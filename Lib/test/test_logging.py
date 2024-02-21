@@ -43,11 +43,13 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+from test.support import smtpd
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -61,9 +63,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
-
-with warnings.catch_warnings():
-    from . import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -2998,6 +2997,39 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    class CustomFormatter(logging.Formatter):
+        custom_property = "."
+
+        def format(self, record):
+            return super().format(record)
+
+    config17 = {
+        'version': 1,
+        'formatters': {
+            "custom": {
+                "()": CustomFormatter,
+                "style": "{",
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+                "format": "{message}", # <-- to force an exception when configuring
+                ".": {
+                    "custom_property": "value"
+                }
+            }
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'custom',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     bad_format = {
         "version": 1,
         "formatters": {
@@ -3479,7 +3511,10 @@ class ConfigDictTest(BaseTest):
             {'msg': 'Hello'}))
         self.assertEqual(result, 'Hello ++ defaultvalue')
 
-
+    def test_config17_ok(self):
+        self.apply_config(self.config17)
+        h = logging._handlers['hand1']
+        self.assertEqual(h.formatter.custom_property, 'value')
 
     def setup_via_listener(self, text, verify=None):
         text = text.encode("utf-8")
@@ -3886,6 +3921,26 @@ class ConfigDictTest(BaseTest):
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
 
+    def test_111615(self):
+        # See gh-111615
+        import_helper.import_module('_multiprocessing')  # see gh-113692
+        mp = import_helper.import_module('multiprocessing')
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'sink': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': mp.get_context('spawn').Queue(),
+                },
+            },
+            'root': {
+                'handlers': ['sink'],
+                'level': 'DEBUG',
+            },
+        }
+        logging.config.dictConfig(config)
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -4034,6 +4089,7 @@ class QueueHandlerTest(BaseTest):
             self.que_logger.critical(self.next_message())
         finally:
             listener.stop()
+            listener.stop()  # gh-114706 - ensure no crash if called again
         self.assertTrue(handler.matches(levelno=logging.WARNING, message='1'))
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))
@@ -5422,6 +5478,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertEqual(record.levelno, logging.CRITICAL)
         self.assertEqual(record.msg, msg)
         self.assertEqual(record.args, (self.recording,))
+        self.assertEqual(record.funcName, 'test_critical')
 
     def test_is_enabled_for(self):
         old_disable = self.adapter.logger.manager.disable
@@ -5440,15 +5497,9 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertFalse(self.adapter.hasHandlers())
 
     def test_nested(self):
-        class Adapter(logging.LoggerAdapter):
-            prefix = 'Adapter'
-
-            def process(self, msg, kwargs):
-                return f"{self.prefix} {msg}", kwargs
-
         msg = 'Adapters can be nested, yo.'
-        adapter = Adapter(logger=self.logger, extra=None)
-        adapter_adapter = Adapter(logger=adapter, extra=None)
+        adapter = PrefixAdapter(logger=self.logger, extra=None)
+        adapter_adapter = PrefixAdapter(logger=adapter, extra=None)
         adapter_adapter.prefix = 'AdapterAdapter'
         self.assertEqual(repr(adapter), repr(adapter_adapter))
         adapter_adapter.log(logging.CRITICAL, msg, self.recording)
@@ -5457,6 +5508,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertEqual(record.levelno, logging.CRITICAL)
         self.assertEqual(record.msg, f"Adapter AdapterAdapter {msg}")
         self.assertEqual(record.args, (self.recording,))
+        self.assertEqual(record.funcName, 'test_nested')
         orig_manager = adapter_adapter.manager
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
@@ -5471,6 +5523,61 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(adapter_adapter.manager, orig_manager)
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
+
+    def test_styled_adapter(self):
+        # Test an example from the Cookbook.
+        records = self.recording.records
+        adapter = StyleAdapter(self.logger)
+        adapter.warning('Hello, {}!', 'world')
+        self.assertEqual(str(records[-1].msg), 'Hello, world!')
+        self.assertEqual(records[-1].funcName, 'test_styled_adapter')
+        adapter.log(logging.WARNING, 'Goodbye {}.', 'world')
+        self.assertEqual(str(records[-1].msg), 'Goodbye world.')
+        self.assertEqual(records[-1].funcName, 'test_styled_adapter')
+
+    def test_nested_styled_adapter(self):
+        records = self.recording.records
+        adapter = PrefixAdapter(self.logger)
+        adapter.prefix = '{}'
+        adapter2 = StyleAdapter(adapter)
+        adapter2.warning('Hello, {}!', 'world')
+        self.assertEqual(str(records[-1].msg), '{} Hello, world!')
+        self.assertEqual(records[-1].funcName, 'test_nested_styled_adapter')
+        adapter2.log(logging.WARNING, 'Goodbye {}.', 'world')
+        self.assertEqual(str(records[-1].msg), '{} Goodbye world.')
+        self.assertEqual(records[-1].funcName, 'test_nested_styled_adapter')
+
+    def test_find_caller_with_stacklevel(self):
+        the_level = 1
+        trigger = self.adapter.warning
+
+        def innermost():
+            trigger('test', stacklevel=the_level)
+
+        def inner():
+            innermost()
+
+        def outer():
+            inner()
+
+        records = self.recording.records
+        outer()
+        self.assertEqual(records[-1].funcName, 'innermost')
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'inner')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'outer')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'test_find_caller_with_stacklevel')
+        self.assertGreater(records[-1].lineno, lineno)
 
     def test_extra_in_records(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
@@ -5511,6 +5618,30 @@ class LoggerAdapterTest(unittest.TestCase):
         record = self.recording.records[0]
         self.assertTrue(hasattr(record, 'foo'))
         self.assertEqual(record.foo, '2')
+
+
+class PrefixAdapter(logging.LoggerAdapter):
+    prefix = 'Adapter'
+
+    def process(self, msg, kwargs):
+        return f"{self.prefix} {msg}", kwargs
+
+
+class Message:
+    def __init__(self, fmt, args):
+        self.fmt = fmt
+        self.args = args
+
+    def __str__(self):
+        return self.fmt.format(*self.args)
+
+
+class StyleAdapter(logging.LoggerAdapter):
+    def log(self, level, msg, /, *args, stacklevel=1, **kwargs):
+        if self.isEnabledFor(level):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.log(level, Message(msg, args), **kwargs,
+                            stacklevel=stacklevel+1)
 
 
 class LoggerTest(BaseTest, AssertErrorMessage):

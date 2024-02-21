@@ -4,6 +4,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #ifdef HAVE_UNISTD_H
@@ -119,6 +120,13 @@ faulthandler_get_fileno(PyObject **file_ptr)
         }
     }
     else if (PyLong_Check(file)) {
+        if (PyBool_Check(file)) {
+            if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                    "bool is used as a file descriptor", 1))
+            {
+                return -1;
+            }
+        }
         fd = PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;
@@ -616,7 +624,7 @@ cancel_dump_traceback_later(void)
 #define SEC_TO_US (1000 * 1000)
 
 static char*
-format_timeout(_PyTime_t us)
+format_timeout(PyTime_t us)
 {
     unsigned long sec, min, hour;
     char buffer[100];
@@ -649,7 +657,7 @@ faulthandler_dump_traceback_later(PyObject *self,
 {
     static char *kwlist[] = {"timeout", "repeat", "file", "exit", NULL};
     PyObject *timeout_obj;
-    _PyTime_t timeout, timeout_us;
+    PyTime_t timeout, timeout_us;
     int repeat = 0;
     PyObject *file = NULL;
     int fd;

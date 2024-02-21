@@ -438,7 +438,7 @@ typedef struct {
     bool list;
     // if true, only list detected runtimes with paths without launching
     bool listPaths;
-    // if true, display help message before contiuning
+    // if true, display help message before continuing
     bool help;
     // if set, limits search to registry keys with the specified Company
     // This is intended for debugging and testing only
@@ -571,6 +571,21 @@ findArgv0End(const wchar_t *buffer, int bufferLength)
 /******************************************************************************\
  ***                          COMMAND-LINE PARSING                          ***
 \******************************************************************************/
+
+// Adapted from https://stackoverflow.com/a/65583702
+typedef struct AppExecLinkFile { // For tag IO_REPARSE_TAG_APPEXECLINK
+    DWORD reparseTag;
+    WORD reparseDataLength;
+    WORD reserved;
+    ULONG version;
+    wchar_t stringList[MAX_PATH * 4];  // Multistring (Consecutive UTF-16 strings each ending with a NUL)
+    /* There are normally 4 strings here. Ex:
+        Package ID:  L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe"
+        Entry Point: L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe!PythonRedirector"
+        Executable:  L"C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_1.17.106910_x64__8wekyb3d8bbwe\AppInstallerPythonRedirector.exe"
+        Applic. Type: L"0"   // Integer as ASCII. "0" = Desktop bridge application; Else sandboxed UWP application
+    */
+} AppExecLinkFile;
 
 
 int
@@ -764,6 +779,55 @@ _shebangStartsWith(const wchar_t *buffer, int bufferLength, const wchar_t *prefi
 
 
 int
+ensure_no_redirector_stub(wchar_t* filename, wchar_t* buffer)
+{
+    // Make sure we didn't find a reparse point that will open the Microsoft Store
+    // If we did, pretend there was no shebang and let normal handling take over
+    WIN32_FIND_DATAW findData;
+    HANDLE hFind = FindFirstFileW(buffer, &findData);
+    if (!hFind) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        return RC_NO_SHEBANG;
+    }
+
+    FindClose(hFind);
+
+    if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        findData.dwReserved0 & IO_REPARSE_TAG_APPEXECLINK)) {
+        return 0;
+    }
+
+    HANDLE hReparsePoint = CreateFileW(buffer, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    if (!hReparsePoint) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        return RC_NO_SHEBANG;
+    }
+
+    AppExecLinkFile appExecLink;
+
+    if (!DeviceIoControl(hReparsePoint, FSCTL_GET_REPARSE_POINT, NULL, 0, &appExecLink, sizeof(appExecLink), NULL, NULL)) {
+        // Let normal handling take over
+        debug(L"# Did not find %s on PATH\n", filename);
+        CloseHandle(hReparsePoint);
+        return RC_NO_SHEBANG;
+    }
+
+    CloseHandle(hReparsePoint);
+
+    const wchar_t* redirectorPackageId = L"Microsoft.DesktopAppInstaller_8wekyb3d8bbwe";
+
+    if (0 == wcscmp(appExecLink.stringList, redirectorPackageId)) {
+        debug(L"# ignoring redirector that would launch store\n");
+        return RC_NO_SHEBANG;
+    }
+
+    return 0;
+}
+
+
+int
 searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
 {
     if (isEnvVarSet(L"PYLAUNCHER_NO_SEARCH_PATH")) {
@@ -824,6 +888,11 @@ searchPath(SearchInfo *search, const wchar_t *shebang, int shebangLength)
         // Other errors should cause us to break
         winerror(0, L"Failed to find %s on PATH\n", filename);
         return RC_BAD_VIRTUAL_PATH;
+    }
+
+    int result = ensure_no_redirector_stub(filename, buffer);
+    if (result) {
+        return result;
     }
 
     // Check that we aren't going to call ourselves again
@@ -1525,6 +1594,7 @@ _registryReadLegacyEnvironment(const SearchInfo *search, HKEY root, EnvironmentI
 
             int count = swprintf_s(realTag, tagLength + 4, L"%s-32", env->tag);
             if (count == -1) {
+                debug(L"# Failed to generate 32bit tag\n");
                 free(realTag);
                 return RC_INTERNAL_ERROR;
             }
@@ -1680,10 +1750,18 @@ appxSearch(const SearchInfo *search, EnvironmentInfo **result, const wchar_t *pa
         exeName = search->windowed ? L"pythonw.exe" : L"python.exe";
     }
 
-    if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, buffer)) ||
-        !join(buffer, MAXLEN, L"Microsoft\\WindowsApps") ||
+    // Failure to get LocalAppData may just mean we're running as a user who
+    // doesn't have a profile directory.
+    // In this case, return "not found", but don't fail.
+    // Chances are they can't launch Store installs anyway.
+    if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, buffer))) {
+        return RC_NO_PYTHON;
+    }
+
+    if (!join(buffer, MAXLEN, L"Microsoft\\WindowsApps") ||
         !join(buffer, MAXLEN, packageFamilyName) ||
         !join(buffer, MAXLEN, exeName)) {
+        debug(L"# Failed to construct App Execution Alias path\n");
         return RC_INTERNAL_ERROR;
     }
 
@@ -1884,6 +1962,7 @@ struct AppxSearchInfo {
 
 struct AppxSearchInfo APPX_SEARCH[] = {
     // Releases made through the Store
+    { L"PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0", L"3.13", 10 },
     { L"PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0", L"3.12", 10 },
     { L"PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0", L"3.11", 10 },
     { L"PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0", L"3.10", 10 },
@@ -1893,6 +1972,7 @@ struct AppxSearchInfo APPX_SEARCH[] = {
     // Side-loadable releases. Note that the publisher ID changes whenever we
     // renew our code-signing certificate, so the newer ID has a higher
     // priority (lower sortKey)
+    { L"PythonSoftwareFoundation.Python.3.13_3847v3x7pw1km", L"3.13", 11 },
     { L"PythonSoftwareFoundation.Python.3.12_3847v3x7pw1km", L"3.12", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_3847v3x7pw1km", L"3.11", 11 },
     { L"PythonSoftwareFoundation.Python.3.11_hd69rhyc2wevp", L"3.11", 12 },
@@ -1913,6 +1993,7 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
     EnvironmentInfo *env = NULL;
 
     if (!result) {
+        debug(L"# collectEnvironments() was passed a NULL result\n");
         return RC_INTERNAL_ERROR;
     }
     *result = NULL;
@@ -1973,7 +2054,8 @@ struct StoreSearchInfo {
 
 
 struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.11 */ L"9NRWMJP3717K" },
+    { L"3", /* 3.12 */ L"9NCVDN91XZQP" },
+    { L"3.13", L"9PNRBTZXMB4Z" },
     { L"3.12", L"9NCVDN91XZQP" },
     { L"3.11", L"9NRWMJP3717K" },
     { L"3.10", L"9PJPW5LDXLZ5" },
@@ -2207,6 +2289,7 @@ int
 selectEnvironment(const SearchInfo *search, EnvironmentInfo *root, EnvironmentInfo **best)
 {
     if (!best) {
+        debug(L"# selectEnvironment() was passed a NULL best\n");
         return RC_INTERNAL_ERROR;
     }
     if (!root) {

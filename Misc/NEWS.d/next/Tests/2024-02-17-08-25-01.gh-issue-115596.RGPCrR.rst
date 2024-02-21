@@ -1,0 +1,2 @@
+Fix ``ProgramPriorityTests`` in ``test_os`` permanently changing the process
+priority.

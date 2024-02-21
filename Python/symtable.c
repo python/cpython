@@ -386,11 +386,6 @@ symtable_new(void)
     return NULL;
 }
 
-/* Using a scaling factor means this should automatically adjust when
-   the recursion limit is adjusted for small or large C stack allocations.
-*/
-#define COMPILER_STACK_FRAME_SCALE 2
-
 struct symtable *
 _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
 {
@@ -417,9 +412,9 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     }
     /* Be careful here to prevent overflow. */
     int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
+    starting_recursion_depth = recursion_depth;
     st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    st->recursion_limit = Py_C_RECURSION_LIMIT;
 
     /* Make the initial symbol information gathering pass */
     if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
@@ -497,18 +492,14 @@ _PySymtable_Lookup(struct symtable *st, void *key)
     k = PyLong_FromVoidPtr(key);
     if (k == NULL)
         return NULL;
-    v = PyDict_GetItemWithError(st->st_blocks, k);
-    Py_DECREF(k);
-
-    if (v) {
-        assert(PySTEntry_Check(v));
-    }
-    else if (!PyErr_Occurred()) {
+    if (PyDict_GetItemRef(st->st_blocks, k, &v) == 0) {
         PyErr_SetString(PyExc_KeyError,
                         "unknown symbol table entry");
     }
+    Py_DECREF(k);
 
-    return (PySTEntryObject *)Py_XNewRef(v);
+    assert(v == NULL || PySTEntry_Check(v));
+    return (PySTEntryObject *)v;
 }
 
 long
@@ -767,6 +758,8 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
+    int remove_dunder_class = 0;
+
     while (PyDict_Next(comp->ste_symbols, &pos, &k, &v)) {
         // skip comprehension parameter
         long comp_flags = PyLong_AS_LONG(v);
@@ -788,6 +781,19 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
         if (!existing) {
             // name does not exist in scope, copy from comprehension
             assert(scope != FREE || PySet_Contains(comp_free, k) == 1);
+            if (scope == FREE && ste->ste_type == ClassBlock &&
+                _PyUnicode_EqualToASCIIString(k, "__class__")) {
+                // if __class__ is unbound in the enclosing class scope and free
+                // in the comprehension scope, it needs special handling; just
+                // letting it be marked as free in class scope will break due to
+                // drop_class_free
+                scope = GLOBAL_IMPLICIT;
+                only_flags &= ~DEF_FREE;
+                if (PySet_Discard(comp_free, k) < 0) {
+                    return 0;
+                }
+                remove_dunder_class = 1;
+            }
             PyObject *v_flags = PyLong_FromLong(only_flags);
             if (v_flags == NULL) {
                 return 0;
@@ -811,6 +817,10 @@ inline_comprehension(PySTEntryObject *ste, PySTEntryObject *comp,
                 }
             }
         }
+    }
+    comp->ste_free = PySet_Size(comp_free) > 0;
+    if (remove_dunder_class && PyDict_DelItemString(comp->ste_symbols, "__class__") < 0) {
+        return 0;
     }
     return 1;
 }
@@ -981,6 +991,12 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         }
         Py_DECREF(name);
     }
+
+    /* Check if loop ended because of exception in PyIter_Next */
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+
     Py_DECREF(itr);
     Py_DECREF(v_free);
     return 1;
@@ -1343,14 +1359,20 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
 }
 
 static long
-symtable_lookup(struct symtable *st, PyObject *name)
+symtable_lookup_entry(struct symtable *st, PySTEntryObject *ste, PyObject *name)
 {
     PyObject *mangled = _Py_Mangle(st->st_private, name);
     if (!mangled)
         return 0;
-    long ret = _PyST_GetSymbol(st->st_cur, mangled);
+    long ret = _PyST_GetSymbol(ste, mangled);
     Py_DECREF(mangled);
     return ret;
+}
+
+static long
+symtable_lookup(struct symtable *st, PyObject *name)
+{
+    return symtable_lookup_entry(st, st->st_cur, name);
 }
 
 static int
@@ -1993,7 +2015,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
          * binding conflict with iteration variables, otherwise skip it
          */
         if (ste->ste_comprehension) {
-            long target_in_scope = _PyST_GetSymbol(ste, target_name);
+            long target_in_scope = symtable_lookup_entry(st, ste, target_name);
             if ((target_in_scope & DEF_COMP_ITER) &&
                 (target_in_scope & DEF_LOCAL)) {
                 PyErr_Format(PyExc_SyntaxError, NAMED_EXPR_COMP_CONFLICT, target_name);
@@ -2009,7 +2031,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
 
         /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
         if (ste->ste_type == FunctionBlock) {
-            long target_in_scope = _PyST_GetSymbol(ste, target_name);
+            long target_in_scope = symtable_lookup_entry(st, ste, target_name);
             if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL, LOCATION(e)))
                     VISIT_QUIT(st, 0);

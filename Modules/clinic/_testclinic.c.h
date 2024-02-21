@@ -2935,8 +2935,13 @@ clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f1", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
     if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f1_impl(module, path);
@@ -2996,8 +3001,13 @@ clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         _PyArg_BadArgument("clone_f2", "argument 'path'", "str", args[0]);
         goto exit;
     }
-    path = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
     if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = clone_f2_impl(module, path);
@@ -3131,4 +3141,26 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=32dc6ac90757da7a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testclinic_TestClass_meth_method_no_params__doc__,
+"meth_method_no_params($self, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF    \
+    {"meth_method_no_params", _PyCFunction_CAST(_testclinic_TestClass_meth_method_no_params), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _testclinic_TestClass_meth_method_no_params__doc__},
+
+static PyObject *
+_testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
+                                                 PyTypeObject *cls);
+
+static PyObject *
+_testclinic_TestClass_meth_method_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "meth_method_no_params() takes no arguments");
+        return NULL;
+    }
+    return _testclinic_TestClass_meth_method_no_params_impl(self, cls);
+}
+/*[clinic end generated code: output=6520c1ca5392a3f0 input=a9049054013a1b77]*/

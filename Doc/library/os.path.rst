@@ -79,7 +79,7 @@ the :mod:`glob` module.)
 
 .. function:: commonpath(paths)
 
-   Return the longest common sub-path of each pathname in the sequence
+   Return the longest common sub-path of each pathname in the iterable
    *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
    and relative pathnames, the *paths* are on the different drives or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
@@ -91,6 +91,9 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a sequence of :term:`path-like objects <path-like object>`.
+
+   .. versionchanged:: 3.13
+      Any iterable can now be passed, rather than just sequences.
 
 
 .. function:: commonprefix(list)
@@ -239,11 +242,15 @@ the :mod:`glob` module.)
 .. function:: isabs(path)
 
    Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
-   begins with a slash, on Windows that it begins with a (back)slash after chopping
-   off a potential drive letter.
+   begins with a slash, on Windows that it begins with two (back)slashes, or a
+   drive letter, colon, and (back)slash together.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.13
+      On Windows, returns ``False`` if the given path starts with exactly one
+      (back)slash.
 
 
 .. function:: isfile(path)
@@ -320,6 +327,28 @@ the :mod:`glob` module.)
    .. availability:: Windows.
 
    .. versionadded:: 3.12
+
+
+.. function:: isreserved(path)
+
+   Return ``True`` if *path* is a reserved pathname on the current system.
+
+   On Windows, reserved filenames include those that end with a space or dot;
+   those that contain colons (i.e. file streams such as "name:stream"),
+   wildcard characters (i.e. ``'*?"<>'``), pipe, or ASCII control characters;
+   as well as DOS device names such as "NUL", "CON", "CONIN$", "CONOUT$",
+   "AUX", "PRN", "COM1", and "LPT1".
+
+   .. note::
+
+      This function approximates rules for reserved paths on most Windows
+      systems. These rules change over time in various Windows releases.
+      This function may be updated in future Python releases as changes to
+      the rules become broadly available.
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.13
 
 
 .. function:: join(path, *paths)

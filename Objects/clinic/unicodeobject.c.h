@@ -203,8 +203,13 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[0]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(args[0]);
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[0], &encoding_length);
         if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -215,8 +220,13 @@ unicode_encode(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("encode", "argument 'errors'", "str", args[1]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8(args[1]);
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
     if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -944,8 +954,10 @@ PyDoc_STRVAR(unicode_split__doc__,
 "    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
+"\n"
+"Splitting starts at the front of the string and works to the end.\n"
 "\n"
 "Note, str.split() is mainly useful for data that has been intentionally\n"
 "delimited.  With natural text that includes punctuation, consider using\n"
@@ -1068,7 +1080,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits.\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
 "Splitting starts at the end of the string and works to the front.");
@@ -1463,8 +1475,13 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             _PyArg_BadArgument("str", "argument 'encoding'", "str", fastargs[1]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(fastargs[1]);
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(fastargs[1], &encoding_length);
         if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -1475,8 +1492,13 @@ unicode_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         _PyArg_BadArgument("str", "argument 'errors'", "str", fastargs[2]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8(fastargs[2]);
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(fastargs[2], &errors_length);
     if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -1485,4 +1507,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=20313d6339272ddc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1aab29bab5201c78 input=a9049054013a1b77]*/

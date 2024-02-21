@@ -5,11 +5,9 @@
  * See the xxlimited module for an extension module template.
  */
 
-#ifndef _MSC_VER
-#include "pyconfig.h"   // Py_NOGIL
-#endif
+#include "pyconfig.h"   // Py_GIL_DISABLED
 
-#ifndef Py_NOGIL
+#ifndef Py_GIL_DISABLED
 #define Py_LIMITED_API 0x03050000
 #endif
 

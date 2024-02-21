@@ -68,6 +68,11 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
+    /* The global instrumentation version in high bits, plus flags indicating
+       when to break out of the interpreter loop in lower bits. See details in
+       pycore_ceval.h. */
+    uintptr_t eval_breaker;
+
     struct {
         /* Has been initialized to a safe state.
 
@@ -102,7 +107,7 @@ struct _ts {
 #endif
     int _whence;
 
-    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
        See Include/internal/pycore_pystate.h for more details. */
     int state;
 
@@ -148,6 +153,13 @@ struct _ts {
     unsigned long native_thread_id;
 
     struct _py_trashcan trash;
+
+    /* Tagged pointer to top-most critical section, or zero if there is no
+     * active critical section. Critical sections are only used in
+     * `--disable-gil` builds (i.e., when Py_GIL_DISABLED is defined to 1). In the
+     * default build, this field is always zero.
+     */
+    uintptr_t critical_section;
 
     /* Called when a thread state is deleted normally, but not when it
      * is destroyed after fork().
@@ -205,16 +217,31 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
+    PyObject *previous_executor;
+
 };
 
-#ifdef __wasi__
-   // WASI has limited call stack. Python's recursion limit depends on code
-   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   // recursions, sometimes less. 500 is a more conservative limit.
+#ifdef Py_DEBUG
+   // A debug build is likely built with low optimization level which implies
+   // higher stack memory usage than a release build: use a lower limit.
+#  if defined(__wasi__)
+     // Based on wasmtime 16.
+#    define Py_C_RECURSION_LIMIT 150
+#  else
+#    define Py_C_RECURSION_LIMIT 500
+#  endif
+#elif defined(__wasi__)
+   // Based on wasmtime 16.
 #  define Py_C_RECURSION_LIMIT 500
+#elif defined(__s390x__)
+#  define Py_C_RECURSION_LIMIT 800
+#elif defined(_WIN32)
+#  define Py_C_RECURSION_LIMIT 3000
+#elif defined(_Py_ADDRESS_SANITIZER)
+#  define Py_C_RECURSION_LIMIT 4000
 #else
    // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 1500
+#  define Py_C_RECURSION_LIMIT 10000
 #endif
 
 
@@ -223,6 +250,9 @@ struct _ts {
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
+
+// Alias kept for backward compatibility
+#define _PyThreadState_UncheckedGet PyThreadState_GetUnchecked
 
 
 // Disable tracing and profiling.
@@ -239,6 +269,11 @@ PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
    The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
+
+/* The implementation of sys._current_frames()  Returns a dict mapping
+   thread id to that thread's current frame.
+*/
+PyAPI_FUNC(PyObject*) _PyThread_CurrentFrames(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */

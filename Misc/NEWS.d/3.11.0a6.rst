@@ -248,7 +248,7 @@ Don't un-adapt :opcode:`COMPARE_OP` when collecting specialization stats.
 .. nonce: RX_AzJ
 .. section: Core and Builtins
 
-Fix specialization stats gathering for :opcode:`PRECALL` instructions.
+Fix specialization stats gathering for :opcode:`!PRECALL` instructions.
 
 ..
 
@@ -941,7 +941,7 @@ uvloop library.
 
 Make the :class:`configparser.ConfigParser` constructor raise
 :exc:`TypeError` if the ``interpolation`` parameter is not of type
-:class:`configparser.Interpolation`
+:class:`!configparser.Interpolation`
 
 ..
 
@@ -1034,7 +1034,7 @@ if zlib uses the s390x hardware accelerator. Patch by Victor Stinner.
 .. nonce: jfciLG
 .. section: Build
 
-Respect `--with-suffix` when building on case-insensitive file systems.
+Respect ``--with-suffix`` when building on case-insensitive file systems.
 
 ..
 
@@ -1151,7 +1151,7 @@ Make query dialogs on Windows start with a cursor in the entry box.
 .. nonce: FhiH5P
 .. section: IDLE
 
-Apply IDLE syntax highlighting to `.pyi` files. Patch by Alex Waygood and
+Apply IDLE syntax highlighting to ``.pyi`` files. Patch by Alex Waygood and
 Terry Jan Reedy.
 
 ..

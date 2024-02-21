@@ -1,5 +1,6 @@
 #include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
 #include "pycore_pythread.h"      // _POSIX_SEMAPHORES
+#include "pycore_time.h"          // _PyTime_FromMicrosecondsClamup()
 
 /* Posix threads interface */
 
@@ -20,6 +21,8 @@
 #   include <sys/syscall.h>     /* syscall(SYS_gettid) */
 #elif defined(__FreeBSD__)
 #   include <pthread_np.h>      /* pthread_getthreadid_np() */
+#elif defined(__FreeBSD_kernel__)
+#   include <sys/syscall.h>     /* syscall(SYS_thr_self) */
 #elif defined(__OpenBSD__)
 #   include <unistd.h>          /* getthrid() */
 #elif defined(_AIX)
@@ -147,16 +150,16 @@ _PyThread_cond_init(PyCOND_T *cond)
 void
 _PyThread_cond_after(long long us, struct timespec *abs)
 {
-    _PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
-    _PyTime_t t;
+    PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
+    PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        t = _PyTime_GetMonotonicClock();
+        t = _PyTime_MonotonicUnchecked();
     }
     else
 #endif
     {
-        t = _PyTime_GetSystemClock();
+        t = _PyTime_TimeUnchecked();
     }
     t = _PyTime_Add(t, timeout);
     _PyTime_AsTimespec_clamp(t, abs);
@@ -235,8 +238,8 @@ pythread_wrapper(void *arg)
     return NULL;
 }
 
-unsigned long
-PyThread_start_new_thread(void (*func)(void *), void *arg)
+static int
+do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
 {
     pthread_t th;
     int status;
@@ -252,7 +255,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 
 #if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
     if (pthread_attr_init(&attrs) != 0)
-        return PYTHREAD_INVALID_THREAD_ID;
+        return -1;
 #endif
 #if defined(THREAD_STACK_SIZE)
     PyThreadState *tstate = _PyThreadState_GET();
@@ -261,7 +264,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     if (tss != 0) {
         if (pthread_attr_setstacksize(&attrs, tss) != 0) {
             pthread_attr_destroy(&attrs);
-            return PYTHREAD_INVALID_THREAD_ID;
+            return -1;
         }
     }
 #endif
@@ -272,7 +275,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
     pythread_callback *callback = PyMem_RawMalloc(sizeof(pythread_callback));
 
     if (callback == NULL) {
-      return PYTHREAD_INVALID_THREAD_ID;
+      return -1;
     }
 
     callback->func = func;
@@ -292,16 +295,49 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 
     if (status != 0) {
         PyMem_RawFree(callback);
+        return -1;
+    }
+    *out_id = th;
+    return 0;
+}
+
+int
+PyThread_start_joinable_thread(void (*func)(void *), void *arg,
+                               PyThread_ident_t* ident, PyThread_handle_t* handle) {
+    pthread_t th = (pthread_t) 0;
+    if (do_start_joinable_thread(func, arg, &th)) {
+        return -1;
+    }
+    *ident = (PyThread_ident_t) th;
+    *handle = (PyThread_handle_t) th;
+    assert(th == (pthread_t) *ident);
+    assert(th == (pthread_t) *handle);
+    return 0;
+}
+
+unsigned long
+PyThread_start_new_thread(void (*func)(void *), void *arg)
+{
+    pthread_t th = (pthread_t) 0;
+    if (do_start_joinable_thread(func, arg, &th)) {
         return PYTHREAD_INVALID_THREAD_ID;
     }
-
     pthread_detach(th);
-
 #if SIZEOF_PTHREAD_T <= SIZEOF_LONG
     return (unsigned long) th;
 #else
     return (unsigned long) *(unsigned long *) &th;
 #endif
+}
+
+int
+PyThread_join_thread(PyThread_handle_t th) {
+    return pthread_join((pthread_t) th, NULL);
+}
+
+int
+PyThread_detach_thread(PyThread_handle_t th) {
+    return pthread_detach((pthread_t) th);
 }
 
 /* XXX This implementation is considered (to quote Tim Peters) "inherently
@@ -310,14 +346,20 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
      - The cast to unsigned long is inherently unsafe.
      - It is not clear that the 'volatile' (for AIX?) are any longer necessary.
 */
-unsigned long
-PyThread_get_thread_ident(void)
-{
+PyThread_ident_t
+PyThread_get_thread_ident_ex(void) {
     volatile pthread_t threadid;
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    return (unsigned long) threadid;
+    assert(threadid == (pthread_t) (PyThread_ident_t) threadid);
+    return (PyThread_ident_t) threadid;
+}
+
+unsigned long
+PyThread_get_thread_ident(void)
+{
+    return (unsigned long) PyThread_get_thread_ident_ex();
 }
 
 #ifdef PY_HAVE_THREAD_NATIVE_ID
@@ -335,6 +377,9 @@ PyThread_get_thread_native_id(void)
 #elif defined(__FreeBSD__)
     int native_id;
     native_id = pthread_getthreadid_np();
+#elif defined(__FreeBSD_kernel__)
+    long native_id;
+    syscall(SYS_thr_self, &native_id);
 #elif defined(__OpenBSD__)
     pid_t native_id;
     native_id = getthrid();
@@ -437,7 +482,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
 
     (void) error; /* silence unused-but-set-variable warning */
 
-    _PyTime_t timeout;  // relative timeout
+    PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
         // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
         // overflow to the caller, so clamp the timeout to
@@ -457,11 +502,11 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_MonotonicUnchecked(), timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
-    _PyTime_t deadline = 0;
+    PyTime_t deadline = 0;
     if (timeout > 0 && !intr_flag) {
         deadline = _PyDeadline_Init(timeout);
     }
@@ -473,7 +518,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            _PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
+            PyTime_t abs_time = _PyTime_Add(_PyTime_TimeUnchecked(),
                                              timeout);
             struct timespec ts;
             _PyTime_AsTimespec_clamp(abs_time, &ts);

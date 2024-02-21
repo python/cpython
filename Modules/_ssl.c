@@ -28,6 +28,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_time.h"          // _PyDeadline_Init()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */
@@ -125,10 +126,10 @@ static void _PySSLFixErrno(void) {
 #include "_ssl_data_31.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "_ssl_data_300.h"
-#elif (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+#elif (OPENSSL_VERSION_NUMBER >= 0x10101000L)
 #include "_ssl_data_111.h"
 #else
-#include "_ssl_data.h"
+#error Unsupported OpenSSL version
 #endif
 
 /* OpenSSL API 1.1.0+ does not include version methods */
@@ -301,6 +302,10 @@ typedef struct {
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
+#ifndef OPENSSL_NO_PSK
+    PyObject *psk_client_callback;
+    PyObject *psk_server_callback;
+#endif
 } PySSLContext;
 
 typedef struct {
@@ -365,7 +370,7 @@ class _ssl.SSLSession "PySSLSession *" "get_state_type(type)->PySSLSession_Type"
 
 #include "clinic/_ssl.c.h"
 
-static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
+static int PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout);
 
 static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
 static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
@@ -863,7 +868,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     }
 
     /* bpo43522 and OpenSSL < 1.1.1l: copy hostflags manually */
-#if !defined(LIBRESSL_VERSION_NUMBER) && OPENSSL_VERSION < 0x101010cf
+#if OPENSSL_VERSION < 0x101010cf
     X509_VERIFY_PARAM *ssl_params = SSL_get0_param(self->ssl);
     X509_VERIFY_PARAM_set_hostflags(ssl_params, sslctx->hostflags);
 #endif
@@ -889,10 +894,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
              * only in combination with SSL_VERIFY_PEER flag. */
             int mode = SSL_get_verify_mode(self->ssl);
             if (mode & SSL_VERIFY_PEER) {
-                int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
-                verify_cb = SSL_get_verify_callback(self->ssl);
                 mode |= SSL_VERIFY_POST_HANDSHAKE;
-                SSL_set_verify(self->ssl, mode, verify_cb);
+                SSL_set_verify(self->ssl, mode, NULL);
             }
         } else {
             /* client socket */
@@ -961,7 +964,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     _PySSLError err;
     int sockstate, nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (sock) {
@@ -2271,12 +2274,12 @@ PySSL_dealloc(PySSLSocket *self)
  */
 
 static int
-PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
+PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout)
 {
     int rc;
 #ifdef HAVE_POLL
     struct pollfd pollfd;
-    _PyTime_t ms;
+    PyTime_t ms;
 #else
     int nfds;
     fd_set fds;
@@ -2355,7 +2358,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     _PySSLError err;
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (sock != NULL) {
@@ -2493,7 +2496,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     _PySSLError err;
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (!group_right_1 && len < 0) {
@@ -2625,7 +2628,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
     int sockstate, nonblocking, ret;
     int zeros = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (sock != NULL) {
@@ -2993,7 +2996,6 @@ static int
 _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
 {
     int mode;
-    int (*verify_cb)(int, X509_STORE_CTX *) = NULL;
 
     switch(n) {
     case PY_SSL_CERT_NONE:
@@ -3014,9 +3016,7 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
     /* bpo-37428: newPySSLSocket() sets SSL_VERIFY_POST_HANDSHAKE flag for
      * server sockets and SSL_set_post_handshake_auth() for client. */
 
-    /* keep current verify cb */
-    verify_cb = SSL_CTX_get_verify_callback(self->ctx);
-    SSL_CTX_set_verify(self->ctx, mode, verify_cb);
+    SSL_CTX_set_verify(self->ctx, mode, NULL);
     return 0;
 }
 
@@ -3123,6 +3123,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
+#ifndef OPENSSL_NO_PSK
+    self->psk_client_callback = NULL;
+    self->psk_server_callback = NULL;
+#endif
 
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
@@ -3235,6 +3239,10 @@ context_clear(PySSLContext *self)
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
     Py_CLEAR(self->keylog_filename);
+#ifndef OPENSSL_NO_PSK
+    Py_CLEAR(self->psk_client_callback);
+    Py_CLEAR(self->psk_server_callback);
+#endif
     if (self->keylog_bio != NULL) {
         PySSL_BEGIN_ALLOW_THREADS
         BIO_free_all(self->keylog_bio);
@@ -4546,6 +4554,50 @@ set_sni_callback(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x30300000L
+static X509_OBJECT *x509_object_dup(const X509_OBJECT *obj)
+{
+    int ok;
+    X509_OBJECT *ret = X509_OBJECT_new();
+    if (ret == NULL) {
+        return NULL;
+    }
+    switch (X509_OBJECT_get_type(obj)) {
+        case X509_LU_X509:
+            ok = X509_OBJECT_set1_X509(ret, X509_OBJECT_get0_X509(obj));
+            break;
+        case X509_LU_CRL:
+            /* X509_OBJECT_get0_X509_CRL was not const-correct prior to 3.0.*/
+            ok = X509_OBJECT_set1_X509_CRL(
+                ret, X509_OBJECT_get0_X509_CRL((X509_OBJECT *)obj));
+            break;
+        default:
+            /* We cannot duplicate unrecognized types in a polyfill, but it is
+             * safe to leave an empty object. The caller will ignore it. */
+            ok = 1;
+            break;
+    }
+    if (!ok) {
+        X509_OBJECT_free(ret);
+        return NULL;
+    }
+    return ret;
+}
+
+static STACK_OF(X509_OBJECT) *
+X509_STORE_get1_objects(X509_STORE *store)
+{
+    STACK_OF(X509_OBJECT) *ret;
+    if (!X509_STORE_lock(store)) {
+        return NULL;
+    }
+    ret = sk_X509_OBJECT_deep_copy(X509_STORE_get0_objects(store),
+                                   x509_object_dup, X509_OBJECT_free);
+    X509_STORE_unlock(store);
+    return ret;
+}
+#endif
+
 PyDoc_STRVAR(PySSLContext_sni_callback_doc,
 "Set a callback that will be called when a server name is provided by the SSL/TLS client in the SNI extension.\n\
 \n\
@@ -4575,7 +4627,12 @@ _ssl__SSLContext_cert_store_stats_impl(PySSLContext *self)
     int x509 = 0, crl = 0, ca = 0, i;
 
     store = SSL_CTX_get_cert_store(self->ctx);
-    objs = X509_STORE_get0_objects(store);
+    objs = X509_STORE_get1_objects(store);
+    if (objs == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "failed to query cert store");
+        return NULL;
+    }
+
     for (i = 0; i < sk_X509_OBJECT_num(objs); i++) {
         obj = sk_X509_OBJECT_value(objs, i);
         switch (X509_OBJECT_get_type(obj)) {
@@ -4589,12 +4646,11 @@ _ssl__SSLContext_cert_store_stats_impl(PySSLContext *self)
                 crl++;
                 break;
             default:
-                /* Ignore X509_LU_FAIL, X509_LU_RETRY, X509_LU_PKEY.
-                 * As far as I can tell they are internal states and never
-                 * stored in a cert store */
+                /* Ignore unrecognized types. */
                 break;
         }
     }
+    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
     return Py_BuildValue("{sisisi}", "x509", x509, "crl", crl,
         "x509_ca", ca);
 }
@@ -4626,7 +4682,12 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
     }
 
     store = SSL_CTX_get_cert_store(self->ctx);
-    objs = X509_STORE_get0_objects(store);
+    objs = X509_STORE_get1_objects(store);
+    if (objs == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "failed to query cert store");
+        goto error;
+    }
+
     for (i = 0; i < sk_X509_OBJECT_num(objs); i++) {
         X509_OBJECT *obj;
         X509 *cert;
@@ -4654,12 +4715,246 @@ _ssl__SSLContext_get_ca_certs_impl(PySSLContext *self, int binary_form)
         }
         Py_CLEAR(ci);
     }
+    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
     return rlist;
 
   error:
+    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
     Py_XDECREF(ci);
     Py_XDECREF(rlist);
     return NULL;
+}
+
+#ifndef OPENSSL_NO_PSK
+static unsigned int psk_client_callback(SSL *s,
+                                        const char *hint,
+                                        char *identity,
+                                        unsigned int max_identity_len,
+                                        unsigned char *psk,
+                                        unsigned int max_psk_len)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject *callback = NULL;
+
+    PySSLSocket *ssl = SSL_get_app_data(s);
+    if (ssl == NULL || ssl->ctx == NULL) {
+        goto error;
+    }
+    callback = ssl->ctx->psk_client_callback;
+    if (callback == NULL) {
+        goto error;
+    }
+
+    PyObject *hint_str = (hint != NULL && hint[0] != '\0') ?
+            PyUnicode_DecodeUTF8(hint, strlen(hint), "strict") :
+            Py_NewRef(Py_None);
+    if (hint_str == NULL) {
+        /* The remote side has sent an invalid UTF-8 string
+         * (breaking the standard), drop the connection without
+         * raising a decode exception. */
+        PyErr_Clear();
+        goto error;
+    }
+    PyObject *result = PyObject_CallFunctionObjArgs(callback, hint_str, NULL);
+    Py_DECREF(hint_str);
+
+    if (result == NULL) {
+        goto error;
+    }
+
+    const char *psk_;
+    const char *identity_;
+    Py_ssize_t psk_len_;
+    Py_ssize_t identity_len_ = 0;
+    if (!PyArg_ParseTuple(result, "z#y#", &identity_, &identity_len_, &psk_, &psk_len_)) {
+        Py_DECREF(result);
+        goto error;
+    }
+
+    if (identity_len_ + 1 > max_identity_len || psk_len_ > max_psk_len) {
+        Py_DECREF(result);
+        goto error;
+    }
+    memcpy(psk, psk_, psk_len_);
+    if (identity_ != NULL) {
+        memcpy(identity, identity_, identity_len_);
+    }
+    identity[identity_len_] = 0;
+
+    Py_DECREF(result);
+
+    PyGILState_Release(gstate);
+    return (unsigned int)psk_len_;
+
+error:
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(callback);
+    }
+    PyGILState_Release(gstate);
+    return 0;
+}
+#endif
+
+/*[clinic input]
+_ssl._SSLContext.set_psk_client_callback
+    callback: object
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
+                                              PyObject *callback)
+/*[clinic end generated code: output=0aba86f6ed75119e input=7627bae0e5ee7635]*/
+{
+#ifndef OPENSSL_NO_PSK
+    if (self->protocol == PY_SSL_VERSION_TLS_SERVER) {
+        _setSSLError(get_state_ctx(self),
+                     "Cannot add PSK client callback to a "
+                     "PROTOCOL_TLS_SERVER context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    SSL_psk_client_cb_func ssl_callback;
+    if (callback == Py_None) {
+        callback = NULL;
+        // Delete the existing callback
+        ssl_callback = NULL;
+    } else {
+        if (!PyCallable_Check(callback)) {
+            PyErr_SetString(PyExc_TypeError, "callback must be callable");
+            return NULL;
+        }
+        ssl_callback = psk_client_callback;
+    }
+
+    Py_XDECREF(self->psk_client_callback);
+    Py_XINCREF(callback);
+
+    self->psk_client_callback = callback;
+    SSL_CTX_set_psk_client_callback(self->ctx, ssl_callback);
+
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "TLS-PSK is not supported by your OpenSSL version.");
+    return NULL;
+#endif
+}
+
+#ifndef OPENSSL_NO_PSK
+static unsigned int psk_server_callback(SSL *s,
+                                        const char *identity,
+                                        unsigned char *psk,
+                                        unsigned int max_psk_len)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject *callback = NULL;
+
+    PySSLSocket *ssl = SSL_get_app_data(s);
+    if (ssl == NULL || ssl->ctx == NULL) {
+        goto error;
+    }
+    callback = ssl->ctx->psk_server_callback;
+    if (callback == NULL) {
+        goto error;
+    }
+
+    PyObject *identity_str = (identity != NULL && identity[0] != '\0') ?
+            PyUnicode_DecodeUTF8(identity, strlen(identity), "strict") :
+            Py_NewRef(Py_None);
+    if (identity_str == NULL) {
+        /* The remote side has sent an invalid UTF-8 string
+         * (breaking the standard), drop the connection without
+         * raising a decode exception. */
+        PyErr_Clear();
+        goto error;
+    }
+    PyObject *result = PyObject_CallFunctionObjArgs(callback, identity_str, NULL);
+    Py_DECREF(identity_str);
+
+    if (result == NULL) {
+        goto error;
+    }
+
+    char *psk_;
+    Py_ssize_t psk_len_;
+    if (PyBytes_AsStringAndSize(result, &psk_, &psk_len_) < 0) {
+        Py_DECREF(result);
+        goto error;
+    }
+
+    if (psk_len_ > max_psk_len) {
+        Py_DECREF(result);
+        goto error;
+    }
+    memcpy(psk, psk_, psk_len_);
+
+    Py_DECREF(result);
+
+    PyGILState_Release(gstate);
+    return (unsigned int)psk_len_;
+
+error:
+    if (PyErr_Occurred()) {
+        PyErr_WriteUnraisable(callback);
+    }
+    PyGILState_Release(gstate);
+    return 0;
+}
+#endif
+
+/*[clinic input]
+_ssl._SSLContext.set_psk_server_callback
+    callback: object
+    identity_hint: str(accept={str, NoneType}) = None
+
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
+                                              PyObject *callback,
+                                              const char *identity_hint)
+/*[clinic end generated code: output=1f4d6a4e09a92b03 input=65d4b6022aa85ea3]*/
+{
+#ifndef OPENSSL_NO_PSK
+    if (self->protocol == PY_SSL_VERSION_TLS_CLIENT) {
+        _setSSLError(get_state_ctx(self),
+                     "Cannot add PSK server callback to a "
+                     "PROTOCOL_TLS_CLIENT context", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+
+    SSL_psk_server_cb_func ssl_callback;
+    if (callback == Py_None) {
+        callback = NULL;
+        // Delete the existing callback and hint
+        ssl_callback = NULL;
+        identity_hint = NULL;
+    } else {
+        if (!PyCallable_Check(callback)) {
+            PyErr_SetString(PyExc_TypeError, "callback must be callable");
+            return NULL;
+        }
+        ssl_callback = psk_server_callback;
+    }
+
+    if (SSL_CTX_use_psk_identity_hint(self->ctx, identity_hint) != 1) {
+        PyErr_SetString(PyExc_ValueError, "failed to set identity hint");
+        return NULL;
+    }
+
+    Py_XDECREF(self->psk_server_callback);
+    Py_XINCREF(callback);
+
+    self->psk_server_callback = callback;
+    SSL_CTX_set_psk_server_callback(self->ctx, ssl_callback);
+
+    Py_RETURN_NONE;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "TLS-PSK is not supported by your OpenSSL version.");
+    return NULL;
+#endif
 }
 
 
@@ -4716,6 +5011,8 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_CERT_STORE_STATS_METHODDEF
     _SSL__SSLCONTEXT_GET_CA_CERTS_METHODDEF
     _SSL__SSLCONTEXT_GET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_SET_PSK_CLIENT_CALLBACK_METHODDEF
+    _SSL__SSLCONTEXT_SET_PSK_SERVER_CALLBACK_METHODDEF
     {NULL, NULL}        /* sentinel */
 };
 
@@ -6017,6 +6314,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_TLSv1_3", 1);
 #else
     addbool(m, "HAS_TLSv1_3", 0);
+#endif
+
+#ifdef OPENSSL_NO_PSK
+    addbool(m, "HAS_PSK", 0);
+#else
+    addbool(m, "HAS_PSK", 1);
 #endif
 
 #undef addbool

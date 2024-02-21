@@ -61,7 +61,7 @@ The module defines the following items:
 
 .. exception:: BadGzipFile
 
-   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
    :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
    files.
 
@@ -105,7 +105,7 @@ The module defines the following items:
    should only be provided in compression mode.  If omitted or ``None``, the
    current time is used.  See the :attr:`mtime` attribute for more details.
 
-   Calling a :class:`GzipFile` object's :meth:`close` method does not close
+   Calling a :class:`GzipFile` object's :meth:`!close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
    data.  This also allows you to pass an :class:`io.BytesIO` object opened for
    writing as *fileobj*, and retrieve the resulting memory buffer using the
@@ -287,4 +287,3 @@ Command line options
 .. option:: -h, --help
 
    Show the help message.
-
