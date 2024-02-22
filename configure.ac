@@ -4523,9 +4523,9 @@ fi
 AS_VAR_IF([ipv6], [yes], [
     AS_VAR_SET([noipv6found],
                [m4_normalize([
-                No $ipv6lib library found; cannot continue.
+                "No $ipv6lib library found; cannot continue.
                 You need to fetch lib$ipv6lib.a from appropriate
-                ipv6 kit and compile beforehand.])])
+                ipv6 kit and compile beforehand."])])
     AC_MSG_CHECKING([ipv6 library])
     AS_VAR_IF([ipv6lib], [none], [AC_MSG_ERROR([$noipv6found])])
     if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
