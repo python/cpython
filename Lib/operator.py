@@ -14,7 +14,7 @@ __all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'co
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
            'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
            'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',
-           'is_', 'is_not', 'isub', 'itemgetter', 'itruediv', 'ixor', 'le',
+           'is_', 'is_none', 'is_not', 'isub', 'itemgetter', 'itruediv', 'ixor', 'le',
            'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
            'mul', 'ne', 'neg', 'not_', 'or_', 'pos', 'pow', 'rshift',
            'setitem', 'sub', 'truediv', 'truth', 'xor']
@@ -57,6 +57,10 @@ def not_(a):
 def truth(a):
     "Return True if a is true, False otherwise."
     return True if a else False
+
+def is_none(a):
+    "Same as a is None."
+    return a is None
 
 def is_(a, b):
     "Same as a is b."

@@ -328,6 +328,14 @@ class OperatorTestCase:
         self.assertRaises(TypeError, operator.xor, None, None)
         self.assertEqual(operator.xor(0xb, 0xc), 0x7)
 
+    def test_is_none(self):
+        operator = self.module
+        a = 'xyzpdq'
+        b = None
+        self.assertRaises(TypeError, operator.is_none)
+        self.assertFalse(operator.is_none(a))
+        self.assertTrue(operator.is_none(None))
+
     def test_is(self):
         operator = self.module
         a = b = 'xyzpdq'
