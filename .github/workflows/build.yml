@@ -162,7 +162,7 @@ jobs:
       - name: Build CPython
         run: |
           make -j4 regen-all
-          make regen-stdlib-module-names
+          make regen-stdlib-module-names regen-sbom
       - name: Check for changes
         run: |
           git add -u
