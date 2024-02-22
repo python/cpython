@@ -28,6 +28,7 @@ configuration problem notification and resolution.
 from configparser import ConfigParser
 import os
 import sys
+import re
 
 from tkinter.font import Font
 import idlelib
@@ -549,6 +550,15 @@ class IdleConf:
                 v2 = [ x.replace('<Alt-', '<Option-') for x in v ]
                 if v != v2:
                     result[k] = v2
+        else:
+            def replace(m):
+                return m.group('prefix') + m.group('alpha').swapcase()+'>'
+
+            pat = '(?P<prefix><[A-Za-z-]+Key-)(?P<alpha>[a-zA-Z])>'
+            for k, v in result.items():
+                v2 = [re.sub(pat, replace, x) for x in v]
+                if v != v2:
+                    v.extend(v2)
 
         return result
 
