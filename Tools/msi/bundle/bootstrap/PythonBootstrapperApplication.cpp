@@ -442,6 +442,14 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         ThemeControlElevates(_theme, ID_INSTALL_BUTTON, elevated);
         ThemeControlElevates(_theme, ID_INSTALL_SIMPLE_BUTTON, elevated);
         ThemeControlElevates(_theme, ID_INSTALL_UPGRADE_BUTTON, elevated);
+
+        LONGLONG blockedLauncher;
+        if (SUCCEEDED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher)) && blockedLauncher) {
+            LOC_STRING *pLocString = nullptr;
+            if (SUCCEEDED(LocGetString(_wixLoc, L"#(loc.ShortInstallLauncherBlockedLabel)", &pLocString)) && pLocString) {
+                ThemeSetTextControl(_theme, ID_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX, pLocString->wzText);
+            }
+        }
     }
 
     void Custom1Page_Show() {
@@ -718,24 +726,44 @@ public: // IBootstrapperApplication
         __in DWORD64 /*dw64Version*/,
         __in BOOTSTRAPPER_RELATED_OPERATION operation
     ) {
-        if ((CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_AllUsers", -1) ||
-             CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_JustForMe", -1))) {
-            BalLog(BOOTSTRAPPER_LOG_LEVEL_INFO, "Detected existing launcher install");
+        // Only check launcher_AllUsers because we'll find the same packages
+        // twice if we check launcher_JustForMe as well.
+        if (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, wzPackageId, -1, L"launcher_AllUsers", -1)) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Detected existing launcher install");
 
-            LONGLONG detectedLauncher;
+            LONGLONG blockedLauncher, detectedLauncher;
+            if (FAILED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher))) {
+                blockedLauncher = 0;
+            }
             if (FAILED(BalGetNumericVariable(L"DetectedLauncher", &detectedLauncher))) {
                 detectedLauncher = -1;
             }
-            if (detectedLauncher == 1) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Multiple launcher installs have been detected.");
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "No launcher will be installed or upgraded until one has been removed.");
-                _engine->SetVariableNumeric(L"Include_launcher", 0);
-                _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
-            }
-            else {
-                _engine->SetVariableNumeric(L"DetectedLauncher", 1);
 
-                LONGLONG includeLauncher, includeLaucherAllUsers;
+            _engine->SetVariableNumeric(L"DetectedLauncher", 1);
+
+            if (blockedLauncher) {
+                // Nothing else to do, we're already blocking
+            }
+            else if (BOOTSTRAPPER_RELATED_OPERATION_DOWNGRADE == operation) {
+                // Found a higher version, so we can't install ours.
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Higher version launcher has been detected.");
+                BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Launcher will not be installed");
+                _engine->SetVariableNumeric(L"BlockedLauncher", 1);
+            }
+            else if (detectedLauncher == 1) {
+                if (!blockedLauncher) {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Multiple launcher installs have been detected.");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "No launcher will be installed or upgraded until one has been removed.");
+                    _engine->SetVariableNumeric(L"BlockedLauncher", 1);
+                }
+            }
+            else if (BOOTSTRAPPER_RELATED_OPERATION_MAJOR_UPGRADE == operation) {
+                // Found an older version, so let's run the equivalent as an upgrade
+                // This overrides "unknown" all users options, but will leave alone
+                // any that have already been set/detected.
+                // User can deselect the option to include the launcher, but cannot
+                // change it from the current per user/machine setting.
+                LONGLONG includeLauncher, includeLauncherAllUsers;
                 if (FAILED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))) {
                     includeLauncher = -1;
                 }
@@ -743,50 +771,16 @@ public: // IBootstrapperApplication
                     includeLauncherAllUsers = -1;
                 }
 
-                if (includeLauncher == 1) {
-                    // We already want to install, so check if settings are consistent
-                    LONGLONG perMachine;
-                    if (includeLauncherAllUsers == -1) {
-                        // Unspecified value, so update to match what was detected
-                        _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
-                    } else if (includeLauncherAllUsers != (fPerMachine ? 1 : 0)) {
-                        // Inconsistent preference, so disable launcher install
-                        BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Existing launcher is inconsistent with install request - disabling install");
-                        _engine->SetVariableNumeric(L"Include_launcher", 0);
-                    }
-                }
-                else if (includeLauncher == 0) {
-                    // Launch requested no launcher, but we found one. This is
-                    // fine as long as the user leaves the setting unchanged,
-                    // which ought to be handled in OnDetectComplete because
-                    // Include_launcher != -1 and DetectedLauncher == 1
-                }
-                else if (BOOTSTRAPPER_RELATED_OPERATION_DOWNGRADE == operation) {
-                    // Found a higher version, so we can't install ours.
-                    _engine->SetVariableNumeric(L"Include_launcher", 0);
-                    _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
-                }
-                else if (BOOTSTRAPPER_RELATED_OPERATION_MAJOR_UPGRADE == operation) {
-                    // Found an older version, so let's run the equivalent as an upgrade
-                    // This overrides "unknown" all users options, but will leave alone
-                    // any that have already been set/detected.
-                    // User can deselect the option to include the launcher, but cannot
-                    // change it from the current per user/machine setting.
+                if (includeLauncher < 0) {
                     _engine->SetVariableNumeric(L"Include_launcher", 1);
-                    if (installLauncherAllUsers < 0) {
-                        _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
-                    }
-                    _engine->SetVariableNumeric(L"DetectedOldLauncher", 1);
                 }
-
-                auto hr = LoadAssociateFilesStateFromKey(_engine, fPerMachine ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER);
-                LONGLONG associateFiles = 1;
-                if (FAILED(hr)) {
-                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
-                } else if (hr == S_FALSE) {
-                    associateFiles = 0;
+                if (includeLauncherAllUsers < 0) {
+                    _engine->SetVariableNumeric(L"InstallLauncherAllUsers", fPerMachine ? 1 : 0);
+                } else if (includeLauncherAllUsers != fPerMachine ? 1 : 0) {
+                    // Requested AllUsers option is inconsistent, so block
+                    _engine->SetVariableNumeric(L"BlockedLauncher", 1);
                 }
-                _engine->SetVariableNumeric(L"AssociateFiles", associateFiles);
+                _engine->SetVariableNumeric(L"DetectedOldLauncher", 1);
             }
         }
         return CheckCanceled() ? IDCANCEL : IDNOACTION;
@@ -854,35 +848,56 @@ public: // IBootstrapperApplication
             // The code in OnDetectRelatedMsiPackage is responsible for figuring
             // out whether existing installs are compatible with the settings in
             // place during detection.
-            LONGLONG detectedLauncher, includeLauncher, includeLauncherAllUsers;
-            if (FAILED(BalGetNumericVariable(L"DetectedLauncher", &detectedLauncher))) {
-                detectedLauncher = 0;
-            }
-            if (FAILED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))) {
-                includeLauncher = -1;
-            }
-            if (FAILED(BalGetNumericVariable(L"InstallLauncherAllUsers", &includeLauncherAllUsers))) {
-                includeLauncherAllUsers = -1;
-            }
-
-            if (includeLauncherAllUsers == -1) {
+            LONGLONG blockedLauncher;
+            if (SUCCEEDED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher))
+                    && blockedLauncher) {
+                _engine->SetVariableNumeric(L"Include_launcher", 0);
                 _engine->SetVariableNumeric(L"InstallLauncherAllUsers", 0);
-            } else if (detectedLauncher) {
                 _engine->SetVariableString(L"InstallLauncherAllUsersState", L"disable");
-            }
-
-            if (includeLauncher == -1) {
-                if (BOOTSTRAPPER_ACTION_LAYOUT == _command.action ||
-                    (BOOTSTRAPPER_ACTION_INSTALL == _command.action && !_upgrading)) {
-                    // When installing/downloading, we include the launcher
-                    _engine->SetVariableNumeric(L"Include_launcher", 1);
-                } else {
-                    // Any other action, don't include by default
-                    _engine->SetVariableNumeric(L"Include_launcher", 0);
-                    _engine->SetVariableNumeric(L"AssociateFiles", 0);
-                }
-            } else if (detectedLauncher) {
                 _engine->SetVariableString(L"Include_launcherState", L"disable");
+            }
+            else {
+                LONGLONG includeLauncher, includeLauncherAllUsers, associateFiles;
+
+                if (FAILED(BalGetNumericVariable(L"Include_launcher", &includeLauncher))) {
+                    includeLauncher = -1;
+                }
+                if (FAILED(BalGetNumericVariable(L"InstallLauncherAllUsers", &includeLauncherAllUsers))) {
+                    includeLauncherAllUsers = -1;
+                }
+                if (FAILED(BalGetNumericVariable(L"AssociateFiles", &associateFiles))) {
+                    associateFiles = -1;
+                }
+
+                if (includeLauncherAllUsers == -1) {
+                    includeLauncherAllUsers = 0;
+                    _engine->SetVariableNumeric(L"InstallLauncherAllUsers", includeLauncherAllUsers);
+                }
+
+                if (includeLauncher == -1) {
+                    if (BOOTSTRAPPER_ACTION_LAYOUT == _command.action ||
+                        (BOOTSTRAPPER_ACTION_INSTALL == _command.action && !_upgrading)) {
+                        // When installing/downloading, we include the launcher
+                        _engine->SetVariableNumeric(L"Include_launcher", 1);
+                    } else {
+                        // Any other action, don't include by default
+                        _engine->SetVariableNumeric(L"Include_launcher", 0);
+                        _engine->SetVariableNumeric(L"AssociateFiles", 0);
+                    }
+                }
+
+                if (associateFiles == -1) {
+                    auto hr = LoadAssociateFilesStateFromKey(
+                        _engine,
+                        includeLauncherAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER
+                    );
+                    if (FAILED(hr)) {
+                        BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Failed to load AssociateFiles state: error code 0x%08X", hr);
+                    } else if (hr == S_OK) {
+                        associateFiles = 1;
+                    }
+                    _engine->SetVariableNumeric(L"AssociateFiles", associateFiles);
+                }
             }
         }
 
