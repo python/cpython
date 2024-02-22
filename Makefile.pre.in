@@ -2373,6 +2373,7 @@ COMPILEALL_OPTS=-j0
 
 TEST_MODULES=@TEST_MODULES@
 
+# This is needed for `test_makefile`:
 .PHONY: listtestmodules
 listtestmodules:
 	@echo "@-----@"

@@ -35,7 +35,7 @@ class TestMakefile(unittest.TestCase):
         )
 
     def check_existing_test_modules(self, result):
-        test_dirs = result.split(' ')
+        test_dirs = list(filter(None, result.split(' ')))
         idle_test = 'idlelib/idle_test'
         self.assertIn(idle_test, test_dirs)
 
@@ -44,8 +44,9 @@ class TestMakefile(unittest.TestCase):
             dirname = os.path.basename(dirpath)
             if dirname == '__pycache__':
                 continue
-            with self.subTest(dirpath=dirpath):
-                relpath = os.path.relpath(dirpath, support.STDLIB_DIR)
+
+            relpath = os.path.relpath(dirpath, support.STDLIB_DIR)
+            with self.subTest(relpath=relpath):
                 self.assertIn(
                     relpath,
                     test_dirs,
