@@ -76,7 +76,8 @@ static int pysleep(PyTime_t timeout);
 
 typedef struct {
     PyTypeObject *struct_time_type;
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
     // times() clock frequency in hertz
     _PyTimeFraction times_base;
 #endif
@@ -1210,7 +1211,8 @@ PyDoc_STRVAR(perf_counter_ns_doc,
 Performance counter for benchmarking as nanoseconds.");
 
 
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
 static int
 process_time_times(time_module_state *state, PyTime_t *tp,
                    _Py_clock_info_t *info)
@@ -1278,8 +1280,10 @@ py_process_time(time_module_state *state, PyTime_t *tp,
 #else
 
     /* clock_gettime */
+// gh-115714: Don't use CLOCK_PROCESS_CPUTIME_ID on WASI.
 #if defined(HAVE_CLOCK_GETTIME) \
-    && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF))
+    && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF)) \
+    && !defined(__wasi__)
     struct timespec ts;
 
     if (HAVE_CLOCK_GETTIME_RUNTIME) {
@@ -1341,7 +1345,8 @@ py_process_time(time_module_state *state, PyTime_t *tp,
 #endif
 
     /* times() */
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
     int res = process_time_times(state, tp, info);
     if (res < 0) {
         return -1;
@@ -2068,7 +2073,8 @@ time_exec(PyObject *module)
     }
 #endif
 
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
     long ticks_per_second;
     if (_Py_GetTicksPerSecond(&ticks_per_second) < 0) {
         PyErr_SetString(PyExc_RuntimeError,
