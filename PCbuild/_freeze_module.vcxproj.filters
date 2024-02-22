@@ -46,6 +46,9 @@
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\brc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\boolobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -371,6 +374,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pytime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">

@@ -664,7 +664,8 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be one or more of the following flags:
+
+   If given, *creationflags*, can be one or more of the following flags:
 
    * :data:`CREATE_NEW_CONSOLE`
    * :data:`CREATE_NEW_PROCESS_GROUP`
@@ -856,8 +857,8 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.terminate()
 
-   Stop the child. On POSIX OSs the method sends SIGTERM to the
-   child. On Windows the Win32 API function :c:func:`TerminateProcess` is called
+   Stop the child. On POSIX OSs the method sends :py:const:`~signal.SIGTERM` to the
+   child. On Windows the Win32 API function :c:func:`!TerminateProcess` is called
    to stop the child.
 
 

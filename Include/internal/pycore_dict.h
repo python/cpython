@@ -67,12 +67,6 @@ typedef struct {
 extern PyObject* _PyDictView_New(PyObject *, PyTypeObject *);
 extern PyObject* _PyDictView_Intersect(PyObject* self, PyObject *other);
 
-
-/* runtime lifecycle */
-
-extern void _PyDict_Fini(PyInterpreterState *state);
-
-
 /* other API */
 
 typedef struct {
@@ -142,6 +136,11 @@ struct _dictkeysobject {
     /* Kind of keys */
     uint8_t dk_kind;
 
+#ifdef Py_GIL_DISABLED
+    /* Lock used to protect shared keys */
+    PyMutex dk_mutex;
+#endif
+
     /* Version number -- Reset to 0 by any modification to keys */
     uint32_t dk_version;
 
@@ -150,6 +149,7 @@ struct _dictkeysobject {
 
     /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
+
 
     /* Actual hash table of dk_size entries. It holds indices in dk_entries,
        or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
@@ -209,6 +209,9 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 
 #define DICT_VERSION_INCREMENT (1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS))
 #define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
+#define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
+
+#define DICT_VALUES_SIZE(values) ((uint8_t *)values)[-1]
 
 #ifdef Py_GIL_DISABLED
 #define DICT_NEXT_VERSION(INTERP) \
@@ -236,10 +239,10 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
     assert(Py_REFCNT((PyObject*)mp) > 0);
     int watcher_bits = mp->ma_version_tag & DICT_WATCHER_MASK;
     if (watcher_bits) {
+        RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
-        return DICT_NEXT_VERSION(interp) | watcher_bits;
     }
-    return DICT_NEXT_VERSION(interp);
+    return DICT_NEXT_VERSION(interp) | (mp->ma_version_tag & DICT_WATCHER_AND_MODIFICATION_MASK);
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
@@ -255,7 +258,7 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     assert(ix < SHARED_KEYS_MAX_SIZE);
     uint8_t *size_ptr = ((uint8_t *)values)-2;
     int size = *size_ptr;
-    assert(size+2 < ((uint8_t *)values)[-1]);
+    assert(size+2 < DICT_VALUES_SIZE(values));
     size++;
     size_ptr[-size] = (uint8_t)ix;
     *size_ptr = size;

@@ -18,6 +18,7 @@ import zipfile
 from tempfile import TemporaryFile
 from random import randint, random, randbytes
 
+from test import archiver_tests
 from test.support import script_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
@@ -1685,6 +1686,33 @@ class ExtractTests(unittest.TestCase):
             rmtree(fixedname.split('/')[0])
 
             unlink(TESTFN2)
+
+
+class OverwriteTests(archiver_tests.OverwriteTests, unittest.TestCase):
+    testdir = TESTFN
+
+    @classmethod
+    def setUpClass(cls):
+        p = cls.ar_with_file = TESTFN + '-with-file.zip'
+        cls.addClassCleanup(unlink, p)
+        with zipfile.ZipFile(p, 'w') as zipfp:
+            zipfp.writestr('test', b'newcontent')
+
+        p = cls.ar_with_dir = TESTFN + '-with-dir.zip'
+        cls.addClassCleanup(unlink, p)
+        with zipfile.ZipFile(p, 'w') as zipfp:
+            zipfp.mkdir('test')
+
+        p = cls.ar_with_implicit_dir = TESTFN + '-with-implicit-dir.zip'
+        cls.addClassCleanup(unlink, p)
+        with zipfile.ZipFile(p, 'w') as zipfp:
+            zipfp.writestr('test/file', b'newcontent')
+
+    def open(self, path):
+        return zipfile.ZipFile(path, 'r')
+
+    def extractall(self, ar):
+        ar.extractall(self.testdir)
 
 
 class OtherTests(unittest.TestCase):

@@ -3,6 +3,7 @@ import logging
 import queue
 import time
 import unittest
+import sys
 from concurrent.futures._base import BrokenExecutor
 from logging.handlers import QueueHandler
 
@@ -107,6 +108,31 @@ class FailingInitializerMixin(ExecutorMixin):
 
 create_executor_tests(globals(), InitializerMixin)
 create_executor_tests(globals(), FailingInitializerMixin)
+
+
+@unittest.skipIf(sys.platform == "win32", "Resource Tracker doesn't run on Windows")
+class FailingInitializerResourcesTest(unittest.TestCase):
+    """
+    Source: https://github.com/python/cpython/issues/104090
+    """
+
+    def _test(self, test_class):
+        runner = unittest.TextTestRunner()
+        runner.run(test_class('test_initializer'))
+
+        # GH-104090:
+        # Stop resource tracker manually now, so we can verify there are not leaked resources by checking
+        # the process exit code
+        from multiprocessing.resource_tracker import _resource_tracker
+        _resource_tracker._stop()
+
+        self.assertEqual(_resource_tracker._exitcode, 0)
+
+    def test_spawn(self):
+        self._test(ProcessPoolSpawnFailingInitializerTest)
+
+    def test_forkserver(self):
+        self._test(ProcessPoolForkserverFailingInitializerTest)
 
 
 def setUpModule():
