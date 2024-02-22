@@ -948,6 +948,196 @@ _PyMem_Strdup(const char *str)
     return copy;
 }
 
+/***********************************************/
+/* Delayed freeing support for Py_GIL_DISABLED */
+/***********************************************/
+
+// So that sizeof(struct _mem_work_chunk) is 4096 bytes on 64-bit platforms.
+#define WORK_ITEMS_PER_CHUNK 254
+
+// A pointer to be freed once the QSBR read sequence reaches qsbr_goal.
+struct _mem_work_item {
+    void *ptr;
+    uint64_t qsbr_goal;
+};
+
+// A fixed-size buffer of pointers to be freed
+struct _mem_work_chunk {
+    // Linked list node of chunks in queue
+    struct llist_node node;
+
+    Py_ssize_t rd_idx;  // index of next item to read
+    Py_ssize_t wr_idx;  // index of next item to write
+    struct _mem_work_item array[WORK_ITEMS_PER_CHUNK];
+};
+
+void
+_PyMem_FreeDelayed(void *ptr)
+{
+#ifndef Py_GIL_DISABLED
+    PyMem_Free(ptr);
+#else
+    if (_PyRuntime.stoptheworld.world_stopped) {
+        // Free immediately if the world is stopped, including during
+        // interpreter shutdown.
+        PyMem_Free(ptr);
+        return;
+    }
+
+    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    struct llist_node *head = &tstate->mem_free_queue;
+
+    struct _mem_work_chunk *buf = NULL;
+    if (!llist_empty(head)) {
+        // Try to re-use the last buffer
+        buf = llist_data(head->prev, struct _mem_work_chunk, node);
+        if (buf->wr_idx == WORK_ITEMS_PER_CHUNK) {
+            // already full
+            buf = NULL;
+        }
+    }
+
+    if (buf == NULL) {
+        buf = PyMem_Calloc(1, sizeof(*buf));
+        if (buf != NULL) {
+            llist_insert_tail(head, &buf->node);
+        }
+    }
+
+    if (buf == NULL) {
+        // failed to allocate a buffer, free immediately
+        _PyEval_StopTheWorld(tstate->base.interp);
+        PyMem_Free(ptr);
+        _PyEval_StartTheWorld(tstate->base.interp);
+        return;
+    }
+
+    assert(buf != NULL && buf->wr_idx < WORK_ITEMS_PER_CHUNK);
+    uint64_t seq = _Py_qsbr_deferred_advance(tstate->qsbr);
+    buf->array[buf->wr_idx].ptr = ptr;
+    buf->array[buf->wr_idx].qsbr_goal = seq;
+    buf->wr_idx++;
+
+    if (buf->wr_idx == WORK_ITEMS_PER_CHUNK) {
+        _PyMem_ProcessDelayed((PyThreadState *)tstate);
+    }
+#endif
+}
+
+static struct _mem_work_chunk *
+work_queue_first(struct llist_node *head)
+{
+    return llist_data(head->next, struct _mem_work_chunk, node);
+}
+
+static void
+process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
+              bool keep_empty)
+{
+    while (!llist_empty(head)) {
+        struct _mem_work_chunk *buf = work_queue_first(head);
+
+        while (buf->rd_idx < buf->wr_idx) {
+            struct _mem_work_item *item = &buf->array[buf->rd_idx];
+            if (!_Py_qsbr_poll(qsbr, item->qsbr_goal)) {
+                return;
+            }
+
+            PyMem_Free(item->ptr);
+            buf->rd_idx++;
+        }
+
+        assert(buf->rd_idx == buf->wr_idx);
+        if (keep_empty && buf->node.next == head) {
+            // Keep the last buffer in the queue to reduce re-allocations
+            buf->rd_idx = buf->wr_idx = 0;
+            return;
+        }
+
+        llist_remove(&buf->node);
+        PyMem_Free(buf);
+    }
+}
+
+static void
+process_interp_queue(struct _Py_mem_interp_free_queue *queue,
+                     struct _qsbr_thread_state *qsbr)
+{
+    if (!_Py_atomic_load_int_relaxed(&queue->has_work)) {
+        return;
+    }
+
+    // Try to acquire the lock, but don't block if it's already held.
+    if (_PyMutex_LockTimed(&queue->mutex, 0, 0) == PY_LOCK_ACQUIRED) {
+        process_queue(&queue->head, qsbr, false);
+
+        int more_work = !llist_empty(&queue->head);
+        _Py_atomic_store_int_relaxed(&queue->has_work, more_work);
+
+        PyMutex_Unlock(&queue->mutex);
+    }
+}
+
+void
+_PyMem_ProcessDelayed(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+
+    // Process thread-local work
+    process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true);
+
+    // Process shared interpreter work
+    process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr);
+}
+
+void
+_PyMem_AbandonDelayed(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    struct llist_node *queue = &((_PyThreadStateImpl *)tstate)->mem_free_queue;
+
+    if (llist_empty(queue)) {
+        return;
+    }
+
+    // Check if the queue contains one empty buffer
+    struct _mem_work_chunk *buf = work_queue_first(queue);
+    if (buf->rd_idx == buf->wr_idx) {
+        llist_remove(&buf->node);
+        PyMem_Free(buf);
+        assert(llist_empty(queue));
+        return;
+    }
+
+    // Merge the thread's work queue into the interpreter's work queue.
+    PyMutex_Lock(&interp->mem_free_queue.mutex);
+    llist_concat(&interp->mem_free_queue.head, queue);
+    _Py_atomic_store_int_relaxed(&interp->mem_free_queue.has_work, 1);
+    PyMutex_Unlock(&interp->mem_free_queue.mutex);
+
+    assert(llist_empty(queue));  // the thread's queue is now empty
+}
+
+void
+_PyMem_FiniDelayed(PyInterpreterState *interp)
+{
+    struct llist_node *head = &interp->mem_free_queue.head;
+    while (!llist_empty(head)) {
+        struct _mem_work_chunk *buf = work_queue_first(head);
+
+        while (buf->rd_idx < buf->wr_idx) {
+            // Free the remaining items immediately. There should be no other
+            // threads accessing the memory at this point during shutdown.
+            struct _mem_work_item *item = &buf->array[buf->rd_idx];
+            PyMem_Free(item->ptr);
+            buf->rd_idx++;
+        }
+
+        llist_remove(&buf->node);
+        PyMem_Free(buf);
+    }
+}
 
 /**************************/
 /* the "object" allocator */
@@ -2269,6 +2459,24 @@ write_size_t(void *p, size_t n)
     }
 }
 
+static void
+fill_mem_debug(debug_alloc_api_t *api, void *data, int c, size_t nbytes)
+{
+#ifdef Py_GIL_DISABLED
+    if (api->api_id == 'o') {
+        // Don't overwrite the first few bytes of a PyObject allocation in the
+        // free-threaded build
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+        size_t debug_offset = tstate->mimalloc.current_object_heap->debug_offset;
+        if (debug_offset < nbytes) {
+            memset((char *)data + debug_offset, c, nbytes - debug_offset);
+        }
+        return;
+    }
+#endif
+    memset(data, c, nbytes);
+}
+
 /* Let S = sizeof(size_t).  The debug malloc asks for 4 * S extra bytes and
    fills them with useful stuff, here calling the underlying malloc's result p:
 
@@ -2345,7 +2553,7 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     memset(p + SST + 1, PYMEM_FORBIDDENBYTE, SST-1);
 
     if (nbytes > 0 && !use_calloc) {
-        memset(data, PYMEM_CLEANBYTE, nbytes);
+        fill_mem_debug(api, data, PYMEM_CLEANBYTE, nbytes);
     }
 
     /* at tail, write pad (SST bytes) and serialno (SST bytes) */
@@ -2393,8 +2601,9 @@ _PyMem_DebugRawFree(void *ctx, void *p)
 
     _PyMem_DebugCheckAddress(__func__, api->api_id, p);
     nbytes = read_size_t(q);
-    nbytes += PYMEM_DEBUG_EXTRA_BYTES;
-    memset(q, PYMEM_DEADBYTE, nbytes);
+    nbytes += PYMEM_DEBUG_EXTRA_BYTES - 2*SST;
+    memset(q, PYMEM_DEADBYTE, 2*SST);
+    fill_mem_debug(api, p, PYMEM_DEADBYTE, nbytes);
     api->alloc.free(api->alloc.ctx, q);
 }
 
@@ -2414,7 +2623,6 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     size_t total;         /* 2 * SST + nbytes + 2 * SST */
     size_t original_nbytes;
 #define ERASED_SIZE 64
-    uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
 
     _PyMem_DebugCheckAddress(__func__, api->api_id, p);
 
@@ -2431,9 +2639,11 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 #ifdef PYMEM_DEBUG_SERIALNO
     size_t block_serialno = read_size_t(tail + SST);
 #endif
+#ifndef Py_GIL_DISABLED
     /* Mark the header, the trailer, ERASED_SIZE bytes at the begin and
        ERASED_SIZE bytes at the end as dead and save the copy of erased bytes.
      */
+    uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
     if (original_nbytes <= sizeof(save)) {
         memcpy(save, data, original_nbytes);
         memset(data - 2 * SST, PYMEM_DEADBYTE,
@@ -2446,6 +2656,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
         memset(tail - ERASED_SIZE, PYMEM_DEADBYTE,
                ERASED_SIZE + PYMEM_DEBUG_EXTRA_BYTES - 2 * SST);
     }
+#endif
 
     /* Resize and add decorations. */
     r = (uint8_t *)api->alloc.realloc(api->alloc.ctx, head, total);
@@ -2473,6 +2684,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
     write_size_t(tail + SST, block_serialno);
 #endif
 
+#ifndef Py_GIL_DISABLED
     /* Restore saved bytes. */
     if (original_nbytes <= sizeof(save)) {
         memcpy(data, save, Py_MIN(nbytes, original_nbytes));
@@ -2485,6 +2697,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
                    Py_MIN(nbytes - i, ERASED_SIZE));
         }
     }
+#endif
 
     if (r == NULL) {
         return NULL;

@@ -413,6 +413,8 @@ class HelpFormatter(object):
                             suppressed_actions_count += 1
 
                     exposed_actions_count = group_action_count - suppressed_actions_count
+                    if not exposed_actions_count:
+                        continue
 
                     if not group.required:
                         if start in inserts:
@@ -698,14 +700,6 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
-        """
-        Add the default value to the option help message.
-
-        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
-        already present. This code will do that, detecting cornercases to
-        prevent duplicates or cases where it wouldn't make sense to the end
-        user.
-        """
         help = action.help
         if help is None:
             help = ''

@@ -124,7 +124,7 @@
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     QSBR_QUIESCENT_STATE(tstate); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
             GOTO_ERROR(error); \
         } \
@@ -394,7 +394,36 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 
 /* Tier-switching macros. */
 
-#define GOTO_TIER_TWO() goto enter_tier_two;
+#ifdef _Py_JIT
+#define GOTO_TIER_TWO(EXECUTOR)                        \
+do {                                                   \
+    jit_func jitted = (EXECUTOR)->jit_code;            \
+    next_instr = jitted(frame, stack_pointer, tstate); \
+    Py_DECREF(tstate->previous_executor);              \
+    tstate->previous_executor = NULL;                  \
+    frame = tstate->current_frame;                     \
+    if (next_instr == NULL) {                          \
+        goto resume_with_error;                        \
+    }                                                  \
+    stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    DISPATCH();                                        \
+} while (0)
+#else
+#define GOTO_TIER_TWO(EXECUTOR) \
+do { \
+    next_uop = (EXECUTOR)->trace; \
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
+    goto enter_tier_two; \
+} while (0)
+#endif
+
+#define GOTO_TIER_ONE(TARGET) \
+do { \
+    Py_DECREF(tstate->previous_executor); \
+    tstate->previous_executor = NULL;  \
+    next_instr = target; \
+    DISPATCH(); \
+} while (0)
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 

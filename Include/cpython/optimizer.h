@@ -33,16 +33,28 @@ typedef struct {
 typedef struct {
     uint16_t opcode;
     uint16_t oparg;
-    uint32_t target;
+    union {
+        uint32_t target;
+        uint32_t exit_index;
+    };
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
+typedef struct _exit_data {
+    uint32_t target;
+    int16_t temperature;
+    const struct _PyExecutorObject *executor;
+} _PyExitData;
+
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
+    const _PyUOpInstruction *trace;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
-    void *jit_code;
+    uint32_t exit_count;
+    uint32_t code_size;
     size_t jit_size;
-    _PyUOpInstruction trace[1];
+    void *jit_code;
+    _PyExitData exits[1];
 } _PyExecutorObject;
 
 typedef struct _PyOptimizerObject _PyOptimizerObject;
@@ -59,6 +71,7 @@ typedef struct _PyOptimizerObject {
     /* These thresholds are treated as signed so do not exceed INT16_MAX
      * Use INT16_MAX to indicate that the optimizer should never be called */
     uint16_t resume_threshold;
+    uint16_t side_threshold;
     uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 } _PyOptimizerObject;
@@ -73,16 +86,16 @@ PyAPI_FUNC(int) PyUnstable_Replace_Executor(PyCodeObject *code, _Py_CODEUNIT *in
 
 _PyOptimizerObject *_Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject* optimizer);
 
-PyAPI_FUNC(void) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
+PyAPI_FUNC(int) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 
 PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
 
 int
-_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer);
+_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
-void _Py_ExecutorInit(_PyExecutorObject *, _PyBloomFilter *);
+void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorClear(_PyExecutorObject *);
 void _Py_BloomFilter_Init(_PyBloomFilter *);
 void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);

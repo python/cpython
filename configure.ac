@@ -1360,6 +1360,7 @@ if test $enable_shared = "yes"; then
   case $ac_sys_system in
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
+      BLDLIBRARY='-L. -lpython$(LDVERSION)'
       DLLLIBRARY='libpython$(LDVERSION).dll'
       ;;
     SunOS*)
@@ -2909,12 +2910,10 @@ AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is 
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
-AC_CHECK_TYPE([ssize_t],
-  AC_DEFINE([HAVE_SSIZE_T], [1],
-            [Define if your compiler provides ssize_t]), [], [])
-AC_CHECK_TYPE([__uint128_t],
-  AC_DEFINE([HAVE_GCC_UINT128_T], [1],
-            [Define if your compiler provides __uint128_t]), [], [])
+AC_CHECK_TYPES([ssize_t])
+AC_CHECK_TYPES([__uint128_t],
+               [AC_DEFINE([HAVE_GCC_UINT128_T], [1],
+                          [Define if your compiler provides __uint128_t])])
 
 # Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
@@ -3333,7 +3332,6 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
-	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	Emscripten*|WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
@@ -5888,11 +5886,13 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT([$LDVERSION])
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
-AC_SUBST([LIBPYTHON])
+AC_SUBST([MODULE_DEPS_SHARED])
+AC_SUBST([MODULE_LDFLAGS])
+MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+MODULE_LDFLAGS=''
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
-  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
-else
-  LIBPYTHON=''
+  MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
+  MODULE_LDFLAGS="\$(BLDLIBRARY)"
 fi
 
 
@@ -6151,11 +6151,7 @@ AS_VAR_IF([with_readline], [no], [
     ])
 
     # in readline as well as newer editline (April 2023)
-    AC_CHECK_TYPE([rl_compdisp_func_t],
-                  [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
-                             [Define if readline supports rl_compdisp_func_t])],
-                  [],
-                  [readline_includes])
+    AC_CHECK_TYPES([rl_compdisp_func_t], [], [], [readline_includes])
 
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
@@ -6553,12 +6549,9 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-AC_CHECK_TYPE(
-  [socklen_t], [],
-  [AC_DEFINE(
-    [socklen_t], [int],
-    [Define to `int' if <sys/socket.h> does not define.]
-  )], [
+AC_CHECK_TYPES([socklen_t], [],
+               [AC_DEFINE([socklen_t], [int],
+                          [Define to 'int' if <sys/socket.h> does not define.])], [
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif

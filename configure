@@ -834,7 +834,8 @@ LIBPL
 PY_ENABLE_SHARED
 PLATLIBDIR
 BINLIBDEST
-LIBPYTHON
+MODULE_LDFLAGS
+MODULE_DEPS_SHARED
 EXT_SUFFIX
 ALT_SOABI
 SOABI
@@ -7330,6 +7331,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
   case $ac_sys_system in
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
+      BLDLIBRARY='-L. -lpython$(LDVERSION)'
       DLLLIBRARY='libpython$(LDVERSION).dll'
       ;;
     SunOS*)
@@ -11494,11 +11496,15 @@ then :
 
 printf "%s\n" "#define HAVE_SSIZE_T 1" >>confdefs.h
 
+
 fi
 
 ac_fn_c_check_type "$LINENO" "__uint128_t" "ac_cv_type___uint128_t" "$ac_includes_default"
 if test "x$ac_cv_type___uint128_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE___UINT128_T 1" >>confdefs.h
+
 
 printf "%s\n" "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
 
@@ -12789,7 +12795,6 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
-	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	Emscripten*|WASI*)
 		if test "x$enable_wasm_dynamic_linking" = xyes
@@ -23959,10 +23964,12 @@ printf "%s\n" "$LDVERSION" >&6; }
 
 # On Android and Cygwin the shared libraries must be linked with libpython.
 
+
+MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+MODULE_LDFLAGS=''
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
-  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
-else
-  LIBPYTHON=''
+  MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
+  MODULE_LDFLAGS="\$(BLDLIBRARY)"
 fi
 
 
@@ -24957,6 +24964,7 @@ if test "x$ac_cv_type_rl_compdisp_func_t" = xyes
 then :
 
 printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
+
 
 fi
 
@@ -26779,6 +26787,9 @@ ac_fn_c_check_type "$LINENO" "socklen_t" "ac_cv_type_socklen_t" "
 "
 if test "x$ac_cv_type_socklen_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE_SOCKLEN_T 1" >>confdefs.h
+
 
 else $as_nop
 

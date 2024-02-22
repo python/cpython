@@ -131,8 +131,8 @@
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
             sym_set_type(value, &PyLong_Type);
-            if (is_const(value)) {
-                PyObject *load = _PyLong_IsZero((PyLongObject *)get_const(value))
+            if (sym_is_const(value)) {
+                PyObject *load = _PyLong_IsZero((PyLongObject *)sym_get_const(value))
                 ? Py_False : Py_True;
                 REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
                 OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
@@ -158,7 +158,7 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
-            if (get_const(value) == Py_None) {
+            if (sym_get_const(value) == Py_None) {
                 REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
             }
             sym_set_const(value, Py_None);
@@ -220,11 +220,11 @@
             _Py_UOpsSymType *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (is_const(left) && is_const(right)) {
-                assert(PyLong_CheckExact(get_const(left)));
-                assert(PyLong_CheckExact(get_const(right)));
-                PyObject *temp = _PyLong_Multiply((PyLongObject *)get_const(left),
-                    (PyLongObject *)get_const(right));
+            if (sym_is_const(left) && sym_is_const(right)) {
+                assert(PyLong_CheckExact(sym_get_const(left)));
+                assert(PyLong_CheckExact(sym_get_const(right)));
+                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
+                    (PyLongObject *)sym_get_const(right));
                 ERROR_IF(temp == NULL, error);
                 OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
                 // TODO gh-115506:
@@ -244,11 +244,11 @@
             _Py_UOpsSymType *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (is_const(left) && is_const(right)) {
-                assert(PyLong_CheckExact(get_const(left)));
-                assert(PyLong_CheckExact(get_const(right)));
-                PyObject *temp = _PyLong_Add((PyLongObject *)get_const(left),
-                    (PyLongObject *)get_const(right));
+            if (sym_is_const(left) && sym_is_const(right)) {
+                assert(PyLong_CheckExact(sym_get_const(left)));
+                assert(PyLong_CheckExact(sym_get_const(right)));
+                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
+                    (PyLongObject *)sym_get_const(right));
                 ERROR_IF(temp == NULL, error);
                 OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
                 // TODO gh-115506:
@@ -268,11 +268,11 @@
             _Py_UOpsSymType *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (is_const(left) && is_const(right)) {
-                assert(PyLong_CheckExact(get_const(left)));
-                assert(PyLong_CheckExact(get_const(right)));
-                PyObject *temp = _PyLong_Subtract((PyLongObject *)get_const(left),
-                    (PyLongObject *)get_const(right));
+            if (sym_is_const(left) && sym_is_const(right)) {
+                assert(PyLong_CheckExact(sym_get_const(left)));
+                assert(PyLong_CheckExact(sym_get_const(right)));
+                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
+                    (PyLongObject *)sym_get_const(right));
                 ERROR_IF(temp == NULL, error);
                 OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
                 // TODO gh-115506:
@@ -306,14 +306,14 @@
             _Py_UOpsSymType *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (is_const(left) && is_const(right)) {
-                assert(PyFloat_CheckExact(get_const(left)));
-                assert(PyFloat_CheckExact(get_const(right)));
+            if (sym_is_const(left) && sym_is_const(right)) {
+                assert(PyFloat_CheckExact(sym_get_const(left)));
+                assert(PyFloat_CheckExact(sym_get_const(right)));
                 PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(get_const(left)) *
-                    PyFloat_AS_DOUBLE(get_const(right)));
+                    PyFloat_AS_DOUBLE(sym_get_const(left)) *
+                    PyFloat_AS_DOUBLE(sym_get_const(right)));
                 ERROR_IF(temp == NULL, error);
-                res = sym_new_const(ctx, temp);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
@@ -331,14 +331,14 @@
             _Py_UOpsSymType *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (is_const(left) && is_const(right)) {
-                assert(PyFloat_CheckExact(get_const(left)));
-                assert(PyFloat_CheckExact(get_const(right)));
+            if (sym_is_const(left) && sym_is_const(right)) {
+                assert(PyFloat_CheckExact(sym_get_const(left)));
+                assert(PyFloat_CheckExact(sym_get_const(right)));
                 PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(get_const(left)) +
-                    PyFloat_AS_DOUBLE(get_const(right)));
+                    PyFloat_AS_DOUBLE(sym_get_const(left)) +
+                    PyFloat_AS_DOUBLE(sym_get_const(right)));
                 ERROR_IF(temp == NULL, error);
-                res = sym_new_const(ctx, temp);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
@@ -356,14 +356,14 @@
             _Py_UOpsSymType *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (is_const(left) && is_const(right)) {
-                assert(PyFloat_CheckExact(get_const(left)));
-                assert(PyFloat_CheckExact(get_const(right)));
+            if (sym_is_const(left) && sym_is_const(right)) {
+                assert(PyFloat_CheckExact(sym_get_const(left)));
+                assert(PyFloat_CheckExact(sym_get_const(right)));
                 PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(get_const(left)) -
-                    PyFloat_AS_DOUBLE(get_const(right)));
+                    PyFloat_AS_DOUBLE(sym_get_const(left)) -
+                    PyFloat_AS_DOUBLE(sym_get_const(right)));
                 ERROR_IF(temp == NULL, error);
-                res = sym_new_const(ctx, temp);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
                 // TODO gh-115506:
                 // replace opcode with constant propagated one and update tests!
             }
@@ -376,6 +376,16 @@
         }
 
         case _GUARD_BOTH_UNICODE: {
+            _Py_UOpsSymType *right;
+            _Py_UOpsSymType *left;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (sym_matches_type(left, &PyUnicode_Type) &&
+                sym_matches_type(right, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            }
+            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 
@@ -859,7 +869,7 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + ((0) ? 1 : 0);
+            stack_pointer += -2;
             break;
         }
 
@@ -913,6 +923,23 @@
         }
 
         case _CHECK_ATTR_MODULE: {
+            _Py_UOpsSymType *owner;
+            owner = stack_pointer[-1];
+            uint32_t dict_version = (uint32_t)this_instr->operand;
+            (void)dict_version;
+            if (sym_is_const(owner)) {
+                PyObject *cnst = sym_get_const(owner);
+                if (PyModule_CheckExact(cnst)) {
+                    PyModuleObject *mod = (PyModuleObject *)cnst;
+                    PyObject *dict = mod->md_dict;
+                    uint64_t watched_mutations = get_mutations(dict);
+                    if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                        PyDict_Watch(GLOBALS_WATCHER_ID, dict);
+                        _Py_BloomFilter_Add(dependencies, dict);
+                        this_instr->opcode = _NOP;
+                    }
+                }
+            }
             break;
         }
 
@@ -922,9 +949,25 @@
             _Py_UOpsSymType *null = NULL;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL
             (void)index;
-            (void)owner;
+            OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
+            attr = NULL;
+            if (this_instr[-1].opcode == _NOP) {
+                // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
+                assert(sym_is_const(owner));
+                PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
+                assert(PyModule_CheckExact(mod));
+                PyObject *dict = mod->md_dict;
+                PyObject *res = convert_global_to_const(this_instr, dict);
+                if (res != NULL) {
+                    this_instr[-1].opcode = _POP_TOP;
+                    OUT_OF_SPACE_IF_NULL(attr = sym_new_const(ctx, res));
+                }
+            }
+            if (attr == NULL) {
+                /* No conversion made. We don't know what `attr` is. */
+                OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+            }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
@@ -1077,8 +1120,6 @@
             stack_pointer[-1] = b;
             break;
         }
-
-        /* _JUMP_BACKWARD is not a viable micro-op for tier 2 */
 
         /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
 
@@ -1291,8 +1332,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1304,8 +1345,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1314,7 +1355,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1323,7 +1363,6 @@
             attr = sym_new_unknown(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1339,8 +1378,8 @@
             self = sym_new_unknown(ctx);
             if (self == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1434,7 +1473,6 @@
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
-            stack_pointer += ((0) ? 1 : 0);
             break;
         }
 
@@ -1767,6 +1805,18 @@
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
             stack_pointer += -1;
+            break;
+        }
+
+        case _COLD_EXIT: {
+            break;
+        }
+
+        case _START_EXECUTOR: {
+            break;
+        }
+
+        case _FATAL_ERROR: {
             break;
         }
 
