@@ -33,8 +33,7 @@ static inline int get_lltrace(void) {
 
 // Takes a borrowed reference to const_val, turns that into a strong reference.
 static _Py_UOpsSymType*
-sym_new(_Py_UOpsAbstractInterpContext *ctx,
-                               PyObject *const_val)
+sym_new(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
     _Py_UOpsSymType *self = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
     if (ctx->t_arena.ty_curr_number >= ctx->t_arena.ty_max_number) {
