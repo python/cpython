@@ -210,6 +210,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 loc64[0] = value;
                 continue;
             case HoleKind_IMAGE_REL_AMD64_REL32:
+            case HoleKind_IMAGE_REL_I386_REL32:
             case HoleKind_R_X86_64_GOTPCRELX:
             case HoleKind_R_X86_64_REX_GOTPCRELX:
             case HoleKind_X86_64_RELOC_GOT:
