@@ -221,31 +221,18 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                     (int64_t)relaxed - (int64_t)location + 1 < (1LL << 31))
                 {
                     if (loc8[-2] == 0x8B) {
-                        // Before: mov eax, dword ptr [rip + AAA]
-                        // After:  lea eax, [rip + XXX]
-                        assert(hole->kind == HoleKind_IMAGE_REL_AMD64_REL32 ||
-                               hole->kind == HoleKind_R_X86_64_GOTPCRELX ||
-                               hole->kind == HoleKind_R_X86_64_REX_GOTPCRELX ||
-                               hole->kind == HoleKind_X86_64_RELOC_GOT_LOAD);
+                        // mov reg, dword ptr [rip + AAA] -> lea reg, [rip + XXX]
                         loc8[-2] = 0x8D;
                         value = relaxed;
                     }
                     else if (loc8[-2] == 0xFF && loc8[-1] == 0x15) {
-                        // Before: call qword ptr [rip + AAA]
-                        // After:  nop
-                        //         call XXX
-                        assert(hole->kind == HoleKind_R_X86_64_GOTPCRELX ||
-                               hole->kind == HoleKind_X86_64_RELOC_GOT);
+                        // call qword ptr [rip + AAA] -> nop; call XXX
                         loc8[-2] = 0x90;
                         loc8[-1] = 0xE8;
                         value = relaxed;
                     }
                     else if (loc8[-2] == 0xFF && loc8[-1] == 0x25) {
-                        // Before: jmp qword ptr [rip + AAA]
-                        // After:  nop
-                        //         jmp XXX
-                        assert(hole->kind == HoleKind_IMAGE_REL_AMD64_REL32 ||
-                               hole->kind == HoleKind_R_X86_64_GOTPCRELX);
+                        // jmp qword ptr [rip + AAA] -> nop; jmp XXX
                         loc8[-2] = 0x90;
                         loc8[-1] = 0xE9;
                         value = relaxed;
@@ -326,20 +313,14 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                     assert(rd == rn && rn == rt);
                     uint64_t relaxed = *(uint64_t *)value;
                     if (relaxed < (1UL << 16)) {
-                        // Before: adrp x0, AAA
-                        //         ldr  x0, [x0 + BBB]
-                        // After:  movz x0, XXX
-                        //         nop
+                        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
                         loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | rd;
                         loc32[1] = 0xD503201F;
                         i++;
                         continue;
                     }
                     if (relaxed < (1ULL << 32)) {
-                        // Before: adrp x0, AAA
-                        //         ldr  x0, [x0 + BBB]
-                        // After:  movz x0, XXX
-                        //         movk x0, YYY
+                        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
                         loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | rd;
                         loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | rd;
                         i++;
@@ -350,10 +331,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                         (int64_t)relaxed >= -(1L << 19) &&
                         (int64_t)relaxed < (1L << 19))
                     {
-                        // Before: adrp x0, AAA
-                        //         ldr  x0, [x0 + BBB]
-                        // After:  ldr  x0, XXX
-                        //         nop
+                        // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr x0, XXX; nop
                         loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | rd;
                         loc32[1] = 0xD503201F;
                         i++;
