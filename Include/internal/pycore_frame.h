@@ -99,6 +99,18 @@ static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
     f->stacktop++;
 }
 
+static inline void _PyFrame_PushState(PyThreadState *tstate, _PyInterpreterFrame *f) {
+    if (tstate->n_eval_frames >= tstate->eval_stack_size) {
+       tstate->eval_stack_size *= 2;
+       tstate->eval_stack = PyMem_RawRealloc(tstate->eval_stack, tstate->eval_stack_size * sizeof(PyObject*));
+       if (tstate->eval_stack == NULL) {
+           Py_FatalError("Failed to allocate eval stack");
+       }
+    }
+    tstate->eval_stack[tstate->n_eval_frames] = f->f_executable;
+    tstate->n_eval_frames += 1;
+}
+
 #define FRAME_SPECIALS_SIZE ((int)((sizeof(_PyInterpreterFrame)-1)/sizeof(PyObject *)))
 
 static inline int
@@ -270,6 +282,7 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
     _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from);
+    _PyFrame_PushState(tstate, new_frame);
     return new_frame;
 }
 
@@ -294,6 +307,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
+    _PyFrame_PushState(tstate, frame);
     return frame;
 }
 
