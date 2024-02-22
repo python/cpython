@@ -204,7 +204,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, Py_NewRef(ptr)));
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
@@ -212,7 +212,7 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, Py_NewRef(ptr)));
         OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
     }
 

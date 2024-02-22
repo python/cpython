@@ -164,10 +164,6 @@ abstractcontext_fini(_Py_UOpsAbstractInterpContext *ctx)
         return;
     }
     ctx->curr_frame_depth = 0;
-    int tys = ctx->t_arena.ty_curr_number;
-    for (int i = 0; i < tys; i++) {
-        Py_CLEAR(ctx->t_arena.arena[i].const_val);
-    }
 }
 
 static int
@@ -218,7 +214,7 @@ ctx_frame_pop(
 }
 
 
-// Takes a borrowed reference to const_val, turns that into a strong reference.
+// Only accepts immortal constants.
 static _Py_UOpsSymType*
 sym_new(_Py_UOpsAbstractInterpContext *ctx,
                                PyObject *const_val)
@@ -233,9 +229,8 @@ sym_new(_Py_UOpsAbstractInterpContext *ctx,
     self->const_val = NULL;
     self->typ = NULL;
     self->flags = 0;
-
-    if (const_val != NULL) {
-        self->const_val = Py_NewRef(const_val);
+    if (const_val != NULL && _Py_IsImmortal(const_val)) {
+        self->const_val = const_val;
     }
 
     return self;
@@ -317,7 +312,7 @@ sym_new_known_type(_Py_UOpsAbstractInterpContext *ctx,
     return res;
 }
 
-// Takes a borrowed reference to const_val.
+// Steals a reference to const_val if it is not immortal.
 static inline _Py_UOpsSymType*
 sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
@@ -330,7 +325,13 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
         return NULL;
     }
     sym_set_type(temp, Py_TYPE(const_val));
-    sym_set_flag(temp, TRUE_CONST);
+    // const_val can be NULL if it's not immortal, then it's discarded.
+    if (temp->const_val != NULL) {
+        sym_set_flag(temp, TRUE_CONST);
+    }
+    if (!_Py_IsImmortal(const_val)) {
+        Py_DECREF(const_val);
+    }
     sym_set_flag(temp, KNOWN);
     sym_set_flag(temp, NOT_NULL);
     return temp;
