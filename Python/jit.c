@@ -296,8 +296,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 // 21-bit count of pages between this page and an absolute address's
                 // page... I know, I know, it's weird. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGEOFF12 (below).
-                // Try to relax the pair of GOT loads into an immediate value:
                 assert(IS_AARCH64_ADRP(*loc32));
+                // Try to relax the pair of GOT loads into an immediate value:
                 const Hole *next_hole = &stencil->holes[i + 1];
                 if (i + 1 < stencil->holes_size &&
                     (next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12 ||
