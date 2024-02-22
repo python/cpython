@@ -334,7 +334,7 @@ class OperatorTestCase:
         b = None
         self.assertRaises(TypeError, operator.is_none)
         self.assertFalse(operator.is_none(a))
-        self.assertTrue(operator.is_none(None))
+        self.assertTrue(operator.is_none(b))
 
     def test_is(self):
         operator = self.module
