@@ -58,10 +58,6 @@ def truth(a):
     "Return True if a is true, False otherwise."
     return True if a else False
 
-def is_none(a):
-    "Same as a is None."
-    return a is None
-
 def is_(a, b):
     "Same as a is b."
     return a is b
@@ -69,6 +65,10 @@ def is_(a, b):
 def is_not(a, b):
     "Same as a is not b."
     return a is not b
+
+def is_none(a):
+    "Same as a is None."
+    return a is None
 
 # Mathematical/Bitwise Operations *********************************************#
 
