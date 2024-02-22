@@ -273,6 +273,71 @@ to make it usable as a key function::
 
     sorted(words, key=cmp_to_key(strcoll))  # locale-aware sort order
 
+Strategies For Unorderable Types and Values
+===========================================
+
+A number of type and value issues can arise when sorting.
+Here are some strategies that can help:
+
+* Convert inputs to strings prior to sorting:
+
+.. doctest::
+
+   >>> data = ['twelve', '11', 10]
+   >>> sorted(map(str, data))
+   ['10', '11', 'twelve']
+
+This is needed because most cross-type comparisons raise a
+:exc:`TypeError`.
+
+* Remove special values prior to sorting:
+
+.. doctest::
+
+   >>> from math import isnan
+   >>> from itertools import filterfalse
+   >>> data = [3.3, float('nan'), 1.1, 2.2]
+   >>> sorted(filterfalse(isnan, data))
+   [1.1, 2.2, 3.3]
+
+This is needed because the `IEEE-754 standard
+<https://en.wikipedia.org/wiki/IEEE_754>`_ specifies that, "Every NaN
+shall compare unordered with everything, including itself."
+
+Likewise, ``None`` can be stripped from datasets as well:
+
+.. doctest::
+
+   >>> data = [3.3, None, 1.1, 2.2]
+   >>> sorted(x for x in data if x is not None)
+   [1.1, 2.2, 3.3]
+
+This is needed because ``None`` is not comparable to other types.
+
+* Convert mapping types into sortable items before sorting:
+
+.. doctest::
+
+   >>> from operator import methodcaller
+   >>> data = [{'a': 1}, {'b': 2}]
+   >>> list(map(dict, sorted(map(methodcaller('items'), data))))
+   [{'a': 1}, {'b': 2}]
+
+This is needed because dict-to-dict comparisons raise a
+:exc:`TypeError`.
+
+* Convert set types into sorted lists before sorting:
+
+.. doctest::
+
+    >>> data = [{'a', 'b', 'c'}, {'b', 'c', 'd'}]
+    >>> sorted(map(sorted, data))
+    [['a', 'b', 'c'], ['b', 'c', 'd']]
+
+This is needed because the elements contained in set types do not have a
+deterministic order.  For example, ``list({'a', 'b'})`` may produce
+either ``['a', 'b']`` or ``['b', 'a']``.
+
 Odds and Ends
 =============
 
