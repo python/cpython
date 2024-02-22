@@ -49,6 +49,10 @@ jobs:
             architecture: x64
             runner: windows-latest
             compiler: msvc
+          - target: aarch64-pc-windows-msvc/msvc
+            architecture: ARM64
+            runner: windows-latest
+            compiler: msvc
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-13
@@ -92,7 +96,13 @@ jobs:
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
 
-      - name: macOS
+      - name: Emulated Windows
+        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
+        run: |
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+
+      - name: Native macOS
         if: runner.os == 'macOS'
         run: |
           brew install llvm@${{ matrix.llvm }}

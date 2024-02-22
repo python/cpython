@@ -203,13 +203,13 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 loc32[0] = (uint32_t)value;
                 continue;
             case HoleKind_ARM64_RELOC_UNSIGNED:
-            case HoleKind_IMAGE_REL_AMD64_ADDR64:
             case HoleKind_R_AARCH64_ABS64:
             case HoleKind_X86_64_RELOC_UNSIGNED:
             case HoleKind_R_X86_64_64:
                 // 64-bit absolute address.
                 loc64[0] = value;
                 continue;
+            case HoleKind_IMAGE_REL_AMD64_REL32:
             case HoleKind_R_X86_64_GOTPCRELX:
             case HoleKind_R_X86_64_REX_GOTPCRELX:
             case HoleKind_X86_64_RELOC_GOT:
@@ -225,7 +225,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                     unsigned char suffix = loc8[-1];
                     if (opcode == 0x8B) {
                         // mov foo@GOTPCREL(%rip),%reg -> lea foo(%rip),%reg
-                        assert(hole->kind == HoleKind_R_X86_64_GOTPCRELX ||
+                        assert(hole->kind == HoleKind_IMAGE_REL_AMD64_REL32 ||
+                               hole->kind == HoleKind_R_X86_64_GOTPCRELX ||
                                hole->kind == HoleKind_R_X86_64_REX_GOTPCRELX ||
                                hole->kind == HoleKind_X86_64_RELOC_GOT_LOAD);
                         loc8[-2] = 0x8D;
@@ -241,7 +242,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                     }
                     else if (opcode == 0xFF && suffix == 0x25) {
                         // jmp *foo@GOTPCREL(%rip) -> nop; jmp foo
-                        assert(hole->kind == HoleKind_R_X86_64_GOTPCRELX);
+                        assert(hole->kind == HoleKind_IMAGE_REL_AMD64_REL32 ||
+                               hole->kind == HoleKind_R_X86_64_GOTPCRELX);
                         loc8[-2] = 0x90;
                         loc8[-1] = 0xE9;
                         value = relaxed;
@@ -276,6 +278,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 assert((int64_t)value < (1LL << 31));
                 loc32[0] = (uint32_t)value;
                 continue;
+            case HoleKind_IMAGE_REL_ARM64_BRANCH26:
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
                 // 28-bit relative branch.
@@ -317,6 +320,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 set_bits(loc32, 5, value, 48, 16);
                 continue;
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
+            case HoleKind_IMAGE_REL_ARM64_PAGEBASE_REL21:
             case HoleKind_R_AARCH64_ADR_GOT_PAGE: {
                 // 21-bit count of pages between this page and an absolute address's
                 // page... I know, I know, it's weird. Pairs nicely with
@@ -372,6 +376,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 continue;
             }
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
+            case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12A:
+            case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L:
             case HoleKind_R_AARCH64_LD64_GOT_LO12_NC:
                 // 12-bit low part of an absolute address. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGE21 (above).

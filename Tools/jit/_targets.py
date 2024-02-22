@@ -37,9 +37,8 @@ class _Target(typing.Generic[_S, _R]):
     triple: str
     _: dataclasses.KW_ONLY
     alignment: int = 1
-    pic: bool = False
+    args: typing.Sequence[str] = ()
     prefix: str = ""
-    small: bool = False
     debug: bool = False
     force: bool = False
     verbose: bool = False
@@ -121,23 +120,17 @@ class _Target(typing.Generic[_S, _R]):
             "-O3",
             "-c",
             "-fno-asynchronous-unwind-tables",
+            "-fno-builtin",
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
             "-fno-plt",
-            # "-fpic" if self.pic else "-fno-pic",
             # Don't make calls to weird stack-smashing canaries:
             "-fno-stack-protector",
-            # We have three options for code model:
-            # - "small": the default, assumes that code and data reside in the
-            #   lowest 2GB of memory (128MB on aarch64)
-            # - "medium": assumes that code resides in the lowest 2GB of memory,
-            #   and makes no assumptions about data (not available on aarch64)
-            # - "large": makes no assumptions about either code or data
-            "-mcmodel=small" if self.small else "-mcmodel=large",
             "-o",
             f"{o}",
             "-std=c11",
             f"{c}",
+            *self.args,
         ]
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
@@ -215,21 +208,52 @@ class _COFF(
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
-            }:
-                offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 8], "little")
-            case {
-                "Offset": offset,
-                "Symbol": s,
                 "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
+                if s.startswith("__imp_"):
+                    s = s.removeprefix("__imp_")
+                    s = s.removeprefix(self.prefix)
+                    value, symbol = _stencils.HoleValue.GOT, s
+                else:
+                    s = s.removeprefix(self.prefix)
+                    value, symbol = _stencils.symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
+            case {
+                "Offset": offset,
+                "Symbol": s,
+                "Type": {
+                    "Value": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
+                },
+            }:
+                offset += base
+                if s.startswith("__imp_"):
+                    s = s.removeprefix("__imp_")
+                    s = s.removeprefix(self.prefix)
+                    value, symbol = _stencils.HoleValue.GOT, s
+                else:
+                    s = s.removeprefix(self.prefix)
+                    value, symbol = _stencils.symbol_to_value(s)
+                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+            case {
+                "Offset": offset,
+                "Symbol": s,
+                "Type": {
+                    "Value": "IMAGE_REL_ARM64_BRANCH26"
+                    | "IMAGE_REL_ARM64_PAGEBASE_REL21"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
+                },
+            }:
+                offset += base
+                if s.startswith("__imp_"):
+                    s = s.removeprefix("__imp_")
+                    s = s.removeprefix(self.prefix)
+                    value, symbol = _stencils.HoleValue.GOT, s
+                else:
+                    s = s.removeprefix(self.prefix)
+                    value, symbol = _stencils.symbol_to_value(s)
+                addend = 0
             case _:
                 raise NotImplementedError(relocation)
         return _stencils.Hole(offset, kind, value, symbol, addend)
@@ -426,15 +450,22 @@ class _MachO(
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        return _MachO(host, alignment=8, pic=True, prefix="_")
+        args = ["-mcmodel=large"]
+        return _MachO(host, alignment=8, args=args, prefix="_")
+    if re.fullmatch(r"aarch64-pc-windows-msvc", host):
+        args = ["-fms-runtime-lib=dll"]
+        return _COFF(host, alignment=8, args=args)
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        return _ELF(host, alignment=8, pic=True)
+        args = ["-mcmodel=large"]
+        return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
-        return _COFF(host, prefix="_")
+        args = ["-DPy_NO_ENABLE_SHARED"]
+        return _COFF(host, args=args, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, pic=True, prefix="_", small=True)
+        return _MachO(host, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        return _COFF(host)
+        args = ["-fms-runtime-lib=dll"]
+        return _COFF(host, args=args)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host, pic=True, small=True)
+        return _ELF(host)
     raise ValueError(host)

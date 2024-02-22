@@ -162,6 +162,11 @@ class StencilGroup:
                 ):
                     self.code.emit_aarch64_trampoline(hole)
                     continue
+                elif (
+                    hole.kind in {"IMAGE_REL_AMD64_REL32"}
+                    and hole.value is HoleValue.ZERO
+                ):
+                    raise ValueError(f"Add PyAPI_FUNC(...) or PyAPI_DATA(...) to declaration of {hole.symbol}!")
                 holes.append(hole)
             stencil.holes[:] = holes
         self.code.pad(alignment)
