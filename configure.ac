@@ -73,14 +73,14 @@ AC_DEFUN([PY_CHECK_FUNC],
   AS_VAR_POPDEF([py_define])
 ])
 
-dnl PY_CHECK_CPP(CPP_CHECK, [LIST-OF-INCLUDES], [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND])
+dnl PY_CHECK_CPP(CPP_CHECK, [LIST-OF-INCLUDES], [ACTION-IF-TRUE], [ACTION-IF-FALSE])
 AC_DEFUN([PY_CHECK_CPP],
          [AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
 m4_foreach_w([incl], [$2], [@%:@include <incl> m4_newline])
 @%:@if $1
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 ])], [$3], [$4])])
 
@@ -2838,15 +2838,13 @@ AC_CHECK_HEADERS(
 #endif
 ])
 
-# checks for typedefs
-AC_CACHE_CHECK([for clock_t in time.h], [ac_cv_clock_t_time_h], [
-  AX_CHECK_TYPEDEF([clock_t], [time.h], [ac_cv_clock_t_time_h=yes], [ac_cv_clock_t_time_h=no])
-])
-dnl checks for "no"
-AS_VAR_IF([ac_cv_clock_t_time_h], [no], [
-  AC_DEFINE([clock_t], [long],
-            [Define to 'long' if <time.h> doesn't define.])
-])
+# Check for clock_t in time.h.
+AC_CHECK_TYPES([clock_t],
+               [],
+               [AS_VAR_IF([ac_cv_type_clock_t], [no],
+                          [AC_DEFINE([clock_t], [long],
+                                     ["Define to 'long' if <time.h> doesn't define."])])],
+               [@%:@include time.h])
 
 AC_CACHE_CHECK([for makedev], [ac_cv_func_makedev], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[

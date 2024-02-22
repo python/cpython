@@ -11222,63 +11222,24 @@ then :
 fi
 
 
-# checks for typedefs
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_t in time.h" >&5
-printf %s "checking for clock_t in time.h... " >&6; }
-if test ${ac_cv_clock_t_time_h+y}
+# Check for clock_t in time.h.
+ac_fn_c_check_type "$LINENO" "clock_t" "ac_cv_type_clock_t" "#include time.h
+"
+if test "x$ac_cv_type_clock_t" = xyes
 then :
-  printf %s "(cached) " >&6
+
+printf "%s\n" "#define HAVE_CLOCK_T 1" >>confdefs.h
+
+
 else $as_nop
-
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_t in time.h" >&5
-printf %s "checking for clock_t in time.h... " >&6; }
- ac_lib_var=`echo clock_t'_'time.h | sed 'y%./+-%__p_%'`
-if eval test \${ac_cv_lib_$ac_lib_var+y}
+  if test "x$ac_cv_type_clock_t" = xno
 then :
-  printf %s "(cached) " >&6
-else $as_nop
-   eval "ac_cv_type_$ac_lib_var='not-found'"
-  ac_cv_check_typedef_header=`echo time.h`
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <$ac_cv_check_typedef_header>
-int
-main (void)
-{
-int x = sizeof(clock_t); x = x;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  eval "ac_cv_type_$ac_lib_var=yes"
-else $as_nop
-  eval "ac_cv_type_$ac_lib_var=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  if test `eval echo '$ac_cv_type_'$ac_lib_var` = "no" ; then
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-  else
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-  fi
-
-fi
-
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_clock_t_time_h" >&5
-printf "%s\n" "$ac_cv_clock_t_time_h" >&6; }
-if test "x$ac_cv_clock_t_time_h" = xno
-then :
-
 
 printf "%s\n" "#define clock_t long" >>confdefs.h
 
-
 fi
+fi
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for makedev" >&5
 printf %s "checking for makedev... " >&6; }
@@ -16126,7 +16087,7 @@ printf %s "checking for _POSIX_THREADS in unistd.h... " >&6; }
 #if defined(_POSIX_THREADS)
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 
 int
@@ -16658,7 +16619,7 @@ printf %s "checking ipv6 stack type... " >&6; }
 #if defined(IPV6_INRIA_VERSION)
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 
 int
@@ -16684,7 +16645,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #if defined(__KAME__)
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 
 int
@@ -16713,7 +16674,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 
 int
@@ -16756,7 +16717,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #if defined(_TOSHIBA_INET6)
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 
 int
@@ -16784,7 +16745,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #if defined(__V6D__)
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 
 int
@@ -16813,7 +16774,7 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #if defined(_ZETA_MINAMI_INET6)
 /* pass */
 #else
-#error "not defined"
+#error "check failed"
 #endif
 
 int
