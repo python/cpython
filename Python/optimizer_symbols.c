@@ -288,12 +288,12 @@ do { \
 
 /*
 static _Py_UOpsSymType *
-make_top(_Py_UOpsAbstractInterpContext *ctx)
+make_bottom(_Py_UOpsAbstractInterpContext *ctx)
 {
-    _Py_UOpsSymType *top = _Py_uop_sym_new_unknown(ctx);
-    _Py_uop_sym_set_null(top);
-    _Py_uop_sym_set_type(top, &PyLong_Type);
-    return top;
+    _Py_UOpsSymType *sym = _Py_uop_sym_new_unknown(ctx);
+    _Py_uop_sym_set_null(sym);
+    _Py_uop_sym_set_type(sym, &PyLong_Type);
+    return sym;
 }*/
 
 PyObject *
@@ -303,26 +303,26 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_UOpsAbstractInterpContext *ctx = &context;
     _Py_uop_abstractcontext_init(ctx);
 
-    _Py_UOpsSymType *bottom = _Py_uop_sym_new_unknown(ctx);
-    if (bottom == NULL) {
+    _Py_UOpsSymType *top = _Py_uop_sym_new_unknown(ctx);
+    if (top == NULL) {
         return NULL;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(bottom), "unknown is NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_not_null(bottom), "unknown is not NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(bottom), "unknown is a constant");
-    // TEST_PREDICATE(_Py_uop_sym_get_const(bottom) == NULL, "unknown as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(top), "unknown is NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_not_null(top), "unknown is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(top), "unknown is a constant");
+    // TEST_PREDICATE(_Py_uop_sym_get_const(top) == NULL, "unknown as constant is not NULL");
 
-    // _Py_UOpsSymType *top = make_top(ctx);
-    // TEST_PREDICATE(_Py_uop_sym_is_null(top), "top is NULL is not true");
-    // TEST_PREDICATE(_Py_uop_sym_is_not_null(top), "top is not NULL is not true");
-    // TEST_PREDICATE(_Py_uop_sym_is_const(top), "top is a constant is not true");
+    // _Py_UOpsSymType *bottom = make_bottom(ctx);
+    // TEST_PREDICATE(_Py_uop_sym_is_null(bottom), "bottom is NULL is not true");
+    // TEST_PREDICATE(_Py_uop_sym_is_not_null(bottom), "bottom is not NULL is not true");
+    // TEST_PREDICATE(_Py_uop_sym_is_const(bottom), "bottom is a constant is not true");
 
     _Py_UOpsSymType *int_type = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
     _Py_uop_sym_set_type(int_type, &PyLong_Type);
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
     _Py_uop_sym_set_type(int_type, &PyFloat_Type);
-    // TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "top doesn't match int");
+    // TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "bottom doesn't match int");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_RETURN_NONE;
