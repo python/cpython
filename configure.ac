@@ -4523,23 +4523,22 @@ yes
 fi
 
 AS_VAR_IF([ipv6], [yes], [
-    AC_MSG_CHECKING([ipv6 library])
-    AS_VAR_IF([ipv6lib], [none], [AC_MSG_RESULT([none])], [
-        if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
-            LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-            AC_MSG_RESULT([lib$ipv6lib])
-        else
-            AS_VAR_IF([ipv6trylibc], [yes], [
-              AC_MSG_RESULT([libc])
-            ], [
-              AC_MSG_ERROR([m4_normalize([
+    AS_VAR_SET([noipv6found],
+               [m4_normalize([
                 No $ipv6lib library found; cannot continue.
                 You need to fetch lib$ipv6lib.a from appropriate
-                ipv6 kit and compile beforehand.
-              ])])
-            ])
-        fi
-    ])
+                ipv6 kit and compile beforehand.])])
+    AC_MSG_CHECKING([ipv6 library])
+    AS_VAR_IF([ipv6lib], [none], [AC_MSG_ERROR([$noipv6found])])
+    if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
+        LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
+        AC_MSG_RESULT([lib$ipv6lib])
+    else
+        AS_VAR_IF([ipv6trylibc], [yes],
+                  [AC_MSG_RESULT([libc])],
+                  [AC_MSG_ERROR([$noipv6found])])
+    fi
+    AS_UNSET([noipv6found])
 ])
 
 
