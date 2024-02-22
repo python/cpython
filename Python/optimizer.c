@@ -546,6 +546,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         uint32_t oparg = instr->op.arg;
         uint32_t extended = 0;
 
+        DPRINTF(3, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
+
         if (opcode == ENTER_EXECUTOR) {
             assert(oparg < 256);
             _PyExecutorObject *executor = code->co_executors->executors[oparg];
@@ -593,21 +595,25 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
+                /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
+                   If it's 16 or 0 (all or none were taken), adjust by 10%
+                   (since the future is still somewhat uncertain).
+                   For values in between, adjust proportionally. */
                 if (jump_likely) {
-                    confidence = confidence * bitcount / 16;
+                    confidence = confidence * (bitcount + 2) / 20;
                 }
                 else {
-                    confidence = confidence * (16 - bitcount) / 16;
+                    confidence = confidence * (18 - bitcount) / 20;
                 }
+                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
+                DPRINTF(2, "%d: %s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
+                        target, _PyOpcode_OpName[opcode], oparg,
+                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 if (confidence < CONFIDENCE_CUTOFF) {
-                    DPRINTF(2, "Confidence too low (%d)\n", confidence);
+                    DPRINTF(2, "Confidence too low (%d < %d)\n", confidence, CONFIDENCE_CUTOFF);
                     OPT_STAT_INC(low_confidence);
                     goto done;
                 }
-                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-                DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
-                        _PyOpcode_OpName[opcode], oparg,
-                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 _Py_CODEUNIT *target_instr = next_instr + oparg;
                 if (jump_likely) {
