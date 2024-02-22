@@ -1272,12 +1272,11 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL_SELF
-            (void)descr;
-            (void)owner;
+            OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self;
-            stack_pointer += (oparg & 1);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1287,12 +1286,11 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL_SELF
-            (void)descr;
-            (void)owner;
+            OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self;
-            stack_pointer += (oparg & 1);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1322,12 +1320,11 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
-            _LOAD_ATTR_NOT_NULL_SELF
-            (void)descr;
-            (void)owner;
+            OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
             stack_pointer[-1] = attr;
-            if (oparg & 1) stack_pointer[0] = self;
-            stack_pointer += (oparg & 1);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             break;
         }
 
@@ -1347,12 +1344,12 @@
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
             _Py_UOpsSymType *callable;
-            _Py_UOpsSymType *attr;
+            _Py_UOpsSymType *func;
             _Py_UOpsSymType *self;
             callable = stack_pointer[-2 - oparg];
-            _LOAD_ATTR_NOT_NULL_SELF
-            (void)callable;
-            stack_pointer[-2 - oparg] = attr;
+            OUT_OF_SPACE_IF_NULL(func = sym_new_known_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+            stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = self;
             break;
         }

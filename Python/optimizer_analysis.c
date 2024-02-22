@@ -597,12 +597,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx)); \
     } while (0);
 
-#define _LOAD_ATTR_NOT_NULL_SELF                                 \
-    do {                                                         \
-        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx)); \
-        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx)); \
-    } while (0);
-
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
