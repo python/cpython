@@ -353,7 +353,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                         i++;
                         continue;
                     }
-                    relaxed = (uint64_t)value - (uint64_t)location - 4;
+                    relaxed = (uint64_t)value - (uint64_t)location;
                     if ((relaxed & 0x3) == 0 &&
                         (int64_t)relaxed >= -(1L << 19) &&
                         (int64_t)relaxed < (1L << 19))
