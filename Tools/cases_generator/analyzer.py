@@ -315,6 +315,7 @@ def tier_variable(node: parser.InstDef) -> int | None:
     for token in node.tokens:
         if token.kind == "ANNOTATION" and re.match(r"tier\d", token.text):
             return int(token.text[-1])
+    return None
 
 def is_infallible(op: parser.InstDef) -> bool:
     return not (
