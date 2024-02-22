@@ -2843,7 +2843,7 @@ AC_CHECK_TYPES([clock_t],
                [],
                [AS_VAR_IF([ac_cv_type_clock_t], [no],
                           [AC_DEFINE([clock_t], [long],
-                                     ["Define to 'long' if <time.h> doesn't define."])])],
+                                     [Define to 'long' if <time.h> does not define clock_t.])])],
                [@%:@include time.h])
 
 AC_CACHE_CHECK([for makedev], [ac_cv_func_makedev], [
