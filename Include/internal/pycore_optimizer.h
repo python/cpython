@@ -87,7 +87,7 @@ extern bool _Py_uop_sym_is_not_null(_Py_UOpsSymType *sym);
 extern bool _Py_uop_sym_is_const(_Py_UOpsSymType *sym);
 extern PyObject *_Py_uop_sym_get_const(_Py_UOpsSymType *sym);
 extern _Py_UOpsSymType *_Py_uop_sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx);
-extern _Py_UOpsSymType *_Py_uop_sym_new_notnull(_Py_UOpsAbstractInterpContext *ctx);
+extern _Py_UOpsSymType *_Py_uop_sym_new_not_null(_Py_UOpsAbstractInterpContext *ctx);
 extern _Py_UOpsSymType *_Py_uop_sym_new_type(
     _Py_UOpsAbstractInterpContext *ctx, PyTypeObject *typ);
 extern _Py_UOpsSymType *_Py_uop_sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val);

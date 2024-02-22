@@ -941,7 +941,7 @@
             }
             if (attr == NULL) {
                 /* No conversion made. We don't know what `attr` is. */
-                OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+                OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
             }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = null;
@@ -1306,7 +1306,7 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
-            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1321,7 +1321,7 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
-            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1356,7 +1356,7 @@
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
             (void)descr;
-            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
             self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1384,8 +1384,8 @@
             _Py_UOpsSymType *self;
             callable = stack_pointer[-2 - oparg];
             (void)callable;
-            OUT_OF_SPACE_IF_NULL(func = _Py_uop_sym_new_notnull(ctx));
-            OUT_OF_SPACE_IF_NULL(self = _Py_uop_sym_new_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(func = _Py_uop_sym_new_not_null(ctx));
+            OUT_OF_SPACE_IF_NULL(self = _Py_uop_sym_new_not_null(ctx));
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = self;
             break;

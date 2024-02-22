@@ -277,7 +277,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 #define _LOAD_ATTR_NOT_NULL \
     do {                    \
-    OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx)); \
+    OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx)); \
     OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx)); \
     } while (0);
 

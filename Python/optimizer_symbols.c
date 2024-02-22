@@ -115,7 +115,7 @@ _Py_uop_sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx)
 }
 
 _Py_UOpsSymType *
-_Py_uop_sym_new_notnull(_Py_UOpsAbstractInterpContext *ctx)
+_Py_uop_sym_new_not_null(_Py_UOpsAbstractInterpContext *ctx)
 {
     _Py_UOpsSymType *res = _Py_uop_sym_new_unknown(ctx);
     if (res == NULL) {

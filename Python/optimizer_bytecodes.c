@@ -273,7 +273,7 @@ dummy_func(void) {
         }
         if (attr == NULL) {
             /* No conversion made. We don't know what `attr` is. */
-            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+            OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
         }
     }
 
@@ -297,26 +297,26 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
-        OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
         self = owner;
     }
 
     op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
-        OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
         self = owner;
     }
 
     op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
         (void)descr;
-        OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx));
         self = owner;
     }
 
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
         (void)callable;
-        OUT_OF_SPACE_IF_NULL(func = _Py_uop_sym_new_notnull(ctx));
-        OUT_OF_SPACE_IF_NULL(self = _Py_uop_sym_new_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(func = _Py_uop_sym_new_not_null(ctx));
+        OUT_OF_SPACE_IF_NULL(self = _Py_uop_sym_new_not_null(ctx));
     }
 
 
