@@ -242,7 +242,7 @@ class HKEY_return_converter(CReturnConverter):
             'return_value = PyHKEY_FromHKEY(_PyModule_GetState(module), _return_value);\n')
 
 # HACK: this only works for PyHKEYObjects, nothing else.
-#       Should this be generalized and enshrined in clinic.py,
+#       Should this be generalized and enshrined in Argument Clinic,
 #       destroy this converter with prejudice.
 class self_return_converter(CReturnConverter):
     type = 'PyHKEYObject *'
@@ -252,7 +252,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=4979f33998ffb6f8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=9c01a5ec9b2e88a1]*/
 
 #include "clinic/winreg.c.h"
 
