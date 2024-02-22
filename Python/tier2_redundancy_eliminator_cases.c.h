@@ -161,7 +161,7 @@
             if (get_const(value) == Py_None) {
                 REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
             }
-            sym_set_type(value, &_PyNone_Type);
+            sym_set_const(value, Py_None);
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));
             stack_pointer[-1] = res;
             break;
