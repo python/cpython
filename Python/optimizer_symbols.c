@@ -32,7 +32,7 @@ static inline int get_lltrace(void) {
 #endif
 
 // Takes a borrowed reference to const_val, turns that into a strong reference.
-static _Py_UOpsSymType*
+static _Py_UOpsSymType *
 sym_new(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
     _Py_UOpsSymType *self = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
@@ -111,7 +111,7 @@ _Py_uop_sym_set_null(_Py_UOpsSymType *sym)
 _Py_UOpsSymType *
 _Py_uop_sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx)
 {
-    return sym_new(ctx,NULL);
+    return sym_new(ctx, NULL);
 }
 
 _Py_UOpsSymType *
@@ -139,14 +139,11 @@ _Py_uop_sym_new_type(_Py_UOpsAbstractInterpContext *ctx,
 }
 
 // Takes a borrowed reference to const_val.
-_Py_UOpsSymType*
+_Py_UOpsSymType *
 _Py_uop_sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
-    _Py_UOpsSymType *temp = sym_new(
-        ctx,
-        const_val
-    );
+    _Py_UOpsSymType *temp = sym_new(ctx, const_val);
     if (temp == NULL) {
         return NULL;
     }
@@ -157,7 +154,7 @@ _Py_uop_sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
     return temp;
 }
 
-_Py_UOpsSymType*
+_Py_UOpsSymType *
 _Py_uop_sym_new_null(_Py_UOpsAbstractInterpContext *ctx)
 {
     _Py_UOpsSymType *null_sym = _Py_uop_sym_new_unknown(ctx);
@@ -185,8 +182,7 @@ _Py_uop_ctx_frame_new(
     PyCodeObject *co,
     _Py_UOpsSymType **localsplus_start,
     int n_locals_already_filled,
-    int curr_stackentries
-)
+    int curr_stackentries)
 {
     assert(ctx->curr_frame_depth < MAX_ABSTRACT_FRAME_DEPTH);
     _Py_UOpsAbstractFrame *frame = &ctx->frames[ctx->curr_frame_depth];
@@ -239,9 +235,7 @@ _Py_uop_abstractcontext_fini(_Py_UOpsAbstractInterpContext *ctx)
 }
 
 int
-_Py_uop_abstractcontext_init(
-    _Py_UOpsAbstractInterpContext *ctx
-)
+_Py_uop_abstractcontext_init(_Py_UOpsAbstractInterpContext *ctx)
 {
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     ctx->n_consumed = ctx->locals_and_stack;
@@ -262,12 +256,9 @@ _Py_uop_abstractcontext_init(
 }
 
 int
-_Py_uop_ctx_frame_pop(
-    _Py_UOpsAbstractInterpContext *ctx
-)
+_Py_uop_ctx_frame_pop(_Py_UOpsAbstractInterpContext *ctx)
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
-
     ctx->n_consumed = frame->locals;
     ctx->curr_frame_depth--;
     assert(ctx->curr_frame_depth >= 1);
@@ -288,7 +279,7 @@ do { \
 
 /*
 static _Py_UOpsSymType *
-make_bottom(_Py_UOpsAbstractInterpContext *ctx)
+make_contradiction(_Py_UOpsAbstractInterpContext *ctx)
 {
     _Py_UOpsSymType *sym = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_null(sym);
@@ -312,17 +303,17 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(!_Py_uop_sym_is_const(top), "unknown is a constant");
     // TEST_PREDICATE(_Py_uop_sym_get_const(top) == NULL, "unknown as constant is not NULL");
 
-    // _Py_UOpsSymType *bottom = make_bottom(ctx);
-    // TEST_PREDICATE(_Py_uop_sym_is_null(bottom), "bottom is NULL is not true");
-    // TEST_PREDICATE(_Py_uop_sym_is_not_null(bottom), "bottom is not NULL is not true");
-    // TEST_PREDICATE(_Py_uop_sym_is_const(bottom), "bottom is a constant is not true");
+    // _Py_UOpsSymType *contradiction = make_contradiction(ctx);
+    // TEST_PREDICATE(_Py_uop_sym_is_null(contradiction), "contradiction is NULL is not true");
+    // TEST_PREDICATE(_Py_uop_sym_is_not_null(contradiction), "contradiction is not NULL is not true");
+    // TEST_PREDICATE(_Py_uop_sym_is_const(contradiction), "contradiction is a constant is not true");
 
     _Py_UOpsSymType *int_type = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
     _Py_uop_sym_set_type(int_type, &PyLong_Type);
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
     _Py_uop_sym_set_type(int_type, &PyFloat_Type);
-    // TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "bottom doesn't match int");
+    // TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "(int and float) doesn't match int");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_RETURN_NONE;

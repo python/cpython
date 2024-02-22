@@ -38,9 +38,7 @@ struct _Py_UOpsSymType {
 // Holds locals, stack, locals, stack ... co_consts (in that order)
 #define MAX_ABSTRACT_INTERP_SIZE 4096
 
-#define OVERALLOCATE_FACTOR 5
-
-#define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * OVERALLOCATE_FACTOR)
+#define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * 5)
 
 // Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
 #define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
@@ -107,8 +105,7 @@ extern _Py_UOpsAbstractFrame *_Py_uop_ctx_frame_new(
     int curr_stackentries);
 extern int _Py_uop_ctx_frame_pop(_Py_UOpsAbstractInterpContext *ctx);
 
-PyAPI_FUNC(PyObject *)
-_Py_uop_symbols_test(PyObject *self, PyObject *ignored);
+PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 #ifdef __cplusplus
 }
