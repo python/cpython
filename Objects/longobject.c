@@ -1183,7 +1183,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
                 for (Py_ssize_t i = sizeof(cv.b); i > 0; --i) {
                     *b++ = cv.b[i - 1];
                 }
-                for (Py_ssize_t i = 0; i < n - sizeof(cv.b); ++i) {
+                for (Py_ssize_t i = 0; i < n - (int)sizeof(cv.b); ++i) {
                     *b++ = fill;
                 }
             }
