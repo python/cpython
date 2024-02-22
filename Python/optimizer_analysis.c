@@ -296,12 +296,15 @@ uop_redundancy_eliminator(
     _Py_UOpsAbstractInterpContext context;
     _Py_UOpsAbstractInterpContext *ctx = &context;
 
-    if (_Py_uop_abstractcontext_init(
-        ctx,
-        co, curr_stacklen,
-        trace_len) < 0) {
+    if (_Py_uop_abstractcontext_init(ctx) < 0) {
         goto out_of_space;
     }
+    _Py_UOpsAbstractFrame *frame = _Py_uop_ctx_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
+    if (frame == NULL) {
+        return -1;
+    }
+    ctx->curr_frame_depth++;
+    ctx->frame = frame;
 
     for (_PyUOpInstruction *this_instr = trace;
          this_instr < trace + trace_len && !op_is_end(this_instr->opcode);

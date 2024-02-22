@@ -96,9 +96,7 @@ extern bool _Py_uop_sym_matches_type(_Py_UOpsSymType *sym, PyTypeObject *typ);
 extern void _Py_uop_sym_set_null(_Py_UOpsSymType *sym);
 extern void _Py_uop_sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp);
 
-extern int _Py_uop_abstractcontext_init(
-    _Py_UOpsAbstractInterpContext *ctx, PyCodeObject *co,
-    int curr_stacklen, int ir_entries);
+extern int _Py_uop_abstractcontext_init(_Py_UOpsAbstractInterpContext *ctx);
 extern void _Py_uop_abstractcontext_fini(_Py_UOpsAbstractInterpContext *ctx);
 
 extern _Py_UOpsAbstractFrame *_Py_uop_ctx_frame_new(
@@ -108,6 +106,9 @@ extern _Py_UOpsAbstractFrame *_Py_uop_ctx_frame_new(
     int n_locals_already_filled,
     int curr_stackentries);
 extern int _Py_uop_ctx_frame_pop(_Py_UOpsAbstractInterpContext *ctx);
+
+PyAPI_FUNC(PyObject *)
+_Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 #ifdef __cplusplus
 }
