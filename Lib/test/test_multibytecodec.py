@@ -193,7 +193,7 @@ class Test_IncrementalEncoder(unittest.TestCase):
             b"\x00\x00\x00\x00\x00\x00\x00\x00"
             b"\x00\x00\x00\x00\x00\x00\x00\x00",
             'little')
-        self.assertRaises(UnicodeEncodeError, encoder.setstate, pending_size_nine)
+        self.assertRaises(UnicodeError, encoder.setstate, pending_size_nine)
 
     def test_setstate_validates_input_bytes(self):
         encoder = codecs.getincrementalencoder('euc_jp')()
