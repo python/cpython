@@ -1009,7 +1009,7 @@
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
-/* Define if readline supports rl_compdisp_func_t */
+/* Define to 1 if the system has the type `rl_compdisp_func_t'. */
 #undef HAVE_RL_COMPDISP_FUNC_T
 
 /* Define if you have readline 2.2 */
@@ -1195,13 +1195,16 @@
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
+/* Define to 1 if the system has the type `socklen_t'. */
+#undef HAVE_SOCKLEN_T
+
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
 /* Define to 1 if you have the `splice' function. */
 #undef HAVE_SPLICE
 
-/* Define if your compiler provides ssize_t */
+/* Define to 1 if the system has the type `ssize_t'. */
 #undef HAVE_SSIZE_T
 
 /* Define to 1 if you have the `statvfs' function. */
@@ -1567,6 +1570,9 @@
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
+
+/* Define to 1 if the system has the type `__uint128_t'. */
+#undef HAVE___UINT128_T
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
@@ -1956,7 +1962,7 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
-/* Define to `int' if <sys/socket.h> does not define. */
+/* Define to 'int' if <sys/socket.h> does not define. */
 #undef socklen_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */
