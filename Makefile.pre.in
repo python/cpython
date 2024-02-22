@@ -1320,9 +1320,9 @@ regen-limited-abi: all
 regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects regen-sbom
+	regen-test-levenshtein regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make-regen-sbom, and make regen-configure should be run manually"
 
 ############################################################################
 # Special rules for object files
