@@ -45,7 +45,7 @@ dummy_func(void) {
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
         _Py_UOpsSymType *temp;
-        OUT_OF_SPACE_IF_NULL(temp = _Py_uop_sym_newnull(ctx));
+        OUT_OF_SPACE_IF_NULL(temp = _Py_uop_sym_new_null(ctx));
         GETLOCAL(oparg) = temp;
     }
 
@@ -54,7 +54,7 @@ dummy_func(void) {
     }
 
     op(_PUSH_NULL, (-- res)) {
-        res = _Py_uop_sym_newnull(ctx);
+        res = _Py_uop_sym_new_null(ctx);
         if (res == NULL) {
             goto out_of_space;
         };
@@ -96,7 +96,7 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_newconst(ctx, temp));
+            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
@@ -114,7 +114,7 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_newconst(ctx, temp));
+            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
@@ -132,7 +132,7 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_newconst(ctx, temp));
+            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
@@ -151,7 +151,7 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            res = _Py_uop_sym_newconst(ctx, temp);
+            res = _Py_uop_sym_new_const(ctx, temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
@@ -170,7 +170,7 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            res = _Py_uop_sym_newconst(ctx, temp);
+            res = _Py_uop_sym_new_const(ctx, temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
@@ -189,7 +189,7 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            res = _Py_uop_sym_newconst(ctx, temp);
+            res = _Py_uop_sym_new_const(ctx, temp);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
@@ -205,21 +205,21 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_newconst(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_newconst(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_newconst(ctx, ptr));
-        OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_newnull(ctx));
+        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx));
     }
 
     op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_newconst(ctx, ptr));
-        OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_newnull(ctx));
+        OUT_OF_SPACE_IF_NULL(value = _Py_uop_sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx));
     }
 
 
@@ -257,7 +257,7 @@ dummy_func(void) {
 
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
         (void)index;
-        OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_newnull(ctx));
+        OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx));
         attr = NULL;
         if (this_instr[-1].opcode == _NOP) {
             // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
@@ -268,7 +268,7 @@ dummy_func(void) {
             PyObject *res = convert_global_to_const(this_instr, dict);
             if (res != NULL) {
                 this_instr[-1].opcode = _POP_TOP;
-                OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_newconst(ctx, res));
+                OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_const(ctx, res));
             }
         }
         if (attr == NULL) {
@@ -383,7 +383,7 @@ dummy_func(void) {
         /* This has to be done manually */
         (void)seq;
         for (int i = 0; i < oparg; i++) {
-            OUT_OF_SPACE_IF_NULL(values[i] = _Py_uop_sym_newunknown(ctx));
+            OUT_OF_SPACE_IF_NULL(values[i] = _Py_uop_sym_new_unknown(ctx));
         }
     }
 
@@ -392,7 +392,7 @@ dummy_func(void) {
         (void)seq;
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
-            OUT_OF_SPACE_IF_NULL(values[i] = _Py_uop_sym_newunknown(ctx));
+            OUT_OF_SPACE_IF_NULL(values[i] = _Py_uop_sym_new_unknown(ctx));
         }
     }
 
