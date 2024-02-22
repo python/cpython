@@ -323,7 +323,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_sym_set_type(int_type, &PyLong_Type);
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
     _Py_uop_sym_set_type(int_type, &PyFloat_Type);
-    // git TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "top doesn't match int");
+    // TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "top doesn't match int");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_RETURN_NONE;
