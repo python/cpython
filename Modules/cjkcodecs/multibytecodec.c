@@ -1005,15 +1005,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
     }
 
     if (statebytes[0] > MAXENCPENDING*4) {
-        PyObject *excobj = PyObject_CallFunction(PyExc_UnicodeEncodeError,
-                                                 "ssnns",
-                                                 self->codec->encoding,
-                                                 statebytes,
-                                                 0, sizeof(statebytes),
-                                                 "pending buffer too large");
-        if (excobj == NULL) goto errorexit;
-        PyErr_SetObject(PyExc_UnicodeEncodeError, excobj);
-        Py_DECREF(excobj);
+        PyErr_SetString(PyExc_UnicodeError, "pending buffer too large");
         goto errorexit;
     }
 
