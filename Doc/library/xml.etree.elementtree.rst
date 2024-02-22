@@ -843,16 +843,15 @@ Functions
 
 .. function:: include(elem, loader=None, base_url=None, max_depth=6)
 
-   This function expands XInclude directives in-place in *elem*.  *elem* is the
-   root element or an :class:`~xml.etree.ElementTree.ElementTree` instance.  *loader* is
-   an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
+   This function expands XInclude directives in-place in tree pointed by *elem*.
+   *elem* is either the root :class:`~xml.etree.ElementTree.Element` or an
+   :class:`~xml.etree.ElementTree.ElementTree` instance to find such element.
+   *loader* is an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
    :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
    relative include file references.  *max_depth* is the maximum number of recursive
    inclusions.  Limited to reduce the risk of malicious content explosion.
    Pass ``None`` to disable the limitation.
-
-   Returns ``None``.  Updates tree pointed by *elem*.
 
    .. versionadded:: 3.9
       The *base_url* and *max_depth* parameters.

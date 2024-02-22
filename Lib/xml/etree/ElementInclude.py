@@ -98,7 +98,7 @@ def default_loader(href, parse, encoding=None):
 ##
 # Expand XInclude directives.
 #
-# @param elem Root element.
+# @param elem Root Element or any ElementTree of a tree to be expanded
 # @param loader Optional resource loader.  If omitted, it defaults
 #     to {@link default_loader}.  If given, it should be a callable
 #     that implements the same interface as <b>default_loader</b>.
@@ -110,7 +110,7 @@ def default_loader(href, parse, encoding=None):
 # @throws LimitedRecursiveIncludeError If the {@link max_depth} was exceeded.
 # @throws FatalIncludeError If the function fails to include a given
 #     resource, or if the tree contains malformed XInclude elements.
-# @throws IOError If the function fails to load a given resource.
+# @throws OSError If the function fails to load a given resource.
 # @throws ValueError If negative {@link max_depth} is passed.
 # @returns None. Modifies tree pointed by {@link elem}
 
