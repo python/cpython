@@ -212,6 +212,7 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 #define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
 #define DICT_VALUES_SIZE(values) ((uint8_t *)values)[-1]
+#define DICT_VALUES_USED_SIZE(values) ((uint8_t *)values)[-2]
 
 #ifdef Py_GIL_DISABLED
 #define DICT_NEXT_VERSION(INTERP) \
