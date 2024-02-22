@@ -319,19 +319,14 @@ def test_ctypes_call_function():
 
 
 def test_posixsubprocess():
-    import subprocess
-    import _posixsubprocess
+    import multiprocessing.util
+
+    exe = b"xxx"
+    args = [b"yyy", b"zzz"]
     with TestHook() as hook:
-        args = [b'x', b'y']
-        exec_list = [b'xxx', b'yyy']
-        env = [b'A=A']
-        # Based upon `multiprocessing.spawnv_passfds` to figure out arguments
-        _posixsubprocess.fork_exec(
-            args, exec_list, False, (), None, env, -1, -1, -1, -1, -1, -1, -1,
-            -1, False, False, -1, None, None, None, -1, None,
-            subprocess._USE_VFORK
-        )
-        assert ("_posixsubprocess.fork_exec", (exec_list, args, env)) in hook.seen
+        multiprocessing.util.spawnv_passfds(exe, args, ())
+        assert ("_posixsubprocess.fork_exec", ([exe], args, None)) in hook.seen
+
 
 def test_excepthook():
     def excepthook(exc_type, exc_value, exc_tb):
