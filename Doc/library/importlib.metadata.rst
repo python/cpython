@@ -1,11 +1,11 @@
 .. _using:
 
-=================================
- Using :mod:`!importlib.metadata`
-=================================
+========================================================
+:mod:`!importlib.metadata` -- Accessing package metadata
+========================================================
 
 .. module:: importlib.metadata
-   :synopsis: The implementation of the importlib metadata.
+   :synopsis: Accessing package metadata
 
 .. versionadded:: 3.8
 .. versionchanged:: 3.10
@@ -13,7 +13,7 @@
 
 **Source code:** :source:`Lib/importlib/metadata/__init__.py`
 
-``importlib_metadata`` is a library that provides access to
+``importlib.metadata`` is a library that provides access to
 the metadata of an installed `Distribution Package <https://packaging.python.org/en/latest/glossary/#term-Distribution-Package>`_,
 such as its entry points
 or its top-level names (`Import Package <https://packaging.python.org/en/latest/glossary/#term-Import-Package>`_\s, modules, if any).
@@ -24,7 +24,7 @@ API`_ and `metadata API`_ of ``pkg_resources``.  Along with
 this package can eliminate the need to use the older and less efficient
 ``pkg_resources`` package.
 
-``importlib_metadata`` operates on third-party *distribution packages*
+``importlib.metadata`` operates on third-party *distribution packages*
 installed into Python's ``site-packages`` directory via tools such as
 `pip <https://pypi.org/project/pip/>`_.
 Specifically, it works with distributions with discoverable
@@ -41,7 +41,7 @@ and metadata defined by the `Core metadata specifications <https://packaging.pyt
    and one top-level *import package*
    may map to multiple *distribution packages*
    if it is a namespace package.
-   You can use :ref:`package_distributions() <package-distributions>`
+   You can use :ref:`packages_distributions() <package-distributions>`
    to get a mapping between them.
 
 By default, distribution metadata can live on the file system
@@ -73,7 +73,7 @@ something into it:
 
 .. code-block:: shell-session
 
-    $ python3 -m venv example
+    $ python -m venv example
     $ source example/bin/activate
     (example) $ python -m pip install wheel
 
@@ -171,16 +171,18 @@ group.  Read `the setuptools docs
 <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_
 for more information on entry points, their definition, and usage.
 
-*Compatibility Note*
+.. versionchanged:: 3.12
+   The "selectable" entry points were introduced in ``importlib_metadata``
+   3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
+   no parameters and always returned a dictionary of entry points, keyed
+   by group. With ``importlib_metadata`` 5.0 and Python 3.12,
+   ``entry_points`` always returns an ``EntryPoints`` object. See
+   `backports.entry_points_selectable <https://pypi.org/project/backports.entry-points-selectable>`_
+   for compatibility options.
 
-The "selectable" entry points were introduced in ``importlib_metadata``
-3.6 and Python 3.10. Prior to those changes, ``entry_points`` accepted
-no parameters and always returned a dictionary of entry points, keyed
-by group. With ``importlib_metadata`` 5.0 and Python 3.12,
-``entry_points`` always returns an ``EntryPoints`` object. See
-`backports.entry_points_selectable <https://pypi.org/project/backports.entry_points_selectable>`_
-for compatibility options.
-
+.. versionchanged:: 3.13
+   ``EntryPoint`` objects no longer present a tuple-like interface
+   (:meth:`~object.__getitem__`).
 
 .. _metadata:
 
@@ -308,6 +310,10 @@ Python module or `Import Package <https://packaging.python.org/en/latest/glossar
     >>> packages_distributions()
     {'importlib_metadata': ['importlib-metadata'], 'yaml': ['PyYAML'], 'jaraco': ['jaraco.classes', 'jaraco.functools'], ...}
 
+Some editable installs, `do not supply top-level names
+<https://github.com/pypa/packaging-problems/issues/609>`_, and thus this
+function is not reliable with such installs.
+
 .. versionadded:: 3.10
 
 .. _distributions:
@@ -338,9 +344,17 @@ instance::
     >>> dist.metadata['License']  # doctest: +SKIP
     'MIT'
 
+For editable packages, an origin property may present :pep:`610`
+metadata::
+
+    >>> dist.origin.url
+    'file:///path/to/wheel-0.32.3.editable-py3-none-any.whl'
+
 The full set of available metadata is not described here.
 See the `Core metadata specifications <https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata>`_ for additional details.
 
+.. versionadded:: 3.13
+   The ``.origin`` property was added.
 
 Distribution Discovery
 ======================
@@ -364,7 +378,7 @@ system :ref:`finders <finders-and-loaders>`.  To find a distribution package's m
 ``importlib.metadata`` queries the list of :term:`meta path finders <meta path finder>` on
 :data:`sys.meta_path`.
 
-By default ``importlib_metadata`` installs a finder for distribution packages
+By default ``importlib.metadata`` installs a finder for distribution packages
 found on the file system.
 This finder doesn't actually find any *distributions*,
 but it can find their metadata.
