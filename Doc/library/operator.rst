@@ -70,6 +70,11 @@ truth tests, identity tests, and boolean operations:
    equivalent to using the :class:`bool` constructor.
 
 
+.. function:: is_none(a)
+
+   Return ``a is None``.  Tests object identity.
+
+
 .. function:: is_(a, b)
 
    Return ``a is b``.  Tests object identity.
@@ -400,6 +405,8 @@ Python syntax and the functions in the :mod:`operator` module.
 | Bitwise Or            | ``a | b``               | ``or_(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
 | Exponentiation        | ``a ** b``              | ``pow(a, b)``                         |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is None``           | ``is_none(a)``                        |
 +-----------------------+-------------------------+---------------------------------------+
 | Identity              | ``a is b``              | ``is_(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+

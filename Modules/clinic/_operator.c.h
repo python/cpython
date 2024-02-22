@@ -1333,6 +1333,34 @@ PyDoc_STRVAR(_operator_index__doc__,
 #define _OPERATOR_INDEX_METHODDEF    \
     {"index", (PyCFunction)_operator_index, METH_O, _operator_index__doc__},
 
+PyDoc_STRVAR(_operator_is_none__doc__,
+"is_none($module, a, /)\n"
+"--\n"
+"\n"
+"Same as a is None.");
+
+#define _OPERATOR_IS_NONE_METHODDEF    \
+    {"is_none", (PyCFunction)_operator_is_none, METH_O, _operator_is_none__doc__},
+
+static int
+_operator_is_none_impl(PyObject *module, PyObject *a);
+
+static PyObject *
+_operator_is_none(PyObject *module, PyObject *a)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _operator_is_none_impl(module, a);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_operator_is___doc__,
 "is_($module, a, b, /)\n"
 "--\n"
@@ -1489,4 +1517,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ddbba2cd943571eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a15e6fcbb5480d2 input=a9049054013a1b77]*/

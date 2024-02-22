@@ -386,6 +386,13 @@ opcode
   documented or exposed through ``dis``, and were not intended to be
   used externally.
 
+operator
+--------
+
+* A new function ``operator.is_none`` has been added, such that
+  ``operator.is_none(obj)`` is equivalent to ``obj is None``.
+  (Contributed by Raymond Hettinger and Nico Mexis in :gh:`115808`.)
+
 os
 --
 
