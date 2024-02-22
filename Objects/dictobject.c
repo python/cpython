@@ -250,9 +250,9 @@ load_keys_nentries(PyDictObject *mp)
 
 #endif
 
-#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELAXED(ep->me_key, key)
-#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELAXED(ep->me_value, value)
-#define STORE_SPLIT_VALUE(mp, idx, value) FT_ATOMIC_STORE_PTR_RELAXED(mp->ma_values->values[idx], value)
+#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_key, key)
+#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, value)
+#define STORE_SPLIT_VALUE(mp, idx, value) FT_ATOMIC_STORE_PTR_RELEASE(mp->ma_values->values[idx], value)
 #define STORE_HASH(ep, hash) FT_ATOMIC_STORE_SSIZE_RELAXED(ep->me_hash, hash)
 #define STORE_KEYS_USABLE(keys, usable) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_usable, usable)
 #define STORE_KEYS_NENTRIES(keys, nentries) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_nentries, nentries)
