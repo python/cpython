@@ -226,7 +226,6 @@ annotations = {
     "replicate",
 }
 
-TIER = "TIER"
 
 __all__ = []
 __all__.extend(kwds)
