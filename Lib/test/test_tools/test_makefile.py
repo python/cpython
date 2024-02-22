@@ -71,7 +71,7 @@ class TestMakefile(unittest.TestCase):
         result = self.list_test_dirs().strip()
         self.assertEqual(
             result.count(SPLITTER), 1,
-            msg=f'{SPLITTER} is contained in result multiple times',
+            msg=f'{SPLITTER} should be contained in the output exactly once',
         )
         _, actual_result = result.split(SPLITTER)
         actual_result = actual_result.strip()
