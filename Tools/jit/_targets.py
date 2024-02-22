@@ -45,8 +45,7 @@ class _Target(typing.Generic[_S, _R]):
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
-        hasher.update(self.alignment.to_bytes())
-        hasher.update(self.prefix.encode())
+        hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -119,6 +118,7 @@ class _Target(typing.Generic[_S, _R]):
             "-O3",
             "-c",
             "-fno-asynchronous-unwind-tables",
+            "-fno-builtin",
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
             # Position-independent code adds indirection to every load and jump:
@@ -166,7 +166,7 @@ class _Target(typing.Generic[_S, _R]):
         with jit_stencils.open("w") as file:
             file.write(digest)
             if comment:
-                file.write(f"// {comment}\n")
+                file.write(f"// {comment}\n\n")
             file.write("")
             for line in _writer.dump(stencil_groups):
                 file.write(f"{line}\n")
@@ -310,6 +310,8 @@ class _MachO(
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
+        if "Debug" in flags:
+            return
         if "SomeInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
@@ -371,9 +373,6 @@ class _MachO(
                 addend = 0
             case _:
                 raise NotImplementedError(relocation)
-        # Turn Clang's weird __bzero calls into normal bzero calls:
-        if symbol == "__bzero":
-            symbol = "bzero"
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
