@@ -11495,11 +11495,15 @@ then :
 
 printf "%s\n" "#define HAVE_SSIZE_T 1" >>confdefs.h
 
+
 fi
 
 ac_fn_c_check_type "$LINENO" "__uint128_t" "ac_cv_type___uint128_t" "$ac_includes_default"
 if test "x$ac_cv_type___uint128_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE___UINT128_T 1" >>confdefs.h
+
 
 printf "%s\n" "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
 
@@ -24967,6 +24971,7 @@ then :
 
 printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
 
+
 fi
 
 
@@ -26788,6 +26793,9 @@ ac_fn_c_check_type "$LINENO" "socklen_t" "ac_cv_type_socklen_t" "
 "
 if test "x$ac_cv_type_socklen_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE_SOCKLEN_T 1" >>confdefs.h
+
 
 else $as_nop
 
