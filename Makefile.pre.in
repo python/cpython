@@ -2373,6 +2373,12 @@ COMPILEALL_OPTS=-j0
 
 TEST_MODULES=@TEST_MODULES@
 
+.PHONY: listtestmodules
+listtestmodules:
+	@if test "$(TEST_MODULES)" = yes; then \
+		echo "$(TESTSUBDIRS)"; \
+	fi
+
 .PHONY: libinstall
 libinstall:	all $(srcdir)/Modules/xxmodule.c
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
