@@ -633,11 +633,6 @@ internal consistency, so you should know what you're doing if you do that.
    case :attr:`version` is 0.
 
 
-.. attribute:: Cookie.domain
-
-   Cookie domain (a string).
-
-
 .. attribute:: Cookie.name
 
    Cookie name (a string).
@@ -652,6 +647,11 @@ internal consistency, so you should know what you're doing if you do that.
 
    String representing a port or a set of ports (eg. '80', or '80,8080'), or
    :const:`None`.
+
+
+.. attribute:: Cookie.domain
+
+   Cookie domain (a string).
 
 
 .. attribute:: Cookie.path
