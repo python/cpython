@@ -176,7 +176,7 @@ def generate_abstract_interpreter(
         if uop.name in abstract.uops:
             override = abstract.uops[uop.name]
             validate_uop(override, uop)
-        if uop.properties.tier == 1:
+        if uop.properties.tier == 1 or "specializing" in uop.annotations:
             continue
         if uop.replicates:
             continue

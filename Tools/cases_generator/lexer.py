@@ -224,6 +224,8 @@ annotations = {
     "pure",
     "split",
     "replicate",
+    "tier1",
+    "tier2",
 }
 
 __all__ = []
@@ -288,7 +290,7 @@ def tokenize(src: str, line: int = 1, filename: str = "") -> Iterator[Token]:
         text = m.group(0)
         if text in keywords:
             kind = keywords[text]
-        elif text in annotations or "tier" in text:
+        elif text in annotations:
             kind = ANNOTATION
         elif letter.match(text):
             kind = IDENTIFIER
