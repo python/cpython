@@ -226,12 +226,9 @@ sym_new(_Py_UOpsAbstractInterpContext *ctx,
         return NULL;
     }
     ctx->t_arena.ty_curr_number++;
-    self->const_val = NULL;
     self->typ = NULL;
     self->flags = 0;
-    if (const_val != NULL && _Py_IsImmortal(const_val)) {
-        self->const_val = const_val;
-    }
+    self->const_val = const_val;
 
     return self;
 }
@@ -325,15 +322,36 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
         return NULL;
     }
     sym_set_type(temp, Py_TYPE(const_val));
-    // const_val can be NULL if it's not immortal, then it's discarded.
-    if (temp->const_val != NULL) {
-        sym_set_flag(temp, TRUE_CONST);
-    }
-    if (!_Py_IsImmortal(const_val)) {
-        Py_DECREF(const_val);
-    }
     sym_set_flag(temp, KNOWN);
     sym_set_flag(temp, NOT_NULL);
+    // If the constant is not immortal, discard it.
+    if (_Py_IsImmortal(const_val))  {
+        sym_set_flag(temp, TRUE_CONST);
+    }
+    else {
+        Py_DECREF(const_val);
+        temp->const_val = NULL;
+    }
+    return temp;
+}
+
+// Same as sym_new_const, but borrows const_val, assuming it will be kept alive.
+// Only safe if we know const_val has a strong reference elsewhere.
+static inline _Py_UOpsSymType*
+sym_new_const_borrow(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
+{
+    assert(const_val != NULL);
+    _Py_UOpsSymType *temp = sym_new(
+        ctx,
+        const_val
+    );
+    if (temp == NULL) {
+        return NULL;
+    }
+    sym_set_type(temp, Py_TYPE(const_val));
+    sym_set_flag(temp, KNOWN);
+    sym_set_flag(temp, NOT_NULL);
+    sym_set_flag(temp, TRUE_CONST);
     return temp;
 }
 
