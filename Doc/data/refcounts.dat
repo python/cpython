@@ -1133,6 +1133,10 @@ PyList_GetItem:PyObject*::0:
 PyList_GetItem:PyObject*:list:0:
 PyList_GetItem:Py_ssize_t:index::
 
+PyList_GetItemRef:PyObject*::+1:
+PyList_GetItemRef:PyObject*:list:0:
+PyList_GetItemRef:Py_ssize_t:index::
+
 PyList_GetSlice:PyObject*::+1:
 PyList_GetSlice:PyObject*:list:0:
 PyList_GetSlice:Py_ssize_t:low::

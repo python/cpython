@@ -68,6 +68,11 @@ struct _ts {
     PyThreadState *next;
     PyInterpreterState *interp;
 
+    /* The global instrumentation version in high bits, plus flags indicating
+       when to break out of the interpreter loop in lower bits. See details in
+       pycore_ceval.h. */
+    uintptr_t eval_breaker;
+
     struct {
         /* Has been initialized to a safe state.
 
@@ -212,6 +217,8 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
+    PyObject *previous_executor;
+
 };
 
 #ifdef Py_DEBUG
@@ -229,7 +236,7 @@ struct _ts {
 #elif defined(__s390x__)
 #  define Py_C_RECURSION_LIMIT 800
 #elif defined(_WIN32)
-#  define Py_C_RECURSION_LIMIT 4000
+#  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
 #else

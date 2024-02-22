@@ -484,6 +484,14 @@ class OtherFileTests:
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
 
+    def testBooleanFd(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor') as cm:
+                f = self.FileIO(fd, closefd=False)
+            f.close()
+            self.assertEqual(cm.filename, __file__)
+
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
         bad_mode = "qwerty"

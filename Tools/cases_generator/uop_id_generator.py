@@ -38,15 +38,17 @@ def generate_uop_ids(
         next_id += 1
         PRE_DEFINED = {"_EXIT_TRACE", "_SET_IP"}
 
-        for uop in analysis.uops.values():
-            if uop.name in PRE_DEFINED:
+        uops = [(uop.name, uop) for uop in analysis.uops.values()]
+        # Sort so that _BASE comes immediately before _BASE_0, etc.
+        for name, uop in sorted(uops):
+            if name in PRE_DEFINED:
                 continue
             if uop.properties.tier_one_only:
                 continue
-            if uop.implicitly_created and not distinct_namespace:
-                out.emit(f"#define {uop.name} {uop.name[1:]}\n")
+            if uop.implicitly_created and not distinct_namespace and not uop.replicated:
+                out.emit(f"#define {name} {name[1:]}\n")
             else:
-                out.emit(f"#define {uop.name} {next_id}\n")
+                out.emit(f"#define {name} {next_id}\n")
                 next_id += 1
 
         out.emit(f"#define MAX_UOP_ID {next_id-1}\n")

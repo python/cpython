@@ -372,6 +372,7 @@ SYMBOL_NAMES = (
     "PyList_Append",
     "PyList_AsTuple",
     "PyList_GetItem",
+    "PyList_GetItemRef",
     "PyList_GetSlice",
     "PyList_Insert",
     "PyList_New",

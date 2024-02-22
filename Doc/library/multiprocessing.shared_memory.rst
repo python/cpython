@@ -23,7 +23,7 @@ processes, a :class:`~multiprocessing.managers.BaseManager` subclass,
 :class:`~multiprocessing.managers.SharedMemoryManager`, is also provided in the
 :mod:`multiprocessing.managers` module.
 
-In this module, shared memory refers to "System V style" shared memory blocks
+In this module, shared memory refers to "POSIX style" shared memory blocks
 (though is not necessarily implemented explicitly as such) and does not refer
 to "distributed shared memory".  This style of shared memory permits distinct
 processes to potentially read and write to a common (or shared) region of

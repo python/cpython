@@ -212,8 +212,9 @@ struct _object {
 struct _PyMutex { uint8_t v; };
 
 struct _object {
-    // ob_tid stores the thread id (or zero). It is also used by the GC to
-    // store linked lists and the computed "gc_refs" refcount.
+    // ob_tid stores the thread id (or zero). It is also used by the GC and the
+    // trashcan mechanism as a linked list pointer and by the GC to store the
+    // computed "gc_refs" refcount.
     uintptr_t ob_tid;
     uint16_t _padding;
     struct _PyMutex ob_mutex;   // per-object lock
