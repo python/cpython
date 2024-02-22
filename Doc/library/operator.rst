@@ -70,11 +70,6 @@ truth tests, identity tests, and boolean operations:
    equivalent to using the :class:`bool` constructor.
 
 
-.. function:: is_none(a)
-
-   Return ``a is None``.  Tests object identity.
-
-
 .. function:: is_(a, b)
 
    Return ``a is b``.  Tests object identity.
@@ -83,6 +78,13 @@ truth tests, identity tests, and boolean operations:
 .. function:: is_not(a, b)
 
    Return ``a is not b``.  Tests object identity.
+
+
+.. function:: is_none(a)
+
+   Return ``a is None``.  Tests object identity.
+
+   .. versionadded:: 3.13
 
 
 The mathematical and bitwise operations are the most numerous:
@@ -406,11 +408,11 @@ Python syntax and the functions in the :mod:`operator` module.
 +-----------------------+-------------------------+---------------------------------------+
 | Exponentiation        | ``a ** b``              | ``pow(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
-| Identity              | ``a is None``           | ``is_none(a)``                        |
-+-----------------------+-------------------------+---------------------------------------+
 | Identity              | ``a is b``              | ``is_(a, b)``                         |
 +-----------------------+-------------------------+---------------------------------------+
 | Identity              | ``a is not b``          | ``is_not(a, b)``                      |
++-----------------------+-------------------------+---------------------------------------+
+| Identity              | ``a is None``           | ``is_none(a)``                        |
 +-----------------------+-------------------------+---------------------------------------+
 | Indexed Assignment    | ``obj[k] = v``          | ``setitem(obj, k, v)``                |
 +-----------------------+-------------------------+---------------------------------------+
