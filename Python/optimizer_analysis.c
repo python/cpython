@@ -323,8 +323,7 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
         return NULL;
     }
     sym_set_type(temp, Py_TYPE(const_val));
-    sym_set_flag(temp, KNOWN);
-    sym_set_flag(temp, NOT_NULL);
+    sym_set_flag(temp, KNOWN | NOT_NULL);
     // If the constant is not immortal, discard it.
     if (_Py_IsImmortal(const_val))  {
         sym_set_flag(temp, TRUE_CONST);
@@ -350,9 +349,7 @@ sym_new_const_borrow(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
         return NULL;
     }
     sym_set_type(temp, Py_TYPE(const_val));
-    sym_set_flag(temp, KNOWN);
-    sym_set_flag(temp, NOT_NULL);
-    sym_set_flag(temp, TRUE_CONST);
+    sym_set_flag(temp, KNOWN | NOT_NULL | TRUE_CONST);
     return temp;
 }
 
