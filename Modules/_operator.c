@@ -699,14 +699,14 @@ _operator_index(PyObject *module, PyObject *a)
 }
 
 /*[clinic input]
-_operator.is_none = _operator.truth
+_operator.is_none = _operator.neg
 
 Same as a is None.
 [clinic start generated code]*/
 
-static int
-_operator_is_none_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=b3e4655e6929eda6 input=fdfffa61fae7a975]*/
+static PyObject *
+_operator_is_none(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=07159cc102261dec input=0448b38af7b8533d]*/
 {
     PyObject *result = Py_IsNone(a) ? Py_True : Py_False;
     return Py_NewRef(result);
