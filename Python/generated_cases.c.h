@@ -3712,11 +3712,11 @@
             // _CHECK_ATTR_MODULE
             owner = stack_pointer[-1];
             {
-                uint32_t type_version = read_u32(&this_instr[2].cache);
+                uint32_t dict_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
                 PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
                 assert(dict != NULL);
-                DEOPT_IF(dict->ma_keys->dk_version != type_version, LOAD_ATTR);
+                DEOPT_IF(dict->ma_keys->dk_version != dict_version, LOAD_ATTR);
             }
             // _LOAD_ATTR_MODULE
             {
