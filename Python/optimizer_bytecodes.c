@@ -5,8 +5,8 @@
 
 #define op(name, ...) /* NAME is ignored */
 
-typedef struct _Py_UOpsSymType _Py_UOpsSymType;
-typedef struct _Py_UOpsAbstractInterpContext _Py_UOpsAbstractInterpContext;
+typedef struct _Py_UopsSymbol _Py_UopsSymbol;
+typedef struct _Py_UOpsContext _Py_UOpsContext;
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 
 static int
@@ -14,16 +14,16 @@ dummy_func(void) {
 
     PyCodeObject *code;
     int oparg;
-    _Py_UOpsSymType *flag;
-    _Py_UOpsSymType *left;
-    _Py_UOpsSymType *right;
-    _Py_UOpsSymType *value;
-    _Py_UOpsSymType *res;
-    _Py_UOpsSymType *iter;
-    _Py_UOpsSymType *top;
-    _Py_UOpsSymType *bottom;
+    _Py_UopsSymbol *flag;
+    _Py_UopsSymbol *left;
+    _Py_UopsSymbol *right;
+    _Py_UopsSymbol *value;
+    _Py_UopsSymbol *res;
+    _Py_UopsSymbol *iter;
+    _Py_UopsSymbol *top;
+    _Py_UopsSymbol *bottom;
     _Py_UOpsAbstractFrame *frame;
-    _Py_UOpsAbstractInterpContext *ctx;
+    _Py_UOpsContext *ctx;
     _PyUOpInstruction *this_instr;
     _PyBloomFilter *dependencies;
     int modified;
@@ -44,7 +44,7 @@ dummy_func(void) {
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UOpsSymType *temp;
+        _Py_UopsSymbol *temp;
         OUT_OF_SPACE_IF_NULL(temp = _Py_uop_sym_new_null(ctx));
         GETLOCAL(oparg) = temp;
     }
@@ -350,7 +350,7 @@ dummy_func(void) {
             argcount++;
         }
 
-        _Py_UOpsSymType **localsplus_start = ctx->n_consumed;
+        _Py_UopsSymbol **localsplus_start = ctx->n_consumed;
         int n_locals_already_filled = 0;
         // Can determine statically, so we interleave the new locals
         // and make the current stack the new locals.

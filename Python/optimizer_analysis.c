@@ -293,8 +293,8 @@ optimize_uops(
 )
 {
 
-    _Py_UOpsAbstractInterpContext context;
-    _Py_UOpsAbstractInterpContext *ctx = &context;
+    _Py_UOpsContext context;
+    _Py_UOpsContext *ctx = &context;
 
     if (_Py_uop_abstractcontext_init(ctx) < 0) {
         goto out_of_space;
@@ -313,7 +313,7 @@ optimize_uops(
         int oparg = this_instr->oparg;
         uint32_t opcode = this_instr->opcode;
 
-        _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
+        _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
         DPRINTF(3, "Abstract interpreting %s:%d ",
                 _PyUOpName(opcode),
