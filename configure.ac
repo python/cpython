@@ -4522,13 +4522,14 @@ yes
 	AC_MSG_RESULT([$ipv6type])
 fi
 
+AC_MSG_CHECKING([ipv6 library])
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		AC_MSG_NOTICE([using lib$ipv6lib])
+		AC_MSG_RESULT([lib$ipv6lib])
 	else
     AS_VAR_IF([ipv6trylibc], [yes], [
-      AC_MSG_NOTICE([using libc])
+      AC_MSG_RESULT([libc])
     ], [
       AC_MSG_ERROR([m4_normalize([
         No $ipv6lib library found; cannot continue.
