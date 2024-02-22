@@ -754,7 +754,7 @@ Glossary
 
       On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
 
-      ``locale.getencoding()`` can be used to get the locale encoding.
+      :func:`locale.getencoding` can be used to get the locale encoding.
 
       See also the :term:`filesystem encoding and error handler`.
 
