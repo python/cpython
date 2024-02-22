@@ -331,10 +331,12 @@ class OperatorTestCase:
     def test_is_none(self):
         operator = self.module
         a = 'xyzpdq'
-        b = None
+        b = ''
+        c = None
         self.assertRaises(TypeError, operator.is_none)
         self.assertFalse(operator.is_none(a))
-        self.assertTrue(operator.is_none(b))
+        self.assertFalse(operator.is_none(b))
+        self.assertTrue(operator.is_none(c))
 
     def test_is(self):
         operator = self.module
