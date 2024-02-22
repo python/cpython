@@ -358,46 +358,86 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Copy the Python integer value to a native *buffer* of size *n_bytes*::
 
-      int value;
-      Py_ssize_t bytes = PyLong_AsNativeBytes(v, &value, sizeof(value), -1);
+      int32_t value;
+      Py_ssize_t bytes = PyLong_AsNativeBits(pylong, &value, sizeof(value), -1);
       if (bytes < 0) {
-          // Error occurred
+          // A Python exception was set with the reason.
           return NULL;
       }
       else if (bytes <= (Py_ssize_t)sizeof(value)) {
           // Success!
       }
       else {
-          // Overflow occurred, but 'value' contains truncated value
+          // Overflow occurred, but 'value' contains the truncated
+          // lowest bits of pylong.
       }
+
+   The above example may look *similar* to
+   :c:func:`PyLong_As* <PyLong_AsSize_t>`
+   but instead fills in a specific caller defined type and never raises an
+   error about of the :class:`int` *pylong*'s value regardless of *n_bytes*
+   or the returned byte count.
+
+   To get at the entire potentially big Python value, this can be used to
+   reserve enough space and copy it::
+
+      // Ask how much space we need.
+      Py_ssize_t expected = PyLong_AsNativeBits(pylong, NULL, 0, -1);
+      if (expected < 0) {
+          // A Python exception was set with the reason.
+          return NULL;
+      }
+      assert(expected != 0);  // Impossible per the API definition.
+      uint8_t *bignum = malloc(expected);
+      if (!bignum) {
+          PyErr_SetString(PyExc_MemoryError, "bignum malloc failed.");
+          return NULL;
+      }
+      // Safely get the entire value.
+      Py_ssize_t bytes = PyLong_AsNativeBits(pylong, bignum, expected, -1);
+      if (bytes < 0) {  // Exception set.
+          free(bignum);
+          return NULL;
+      }
+      else if (bytes > expected) {  // Be safe, should not be possible.
+          PyErr_SetString(PyExc_RuntimeError,
+              "Unexpected bignum truncation after a size check.");
+          free(bignum);
+          return NULL;
+      }
+      // The expected success given the above pre-check.
+      // ... use bignum ...
+      free(bignum);
 
    *endianness* may be passed ``-1`` for the native endian that CPython was
    compiled with, or ``0`` for big endian and ``1`` for little.
 
-   Return ``-1`` with an exception raised if *pylong* cannot be interpreted as
+   Returns ``-1`` with an exception raised if *pylong* cannot be interpreted as
    an integer. Otherwise, return the size of the buffer required to store the
    value. If this is equal to or less than *n_bytes*, the entire value was
-   copied.
+   copied. ``0`` will never be returned.
 
-   Unless an exception is raised, all *n_bytes* of the buffer will be written
-   with as much of the value as can fit. This allows the caller to ignore all
-   non-negative results if the intent is to match the typical behavior of a
-   C-style downcast. No exception is set for this case.
+   Unless an exception is raised, all *n_bytes* of the buffer will always be
+   written. In the case of truncation, as many of the lowest bits of the value
+   as could fit are written. This allows the caller to ignore all non-negative
+   results if the intent is to match the typical behavior of a C-style
+   downcast. No exception is set on truncation.
 
-   Values are always copied as two's-complement, and sufficient buffer will be
+   Values are always copied as two's-complement and sufficient buffer will be
    requested to include a sign bit. For example, this may cause an value that
    fits into 8 bytes when treated as unsigned to request 9 bytes, even though
    all eight bytes were copied into the buffer. What has been omitted is the
-   zero sign bit, which is redundant when the intention is to treat the value as
-   unsigned.
+   zero sign bit -- redundant if the caller's intention is to treat the value
+   as unsigned.
 
-   Passing zero to *n_bytes* will return the requested buffer size.
+   Passing zero to *n_bytes* will return the size of a buffer that would
+   be large enough to hold the value. This may be larger than technically
+   necessary, but not unreasonably so.
 
    .. note::
 
-      When the value does not fit in the provided buffer, the requested size
-      returned from the function may be larger than necessary. Passing 0 to this
-      function is not an accurate way to determine the bit length of a value.
+      Passing *n_bytes=0* to this function is not an accurate way to determine
+      the bit length of a value.
 
    .. versionadded:: 3.13
 

@@ -438,7 +438,12 @@ class LongTests(unittest.TestCase):
         if support.verbose:
             print(f"SIZEOF_SIZE={SZ}\n{MAX_SSIZE=:016X}\n{MAX_USIZE=:016X}")
 
-        # These tests check that the requested buffer size is correct
+        # These tests check that the requested buffer size is correct.
+        # This matches our current implementation: We only specify that the
+        # return value is a size *sufficient* to hold the result when queried
+        # using n_bytes=0. If our implementation changes, feel free to update
+        # the expectations here -- or loosen them to be range checks.
+        # (i.e. 0 *could* be stored in 1 byte and 512 in 2)
         for v, expect in [
             (0, SZ),
             (512, SZ),
@@ -453,12 +458,25 @@ class LongTests(unittest.TestCase):
             (-(2**256-1), 33),
         ]:
             with self.subTest(f"sizeof-{v:X}"):
-                buffer = bytearray(1)
+                buffer = bytearray(b"\x5a")
                 self.assertEqual(expect, asnativebytes(v, buffer, 0, -1),
-                    "PyLong_AsNativeBytes(v, NULL, 0, -1)")
+                    "PyLong_AsNativeBytes(v, <unknown>, 0, -1)")
+                self.assertEqual(buffer, b"\x5a",
+                    "buffer overwritten when it should not have been")
                 # Also check via the __index__ path
                 self.assertEqual(expect, asnativebytes(Index(v), buffer, 0, -1),
-                    "PyLong_AsNativeBytes(Index(v), NULL, 0, -1)")
+                    "PyLong_AsNativeBytes(Index(v), <unknown>, 0, -1)")
+                self.assertEqual(buffer, b"\x5a",
+                    "buffer overwritten when it should not have been")
+
+        # Test that we populate n=2 bytes but do not overwrite more.
+        buffer = bytearray(b"\x99"*3)
+        self.assertEqual(2, asnativebytes(4, buffer, 2, 0),  # BE
+            "PyLong_AsNativeBytes(v, <3 byte buffer>, 2, 0)  // BE")
+        self.assertEqual(buffer, b"\x00\x04\x99")
+        self.assertEqual(2, asnativebytes(4, buffer, 2, 1),  # LE
+            "PyLong_AsNativeBytes(v, <3 byte buffer>, 2, 1)  // LE")
+        self.assertEqual(buffer, b"\x04\x00\x99")
 
         # We request as many bytes as `expect_be` contains, and always check
         # the result (both big and little endian). We check the return value
@@ -510,7 +528,9 @@ class LongTests(unittest.TestCase):
         ]:
             with self.subTest(f"{v:X}-{len(expect_be)}bytes"):
                 n = len(expect_be)
-                buffer = bytearray(n)
+                # Fill the buffer with dummy data to ensure all bytes
+                # are overwritten.
+                buffer = bytearray(b"\xa5"*n)
                 expect_le = expect_be[::-1]
 
                 self.assertEqual(expect_n, asnativebytes(v, buffer, n, 0),
