@@ -1438,7 +1438,7 @@
             // Can determine statically, so we interleave the new locals
             // and make the current stack the new locals.
             // This also sets up for true call inlining.
-            if (sym_is_known(self_or_null)) {
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                 localsplus_start = args;
                 n_locals_already_filled = argcount;
             }
