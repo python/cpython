@@ -369,20 +369,18 @@ class _MachO(
             case {
                 "Offset": offset,
                 "Symbol": {"Value": s},
-                "Type": {
-                    "Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind
-                },
+                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
-                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
             case {
                 "Offset": offset,
                 "Section": {"Value": s},
-                "Type": {
-                    "Value": "X86_64_RELOC_SIGNED" as kind
-                },
+                "Type": {"Value": "X86_64_RELOC_SIGNED" as kind},
             } | {
                 "Offset": offset,
                 "Symbol": {"Value": s},
@@ -393,7 +391,9 @@ class _MachO(
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
             case {
                 "Offset": offset,
                 "Section": {"Value": s},
