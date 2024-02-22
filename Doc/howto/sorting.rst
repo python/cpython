@@ -47,8 +47,10 @@ lists. In contrast, the :func:`sorted` function accepts any iterable.
 Key Functions
 =============
 
-Both :meth:`list.sort` and :func:`sorted` have a *key* parameter to specify a
-function (or other callable) to be called on each list element prior to making
+This :meth:`list.sort` method and the functions :func:`sorted`,
+:func:`min`, :func:`max`, :func:`heapq.nsmallest`, and
+:func:`heapq.nlargest` have a *key* parameter to specify a function (or
+other callable) to be called on each list element prior to making
 comparisons.
 
 For example, here's a case-insensitive string comparison using
