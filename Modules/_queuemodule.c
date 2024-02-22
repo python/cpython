@@ -6,7 +6,7 @@
 #include "pycore_ceval.h"         // Py_MakePendingCalls()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_parking_lot.h"
-#include "pycore_time.h"          // _PyTime_t
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -372,13 +372,13 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
                             int block, PyObject *timeout_obj)
 /*[clinic end generated code: output=5c2cca914cd1e55b input=f7836c65e5839c51]*/
 {
-    _PyTime_t endtime = 0;
+    PyTime_t endtime = 0;
 
     // XXX Use PyThread_ParseTimeoutArg().
 
     if (block != 0 && !Py_IsNone(timeout_obj)) {
         /* With timeout */
-        _PyTime_t timeout;
+        PyTime_t timeout;
         if (_PyTime_FromSecondsObject(&timeout,
                                       timeout_obj, _PyTime_ROUND_CEILING) < 0) {
             return NULL;

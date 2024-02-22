@@ -753,6 +753,9 @@
     <ClInclude Include="..\Include\internal\pycore_pythread.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_qsbr.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_range.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -1419,6 +1422,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrtod.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\dtoa.c">

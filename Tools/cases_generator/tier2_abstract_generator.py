@@ -178,6 +178,8 @@ def generate_abstract_interpreter(
             validate_uop(override, uop)
         if uop.properties.tier_one_only:
             continue
+        if uop.replicates:
+            continue
         if uop.is_super():
             continue
         if not uop.is_viable():
