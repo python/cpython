@@ -1932,11 +1932,11 @@ dummy_func(
             _LOAD_ATTR_INSTANCE_VALUE +
             unused/5;  // Skip over rest of cache
 
-        op(_CHECK_ATTR_MODULE, (type_version/2, owner -- owner)) {
+        op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
             DEOPT_IF(!PyModule_CheckExact(owner));
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
-            DEOPT_IF(dict->ma_keys->dk_version != type_version);
+            DEOPT_IF(dict->ma_keys->dk_version != dict_version);
         }
 
         op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
