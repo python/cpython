@@ -203,13 +203,14 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 *loc32 = (uint32_t)value;
                 continue;
             case HoleKind_ARM64_RELOC_UNSIGNED:
-            case HoleKind_IMAGE_REL_AMD64_ADDR64:
             case HoleKind_R_AARCH64_ABS64:
             case HoleKind_X86_64_RELOC_UNSIGNED:
             case HoleKind_R_X86_64_64:
                 // 64-bit absolute address.
                 *loc64 = value;
                 continue;
+            case HoleKind_IMAGE_REL_AMD64_REL32:
+            case HoleKind_IMAGE_REL_I386_REL32:
             case HoleKind_R_X86_64_GOTPCRELX:
             case HoleKind_R_X86_64_REX_GOTPCRELX:
             case HoleKind_X86_64_RELOC_GOT:
@@ -249,7 +250,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 // Check that we're not out of range of 32 signed bits:
                 assert((int64_t)value >= -(1LL << 31));
                 assert((int64_t)value < (1LL << 31));
-                loc32[0] = (uint32_t)value;
+                *loc32 = (uint32_t)value;
                 continue;
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
