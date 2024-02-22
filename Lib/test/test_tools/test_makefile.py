@@ -27,7 +27,7 @@ class TestMakefile(unittest.TestCase):
     def list_test_dirs(self):
         import subprocess
         return subprocess.check_output(
-            ['make', '-C', support.REPO_ROOT, 'listtestmodules'],
+            ['make', '-s', '-C', support.REPO_ROOT, 'listtestmodules'],
             universal_newlines=True,
             encoding='utf-8',
         )
