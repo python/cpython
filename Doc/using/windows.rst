@@ -15,7 +15,7 @@ know about when using Python on Microsoft Windows.
 Unlike most Unix systems and services, Windows does not include a system
 supported installation of Python. To make Python available, the CPython team
 has compiled Windows installers (MSI packages) with every `release
-<https://www.python.org/download/releases/>`_ for many years. These installers
+<https://www.python.org/downloads/>`_ for many years. These installers
 are primarily intended to add a per-user installation of Python, with the
 core interpreter and library being used by a single user. The installer is also
 able to install for all users of a single machine, and a separate ZIP file is
