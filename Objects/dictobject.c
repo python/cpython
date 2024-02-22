@@ -5274,7 +5274,7 @@ fail:
 
 // Grabs the key and/or value from the provided locations and if successful
 // returns them with an increased reference count.  If either one is unsucessful
-// nothing is incref'd and returns 0.
+// nothing is incref'd and returns -1.
 static int
 acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
                   PyObject **out_key, PyObject **out_value)
@@ -5282,7 +5282,7 @@ acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
     if (out_key) {
         *out_key = _Py_TryXGetRef(key_loc);
         if (*out_key == NULL) {
-            return 0;
+            return -1;
         }
     }
 
@@ -5291,12 +5291,12 @@ acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
             if (out_key) {
                 Py_DECREF(*out_key);
             }
-            return 0;
+            return -1;
         }
         *out_value = value;
     }
 
-    return 1;
+    return 0;
 }
 
 static Py_ssize_t
@@ -5344,8 +5344,8 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
         // here.
         int index = get_index_from_order(d, i);
         PyObject *value = _Py_atomic_load_ptr(&values->values[index]);
-        if (!acquire_key_value(&DK_UNICODE_ENTRIES(k)[index].me_key, value,
-                               &values->values[index], out_key, out_value)) {
+        if (acquire_key_value(&DK_UNICODE_ENTRIES(k)[index].me_key, value,
+                               &values->values[index], out_key, out_value) < 0) {
             goto try_locked;
         }
     }
@@ -5362,8 +5362,8 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
             if (i >= n)
                 goto fail;
 
-            if (!acquire_key_value(&entry_ptr->me_key, value,
-                                   &entry_ptr->me_value, out_key, out_value)) {
+            if (acquire_key_value(&entry_ptr->me_key, value,
+                                   &entry_ptr->me_value, out_key, out_value) < 0) {
                 goto try_locked;
             }
         }
@@ -5379,8 +5379,8 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
             if (i >= n)
                 goto fail;
 
-            if (!acquire_key_value(&entry_ptr->me_key, value,
-                                   &entry_ptr->me_value, out_key, out_value)) {
+            if (acquire_key_value(&entry_ptr->me_key, value,
+                                   &entry_ptr->me_value, out_key, out_value) < 0) {
                 goto try_locked;
             }
         }
