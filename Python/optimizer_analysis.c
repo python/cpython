@@ -214,7 +214,8 @@ ctx_frame_pop(
 }
 
 
-// Only accepts immortal constants.
+// Only accepts immortal constants or borrowed constants that will be kept alive
+// elsewhere.
 static _Py_UOpsSymType*
 sym_new(_Py_UOpsAbstractInterpContext *ctx,
                                PyObject *const_val)
@@ -309,7 +310,7 @@ sym_new_known_type(_Py_UOpsAbstractInterpContext *ctx,
     return res;
 }
 
-// Steals a reference to const_val if it is not immortal.
+// Decrefs const_val if it is not immortal and discards it.
 static inline _Py_UOpsSymType*
 sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
 {
