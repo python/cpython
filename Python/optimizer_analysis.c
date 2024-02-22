@@ -277,8 +277,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 #define _LOAD_ATTR_NOT_NULL \
     do {                    \
-    OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx)); \
-    OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx)); \
+    OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_notnull(ctx)); \
+    OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_newnull(ctx)); \
     } while (0);
 
 
@@ -296,7 +296,7 @@ uop_redundancy_eliminator(
     _Py_UOpsAbstractInterpContext context;
     _Py_UOpsAbstractInterpContext *ctx = &context;
 
-    if (abstractcontext_init(
+    if (_Py_uop_abstractcontext_init(
         ctx,
         co, curr_stacklen,
         trace_len) < 0) {
@@ -328,17 +328,17 @@ uop_redundancy_eliminator(
         assert(STACK_LEVEL() >= 0);
     }
 
-    abstractcontext_fini(ctx);
+    _Py_uop_abstractcontext_fini(ctx);
     return 1;
 
 out_of_space:
     DPRINTF(1, "Out of space in abstract interpreter\n");
-    abstractcontext_fini(ctx);
+    _Py_uop_abstractcontext_fini(ctx);
     return 0;
 
 error:
     DPRINTF(1, "Encountered error in abstract interpreter\n");
-    abstractcontext_fini(ctx);
+    _Py_uop_abstractcontext_fini(ctx);
     return 0;
 }
 
