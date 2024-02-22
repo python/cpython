@@ -75,7 +75,7 @@ AC_DEFUN([PY_CHECK_FUNC],
 
 dnl PY_CHECK_CPP(CPP_CHECK, [LIST-OF-INCLUDES], [ACTION-IF-TRUE], [ACTION-IF-FALSE])
 AC_DEFUN([PY_CHECK_CPP],
-         [AC_PREPROC_IFELSE([AC_LANG_PROGRAM([
+         [AC_PREPROC_IFELSE([AC_LANG_SOURCE([
 m4_foreach_w([incl], [$2], [@%:@include <incl> m4_newline])
 @%:@if $1
 /* pass */
@@ -2839,12 +2839,10 @@ AC_CHECK_HEADERS(
 ])
 
 # Check for clock_t in time.h.
-AC_CHECK_TYPES([clock_t],
-               [],
-               [AS_VAR_IF([ac_cv_type_clock_t], [no],
-                          [AC_DEFINE([clock_t], [long],
-                                     [Define to 'long' if <time.h> does not define clock_t.])])],
-               [@%:@include time.h])
+AC_CHECK_TYPES([clock_t], [],
+               [AC_DEFINE([clock_t], [long],
+                          [Define to 'long' if <time.h> does not define clock_t.])],
+               [@%:@include <time.h>])
 
 AC_CACHE_CHECK([for makedev], [ac_cv_func_makedev], [
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[

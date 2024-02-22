@@ -11223,7 +11223,7 @@ fi
 
 
 # Check for clock_t in time.h.
-ac_fn_c_check_type "$LINENO" "clock_t" "ac_cv_type_clock_t" "#include time.h
+ac_fn_c_check_type "$LINENO" "clock_t" "ac_cv_type_clock_t" "#include <time.h>
 "
 if test "x$ac_cv_type_clock_t" = xyes
 then :
@@ -11232,12 +11232,9 @@ printf "%s\n" "#define HAVE_CLOCK_T 1" >>confdefs.h
 
 
 else $as_nop
-  if test "x$ac_cv_type_clock_t" = xno
-then :
 
 printf "%s\n" "#define clock_t long" >>confdefs.h
 
-fi
 fi
 
 
@@ -16090,13 +16087,6 @@ printf %s "checking for _POSIX_THREADS in unistd.h... " >&6; }
 #error "check failed"
 #endif
 
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
@@ -16622,13 +16612,6 @@ printf %s "checking ipv6 stack type... " >&6; }
 #error "check failed"
 #endif
 
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
@@ -16648,13 +16631,6 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #error "check failed"
 #endif
 
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
@@ -16677,13 +16653,6 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #error "check failed"
 #endif
 
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
@@ -16720,13 +16689,6 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #error "check failed"
 #endif
 
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
@@ -16748,13 +16710,6 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #error "check failed"
 #endif
 
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
@@ -16777,13 +16732,6 @@ rm -f conftest.err conftest.i conftest.$ac_ext
 #error "check failed"
 #endif
 
-int
-main (void)
-{
-
-  ;
-  return 0;
-}
 _ACEOF
 if ac_fn_c_try_cpp "$LINENO"
 then :
