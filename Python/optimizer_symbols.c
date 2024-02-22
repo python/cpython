@@ -177,7 +177,7 @@ _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 
 // 0 on success, -1 on error.
 _Py_UOpsAbstractFrame *
-_Py_uop_ctx_frame_new(
+_Py_uop_frame_new(
     _Py_UOpsContext *ctx,
     PyCodeObject *co,
     _Py_UopsSymbol **localsplus_start,
@@ -256,7 +256,7 @@ _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx)
 }
 
 int
-_Py_uop_ctx_frame_pop(_Py_UOpsContext *ctx)
+_Py_uop_frame_pop(_Py_UOpsContext *ctx)
 {
     _Py_UOpsAbstractFrame *frame = ctx->frame;
     ctx->n_consumed = frame->locals;
