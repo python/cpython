@@ -6,6 +6,7 @@ import os
 import unittest
 from test import support
 
+SPLITTER = '@-----@'
 MAKEFILE = os.path.join(support.REPO_ROOT, 'Makefile')
 
 if not support.check_impl_detail(cpython=True):
@@ -21,6 +22,7 @@ except ImportError:
     TEST_MODULES = False
 else:
     TEST_MODULES = True
+
 
 @support.requires_subprocess()
 class TestMakefile(unittest.TestCase):
@@ -44,7 +46,14 @@ class TestMakefile(unittest.TestCase):
                 continue
             with self.subTest(dirpath=dirpath):
                 relpath = os.path.relpath(dirpath, support.STDLIB_DIR)
-                self.assertIn(relpath, test_dirs)
+                self.assertIn(
+                    relpath,
+                    test_dirs,
+                    msg=(
+                        f"{relpath!r} is not included in the Makefile's list "
+                        "of test directories to install"
+                    )
+                )
                 used.append(relpath)
 
         # Check that there are no extra entries:
@@ -60,7 +69,13 @@ class TestMakefile(unittest.TestCase):
 
     def test_makefile_test_folders(self):
         result = self.list_test_dirs().strip()
+        self.assertEqual(
+            result.count(SPLITTER), 1,
+            msg=f'{SPLITTER} is contained in result multiple times',
+        )
+        _, actual_result = result.split(SPLITTER)
+        actual_result = actual_result.strip()
         if TEST_MODULES:
-            self.check_existing_test_modules(result)
+            self.check_existing_test_modules(actual_result)
         else:
-            self.check_missing_test_modules(result)
+            self.check_missing_test_modules(actual_result)

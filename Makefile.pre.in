@@ -2237,6 +2237,7 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
+		test/archivetestdata \
 		test/audiodata \
 		test/certdata \
 		test/certdata/capath \
@@ -2374,6 +2375,7 @@ TEST_MODULES=@TEST_MODULES@
 
 .PHONY: listtestmodules
 listtestmodules:
+	@echo "@-----@"
 	@if test "$(TEST_MODULES)" = yes; then \
 		echo "$(TESTSUBDIRS)"; \
 	fi
