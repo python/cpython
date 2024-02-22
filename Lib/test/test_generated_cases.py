@@ -33,7 +33,7 @@ with test_tools.imports_under_tool("cases_generator"):
     import parser
     from stack import Stack
     import tier1_generator
-    import tier2_abstract_generator
+    import optimizer_generator
 
 
 def handle_stderr():
@@ -841,7 +841,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
             temp_input.flush()
 
         with handle_stderr():
-            tier2_abstract_generator.generate_tier2_abstract_from_files(
+            optimizer_generator.generate_tier2_abstract_from_files(
                 [self.temp_input_filename, self.temp_input2_filename],
                 self.temp_output_filename
             )
