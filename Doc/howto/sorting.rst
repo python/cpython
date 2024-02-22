@@ -51,7 +51,8 @@ Both :meth:`list.sort` and :func:`sorted` have a *key* parameter to specify a
 function (or other callable) to be called on each list element prior to making
 comparisons.
 
-For example, here's a case-insensitive string comparison:
+For example, here's a case-insensitive string comparison using
+:meth:`str.casefold`:
 
 .. doctest::
 
