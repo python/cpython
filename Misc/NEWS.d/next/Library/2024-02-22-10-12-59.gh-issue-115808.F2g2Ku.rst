@@ -1,1 +1,1 @@
-Add is_none operator
+Add :func:`operator.is_none` function.
