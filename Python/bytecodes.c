@@ -141,8 +141,7 @@ dummy_func(
             RESUME_CHECK,
         };
 
-        inst(RESUME, (--)) {
-            TIER_ONE_ONLY
+        tier1 inst(RESUME, (--)) {
             assert(frame == tstate->current_frame);
             uintptr_t global_version =
                 _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
@@ -268,8 +267,7 @@ dummy_func(
 
         macro(END_FOR) = POP_TOP;
 
-        inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
-            TIER_ONE_ONLY
+        tier1 inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
@@ -286,8 +284,7 @@ dummy_func(
             Py_DECREF(receiver);
         }
 
-        inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
-            TIER_ONE_ONLY
+        tier1 inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
@@ -319,7 +316,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_TO_BOOL, (counter/1, value -- value)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -506,8 +502,7 @@ dummy_func(
         // So the inputs are the same as for all BINARY_OP
         // specializations, but there is no output.
         // At the end we just skip over the STORE_FAST.
-        op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
-            TIER_ONE_ONLY
+        tier1 op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             assert(next_instr->op.code == STORE_FAST);
             PyObject **target_local = &GETLOCAL(next_instr->op.arg);
             DEOPT_IF(*target_local != left);
@@ -545,7 +540,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_BINARY_SUBSCR, (counter/1, container, sub -- container, sub)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -693,7 +687,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_STORE_SUBSCR, (counter/1, container, sub -- container, sub)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -762,8 +755,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        inst(RAISE_VARARGS, (args[oparg] -- )) {
-            TIER_ONE_ONLY
+        tier1 inst(RAISE_VARARGS, (args[oparg] -- )) {
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -787,8 +779,7 @@ dummy_func(
             ERROR_IF(true, error);
         }
 
-        inst(INTERPRETER_EXIT, (retval --)) {
-            TIER_ONE_ONLY
+        tier1 inst(INTERPRETER_EXIT, (retval --)) {
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
@@ -980,7 +971,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -1075,8 +1065,7 @@ dummy_func(
             goto resume_frame;
         }
 
-        inst(YIELD_VALUE, (retval -- unused)) {
-            TIER_ONE_ONLY
+        tier1 inst(YIELD_VALUE, (retval -- unused)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1105,8 +1094,7 @@ dummy_func(
             Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
         }
 
-        inst(RERAISE, (values[oparg], exc -- values[oparg])) {
-            TIER_ONE_ONLY
+        tier1 inst(RERAISE, (values[oparg], exc -- values[oparg])) {
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -1127,8 +1115,7 @@ dummy_func(
             goto exception_unwind;
         }
 
-        inst(END_ASYNC_FOR, (awaitable, exc -- )) {
-            TIER_ONE_ONLY
+        tier1 inst(END_ASYNC_FOR, (awaitable, exc -- )) {
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 DECREF_INPUTS();
@@ -1141,8 +1128,7 @@ dummy_func(
             }
         }
 
-        inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- none, value)) {
-            TIER_ONE_ONLY
+        tier1 inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- none, value)) {
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
@@ -1214,7 +1200,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_UNPACK_SEQUENCE, (counter/1, seq -- seq)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -1284,7 +1269,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_STORE_ATTR, (counter/1, owner -- owner)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -1403,7 +1387,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_GLOBAL, (counter/1 -- )) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -1731,7 +1714,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_SUPER_ATTR, (counter/1, global_super, class, unused -- global_super, class, unused)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             int load_method = oparg & 1;
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -1744,8 +1726,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_LOAD_SUPER_ATTR, (global_super, class, self -- attr, null if (oparg & 1))) {
-            TIER_ONE_ONLY
+        tier1 op(_LOAD_SUPER_ATTR, (global_super, class, self -- attr, null if (oparg & 1))) {
             if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 int err = _Py_call_instrumentation_2args(
@@ -1847,7 +1828,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_LOAD_ATTR, (counter/1, owner -- owner)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -2172,7 +2152,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_COMPARE_OP, (counter/1, left, right -- left, right)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -2297,28 +2276,24 @@ dummy_func(
             b = res ? Py_True : Py_False;
         }
 
-         inst(IMPORT_NAME, (level, fromlist -- res)) {
-            TIER_ONE_ONLY
+         tier1 inst(IMPORT_NAME, (level, fromlist -- res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             DECREF_INPUTS();
             ERROR_IF(res == NULL, error);
         }
 
-        inst(IMPORT_FROM, (from -- from, res)) {
-            TIER_ONE_ONLY
+        tier1 inst(IMPORT_FROM, (from -- from, res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_from(tstate, from, name);
             ERROR_IF(res == NULL, error);
         }
 
-        inst(JUMP_FORWARD, (--)) {
-            TIER_ONE_ONLY
+        tier1 inst(JUMP_FORWARD, (--)) {
             JUMPBY(oparg);
         }
 
-        inst(JUMP_BACKWARD, (unused/1 --)) {
-            TIER_ONE_ONLY
+        tier1 inst(JUMP_BACKWARD, (unused/1 --)) {
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -2373,8 +2348,7 @@ dummy_func(
             JUMP_BACKWARD_NO_INTERRUPT,
         };
 
-        inst(ENTER_EXECUTOR, (--)) {
-            TIER_ONE_ONLY
+        tier1 inst(ENTER_EXECUTOR, (--)) {
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -2423,8 +2397,7 @@ dummy_func(
 
         macro(POP_JUMP_IF_NOT_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_FALSE;
 
-        inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
-            TIER_ONE_ONLY
+        tier1 inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -2520,7 +2493,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -3018,7 +2990,6 @@ dummy_func(
         };
 
         specializing op(_SPECIALIZE_CALL, (counter/1, callable, self_or_null, args[oparg] -- callable, self_or_null, args[oparg])) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -3480,8 +3451,7 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
-            TIER_ONE_ONLY
+        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
@@ -3819,8 +3789,7 @@ dummy_func(
             }
         }
 
-        inst(RETURN_GENERATOR, (--)) {
-            TIER_ONE_ONLY
+        tier1 inst(RETURN_GENERATOR, (--)) {
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -3886,7 +3855,6 @@ dummy_func(
         }
 
         specializing op(_SPECIALIZE_BINARY_OP, (counter/1, lhs, rhs -- lhs, rhs)) {
-            TIER_ONE_ONLY
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -3992,8 +3960,7 @@ dummy_func(
             INSTRUMENTED_JUMP(this_instr, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
-        inst(EXTENDED_ARG, ( -- )) {
-            TIER_ONE_ONLY
+        tier1 inst(EXTENDED_ARG, ( -- )) {
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -4001,14 +3968,12 @@ dummy_func(
             DISPATCH_GOTO();
         }
 
-        inst(CACHE, (--)) {
-            TIER_ONE_ONLY
+        tier1 inst(CACHE, (--)) {
             assert(0 && "Executing a cache.");
             Py_FatalError("Executing a cache.");
         }
 
-        inst(RESERVED, (--)) {
-            TIER_ONE_ONLY
+        tier1 inst(RESERVED, (--)) {
             assert(0 && "Executing RESERVED instruction.");
             Py_FatalError("Executing RESERVED instruction.");
         }
@@ -4048,8 +4013,7 @@ dummy_func(
             CHECK_EVAL_BREAKER();
         }
 
-        op(_SET_IP, (instr_ptr/4 --)) {
-            TIER_TWO_ONLY
+        tier2 op(_SET_IP, (instr_ptr/4 --)) {
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
@@ -4062,45 +4026,37 @@ dummy_func(
             #endif
         }
 
-        op(_EXIT_TRACE, (--)) {
-            TIER_TWO_ONLY
+        tier2 op(_EXIT_TRACE, (--)) {
             EXIT_IF(1);
         }
 
-        op(_CHECK_VALIDITY, (--)) {
-            TIER_TWO_ONLY
+        tier2 op(_CHECK_VALIDITY, (--)) {
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
-        pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-            TIER_TWO_ONLY
+        tier2 pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
             value = Py_NewRef(ptr);
         }
 
-        pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-            TIER_TWO_ONLY
+        tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = ptr;
         }
 
-        pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-            TIER_TWO_ONLY
+        tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
             value = Py_NewRef(ptr);
             null = NULL;
         }
 
-        pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-            TIER_TWO_ONLY
+        tier2 pure op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
             value = ptr;
             null = NULL;
         }
 
-        op(_CHECK_GLOBALS, (dict/4 -- )) {
-            TIER_TWO_ONLY
+        tier2 op(_CHECK_GLOBALS, (dict/4 -- )) {
             DEOPT_IF(GLOBALS() != dict);
         }
 
-        op(_CHECK_BUILTINS, (dict/4 -- )) {
-            TIER_TWO_ONLY
+        tier2 op(_CHECK_BUILTINS, (dict/4 -- )) {
             DEOPT_IF(BUILTINS() != dict);
         }
 
@@ -4113,8 +4069,7 @@ dummy_func(
         /* Only used for handling cold side exits, should never appear in
          * a normal trace or as part of an instruction.
          */
-        op(_COLD_EXIT, (--)) {
-            TIER_TWO_ONLY
+        tier2 op(_COLD_EXIT, (--)) {
             _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
             _PyExitData *exit = &previous->exits[oparg];
             exit->temperature++;
@@ -4147,8 +4102,7 @@ dummy_func(
             GOTO_TIER_TWO(executor);
         }
 
-        op(_START_EXECUTOR, (executor/4 --)) {
-            TIER_TWO_ONLY
+        tier2 op(_START_EXECUTOR, (executor/4 --)) {
             Py_DECREF(tstate->previous_executor);
             tstate->previous_executor = NULL;
 #ifndef _Py_JIT
@@ -4156,14 +4110,12 @@ dummy_func(
 #endif
         }
 
-        op(_FATAL_ERROR, (--)) {
-            TIER_TWO_ONLY
+        tier2 op(_FATAL_ERROR, (--)) {
             assert(0);
             Py_FatalError("Fatal error uop executed.");
         }
 
-        op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
-            TIER_TWO_ONLY
+        tier2 op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
             DEOPT_IF(!current_executor->vm_data.valid);
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }

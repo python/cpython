@@ -112,7 +112,6 @@
             lhs = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -242,7 +241,6 @@
             /* Skip 1 cache entry */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
-                TIER_ONE_ONLY
                 assert(next_instr->op.code == STORE_FAST);
                 PyObject **target_local = &GETLOCAL(next_instr->op.arg);
                 DEOPT_IF(*target_local != left, BINARY_OP);
@@ -429,7 +427,6 @@
             container = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -739,7 +736,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CACHE);
-            TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
             Py_FatalError("Executing a cache.");
             DISPATCH();
@@ -761,7 +757,6 @@
             callable = stack_pointer[-2 - oparg];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -1477,7 +1472,6 @@
             args = &stack_pointer[-oparg];
             self = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            TIER_ONE_ONLY
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
@@ -1953,7 +1947,6 @@
             exc_value = stack_pointer[-1];
             last_sent_val = stack_pointer[-2];
             sub_iter = stack_pointer[-3];
-            TIER_ONE_ONLY
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
@@ -1988,7 +1981,6 @@
             left = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -2338,7 +2330,6 @@
             PyObject *awaitable;
             exc = stack_pointer[-1];
             awaitable = stack_pointer[-2];
-            TIER_ONE_ONLY
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 Py_DECREF(awaitable);
@@ -2383,7 +2374,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
-            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
@@ -2418,7 +2408,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXTENDED_ARG);
-            TIER_ONE_ONLY
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -2477,7 +2466,6 @@
             iter = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -2867,7 +2855,6 @@
             PyObject *from;
             PyObject *res;
             from = stack_pointer[-1];
-            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_from(tstate, from, name);
             if (res == NULL) goto error;
@@ -2885,7 +2872,6 @@
             PyObject *res;
             fromlist = stack_pointer[-1];
             level = stack_pointer[-2];
-            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             Py_DECREF(level);
@@ -2945,7 +2931,6 @@
             PyObject *receiver;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
-            TIER_ONE_ONLY
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
@@ -2968,7 +2953,6 @@
             PyObject *receiver;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
-            TIER_ONE_ONLY
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
@@ -3248,7 +3232,6 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             PyObject *retval;
             retval = stack_pointer[-1];
-            TIER_ONE_ONLY
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
@@ -3281,7 +3264,6 @@
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
             /* Skip 1 cache entry */
-            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
@@ -3331,7 +3313,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
-            TIER_ONE_ONLY
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -3345,7 +3326,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_FORWARD);
-            TIER_ONE_ONLY
             JUMPBY(oparg);
             DISPATCH();
         }
@@ -3414,7 +3394,6 @@
             owner = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -4109,7 +4088,6 @@
             // _SPECIALIZE_LOAD_GLOBAL
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -4311,7 +4289,6 @@
             global_super = stack_pointer[-3];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 int load_method = oparg & 1;
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -4326,7 +4303,6 @@
             // _LOAD_SUPER_ATTR
             self = stack_pointer[-1];
             {
-                TIER_ONE_ONLY
                 if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                     PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                     int err = _Py_call_instrumentation_2args(
@@ -4737,7 +4713,6 @@
             INSTRUCTION_STATS(RAISE_VARARGS);
             PyObject **args;
             args = &stack_pointer[-oparg];
-            TIER_ONE_ONLY
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
                 case 2:
@@ -4769,7 +4744,6 @@
             PyObject **values;
             exc = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg];
-            TIER_ONE_ONLY
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -4794,7 +4768,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESERVED);
-            TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
             Py_FatalError("Executing RESERVED instruction.");
             DISPATCH();
@@ -4806,7 +4779,6 @@
             INSTRUCTION_STATS(RESUME);
             PREDICTED(RESUME);
             _Py_CODEUNIT *this_instr = next_instr - 1;
-            TIER_ONE_ONLY
             assert(frame == tstate->current_frame);
             uintptr_t global_version =
             _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
@@ -4884,7 +4856,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
-            TIER_ONE_ONLY
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -4951,7 +4922,6 @@
             receiver = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5138,7 +5108,6 @@
             owner = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -5430,7 +5399,6 @@
             container = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5532,7 +5500,6 @@
             value = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5741,7 +5708,6 @@
             seq = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5876,7 +5842,6 @@
             INSTRUCTION_STATS(YIELD_VALUE);
             PyObject *retval;
             retval = stack_pointer[-1];
-            TIER_ONE_ONLY
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.

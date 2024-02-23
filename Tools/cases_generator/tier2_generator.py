@@ -194,7 +194,7 @@ def generate_tier2(
     out = CWriter(outfile, 2, lines)
     out.emit("\n")
     for name, uop in analysis.uops.items():
-        if uop.properties.tier_one_only:
+        if uop.properties.tier == 1:
             continue
         if uop.properties.oparg_and_1:
             out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
