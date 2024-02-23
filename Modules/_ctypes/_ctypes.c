@@ -4317,8 +4317,11 @@ PyCFuncPtr_clear(PyCFuncPtrObject *self)
 static void
 PyCFuncPtr_dealloc(PyCFuncPtrObject *self)
 {
+    PyObject_GC_UnTrack(self);
     PyCFuncPtr_clear(self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    PyTypeObject *type = Py_TYPE(self);
+    type->tp_free((PyObject *)self);
+    Py_DECREF(type);
 }
 
 static PyObject *
@@ -4346,63 +4349,26 @@ PyCFuncPtr_bool(PyCFuncPtrObject *self)
         );
 }
 
-static PyNumberMethods PyCFuncPtr_as_number = {
-    0, /* nb_add */
-    0, /* nb_subtract */
-    0, /* nb_multiply */
-    0, /* nb_remainder */
-    0, /* nb_divmod */
-    0, /* nb_power */
-    0, /* nb_negative */
-    0, /* nb_positive */
-    0, /* nb_absolute */
-    (inquiry)PyCFuncPtr_bool, /* nb_bool */
+static PyType_Slot pycfuncptr_slots[] = {
+    {Py_tp_dealloc, PyCFuncPtr_dealloc},
+    {Py_tp_repr, PyCFuncPtr_repr},
+    {Py_tp_call, PyCFuncPtr_call},
+    {Py_tp_doc, PyDoc_STR("Function Pointer")},
+    {Py_tp_traverse, PyCFuncPtr_traverse},
+    {Py_tp_clear, PyCFuncPtr_clear},
+    {Py_tp_getset, PyCFuncPtr_getsets},
+    {Py_tp_new, PyCFuncPtr_new},
+    {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {Py_nb_bool, PyCFuncPtr_bool},
+    {0, NULL},
 };
 
-static _HackyHeapType PyCFuncPtr_Type = {
- .ht = {
-  .ht_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.CFuncPtr",
-    sizeof(PyCFuncPtrObject),                           /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    (destructor)PyCFuncPtr_dealloc,             /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)PyCFuncPtr_repr,                  /* tp_repr */
-    &PyCFuncPtr_as_number,                      /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    (ternaryfunc)PyCFuncPtr_call,               /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("Function Pointer"),              /* tp_doc */
-    (traverseproc)PyCFuncPtr_traverse,          /* tp_traverse */
-    (inquiry)PyCFuncPtr_clear,                  /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    PyCFuncPtr_getsets,                         /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    PyCFuncPtr_new,                             /* tp_new */
-    0,                                          /* tp_free */
-  }
- }
+PyType_Spec pycfuncptr_spec = {
+    .name = "_ctypes.CFuncPtr",
+    .basicsize = sizeof(PyCFuncPtrObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycfuncptr_slots,
 };
 
 /*****************************************************************/
@@ -5860,10 +5826,11 @@ _ctypes_add_types(PyObject *mod)
     MOD_ADD_TYPE(st->Union_Type, st->UnionType_Type, st->PyCData_Type);
     MOD_ADD_TYPE(st->PyCPointer_Type, st->PyCPointerType_Type, st->PyCData_Type);
     MOD_ADD_TYPE(st->PyCArray_Type, st->PyCArrayType_Type, st->PyCData_Type);
-    //MOD_ADD_TYPE(st->Simple_Type, st->PyCSimpleType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE(st->PyCFuncPtr_Type, st->PyCFuncPtrType_Type, st->PyCData_Type);
 
-    MOD_ADD_TYPE_M(st->Simple_Type, &pycsimple_spec, st->PyCSimpleType_Type, st->PyCData_Type); // _ctypes._SimpleCData
+    MOD_ADD_TYPE_M(st->Simple_Type, &pycsimple_spec,
+                   st->PyCSimpleType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE_M(st->PyCFuncPtr_Type, &pycfuncptr_spec,
+                   st->PyCFuncPtrType_Type, st->PyCData_Type);
 
     /*************************************************
      *
