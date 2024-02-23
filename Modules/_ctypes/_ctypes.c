@@ -5408,90 +5408,32 @@ Pointer_subscript(PyObject *myself, PyObject *item)
     }
 }
 
-static PySequenceMethods Pointer_as_sequence = {
-    0,                                          /* inquiry sq_length; */
-    0,                                          /* binaryfunc sq_concat; */
-    0,                                          /* intargfunc sq_repeat; */
-    Pointer_item,                               /* intargfunc sq_item; */
-    0,                                          /* intintargfunc sq_slice; */
-    Pointer_ass_item,                           /* intobjargproc sq_ass_item; */
-    0,                                          /* intintobjargproc sq_ass_slice; */
-    0,                                          /* objobjproc sq_contains; */
-    /* Added in release 2.0 */
-    0,                                          /* binaryfunc sq_inplace_concat; */
-    0,                                          /* intargfunc sq_inplace_repeat; */
-};
-
-static PyMappingMethods Pointer_as_mapping = {
-    0,
-    Pointer_subscript,
-};
-
 static int
 Pointer_bool(CDataObject *self)
 {
     return (*(void **)self->b_ptr != NULL);
 }
 
-static PyNumberMethods Pointer_as_number = {
-    0, /* nb_add */
-    0, /* nb_subtract */
-    0, /* nb_multiply */
-    0, /* nb_remainder */
-    0, /* nb_divmod */
-    0, /* nb_power */
-    0, /* nb_negative */
-    0, /* nb_positive */
-    0, /* nb_absolute */
-    (inquiry)Pointer_bool, /* nb_bool */
+static PyType_Slot pycpointer_slots[] = {
+    {Py_tp_doc, PyDoc_STR("XXX to be provided")},
+    {Py_tp_getset, },
+    {Py_tp_getset, Pointer_getsets},
+    {Py_tp_init, Pointer_init},
+    {Py_tp_new, Pointer_new},
+    {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {Py_nb_bool, Pointer_bool},
+    {Py_mp_subscript, Pointer_subscript},
+    {Py_sq_item, Pointer_item},
+    {Py_sq_ass_item, Pointer_ass_item},
+    {0, NULL},
 };
 
-static _HackyHeapType PyCPointer_Type = {
- .ht = {
-  .ht_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes._Pointer",
-    sizeof(CDataObject),                        /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    &Pointer_as_number,                         /* tp_as_number */
-    &Pointer_as_sequence,                       /* tp_as_sequence */
-    &Pointer_as_mapping,                        /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("XXX to be provided"),            /* tp_doc */
-    (traverseproc)PyCData_traverse,             /* tp_traverse */
-    (inquiry)PyCData_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    Pointer_getsets,                            /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)Pointer_init,                     /* tp_init */
-    0,                                          /* tp_alloc */
-    Pointer_new,                                /* tp_new */
-    0,                                          /* tp_free */
-  }
- }
+PyType_Spec pycpointer_spec = {
+    .name = "_ctypes._Pointer",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycpointer_slots,
 };
-
 
 /******************************************************************/
 /*
@@ -5780,8 +5722,9 @@ _ctypes_add_types(PyObject *mod)
 
     MOD_ADD_TYPE(st->Struct_Type, st->PyCStructType_Type, st->PyCData_Type);
     MOD_ADD_TYPE(st->Union_Type, st->UnionType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE(st->PyCPointer_Type, st->PyCPointerType_Type, st->PyCData_Type);
 
+    MOD_ADD_TYPE_M(st->PyCPointer_Type, &pycpointer_spec,
+                   st->PyCPointerType_Type, st->PyCData_Type);
     MOD_ADD_TYPE_M(st->PyCArray_Type, &pycarray_spec,
                    st->PyCArrayType_Type, st->PyCData_Type);
     MOD_ADD_TYPE_M(st->Simple_Type, &pycsimple_spec,
