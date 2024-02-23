@@ -11,7 +11,7 @@ ace_prefix = b"xn--"
 sace_prefix = "xn--"
 
 # This assumes query strings, so AllowUnassigned is true
-def nameprep(label):
+def nameprep(label):  # type: (str) -> str
     # Map
     newlabel = []
     for c in label:
@@ -63,18 +63,17 @@ def nameprep(label):
 
     return label
 
-def ToASCII(label):
+def ToASCII(label):  # type: (str) -> bytes
     try:
         # Step 1: try ASCII
-        label = label.encode("ascii")
+        label_ascii = label.encode("ascii")
     except UnicodeEncodeError:
         pass
     else:
         # Skip to step 3: UseSTD3ASCIIRules is false, so
         # Skip to step 8.
-        if 0 < len(label) < 64:
-            return label
-        label = label.decode("ascii", errors="backslashreplace")
+        if 0 < len(label_ascii) < 64:
+            return label_ascii
         if len(label) == 0:
             raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
         else:
@@ -86,14 +85,13 @@ def ToASCII(label):
     # Step 3: UseSTD3ASCIIRules is false
     # Step 4: try ASCII
     try:
-        label = label.encode("ascii")
+        label_ascii = label.encode("ascii")
     except UnicodeEncodeError:
         pass
     else:
         # Skip to step 8.
         if 0 < len(label) < 64:
-            return label
-        label = label.decode("ascii", errors="backslashreplace")
+            return label_ascii
         if len(label) == 0:
             raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
         else:
@@ -102,23 +100,19 @@ def ToASCII(label):
     # Step 5: Check ACE prefix
     if label.startswith(sace_prefix):
         raise UnicodeEncodeError(
-            "idna", label.decode("ascii", errors="backslashreplace"),
-            0, len(sace_prefix), "Label starts with ACE prefix")
+            "idna", label, 0, len(sace_prefix), "Label starts with ACE prefix")
 
     # Step 6: Encode with PUNYCODE
-    label = label.encode("punycode")
+    label_ascii = label.encode("punycode")
 
     # Step 7: Prepend ACE prefix
-    label = ace_prefix + label
+    label_ascii = ace_prefix + label_ascii
 
     # Step 8: Check size
-    if 0 < len(label) < 64:
-        return label
-    label = label[len(ace_prefix):].decode("punycode", errors="replace")
-    if len(label) == 0:
-        raise UnicodeEncodeError("idna", label, 0, 1, "label empty")
-    else:
-        raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
+    # do not check for empty as we prepend ace_prefix.
+    if len(label_ascii) < 64:
+        return label_ascii
+    raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
 
 def ToUnicode(label):
     if len(label) > 1024:
@@ -130,9 +124,9 @@ def ToUnicode(label):
         # per https://www.rfc-editor.org/rfc/rfc3454#section-3.1 while still
         # preventing us from wasting time decoding a big thing that'll just
         # hit the actual <= 63 length limit in Step 6.
-        if isinstance(label, bytes):
-            label = label.decode("utf-8", errors="backslashreplace")
-        raise UnicodeEncodeError("idna", label, 0, len(label), "label way too long")
+        if isinstance(label, str):
+            label = label.encode("utf-8", errors="backslashreplace")
+        raise UnicodeDecodeError("idna", label, 0, len(label), "label way too long")
     # Step 1: Check for ASCII
     if isinstance(label, bytes):
         pure_ascii = True
@@ -143,17 +137,17 @@ def ToUnicode(label):
         except UnicodeEncodeError:
             pure_ascii = False
     if not pure_ascii:
+        assert isinstance(label, str)
         # Step 2: Perform nameprep
         label = nameprep(label)
         # It doesn't say this, but apparently, it should be ASCII now
         try:
             label = label.encode("ascii")
-        except (UnicodeEncodeError, UnicodeDecodeError) as exc:
-            if isinstance(label, bytes):
-                label = label.decode("utf-8", errors="backslashreplace")
+        except UnicodeEncodeError as exc:
             raise UnicodeEncodeError("idna", label, exc.start, exc.end,
                                      "Invalid character in IDN label")
     # Step 3: Check for ACE prefix
+    assert isinstance(label, bytes)
     if not label.startswith(ace_prefix):
         return str(label, "ascii")
 
@@ -163,10 +157,9 @@ def ToUnicode(label):
     # Step 5: Decode using PUNYCODE
     try:
         result = label1.decode("punycode")
-    except (UnicodeEncodeError, UnicodeDecodeError) as exc:
+    except UnicodeDecodeError as exc:
         offset = len(ace_prefix)
-        raise UnicodeEncodeError("idna", label.decode("utf-8", errors="backslashreplace"),
-                                 offset+exc.start, offset+exc.end, exc.reason)
+        raise UnicodeDecodeError("idna", label, offset+exc.start, offset+exc.end, exc.reason)
 
     # Step 6: Apply ToASCII
     label2 = ToASCII(result)
@@ -174,7 +167,7 @@ def ToUnicode(label):
     # Step 7: Compare the result of step 6 with the one of step 3
     # label2 will already be in lower case.
     if str(label, "ascii").lower() != str(label2, "ascii"):
-        raise UnicodeEncodeError("idna", label, 0, len(label),
+        raise UnicodeDecodeError("idna", label, 0, len(label),
                                  f"IDNA does not round-trip, '{label!r}' != '{label2!r}'")
 
     # Step 8: return the result of step 5
