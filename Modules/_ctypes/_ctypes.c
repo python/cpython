@@ -1668,7 +1668,7 @@ static PyType_Spec pycarray_type_spec = {
 */
 /*
 
-PyCSimpleType_new ensures that the new Simple_Type subclass created has a valid
+PyCSimpleType_init ensures that the new Simple_Type subclass created has a valid
 _type_ attribute.
 
 */
@@ -2542,28 +2542,18 @@ PyCFuncPtrType_paramfunc(CDataObject *self)
     return parg;
 }
 
-static PyObject *
-PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static int
+PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *result;
-
-    /* create the new instance (which is a class,
-       since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL) {
-        return NULL;
-    }
-
-    PyObject *attrdict = PyType_GetDict(result);
+    PyObject *attrdict = PyType_GetDict((PyTypeObject *)self);
     if (!attrdict) {
-        return NULL;
+        return -1;
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    StgInfo *stginfo = PyStgInfo_Init(st, (PyTypeObject *)self);
     if (!stginfo) {
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
 
     stginfo->paramfunc = PyCFuncPtrType_paramfunc;
@@ -2576,17 +2566,15 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     */
     stginfo->format = _ctypes_alloc_format_string(NULL, "X{}");
     if (stginfo->format == NULL) {
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
     stginfo->flags |= TYPEFLAG_ISPOINTER;
 
     if (-1 == make_funcptrtype_dict(attrdict, stginfo)) {
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
 
-    return (PyObject *)result;
+    return 0;
 }
 
 static PyType_Slot pycfuncptr_type_slots[] = {
@@ -2594,7 +2582,7 @@ static PyType_Slot pycfuncptr_type_slots[] = {
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
-    {Py_tp_new, PyCFuncPtrType_new},
+    {Py_tp_init, PyCFuncPtrType_init},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
