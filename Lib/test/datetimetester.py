@@ -1723,11 +1723,24 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_subclass_replace(self):
         class DateSubclass(self.theclass):
-            pass
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+                return result
 
         dt = DateSubclass(2012, 1, 1)
-        self.assertIs(type(dt.replace(year=2013)), DateSubclass)
-        self.assertIs(type(copy.replace(dt, year=2013)), DateSubclass)
+
+        test_cases = [
+            ('self.replace', dt.replace(year=2013)),
+            ('copy.replace', copy.replace(dt, year=2013)),
+        ]
+
+        for name, res in test_cases:
+            with self.subTest(name):
+                self.assertIs(type(res), DateSubclass)
+                self.assertEqual(res.year, 2013)
+                self.assertEqual(res.month, 1)
+                self.assertEqual(res.extra, 7)
 
     def test_subclass_date(self):
 
@@ -3025,6 +3038,26 @@ class TestDateTime(TestDate):
                 self.assertIsInstance(dt, DateTimeSubclass)
                 self.assertEqual(dt.extra, 7)
 
+    def test_subclass_replace_fold(self):
+        class DateTimeSubclass(self.theclass):
+            pass
+
+        dt = DateTimeSubclass(2012, 1, 1)
+        dt2 = DateTimeSubclass(2012, 1, 1, fold=1)
+
+        test_cases = [
+            ('self.replace', dt.replace(year=2013), 0),
+            ('self.replace', dt2.replace(year=2013), 1),
+            ('copy.replace', copy.replace(dt, year=2013), 0),
+            ('copy.replace', copy.replace(dt2, year=2013), 1),
+        ]
+
+        for name, res, fold in test_cases:
+            with self.subTest(name, fold=fold):
+                self.assertIs(type(res), DateTimeSubclass)
+                self.assertEqual(res.year, 2013)
+                self.assertEqual(res.fold, fold)
+
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
         base_dates = [
@@ -3705,11 +3738,28 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     def test_subclass_replace(self):
         class TimeSubclass(self.theclass):
-            pass
+            def __new__(cls, *args, **kwargs):
+                result = self.theclass.__new__(cls, *args, **kwargs)
+                result.extra = 7
+                return result
 
         ctime = TimeSubclass(12, 30)
-        self.assertIs(type(ctime.replace(hour=10)), TimeSubclass)
-        self.assertIs(type(copy.replace(ctime, hour=10)), TimeSubclass)
+        ctime2 = TimeSubclass(12, 30, fold=1)
+
+        test_cases = [
+            ('self.replace', ctime.replace(hour=10), 0),
+            ('self.replace', ctime2.replace(hour=10), 1),
+            ('copy.replace', copy.replace(ctime, hour=10), 0),
+            ('copy.replace', copy.replace(ctime2, hour=10), 1),
+        ]
+
+        for name, res, fold in test_cases:
+            with self.subTest(name, fold=fold):
+                self.assertIs(type(res), TimeSubclass)
+                self.assertEqual(res.hour, 10)
+                self.assertEqual(res.minute, 30)
+                self.assertEqual(res.extra, 7)
+                self.assertEqual(res.fold, fold)
 
     def test_subclass_time(self):
 

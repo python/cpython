@@ -160,6 +160,21 @@ Other Language Changes
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
   :gh:`73965`.)
 
+* Add :exc:`PythonFinalizationError` exception. This exception derived from
+  :exc:`RuntimeError` is raised when an operation is blocked during
+  the :term:`Python finalization <interpreter shutdown>`.
+
+  The following functions now raise PythonFinalizationError, instead of
+  :exc:`RuntimeError`:
+
+  * :func:`_thread.start_new_thread`.
+  * :class:`subprocess.Popen`.
+  * :func:`os.fork`.
+  * :func:`os.forkpty`.
+
+  (Contributed by Victor Stinner in :gh:`114570`.)
+
+
 New Modules
 ===========
 
@@ -203,6 +218,12 @@ asyncio
   the Unix socket when the server is closed.
   (Contributed by Pierre Ossman in :gh:`111246`.)
 
+* :meth:`asyncio.DatagramTransport.sendto` will now send zero-length
+  datagrams if called with an empty bytes object. The transport flow
+  control also now accounts for the datagram header when calculating
+  the buffer size.
+  (Contributed by Jamie Phan in :gh:`115199`.)
+
 copy
 ----
 
@@ -230,6 +251,16 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
+
+dbm
+---
+
+* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
+  from the database.
+  (Contributed by Donghee Na in :gh:`107122`.)
+
+* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 doctest
 -------
@@ -585,6 +616,7 @@ The internal architecture is roughly as follows.
 (JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
 Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
+
 
 
 Deprecated
@@ -1516,6 +1548,21 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add PyTime C API:
+
+  * :c:type:`PyTime_t` type.
+  * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
+  * :c:func:`PyTime_AsSecondsDouble`
+    :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
+    :c:func:`PyTime_Time` functions.
+
+  (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
+
+* Add :c:func:`PyLong_AsNativeBytes`, :c:func:`PyLong_FromNativeBytes` and
+  :c:func:`PyLong_FromUnsignedNativeBytes` functions to simplify converting
+  between native integer types and Python :class:`int` objects.
+  (Contributed by Steve Dower in :gh:`111140`.)
+
 
 Porting to Python 3.13
 ----------------------
@@ -1574,7 +1621,6 @@ Porting to Python 3.13
   Including ``<stddef.h>`` explicitly was already needed by all other
   platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
   (Contributed by Victor Stinner in :gh:`108765`.)
-
 
 Deprecated
 ----------

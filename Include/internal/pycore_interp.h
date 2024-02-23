@@ -20,7 +20,6 @@ extern "C" {
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
 #include "pycore_floatobject.h"   // struct _Py_float_state
-#include "pycore_freelist.h"      // struct _Py_freelist_state
 #include "pycore_function.h"      // FUNC_MAX_WATCHERS
 #include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
@@ -31,6 +30,7 @@ extern "C" {
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
+#include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct types_state
@@ -112,7 +112,7 @@ struct _is {
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
-        long count;
+        Py_ssize_t count;
         /* Support for runtime thread stack size tuning.
            A value of 0 means using the platform's default stack size
            or the size specified by the THREAD_STACK_SIZE macro. */
@@ -198,6 +198,7 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
     struct _stoptheworld_state stoptheworld;
+    struct _qsbr_shared qsbr;
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
@@ -222,9 +223,6 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
-#if !defined(Py_GIL_DISABLED)
-    struct _Py_freelist_state freelist_state;
-#endif
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
     struct _Py_long_state long_state;
@@ -233,14 +231,20 @@ struct _is {
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
+    struct _Py_mem_interp_free_queue mem_free_queue;
 
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-    uint16_t optimizer_resume_threshold;
-    uint16_t optimizer_backedge_threshold;
+
+    /* These two values are shifted and offset to speed up check in JUMP_BACKWARD */
+    uint32_t optimizer_resume_threshold;
+    uint32_t optimizer_backedge_threshold;
+
+    uint16_t optimizer_side_threshold;
+
     uint32_t next_func_version;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;

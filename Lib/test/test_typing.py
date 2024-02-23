@@ -6156,8 +6156,6 @@ class OverloadTests(BaseTestCase):
             self.assertEqual(list(get_overloads(impl)), overloads)
 
 
-# Definitions needed for features introduced in Python 3.6
-
 from test.typinganndata import (
     ann_module, ann_module2, ann_module3, ann_module5, ann_module6,
 )

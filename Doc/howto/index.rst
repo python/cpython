@@ -13,7 +13,6 @@ Currently, the HOWTOs are:
 .. toctree::
    :maxdepth: 1
 
-   pyporting.rst
    cporting.rst
    curses.rst
    descriptor.rst
