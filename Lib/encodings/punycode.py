@@ -131,11 +131,10 @@ def decode_generalized_number(extended, extpos, bias, errors):
     j = 0
     while 1:
         try:
-            char = ord(extended[extpos])
+            char = extended[extpos]
         except IndexError:
             if errors == "strict":
-                b_extended = extended.encode("utf-8", errors="backslashreplace")
-                raise UnicodeDecodeError("punycode", b_extended, extpos, extpos+1,
+                raise UnicodeDecodeError("punycode", extended, extpos, extpos+1,
                                          "incomplete punycode string")
             return extpos + 1, None
         extpos += 1
@@ -144,8 +143,7 @@ def decode_generalized_number(extended, extpos, bias, errors):
         elif 0x30 <= char <= 0x39:
             digit = char - 22 # 0x30-26
         elif errors == "strict":
-            b_extended = extended.encode("utf-8", errors="backslashreplace")
-            raise UnicodeDecodeError("punycode", b_extended, extpos-1, extpos,
+            raise UnicodeDecodeError("punycode", extended, extpos-1, extpos,
                                      f"Invalid extended code point '{extended[extpos-1]}'")
         else:
             return extpos, None
@@ -163,8 +161,9 @@ def insertion_sort(base, extended, errors):
     pos = -1
     bias = 72
     extpos = 0
-    original_base, original_ext = base, extended
-    extended_offset = (len(original_base) + 1) if original_base else 0
+    extended_offset = (len(base) + 1) if base else 0
+    result = base.decode('ascii', errors)
+
     while extpos < len(extended):
         try:
             newpos, delta = decode_generalized_number(extended, extpos,
@@ -172,32 +171,28 @@ def insertion_sort(base, extended, errors):
         except UnicodeDecodeError as exc:
             raise UnicodeDecodeError(
                 "punycode",
-                original_base.encode("utf-8", errors="backslashreplace")
-                    + (b"-" if original_base else b"")
-                    + original_ext.encode("utf-8", errors="backslashreplace"),
+                base + (b"-" if base else b"") + extended,
                 extended_offset+exc.start, extended_offset+exc.end, exc.reason)
 
         if delta is None:
             # There was an error in decoding. We can't continue because
             # synchronization is lost.
-            return base
+            return result
         pos += delta+1
-        char += pos // (len(base) + 1)
+        char += pos // (len(result) + 1)
         if char > 0x10FFFF:
             if errors == "strict":
                 raise UnicodeDecodeError(
                     "punycode",
-                    original_base.encode("utf-8", errors="backslashreplace")
-                        + (b"-" if original_base else b"")
-                        + original_ext.encode("utf-8", errors="backslashreplace"),
+                    base + (b"-" if base else b"") + extended,
                     extended_offset+pos-1, extended_offset+pos,
                     f"Invalid character U+{char:x}")
             char = ord('?')
-        pos = pos % (len(base) + 1)
-        base = base[:pos] + chr(char) + base[pos:]
-        bias = adapt(delta, (extpos == 0), len(base))
+        pos = pos % (len(result) + 1)
+        result = result[:pos] + chr(char) + result[pos:]
+        bias = adapt(delta, (extpos == 0), len(result))
         extpos = newpos
-    return base
+    return result
 
 def punycode_decode(text, errors):
     if isinstance(text, str):
@@ -206,11 +201,11 @@ def punycode_decode(text, errors):
         text = bytes(text)
     pos = text.rfind(b"-")
     if pos == -1:
-        base = ""
-        extended = str(text, "ascii").upper()
+        base = b""
+        extended = text.upper()
     else:
-        base = str(text[:pos], "ascii", errors)
-        extended = str(text[pos+1:], "ascii").upper()
+        base = text[:pos]
+        extended = text[pos+1:].upper()
     return insertion_sort(base, extended, errors)
 
 ### Codec APIs
