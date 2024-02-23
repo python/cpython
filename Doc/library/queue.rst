@@ -188,9 +188,7 @@ fully processed by daemon consumer threads.
    that had been :meth:`put` into the queue).
 
    Raises a :exc:`ValueError` if called more times than there were items placed in
-   the queue.
-
-   Raises :exc:`ShutDown` if the queue has been shut down immediately.
+   the queue, or after an immediate shutdown.
 
 
 .. method:: Queue.join()
@@ -201,8 +199,6 @@ fully processed by daemon consumer threads.
    The count goes down whenever a consumer thread calls :meth:`task_done` to
    indicate that the item was retrieved and all work on it is complete.  When the
    count of unfinished tasks drops to zero, :meth:`join` unblocks.
-
-   Raises :exc:`ShutDown` if the queue has been shut down immediately.
 
 
 Example of how to wait for enqueued tasks to be completed::
