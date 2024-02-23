@@ -1109,6 +1109,8 @@ join_append_data(WriterObj *self, unsigned int field_kind, const void *field_dat
         if (c == dialect->delimiter ||
             c == dialect->escapechar ||
             c == dialect->quotechar  ||
+            c == '\n'  ||
+            c == '\r'  ||
             PyUnicode_FindChar(
                 dialect->lineterminator, c, 0,
                 PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
