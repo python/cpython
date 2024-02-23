@@ -1,1 +1,0 @@
-Improve error message on invalid calls to :meth:`BaseExceptionGroup.__new__`.

@@ -1,3 +1,0 @@
-The integer division ``//`` implementation has been optimized to better let the
-compiler understand its constraints. It can be 20% faster on the amd64 platform
-when dividing an int by a value smaller than ``2**30``.

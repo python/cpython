@@ -1,2 +1,0 @@
-Allow passing ``iterable`` as a keyword argument to :func:`enumerate` again.
-Patch by Jelle Zijlstra.

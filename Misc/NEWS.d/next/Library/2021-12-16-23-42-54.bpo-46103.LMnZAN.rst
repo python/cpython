@@ -1,2 +1,0 @@
-Now :func:`inspect.getmembers` only gets :attr:`__bases__` attribute from
-class type. Patch by Weipeng Hong.

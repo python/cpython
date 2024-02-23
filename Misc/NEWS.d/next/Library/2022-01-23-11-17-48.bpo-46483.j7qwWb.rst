@@ -1,2 +1,0 @@
-Change :meth:`pathlib.PurePath.__class_getitem__` to return
-:class:`types.GenericAlias`.

@@ -40,7 +40,7 @@ If you'd like to create the virtual environment in a different location,
 you can specify it using the ``VENVDIR`` variable.
 
 You can also skip creating the virtual environment altogether, in which case
-the Makefile will look for instances of ``sphinxbuild`` and ``blurb``
+the Makefile will look for instances of ``sphinx-build`` and ``blurb``
 installed on your process ``PATH`` (configurable with the ``SPHINXBUILD`` and
 ``BLURB`` variables).
 
@@ -93,9 +93,6 @@ Available make targets are:
   plain text documentation for the labels defined in
   ``tools/pyspecific.py`` -- pydoc needs these to show topic and keyword help.
 
-* "suspicious", which checks the parsed markup for text that looks like
-  malformed and thus unconverted reST.
-
 * "check", which checks for frequent markup errors.
 
 * "serve", which serves the build/html directory on port 8000.
@@ -130,7 +127,7 @@ Contributing
 ============
 
 Bugs in the content should be reported to the
-`Python bug tracker <https://bugs.python.org>`_.
+`Python bug tracker <https://github.com/python/cpython/issues>`_.
 
 Bugs in the toolset should be reported to the tools themselves.
 
