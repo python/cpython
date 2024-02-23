@@ -5590,19 +5590,8 @@ _ctypes_add_types(PyObject *mod)
     if (PyType_Ready(TYPE) < 0) { \
         return -1; \
     }
-
-#define MOD_ADD_TYPE(TYPE_EXPR, TP_TYPE, TP_BASE) \
-    do { \
-        PyTypeObject *type = (TYPE_EXPR); \
-        Py_SET_TYPE(type, TP_TYPE); \
-        type->tp_base = TP_BASE; \
-        if (PyModule_AddType(mod, type) < 0) { \
-            return -1; \
-        } \
-    } while (0)
-
-#define CREATE_TYPE(MOD, TP, SPEC, BASE) do {                       \
-    PyObject *type = PyType_FromMetaclass(NULL, MOD, SPEC,          \
+#define CREATE_TYPE(TP, SPEC, META, BASE) do {                      \
+    PyObject *type = PyType_FromMetaclass(META, mod, SPEC,          \
                                           (PyObject *)BASE);        \
     if (type == NULL) {                                             \
         return -1;                                                  \
@@ -5610,14 +5599,9 @@ _ctypes_add_types(PyObject *mod)
     TP = (PyTypeObject *)type;                                      \
 } while (0)
 
-#define MOD_ADD_TYPE_M(TP, SPEC, META, BASE) do {                   \
-    PyObject *type = PyType_FromMetaclass(META, mod, SPEC,          \
-                                          (PyObject *)BASE);        \
-    if (type == NULL) {                                             \
-        return -1;                                                  \
-    }                                                               \
-    TP = (PyTypeObject *)type;                                      \
-    if (PyModule_AddType(mod, (PyTypeObject *)type) < 0) {          \
+#define MOD_ADD_TYPE(TP, SPEC, META, BASE) do {                     \
+    CREATE_TYPE(TP, SPEC, META, BASE);                              \
+    if (PyModule_AddType(mod, (PyTypeObject *)(TP)) < 0) {          \
         return -1;                                                  \
     }                                                               \
 } while (0)
@@ -5628,70 +5612,69 @@ _ctypes_add_types(PyObject *mod)
        ob_type is the metatype (the 'type'), defaults to PyType_Type,
        tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
     */
-    CREATE_TYPE(mod, st->PyCArg_Type, &carg_spec, NULL);
-    CREATE_TYPE(mod, st->PyCThunk_Type, &cthunk_spec, NULL);
+    CREATE_TYPE(st->PyCArg_Type, &carg_spec, NULL, NULL);
+    CREATE_TYPE(st->PyCThunk_Type, &cthunk_spec, NULL, NULL);
     TYPE_READY(st->PyCData_Type);
 
     // Common Metaclass
-    CREATE_TYPE(mod, st->PyCType_Type, &pyctype_type_spec,
-                &PyType_Type);
+    CREATE_TYPE(st->PyCType_Type, &pyctype_type_spec,
+                NULL, &PyType_Type);
 
     /*************************************************
      *
      * Metaclasses
      */
-    CREATE_TYPE(mod, st->PyCStructType_Type, &pycstruct_type_spec,
-                st->PyCType_Type);
-    CREATE_TYPE(mod, st->UnionType_Type, &union_type_spec,
-                st->PyCType_Type);
-    CREATE_TYPE(mod, st->PyCPointerType_Type, &pycpointer_type_spec,
-                st->PyCType_Type);
-    CREATE_TYPE(mod, st->PyCArrayType_Type, &pycarray_type_spec,
-                st->PyCType_Type);
-    CREATE_TYPE(mod, st->PyCSimpleType_Type, &pycsimple_type_spec,
-                st->PyCType_Type);
-    CREATE_TYPE(mod, st->PyCFuncPtrType_Type, &pycfuncptr_type_spec,
-                st->PyCType_Type);
+    CREATE_TYPE(st->PyCStructType_Type, &pycstruct_type_spec,
+                NULL, st->PyCType_Type);
+    CREATE_TYPE(st->UnionType_Type, &union_type_spec,
+                NULL, st->PyCType_Type);
+    CREATE_TYPE(st->PyCPointerType_Type, &pycpointer_type_spec,
+                NULL, st->PyCType_Type);
+    CREATE_TYPE(st->PyCArrayType_Type, &pycarray_type_spec,
+                NULL, st->PyCType_Type);
+    CREATE_TYPE(st->PyCSimpleType_Type, &pycsimple_type_spec,
+                NULL, st->PyCType_Type);
+    CREATE_TYPE(st->PyCFuncPtrType_Type, &pycfuncptr_type_spec,
+                NULL, st->PyCType_Type);
 
     /*************************************************
      *
      * Classes using a custom metaclass
      */
 
-    MOD_ADD_TYPE_M(st->Struct_Type, &pycstruct_spec,
-                   st->PyCStructType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE_M(st->Union_Type, &pycunion_spec,
-                   st->UnionType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE_M(st->PyCPointer_Type, &pycpointer_spec,
-                   st->PyCPointerType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE_M(st->PyCArray_Type, &pycarray_spec,
-                   st->PyCArrayType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE_M(st->Simple_Type, &pycsimple_spec,
-                   st->PyCSimpleType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE_M(st->PyCFuncPtr_Type, &pycfuncptr_spec,
-                   st->PyCFuncPtrType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->Struct_Type, &pycstruct_spec,
+                 st->PyCStructType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->Union_Type, &pycunion_spec,
+                 st->UnionType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->PyCPointer_Type, &pycpointer_spec,
+                 st->PyCPointerType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->PyCArray_Type, &pycarray_spec,
+                 st->PyCArrayType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->Simple_Type, &pycsimple_spec,
+                 st->PyCSimpleType_Type, st->PyCData_Type);
+    MOD_ADD_TYPE(st->PyCFuncPtr_Type, &pycfuncptr_spec,
+                 st->PyCFuncPtrType_Type, st->PyCData_Type);
 
     /*************************************************
      *
      * Simple classes
      */
 
-    CREATE_TYPE(mod, st->PyCField_Type, &cfield_spec, NULL);
+    CREATE_TYPE(st->PyCField_Type, &cfield_spec, NULL, NULL);
 
     /*************************************************
      *
      * Other stuff
      */
 
-    CREATE_TYPE(mod, st->DictRemover_Type, &dictremover_spec, NULL);
-    CREATE_TYPE(mod, st->StructParam_Type, &structparam_spec, NULL);
+    CREATE_TYPE(st->DictRemover_Type, &dictremover_spec, NULL, NULL);
+    CREATE_TYPE(st->StructParam_Type, &structparam_spec, NULL, NULL);
 
 #ifdef MS_WIN32
-    CREATE_TYPE(mod, st->PyComError_Type, &comerror_spec, PyExc_Exception);
+    CREATE_TYPE(st->PyComError_Type, &comerror_spec, NULL, PyExc_Exception);
 #endif
 
 #undef TYPE_READY
-#undef MOD_ADD_TYPE_M
 #undef MOD_ADD_TYPE
 #undef CREATE_TYPE
     return 0;
