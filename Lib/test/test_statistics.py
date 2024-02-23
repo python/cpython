@@ -2353,6 +2353,30 @@ class TestGeometricMean(unittest.TestCase):
                 self.assertAlmostEqual(actual_mean, expected_mean, places=5)
 
 
+class TestKDE(unittest.TestCase):
+
+    def test_kde_area(self):
+        # The approximate integral of a PDF should be close to 1.0
+
+        sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+
+        def integrate(func, low, high, steps=10_000):
+            "Numeric approximation of a definite function integral."
+            width = (high - low) / steps
+            xarr = (low + width/2 + width * i for i in range(steps))
+            return sum(map(func, xarr)) * width
+
+        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
+                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
+                   'quartic', 'biweight', 'triweight', 'cosine']
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                f_hat = statistics.kde(sample, h=1.5, kernel=kernel)
+                area = integrate(f_hat, -20, 20)
+                self.assertAlmostEqual(area, 1.0, places=4)
+
+
 class TestQuantiles(unittest.TestCase):
 
     def test_specific_cases(self):
