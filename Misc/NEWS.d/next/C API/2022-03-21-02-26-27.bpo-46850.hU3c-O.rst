@@ -1,3 +1,0 @@
-Remove the private undocumented function ``_PyEval_CallTracing()`` from the
-C API. Call the public :func:`sys.call_tracing` function instead. Patch by
-Victor Stinner.

@@ -22,16 +22,16 @@ A small number of constants live in the built-in namespace.  They are:
    An object frequently used to represent the absence of a value, as when
    default arguments are not passed to a function. Assignments to ``None``
    are illegal and raise a :exc:`SyntaxError`.
-   ``None`` is the sole instance of the :data:`NoneType` type.
+   ``None`` is the sole instance of the :data:`~types.NoneType` type.
 
 
 .. data:: NotImplemented
 
    A special value which should be returned by the binary special methods
-   (e.g. :meth:`__eq__`, :meth:`__lt__`, :meth:`__add__`, :meth:`__rsub__`,
+   (e.g. :meth:`~object.__eq__`, :meth:`~object.__lt__`, :meth:`~object.__add__`, :meth:`~object.__rsub__`,
    etc.) to indicate that the operation is not implemented with respect to
    the other type; may be returned by the in-place binary special methods
-   (e.g. :meth:`__imul__`, :meth:`__iand__`, etc.) for the same purpose.
+   (e.g. :meth:`~object.__imul__`, :meth:`~object.__iand__`, etc.) for the same purpose.
    It should not be evaluated in a boolean context.
    ``NotImplemented`` is the sole instance of the :data:`types.NotImplementedType` type.
 
