@@ -2391,7 +2391,7 @@ class TestKDE(unittest.TestCase):
             kde(sample, h=0.0)                          # Negative bandwidth
         with self.assertRaises(TypeError):
             kde(sample, h='str')                        # Wrong bandwidth type
-        with self.assertRaises(StatisticsError):
+        with self.assertRaises(Statisticsrror):
             kde(sample, h=1.0, kernel='bogus')          # Invalid kernel
 
         # Test name and docstring of the generated function
