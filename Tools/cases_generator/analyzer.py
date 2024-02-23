@@ -313,8 +313,11 @@ def variable_used(node: parser.InstDef, name: str) -> bool:
 def tier_variable(node: parser.InstDef) -> int | None:
     """Determine whether a tier variable is used in a node."""
     for token in node.tokens:
-        if token.kind == "ANNOTATION" and re.match(r"tier\d", token.text):
-            return int(token.text[-1])
+        if token.kind == "ANNOTATION":
+            if token.text == "specializing":
+                return 1
+            if re.match(r"tier\d", token.text):
+                return int(token.text[-1])
     return None
 
 def is_infallible(op: parser.InstDef) -> bool:
