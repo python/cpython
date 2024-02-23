@@ -4855,26 +4855,6 @@ static PyMethodDef Array_methods[] = {
     { NULL, NULL }
 };
 
-static PySequenceMethods Array_as_sequence = {
-    Array_length,                               /* sq_length; */
-    0,                                          /* sq_concat; */
-    0,                                          /* sq_repeat; */
-    Array_item,                                 /* sq_item; */
-    0,                                          /* sq_slice; */
-    Array_ass_item,                             /* sq_ass_item; */
-    0,                                          /* sq_ass_slice; */
-    0,                                          /* sq_contains; */
-
-    0,                                          /* sq_inplace_concat; */
-    0,                                          /* sq_inplace_repeat; */
-};
-
-static PyMappingMethods Array_as_mapping = {
-    Array_length,
-    Array_subscript,
-    Array_ass_subscript,
-};
-
 PyDoc_STRVAR(array_doc,
 "Abstract base class for arrays.\n"
 "\n"
@@ -4885,50 +4865,26 @@ PyDoc_STRVAR(array_doc,
 "reads, the resulting object is not itself an Array."
 );
 
-static _HackyHeapType PyCArray_Type = {
- .ht = {
-  .ht_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.Array",
-    sizeof(CDataObject),                        /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    &Array_as_sequence,                         /* tp_as_sequence */
-    &Array_as_mapping,                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    array_doc,                                  /* tp_doc */
-    (traverseproc)PyCData_traverse,             /* tp_traverse */
-    (inquiry)PyCData_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    Array_methods,                              /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    (initproc)Array_init,                       /* tp_init */
-    0,                                          /* tp_alloc */
-    GenericPyCData_new,                         /* tp_new */
-    0,                                          /* tp_free */
-  }
- }
+static PyType_Slot pycarray_slots[] = {
+    {Py_tp_doc, (char*)array_doc},
+    {Py_tp_methods, Array_methods},
+    {Py_tp_init, Array_init},
+    {Py_tp_new, GenericPyCData_new},
+    {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {Py_sq_length, Array_length},
+    {Py_sq_item, Array_item},
+    {Py_sq_ass_item, Array_ass_item},
+    {Py_mp_length, Array_length},
+    {Py_mp_subscript, Array_subscript},
+    {Py_mp_ass_subscript, Array_ass_subscript},
+    {0, NULL},
+};
+
+PyType_Spec pycarray_spec = {
+    .name = "_ctypes.Array",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycarray_slots,
 };
 
 PyObject *
@@ -5825,8 +5781,9 @@ _ctypes_add_types(PyObject *mod)
     MOD_ADD_TYPE(st->Struct_Type, st->PyCStructType_Type, st->PyCData_Type);
     MOD_ADD_TYPE(st->Union_Type, st->UnionType_Type, st->PyCData_Type);
     MOD_ADD_TYPE(st->PyCPointer_Type, st->PyCPointerType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE(st->PyCArray_Type, st->PyCArrayType_Type, st->PyCData_Type);
 
+    MOD_ADD_TYPE_M(st->PyCArray_Type, &pycarray_spec,
+                   st->PyCArrayType_Type, st->PyCData_Type);
     MOD_ADD_TYPE_M(st->Simple_Type, &pycsimple_spec,
                    st->PyCSimpleType_Type, st->PyCData_Type);
     MOD_ADD_TYPE_M(st->PyCFuncPtr_Type, &pycfuncptr_spec,
