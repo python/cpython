@@ -195,7 +195,6 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object materialize dict (new key): %" PRIu64 "\n", stats->dict_materialized_new_key);
     fprintf(out, "Object materialize dict (too big): %" PRIu64 "\n", stats->dict_materialized_too_big);
     fprintf(out, "Object materialize dict (str subclass): %" PRIu64 "\n", stats->dict_materialized_str_subclass);
-    fprintf(out, "Object dematerialize dict: %" PRIu64 "\n", stats->dict_dematerialized);
     fprintf(out, "Object method cache hits: %" PRIu64 "\n", stats->type_cache_hits);
     fprintf(out, "Object method cache misses: %" PRIu64 "\n", stats->type_cache_misses);
     fprintf(out, "Object method cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
@@ -807,7 +806,7 @@ specialize_dict_access(
         return 0;
     }
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES && _PyObject_InlineValues(owner)->valid) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
         assert(PyUnicode_CheckExact(name));
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);

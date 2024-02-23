@@ -322,7 +322,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictOrValues_IsValues",
     "_PyObject_DictOrValuesPointer",
     "_PyObject_InlineValues",
-    "_PyObject_MakeInstanceAttributesFromDict",
     "Py_DECREF",
     "_Py_DECREF_SPECIALIZED",
     "DECREF_INPUTS_AND_REUSE_FLOAT",

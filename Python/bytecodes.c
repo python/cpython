@@ -1957,7 +1957,6 @@ dummy_func(
             unused/5;
 
         op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
-            assert((Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
@@ -2114,7 +2113,6 @@ dummy_func(
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version);
-            assert((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);

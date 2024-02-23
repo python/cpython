@@ -1693,7 +1693,6 @@
         case _CHECK_ATTR_WITH_HINT: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            assert((Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
