@@ -124,6 +124,7 @@ The following implementation-specific options are available:\n\
          This helps avoid denial of service attacks when parsing untrusted\n\
          data.  The default is sys.int_info.default_max_str_digits.\n\
          0 disables.\n\
+"
 #ifdef Py_STATS
 "\n\
 -X pystats: Enable pystats collection at startup."
