@@ -1150,24 +1150,15 @@ PyCPointerType_paramfunc(CDataObject *self)
     return parg;
 }
 
-static PyObject *
-PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static int
+PyCPointerType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *result;
     PyObject *proto;
     PyObject *typedict;
 
-
     typedict = PyTuple_GetItem(args, 2);
     if (!typedict) {
-        return NULL;
-    }
-
-    /* create the new instance (which is a class,
-       since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL) {
-        return NULL;
+        return -1;
     }
 
 /*
@@ -1175,10 +1166,9 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   stginfo->proto has info about the pointed to type!
 */
     ctypes_state *st = GLOBAL_STATE();
-    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    StgInfo *stginfo = PyStgInfo_Init(st, (PyTypeObject *)self);
     if (!stginfo) {
-        Py_DECREF((PyObject *)result);
-        return NULL;
+        return -1;
     }
     stginfo->size = sizeof(void *);
     stginfo->align = _ctypes_get_fielddesc("P")->pffi_type->alignment;
@@ -1188,21 +1178,18 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stginfo->flags |= TYPEFLAG_ISPOINTER;
 
     if (PyDict_GetItemRef(typedict, &_Py_ID(_type_), &proto) < 0) {
-        Py_DECREF((PyObject *)result);
-        return NULL;
+        return -1;
     }
     if (proto) {
         const char *current_format;
         if (-1 == PyCPointerType_SetProto(stginfo, proto)) {
             Py_DECREF(proto);
-            Py_DECREF((PyObject *)result);
-            return NULL;
+            return -1;
         }
         StgInfo *iteminfo;
         if (PyStgInfo_FromType(st, proto, &iteminfo) < 0) {
             Py_DECREF(proto);
-            Py_DECREF((PyObject *)result);
-            return NULL;
+            return -1;
         }
         /* PyCPointerType_SetProto has verified proto has a stginfo. */
         assert(iteminfo);
@@ -1221,12 +1208,11 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         Py_DECREF(proto);
         if (stginfo->format == NULL) {
-            Py_DECREF((PyObject *)result);
-            return NULL;
+            return -1;
         }
     }
 
-    return (PyObject *)result;
+    return 0;
 }
 
 
@@ -1327,7 +1313,7 @@ static PyType_Slot pycpointer_type_slots[] = {
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, PyCPointerType_methods},
-    {Py_tp_new, PyCPointerType_new},
+    {Py_tp_init, PyCPointerType_init},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
@@ -1347,7 +1333,7 @@ static PyType_Spec pycpointer_type_spec = {
   PyCArrayType_Type
 */
 /*
-  PyCArrayType_new ensures that the new Array subclass created has a _length_
+  PyCArrayType_init ensures that the new Array subclass created has a _length_
   attribute, and a _type_ attribute.
 */
 
@@ -1531,25 +1517,18 @@ PyCArrayType_paramfunc(CDataObject *self)
     return p;
 }
 
-static PyObject *
-PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static int
+PyCArrayType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *result;
     PyObject *length_attr, *type_attr;
     Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
-
-    /* create the new instance (which is a class,
-       since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL)
-        return NULL;
 
     /* Initialize these variables to NULL so that we can simplify error
        handling by using Py_XDECREF.  */
     type_attr = NULL;
 
-    if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_length_), &length_attr) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(_length_), &length_attr) < 0) {
         goto error;
     }
     if (!length_attr) {
@@ -1582,7 +1561,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_type_), &type_attr) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(_type_), &type_attr) < 0) {
         goto error;
     }
     if (!type_attr) {
@@ -1592,7 +1571,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    StgInfo *stginfo = PyStgInfo_Init(st, result);
+    StgInfo *stginfo = PyStgInfo_Init(st, (PyTypeObject*)self);
     if (!stginfo) {
         goto error;
     }
@@ -1650,26 +1629,25 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
        A permanent annoyance: char arrays are also strings!
     */
     if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-        if (-1 == add_getset(result, CharArray_getsets))
+        if (-1 == add_getset((PyTypeObject*)self, CharArray_getsets))
             goto error;
     }
     else if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-        if (-1 == add_getset(result, WCharArray_getsets))
+        if (-1 == add_getset((PyTypeObject*)self, WCharArray_getsets))
             goto error;
     }
 
-    return (PyObject *)result;
+    return 0;
 error:
     Py_XDECREF(type_attr);
-    Py_DECREF(result);
-    return NULL;
+    return -1;
 }
 
 static PyType_Slot pycarray_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_methods, CDataType_methods},
-    {Py_tp_new, PyCArrayType_new},
+    {Py_tp_init, PyCArrayType_init},
     {Py_tp_clear, CDataType_clear},
 
     // Sequence protocol.
