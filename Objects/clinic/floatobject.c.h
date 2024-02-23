@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
 "--\n"
@@ -83,7 +85,7 @@ PyDoc_STRVAR(float___round____doc__,
 "When an argument is passed, work like built-in round(x, ndigits).");
 
 #define FLOAT___ROUND___METHODDEF    \
-    {"__round__", (PyCFunction)(void(*)(void))float___round__, METH_FASTCALL, float___round____doc__},
+    {"__round__", _PyCFunction_CAST(float___round__), METH_FASTCALL, float___round____doc__},
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits);
@@ -167,12 +169,10 @@ PyDoc_STRVAR(float_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return integer ratio.\n"
+"Return a pair of integers, whose ratio is exactly equal to the original float.\n"
 "\n"
-"Return a pair of integers, whose ratio is exactly equal to the original float\n"
-"and with a positive denominator.\n"
-"\n"
-"Raise OverflowError on infinities and a ValueError on NaNs.\n"
+"The ratio is in lowest terms and has a positive denominator.  Raise\n"
+"OverflowError on infinities and a ValueError on NaNs.\n"
 "\n"
 ">>> (10.0).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -206,10 +206,10 @@ static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyFloat_Type;
     PyObject *x = NULL;
 
-    if ((type == &PyFloat_Type ||
-         type->tp_init == PyFloat_Type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("float", kwargs)) {
         goto exit;
     }
@@ -312,13 +312,10 @@ float___format__(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = float___format___impl(self, format_spec);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=604cb27bf751ea16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c79743c8551c30d9 input=a9049054013a1b77]*/

@@ -1,4 +1,0 @@
-Improve :func:`typing.no_type_check`.
-
-Now it does not modify external classes and functions.
-We also now correctly mark classmethods as not to be type checked.

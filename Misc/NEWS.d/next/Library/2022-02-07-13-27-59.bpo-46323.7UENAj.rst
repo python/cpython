@@ -1,3 +1,0 @@
-``ctypes.CFUNCTYPE()`` and ``ctypes.WINFUNCTYPE()`` now fail to create the type
-if its ``_argtypes_`` member contains too many arguments. Previously, the error
-was only raised when calling a function. Patch by Victor Stinner.
