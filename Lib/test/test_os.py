@@ -3121,10 +3121,9 @@ class Win32NtTests(unittest.TestCase):
         if support.verbose:
             print(" without access:", stat2)
 
-        # We cannot get st_dev/st_ino, so ensure those are 0 or else our test
-        # is not set up correctly
-        self.assertEqual(0, stat2.st_dev)
-        self.assertEqual(0, stat2.st_ino)
+        # We may not get st_dev/st_ino, so ensure those are 0 or match
+        self.assertIn(stat2.st_dev, (0, stat1.st_dev))
+        self.assertIn(stat2.st_ino, (0, stat1.st_ino))
 
         # st_mode and st_size should match (for a normal file, at least)
         self.assertEqual(stat1.st_mode, stat2.st_mode)
