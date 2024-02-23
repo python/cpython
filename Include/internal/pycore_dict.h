@@ -212,13 +212,6 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
     return (PyDictUnicodeEntry*)_DK_ENTRIES(dk);
 }
 
-static inline int
-_PyObject_InlineValuesAreValid(PyObject *obj)
-{
-    PyDictValues *values = _PyObject_InlineValues(obj);
-    return values->valid;
-}
-
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
 #define DICT_VERSION_INCREMENT (1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS))
