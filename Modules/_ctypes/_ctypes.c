@@ -4539,50 +4539,19 @@ static _HackyHeapType Struct_Type = {
  }
 };
 
-static _HackyHeapType Union_Type = {
- .ht = {
-  .ht_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.Union",
-    sizeof(CDataObject),                        /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    0,                                          /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    &PyCData_as_buffer,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("Union base class"),              /* tp_doc */
-    (traverseproc)PyCData_traverse,             /* tp_traverse */
-    (inquiry)PyCData_clear,                     /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    0,                                          /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    Struct_init,                                /* tp_init */
-    0,                                          /* tp_alloc */
-    GenericPyCData_new,                         /* tp_new */
-    0,                                          /* tp_free */
-  }
- }
+static PyType_Slot pycunion_slots[] = {
+    {Py_tp_doc, PyDoc_STR("Union base class")},
+    {Py_tp_init, Struct_init},
+    {Py_tp_new, GenericPyCData_new},
+    {Py_bf_getbuffer, PyCData_NewGetBuffer},
+    {0, NULL},
+};
+
+PyType_Spec pycunion_spec = {
+    .name = "_ctypes.Union",
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = pycunion_slots,
 };
 
 
@@ -5721,8 +5690,9 @@ _ctypes_add_types(PyObject *mod)
      */
 
     MOD_ADD_TYPE(st->Struct_Type, st->PyCStructType_Type, st->PyCData_Type);
-    MOD_ADD_TYPE(st->Union_Type, st->UnionType_Type, st->PyCData_Type);
 
+    MOD_ADD_TYPE_M(st->Union_Type, &pycunion_spec,
+                   st->UnionType_Type, st->PyCData_Type);
     MOD_ADD_TYPE_M(st->PyCPointer_Type, &pycpointer_spec,
                    st->PyCPointerType_Type, st->PyCData_Type);
     MOD_ADD_TYPE_M(st->PyCArray_Type, &pycarray_spec,
