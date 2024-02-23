@@ -887,6 +887,9 @@ def kde(data, h, kernel='normal'):
     if not n:
         raise StatisticsError('Empty data sequence')
 
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
     if h <= 0.0:
         raise StatisticsError(f'Bandwidth h must be positive, not {h=}')
 

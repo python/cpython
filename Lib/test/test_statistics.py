@@ -2383,9 +2383,8 @@ class TestKDE(unittest.TestCase):
 
         with self.assertRaises(StatisticsError):
             kde([], h=1.0)                              # Empty dataset
-        f_hat = kde(['abc', 'def'], 1.5)                # Non-numeric data
         with self.assertRaises(TypeError):
-            f_hat(0)
+            kde(['abc', 'def'], 1.5)                    # Non-numeric data
         with self.assertRaises(StatisticsError):
             kde(sample, h=0.0)                          # Zero bandwidth
         with self.assertRaises(StatisticsError):
@@ -2394,6 +2393,14 @@ class TestKDE(unittest.TestCase):
             kde(sample, h='str')                        # Wrong bandwidth type
         with self.assertRaises(ValueError):
             kde(sample, h=1.0, kernel='bogus')          # Invalid kernel
+
+        # Test name and docstring
+        h = 1.5
+        kernel = 'cosine'
+        f_hat = kde(sample, h, kernel)
+        self.assertEqual(f_hat.__name__, 'pdf')
+        self.assertIn(kernel, f_hat.__doc__)
+        self.assertIn(str(h), f_hat.__doc__)
 
 
 class TestQuantiles(unittest.TestCase):
