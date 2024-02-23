@@ -229,8 +229,8 @@ dummy_func(void) {
 
     op(_TO_BOOL_STR, (value -- res)) {
         sym_set_type(value, &PyUnicode_Type);
-        if (is_const(value)) {
-            PyObject *load = get_const(value) == &_Py_STR(empty) ? Py_False : Py_True;
+        if (sym_is_const(value)) {
+            PyObject *load = sym_get_const(value) == &_Py_STR(empty) ? Py_False : Py_True;
             REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
         }
