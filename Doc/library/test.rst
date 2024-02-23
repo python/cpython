@@ -1725,7 +1725,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
    then any of the attributes that would otherwise be expected on an object
    representing a warning will return ``None``.
 
-   The recorder object also has a :meth:`!reset` method, which clears the
+   The recorder object also has a :meth:`~WarningsRecorder.reset` method, which clears the
    warnings list.
 
    The context manager is designed to be used like this::
