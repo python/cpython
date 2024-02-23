@@ -4,6 +4,7 @@ import sys
 import textwrap
 import unittest
 import gc
+import os
 
 import _testinternalcapi
 
@@ -568,6 +569,8 @@ class TestUops(unittest.TestCase):
         count = ops.count("_GUARD_IS_TRUE_POP") + ops.count("_GUARD_IS_FALSE_POP")
         self.assertLessEqual(count, 2)
 
+
+@unittest.skipIf(os.getenv("PYTHONUOPSOPTIMIZE", default=0) == 0, "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
     def _run_with_optimizer(self, testfunc, arg):
