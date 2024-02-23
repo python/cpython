@@ -43,7 +43,7 @@ def generate_uop_ids(
         for name, uop in sorted(uops):
             if name in PRE_DEFINED:
                 continue
-            if uop.properties.tier_one_only:
+            if uop.properties.tier == 1:
                 continue
             if uop.implicitly_created and not distinct_namespace and not uop.replicated:
                 out.emit(f"#define {name} {name[1:]}\n")
