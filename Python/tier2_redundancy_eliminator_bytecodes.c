@@ -296,21 +296,25 @@ dummy_func(void) {
     }
 
     op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+        (void)descr;
         OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
-        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+        self = owner;
     }
 
     op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+        (void)descr;
         OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
-        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+        self = owner;
     }
 
     op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+        (void)descr;
         OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
-        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+        self = owner;
     }
 
     op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
+        (void)callable;
         OUT_OF_SPACE_IF_NULL(func = sym_new_known_notnull(ctx));
         OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
     }
