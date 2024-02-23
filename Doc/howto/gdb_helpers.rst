@@ -38,7 +38,7 @@ Prerequisites
 You need to have:
 
 - GDB 7 or later. (For earlier versions of GDB, see ``Misc/gdbinit`` in the
-  sources of Python 3.11 or earlier.)
+  CPython sources. Note that this file will be removed in Python 3.12.)
 - GDB-compatible debugging information for Python and any extension you are
   debugging.
 - The ``python-gdb.py`` extension.
@@ -288,28 +288,6 @@ Again, the implementation details can be revealed with a cast to
 
    and we're at the bottom of the Python stack.
 
-   Note that in Python 3.12 and newer, the same C stack frame can be used for
-   multiple Python stack frames. This means that ``py-up`` and ``py-down``
-   may move multiple Python frames at once. For example::
-
-      (gdb) py-up
-      #6 Frame 0x7ffff7fb62b0, for file /tmp/rec.py, line 5, in recursive_function (n=0)
-         time.sleep(5)
-      #6 Frame 0x7ffff7fb6240, for file /tmp/rec.py, line 7, in recursive_function (n=1)
-         recursive_function(n-1)
-      #6 Frame 0x7ffff7fb61d0, for file /tmp/rec.py, line 7, in recursive_function (n=2)
-         recursive_function(n-1)
-      #6 Frame 0x7ffff7fb6160, for file /tmp/rec.py, line 7, in recursive_function (n=3)
-         recursive_function(n-1)
-      #6 Frame 0x7ffff7fb60f0, for file /tmp/rec.py, line 7, in recursive_function (n=4)
-         recursive_function(n-1)
-      #6 Frame 0x7ffff7fb6080, for file /tmp/rec.py, line 7, in recursive_function (n=5)
-         recursive_function(n-1)
-      #6 Frame 0x7ffff7fb6020, for file /tmp/rec.py, line 9, in <module> ()
-         recursive_function(5)
-      (gdb) py-up
-      Unable to find an older python frame
-
 
 ``py-bt``
 ---------
@@ -353,9 +331,6 @@ Again, the implementation details can be revealed with a cast to
         (gdb) py-print scarlet_pimpernel
         'scarlet_pimpernel' not found
 
-   If the current C frame corresponds to multiple Python frames, ``py-print``
-   only considers the first one.
-
 ``py-locals``
 -------------
 
@@ -366,24 +341,6 @@ Again, the implementation details can be revealed with a cast to
         self = <SwappableArea(running=<gtk.Dialog at remote 0x98faaa4>,
         main_page=0) at remote 0x98fa6e4>
         d = <gtk.Dialog at remote 0x98faaa4>
-
-   If the current C frame corresponds to multiple Python frames, locals from
-   all of them will be shown::
-
-      (gdb) py-locals
-      Locals for recursive_function
-      n = 0
-      Locals for recursive_function
-      n = 1
-      Locals for recursive_function
-      n = 2
-      Locals for recursive_function
-      n = 3
-      Locals for recursive_function
-      n = 4
-      Locals for recursive_function
-      n = 5
-      Locals for <module>
 
 
 Use with GDB commands
