@@ -271,6 +271,20 @@ sym_is_null(_Py_UOpsSymType *sym)
     return (sym->flags & (IS_NULL | NOT_NULL)) == IS_NULL;
 }
 
+static inline bool
+sym_is_const(_Py_UOpsSymType *sym)
+{
+    return (sym->flags & TRUE_CONST) != 0;
+}
+
+static inline PyObject *
+sym_get_const(_Py_UOpsSymType *sym)
+{
+    assert(sym_is_const(sym));
+    assert(sym->const_val);
+    return sym->const_val;
+}
+
 static inline void
 sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp)
 {
@@ -301,6 +315,7 @@ sym_new_known_notnull(_Py_UOpsAbstractInterpContext *ctx)
     if (res == NULL) {
         return NULL;
     }
+    sym_set_flag(res, KNOWN);
     sym_set_flag(res, NOT_NULL);
     return res;
 }
@@ -334,18 +349,6 @@ sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val)
     sym_set_flag(temp, KNOWN);
     sym_set_flag(temp, NOT_NULL);
     return temp;
-}
-
-static inline bool
-is_const(_Py_UOpsSymType *sym)
-{
-    return sym->const_val != NULL;
-}
-
-static inline PyObject *
-get_const(_Py_UOpsSymType *sym)
-{
-    return sym->const_val;
 }
 
 static _Py_UOpsSymType*
@@ -408,18 +411,21 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
     return 0;
 }
 
-static void
-global_to_const(_PyUOpInstruction *inst, PyObject *obj)
+static PyObject *
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
-    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS);
+    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
     assert(inst->operand <= UINT16_MAX);
+    if ((int)inst->operand >= dict->ma_keys->dk_nentries) {
+        return NULL;
+    }
     PyObject *res = entries[inst->operand].me_value;
     if (res == NULL) {
-        return;
+        return NULL;
     }
     if (_Py_IsImmortal(res)) {
         inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_BORROW_WITH_NULL : _LOAD_CONST_INLINE_BORROW;
@@ -428,6 +434,7 @@ global_to_const(_PyUOpInstruction *inst, PyObject *obj)
         inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
     }
     inst->operand = (uint64_t)res;
+    return res;
 }
 
 static int
@@ -524,12 +531,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 break;
             case _LOAD_GLOBAL_BUILTINS:
                 if (globals_checked & builtins_checked & globals_watched & builtins_watched & 1) {
-                    global_to_const(inst, builtins);
+                    convert_global_to_const(inst, builtins);
                 }
                 break;
             case _LOAD_GLOBAL_MODULE:
                 if (globals_checked & globals_watched & 1) {
-                    global_to_const(inst, globals);
+                    convert_global_to_const(inst, globals);
                 }
                 break;
             case _PUSH_FRAME:
@@ -603,7 +610,8 @@ uop_redundancy_eliminator(
     PyCodeObject *co,
     _PyUOpInstruction *trace,
     int trace_len,
-    int curr_stacklen
+    int curr_stacklen,
+    _PyBloomFilter *dependencies
 )
 {
 
@@ -665,7 +673,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
      * could error. _CHECK_VALIDITY is needed if the previous
      * instruction could have escaped. */
     int last_set_ip = -1;
-    bool may_have_escaped = false;
+    bool may_have_escaped = true;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
@@ -691,6 +699,22 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 last_set_ip = pc;
                 break;
+            case _POP_TOP:
+            {
+                _PyUOpInstruction *last = &buffer[pc-1];
+                while (last->opcode == _NOP) {
+                    last--;
+                }
+                if (last->opcode == _LOAD_CONST_INLINE  ||
+                    last->opcode == _LOAD_CONST_INLINE_BORROW ||
+                    last->opcode == _LOAD_FAST ||
+                    last->opcode == _COPY
+                ) {
+                    last->opcode = _NOP;
+                    buffer[pc].opcode = NOP;
+                }
+                break;
+            }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
                 return;
@@ -702,9 +726,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = true;
                 }
                 if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-                    needs_ip = true;
-                }
-                if (opcode == _PUSH_FRAME) {
                     needs_ip = true;
                 }
                 if (needs_ip && last_set_ip >= 0) {
@@ -791,7 +812,7 @@ _Py_uop_analyze_and_optimize(
 
     err = uop_redundancy_eliminator(
         (PyCodeObject *)frame->f_executable, buffer,
-        buffer_size, curr_stacklen);
+        buffer_size, curr_stacklen, dependencies);
 
     if (err == 0) {
         goto not_ready;

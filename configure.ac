@@ -1415,11 +1415,13 @@ else # shared is disabled
       ;;
   esac
 fi
+AC_MSG_RESULT([$LDLIBRARY])
 
 if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+AC_MSG_CHECKING([HOSTRUNNER])
 AC_ARG_VAR([HOSTRUNNER], [Program to run CPython for the host platform])
 if test -z "$HOSTRUNNER"
 then
@@ -1465,15 +1467,12 @@ then
   )
 fi
 AC_SUBST([HOSTRUNNER])
-AC_MSG_CHECKING([HOSTRUNNER])
 AC_MSG_RESULT([$HOSTRUNNER])
 
 if test -n "$HOSTRUNNER"; then
   dnl Pass hostrunner variable as env var in order to expand shell expressions.
   PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
 fi
-
-AC_MSG_RESULT([$LDLIBRARY])
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 AS_CASE([$ac_sys_system/$ac_sys_emscripten_target],
@@ -2910,12 +2909,10 @@ AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is 
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
-AC_CHECK_TYPE([ssize_t],
-  AC_DEFINE([HAVE_SSIZE_T], [1],
-            [Define if your compiler provides ssize_t]), [], [])
-AC_CHECK_TYPE([__uint128_t],
-  AC_DEFINE([HAVE_GCC_UINT128_T], [1],
-            [Define if your compiler provides __uint128_t]), [], [])
+AC_CHECK_TYPES([ssize_t])
+AC_CHECK_TYPES([__uint128_t],
+               [AC_DEFINE([HAVE_GCC_UINT128_T], [1],
+                          [Define if your compiler provides __uint128_t])])
 
 # Sizes and alignments of various common basic types
 # ANSI C requires sizeof(char) == 1, so no need to check it
@@ -4524,12 +4521,13 @@ yes
 fi
 
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+    AC_MSG_CHECKING([ipv6 library])
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		AC_MSG_NOTICE([using lib$ipv6lib])
+		AC_MSG_RESULT([lib$ipv6lib])
 	else
     AS_VAR_IF([ipv6trylibc], [yes], [
-      AC_MSG_NOTICE([using libc])
+      AC_MSG_RESULT([libc])
     ], [
       AC_MSG_ERROR([m4_normalize([
         No $ipv6lib library found; cannot continue.
@@ -6153,11 +6151,7 @@ AS_VAR_IF([with_readline], [no], [
     ])
 
     # in readline as well as newer editline (April 2023)
-    AC_CHECK_TYPE([rl_compdisp_func_t],
-                  [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
-                             [Define if readline supports rl_compdisp_func_t])],
-                  [],
-                  [readline_includes])
+    AC_CHECK_TYPES([rl_compdisp_func_t], [], [], [readline_includes])
 
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
@@ -6555,12 +6549,9 @@ then
 	LIBS="$LIBS -framework CoreFoundation"
 fi
 
-AC_CHECK_TYPE(
-  [socklen_t], [],
-  [AC_DEFINE(
-    [socklen_t], [int],
-    [Define to `int' if <sys/socket.h> does not define.]
-  )], [
+AC_CHECK_TYPES([socklen_t], [],
+               [AC_DEFINE([socklen_t], [int],
+                          [Define to 'int' if <sys/socket.h> does not define.])], [
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
