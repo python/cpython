@@ -204,6 +204,10 @@ aliases = {
     'csibm869'           : 'cp869',
     'ibm869'             : 'cp869',
 
+    # cp874 codec
+    'windows_874'        : 'cp874',
+
+
     # cp932 codec
     '932'                : 'cp932',
     'ms932'              : 'cp932',
@@ -442,6 +446,7 @@ aliases = {
 
     # mac_cyrillic codec
     'maccyrillic'        : 'mac_cyrillic',
+    'x_mac_cyrillic'     : 'mac_cyrillic',
 
     # mac_greek codec
     'macgreek'           : 'mac_greek',
