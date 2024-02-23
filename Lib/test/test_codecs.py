@@ -1356,17 +1356,17 @@ class PunycodeTest(unittest.TestCase):
 
     def test_decode_invalid(self):
         testcases = [
-            (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"xn--W&", 5, 6, "")),
-            (b"&egbpdaj6bu4bxfgehfvwxn", "strict", UnicodeDecodeError("punycode", b"&EGBPDAJ6BU4BXFGEHFVWXN", 0, 1, "")),
-            (b"egbpdaj6bu&4bx&fgehfvwxn", "strict", UnicodeDecodeError("punycode", b"EGBPDAJ6BU&4BX&FGEHFVWXN", 10, 11, "")),
-            (b"egbpdaj6bu4bxfgehfvwxn&", "strict", UnicodeDecodeError("punycode", b"EGBPDAJ6BU4BXFGEHFVWXN&", 22, 23, "")),
-            (b"\xFFProprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"\xFFProprostnemluvesky", 0, 1, "")),
-            (b"Pro\xFFprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"Pro\xFFprostnemluvesky", 3, 4, "")),
-            (b"Proprost&nemluvesky-uyb24&dma41a", "strict", UnicodeDecodeError("punycode", b"Proprost&nemluvesky-UYB24&DMA41A", 25, 26, "")),
-            (b"Proprostnemluvesky&-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky&-&UYB24DMA41A", 20, 21, "")),
-            (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky-&UYB24DMA41A", 19, 20, "")),
-            (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky-UYB24D&MA41A", 25, 26, "")),
-            (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"Proprostnemluvesky-UYB24DMA41A&", 30, 31, "")),
+            (b"xn--w&", "strict", UnicodeDecodeError("punycode", b"", 5, 6, "")),
+            (b"&egbpdaj6bu4bxfgehfvwxn", "strict", UnicodeDecodeError("punycode", b"", 0, 1, "")),
+            (b"egbpdaj6bu&4bx&fgehfvwxn", "strict", UnicodeDecodeError("punycode", b"", 10, 11, "")),
+            (b"egbpdaj6bu4bxfgehfvwxn&", "strict", UnicodeDecodeError("punycode", b"", 22, 23, "")),
+            (b"\xFFProprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"", 0, 1, "")),
+            (b"Pro\xFFprostnemluvesky-uyb24dma41a", "strict", UnicodeDecodeError("ascii", b"", 3, 4, "")),
+            (b"Proprost&nemluvesky-uyb24&dma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
+            (b"Proprostnemluvesky&-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 20, 21, "")),
+            (b"Proprostnemluvesky-&uyb24dma41a", "strict", UnicodeDecodeError("punycode", b"", 19, 20, "")),
+            (b"Proprostnemluvesky-uyb24d&ma41a", "strict", UnicodeDecodeError("punycode", b"", 25, 26, "")),
+            (b"Proprostnemluvesky-uyb24dma41a&", "strict", UnicodeDecodeError("punycode", b"", 30, 31, "")),
             (b"xn--w&", "ignore", "xn-"),
         ]
         for puny, errors, expected in testcases:
@@ -1376,7 +1376,7 @@ class PunycodeTest(unittest.TestCase):
                         puny.decode("punycode", errors)
                     exc = cm.exception
                     self.assertEqual(exc.encoding, expected.encoding)
-                    self.assertEqual(exc.object, expected.object)
+                    self.assertEqual(exc.object, puny)
                     self.assertEqual(exc.start, expected.start)
                     self.assertEqual(exc.end, expected.end)
                 else:

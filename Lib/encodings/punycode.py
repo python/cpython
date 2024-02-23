@@ -157,42 +157,33 @@ def decode_generalized_number(extended, extpos, bias, errors):
 
 def insertion_sort(base, extended, errors):
     """3.2 Insertion sort coding"""
+    # This function raises UnicodeDecodeError with position in the extended.
+    # Caller should add the offset.
     char = 0x80
     pos = -1
     bias = 72
     extpos = 0
-    extended_offset = (len(base) + 1) if base else 0
-    result = base.decode('ascii', errors)
 
     while extpos < len(extended):
-        try:
-            newpos, delta = decode_generalized_number(extended, extpos,
-                                                      bias, errors)
-        except UnicodeDecodeError as exc:
-            raise UnicodeDecodeError(
-                "punycode",
-                base + (b"-" if base else b"") + extended,
-                extended_offset+exc.start, extended_offset+exc.end, exc.reason)
-
+        newpos, delta = decode_generalized_number(extended, extpos,
+                                                  bias, errors)
         if delta is None:
             # There was an error in decoding. We can't continue because
             # synchronization is lost.
-            return result
+            return base
         pos += delta+1
-        char += pos // (len(result) + 1)
+        char += pos // (len(base) + 1)
         if char > 0x10FFFF:
             if errors == "strict":
                 raise UnicodeDecodeError(
-                    "punycode",
-                    base + (b"-" if base else b"") + extended,
-                    extended_offset+pos-1, extended_offset+pos,
+                    "punycode", extended, pos-1, pos,
                     f"Invalid character U+{char:x}")
             char = ord('?')
-        pos = pos % (len(result) + 1)
-        result = result[:pos] + chr(char) + result[pos:]
-        bias = adapt(delta, (extpos == 0), len(result))
+        pos = pos % (len(base) + 1)
+        base = base[:pos] + chr(char) + base[pos:]
+        bias = adapt(delta, (extpos == 0), len(base))
         extpos = newpos
-    return result
+    return base
 
 def punycode_decode(text, errors):
     if isinstance(text, str):
@@ -201,12 +192,22 @@ def punycode_decode(text, errors):
         text = bytes(text)
     pos = text.rfind(b"-")
     if pos == -1:
-        base = b""
+        base = ""
         extended = text.upper()
     else:
-        base = text[:pos]
+        try:
+            base = str(text[:pos], "ascii", errors)
+        except UnicodeDecodeError as exc:
+            raise UnicodeDecodeError("ascii", text, exc.start, exc.end,
+                                     exc.reason) from None
         extended = text[pos+1:].upper()
-    return insertion_sort(base, extended, errors)
+    try:
+        return insertion_sort(base, extended, errors)
+    except UnicodeDecodeError as exc:
+        offset = pos + 1
+        raise UnicodeDecodeError("punycode", text,
+                                 offset+exc.start, offset+exc.end,
+                                 exc.reason) from None
 
 ### Codec APIs
 
