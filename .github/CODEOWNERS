@@ -37,6 +37,8 @@ Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
 Python/bytecodes.c            @markshannon @gvanrossum
 Python/optimizer*.c           @markshannon @gvanrossum
+Python/optimizer_analysis.c   @Fidget-Spinner
+Python/tier2_redundancy_eliminator_bytecodes.c  @Fidget-Spinner
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum

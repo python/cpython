@@ -1799,7 +1799,7 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
     def setUp(self):
         import _testinternalcapi
         self.old_opt = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.get_counter_optimizer()
+        opt = _testinternalcapi.new_counter_optimizer()
         _testinternalcapi.set_optimizer(opt)
         super(TestOptimizer, self).setUp()
 

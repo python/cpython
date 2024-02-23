@@ -39,13 +39,14 @@ static const char copyright[] =
     " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB ";
 
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_Next()
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
+#include "pycore_dict.h"             // _PyDict_Next()
+#include "pycore_long.h"             // _PyLong_GetZero()
+#include "pycore_moduleobject.h"     // _PyModule_GetState()
 
-#include "sre.h"                  // SRE_CODE
+#include "sre.h"                     // SRE_CODE
 
-#include <ctype.h>                // tolower(), toupper(), isalnum()
+#include <ctype.h>                   // tolower(), toupper(), isalnum()
 
 #define SRE_CODE_BITS (8 * sizeof(SRE_CODE))
 
@@ -2349,26 +2350,28 @@ _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
     if (!result || !self->pattern->groupindex)
         return result;
 
+    Py_BEGIN_CRITICAL_SECTION(self->pattern->groupindex);
     while (_PyDict_Next(self->pattern->groupindex, &pos, &key, &value, &hash)) {
         int status;
         Py_INCREF(key);
         value = match_getslice(self, key, default_value);
         if (!value) {
             Py_DECREF(key);
-            goto failed;
+            Py_CLEAR(result);
+            goto exit;
         }
         status = _PyDict_SetItem_KnownHash(result, key, value, hash);
         Py_DECREF(value);
         Py_DECREF(key);
-        if (status < 0)
-            goto failed;
+        if (status < 0) {
+            Py_CLEAR(result);
+            goto exit;
+        }
     }
+exit:
+    Py_END_CRITICAL_SECTION();
 
     return result;
-
-failed:
-    Py_DECREF(result);
-    return NULL;
 }
 
 /*[clinic input]

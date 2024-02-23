@@ -125,6 +125,7 @@
     <ClCompile Include="..\Modules\_testcapi\codec.c" />
     <ClCompile Include="..\Modules\_testcapi\sys.c" />
     <ClCompile Include="..\Modules\_testcapi\hash.c" />
+    <ClCompile Include="..\Modules\_testcapi\time.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />
   </ItemGroup>
