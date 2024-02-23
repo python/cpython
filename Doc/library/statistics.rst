@@ -82,7 +82,6 @@ or sample.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
 :func:`multimode`        List of modes (most common values) of discrete or nominal data.
-:func:`quantiles`        Divide data into intervals with equal probability.
 =======================  ===============================================================
 
 Measures of spread
@@ -91,12 +90,14 @@ Measures of spread
 These functions calculate a measure of how much the population or sample
 tends to deviate from the typical or average values.
 
-=======================  =============================================
+=======================  =====================================================
+:func:`kde`              Estimate the probability density distributionof data.
 :func:`pstdev`           Population standard deviation of data.
 :func:`pvariance`        Population variance of data.
+:func:`quantiles`        Divide data into intervals with equal probability.
 :func:`stdev`            Sample standard deviation of data.
 :func:`variance`         Sample variance of data.
-=======================  =============================================
+=======================  =====================================================
 
 Statistics for relations between two inputs
 -------------------------------------------
@@ -499,6 +500,52 @@ However, for reading convenience, most of the examples show sorted sequences.
       population mean as the second argument.  Provided the data points are a
       random sample of the population, the result will be an unbiased estimate
       of the population variance.
+
+
+.. function:: kde(data, h, kernel='normal')
+
+   `Kernel Density Estimation (KDE)
+   https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf`_
+   creates an estimated continuous probability density function from *data*
+   containing a fixed number of discrete samples.
+
+   The basic idea is to smooth the data using `a kernel function such as a
+   normal distribution, triangular distribution, or uniform distribution
+   <https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
+
+   The degree of smoothing is controlled by the scaling parameter *h*
+   which is called the bandwidth.  Smaller values emphasize local
+   features while larger values give smoother results.
+
+   The *kernel* determines the relative weights of the sample data
+   points.  Generally, the choice of kernel shape does not matter
+   as much as the more influential bandwidth smoothing parameter.
+
+   Kernels that give some weight to every sample point include:
+   normal or gauss, logistic, and sigmoid.
+
+   Kernels that only give weight to sample points within the bandwidth
+   include rectangular or uniform, triangular, parabolic or epanechnikov,
+   quartic or biweight, triweight, and cosine.
+
+   `Wikipedia has an example
+   <https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
+   where we can use :func:`kde` to generate and plot a probability
+   density function estimated from a small sample:
+
+   .. doctest::
+
+      >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+      >>> f_hat = kde(sample, h=1.5)
+      >>> xarr = [i/100 for i in range(-750, 1100)]
+      >>> yarr = [f_hat(x) for x in xarr]
+
+   The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
+
+   .. image:: kde_example.png
+      :alt: Scatter plot of the estimated probability density function.
+
+   .. versionadded:: 3.13
 
 
 .. function:: stdev(data, xbar=None)
