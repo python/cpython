@@ -1739,16 +1739,18 @@ _Py_Instrument(PyCodeObject *code, PyThreadState *tstate)
 
 
 static int
-instrument_all_executing_code_objects(PyInterpreterState *interp) {
+instrument_all_executing_code_objects(PyThreadState *this_tstate) {
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(this_tstate->interp);
     HEAD_UNLOCK(runtime);
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
             if (frame->owner != FRAME_OWNED_BY_CSTACK) {
-                if (_Py_Instrument(_PyFrame_GetCode(frame), ts)) {
+                // _Py_Instrument() takes the current tstate, regardless of
+                // which thread we fetched this code object from.
+                if (_Py_Instrument(_PyFrame_GetCode(frame), this_tstate)) {
                     return -1;
                 }
             }
@@ -1823,7 +1825,7 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
     }
     set_global_version(tstate, new_version);
     _Py_Executors_InvalidateAll(interp);
-    return instrument_all_executing_code_objects(interp);
+    return instrument_all_executing_code_objects(tstate);
 }
 
 int
@@ -2161,7 +2163,7 @@ monitoring_restart_events_impl(PyObject *module)
     }
     interp->last_restart_version = restart_version;
     set_global_version(tstate, new_version);
-    if (instrument_all_executing_code_objects(interp)) {
+    if (instrument_all_executing_code_objects(tstate)) {
         return NULL;
     }
     Py_RETURN_NONE;
