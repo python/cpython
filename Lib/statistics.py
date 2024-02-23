@@ -938,7 +938,7 @@ def kde(data, h, kernel='normal'):
             support = 1.0
 
         case _:
-            raise ValueError(f'Unknown kernel name: {kernel!r}')
+            raise StatisticsError(f'Unknown kernel name: {kernel!r}')
 
     if support is None:
 
