@@ -260,12 +260,6 @@ sym_is_known(_Py_UOpsSymType *sym)
 }
 
 static inline bool
-sym_is_not_null(_Py_UOpsSymType *sym)
-{
-    return (sym->flags & (IS_NULL | NOT_NULL)) == NOT_NULL;
-}
-
-static inline bool
 sym_is_null(_Py_UOpsSymType *sym)
 {
     return (sym->flags & (IS_NULL | NOT_NULL)) == IS_NULL;

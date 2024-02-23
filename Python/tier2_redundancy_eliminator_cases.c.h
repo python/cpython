@@ -1305,6 +1305,7 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
+            (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
             self = owner;
             stack_pointer[-1] = attr;
@@ -1319,6 +1320,7 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
+            (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
             self = owner;
             stack_pointer[-1] = attr;
@@ -1353,6 +1355,7 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
+            (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
             self = owner;
             stack_pointer[-1] = attr;
@@ -1380,6 +1383,7 @@
             _Py_UOpsSymType *func;
             _Py_UOpsSymType *self;
             callable = stack_pointer[-2 - oparg];
+            (void)callable;
             OUT_OF_SPACE_IF_NULL(func = sym_new_known_notnull(ctx));
             OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
             stack_pointer[-2 - oparg] = func;
@@ -1424,7 +1428,7 @@
             PyCodeObject *co = (PyCodeObject *)func->func_code;
             assert(self_or_null != NULL);
             assert(args != NULL);
-            if (sym_is_not_null(self_or_null)) {
+            if (!sym_is_null(self_or_null)) {
                 // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
                 args--;
                 argcount++;
