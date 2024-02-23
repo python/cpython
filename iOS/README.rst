@@ -21,7 +21,14 @@ Compilers for building on iOS
 Building for iOS requires the use of Apple's Xcode tooling. It is strongly
 recommended that you use the most recent stable release of Xcode. This will
 require the use of the most (or second-most) recently released macOS version,
-as Apple does not maintain Xcode for older macOS versions.
+as Apple does not maintain Xcode for older macOS versions. The Xcode Command
+Line Tools are not sufficient for iOS development; you need a *full* Xcode
+install.
+
+If you want to run your code on the iOS simulator, you'll also need to install
+an iOS Simulator Platform. You should be prompted to select an iOS Simulator
+Platform when you first run Xcode. Alternatively, you can add an iOS Simulator
+Platform by selecting an open the Platforms tab of the Xcode Settings panel.
 
 iOS specific arguments to configure
 ===================================
