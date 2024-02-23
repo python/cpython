@@ -1601,8 +1601,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(a, b'a')
         a = bytearray(b'abc')
         self.assertRaisesRegex(TypeError,
-                              "Expected iterable of integers; got: 'str'",
-                              a.extend, 'def')
+                               "Expected iterable of integers; got: 'str'",
+                               a.extend, 'def')
 
     def test_remove(self):
         b = bytearray(b'hello')
