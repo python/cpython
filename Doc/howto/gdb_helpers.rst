@@ -6,21 +6,30 @@ Debugging C API extensions and CPython Internals with GDB
 
 .. highlight:: none
 
-If you experience low-level problems such as crashes or deadlocks,
-especially when debugging extensions or tinkering with parts of CPython
-which are written in C, it can be convenient to use a low-level
-debugger such as GDB in order to diagnose and fix the issue.
-By default, however, GDB (or any of its front-ends) doesn't know about
-high-level information specific to the CPython interpreter, such as which
-Python function is currently executing, or what type or value has a given
-Python object represented by a standard ``PyObject *`` pointer.
-This guide introduces an extenstion that provides this information to GDB.
+This document explains how the Python GDB extension, ``python-gdb.py``, can
+be used with the GDB debugger to debug CPython extensions and the
+CPython interpreter itself.
 
-The guide assumes you are familiar with GDB, and focuses on Python-specific
-details.
-It is a consolidation of guidance from the CPython
-`devguide <https://devguide.python.org>`_ and the
-`Python wiki <https://wiki.python.org/moin/DebuggingWithGdb>`_
+When debugging low-level problems such as crashes or deadlocks, a low-level
+debugger, such as GDB, is useful to diagnose and correct the issue.
+By default, GDB (or any of its front-ends) doesn't support high-level
+information specific to the CPython interpreter.
+
+The ``python-gdb.py`` extension adds CPython interpreter information to GDB.
+The extension helps introspect the stack of currently executing Python functions.
+Given a Python object represented by a :c:expr:`PyObject *` pointer,
+the extension surfaces the type and value of the object.
+
+Developers who are working on CPython extensions or tinkering with parts
+of CPython that are written in C can use this document to learn how to use the
+``python-gdb.py`` extension with GDB.
+
+.. note::
+
+   This document assumes that you are familiar with the basics of GDB and the
+   CPython C API. It consolidates guidance from the
+   `devguide <https://devguide.python.org>`_  and the
+   `Python wiki <https://wiki.python.org/moin/DebuggingWithGdb>`_.
 
 
 Prerequisites
