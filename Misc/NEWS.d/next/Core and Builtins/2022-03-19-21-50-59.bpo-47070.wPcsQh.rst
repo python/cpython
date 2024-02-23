@@ -1,3 +1,0 @@
-Improve performance of ``array_inplace_repeat`` by reducing the number of invocations of ``memcpy``.
-Refactor the ``repeat`` and inplace ``repeat`` methods of ``array``, ``bytes``, ``bytearray``
-and ``unicodeobject`` to use the common ``_PyBytes_Repeat``.

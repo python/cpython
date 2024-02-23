@@ -1,1 +1,0 @@
-Update ``zlib`` to v1.2.12 to resolve CVE-2018-25032.

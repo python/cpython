@@ -1,5 +1,6 @@
 """Unit tests for collections.py."""
 
+import array
 import collections
 import copy
 import doctest
@@ -25,7 +26,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import ByteString
+from collections.abc import ByteString, Buffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -70,6 +71,14 @@ class TestUserObjects(unittest.TestCase):
         obj = UserDict()
         obj[123] = "abc"
         self._copy_test(obj)
+
+    def test_dict_missing(self):
+        class A(UserDict):
+            def __missing__(self, key):
+                return 456
+        self.assertEqual(A()[123], 456)
+        # get() ignores __missing__ on dict
+        self.assertIs(A().get(123), None)
 
 
 ################################################################################
@@ -480,12 +489,8 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p._replace(x=1), (1, 22))      # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22)) # test _asdict method
 
-        try:
+        with self.assertRaises(TypeError):
             p._replace(x=1, error=2)
-        except ValueError:
-            pass
-        else:
-            self._fail('Did not detect an incorrect fieldname')
 
         # verify that field string can have commas
         Point = namedtuple('Point', 'x, y')
@@ -537,7 +542,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Dot(1)._replace(d=999), (999,))
         self.assertEqual(Dot(1)._fields, ('d',))
 
-        n = 5000
+        n = support.EXCEEDS_RECURSION_LIMIT
         names = list(set(''.join([choice(string.ascii_letters)
                                   for j in range(10)]) for i in range(n)))
         n = len(names)
@@ -698,6 +703,18 @@ class TestNamedTuple(unittest.TestCase):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__match_args__, ('x', 'y'))
 
+    def test_non_generic_subscript(self):
+        # For backward compatibility, subscription works
+        # on arbitrary named tuple types.
+        Group = collections.namedtuple('Group', 'key group')
+        A = Group[int, list[int]]
+        self.assertEqual(A.__origin__, Group)
+        self.assertEqual(A.__parameters__, ())
+        self.assertEqual(A.__args__, (int, list[int]))
+        a = A(1, [2])
+        self.assertIs(type(a), Group)
+        self.assertEqual(a, (1, [2]))
+
 
 ################################################################################
 ### Abstract Base Classes
@@ -790,6 +807,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
             def __await__(self):
                 yield
 
+        self.validate_abstract_methods(Awaitable, '__await__')
+
         non_samples = [None, int(), gen(), object()]
         for x in non_samples:
             self.assertNotIsInstance(x, Awaitable)
@@ -839,6 +858,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
                 super().throw(typ, val, tb)
             def __await__(self):
                 yield
+
+        self.validate_abstract_methods(Coroutine, '__await__', 'send', 'throw')
 
         non_samples = [None, int(), gen(), object(), Bar()]
         for x in non_samples:
@@ -1582,6 +1603,7 @@ class TestCollectionABCs(ABCTestCase):
         containers = [
             seq,
             ItemsView({1: nan, 2: obj}),
+            KeysView({1: nan, 2: obj}),
             ValuesView({1: nan, 2: obj})
         ]
         for container in containers:
@@ -1601,7 +1623,7 @@ class TestCollectionABCs(ABCTestCase):
         class SetUsingInstanceFromIterable(MutableSet):
             def __init__(self, values, created_by):
                 if not created_by:
-                    raise ValueError(f'created_by must be specified')
+                    raise ValueError('created_by must be specified')
                 self.created_by = created_by
                 self._values = set(values)
 
@@ -1845,6 +1867,8 @@ class TestCollectionABCs(ABCTestCase):
         mymap['red'] = 5
         self.assertIsInstance(mymap.keys(), Set)
         self.assertIsInstance(mymap.keys(), KeysView)
+        self.assertIsInstance(mymap.values(), Collection)
+        self.assertIsInstance(mymap.values(), ValuesView)
         self.assertIsInstance(mymap.items(), Set)
         self.assertIsInstance(mymap.items(), ItemsView)
 
@@ -1913,13 +1937,34 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_ByteString(self):
         for sample in [bytes, bytearray]:
-            self.assertIsInstance(sample(), ByteString)
+            with self.assertWarns(DeprecationWarning):
+                self.assertIsInstance(sample(), ByteString)
             self.assertTrue(issubclass(sample, ByteString))
         for sample in [str, list, tuple]:
-            self.assertNotIsInstance(sample(), ByteString)
+            with self.assertWarns(DeprecationWarning):
+                self.assertNotIsInstance(sample(), ByteString)
             self.assertFalse(issubclass(sample, ByteString))
-        self.assertNotIsInstance(memoryview(b""), ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertNotIsInstance(memoryview(b""), ByteString)
         self.assertFalse(issubclass(memoryview, ByteString))
+        with self.assertWarns(DeprecationWarning):
+            self.validate_abstract_methods(ByteString, '__getitem__', '__len__')
+
+        with self.assertWarns(DeprecationWarning):
+            class X(ByteString): pass
+
+        with self.assertWarns(DeprecationWarning):
+            # No metaclass conflict
+            class Z(ByteString, Awaitable): pass
+
+    def test_Buffer(self):
+        for sample in [bytes, bytearray, memoryview]:
+            self.assertIsInstance(sample(b"x"), Buffer)
+            self.assertTrue(issubclass(sample, Buffer))
+        for sample in [str, list, tuple]:
+            self.assertNotIsInstance(sample(), Buffer)
+            self.assertFalse(issubclass(sample, Buffer))
+        self.validate_abstract_methods(Buffer, '__buffer__')
 
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:
@@ -1928,6 +1973,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [list, bytearray, deque]:
             self.assertIsInstance(sample(), MutableSequence)
             self.assertTrue(issubclass(sample, MutableSequence))
+        self.assertTrue(issubclass(array.array, MutableSequence))
         self.assertFalse(issubclass(str, MutableSequence))
         self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
             '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')

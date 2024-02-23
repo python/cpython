@@ -2,7 +2,7 @@
 /* Frozen modules bootstrap
  *
  * Limited and restricted Python interpreter to run
- * "Tools/scripts/deepfreeze.py" on systems with no or older Python
+ * "Tools/build/deepfreeze.py" on systems with no or older Python
  * interpreter.
  */
 
@@ -12,6 +12,7 @@
 /* Includes for frozen modules: */
 #include "Python/frozen_modules/importlib._bootstrap.h"
 #include "Python/frozen_modules/importlib._bootstrap_external.h"
+#include "Python/frozen_modules/zipimport.h"
 /* End includes */
 
 /* Empty initializer for deepfrozen modules */
@@ -30,6 +31,7 @@ _Py_Deepfreeze_Fini(void)
 static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap)},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external)},
+    {"zipimport", _Py_M__zipimport, (int)sizeof(_Py_M__zipimport)},
     {0, 0, 0} /* bootstrap sentinel */
 };
 static const struct _frozen stdlib_modules[] = {
@@ -71,6 +73,7 @@ main(int argc, char **argv)
     config.parse_argv = 1;
     // add current script dir to sys.path
     config.isolated = 0;
+    config.safe_path = 0;
 
 #ifdef MS_WINDOWS
     status = PyConfig_SetArgv(&config, argc, argv);

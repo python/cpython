@@ -1,1 +1,0 @@
-Replace :opcode:`JUMP_IF_NOT_EXC_MATCH` by :opcode:`CHECK_EXC_MATCH` + jump.

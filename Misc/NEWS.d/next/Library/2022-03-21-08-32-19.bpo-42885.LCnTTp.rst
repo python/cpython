@@ -1,3 +1,0 @@
-Optimize :func:`re.search`, :func:`re.split`, :func:`re.findall`,
-:func:`re.finditer` and :func:`re.sub` for regular expressions starting with
-``\A`` or ``^``.

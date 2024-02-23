@@ -1,2 +1,0 @@
-Brings :class:`ParamSpec` propagation for :class:`GenericAlias` in line with
-:class:`Concatenate` (and others).

@@ -9,9 +9,9 @@ import _testinternalcapi
 import os
 import sys
 import unittest
+from test.support import MS_WINDOWS
 
 
-MS_WINDOWS = (os.name == 'nt')
 MAX_HASH_SEED = 4294967295
 
 class SetConfigTests(unittest.TestCase):
@@ -84,7 +84,6 @@ class SetConfigTests(unittest.TestCase):
             'skip_source_first_line',
             '_install_importlib',
             '_init_main',
-            '_isolated_interpreter',
         ]
         if MS_WINDOWS:
             options.append('legacy_windows_stdio')
@@ -236,10 +235,11 @@ class SetConfigTests(unittest.TestCase):
                         module_search_paths=['a', 'b', 'c'])
         self.assertEqual(sys.path, ['a', 'b', 'c'])
 
-        # Leave sys.path unchanged if module_search_paths_set=0
+        # sys.path is reset if module_search_paths_set=0
         self.set_config(module_search_paths_set=0,
                         module_search_paths=['new_path'])
-        self.assertEqual(sys.path, ['a', 'b', 'c'])
+        self.assertNotEqual(sys.path, ['a', 'b', 'c'])
+        self.assertNotEqual(sys.path, ['new_path'])
 
     def test_argv(self):
         self.set_config(parse_argv=0,
