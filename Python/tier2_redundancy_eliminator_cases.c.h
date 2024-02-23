@@ -158,7 +158,7 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *res;
             value = stack_pointer[-1];
-            if (sym_get_const(value) == Py_None) {
+            if (sym_is_const(value) && (sym_get_const(value) == Py_None)) {
                 REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
             }
             sym_set_const(value, Py_None);

@@ -220,7 +220,7 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        if (sym_get_const(value) == Py_None) {
+        if (sym_is_const(value) && (sym_get_const(value) == Py_None)) {
             REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
         }
         sym_set_const(value, Py_None);
