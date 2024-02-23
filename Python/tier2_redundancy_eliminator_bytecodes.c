@@ -295,6 +295,27 @@ dummy_func(void) {
         (void)owner;
     }
 
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+    }
+
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+    }
+
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+    }
+
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
+        OUT_OF_SPACE_IF_NULL(func = sym_new_known_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+    }
+
+
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         sym_set_type(callable, &PyFunction_Type);
         (void)self_or_null;
