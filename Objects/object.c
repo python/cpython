@@ -1385,7 +1385,7 @@ _PyObject_GetDictPtr(PyObject *obj)
     }
     PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
     if (dorv_ptr->dict == NULL && Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj, _PyObject_InlineValues(obj));
+        PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj);
         if (dict == NULL) {
             PyErr_Clear();
             return NULL;
@@ -1575,7 +1575,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                 }
             }
             else {
-                dict = _PyObject_MakeDictFromInstanceAttributes(obj, values);
+                dict = _PyObject_MakeDictFromInstanceAttributes(obj);
                 if (dict == NULL) {
                     res = NULL;
                     goto done;

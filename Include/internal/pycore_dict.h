@@ -258,7 +258,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
     return DICT_NEXT_VERSION(interp);
 }
 
-extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
+extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj);
 
 extern PyObject *_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
@@ -299,7 +299,7 @@ _PyInlineValuesSize(PyTypeObject *tp)
     return prefix_size + (size + 1) * sizeof(PyObject *);
 }
 
-void
+int
 _PyDict_DetachFromObject(PyObject *dict, PyObject *obj);
 
 #ifdef __cplusplus

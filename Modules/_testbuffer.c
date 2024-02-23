@@ -2827,6 +2827,9 @@ PyInit__testbuffer(void)
         return NULL;
 
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
+    if (PyType_Ready(&NDArray_Type)) {
+        return NULL;
+    }
     Py_INCREF(&NDArray_Type);
     PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
 

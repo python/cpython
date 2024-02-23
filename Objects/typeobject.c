@@ -1715,11 +1715,6 @@ _PyType_NewManagedObject(PyTypeObject *type)
     if (obj == NULL) {
         return PyErr_NoMemory();
     }
-    _PyObject_DictOrValuesPointer(obj)->dict = NULL;
-    if (_PyObject_InitInlineValues(obj, type)) {
-        Py_DECREF(obj);
-        return NULL;
-    }
     return obj;
 }
 
@@ -1757,6 +1752,9 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     }
     else {
         _PyObject_InitVar((PyVarObject *)obj, type, nitems);
+    }
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        _PyObject_InitInlineValues(obj, type);
     }
     return obj;
 }
@@ -2983,7 +2981,9 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return -1;
     }
     if (*dictptr) {
-        _PyDict_DetachFromObject(*dictptr, obj);
+        if (_PyDict_DetachFromObject(*dictptr, obj)) {
+            return -1;
+        }
         Py_SETREF(*dictptr, Py_XNewRef(value));
     }
     else {
@@ -5563,10 +5563,6 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (obj == NULL) {
         return NULL;
     }
-    if (_PyObject_InitializeDict(obj)) {
-        Py_DECREF(obj);
-        return NULL;
-    }
     return obj;
 }
 
@@ -5750,6 +5746,11 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
          !same_slots_added(newbase, oldbase))) {
         goto differs;
     }
+    if ((oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) !=
+        ((newto->tp_flags & Py_TPFLAGS_INLINE_VALUES)))
+    {
+        goto differs;
+    }
     /* The above does not check for the preheader */
     if ((oldto->tp_flags & Py_TPFLAGS_PREHEADER) ==
         ((newto->tp_flags & Py_TPFLAGS_PREHEADER)))
@@ -5851,14 +5852,18 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     if (compatible_for_assignment(oldto, newto, "__class__")) {
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
-        assert((oldto->tp_flags & Py_TPFLAGS_PREHEADER) == (newto->tp_flags & Py_TPFLAGS_PREHEADER));
-        _PyObject_GetDictPtr(self);
-        if (oldto->tp_flags & Py_TPFLAGS_MANAGED_DICT &&
-            _PyObject_DictOrValuesPointer(self)->dict == NULL)
-        {
-            /* Was unable to convert to dict */
-            PyErr_NoMemory();
-            return -1;
+        if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+            PyObject *dict = _PyObject_DictOrValuesPointer(self)->dict;
+            if (dict == NULL) {
+                dict = _PyObject_MakeDictFromInstanceAttributes(self);
+                if (dict == NULL) {
+                    return -1;
+                }
+                _PyObject_DictOrValuesPointer(self)->dict = dict;
+            }
+            if (_PyDict_DetachFromObject(dict, self)) {
+                return -1;
+            }
         }
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_INCREF(newto);
@@ -7616,6 +7621,9 @@ PyType_Ready(PyTypeObject *type)
     /* Historically, all static types were immutable. See bpo-43908 */
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
+        /* Static types must be immortal */
+        /* Cannot call _Py_SetImmortal on incomplete object */
+        type->ob_base.ob_base.ob_refcnt = _Py_IMMORTAL_REFCNT;
     }
 
     return type_ready(type, 0);

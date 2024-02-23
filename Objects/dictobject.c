@@ -496,7 +496,7 @@ static PyDictKeysObject empty_keys_struct = {
 #define Py_EMPTY_KEYS &empty_keys_struct
 
 /* Uncomment to check the dict content in _PyDict_CheckConsistency() */
-#define DEBUG_PYDICT
+// #define DEBUG_PYDICT
 
 #ifdef DEBUG_PYDICT
 #  define ASSERT_CONSISTENT(op) assert(_PyDict_CheckConsistency((PyObject *)(op), 1))
@@ -2952,10 +2952,11 @@ dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
             PyDictKeysObject *okeys = other->ma_keys;
 
             // If other is clean, combined, and just allocated, just clone it.
-            if (other->ma_values == NULL &&
-                    other->ma_used == okeys->dk_nentries &&
-                    (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
-                     USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
+            if (mp->ma_values == NULL &&
+                other->ma_values == NULL &&
+                other->ma_used == okeys->dk_nentries &&
+                (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
+                 USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
                 uint64_t new_version = _PyDict_NotifyEvent(
                         interp, PyDict_EVENT_CLONED, mp, b, NULL);
                 PyDictKeysObject *keys = clone_combined_dict_keys(other);
@@ -2965,11 +2966,6 @@ dict_merge(PyInterpreterState *interp, PyObject *a, PyObject *b, int override)
 
                 dictkeys_decref(interp, mp->ma_keys);
                 mp->ma_keys = keys;
-                if (mp->ma_values != NULL) {
-                    free_values(mp->ma_values);
-                    mp->ma_values = NULL;
-                }
-
                 mp->ma_used = other->ma_used;
                 mp->ma_version_tag = new_version;
                 ASSERT_CONSISTENT(mp);
@@ -5506,7 +5502,7 @@ _PyDict_NewKeysForClass(void)
     return keys;
 }
 
-int
+void
 _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
 {
     assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -5528,37 +5524,6 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
         values->values[i] = NULL;
     }
     _PyObject_DictOrValuesPointer(obj)->dict = NULL;
-    return 0;
-}
-
-int
-_PyObject_InitializeDict(PyObject *obj)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyTypeObject *tp = Py_TYPE(obj);
-    if (tp->tp_dictoffset == 0) {
-        return 0;
-    }
-    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
-        OBJECT_STAT_INC(new_values);
-        return _PyObject_InitInlineValues(obj, tp);
-    }
-    PyObject *dict = NULL;
-    if (_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE) && CACHED_KEYS(tp)) {
-        dictkeys_incref(CACHED_KEYS(tp));
-        dict = new_dict_with_shared_keys(interp, CACHED_KEYS(tp));
-        if (dict == NULL) {
-            return -1;
-        }
-    }
-    if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
-        _PyObject_DictOrValuesPointer(obj)->dict = dict;
-    }
-    else {
-        PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
-        *dictptr = dict;
-    }
-    return 0;
 }
 
 static PyObject *
@@ -5584,8 +5549,9 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
 }
 
 PyObject *
-_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values)
+_PyObject_MakeDictFromInstanceAttributes(PyObject *obj)
 {
+    PyDictValues *values = _PyObject_InlineValues(obj);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     OBJECT_STAT_INC(dict_materialized_on_request);
@@ -5730,6 +5696,10 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         }
         dict = _PyObject_DictOrValuesPointer(obj)->dict;
     }
+    else if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
+        dict = dorv_ptr->dict;
+    }
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         dict = *dictptr;
@@ -5756,7 +5726,9 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
         }
     }
     else {
-        _PyDict_DetachFromObject(dict, self);
+        if (_PyDict_DetachFromObject(dict, self)) {
+             PyErr_WriteUnraisable(self);
+        }
         assert(!values->valid);
         assert(((PyDictObject *)dict)->ma_values == NULL ||
                ((PyDictObject *)dict)->ma_values->valid);
@@ -5818,14 +5790,14 @@ PyObject_ClearManagedDict(PyObject *obj)
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
 }
 
-void
+int
 _PyDict_DetachFromObject(PyObject *dict, PyObject *obj)
 {
 
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     PyDictObject *mp = (PyDictObject *)dict;
     if (mp->ma_values == NULL || mp->ma_values != _PyObject_InlineValues(obj)) {
-        return;
+        return 0;
     }
     assert(mp->ma_values->embedded);
     assert(mp->ma_values->valid);
@@ -5833,16 +5805,16 @@ _PyDict_DetachFromObject(PyObject *dict, PyObject *obj)
     mp->ma_values->refcount--;
     assert(mp->ma_values->refcount == 0);
     mp->ma_values = copy_values(mp->ma_values);
+    if (mp->ma_values == NULL) {
+        return -1;
+    }
     assert(mp->ma_values->refcount == 0);
     mp->ma_values->refcount++;
-    if (mp->ma_values == NULL) {
-        /* TO DO --
-            * This is tricky to sort out */
-    }
     assert(_PyObject_InlineValues(obj)->refcount == 0);
     _PyObject_InlineValues(obj)->valid = 0;
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     ASSERT_CONSISTENT(dict);
+    return 0;
 }
 
 PyObject *
