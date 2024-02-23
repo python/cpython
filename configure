@@ -7386,11 +7386,15 @@ else # shared is disabled
       ;;
   esac
 fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
+printf "%s\n" "$LDLIBRARY" >&6; }
 
 if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
+printf %s "checking HOSTRUNNER... " >&6; }
 
 if test -z "$HOSTRUNNER"
 then
@@ -7574,17 +7578,12 @@ fi
 esac
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
-printf %s "checking HOSTRUNNER... " >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 printf "%s\n" "$HOSTRUNNER" >&6; }
 
 if test -n "$HOSTRUNNER"; then
     PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
 fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
-printf "%s\n" "$LDLIBRARY" >&6; }
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 case $ac_sys_system/$ac_sys_emscripten_target in #(
@@ -16755,16 +16754,18 @@ printf "%s\n" "$ipv6type" >&6; }
 fi
 
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 library" >&5
+printf %s "checking ipv6 library... " >&6; }
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: using lib$ipv6lib" >&5
-printf "%s\n" "$as_me: using lib$ipv6lib" >&6;}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: lib$ipv6lib" >&5
+printf "%s\n" "lib$ipv6lib" >&6; }
 	else
     if test "x$ipv6trylibc" = xyes
 then :
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: using libc" >&5
-printf "%s\n" "$as_me: using libc" >&6;}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: libc" >&5
+printf "%s\n" "libc" >&6; }
 
 else $as_nop
 
