@@ -186,19 +186,41 @@ Template.__init_subclass__()
 # The field name parser is implemented in _string.formatter_field_name_split
 
 class Formatter:
+
+    class AutoNumber:
+        def __init__(self):
+            self.field_number = 0
+
+        def __next__(self):
+            if self.field_number is False:
+                raise ValueError('cannot switch from manual field '
+                                 'specification to automatic field '
+                                 'numbering')
+            self.field_number += 1
+            return self.field_number - 1
+
+        def set_manual(self):
+            if self.field_number:
+                raise ValueError('cannot switch from automatic '
+                                 'field numbering to manual '
+                                 'field specification')
+            self.field_number = False
+
     def format(self, format_string, /, *args, **kwargs):
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):
         used_args = set()
-        result, _ = self._vformat(format_string, args, kwargs, used_args, 2)
+        result = self._vformat(format_string, args, kwargs, used_args, 2)
         self.check_unused_args(used_args, args, kwargs)
         return result
 
     def _vformat(self, format_string, args, kwargs, used_args, recursion_depth,
-                 auto_arg_index=0):
+                 auto_number=None):
         if recursion_depth < 0:
             raise ValueError('Max string recursion exceeded')
+        if not auto_number:
+            auto_number = Formatter.AutoNumber()
         result = []
         for literal_text, field_name, format_spec, conversion in \
                 self.parse(format_string):
@@ -212,22 +234,8 @@ class Formatter:
                 # this is some markup, find the object and do
                 #  the formatting
 
-                # handle arg indexing when empty field_names are given.
-                if field_name == '':
-                    if auto_arg_index is False:
-                        raise ValueError('cannot switch from manual field '
-                                         'specification to automatic field '
-                                         'numbering')
-                    field_name = str(auto_arg_index)
-                    auto_arg_index += 1
-                elif field_name.isdigit():
-                    if auto_arg_index:
-                        raise ValueError('cannot switch from manual field '
-                                         'specification to automatic field '
-                                         'numbering')
-                    # disable auto arg incrementing, if it gets
-                    # used later on, then an exception will be raised
-                    auto_arg_index = False
+                field_name = self.ensure_reference(field_name,
+                    auto_number)
 
                 # given the field_name, find the object it references
                 #  and the argument it came from
@@ -238,15 +246,15 @@ class Formatter:
                 obj = self.convert_field(obj, conversion)
 
                 # expand the format spec, if needed
-                format_spec, auto_arg_index = self._vformat(
+                format_spec = self._vformat(
                     format_spec, args, kwargs,
                     used_args, recursion_depth-1,
-                    auto_arg_index=auto_arg_index)
+                    auto_number)
 
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))
 
-        return ''.join(result), auto_arg_index
+        return ''.join(result)
 
 
     def get_value(self, key, args, kwargs):
@@ -286,6 +294,23 @@ class Formatter:
     #  with format_spec and conversion and then used
     def parse(self, format_string):
         return _string.formatter_parser(format_string)
+
+
+    # given a field_name and auto_number, return a version
+    # starting with a name or index, taken from auto_number
+    # if necessary; calls auto_number.set_manual()
+    # if field_name already contains index
+    #  field_name:   the field being checked, e.g. "",
+    #                ".name" or "[3]"
+    #  auto_number   numbering source
+    def ensure_reference(self, field_name, auto_number):
+        first, _ = _string.formatter_field_name_split(field_name)
+        if first == '':
+            first = str(next(auto_number))
+            field_name = first + field_name
+        elif isinstance(first, int):
+            auto_number.set_manual()
+        return field_name
 
 
     # given a field_name, find the object it references.
