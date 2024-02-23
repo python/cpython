@@ -264,7 +264,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: kde(data, h, kernel='normal')
 
    `Kernel Density Estimation (KDE)
-   https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf`_
+   <https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf>`_
    creates an estimated continuous probability density function from *data*
    containing a fixed number of discrete samples.
 
