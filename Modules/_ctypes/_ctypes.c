@@ -2712,7 +2712,7 @@ PyCData_traverse(CDataObject *self, visitproc visit, void *arg)
     Py_VISIT((PyObject *)self->b_base);
     PyTypeObject *type = Py_TYPE(self);
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        //TODO Py_VISIT(type);
+        Py_VISIT(type);
     }
     return 0;
 }
@@ -2739,7 +2739,7 @@ PyCData_dealloc(PyObject *self)
     PyCData_clear((CDataObject *)self);
     type->tp_free(self);
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        //TODO Py_DECREF(type);
+        Py_DECREF(type);
     }
 }
 
