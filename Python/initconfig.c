@@ -123,7 +123,7 @@ The following implementation-specific options are available:\n\
 -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
          This helps avoid denial of service attacks when parsing untrusted\n\
          data.  The default is sys.int_info.default_max_str_digits.\n\
-         0 disables.\n\
+         0 disables.\
 "
 #ifdef Py_STATS
 "\n\
