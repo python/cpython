@@ -1719,7 +1719,7 @@ The :mod:`test.support.warnings_helper` module provides support for warnings tes
    On entry to the context manager, a :class:`WarningsRecorder` instance is
    returned. The underlying warnings list from
    :func:`~warnings.catch_warnings` is available via the recorder object's
-   :attr:`warnings` attribute.  As a convenience, the attributes of the object
+   :attr:`~WarningsRecorder.warnings` attribute.  As a convenience, the attributes of the object
    representing the most recent warning can also be accessed directly through
    the recorder object (see example below).  If no warning has been raised,
    then any of the attributes that would otherwise be expected on an object
