@@ -5340,7 +5340,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
         port = socket_helper.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(cli.close)
-        expected_regex = (f"\\[Errno 111] Connection refused: \\('localhost', "
+        expected_regex = (f"\\[\\w+ \\d+] [a-zA-Z ]+: \\('localhost', "
                           f"{port}\\)")
         with self.assertRaisesRegex(OSError, expected_regex) as cm:
             cli.connect((HOST, port))
