@@ -117,6 +117,16 @@ In this invocation:
   retaining the ability to adapt to the local Xcode install. These scripts are
   included in the ``bin`` directory of an iOS install.
 
+  These scripts will, by default, use the currently active Xcode installation.
+  If you want to use a different Xcode installation, you can use
+  ``xcode-select`` to set a new default Xcode globally, or you can use the
+  ``DEVELOPER_DIR`` environment variable to specify an Xcode install. The
+  scripts will use the default ``iphoneos``/``iphonesimulator`` SDK version for
+  the select Xcode install; if you want to use a different SDK, you can set the
+  ``IOS_SDK_VERSION`` environment variable. (e.g, setting
+  ``IOS_SDK_VERSION=17.1`` would cause the scripts to use the ``iphoneos17.1``
+  and ``iphonesimulator17.1`` SDKs, regardless of the Xcode default.)
+
   The path has also been cleared of any user customizations. A common source of
   bugs is for tools like Homebrew to accidentally leak macOS binaries into an iOS
   build. Resetting the path to a known "bare bones" value is the easiest way to

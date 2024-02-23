@@ -1,2 +1,2 @@
-#!/bin/bash
-xcrun --sdk iphoneos clang -target arm64-apple-ios $@
+#!/bin/sh
+xcrun --sdk iphoneos${IOS_SDK_VERSION} clang -target arm64-apple-ios $@
