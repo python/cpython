@@ -17,6 +17,7 @@
 
 #include <stdlib.h> // rand()
 
+extern const char *_PyUOpName(int index);
 
 /* For guidance on adding or extending families of instructions see
  * ./adaptive.md
@@ -240,18 +241,18 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     print_histogram(out, "Trace run length", stats->trace_run_length_hist);
     print_histogram(out, "Optimized trace length", stats->optimized_trace_length_hist);
 
+    fprintf(out, "Optimization optimizer attempts: %" PRIu64 "\n", stats->optimizer_attempts);
+    fprintf(out, "Optimization optimizer successes: %" PRIu64 "\n", stats->optimizer_successes);
+    fprintf(out, "Optimization optimizer failure no memory: %" PRIu64 "\n",
+            stats->optimizer_failure_reason_no_memory);
+
     const char* const* names;
-    for (int i = 0; i < 512; i++) {
-        if (i < 256) {
-            names = _PyOpcode_OpName;
-        } else {
-            names = _PyOpcode_uop_name;
-        }
+    for (int i = 0; i <= MAX_UOP_ID; i++) {
         if (stats->opcode[i].execution_count) {
-            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
+            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
         }
         if (stats->opcode[i].miss) {
-            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].miss);
         }
     }
 
