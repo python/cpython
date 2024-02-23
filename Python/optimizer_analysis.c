@@ -811,7 +811,7 @@ _Py_uop_analyze_and_optimize(
     peephole_opt(frame, buffer, buffer_size);
 
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
-    if (*uop_optimize > '0') {
+    if (uop_optimize != NULL && *uop_optimize > '0') {
         err = uop_redundancy_eliminator(
             (PyCodeObject *)frame->f_executable, buffer,
             buffer_size, curr_stacklen, dependencies);
