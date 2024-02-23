@@ -1145,46 +1145,6 @@ The final prediction goes to the largest posterior. This is known as the
   'female'
 
 
-Kernel density estimation
-*************************
-
-It is possible to estimate a continuous probability density function
-from a fixed number of discrete samples.
-
-The basic idea is to smooth the data using `a kernel function such as a
-normal distribution, triangular distribution, or uniform distribution
-<https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
-The degree of smoothing is controlled by a scaling parameter, ``h``,
-which is called the *bandwidth*.
-
-.. testcode::
-
-   def kde_normal(sample, h):
-       "Create a continuous probability density function from a sample."
-       # Smooth the sample with a normal distribution kernel scaled by h.
-       kernel_h = NormalDist(0.0, h).pdf
-       n = len(sample)
-       def pdf(x):
-           return sum(kernel_h(x - x_i) for x_i in sample) / n
-       return pdf
-
-`Wikipedia has an example
-<https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
-where we can use the ``kde_normal()`` recipe to generate and plot
-a probability density function estimated from a small sample:
-
-.. doctest::
-
-   >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
-   >>> f_hat = kde_normal(sample, h=1.5)
-   >>> xarr = [i/100 for i in range(-750, 1100)]
-   >>> yarr = [f_hat(x) for x in xarr]
-
-The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
-
-.. image:: kde_example.png
-   :alt: Scatter plot of the estimated probability density function.
-
 ..
    # This modelines must appear within the last ten lines of the file.
    kate: indent-width 3; remove-trailing-space on; replace-tabs on; encoding utf-8;
