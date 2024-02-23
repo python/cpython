@@ -883,6 +883,13 @@ def kde(data, h, kernel='normal'):
 
     """
 
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=}')
+
     match kernel:
 
         case 'normal' | 'gauss':
@@ -929,10 +936,6 @@ def kde(data, h, kernel='normal'):
 
         case _:
             raise ValueError(f'Unknown kernel name: {kernel!r}')
-
-    n = len(data)
-    if not n:
-        raise StatisticsError('Empty data sequence')
 
     if support is None:
 

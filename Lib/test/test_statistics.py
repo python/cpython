@@ -2355,10 +2355,17 @@ class TestGeometricMean(unittest.TestCase):
 
 class TestKDE(unittest.TestCase):
 
-    def test_kde_area(self):
-        # The approximate integral of a PDF should be close to 1.0
+    def test_kde(self):
+        kde = statistics.kde
+        StatisticsError = statistics.StatisticsError
+
+        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
+                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
+                   'quartic', 'biweight', 'triweight', 'cosine']
 
         sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+
+        # The approximate integral of a PDF should be close to 1.0
 
         def integrate(func, low, high, steps=10_000):
             "Numeric approximation of a definite function integral."
@@ -2366,15 +2373,27 @@ class TestKDE(unittest.TestCase):
             xarr = (low + width/2 + width * i for i in range(steps))
             return sum(map(func, xarr)) * width
 
-        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
-                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
-                   'quartic', 'biweight', 'triweight', 'cosine']
-
         for kernel in kernels:
             with self.subTest(kernel=kernel):
-                f_hat = statistics.kde(sample, h=1.5, kernel=kernel)
+                f_hat = kde(sample, h=1.5, kernel=kernel)
                 area = integrate(f_hat, -20, 20)
                 self.assertAlmostEqual(area, 1.0, places=4)
+
+        # Check error cases
+
+        with self.assertRaises(StatisticsError):
+            kde([], h=1.0)                              # Empty dataset
+        f_hat = kde(['abc', 'def'], 1.5)                # Non-numeric data
+        with self.assertRaises(TypeError):
+            f_hat(0)
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=0.0)                          # Zero bandwidth
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=0.0)                          # Negative bandwidth
+        with self.assertRaises(TypeError):
+            kde(sample, h='str')                        # Wrong bandwidth type
+        with self.assertRaises(ValueError):
+            kde(sample, h=1.0, kernel='bogus')          # Invalid kernel
 
 
 class TestQuantiles(unittest.TestCase):
