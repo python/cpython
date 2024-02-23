@@ -316,7 +316,7 @@ def tier_variable(node: parser.InstDef) -> int | None:
         if token.kind == "ANNOTATION":
             if token.text == "specializing":
                 return 1
-            if re.match(r"tier\d", token.text):
+            if re.fullmatch(r"tier\d", token.text):
                 return int(token.text[-1])
     return None
 
