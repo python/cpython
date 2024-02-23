@@ -92,6 +92,10 @@ def main():
 
     keyed_archive_data = NSKeyedArchiver.archivedDataWithRootObject_("KeyArchive UID Test")
     print("    'KEYED_ARCHIVE': binascii.a2b_base64(b'''\n        %s''')," % (_encode_base64(bytes(keyed_archive_data)).decode('ascii')[:-1]))
+    nska_xml = NSKeyedArchiver.init()
+    nska_xml.outputFormat = NSPropertyListXMLFormat_v1_0
+    keyed_archive_data_xml = NSKeyedArchiver.archivedDataWithRootObject_("KeyArchive UID Test")
+    print("    'KEYED_ARCHIVE_XML': binascii.a2b_base64(b'''\n        %s''')," % (_encode_base64(bytes(keyed_archive_data)).decode('ascii')[:-1]))
     print("}")
     print()
 

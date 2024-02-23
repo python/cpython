@@ -537,7 +537,9 @@ class TestPlistlib(unittest.TestCase):
 
     def test_uid(self):
         data = UID(1)
-        self.assertEqual(plistlib.loads(plistlib.dumps(data, fmt=plistlib.FMT_BINARY)), data)
+        for fmt in ALL_FORMATS:
+            self.assertEqual(plistlib.loads(plistlib.dumps(data, fmt=fmt)), data)
+
         dict_data = {
             'uid0': UID(0),
             'uid2': UID(2),
@@ -546,7 +548,9 @@ class TestPlistlib(unittest.TestCase):
             'uid32': UID(2 ** 32),
             'uid63': UID(2 ** 63)
         }
-        self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_BINARY)), dict_data)
+        for fmt in ALL_FORMATS:
+            self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=fmt)), dict_data)
+
 
     def test_uid_data(self):
         uid = UID(1)
