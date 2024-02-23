@@ -2385,13 +2385,15 @@ class TestKDE(unittest.TestCase):
             kde([], h=1.0)                              # Empty dataset
         with self.assertRaises(TypeError):
             kde(['abc', 'def'], 1.5)                    # Non-numeric data
+        with self.assertRaises(TypeError):
+            kde(iter(sample), 1.5)                      # Data is not a sequence
         with self.assertRaises(StatisticsError):
             kde(sample, h=0.0)                          # Zero bandwidth
         with self.assertRaises(StatisticsError):
             kde(sample, h=0.0)                          # Negative bandwidth
         with self.assertRaises(TypeError):
             kde(sample, h='str')                        # Wrong bandwidth type
-        with self.assertRaises(Statisticsrror):
+        with self.assertRaises(StatisticsError):
             kde(sample, h=1.0, kernel='bogus')          # Invalid kernel
 
         # Test name and docstring of the generated function
