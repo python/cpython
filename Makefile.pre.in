@@ -2656,16 +2656,16 @@ frameworkinstallunversionedstructure:	$(LDLIBRARY)
 		exit 1; \
 	else true; \
 	fi
-	if test -d $(PYTHONFRAMEWORKPREFIX)/include; then \
+	if test -d $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; then \
 		echo "Clearing stale header symlink directory"; \
-		rm -rf $(PYTHONFRAMEWORKPREFIX)/include; \
+		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; \
 	fi
-	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKINSTALLDIR)
-	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
-	$(INSTALL_SHARED) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
-	$(INSTALL) -d -m $(DIRMODE) $(BINDIR)
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)
+	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
+	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(BINDIR)
 	for file in $(RESSRCDIR)/bin/* ; do \
-		$(INSTALL) -m $(EXEMODE) $$file $(BINDIR); \
+		$(INSTALL) -m $(EXEMODE) $$file $(DESTDIR)$(BINDIR); \
 	done
 
 # This installs Mac/Lib into the framework
@@ -2714,12 +2714,12 @@ frameworkinstallextras:
 # Python.framework; Move the headers to their final framework-compatible home.
 .PHONY: frameworkinstallmobileheaders
 frameworkinstallmobileheaders:
-	if test -d $(PYTHONFRAMEWORKINSTALLDIR)/Headers; then \
+	if test -d $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; then \
 		echo "Removing old framework headers"; \
-		rm -rf $(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
+		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
 	fi
-	mv "$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)" "$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
-	$(LN) -fs "$(PYTHONFRAMEWORKDIR)" "$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)"
+	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
+	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)"
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
