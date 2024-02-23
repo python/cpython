@@ -1197,7 +1197,8 @@ class BufferedReader(_BufferedIOMixin):
         return written
 
     def tell(self):
-        return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
+        # GH-95782: Keep return value non-negative
+        return max(_BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos, 0)
 
     def seek(self, pos, whence=0):
         if whence not in valid_seek_flags:
@@ -1495,6 +1496,11 @@ class FileIO(RawIOBase):
         if isinstance(file, float):
             raise TypeError('integer argument expected, got float')
         if isinstance(file, int):
+            if isinstance(file, bool):
+                import warnings
+                warnings.warn("bool is used as a file descriptor",
+                              RuntimeWarning, stacklevel=2)
+                file = int(file)
             fd = file
             if fd < 0:
                 raise ValueError('negative file descriptor')

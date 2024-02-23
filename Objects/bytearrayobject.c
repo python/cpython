@@ -132,7 +132,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
     }
     else {
         alloc = size + 1;
-        new->ob_bytes = PyObject_Malloc(alloc);
+        new->ob_bytes = PyMem_Malloc(alloc);
         if (new->ob_bytes == NULL) {
             Py_DECREF(new);
             return PyErr_NoMemory();
@@ -221,17 +221,17 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
     }
 
     if (logical_offset > 0) {
-        sval = PyObject_Malloc(alloc);
+        sval = PyMem_Malloc(alloc);
         if (sval == NULL) {
             PyErr_NoMemory();
             return -1;
         }
         memcpy(sval, PyByteArray_AS_STRING(self),
                Py_MIN((size_t)requested_size, (size_t)Py_SIZE(self)));
-        PyObject_Free(obj->ob_bytes);
+        PyMem_Free(obj->ob_bytes);
     }
     else {
-        sval = PyObject_Realloc(obj->ob_bytes, alloc);
+        sval = PyMem_Realloc(obj->ob_bytes, alloc);
         if (sval == NULL) {
             PyErr_NoMemory();
             return -1;
@@ -951,7 +951,7 @@ bytearray_repr(PyByteArrayObject *self)
     }
 
     newsize += 6 + length * 4;
-    buffer = PyObject_Malloc(newsize);
+    buffer = PyMem_Malloc(newsize);
     if (buffer == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -1008,7 +1008,7 @@ bytearray_repr(PyByteArrayObject *self)
     }
 
     v = PyUnicode_FromStringAndSize(buffer, p - buffer);
-    PyObject_Free(buffer);
+    PyMem_Free(buffer);
     return v;
 }
 
@@ -1088,7 +1088,7 @@ bytearray_dealloc(PyByteArrayObject *self)
         PyErr_Print();
     }
     if (self->ob_bytes != 0) {
-        PyObject_Free(self->ob_bytes);
+        PyMem_Free(self->ob_bytes);
     }
     Py_TYPE(self)->tp_free((PyObject *)self);
 }

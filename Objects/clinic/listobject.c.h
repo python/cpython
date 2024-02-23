@@ -92,7 +92,13 @@ list_copy_impl(PyListObject *self);
 static PyObject *
 list_copy(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return list_copy_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_copy_impl(self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(list_append__doc__,
@@ -104,6 +110,21 @@ PyDoc_STRVAR(list_append__doc__,
 #define LIST_APPEND_METHODDEF    \
     {"append", (PyCFunction)list_append, METH_O, list_append__doc__},
 
+static PyObject *
+list_append_impl(PyListObject *self, PyObject *object);
+
+static PyObject *
+list_append(PyListObject *self, PyObject *object)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_append_impl(self, object);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(py_list_extend__doc__,
 "extend($self, iterable, /)\n"
 "--\n"
@@ -112,6 +133,21 @@ PyDoc_STRVAR(py_list_extend__doc__,
 
 #define PY_LIST_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)py_list_extend, METH_O, py_list_extend__doc__},
+
+static PyObject *
+py_list_extend_impl(PyListObject *self, PyObject *iterable);
+
+static PyObject *
+py_list_extend(PyListObject *self, PyObject *iterable)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+    return_value = py_list_extend_impl(self, iterable);
+    Py_END_CRITICAL_SECTION2();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(list_pop__doc__,
 "pop($self, index=-1, /)\n"
@@ -416,4 +452,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=3c9f24fd3212b18b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26dfb2c9846348f9 input=a9049054013a1b77]*/

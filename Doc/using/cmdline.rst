@@ -623,7 +623,7 @@ Setting the environment variable ``TERM`` to ``dumb`` will disable color.
 
 If the environment variable ``FORCE_COLOR`` is set, then color will be
 enabled regardless of the value of TERM. This is useful on CI systems which
-aren’t terminals but can none-the-less display ANSI escape sequences.
+aren’t terminals but can still display ANSI escape sequences.
 
 If the environment variable ``NO_COLOR`` is set, Python will disable all color
 in the output. This takes precedence over ``FORCE_COLOR``.

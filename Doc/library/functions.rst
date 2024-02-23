@@ -668,16 +668,15 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      digitpart: `!digit` (["_"] `!digit`)*
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
+      digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
       floatnumber: number [`exponent`]
       floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
-   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
-   "INFINITY", and "iNfINity" are all acceptable spellings for positive
-   infinity.
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
@@ -1074,8 +1073,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1112,8 +1111,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.

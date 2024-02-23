@@ -14,8 +14,7 @@ import io
 
 import textwrap
 from test import support
-from test.support import import_helper
-from test.support import os_helper
+from test.support import import_helper, is_apple, os_helper
 from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok, assert_python_failure, spawn_python, kill_python)
@@ -557,12 +556,17 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[3].startswith('NameError'))
 
     def test_non_ascii(self):
-        # Mac OS X denies the creation of a file with an invalid UTF-8 name.
+        # Apple platforms deny the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
-        # WASI does not permit invalid UTF-8 names.
-        if (os_helper.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
+        # Emscripten/WASI does not permit invalid UTF-8 names.
+        if (
+            os_helper.TESTFN_UNDECODABLE
+            and sys.platform not in {
+                "win32", "emscripten", "wasi"
+            }
+            and not is_apple
+        ):
             name = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII

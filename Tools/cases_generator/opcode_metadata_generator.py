@@ -1,6 +1,6 @@
-"""Generate uop metedata.
+"""Generate opcode metadata.
 Reads the instruction definitions from bytecodes.c.
-Writes the metadata to pycore_uop_metadata.h by default.
+Writes the metadata to pycore_opcode_metadata.h by default.
 """
 
 import argparse
@@ -50,8 +50,10 @@ FLAGS = [
     "DEOPT",
     "ERROR",
     "ESCAPES",
+    "EXIT",
     "PURE",
     "PASSTHROUGH",
+    "OPARG_AND_1",
 ]
 
 

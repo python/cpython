@@ -1614,3 +1614,53 @@ mi_page_t* _mi_segment_page_alloc(mi_heap_t* heap, size_t block_size, size_t pag
   mi_assert_expensive(page == NULL || mi_segment_is_valid(_mi_page_segment(page),tld));
   return page;
 }
+
+/* -----------------------------------------------------------
+   Visit blocks in abandoned segments
+----------------------------------------------------------- */
+
+static bool mi_segment_visit_page(mi_segment_t* segment, mi_page_t* page, bool visit_blocks, mi_block_visit_fun* visitor, void* arg)
+{
+  mi_heap_area_t area;
+  _mi_heap_area_init(&area, page);
+  if (!visitor(NULL, &area, NULL, area.block_size, arg)) return false;
+  if (visit_blocks) {
+    return _mi_heap_area_visit_blocks(&area, page, visitor, arg);
+  }
+  else {
+    return true;
+  }
+}
+
+static bool mi_segment_visit_pages(mi_segment_t* segment, uint8_t page_tag, bool visit_blocks, mi_block_visit_fun* visitor, void* arg) {
+  const mi_slice_t* end;
+  mi_slice_t* slice = mi_slices_start_iterate(segment, &end);
+  while (slice < end) {
+    if (mi_slice_is_used(slice)) {
+      mi_page_t* const page = mi_slice_to_page(slice);
+      if (page->tag == page_tag) {
+        if (!mi_segment_visit_page(segment, page, visit_blocks, visitor, arg)) return false;
+      }
+    }
+    slice = slice + slice->slice_count;
+  }
+  return true;
+}
+
+// Visit all blocks in a abandoned segments
+bool _mi_abandoned_pool_visit_blocks(mi_abandoned_pool_t* pool, uint8_t page_tag, bool visit_blocks, mi_block_visit_fun* visitor, void* arg) {
+  // Note: this is not safe in any other thread is abandoning or claiming segments from the pool
+  mi_segment_t* segment = mi_tagged_segment_ptr(pool->abandoned);
+  while (segment != NULL) {
+    if (!mi_segment_visit_pages(segment, page_tag, visit_blocks, visitor, arg)) return false;
+    segment = segment->abandoned_next;
+  }
+
+  segment = pool->abandoned_visited;
+  while (segment != NULL) {
+    if (!mi_segment_visit_pages(segment, page_tag, visit_blocks, visitor, arg)) return false;
+    segment = segment->abandoned_next;
+  }
+
+  return true;
+}

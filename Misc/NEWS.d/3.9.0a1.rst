@@ -2857,8 +2857,8 @@ Patch by Justin Blanchard.
 Add formal support for UDPLITE sockets. Support was present before, but it
 is now easier to detect support with ``hasattr(socket, 'IPPROTO_UDPLITE')``
 and there are constants defined for each of the values needed:
-:py:obj:`socket.IPPROTO_UDPLITE`, :py:obj:`UDPLITE_SEND_CSCOV`, and
-:py:obj:`UDPLITE_RECV_CSCOV`. Patch by Gabe Appleton.
+``socket.IPPROTO_UDPLITE``, ``UDPLITE_SEND_CSCOV``, and
+``UDPLITE_RECV_CSCOV``. Patch by Gabe Appleton.
 
 ..
 
@@ -5715,8 +5715,8 @@ The :c:macro:`METH_FASTCALL` calling convention has been documented.
 .. nonce: 4tClQT
 .. section: C API
 
-The new function :c:func:`PyCode_NewWithPosOnlyArgs` allows to create code
-objects like :c:func:`PyCode_New`, but with an extra *posonlyargcount*
+The new function :c:func:`!PyCode_NewWithPosOnlyArgs` allows to create code
+objects like :c:func:`!PyCode_New`, but with an extra *posonlyargcount*
 parameter for indicating the number of positonal-only arguments.
 
 ..

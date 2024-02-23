@@ -1420,7 +1420,7 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(set_asyncgen_hooks_doc,
-"set_asyncgen_hooks(* [, firstiter] [, finalizer])\n\
+"set_asyncgen_hooks([firstiter] [, finalizer])\n\
 \n\
 Set a finalizer for async generators objects."
 );
@@ -1878,7 +1878,15 @@ _PySys_GetSizeOf(PyObject *o)
         return (size_t)-1;
     }
 
-    return (size_t)size + _PyType_PreHeaderSize(Py_TYPE(o));
+    size_t presize = 0;
+    if (!Py_IS_TYPE(o, &PyType_Type) ||
+         PyType_HasFeature((PyTypeObject *)o, Py_TPFLAGS_HEAPTYPE))
+    {
+        /* Add the size of the pre-header if "o" is not a static type */
+        presize = _PyType_PreHeaderSize(Py_TYPE(o));
+    }
+
+    return (size_t)size + presize;
 }
 
 static PyObject *
@@ -2115,6 +2123,22 @@ static PyObject *
 sys__clear_type_cache_impl(PyObject *module)
 /*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
+    PyType_ClearCache();
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys._clear_internal_caches
+
+Clear all internal performance-related caches.
+[clinic start generated code]*/
+
+static PyObject *
+sys__clear_internal_caches_impl(PyObject *module)
+/*[clinic end generated code: output=0ee128670a4966d6 input=253e741ca744f6e8]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _Py_Executors_InvalidateAll(interp);
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
@@ -2453,6 +2477,7 @@ static PyMethodDef sys_methods[] = {
     {"audit", _PyCFunction_CAST(sys_audit), METH_FASTCALL, audit_doc },
     {"breakpointhook", _PyCFunction_CAST(sys_breakpointhook),
      METH_FASTCALL | METH_KEYWORDS, breakpointhook_doc},
+    SYS__CLEAR_INTERNAL_CACHES_METHODDEF
     SYS__CLEAR_TYPE_CACHE_METHODDEF
     SYS__CURRENT_FRAMES_METHODDEF
     SYS__CURRENT_EXCEPTIONS_METHODDEF
