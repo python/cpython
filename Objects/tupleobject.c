@@ -3,10 +3,11 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_pyerrors.h"      // _Py_FatalRefcountError()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError(), _PyDebugAllocatorStats()
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -62,7 +63,6 @@ tuple_alloc(Py_ssize_t size)
 static inline PyObject *
 tuple_get_empty(void)
 {
-    Py_INCREF(&_Py_SINGLETON(tuple_empty));
     return (PyObject *)&_Py_SINGLETON(tuple_empty);
 }
 
@@ -172,8 +172,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
     items = result->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
-        Py_INCREF(o);
-        items[i] = o;
+        items[i] = Py_NewRef(o);
     }
     va_end(vargs);
     _PyObject_GC_TRACK(result);
@@ -291,7 +290,7 @@ error:
 
 /* Hash for tuples. This is a slightly simplified version of the xxHash
    non-cryptographic hash:
-   - we do not use any parallellism, there is only 1 accumulator.
+   - we do not use any parallelism, there is only 1 accumulator.
    - we drop the final mixing since this is just a permutation of the
      output space: it does not help against collisions.
    - at the end, we mangle the length with a single constant.
@@ -368,8 +367,7 @@ tupleitem(PyTupleObject *a, Py_ssize_t i)
         PyErr_SetString(PyExc_IndexError, "tuple index out of range");
         return NULL;
     }
-    Py_INCREF(a->ob_item[i]);
-    return a->ob_item[i];
+    return Py_NewRef(a->ob_item[i]);
 }
 
 PyObject *
@@ -386,8 +384,7 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
-        Py_INCREF(item);
-        dst[i] = item;
+        dst[i] = Py_NewRef(item);
     }
     _PyObject_GC_TRACK(tuple);
     return (PyObject *)tuple;
@@ -426,8 +423,7 @@ tupleslice(PyTupleObject *a, Py_ssize_t ilow,
     if (ihigh < ilow)
         ihigh = ilow;
     if (ilow == 0 && ihigh == Py_SIZE(a) && PyTuple_CheckExact(a)) {
-        Py_INCREF(a);
-        return (PyObject *)a;
+        return Py_NewRef(a);
     }
     return _PyTuple_FromArray(a->ob_item + ilow, ihigh - ilow);
 }
@@ -450,8 +446,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     PyObject **src, **dest;
     PyTupleObject *np;
     if (Py_SIZE(a) == 0 && PyTuple_CheckExact(bb)) {
-        Py_INCREF(bb);
-        return bb;
+        return Py_NewRef(bb);
     }
     if (!PyTuple_Check(bb)) {
         PyErr_Format(PyExc_TypeError,
@@ -462,8 +457,7 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     PyTupleObject *b = (PyTupleObject *)bb;
 
     if (Py_SIZE(b) == 0 && PyTuple_CheckExact(a)) {
-        Py_INCREF(a);
-        return (PyObject *)a;
+        return Py_NewRef(a);
     }
     assert((size_t)Py_SIZE(a) + (size_t)Py_SIZE(b) < PY_SSIZE_T_MAX);
     size = Py_SIZE(a) + Py_SIZE(b);
@@ -479,15 +473,13 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
     dest = np->ob_item;
     for (i = 0; i < Py_SIZE(a); i++) {
         PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
+        dest[i] = Py_NewRef(v);
     }
     src = b->ob_item;
     dest = np->ob_item + Py_SIZE(a);
     for (i = 0; i < Py_SIZE(b); i++) {
         PyObject *v = src[i];
-        Py_INCREF(v);
-        dest[i] = v;
+        dest[i] = Py_NewRef(v);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *)np;
@@ -496,52 +488,46 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
 static PyObject *
 tuplerepeat(PyTupleObject *a, Py_ssize_t n)
 {
-    Py_ssize_t size;
-    PyTupleObject *np;
-    if (Py_SIZE(a) == 0 || n == 1) {
+    const Py_ssize_t input_size = Py_SIZE(a);
+    if (input_size == 0 || n == 1) {
         if (PyTuple_CheckExact(a)) {
             /* Since tuples are immutable, we can return a shared
                copy in this case */
-            Py_INCREF(a);
-            return (PyObject *)a;
+            return Py_NewRef(a);
         }
     }
-    if (Py_SIZE(a) == 0 || n <= 0) {
+    if (input_size == 0 || n <= 0) {
         return tuple_get_empty();
     }
-    if (n > PY_SSIZE_T_MAX / Py_SIZE(a))
+    assert(n>0);
+
+    if (input_size > PY_SSIZE_T_MAX / n)
         return PyErr_NoMemory();
-    size = Py_SIZE(a) * n;
-    np = tuple_alloc(size);
+    Py_ssize_t output_size = input_size * n;
+
+    PyTupleObject *np = tuple_alloc(output_size);
     if (np == NULL)
         return NULL;
+
     PyObject **dest = np->ob_item;
-    PyObject **dest_end = dest + size;
-    if (Py_SIZE(a) == 1) {
+    if (input_size == 1) {
         PyObject *elem = a->ob_item[0];
-        Py_SET_REFCNT(elem, Py_REFCNT(elem) + n);
-#ifdef Py_REF_DEBUG
-        _Py_RefTotal += n;
-#endif
+        _Py_RefcntAdd(elem, n);
+        PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
             *dest++ = elem;
         }
     }
     else {
         PyObject **src = a->ob_item;
-        PyObject **src_end = src + Py_SIZE(a);
+        PyObject **src_end = src + input_size;
         while (src < src_end) {
-            Py_SET_REFCNT(*src, Py_REFCNT(*src) + n);
-#ifdef Py_REF_DEBUG
-            _Py_RefTotal += n;
-#endif
+            _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
-        // Now src chases after dest in the same buffer
-        src = np->ob_item;
-        while (dest < dest_end) {
-            *dest++ = *src++;
-        }
+
+        _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
+                          sizeof(PyObject *)*input_size);
     }
     _PyObject_GC_TRACK(np);
     return (PyObject *) np;
@@ -753,8 +739,7 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     }
     for (i = 0; i < n; i++) {
         item = PyTuple_GET_ITEM(tmp, i);
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(newobj, i, item);
+        PyTuple_SET_ITEM(newobj, i, Py_NewRef(item));
     }
     Py_DECREF(tmp);
 
@@ -805,8 +790,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         else if (start == 0 && step == 1 &&
                  slicelength == PyTuple_GET_SIZE(self) &&
                  PyTuple_CheckExact(self)) {
-            Py_INCREF(self);
-            return (PyObject *)self;
+            return Py_NewRef(self);
         }
         else {
             PyTupleObject* result = tuple_alloc(slicelength);
@@ -816,8 +800,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
             dest = result->ob_item;
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
-                it = src[cur];
-                Py_INCREF(it);
+                it = Py_NewRef(src[cur]);
                 dest[i] = it;
             }
 
@@ -949,10 +932,6 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
         return *pv == NULL ? -1 : 0;
     }
 
-    /* XXX UNREF/NEWREF interface should be more symmetrical */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
     if (_PyObject_GC_IS_TRACKED(v)) {
         _PyObject_GC_UNTRACK(v);
     }
@@ -966,10 +945,13 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
     if (sv == NULL) {
         *pv = NULL;
+#ifdef Py_REF_DEBUG
+        _Py_DecRefTotal(_PyInterpreterState_GET());
+#endif
         PyObject_GC_Del(v);
         return -1;
     }
-    _Py_NewReference((PyObject *) sv);
+    _Py_NewReferenceNoTotal((PyObject *) sv);
     /* Zero out items added by growing */
     if (newsize > oldsize)
         memset(&sv->ob_item[oldsize], 0,
@@ -980,48 +962,20 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 }
 
 
-PyStatus
-_PyTuple_InitTypes(PyInterpreterState *interp)
-{
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
+static void maybe_freelist_clear(struct _Py_object_freelists *, int);
 
-    if (PyType_Ready(&PyTuple_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize tuple type");
-    }
-
-    if (PyType_Ready(&PyTupleIter_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize tuple iterator type");
-    }
-
-    return _PyStatus_OK();
-}
-
-static void maybe_freelist_clear(PyInterpreterState *, int);
 
 void
-_PyTuple_Fini(PyInterpreterState *interp)
+_PyTuple_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
-    maybe_freelist_clear(interp, 1);
-}
-
-void
-_PyTuple_ClearFreeList(PyInterpreterState *interp)
-{
-    maybe_freelist_clear(interp, 0);
+    maybe_freelist_clear(freelists, is_finalization);
 }
 
 /*********************** Tuple Iterator **************************/
 
-typedef struct {
-    PyObject_HEAD
-    Py_ssize_t it_index;
-    PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
-} tupleiterobject;
 
 static void
-tupleiter_dealloc(tupleiterobject *it)
+tupleiter_dealloc(_PyTupleIterObject *it)
 {
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
@@ -1029,14 +983,14 @@ tupleiter_dealloc(tupleiterobject *it)
 }
 
 static int
-tupleiter_traverse(tupleiterobject *it, visitproc visit, void *arg)
+tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
 {
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-tupleiter_next(tupleiterobject *it)
+tupleiter_next(_PyTupleIterObject *it)
 {
     PyTupleObject *seq;
     PyObject *item;
@@ -1050,8 +1004,7 @@ tupleiter_next(tupleiterobject *it)
     if (it->it_index < PyTuple_GET_SIZE(seq)) {
         item = PyTuple_GET_ITEM(seq, it->it_index);
         ++it->it_index;
-        Py_INCREF(item);
-        return item;
+        return Py_NewRef(item);
     }
 
     it->it_seq = NULL;
@@ -1060,7 +1013,7 @@ tupleiter_next(tupleiterobject *it)
 }
 
 static PyObject *
-tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 {
     Py_ssize_t len = 0;
     if (it->it_seq)
@@ -1071,17 +1024,22 @@ tupleiter_len(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(tupleiterobject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     if (it->it_seq)
-        return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                             it->it_seq, it->it_index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     else
-        return Py_BuildValue("N(())", _PyEval_GetBuiltin(&_Py_ID(iter)));
+        return Py_BuildValue("N(())", iter);
 }
 
 static PyObject *
-tupleiter_setstate(tupleiterobject *it, PyObject *state)
+tupleiter_setstate(_PyTupleIterObject *it, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
@@ -1109,7 +1067,7 @@ static PyMethodDef tupleiter_methods[] = {
 PyTypeObject PyTupleIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple_iterator",                           /* tp_name */
-    sizeof(tupleiterobject),                    /* tp_basicsize */
+    sizeof(_PyTupleIterObject),                    /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)tupleiter_dealloc,              /* tp_dealloc */
@@ -1142,18 +1100,17 @@ PyTypeObject PyTupleIter_Type = {
 static PyObject *
 tuple_iter(PyObject *seq)
 {
-    tupleiterobject *it;
+    _PyTupleIterObject *it;
 
     if (!PyTuple_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
+    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
     if (it == NULL)
         return NULL;
     it->it_index = 0;
-    Py_INCREF(seq);
-    it->it_seq = (PyTupleObject *)seq;
+    it->it_seq = (PyTupleObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
@@ -1163,30 +1120,26 @@ tuple_iter(PyObject *seq)
  * freelists *
  *************/
 
-#define STATE (interp->tuple)
-#define FREELIST_FINALIZED (STATE.numfree[0] < 0)
+#define TUPLE_FREELIST (freelists->tuples)
+#define FREELIST_FINALIZED (TUPLE_FREELIST.numfree[0] < 0)
 
 static inline PyTupleObject *
 maybe_freelist_pop(Py_ssize_t size)
 {
-#if PyTuple_NFREELISTS > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-#ifdef Py_DEBUG
-    /* maybe_freelist_pop() must not be called after maybe_freelist_fini(). */
-    assert(!FREELIST_FINALIZED);
-#endif
+#ifdef WITH_FREELISTS
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     if (size == 0) {
         return NULL;
     }
     assert(size > 0);
     if (size < PyTuple_MAXSAVESIZE) {
         Py_ssize_t index = size - 1;
-        PyTupleObject *op = STATE.free_list[index];
+        PyTupleObject *op = TUPLE_FREELIST.items[index];
         if (op != NULL) {
             /* op is the head of a linked list, with the first item
                pointing to the next node.  Here we pop off the old head. */
-            STATE.free_list[index] = (PyTupleObject *) op->ob_item[0];
-            STATE.numfree[index]--;
+            TUPLE_FREELIST.items[index] = (PyTupleObject *) op->ob_item[0];
+            TUPLE_FREELIST.numfree[index]--;
             /* Inlined _PyObject_InitVar() without _PyType_HasFeature() test */
 #ifdef Py_TRACE_REFS
             /* maybe_freelist_push() ensures these were already set. */
@@ -1196,6 +1149,7 @@ maybe_freelist_pop(Py_ssize_t size)
 #endif
             _Py_NewReference((PyObject *)op);
             /* END inlined _PyObject_InitVar() */
+            OBJECT_STAT_INC(from_freelist);
             return op;
         }
     }
@@ -1206,25 +1160,23 @@ maybe_freelist_pop(Py_ssize_t size)
 static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
-#if PyTuple_NFREELISTS > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-#ifdef Py_DEBUG
-    /* maybe_freelist_push() must not be called after maybe_freelist_fini(). */
-    assert(!FREELIST_FINALIZED);
-#endif
+#ifdef WITH_FREELISTS
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     if (Py_SIZE(op) == 0) {
         return 0;
     }
     Py_ssize_t index = Py_SIZE(op) - 1;
     if (index < PyTuple_NFREELISTS
-        && STATE.numfree[index] < PyTuple_MAXFREELIST
+        && TUPLE_FREELIST.numfree[index] < PyTuple_MAXFREELIST
+        && TUPLE_FREELIST.numfree[index] >= 0
         && Py_IS_TYPE(op, &PyTuple_Type))
     {
         /* op is the head of a linked list, with the first item
            pointing to the next node.  Here we set op as the new head. */
-        op->ob_item[0] = (PyObject *) STATE.free_list[index];
-        STATE.free_list[index] = op;
-        STATE.numfree[index]++;
+        op->ob_item[0] = (PyObject *) TUPLE_FREELIST.items[index];
+        TUPLE_FREELIST.items[index] = op;
+        TUPLE_FREELIST.numfree[index]++;
+        OBJECT_STAT_INC(to_freelist);
         return 1;
     }
 #endif
@@ -1232,13 +1184,13 @@ maybe_freelist_push(PyTupleObject *op)
 }
 
 static void
-maybe_freelist_clear(PyInterpreterState *interp, int fini)
+maybe_freelist_clear(struct _Py_object_freelists *freelists, int fini)
 {
-#if PyTuple_NFREELISTS > 0
+#ifdef WITH_FREELISTS
     for (Py_ssize_t i = 0; i < PyTuple_NFREELISTS; i++) {
-        PyTupleObject *p = STATE.free_list[i];
-        STATE.free_list[i] = NULL;
-        STATE.numfree[i] = fini ? -1 : 0;
+        PyTupleObject *p = TUPLE_FREELIST.items[i];
+        TUPLE_FREELIST.items[i] = NULL;
+        TUPLE_FREELIST.numfree[i] = fini ? -1 : 0;
         while (p) {
             PyTupleObject *q = p;
             p = (PyTupleObject *)(p->ob_item[0]);
@@ -1252,14 +1204,14 @@ maybe_freelist_clear(PyInterpreterState *interp, int fini)
 void
 _PyTuple_DebugMallocStats(FILE *out)
 {
-#if PyTuple_NFREELISTS > 0
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+#ifdef WITH_FREELISTS
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     for (int i = 0; i < PyTuple_NFREELISTS; i++) {
         int len = i + 1;
         char buf[128];
         PyOS_snprintf(buf, sizeof(buf),
                       "free %d-sized PyTupleObject", len);
-        _PyDebugAllocatorStats(out, buf, STATE.numfree[i],
+        _PyDebugAllocatorStats(out, buf, TUPLE_FREELIST.numfree[i],
                                _PyObject_VAR_SIZE(&PyTuple_Type, len));
     }
 #endif
