@@ -112,6 +112,7 @@ __all__ = [
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'kde',
     'linear_regression',
     'mean',
     'median',
