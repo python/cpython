@@ -1305,8 +1305,9 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
+            (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
-            OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+            self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -1319,8 +1320,9 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
+            (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
-            OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+            self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -1353,8 +1355,9 @@
             _Py_UOpsSymType *self = NULL;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand;
+            (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
-            OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+            self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -1380,6 +1383,7 @@
             _Py_UOpsSymType *func;
             _Py_UOpsSymType *self;
             callable = stack_pointer[-2 - oparg];
+            (void)callable;
             OUT_OF_SPACE_IF_NULL(func = sym_new_known_notnull(ctx));
             OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
             stack_pointer[-2 - oparg] = func;
