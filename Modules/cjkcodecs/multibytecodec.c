@@ -1006,7 +1006,7 @@ _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEn
 
     if (statebytes[0] > MAXENCPENDING*4) {
         PyErr_SetString(PyExc_UnicodeError, "pending buffer too large");
-        goto errorexit;
+        return NULL;
     }
 
     pending = PyUnicode_DecodeUTF8((const char *)statebytes+1,
