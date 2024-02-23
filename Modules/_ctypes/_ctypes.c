@@ -126,34 +126,7 @@ bytes(cdata)
 
 #include "pycore_long.h"          // _PyLong_GetZero()
 
-/* Allow defining static types that have space for StgInfo at the end.
- * These should all be converted to actual heap types that
- * honor tp_basicsize of their metaclass!
- */
-typedef struct {
-    PyHeapTypeObject ht;
-    StgInfo info;
-} _HackyHeapType;
-
-static _HackyHeapType PyCData_Type;
-static _HackyHeapType PyCData_Type;
-static _HackyHeapType Union_Type;
-static _HackyHeapType Struct_Type;
-static _HackyHeapType Simple_Type;
-static _HackyHeapType PyCArray_Type;
-static _HackyHeapType PyCPointer_Type;
-static _HackyHeapType PyCFuncPtr_Type;
-
-
-ctypes_state global_state = {
-    .PyCData_Type = (PyTypeObject*)&PyCData_Type,
-    .Struct_Type = (PyTypeObject*)&Struct_Type,
-    .Union_Type = (PyTypeObject*)&Union_Type,
-    .PyCArray_Type = (PyTypeObject*)&PyCArray_Type,
-    .Simple_Type = (PyTypeObject*)&Simple_Type,
-    .PyCPointer_Type = (PyTypeObject*)&PyCPointer_Type,
-    .PyCFuncPtr_Type = (PyTypeObject*)&PyCFuncPtr_Type,
-};
+ctypes_state global_state = {0};
 
 PyObject *PyExc_ArgError = NULL;
 
