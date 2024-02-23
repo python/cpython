@@ -183,7 +183,6 @@ struct _dictkeysobject {
  * [-1] = prefix size. [-2] = used size. size[-2-n...] = insertion order.
  */
 struct _dictvalues {
-    uint8_t refcount;
     uint8_t capacity;
     uint8_t size;
     uint8_t embedded;
@@ -217,7 +216,6 @@ static inline int
 _PyObject_InlineValuesAreValid(PyObject *obj)
 {
     PyDictValues *values = _PyObject_InlineValues(obj);
-    assert(values->refcount == 0 || values->refcount == 1);
     return values->valid;
 }
 

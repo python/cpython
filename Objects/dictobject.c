@@ -557,7 +557,6 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
     else {
         CHECK(keys->dk_kind == DICT_KEYS_SPLIT);
         CHECK(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
-        CHECK(mp->ma_values->refcount == 1);
         if (mp->ma_values->embedded) {
             CHECK(mp->ma_values->embedded == 1);
             CHECK(mp->ma_values->valid == 1);
@@ -722,7 +721,6 @@ new_values(size_t size)
     if (res == NULL) {
         return NULL;
     }
-    res->refcount = 0;
     res->embedded = 0;
     res->size = 0;
     res->capacity = size;
@@ -767,10 +765,6 @@ new_dict(PyInterpreterState *interp,
     }
     mp->ma_keys = keys;
     mp->ma_values = values;
-    if (values) {
-        assert(values->refcount == 0);
-        values->refcount++;
-    }
     mp->ma_used = used;
     mp->ma_version_tag = DICT_NEXT_VERSION(interp);
     ASSERT_CONSISTENT(mp);
@@ -3180,8 +3174,6 @@ PyDict_Copy(PyObject *o)
             Py_XINCREF(newvalues->values[i]);
         }
         split_copy->ma_values = newvalues;
-        assert(newvalues->refcount == 0);
-        newvalues->refcount++;
         split_copy->ma_keys = mp->ma_keys;
         split_copy->ma_used = mp->ma_used;
         split_copy->ma_version_tag = DICT_NEXT_VERSION(interp);
@@ -5518,7 +5510,6 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
     values->capacity = size;
     values->size = 0;
     values->embedded = 1;
-    values->refcount = 0;
     values->valid = 1;
     for (size_t i = 0; i < size; i++) {
         values->values[i] = NULL;
@@ -5767,11 +5758,7 @@ PyObject_ClearManagedDict(PyObject *obj)
             PyDictObject *dict = (PyDictObject *)dorv_ptr->dict;
             if (dict) {
                 assert(dict->ma_values == values);
-                dict->ma_values->refcount--;
-                assert(dict->ma_values->refcount == 0);
                 dict->ma_values = copy_values(values);
-                assert(dict->ma_values->refcount == 0);
-                dict->ma_values->refcount++;
                 values->valid = 0;
                 _PyDict_CheckConsistency((PyObject *)dict, 1);
             }
@@ -5802,15 +5789,10 @@ _PyDict_DetachFromObject(PyObject *dict, PyObject *obj)
     assert(mp->ma_values->embedded);
     assert(mp->ma_values->valid);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-    mp->ma_values->refcount--;
-    assert(mp->ma_values->refcount == 0);
     mp->ma_values = copy_values(mp->ma_values);
     if (mp->ma_values == NULL) {
         return -1;
     }
-    assert(mp->ma_values->refcount == 0);
-    mp->ma_values->refcount++;
-    assert(_PyObject_InlineValues(obj)->refcount == 0);
     _PyObject_InlineValues(obj)->valid = 0;
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     ASSERT_CONSISTENT(dict);
