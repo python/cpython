@@ -1600,7 +1600,9 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         a.extend([Indexable(ord('a'))])
         self.assertEqual(a, b'a')
         a = bytearray(b'abc')
-        self.assertRaises(TypeError, a.extend, 'def', msg="Expected iterable of integers; got: 'str'")
+        self.assertRaises(TypeError,
+                          "Expected iterable of integers; got: 'str'",
+                          a.extend, 'def')
 
     def test_remove(self):
         b = bytearray(b'hello')
