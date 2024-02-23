@@ -628,38 +628,29 @@ StructUnionType_paramfunc(CDataObject *self)
     return parg;
 }
 
-static PyObject *
-StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isStruct)
+static int
+StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruct)
 {
-    PyTypeObject *result;
     PyObject *fields;
 
-    /* create the new instance (which is a class,
-       since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (!result)
-        return NULL;
-
-    PyObject *attrdict = PyType_GetDict(result);
+    PyObject *attrdict = PyType_GetDict((PyTypeObject *)self);
     if (!attrdict) {
-        return NULL;
+        return -1;
     }
 
     /* keep this for bw compatibility */
-    int r = PyDict_Contains(result->tp_dict, &_Py_ID(_abstract_));
+    int r = PyDict_Contains(attrdict, &_Py_ID(_abstract_));
     if (r > 0) {
-        return (PyObject *)result;
+        return 0;
     }
     if (r < 0) {
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    StgInfo *info = PyStgInfo_Init(st, result);
+    StgInfo *info = PyStgInfo_Init(st, (PyTypeObject *)self);
     if (!info) {
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
     if (!isStruct) {
         info->flags |= TYPEFLAG_HASUNION;
@@ -667,57 +658,52 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
 
     info->format = _ctypes_alloc_format_string(NULL, "B");
     if (info->format == NULL) {
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
 
     info->paramfunc = StructUnionType_paramfunc;
 
     if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_fields_), &fields) < 0) {
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
     if (fields) {
-        if (PyObject_SetAttr((PyObject *)result, &_Py_ID(_fields_), fields) < 0) {
-            Py_DECREF(result);
+        if (PyObject_SetAttr(self, &_Py_ID(_fields_), fields) < 0) {
             Py_DECREF(fields);
-            return NULL;
+            return -1;
         }
         Py_DECREF(fields);
-        return (PyObject *)result;
+        return 0;
     }
     else {
         StgInfo *baseinfo;
-        if (PyStgInfo_FromType(st, (PyObject *)result->tp_base,
+        if (PyStgInfo_FromType(st, (PyObject *)((PyTypeObject *)self)->tp_base,
                                &baseinfo) < 0) {
-            Py_DECREF(result);
-            return NULL;
+            return -1;
         }
         if (baseinfo == NULL) {
-            return (PyObject *)result;
+            return 0;
         }
 
         /* copy base info */
         if (-1 == PyCStgInfo_clone(info, baseinfo)) {
-            Py_DECREF(result);
-            return NULL;
+            return -1;
         }
         info->flags &= ~DICTFLAG_FINAL; /* clear the 'final' flag in the subclass info */
         baseinfo->flags |= DICTFLAG_FINAL; /* set the 'final' flag in the baseclass info */
-        return (PyObject *)result;
     }
+    return 0;
 }
 
-static PyObject *
-PyCStructType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static int
+PyCStructType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    return StructUnionType_new(type, args, kwds, 1);
+    return StructUnionType_init(self, args, kwds, 1);
 }
 
-static PyObject *
-UnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static int
+UnionType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    return StructUnionType_new(type, args, kwds, 0);
+    return StructUnionType_init(self, args, kwds, 0);
 }
 
 PyDoc_STRVAR(from_address_doc,
@@ -1075,7 +1061,7 @@ static PyType_Slot pycstruct_type_slots[] = {
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
-    {Py_tp_new, PyCStructType_new},
+    {Py_tp_init, PyCStructType_init},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
@@ -1095,7 +1081,7 @@ static PyType_Slot union_type_slots[] = {
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
-    {Py_tp_new, UnionType_new},
+    {Py_tp_init, UnionType_init},
 
     // Sequence protocol.
     {Py_sq_repeat, CDataType_repeat},
