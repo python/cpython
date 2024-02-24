@@ -892,7 +892,7 @@ def kde(data, h, kernel='normal'):
         raise TypeError('Data sequence must contain ints or floats')
 
     if h <= 0.0:
-        raise StatisticsError(f'Bandwidth h must be positive, not {h=}')
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
 
     match kernel:
 
@@ -957,7 +957,7 @@ def kde(data, h, kernel='normal'):
             supported = sample[i : j]
             return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
 
-    pdf.__doc__ = f'PDF estimate with the {kernel!r} kernel and bandwidth {h}.'
+    pdf.__doc__ = f'PDF estimate with {kernel=!r} and {h=!r}'
 
     return pdf
 
