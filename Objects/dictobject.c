@@ -2474,15 +2474,17 @@ delete_index_from_values(PyDictValues *values, Py_ssize_t ix)
 {
     uint8_t *array = get_insertion_order_array(values);
     int size = values->size;
+    assert(size <= values->capacity);
     int i;
     for (i = 0; array[i] != ix; i++) {
         assert(i < size);
     }
     assert(i < size);
+    size--;
     for (; i < size; i++) {
         array[i] = array[i+1];
     }
-    values->size = size-1;
+    values->size = size;
 }
 
 static int
