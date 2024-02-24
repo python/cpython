@@ -31,6 +31,91 @@ get_list_freelist(void)
 }
 #endif
 
+#ifdef Py_GIL_DISABLED
+static size_t
+list_good_size(Py_ssize_t size)
+{
+    // 4, 8, 16, 24, 32, 40, 48, 64, 80, ...
+    // NOTE: we add one here so that the rounding accounts for the "allocated"
+    size_t reqsize = (size_t)size + 1;
+    if (reqsize <= 4) {
+        reqsize = 4;
+    }
+    else if (reqsize <= 48) {
+        reqsize = (reqsize + 7) & ~7;
+    }
+    else {
+        reqsize = (reqsize + 15) & ~15;
+        if (reqsize <= MI_MEDIUM_OBJ_WSIZE_MAX) {
+            reqsize = mi_good_size(reqsize * sizeof(PyObject *))/sizeof(PyObject*);
+        }
+        else {
+            // ensure geometric spacing for large arrays
+            size_t shift = mi_bsr(reqsize) - 2;
+            reqsize = ((reqsize >> shift) + 1) << shift;
+        }
+    }
+    return reqsize - 1;
+}
+
+static PyObject**
+list_allocate_items(size_t capacity)
+{
+    if (capacity > PY_SSIZE_T_MAX / sizeof(PyObject *) - 1) {
+        return NULL;
+    }
+    PyObject **items = PyMem_Malloc(capacity * sizeof(PyObject *));
+    return items;
+}
+#endif
+
+static PyListObject *
+list_new(Py_ssize_t size)
+{
+    PyListObject *op;
+    assert(size >= 0);
+#ifdef WITH_FREELISTS
+    struct _Py_list_freelist *list_freelist = get_list_freelist();
+    if (PyList_MAXFREELIST && list_freelist->numfree > 0) {
+        list_freelist->numfree--;
+        op = list_freelist->items[list_freelist->numfree];
+        OBJECT_STAT_INC(from_freelist);
+        _Py_NewReference((PyObject *)op);
+    }
+    else
+#endif
+    {
+        op = PyObject_GC_New(PyListObject, &PyList_Type);
+        if (op == NULL) {
+            return NULL;
+        }
+    }
+    if (size <= 0) {
+        op->ob_item = NULL;
+        op->allocated = 0;
+    }
+    else {
+#ifdef Py_GIL_DISABLED
+        size_t capacity = list_good_size(size);
+        PyObject **items = list_allocate_items(capacity);
+#else
+        size_t capacity = size;
+        PyObject **items = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+#endif
+        if (items == NULL) {
+            op->ob_item = NULL;
+            Py_DECREF(op);
+            PyErr_NoMemory();
+            return NULL;
+        }
+        op->ob_item = items;
+        op->allocated = capacity;
+    }
+    Py_SET_SIZE(op, size);
+    _PyObject_GC_TRACK(op);
+    return op;
+}
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -151,61 +236,18 @@ _PyList_DebugMallocStats(FILE *out)
 PyObject *
 PyList_New(Py_ssize_t size)
 {
-    PyListObject *op;
-
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
-
-#ifdef WITH_FREELISTS
-    struct _Py_list_freelist *list_freelist = get_list_freelist();
-    if (PyList_MAXFREELIST && list_freelist->numfree > 0) {
-        list_freelist->numfree--;
-        op = list_freelist->items[list_freelist->numfree];
-        OBJECT_STAT_INC(from_freelist);
-        _Py_NewReference((PyObject *)op);
-    }
-    else
-#endif
-    {
-        op = PyObject_GC_New(PyListObject, &PyList_Type);
-        if (op == NULL) {
-            return NULL;
+    PyListObject *op = list_new(size);
+    if (op && op->ob_item) {
+        PyObject **items = op->ob_item;
+        for (Py_ssize_t i = 0, n = op->allocated; i < n; i++) {
+            FT_ATOMIC_STORE_PTR_RELEASE(items[i], NULL);
         }
     }
-    if (size <= 0) {
-        op->ob_item = NULL;
-    }
-    else {
-        op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
-        if (op->ob_item == NULL) {
-            Py_DECREF(op);
-            return PyErr_NoMemory();
-        }
-    }
-    Py_SET_SIZE(op, size);
-    op->allocated = size;
-    _PyObject_GC_TRACK(op);
-    return (PyObject *) op;
-}
-
-static PyObject *
-list_new_prealloc(Py_ssize_t size)
-{
-    assert(size > 0);
-    PyListObject *op = (PyListObject *) PyList_New(0);
-    if (op == NULL) {
-        return NULL;
-    }
-    assert(op->ob_item == NULL);
-    op->ob_item = PyMem_New(PyObject *, size);
-    if (op->ob_item == NULL) {
-        Py_DECREF(op);
-        return PyErr_NoMemory();
-    }
-    op->allocated = size;
-    return (PyObject *) op;
+    return (PyObject *)op;
 }
 
 Py_ssize_t
@@ -515,7 +557,7 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     if (len <= 0) {
         return PyList_New(0);
     }
-    np = (PyListObject *) list_new_prealloc(len);
+    np = (PyListObject *) list_new(len);
     if (np == NULL)
         return NULL;
 
@@ -567,7 +609,7 @@ list_concat_lock_held(PyListObject *a, PyListObject *b)
     if (size == 0) {
         return PyList_New(0);
     }
-    np = (PyListObject *) list_new_prealloc(size);
+    np = (PyListObject *) list_new(size);
     if (np == NULL) {
         return NULL;
     }
@@ -617,7 +659,7 @@ list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
         return PyErr_NoMemory();
     Py_ssize_t output_size = input_size * n;
 
-    PyListObject *np = (PyListObject *) list_new_prealloc(output_size);
+    PyListObject *np = (PyListObject *) list_new(output_size);
     if (np == NULL)
         return NULL;
 
@@ -658,7 +700,7 @@ list_repeat(PyObject *aa, Py_ssize_t n)
 }
 
 static void
-list_clear(PyListObject *a)
+list_clear_impl(PyListObject *a, bool is_resize)
 {
     PyObject **items = a->ob_item;
     if (items == NULL) {
@@ -675,16 +717,31 @@ list_clear(PyListObject *a)
         Py_XDECREF(items[i]);
     }
     // TODO: Use QSBR technique, if the list is shared between threads,
-    PyMem_Free(items);
-
+#ifdef Py_GIL_DISABLED
+    bool use_qsbr = is_resize && _PyObject_GC_IS_SHARED(a);
+#else
+    bool use_qsbr = false;
+#endif
+    if (use_qsbr) {
+        _PyMem_FreeDelayed(items);
+    }
+    else {
+        PyMem_Free(items);
+    }
     // Note that there is no guarantee that the list is actually empty
     // at this point, because XDECREF may have populated it indirectly again!
+}
+
+static void
+list_clear(PyListObject *a)
+{
+    list_clear_impl(a, true);
 }
 
 static int
 list_clear_slot(PyObject *self)
 {
-    list_clear((PyListObject *)self);
+    list_clear_impl((PyListObject *)self, false);
     return 0;
 }
 
@@ -3095,7 +3152,7 @@ list_subscript(PyObject* _self, PyObject* item)
             return list_slice(self, start, stop);
         }
         else {
-            result = list_new_prealloc(slicelength);
+            result = (PyObject *)list_new(slicelength);
             if (!result) return NULL;
 
             src = self->ob_item;

@@ -1,6 +1,6 @@
 import sys
 from test import list_tests
-from test.support import cpython_only
+from test.support import cpython_only, Py_GIL_DISABLED
 import pickle
 import unittest
 
@@ -230,6 +230,7 @@ class ListTest(list_tests.CommonTest):
         self.assertFalse(list3 == list4)
 
     @cpython_only
+    @unittest.skipIf(Py_GIL_DISABLED, 'Only for the default build')
     def test_preallocation(self):
         iterable = [0] * 10
         iter_size = sys.getsizeof(iterable)
