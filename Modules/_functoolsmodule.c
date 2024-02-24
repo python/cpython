@@ -366,6 +366,7 @@ partial_repr(partialobject *pto)
     PyObject *result = NULL;
     PyObject *arglist;
     PyObject *mod;
+    PyObject *name;
     Py_ssize_t i, n;
     PyObject *key, *value;
     int status;
@@ -402,17 +403,26 @@ partial_repr(partialobject *pto)
     }
 
     mod = _PyType_GetModuleName(Py_TYPE(pto));
+
     if (mod == NULL) {
-        result = PyUnicode_FromFormat("%S(%R%U)",
-                                      PyType_GetQualName(Py_TYPE(pto)),
-                                      pto->fn, arglist);
+        name = PyType_GetQualName(Py_TYPE(pto));
+        if (name == NULL) {
+            return NULL;
+        }
+        result = PyUnicode_FromFormat("%S(%R%U)", name, pto->fn, arglist);
     }
     else {
-        result = PyUnicode_FromFormat("%U.%S(%R%U)",
-                                      mod, PyType_GetQualName(Py_TYPE(pto)),
-                                      pto->fn, arglist);
+        name = PyType_GetQualName(Py_TYPE(pto));
+        if (name == NULL) {
+            Py_DECREF(mod);
+            return NULL;
+        }
+        result = PyUnicode_FromFormat("%U.%S(%R%U)", mod, name, pto->fn,
+                                      arglist);
+        Py_DECREF(mod);
     }
 
+    Py_DECREF(name);
     Py_DECREF(arglist);
 
  done:
