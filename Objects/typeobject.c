@@ -2151,8 +2151,8 @@ subtype_dealloc(PyObject *self)
         _PyObject_FreeInstanceAttributes(self);
     }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(self);
-        Py_CLEAR(dorv_ptr->dict);
+        PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(self);
+        Py_CLEAR(managed_dict->dict);
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);
@@ -3112,7 +3112,8 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return -1;
     }
     if (*dictptr) {
-        if (_PyDict_DetachFromObject(*dictptr, obj)) {
+        assert(PyDict_Check(*dictptr));
+        if (_PyDict_DetachFromObject((PyDictObject *)*dictptr, obj)) {
             return -1;
         }
         Py_SETREF(*dictptr, Py_XNewRef(value));
@@ -6085,13 +6086,13 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-            PyObject *dict = _PyObject_DictOrValuesPointer(self)->dict;
+            PyDictObject *dict = _PyObject_ManagedDictPointer(self)->dict;
             if (dict == NULL) {
-                dict = _PyObject_MakeDictFromInstanceAttributes(self);
+                dict = (PyDictObject *)_PyObject_MakeDictFromInstanceAttributes(self);
                 if (dict == NULL) {
                     return -1;
                 }
-                _PyObject_DictOrValuesPointer(self)->dict = dict;
+                _PyObject_ManagedDictPointer(self)->dict = dict;
             }
             if (_PyDict_DetachFromObject(dict, self)) {
                 return -1;

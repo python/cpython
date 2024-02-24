@@ -1890,8 +1890,8 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+            PyDictObject *dict = managed_dict->dict;
             if (dict == NULL) goto deoptimize;
             assert(PyDict_CheckExact((PyObject *)dict));
             break;
@@ -1904,8 +1904,8 @@
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+            PyDictObject *dict = managed_dict->dict;
             if (hint >= (size_t)dict->ma_keys->dk_nentries) goto deoptimize;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -2024,7 +2024,7 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            if (_PyObject_DictOrValuesPointer(owner)->dict) goto deoptimize;
+            if (_PyObject_ManagedDictPointer(owner)->dict) goto deoptimize;
             if (_PyObject_InlineValues(owner)->valid == 0) goto deoptimize;
             break;
         }
@@ -2037,7 +2037,7 @@
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             STAT_INC(STORE_ATTR, hit);
             assert(_PyObject_InlineValuesConsistencyCheck(owner));
-            assert(_PyObject_DictOrValuesPointer(owner)->dict == NULL);
+            assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
             values->values[index] = value;

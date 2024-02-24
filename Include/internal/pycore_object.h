@@ -635,14 +635,14 @@ PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
 #endif
 
 typedef union {
-    PyObject *dict;
-} PyDictOrValues;
+    PyDictObject *dict;
+} PyManagedDictPointer;
 
-static inline PyDictOrValues *
-_PyObject_DictOrValuesPointer(PyObject *obj)
+static inline PyManagedDictPointer *
+_PyObject_ManagedDictPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return (PyDictOrValues *)((char *)obj + MANAGED_DICT_OFFSET);
+    return (PyManagedDictPointer *)((char *)obj + MANAGED_DICT_OFFSET);
 }
 
 static inline PyDictValues *
@@ -651,12 +651,6 @@ _PyObject_InlineValues(PyObject *obj)
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     return (PyDictValues *)((char *)obj + sizeof(PyObject));
-}
-
-static inline PyObject *
-_PyDictOrValues_GetDict(PyDictOrValues dorv)
-{
-    return dorv.dict;
 }
 
 extern int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);

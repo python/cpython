@@ -11,7 +11,7 @@ extern "C" {
 
 #include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_identifier.h"    // _Py_Identifier
-#include "pycore_object.h"        // PyDictOrValues
+#include "pycore_object.h"        // PyManagedDictPointer
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
 extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
@@ -294,7 +294,7 @@ _PyInlineValuesSize(PyTypeObject *tp)
 }
 
 int
-_PyDict_DetachFromObject(PyObject *dict, PyObject *obj);
+_PyDict_DetachFromObject(PyDictObject *dict, PyObject *obj);
 
 #ifdef __cplusplus
 }

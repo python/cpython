@@ -1397,16 +1397,16 @@ _PyObject_GetDictPtr(PyObject *obj)
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
         return _PyObject_ComputedDictPointer(obj);
     }
-    PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
-    if (dorv_ptr->dict == NULL && Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        PyObject *dict = _PyObject_MakeDictFromInstanceAttributes(obj);
+    PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(obj);
+    if (managed_dict->dict == NULL && Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        PyDictObject *dict = (PyDictObject *)_PyObject_MakeDictFromInstanceAttributes(obj);
         if (dict == NULL) {
             PyErr_Clear();
             return NULL;
         }
-        dorv_ptr->dict = dict;
+        managed_dict->dict = dict;
     }
-    return &dorv_ptr->dict;
+    return (PyObject **)&managed_dict->dict;
 }
 
 PyObject *
@@ -1486,8 +1486,8 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         dict = NULL;
     }
     else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
-        PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
-        dict = dorv_ptr->dict;
+        PyManagedDictPointer* managed_dict = _PyObject_ManagedDictPointer(obj);
+        dict = (PyObject *)managed_dict->dict;
     }
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
@@ -1594,12 +1594,12 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                     res = NULL;
                     goto done;
                 }
-                _PyObject_DictOrValuesPointer(obj)->dict = dict;
+                _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)dict;
             }
         }
         else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
-            PyDictOrValues* dorv_ptr = _PyObject_DictOrValuesPointer(obj);
-            dict = _PyDictOrValues_GetDict(*dorv_ptr);
+            PyManagedDictPointer* managed_dict = _PyObject_ManagedDictPointer(obj);
+            dict = (PyObject *)managed_dict->dict;
         }
         else {
             PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
@@ -1700,8 +1700,8 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             goto error_check;
         }
         else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
-            PyDictOrValues *dorv_ptr = _PyObject_DictOrValuesPointer(obj);
-            dictptr = &dorv_ptr->dict;
+            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(obj);
+            dictptr = &managed_dict->dict;
         }
         else {
             dictptr = _PyObject_ComputedDictPointer(obj);
@@ -1773,7 +1773,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
     PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
         if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES) &&
-            _PyObject_DictOrValuesPointer(obj)->dict == NULL
+            _PyObject_ManagedDictPointer(obj)->dict == NULL
         ) {
             /* Was unable to convert to dict */
             PyErr_NoMemory();

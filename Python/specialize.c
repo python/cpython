@@ -827,8 +827,8 @@ specialize_dict_access(
         instr->op.code = values_op;
     }
     else {
-        PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-        PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(*dorv);
+        PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+        PyDictObject *dict = managed_dict->dict;
         if (dict == NULL || !PyDict_CheckExact(dict)) {
             SPECIALIZATION_FAIL(base_op, SPEC_FAIL_NO_DICT);
             return 0;
