@@ -12,7 +12,7 @@ import sys
 import sysconfig
 import test.support
 from test import support
-from test.support import os_helper
+from test.support import os_helper, Py_GIL_DISABLED
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
@@ -1575,9 +1575,12 @@ class SizeofTest(unittest.TestCase):
         check(re.finditer('',''), size('2P'))
         # list
         check(list([]), vsize('Pn'))
-        check(list([1]), vsize('Pn') + 2*self.P)
-        check(list([1, 2]), vsize('Pn') + 2*self.P)
-        check(list([1, 2, 3]), vsize('Pn') + 4*self.P)
+        if Py_GIL_DISABLED:
+            pass
+        else:
+            check(list([1]), vsize('Pn') + 2*self.P)
+            check(list([1, 2]), vsize('Pn') + 2*self.P)
+            check(list([1, 2, 3]), vsize('Pn') + 4*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)

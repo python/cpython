@@ -773,7 +773,6 @@ list_clear_impl(PyListObject *a, bool is_resize)
     while (--i >= 0) {
         Py_XDECREF(items[i]);
     }
-    // TODO: Use QSBR technique, if the list is shared between threads,
 #ifdef Py_GIL_DISABLED
     bool use_qsbr = is_resize && _PyObject_GC_IS_SHARED(a);
 #else

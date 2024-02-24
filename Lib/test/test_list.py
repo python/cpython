@@ -1,6 +1,6 @@
 import sys
 from test import list_tests
-from test.support import cpython_only, Py_GIL_DISABLED
+from test.support import cpython_only
 import pickle
 import unittest
 
