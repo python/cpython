@@ -1402,6 +1402,9 @@ XMLParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
+      .. versionadded:: 3.13
+
+
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
    for each opening tag, its ``end(tag)`` method for each closing tag, and data
    is processed by method ``data(data)``.  For further supported callback
@@ -1471,6 +1474,8 @@ XMLPullParser Objects
       with Expat (if currently enabled) and triggers a reparse.
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      .. versionadded:: 3.13
 
    .. method:: close()
 
