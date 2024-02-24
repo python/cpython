@@ -688,6 +688,14 @@ loops that truncate the stream.
               else:
                   break
 
+   Note, the element that first fails the predicate condition is
+   consumed from the input iterator and there is no way to access it.
+   This could be an issue if an application wants to further consume the
+   input iterator after takewhile has been run to exhaustion.  To work
+   around this problem, consider using `more-iterools before_and_after()
+   <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
+   instead.
+
 
 .. function:: tee(iterable, n=2)
 
@@ -770,7 +778,7 @@ The primary purpose of the itertools recipes is educational.  The recipes show
 various ways of thinking about individual tools — for example, that
 ``chain.from_iterable`` is related to the concept of flattening.  The recipes
 also give ideas about ways that the tools can be combined — for example, how
-``compress()`` and ``range()`` can work together.  The recipes also show patterns
+``starmap()`` and ``repeat()`` can work together.  The recipes also show patterns
 for using itertools with the :mod:`operator` and :mod:`collections` modules as
 well as with the built-in itertools such as ``map()``, ``filter()``,
 ``reversed()``, and ``enumerate()``.
@@ -855,10 +863,9 @@ which incur interpreter overhead.
        "Given a predicate that returns True or False, count the True results."
        return sum(map(pred, iterable))
 
-   def all_equal(iterable):
+   def all_equal(iterable, key=None):
        "Returns True if all the elements are equal to each other."
-       g = groupby(iterable)
-       return next(g, True) and not next(g, False)
+       return len(take(2, groupby(iterable, key))) <= 1
 
    def first_true(iterable, default=False, pred=None):
        """Returns the first true value in the iterable.
@@ -976,60 +983,15 @@ which incur interpreter overhead.
        """ Call a function repeatedly until an exception is raised.
 
        Converts a call-until-exception interface to an iterator interface.
-       Like builtins.iter(func, sentinel) but uses an exception instead
-       of a sentinel to end the loop.
-
-       Priority queue iterator:
-           iter_except(functools.partial(heappop, h), IndexError)
-
-       Non-blocking dictionary iterator:
-           iter_except(d.popitem, KeyError)
-
-       Non-blocking deque iterator:
-           iter_except(d.popleft, IndexError)
-
-       Non-blocking iterator over a producer Queue:
-           iter_except(q.get_nowait, Queue.Empty)
-
-       Non-blocking set iterator:
-           iter_except(s.pop, KeyError)
-
        """
+       # iter_except(d.popitem, KeyError) --> non-blocking dictionary iterator
        try:
            if first is not None:
-               # For database APIs needing an initial call to db.first()
                yield first()
            while True:
                yield func()
        except exception:
            pass
-
-   def before_and_after(predicate, it):
-       """ Variant of takewhile() that allows complete
-           access to the remainder of the iterator.
-
-           >>> it = iter('ABCdEfGhI')
-           >>> all_upper, remainder = before_and_after(str.isupper, it)
-           >>> ''.join(all_upper)
-           'ABC'
-           >>> ''.join(remainder)     # takewhile() would lose the 'd'
-           'dEfGhI'
-
-           Note that the true iterator must be fully consumed
-           before the remainder iterator can generate valid results.
-       """
-       it = iter(it)
-       transition = []
-
-       def true_iterator():
-           for elem in it:
-               if predicate(elem):
-                   yield elem
-               else:
-                   transition.append(elem)
-                   return
-
-       return true_iterator(), chain(transition, it)
 
 
 The following recipes have a more mathematical flavor:
@@ -1242,6 +1204,8 @@ The following recipes have a more mathematical flavor:
     True
 
     >>> [all_equal(s) for s in ('', 'A', 'AAAA', 'AAAB', 'AAABA')]
+    [True, True, True, False, False]
+    >>> [all_equal(s, key=str.casefold) for s in ('', 'A', 'AaAa', 'AAAB', 'AAABA')]
     [True, True, True, False, False]
 
     >>> quantify(range(99), lambda x: x%2==0)
@@ -1543,13 +1507,6 @@ The following recipes have a more mathematical flavor:
     >>> list(odds)
     [1, 3, 5, 7, 9]
 
-    >>> it = iter('ABCdEfGhI')
-    >>> all_upper, remainder = before_and_after(str.isupper, it)
-    >>> ''.join(all_upper)
-    'ABC'
-    >>> ''.join(remainder)
-    'dEfGhI'
-
     >>> list(subslices('ABCD'))
     ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
 
@@ -1640,6 +1597,32 @@ The following recipes have a more mathematical flavor:
             result.append(pool[-1-n])
         return tuple(result)
 
+    def before_and_after(predicate, it):
+       """ Variant of takewhile() that allows complete
+           access to the remainder of the iterator.
+
+           >>> it = iter('ABCdEfGhI')
+           >>> all_upper, remainder = before_and_after(str.isupper, it)
+           >>> ''.join(all_upper)
+           'ABC'
+           >>> ''.join(remainder)     # takewhile() would lose the 'd'
+           'dEfGhI'
+
+           Note that the true iterator must be fully consumed
+           before the remainder iterator can generate valid results.
+       """
+       it = iter(it)
+       transition = []
+
+       def true_iterator():
+           for elem in it:
+               if predicate(elem):
+                   yield elem
+               else:
+                   transition.append(elem)
+                   return
+
+       return true_iterator(), chain(transition, it)
 
 .. doctest::
     :hide:
@@ -1669,3 +1652,10 @@ The following recipes have a more mathematical flavor:
     >>> combos = list(combinations(iterable, r))
     >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
     True
+
+    >>> it = iter('ABCdEfGhI')
+    >>> all_upper, remainder = before_and_after(str.isupper, it)
+    >>> ''.join(all_upper)
+    'ABC'
+    >>> ''.join(remainder)
+    'dEfGhI'

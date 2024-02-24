@@ -603,9 +603,6 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
                                        PyStructSequence_Desc *desc,
                                        unsigned long tp_flags)
 {
-    if (Py_TYPE(type) == NULL) {
-        Py_SET_TYPE(type, &PyType_Type);
-    }
     Py_ssize_t n_unnamed_members;
     Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
     PyMemberDef *members = NULL;
@@ -621,7 +618,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
         }
         initialize_static_fields(type, desc, members, tp_flags);
 
-        _Py_SetImmortal((PyObject *)type);
+        _Py_SetImmortal(type);
     }
 #ifndef NDEBUG
     else {

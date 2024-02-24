@@ -257,6 +257,27 @@ class PyMockUnseekableIO(MockUnseekableIO, pyio.BytesIO):
     UnsupportedOperation = pyio.UnsupportedOperation
 
 
+class MockCharPseudoDevFileIO(MockFileIO):
+    # GH-95782
+    # ftruncate() does not work on these special files (and CPython then raises
+    # appropriate exceptions), so truncate() does not have to be accounted for
+    # here.
+    def __init__(self, data):
+        super().__init__(data)
+
+    def seek(self, *args):
+        return 0
+
+    def tell(self, *args):
+        return 0
+
+class CMockCharPseudoDevFileIO(MockCharPseudoDevFileIO, io.BytesIO):
+    pass
+
+class PyMockCharPseudoDevFileIO(MockCharPseudoDevFileIO, pyio.BytesIO):
+    pass
+
+
 class MockNonBlockWriterIO:
 
     def __init__(self):
@@ -1648,6 +1669,30 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(self.UnsupportedOperation, bufio.truncate)
         self.assertRaises(self.UnsupportedOperation, bufio.truncate, 0)
 
+    def test_tell_character_device_file(self):
+        # GH-95782
+        # For the (former) bug in BufferedIO to manifest, the wrapped IO obj
+        # must be able to produce at least 2 bytes.
+        raw = self.MockCharPseudoDevFileIO(b"12")
+        buf = self.tp(raw)
+        self.assertEqual(buf.tell(), 0)
+        self.assertEqual(buf.read(1), b"1")
+        self.assertEqual(buf.tell(), 0)
+
+    def test_seek_character_device_file(self):
+        raw = self.MockCharPseudoDevFileIO(b"12")
+        buf = self.tp(raw)
+        self.assertEqual(buf.seek(0, io.SEEK_CUR), 0)
+        self.assertEqual(buf.seek(1, io.SEEK_SET), 0)
+        self.assertEqual(buf.seek(0, io.SEEK_CUR), 0)
+        self.assertEqual(buf.read(1), b"1")
+
+        # In the C implementation, tell() sets the BufferedIO's abs_pos to 0,
+        # which means that the next seek() could return a negative offset if it
+        # does not sanity-check:
+        self.assertEqual(buf.tell(), 0)
+        self.assertEqual(buf.seek(0, io.SEEK_CUR), 0)
+
 
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
@@ -2496,6 +2541,28 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 self.assertEqual(f.read(1), b'c')
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'a2c')
+
+    def test_read1_after_write(self):
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                self.assertEqual(f.read1(1), b'b')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                self.assertEqual(f.read1(), b'bcd')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
+        with self.BytesIO(b'abcdef') as raw:
+            with self.tp(raw, 3) as f:
+                f.write(b"1")
+                # XXX: read(100) returns different numbers of bytes
+                # in Python and C implementations.
+                self.assertEqual(f.read1(100)[:3], b'bcd')
+                f.flush()
+                self.assertEqual(raw.getvalue(), b'1bcdef')
 
     def test_interleaved_readline_write(self):
         with self.BytesIO(b'ab\ncdef\ng\n') as raw:
@@ -4858,7 +4925,7 @@ def load_tests(loader, tests, pattern):
     # classes in the __dict__ of each test.
     mocks = (MockRawIO, MisbehavedRawIO, MockFileIO, CloseFailureIO,
              MockNonBlockWriterIO, MockUnseekableIO, MockRawIOWithoutRead,
-             SlowFlushRawIO)
+             SlowFlushRawIO, MockCharPseudoDevFileIO)
     all_members = io.__all__
     c_io_ns = {name : getattr(io, name) for name in all_members}
     py_io_ns = {name : getattr(pyio, name) for name in all_members}

@@ -1,2 +1,0 @@
-When csv.Error is raised when handling TypeError, do not print the TypeError
-traceback.
