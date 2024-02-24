@@ -325,7 +325,7 @@ class DirectoryHomonym(NamespacePackageTest):
     def test_namespace_package_submodule_homonym(self):
         submodule_path = 'project4.homonym'
         got = importlib.machinery.PathFinder.find_spec(submodule_path)
-        self.assertEqual(got.name, 'project4.homonym')
+        self.assertEqual(got.name, submodule_path)
         self.assertIsNone(got.loader)
         self.assertNotIn('project4', got.submodule_search_locations[0])
 
