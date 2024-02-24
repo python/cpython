@@ -24,6 +24,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -960,13 +961,13 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
-get_counter_optimizer(PyObject *self, PyObject *arg)
+new_counter_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewCounter();
 }
 
 static PyObject *
-get_uop_optimizer(PyObject *self, PyObject *arg)
+new_uop_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewUOpOptimizer();
 }
@@ -977,7 +978,9 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    PyUnstable_SetOptimizer((_PyOptimizerObject*)opt);
+    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1033,7 +1036,7 @@ static PyObject *
 invalidate_executors(PyObject *self, PyObject *obj)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    _Py_Executors_InvalidateDependency(interp, obj);
+    _Py_Executors_InvalidateDependency(interp, obj, 1);
     Py_RETURN_NONE;
 }
 
@@ -1649,6 +1652,20 @@ get_rare_event_counters(PyObject *self, PyObject *type)
     );
 }
 
+static PyObject *
+reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    interp->rare_events.set_class = 0;
+    interp->rare_events.set_bases = 0;
+    interp->rare_events.set_eval_frame_func = 0;
+    interp->rare_events.builtin_dict = 0;
+    interp->rare_events.func_modification = 0;
+
+    return Py_None;
+}
+
 
 #ifdef Py_GIL_DISABLED
 static PyObject *
@@ -1659,7 +1676,6 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromUnsignedLongLong(tid);
 }
 #endif
-
 
 static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
@@ -1704,8 +1720,8 @@ static PyMethodDef module_functions[] = {
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
-    {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
-    {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
+    {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
+    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
@@ -1736,10 +1752,12 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_type_module_name",    get_type_module_name,            METH_O},
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
+    {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
     {"has_inline_values", has_inline_values, METH_O},
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
+    {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

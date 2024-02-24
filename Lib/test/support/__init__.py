@@ -1727,19 +1727,22 @@ def _check_tracemalloc():
 
 
 def check_free_after_iterating(test, iter, cls, args=()):
-    class A(cls):
-        def __del__(self):
-            nonlocal done
-            done = True
-            try:
-                next(it)
-            except StopIteration:
-                pass
-
     done = False
-    it = iter(A(*args))
-    # Issue 26494: Shouldn't crash
-    test.assertRaises(StopIteration, next, it)
+    def wrapper():
+        class A(cls):
+            def __del__(self):
+                nonlocal done
+                done = True
+                try:
+                    next(it)
+                except StopIteration:
+                    pass
+
+        it = iter(A(*args))
+        # Issue 26494: Shouldn't crash
+        test.assertRaises(StopIteration, next, it)
+
+    wrapper()
     # The sequence should be deallocated just after the end of iterating
     gc_collect()
     test.assertTrue(done)
@@ -2376,6 +2379,46 @@ def sleeping_retry(timeout, err_msg=None, /,
 
         time.sleep(delay)
         delay = min(delay * 2, max_delay)
+
+
+class CPUStopwatch:
+    """Context manager to roughly time a CPU-bound operation.
+
+    Disables GC. Uses CPU time if it can (i.e. excludes sleeps & time of
+    other processes).
+
+    N.B.:
+    - This *includes* time spent in other threads.
+    - Some systems only have a coarse resolution; check
+      stopwatch.clock_info.rseolution if.
+
+    Usage:
+
+    with ProcessStopwatch() as stopwatch:
+        ...
+    elapsed = stopwatch.seconds
+    resolution = stopwatch.clock_info.resolution
+    """
+    def __enter__(self):
+        get_time = time.process_time
+        clock_info = time.get_clock_info('process_time')
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
+            get_time = time.monotonic
+            clock_info = time.get_clock_info('monotonic')
+        self.context = disable_gc()
+        self.context.__enter__()
+        self.get_time = get_time
+        self.clock_info = clock_info
+        self.start_time = get_time()
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            end_time = self.get_time()
+        finally:
+            result = self.context.__exit__(*exc)
+        self.seconds = end_time - self.start_time
+        return result
 
 
 @contextlib.contextmanager

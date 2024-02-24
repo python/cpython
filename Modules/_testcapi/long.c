@@ -776,6 +776,51 @@ pylong_asvoidptr(PyObject *module, PyObject *arg)
     return Py_NewRef((PyObject *)value);
 }
 
+static PyObject *
+pylong_asnativebytes(PyObject *module, PyObject *args)
+{
+    PyObject *v;
+    Py_buffer buffer;
+    Py_ssize_t n, endianness;
+    if (!PyArg_ParseTuple(args, "Ow*nn", &v, &buffer, &n, &endianness)) {
+        return NULL;
+    }
+    if (buffer.readonly) {
+        PyErr_SetString(PyExc_TypeError, "buffer must be writable");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    if (buffer.len < n) {
+        PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    Py_ssize_t res = PyLong_AsNativeBytes(v, buffer.buf, n, (int)endianness);
+    PyBuffer_Release(&buffer);
+    return res >= 0 ? PyLong_FromSsize_t(res) : NULL;
+}
+
+static PyObject *
+pylong_fromnativebytes(PyObject *module, PyObject *args)
+{
+    Py_buffer buffer;
+    Py_ssize_t n, endianness, signed_;
+    if (!PyArg_ParseTuple(args, "y*nnn", &buffer, &n, &endianness, &signed_)) {
+        return NULL;
+    }
+    if (buffer.len < n) {
+        PyErr_SetString(PyExc_ValueError, "buffer must be at least 'n' bytes");
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    PyObject *res = signed_
+        ? PyLong_FromNativeBytes(buffer.buf, n, (int)endianness)
+        : PyLong_FromUnsignedNativeBytes(buffer.buf, n, (int)endianness);
+    PyBuffer_Release(&buffer);
+    return res;
+}
+
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
     _TESTCAPI_TEST_LONG_API_METHODDEF
@@ -804,6 +849,8 @@ static PyMethodDef test_methods[] = {
     {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
+    {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
+    {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
     {NULL},
 };
 
@@ -813,6 +860,5 @@ _PyTestCapi_Init_Long(PyObject *mod)
     if (PyModule_AddFunctions(mod, test_methods) < 0) {
         return -1;
     }
-
     return 0;
 }

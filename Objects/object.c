@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_brc.h"           // _Py_brc_queue_object()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
@@ -298,13 +299,13 @@ _Py_DecRef(PyObject *o)
 
 #ifdef Py_GIL_DISABLED
 # ifdef Py_REF_DEBUG
-static inline int
-is_shared_refcnt_dead(Py_ssize_t shared)
+static int
+is_dead(PyObject *o)
 {
 #  if SIZEOF_SIZE_T == 8
-    return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
+    return (uintptr_t)o->ob_type == 0xDDDDDDDDDDDDDDDD;
 #  else
-    return shared == (Py_ssize_t)0xDDDDDDDD;
+    return (uintptr_t)o->ob_type == 0xDDDDDDDD;
 #  endif
 }
 # endif
@@ -334,8 +335,8 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
         }
 
 #ifdef Py_REF_DEBUG
-        if ((_Py_REF_IS_MERGED(new_shared) && new_shared < 0) ||
-            is_shared_refcnt_dead(shared))
+        if ((new_shared < 0 && _Py_REF_IS_MERGED(new_shared)) ||
+            (should_queue && is_dead(o)))
         {
             _Py_NegativeRefcount(filename, lineno, o);
         }
@@ -344,12 +345,10 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
                                                 &shared, new_shared));
 
     if (should_queue) {
-        // TODO: the inter-thread queue is not yet implemented. For now,
-        // we just merge the refcount here.
-        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(o, -1);
-        if (refcount == 0) {
-            _Py_Dealloc(o);
-        }
+#ifdef Py_REF_DEBUG
+        _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+        _Py_brc_queue_object(o);
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
@@ -399,16 +398,16 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
     do {
         refcnt = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
-        if (_Py_REF_IS_MERGED(shared)) {
-            return refcnt;
-        }
-
         refcnt += (Py_ssize_t)op->ob_ref_local;
         refcnt += extra;
 
         new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
                                                 &shared, new_shared));
+
+#ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+#endif
 
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
@@ -794,6 +793,21 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
+void
+_PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization)
+{
+    // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
+    // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
+    _PyFloat_ClearFreeList(freelists, is_finalization);
+    _PyTuple_ClearFreeList(freelists, is_finalization);
+    _PyList_ClearFreeList(freelists, is_finalization);
+    _PyDict_ClearFreeList(freelists, is_finalization);
+    _PyContext_ClearFreeList(freelists, is_finalization);
+    _PyAsyncGen_ClearFreeLists(freelists, is_finalization);
+    // Only be cleared if is_finalization is true.
+    _PyObjectStackChunk_ClearFreeList(freelists, is_finalization);
+    _PySlice_ClearFreeList(freelists, is_finalization);
+}
 
 /*
 def _PyObject_FunctionStr(x):
@@ -2373,21 +2387,6 @@ void
 _Py_NewReferenceNoTotal(PyObject *op)
 {
     new_reference(op);
-}
-
-void
-_Py_SetImmortal(PyObject *op)
-{
-    if (PyObject_IS_GC(op) && _PyObject_GC_IS_TRACKED(op)) {
-        _PyObject_GC_UNTRACK(op);
-    }
-#ifdef Py_GIL_DISABLED
-    op->ob_tid = _Py_UNOWNED_TID;
-    op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
-    op->ob_ref_shared = 0;
-#else
-    op->ob_refcnt = _Py_IMMORTAL_REFCNT;
-#endif
 }
 
 void
