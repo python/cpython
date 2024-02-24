@@ -30,9 +30,9 @@ following links:
       for Debian users
    https://en.opensuse.org/Portal:Packaging
       for OpenSuse users
-   https://docs-old.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
+   https://docs.fedoraproject.org/en-US/package-maintainers/Packaging_Tutorial_GNU_Hello/
       for Fedora users
-   http://www.slackbook.org/html/package-management-making-packages.html
+   https://slackbook.org/html/package-management-making-packages.html
       for Slackware users
 
 
@@ -54,13 +54,6 @@ On FreeBSD and OpenBSD
      pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/i386/python-2.5.1p2.tgz
 
 
-On OpenSolaris
---------------
-
-You can get Python from `OpenCSW <https://www.opencsw.org/>`_.  Various versions
-of Python are available and can be installed with e.g. ``pkgutil -i python27``.
-
-
 .. _building-python-on-unix:
 
 Building Python
@@ -69,7 +62,7 @@ Building Python
 If you want to compile CPython yourself, first thing you should do is get the
 `source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `clone
-<https://devguide.python.org/setup/#getting-the-source-code>`_.  (If you want
+<https://devguide.python.org/setup/#get-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
 The build process consists of the usual commands::
@@ -93,7 +86,7 @@ Python-related paths and files
 ==============================
 
 These are subject to difference depending on local installation conventions;
-:envvar:`prefix` (``${prefix}``) and :envvar:`exec_prefix` (``${exec_prefix}``)
+:option:`prefix <--prefix>` and :option:`exec_prefix <--exec-prefix>`
 are installation-dependent and should be interpreted as for GNU software; they
 may be the same.
 
@@ -158,18 +151,19 @@ Custom OpenSSL
    .. code-block:: shell-session
 
       $ curl -O https://www.openssl.org/source/openssl-VERSION.tar.gz
-         $ tar xzf openssl-VERSION
-         $ pushd openssl-VERSION
-         $ ./config \
-              --prefix=/usr/local/custom-openssl \
-              --openssldir=/etc/ssl
-         $ make -j1 depend
-         $ make -j8
-         $ make install_sw
-         $ popd
+      $ tar xzf openssl-VERSION
+      $ pushd openssl-VERSION
+      $ ./config \
+          --prefix=/usr/local/custom-openssl \
+          --libdir=lib \
+          --openssldir=/etc/ssl
+      $ make -j1 depend
+      $ make -j8
+      $ make install_sw
+      $ popd
 
 3. Build Python with custom OpenSSL
-   (see the configure `--with-openssl` and `--with-openssl-rpath` options)
+   (see the configure ``--with-openssl`` and ``--with-openssl-rpath`` options)
 
    .. code-block:: shell-session
 

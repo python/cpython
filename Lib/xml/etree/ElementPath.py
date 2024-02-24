@@ -48,7 +48,7 @@
 # --------------------------------------------------------------------
 
 # Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/psf/license for licensing details.
+# See https://www.python.org/psf/license for licensing details.
 
 ##
 # Implementation module for XPath support.  There's usually no reason
@@ -416,6 +416,8 @@ def findall(elem, path, namespaces=None):
 def findtext(elem, path, default=None, namespaces=None):
     try:
         elem = next(iterfind(elem, path, namespaces))
-        return elem.text or ""
+        if elem.text is None:
+            return ""
+        return elem.text
     except StopIteration:
         return default

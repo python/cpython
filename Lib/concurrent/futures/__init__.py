@@ -50,4 +50,4 @@ def __getattr__(name):
         ThreadPoolExecutor = te
         return te
 
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

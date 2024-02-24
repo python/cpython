@@ -73,13 +73,13 @@ class ButtonTest(unittest.TestCase):
     def test_click_apply(self):
         d = dialog
         deactivate = d.deactivate_current_config = mock.Mock()
-        save_ext = d.save_all_changed_extensions = mock.Mock()
+        save_ext = d.extpage.save_all_changed_extensions = mock.Mock()
         activate = d.activate_config_changes = mock.Mock()
         d.buttons['Apply'].invoke()
         deactivate.assert_called_once()
         save_ext.assert_called_once()
         activate.assert_called_once()
-        del d.save_all_changed_extensions
+        del d.extpage.save_all_changed_extensions
         del d.activate_config_changes, d.deactivate_current_config
 
     def test_click_cancel(self):
@@ -260,27 +260,6 @@ class FontPageTest(unittest.TestCase):
         d.set_samples = Func()  # Re-mask for other tests.
 
 
-class IndentTest(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        cls.page = dialog.fontpage
-        cls.page.update()
-
-    def test_load_tab_cfg(self):
-        d = self.page
-        d.space_num.set(16)
-        d.load_tab_cfg()
-        self.assertEqual(d.space_num.get(), 4)
-
-    def test_indent_scale(self):
-        d = self.page
-        changes.clear()
-        d.indent_scale.set(20)
-        self.assertEqual(d.space_num.get(), 16)
-        self.assertEqual(mainpage, {'Indent': {'num-spaces': '16'}})
-
-
 class HighPageTest(unittest.TestCase):
     """Test that highlight tab widgets enable users to make changes.
 
@@ -441,20 +420,14 @@ class HighPageTest(unittest.TestCase):
         # Set highlight_target through clicking highlight_sample.
         eq = self.assertEqual
         d = self.page
-
-        elem = {}
-        count = 0
         hs = d.highlight_sample
         hs.focus_force()
-        hs.see(1.0)
-        hs.update_idletasks()
 
-        def tag_to_element(elem):
-            for element, tag in d.theme_elements.items():
-                elem[tag[0]] = element
-
-        def click_it(start):
-            x, y, dx, dy = hs.bbox(start)
+        def click_char(index):
+            "Simulate click on character at *index*."
+            hs.see(index)
+            hs.update_idletasks()
+            x, y, dx, dy = hs.bbox(index)
             x += dx // 2
             y += dy // 2
             hs.event_generate('<Enter>', x=0, y=0)
@@ -462,17 +435,20 @@ class HighPageTest(unittest.TestCase):
             hs.event_generate('<ButtonPress-1>', x=x, y=y)
             hs.event_generate('<ButtonRelease-1>', x=x, y=y)
 
-        # Flip theme_elements to make the tag the key.
-        tag_to_element(elem)
+        # Reverse theme_elements to make the tag the key.
+        elem = {tag: element for element, tag in d.theme_elements.items()}
 
         # If highlight_sample has a tag that isn't in theme_elements, there
         # will be a KeyError in the test run.
+        count = 0
         for tag in hs.tag_names():
-            for start_index in hs.tag_ranges(tag)[0::2]:
-                count += 1
-                click_it(start_index)
+            try:
+                click_char(hs.tag_nextrange(tag, "1.0")[0])
                 eq(d.highlight_target.get(), elem[tag])
+                count += 1
                 eq(d.set_highlight_target.called, count)
+            except IndexError:
+                pass  # Skip unused theme_elements tag, like 'sel'.
 
     def test_highlight_sample_double_click(self):
         # Test double click on highlight_sample.
@@ -975,8 +951,8 @@ class KeysPageTest(unittest.TestCase):
     def test_get_new_keys(self):
         eq = self.assertEqual
         d = self.page
-        orig_getkeysdialog = configdialog.GetKeysDialog
-        gkd = configdialog.GetKeysDialog = Func(return_self=True)
+        orig_getkeysdialog = configdialog.GetKeysWindow
+        gkd = configdialog.GetKeysWindow = Func(return_self=True)
         gnkn = d.get_new_keys_name = Func()
 
         d.button_new_keys.state(('!disabled',))
@@ -1018,7 +994,7 @@ class KeysPageTest(unittest.TestCase):
         eq(d.keybinding.get(), '<Key-p>')
 
         del d.get_new_keys_name
-        configdialog.GetKeysDialog = orig_getkeysdialog
+        configdialog.GetKeysWindow = orig_getkeysdialog
 
     def test_get_new_keys_name(self):
         orig_sectionname = configdialog.SectionName
@@ -1203,7 +1179,7 @@ class KeysPageTest(unittest.TestCase):
         del d.askyesno
 
 
-class GenPageTest(unittest.TestCase):
+class WinPageTest(unittest.TestCase):
     """Test that general tab widgets enable users to make changes.
 
     Test that widget actions set vars, that var changes add
@@ -1211,24 +1187,22 @@ class GenPageTest(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        page = cls.page = dialog.genpage
+        page = cls.page = dialog.winpage
         dialog.note.select(page)
         page.update()
 
     def setUp(self):
         changes.clear()
 
-    def test_load_general_cfg(self):
+    def test_load_windows_cfg(self):
         # Set to wrong values, load, check right values.
         eq = self.assertEqual
         d = self.page
         d.startup_edit.set(1)
-        d.autosave.set(1)
         d.win_width.set(1)
         d.win_height.set(1)
-        d.load_general_cfg()
+        d.load_windows_cfg()
         eq(d.startup_edit.get(), 0)
-        eq(d.autosave.get(), 0)
         eq(d.win_width.get(), '80')
         eq(d.win_height.get(), '40')
 
@@ -1252,6 +1226,12 @@ class GenPageTest(unittest.TestCase):
         d.win_width_int.insert(0, '11')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
 
+    def test_indent_spaces(self):
+        d = self.page
+        d.indent_chooser.set(6)
+        self.assertEqual(d.indent_spaces.get(), '6')
+        self.assertEqual(mainpage, {'Indent': {'num-spaces': '6'}})
+
     def test_cursor_blink(self):
         self.page.cursor_blink_bool.invoke()
         self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 'False'}})
@@ -1274,6 +1254,35 @@ class GenPageTest(unittest.TestCase):
         d.bell_on.invoke()
         eq(extpage, {'ParenMatch': {'bell': 'False'}})
 
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+
+class ShedPageTest(unittest.TestCase):
+    """Test that shed tab widgets enable users to make changes.
+
+    Test that widget actions set vars, that var changes add
+    options to changes.
+    """
+    @classmethod
+    def setUpClass(cls):
+        page = cls.page = dialog.shedpage
+        dialog.note.select(page)
+        page.update()
+
+    def setUp(self):
+        changes.clear()
+
+    def test_load_shelled_cfg(self):
+        # Set to wrong values, load, check right values.
+        eq = self.assertEqual
+        d = self.page
+        d.autosave.set(1)
+        d.load_shelled_cfg()
+        eq(d.autosave.get(), 0)
+
     def test_autosave(self):
         d = self.page
         d.save_auto_on.invoke()
@@ -1281,23 +1290,28 @@ class GenPageTest(unittest.TestCase):
         d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
-    def test_paragraph(self):
-        self.page.format_width_int.delete(0, 'end')
-        self.page.format_width_int.insert(0, '11')
-        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
-
     def test_context(self):
         self.page.context_int.delete(0, 'end')
         self.page.context_int.insert(0, '1')
         self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
 
+#unittest.skip("Nothing here yet TODO")
+class ExtPageTest(unittest.TestCase):
+    """Test that the help source list works correctly."""
+    @classmethod
+    def setUpClass(cls):
+        page = dialog.extpage
+        dialog.note.select(page)
+
+
 class HelpSourceTest(unittest.TestCase):
     """Test that the help source list works correctly."""
     @classmethod
     def setUpClass(cls):
-        dialog.note.select(dialog.extpage)
-        frame = cls.frame = dialog.frame_help
+        page = dialog.extpage
+        dialog.note.select(page)
+        frame = cls.frame = page.frame_help
         frame.set = frame.set_add_delete_state = Func()
         frame.upc = frame.update_help_changes = Func()
         frame.update()

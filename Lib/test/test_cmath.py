@@ -1,4 +1,4 @@
-from test.support import requires_IEEE_754, cpython_only
+from test.support import requires_IEEE_754, cpython_only, import_helper
 from test.test_math import parse_testfile, test_file
 import test.test_math as test_math
 import unittest
@@ -166,6 +166,11 @@ class CMathTests(unittest.TestCase):
         self.assertEqual(cmath.nan.imag, 0.0)
         self.assertEqual(cmath.nanj.real, 0.0)
         self.assertTrue(math.isnan(cmath.nanj.imag))
+        # Also check that the sign of all of these is positive:
+        self.assertEqual(math.copysign(1., cmath.nan.real), 1.)
+        self.assertEqual(math.copysign(1., cmath.nan.imag), 1.)
+        self.assertEqual(math.copysign(1., cmath.nanj.real), 1.)
+        self.assertEqual(math.copysign(1., cmath.nanj.imag), 1.)
 
         # Check consistency with reprs.
         self.assertEqual(repr(cmath.inf), "inf")
@@ -192,14 +197,7 @@ class CMathTests(unittest.TestCase):
         # end up being passed to the cmath functions
 
         # usual case: new-style class implementing __complex__
-        class MyComplex(object):
-            def __init__(self, value):
-                self.value = value
-            def __complex__(self):
-                return self.value
-
-        # old-style class implementing __complex__
-        class MyComplexOS:
+        class MyComplex:
             def __init__(self, value):
                 self.value = value
             def __complex__(self):
@@ -208,17 +206,12 @@ class CMathTests(unittest.TestCase):
         # classes for which __complex__ raises an exception
         class SomeException(Exception):
             pass
-        class MyComplexException(object):
-            def __complex__(self):
-                raise SomeException
-        class MyComplexExceptionOS:
+        class MyComplexException:
             def __complex__(self):
                 raise SomeException
 
         # some classes not providing __float__ or __complex__
         class NeitherComplexNorFloat(object):
-            pass
-        class NeitherComplexNorFloatOS:
             pass
         class Index:
             def __int__(self): return 2
@@ -228,48 +221,32 @@ class CMathTests(unittest.TestCase):
 
         # other possible combinations of __float__ and __complex__
         # that should work
-        class FloatAndComplex(object):
+        class FloatAndComplex:
             def __float__(self):
                 return flt_arg
             def __complex__(self):
                 return cx_arg
-        class FloatAndComplexOS:
-            def __float__(self):
-                return flt_arg
-            def __complex__(self):
-                return cx_arg
-        class JustFloat(object):
-            def __float__(self):
-                return flt_arg
-        class JustFloatOS:
+        class JustFloat:
             def __float__(self):
                 return flt_arg
 
         for f in self.test_functions:
             # usual usage
             self.assertEqual(f(MyComplex(cx_arg)), f(cx_arg))
-            self.assertEqual(f(MyComplexOS(cx_arg)), f(cx_arg))
             # other combinations of __float__ and __complex__
             self.assertEqual(f(FloatAndComplex()), f(cx_arg))
-            self.assertEqual(f(FloatAndComplexOS()), f(cx_arg))
             self.assertEqual(f(JustFloat()), f(flt_arg))
-            self.assertEqual(f(JustFloatOS()), f(flt_arg))
             self.assertEqual(f(Index()), f(int(Index())))
             # TypeError should be raised for classes not providing
             # either __complex__ or __float__, even if they provide
-            # __int__ or __index__.  An old-style class
-            # currently raises AttributeError instead of a TypeError;
-            # this could be considered a bug.
+            # __int__ or __index__:
             self.assertRaises(TypeError, f, NeitherComplexNorFloat())
             self.assertRaises(TypeError, f, MyInt())
-            self.assertRaises(Exception, f, NeitherComplexNorFloatOS())
             # non-complex return value from __complex__ -> TypeError
             for bad_complex in non_complexes:
                 self.assertRaises(TypeError, f, MyComplex(bad_complex))
-                self.assertRaises(TypeError, f, MyComplexOS(bad_complex))
             # exceptions in __complex__ should be propagated correctly
             self.assertRaises(SomeException, f, MyComplexException())
-            self.assertRaises(SomeException, f, MyComplexExceptionOS())
 
     def test_input_type(self):
         # ints should be acceptable inputs to all cmath
@@ -452,13 +429,13 @@ class CMathTests(unittest.TestCase):
     @cpython_only
     def test_polar_errno(self):
         # Issue #24489: check a previously set C errno doesn't disturb polar()
-        from _testcapi import set_errno
+        _testcapi = import_helper.import_module('_testcapi')
         def polar_with_errno_set(z):
-            set_errno(11)
+            _testcapi.set_errno(11)
             try:
                 return polar(z)
             finally:
-                set_errno(0)
+                _testcapi.set_errno(0)
         self.check_polar(polar_with_errno_set)
 
     def test_phase(self):
@@ -634,6 +611,14 @@ class IsCloseTests(test_math.IsCloseTests):
 
         self.assertIsClose(0.001-0.001j, 0.001+0.001j, abs_tol=2e-03)
         self.assertIsNotClose(0.001-0.001j, 0.001+0.001j, abs_tol=1e-03)
+
+    def test_complex_special(self):
+        self.assertIsNotClose(INF, INF*1j)
+        self.assertIsNotClose(INF*1j, INF)
+        self.assertIsNotClose(INF, -INF)
+        self.assertIsNotClose(-INF, INF)
+        self.assertIsNotClose(0, INF)
+        self.assertIsNotClose(0, INF*1j)
 
 
 if __name__ == "__main__":

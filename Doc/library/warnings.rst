@@ -105,7 +105,7 @@ The following warnings category classes are currently defined:
 |                                  | :class:`bytes` and :class:`bytearray`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`ResourceWarning`           | Base category for warnings related to         |
-|                                  | resource usage.                               |
+|                                  | resource usage (ignored by default).          |
 +----------------------------------+-----------------------------------------------+
 
 .. versionchanged:: 3.7
@@ -154,14 +154,19 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
 
 * *message* is a string containing a regular expression that the start of
-  the warning message must match.  The expression is compiled to always be
-  case-insensitive.
+  the warning message must match, case-insensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
+  warning message must contain (case-insensitively), ignoring any whitespace at
+  the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
   category must be a subclass in order to match.
 
-* *module* is a string containing a regular expression that the module name must
-  match.  The expression is compiled to be case-sensitive.
+* *module* is a string containing a regular expression that the start of the
+  fully qualified module name must match, case-sensitively.  In :option:`-W` and
+  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  fully qualified module name must be equal to (case-sensitively), ignoring any
+  whitespace at the start or end of *module*.
 
 * *lineno* is an integer that the line number where the warning occurred must
   match, or ``0`` to match all line numbers.
@@ -207,8 +212,7 @@ Some examples::
    error::ResourceWarning       # Treat ResourceWarning messages as errors
    default::DeprecationWarning  # Show DeprecationWarning messages
    ignore,default:::mymodule    # Only report warnings triggered by "mymodule"
-   error:::mymodule[.*]         # Convert warnings to errors in "mymodule"
-                                # and any subpackages of "mymodule"
+   error:::mymodule             # Convert warnings to errors in "mymodule"
 
 
 .. _default-warning-filter:
@@ -392,7 +396,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1, source=None)
+.. function:: warn(message, category=None, stacklevel=1, source=None, *, skip_file_prefixes=None)
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a :ref:`warning category class <warning-categories>`; it
@@ -403,18 +407,48 @@ Available Functions
    :ref:`warnings filter <warning-filter>`.  The *stacklevel* argument can be used by wrapper
    functions written in Python, like this::
 
-      def deprecation(message):
+      def deprecated_api(message):
           warnings.warn(message, DeprecationWarning, stacklevel=2)
 
-   This makes the warning refer to :func:`deprecation`'s caller, rather than to the
-   source of :func:`deprecation` itself (since the latter would defeat the purpose
-   of the warning message).
+   This makes the warning refer to ``deprecated_api``'s caller, rather than to
+   the source of ``deprecated_api`` itself (since the latter would defeat the
+   purpose of the warning message).
+
+   The *skip_file_prefixes* keyword argument can be used to indicate which
+   stack frames are ignored when counting stack levels. This can be useful when
+   you want the warning to always appear at call sites outside of a package
+   when a constant *stacklevel* does not fit all call paths or is otherwise
+   challenging to maintain. If supplied, it must be a tuple of strings. When
+   prefixes are supplied, stacklevel is implicitly overridden to be ``max(2,
+   stacklevel)``. To cause a warning to be attributed to the caller from
+   outside of the current package you might write::
+
+      # example/lower.py
+      _warn_skips = (os.path.dirname(__file__),)
+
+      def one_way(r_luxury_yacht=None, t_wobbler_mangrove=None):
+          if r_luxury_yacht:
+              warnings.warn("Please migrate to t_wobbler_mangrove=.",
+                            skip_file_prefixes=_warn_skips)
+
+      # example/higher.py
+      from . import lower
+
+      def another_way(**kw):
+          lower.one_way(**kw)
+
+   This makes the warning refer to both the ``example.lower.one_way()`` and
+   ``package.higher.another_way()`` call sites only from calling code living
+   outside of ``example`` package.
 
    *source*, if supplied, is the destroyed object which emitted a
    :exc:`ResourceWarning`.
 
    .. versionchanged:: 3.6
       Added *source* parameter.
+
+   .. versionchanged:: 3.12
+      Added *skip_file_prefixes*.
 
 
 .. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)
@@ -488,10 +522,60 @@ Available Functions
    and calls to :func:`simplefilter`.
 
 
+.. decorator:: deprecated(msg, *, category=DeprecationWarning, stacklevel=1)
+
+   Decorator to indicate that a class, function or overload is deprecated.
+
+   When this decorator is applied to an object,
+   deprecation warnings may be emitted at runtime when the object is used.
+   :term:`static type checkers <static type checker>`
+   will also generate a diagnostic on usage of the deprecated object.
+
+   Usage::
+
+      from warnings import deprecated
+      from typing import overload
+
+      @deprecated("Use B instead")
+      class A:
+          pass
+
+      @deprecated("Use g instead")
+      def f():
+          pass
+
+      @overload
+      @deprecated("int support is deprecated")
+      def g(x: int) -> int: ...
+      @overload
+      def g(x: str) -> int: ...
+
+   The warning specified by *category* will be emitted at runtime
+   on use of deprecated objects. For functions, that happens on calls;
+   for classes, on instantiation and on creation of subclasses.
+   If the *category* is ``None``, no warning is emitted at runtime.
+   The *stacklevel* determines where the
+   warning is emitted. If it is ``1`` (the default), the warning
+   is emitted at the direct caller of the deprecated object; if it
+   is higher, it is emitted further up the stack.
+   Static type checker behavior is not affected by the *category*
+   and *stacklevel* arguments.
+
+   The deprecation message passed to the decorator is saved in the
+   ``__deprecated__`` attribute on the decorated object.
+   If applied to an overload, the decorator
+   must be after the :func:`@overload <typing.overload>` decorator
+   for the attribute to exist on the overload as returned by
+   :func:`typing.get_overloads`.
+
+   .. versionadded:: 3.13
+      See :pep:`702`.
+
+
 Available Context Managers
 --------------------------
 
-.. class:: catch_warnings(*, record=False, module=None)
+.. class:: catch_warnings(*, record=False, module=None, action=None, category=Warning, lineno=0, append=False)
 
     A context manager that copies and, upon exit, restores the warnings filter
     and the :func:`showwarning` function.
@@ -507,6 +591,10 @@ Available Context Managers
     protected. This argument exists primarily for testing the :mod:`warnings`
     module itself.
 
+    If the *action* argument is not ``None``, the remaining arguments are
+    passed to :func:`simplefilter` as if it were called immediately on
+    entering the context.
+
     .. note::
 
         The :class:`catch_warnings` manager works by replacing and
@@ -514,3 +602,7 @@ Available Context Managers
         :func:`showwarning` function and internal list of filter
         specifications.  This means the context manager is modifying
         global state and therefore is not thread-safe.
+
+    .. versionchanged:: 3.11
+
+        Added the *action*, *category*, *lineno*, and *append* parameters.
