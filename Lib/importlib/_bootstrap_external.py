@@ -1370,7 +1370,7 @@ class _NamespacePath:
         try:
             module = sys.modules[parent_module_name]
         except KeyError:
-            return None
+            return sys.path
         return getattr(module, path_attr_name)
 
     def _recalculate(self):
