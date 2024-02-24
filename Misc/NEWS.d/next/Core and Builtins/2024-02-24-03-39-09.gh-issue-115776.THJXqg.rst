@@ -1,0 +1,4 @@
+The array of values, the ``PyDictValues`` struct is now embedded in the
+object during allocation. This provides better performance in the common
+case, and does not degrade as much when the object's ``__dict__`` is
+materialized.
