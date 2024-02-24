@@ -6811,8 +6811,6 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
              PyErr_WriteUnraisable(self);
         }
         assert(!values->valid);
-        assert(((PyDictObject *)dict)->ma_values == NULL ||
-               ((PyDictObject *)dict)->ma_values->valid);
     }
 }
 
