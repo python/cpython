@@ -2369,9 +2369,9 @@ class TestKDE(unittest.TestCase):
 
         def integrate(func, low, high, steps=10_000):
             "Numeric approximation of a definite function integral."
-            width = (high - low) / steps
-            xarr = (low + width/2 + width * i for i in range(steps))
-            return sum(map(func, xarr)) * width
+            dx = (high - low) / steps
+            midpoints = (low + (i + 1/2) * dx for i in range(steps))
+            return sum(map(func, midpoints)) * dx
 
         for kernel in kernels:
             with self.subTest(kernel=kernel):
