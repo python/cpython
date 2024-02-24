@@ -67,6 +67,56 @@ list_allocate_items(size_t capacity)
     PyObject **items = PyMem_Malloc(capacity * sizeof(PyObject *));
     return items;
 }
+
+/* Ensure ob_item has room for at least newsize elements, and set
+ * ob_size to newsize.  If newsize > ob_size on entry, the content
+ * of the new slots at exit is undefined heap trash; it's the caller's
+ * responsibility to overwrite them with sane values.
+ * The number of allocated elements may grow, shrink, or stay the same.
+ * Note that self->ob_item may change, and even if newsize is less
+ * than ob_size on entry.
+ */
+static int
+list_ensure_capacity_slow(PyListObject *self, Py_ssize_t base, Py_ssize_t extra)
+{
+    if (base > PY_SSIZE_T_MAX/(Py_ssize_t)sizeof(PyObject*) - extra) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    Py_ssize_t reqsize = base + extra;
+    Py_ssize_t allocated = self->allocated;
+    if (allocated >= reqsize) {
+        assert(self->ob_item != NULL || reqsize == 0);
+        return 0;
+    }
+
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)self)) {
+        _PyObject_GC_SET_SHARED(self);
+    }
+
+    size_t capacity = list_good_size(reqsize);
+    PyObject **items = list_allocate_items(capacity);
+    if (items == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyObject **old = self->ob_item;
+    if (self->ob_item) {
+        memcpy(items, self->ob_item, allocated * sizeof(PyObject*));
+    }
+    _Py_atomic_store_ptr_release(&self->ob_item, items);
+    self->allocated = capacity;
+    if (old) {
+        if (_PyObject_GC_IS_SHARED(self)) {
+            _PyMem_FreeDelayed(old);
+        }
+        else {
+            PyMem_Free(old);
+        }
+    }
+    return 0;
+}
 #endif
 
 static PyListObject *
@@ -184,8 +234,14 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 }
 
 static int
-list_preallocate_exact(PyListObject *self, Py_ssize_t size)
+list_ensure_capacity(PyListObject *self, Py_ssize_t base, Py_ssize_t extra)
 {
+#ifdef Py_GIL_DISABLED
+    if (base > self->allocated - extra) {
+        return list_ensure_capacity_slow(self, base, extra);
+    }
+#else
+    Py_ssize_t size = extra;
     assert(self->ob_item == NULL);
     assert(size > 0);
 
@@ -202,6 +258,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     }
     self->ob_item = items;
     self->allocated = size;
+#endif
     return 0;
 }
 
@@ -389,7 +446,7 @@ PyList_Insert(PyObject *op, Py_ssize_t where, PyObject *newitem)
 int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem)
 {
-    Py_ssize_t len = Py_SIZE(self);
+    Py_ssize_t len = PyList_GET_SIZE(self);
     assert(self->allocated == -1 || self->allocated == len);
     if (list_resize(self, len + 1) < 0) {
         Py_DECREF(newitem);
@@ -1027,7 +1084,7 @@ list_extend_fast(PyListObject *self, PyObject *iterable)
     // an overflow on any relevant platform.
     assert(m < PY_SSIZE_T_MAX - n);
     if (self->ob_item == NULL) {
-        if (list_preallocate_exact(self, n) < 0) {
+        if (list_ensure_capacity(self, m, n) < 0) {
             return -1;
         }
         Py_SET_SIZE(self, n);
@@ -1075,7 +1132,7 @@ list_extend_iter(PyListObject *self, PyObject *iterable)
          */
     }
     else if (self->ob_item == NULL) {
-        if (n && list_preallocate_exact(self, n) < 0)
+        if (n && list_ensure_capacity(self, m, n) < 0)
             goto error;
     }
     else {

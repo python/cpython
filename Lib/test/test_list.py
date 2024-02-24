@@ -230,7 +230,6 @@ class ListTest(list_tests.CommonTest):
         self.assertFalse(list3 == list4)
 
     @cpython_only
-    @unittest.skipIf(Py_GIL_DISABLED, 'Only for the default build')
     def test_preallocation(self):
         iterable = [0] * 10
         iter_size = sys.getsizeof(iterable)
