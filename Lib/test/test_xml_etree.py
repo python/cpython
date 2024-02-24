@@ -1712,17 +1712,20 @@ class XMLPullParserTest(unittest.TestCase):
             self.skipTest(f'Expat {pyexpat.version_info} does not support reparse deferral')
 
         parser = ET.XMLPullParser(events=('start', 'end'))
+        is_python = hasattr(parser._parser, '_parser')  # rather than C
 
         for chunk in ("<doc", ">"):
             parser.feed(chunk)
 
         self.assert_event_tags(parser, [])  # i.e. no elements started
-        self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
+        if is_python:
+            self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.flush()
 
         self.assert_event_tags(parser, [('start', 'doc')])
-        self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
+        if is_python:
+            self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.feed("</doc>")
         parser.close()
@@ -1731,6 +1734,10 @@ class XMLPullParserTest(unittest.TestCase):
 
     def test_flush_reparse_deferral_disabled(self):
         parser = ET.XMLPullParser(events=('start', 'end'))
+        is_python = hasattr(parser._parser, '_parser')  # rather than C
+
+        if not is_python:
+            self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled methods not available in C')
 
         for chunk in ("<doc", ">"):
             parser.feed(chunk)
