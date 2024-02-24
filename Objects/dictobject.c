@@ -3605,11 +3605,12 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
         PyDictKeysObject *okeys = other->ma_keys;
 
         // If other is clean, combined, and just allocated, just clone it.
-            if (mp->ma_values == NULL &&
-                other->ma_values == NULL &&
-                other->ma_used == okeys->dk_nentries &&
-                (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
-                    USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)) {
+        if (mp->ma_values == NULL &&
+            other->ma_values == NULL &&
+            other->ma_used == okeys->dk_nentries &&
+            (DK_LOG_SIZE(okeys) == PyDict_LOG_MINSIZE ||
+             USABLE_FRACTION(DK_SIZE(okeys)/2) < other->ma_used)
+        ) {
             uint64_t new_version = _PyDict_NotifyEvent(
                     interp, PyDict_EVENT_CLONED, mp, (PyObject *)other, NULL);
             PyDictKeysObject *keys = clone_combined_dict_keys(other);
