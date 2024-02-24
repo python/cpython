@@ -7861,8 +7861,7 @@ PyType_Ready(PyTypeObject *type)
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
         /* Static types must be immortal */
-        /* Cannot call _Py_SetImmortal on incomplete object */
-        type->ob_base.ob_base.ob_refcnt = _Py_IMMORTAL_REFCNT;
+        _Py_SetImmortal(type);
     }
 
     int res;

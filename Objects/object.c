@@ -1701,7 +1701,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         }
         else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
             PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(obj);
-            dictptr = &managed_dict->dict;
+            dictptr = (PyObject **)&managed_dict->dict;
         }
         else {
             dictptr = _PyObject_ComputedDictPointer(obj);
