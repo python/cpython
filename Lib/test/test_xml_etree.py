@@ -1709,7 +1709,8 @@ class XMLPullParserTest(unittest.TestCase):
 
     def test_flush_reparse_deferral_enabled(self):
         if pyexpat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {pyexpat.version_info} does not support reparse deferral')
+            self.skipTest(f'Expat {pyexpat.version_info} does not '
+                          'support reparse deferral')
 
         parser = ET.XMLPullParser(events=('start', 'end'))
         is_python = hasattr(parser._parser, '_parser')  # rather than C
