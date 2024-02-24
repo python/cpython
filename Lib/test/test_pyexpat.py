@@ -769,27 +769,17 @@ class ReparseDeferralTest(unittest.TestCase):
 
     def test_getter_setter_round_trip(self):
         parser = expat.ParserCreate()
-        was_enabled = parser.GetReparseDeferralEnabled()
+        enabled = (expat.version_info >= (2, 6, 0))
 
-        # We'll flip the value back and forth, and we expect ..
-        if expat.version_info >= (2, 6, 0):
-            # that flipping worked both ways for >=2.6.0
-            expected_1 = not was_enabled
-            expected_2 = was_enabled
-        else:
-            # that flipping did not have any effect for <2.6.0
-            expected_1 = False
-            expected_2 = False
+        self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
 
-        parser.SetReparseDeferralEnabled(expected_1)
-        actual_1 = parser.GetReparseDeferralEnabled()
+        parser.SetReparseDeferralEnabled(False)
 
-        self.assertEqual(actual_1, expected_1)
+        self.assertIs(parser.GetReparseDeferralEnabled(), False)
 
-        parser.SetReparseDeferralEnabled(expected_2)
-        actual_2 = parser.GetReparseDeferralEnabled()
+        parser.SetReparseDeferralEnabled(True)
 
-        self.assertEqual(actual_2, expected_2)
+        self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
 
     def test_reparse_deferral_enabled(self):
         if expat.version_info < (2, 6, 0):
