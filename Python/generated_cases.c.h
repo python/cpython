@@ -3575,7 +3575,8 @@
             // _CHECK_ATTR_METHOD_LAZY_DICT
             {
                 uint16_t dictoffset = read_u16(&this_instr[4].cache);
-                PyObject *dict = *(PyObject **)((char *)owner + MANAGED_DICT_OFFSET + dictoffset);
+                char *ptr = ((char *)owner) + MANAGED_DICT_OFFSET + dictoffset;
+                PyObject *dict = *(PyObject **)ptr;
                 /* This object has a __dict__, just not yet created */
                 DEOPT_IF(dict != NULL, LOAD_ATTR);
             }

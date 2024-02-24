@@ -896,19 +896,6 @@ new_dict(PyInterpreterState *interp,
     return (PyObject *)mp;
 }
 
-#ifdef Py_GIL_DISABLED
-    // dk_usable will decrease for each instance that is created and each
-    // value that is added.  dk_nentries will increase for each value that
-    // is added.  We want to always return the right value or larger.
-    // We therefore increase dk_nentries first and we decrease dk_usable
-    // second, and conversely here we read dk_usable first and dk_entries
-    // second (to avoid the case where we read entries before the increment
-    // and read usable after the decrement)
-    return (size_t)(_Py_atomic_load_ssize_acquire(&keys->dk_usable) +
-                    _Py_atomic_load_ssize_acquire(&keys->dk_nentries));
-#else
-#endif
-
 /* Consumes a reference to the keys object */
 static PyObject *
 new_dict_with_shared_keys(PyInterpreterState *interp, PyDictKeysObject *keys)

@@ -2752,7 +2752,8 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             uint16_t dictoffset = (uint16_t)CURRENT_OPERAND();
-            PyObject *dict = *(PyObject **)((char *)owner + MANAGED_DICT_OFFSET + dictoffset);
+            char *ptr = ((char *)owner) + MANAGED_DICT_OFFSET + dictoffset;
+            PyObject *dict = *(PyObject **)ptr;
             /* This object has a __dict__, just not yet created */
             if (dict != NULL) goto deoptimize;
             break;
