@@ -494,11 +494,12 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        ptr = self._gdbval.cast(_type_char_ptr()) + _managed_dict_offset()
-        char_ptr = ptr.cast(_type_char_ptr().pointer()).dereference()
-        if (int(char_ptr) & 1) == 0:
+        obj_ptr = self._gdbval.cast(_type_char_ptr())
+        dict_ptr_ptr = obj_ptr + _managed_dict_offset()
+        dict_ptr = dict_ptr_ptr.cast(_type_char_ptr().pointer()).dereference()
+        if int(dict_ptr):
             return None
-        char_ptr += 1
+        char_ptr = obj_ptr + 2 * _sizeof_void_p()
         values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
         values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
