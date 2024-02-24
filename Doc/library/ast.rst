@@ -2193,7 +2193,7 @@ and classes for traversing abstract syntax trees:
    is no guarantee that the parse (or success of the parse) is the same as
    when run on the Python version corresponding to ``feature_version``.
 
-   If source contains a null character ('\0'), :exc:`ValueError` is raised.
+   If source contains a null character (``\0``), :exc:`ValueError` is raised.
 
    .. warning::
       Note that successfully parsing source code into an AST object doesn't

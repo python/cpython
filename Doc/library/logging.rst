@@ -77,6 +77,27 @@ is the module's name in the Python package namespace.
 
 .. class:: Logger
 
+   .. attribute:: Logger.name
+
+      This is the logger's name, and is the value that was passed to :func:`getLogger`
+      to obtain the logger.
+
+      .. note:: This attribute should be treated as read-only.
+
+   .. attribute:: Logger.level
+
+      The threshold of this logger, as set by the :meth:`setLevel` method.
+
+      .. note:: Do not set this attribute directly - always use :meth:`setLevel`,
+         which has checks for the level passed to it.
+
+   .. attribute:: Logger.parent
+
+      The parent logger of this logger. It may change based on later instantiation
+      of loggers which are higher up in the namespace hierarchy.
+
+      .. note:: This value should be treated as read-only.
+
    .. attribute:: Logger.propagate
 
       If this attribute evaluates to true, events logged to this logger will be
@@ -107,6 +128,21 @@ is the module's name in the Python package namespace.
          provided that their propagate setting is left set to ``True``. A common
          scenario is to attach handlers only to the root logger, and to let
          propagation take care of the rest.
+
+   .. attribute:: Logger.handlers
+
+      The list of handlers directly attached to this logger instance.
+
+      .. note:: This attribute should be treated as read-only; it is normally changed via
+         the :meth:`addHandler` and :meth:`removeHandler` methods, which use locks to ensure
+         thread-safe operation.
+
+   .. attribute:: Logger.disabled
+
+      This attribute disables handling of any events. It is set to ``False`` in the
+      initializer, and only changed by logging configuration code.
+
+      .. note:: This attribute should be treated as read-only.
 
    .. method:: Logger.setLevel(level)
 

@@ -85,8 +85,12 @@ dummy_func(void) {
             sym_matches_type(right, &PyLong_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(left, &PyLong_Type);
-        sym_set_type(right, &PyLong_Type);
+        if (!sym_set_type(left, &PyLong_Type)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(right, &PyLong_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
@@ -94,8 +98,12 @@ dummy_func(void) {
             sym_matches_type(right, &PyFloat_Type)) {
             REPLACE_OP(this_instr, _NOP, 0 ,0);
         }
-        sym_set_type(left, &PyFloat_Type);
-        sym_set_type(right, &PyFloat_Type);
+        if (!sym_set_type(left, &PyFloat_Type)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(right, &PyFloat_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
@@ -103,8 +111,12 @@ dummy_func(void) {
             sym_matches_type(right, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0 ,0);
         }
-        sym_set_type(left, &PyUnicode_Type);
-        sym_set_type(right, &PyUnicode_Type);
+        if (!sym_set_type(left, &PyUnicode_Type)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(right, &PyUnicode_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
@@ -242,6 +254,67 @@ dummy_func(void) {
         }
     }
 
+    op(_TO_BOOL, (value -- res)) {
+        (void)value;
+        res = sym_new_type(ctx, &PyBool_Type);
+        OUT_OF_SPACE_IF_NULL(res);
+    }
+
+    op(_TO_BOOL_BOOL, (value -- value)) {
+        if (sym_matches_type(value, &PyBool_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        else {
+            if(!sym_set_type(value, &PyBool_Type)) {
+                goto hit_bottom;
+            }
+        }
+    }
+
+    op(_TO_BOOL_INT, (value -- res)) {
+        if (sym_is_const(value) && sym_matches_type(value, &PyLong_Type)) {
+            PyObject *load = _PyLong_IsZero((PyLongObject *)sym_get_const(value))
+                             ? Py_False : Py_True;
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+        }
+        if(!sym_set_type(value, &PyLong_Type)) {
+            goto hit_bottom;
+        }
+    }
+
+    op(_TO_BOOL_LIST, (value -- res)) {
+        if(!sym_set_type(value, &PyList_Type)) {
+            goto hit_bottom;
+        }
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_TO_BOOL_NONE, (value -- res)) {
+        if (sym_get_const(value) == Py_None) {
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
+        }
+        sym_set_const(value, Py_None);
+        OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));
+    }
+
+    op(_TO_BOOL_STR, (value -- res)) {
+        if (sym_is_const(value) && sym_matches_type(value, &PyUnicode_Type)) {
+            PyObject *load = sym_get_const(value) == &_Py_STR(empty) ? Py_False : Py_True;
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+        }
+        if(!sym_set_type(value, &PyUnicode_Type)) {
+            goto hit_bottom;
+        }
+    }
+
     op(_LOAD_CONST, (-- value)) {
         // There should be no LOAD_CONST. It should be all
         // replaced by peephole_opt.
@@ -365,14 +438,20 @@ dummy_func(void) {
 
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        sym_set_type(callable, &PyFunction_Type);
+        if (!sym_set_type(callable, &PyFunction_Type)) {
+            goto hit_bottom;
+        }
         (void)self_or_null;
         (void)func_version;
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-        sym_set_null(null);
-        sym_set_type(callable, &PyMethod_Type);
+        if (!sym_set_null(null)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(callable, &PyMethod_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
