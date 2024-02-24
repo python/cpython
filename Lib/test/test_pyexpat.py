@@ -768,7 +768,8 @@ class ReparseDeferralTest(unittest.TestCase):
 
     def test_reparse_deferral_enabled(self):
         if expat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {expat.version_info} does not support reparse deferral')
+            self.skipTest(f'Expat {expat.version_info} does not '
+                          'support reparse deferral')
 
         started = []
 
