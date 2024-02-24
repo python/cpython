@@ -1217,7 +1217,7 @@ class ExpatReaderTest(XmlTestBase):
 
     def test_flush_reparse_deferral_enabled(self):
         if pyexpat.version_info < (2, 6, 0):
-            return
+            self.skipTest(f'Expat {pyexpat.version_info} does not support reparse deferral')
 
         result = BytesIO()
         xmlgen = XMLGenerator(result)
