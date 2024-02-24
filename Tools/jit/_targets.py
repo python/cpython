@@ -106,7 +106,7 @@ class _Target(typing.Generic[_S, _R]):
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
-            "-DPy_BUILD_CORE",
+            "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
@@ -118,12 +118,17 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
+            # This debug info isn't necessary, and bloats out the JIT'ed code.
+            # We *may* be able to re-enable this, process it, and JIT it for a
+            # nicer debugging experience... but that needs a lot more research:
             "-fno-asynchronous-unwind-tables",
+            # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
-            "-fno-jump-tables",
+            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
+            # about emitting in-range trampolines for out-of-range targets.
+            # We can probably remove this and emit trampolines in the future:
             "-fno-plt",
-            # Don't make calls to weird stack-smashing canaries:
+            # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-o",
             f"{o}",
@@ -194,11 +199,20 @@ class _COFF(
             offset = base + symbol["Value"]
             name = symbol["Name"]
             name = name.removeprefix(self.prefix)
-            group.symbols[name] = value, offset
+            if name not in group.symbols:
+                group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
             stencil.holes.append(hole)
+
+    def _unwrap_dllimport(self, name: str) -> tuple[_stencils.HoleValue, str | None]:
+        if name.startswith("__imp_"):
+            name = name.removeprefix("__imp_")
+            name = name.removeprefix(self.prefix)
+            return _stencils.HoleValue.GOT, name
+        name = name.removeprefix(self.prefix)
+        return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
         self, base: int, relocation: _schema.COFFRelocation, raw: bytes
@@ -207,21 +221,23 @@ class _COFF(
             case {
                 "Offset": offset,
                 "Symbol": s,
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
-            }:
-                offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 8], "little")
-            case {
-                "Offset": offset,
-                "Symbol": s,
                 "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
-                s = s.removeprefix(self.prefix)
-                value, symbol = _stencils.symbol_to_value(s)
+                value, symbol = self._unwrap_dllimport(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
+            case {
+                "Offset": offset,
+                "Symbol": s,
+                "Type": {
+                    "Value": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
+                },
+            }:
+                offset += base
+                value, symbol = self._unwrap_dllimport(s)
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
             case _:
                 raise NotImplementedError(relocation)
         return _stencils.Hole(offset, kind, value, symbol, addend)
@@ -423,12 +439,12 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         args = ["-mcmodel=large"]
         return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
-        args = ["-mcmodel=large"]
+        args = ["-DPy_NO_ENABLE_SHARED"]
         return _COFF(host, args=args, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
         return _MachO(host, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        args = ["-mcmodel=large"]
+        args = ["-fms-runtime-lib=dll"]
         return _COFF(host, args=args)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
         return _ELF(host)

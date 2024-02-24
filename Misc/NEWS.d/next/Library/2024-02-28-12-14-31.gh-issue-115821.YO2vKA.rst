@@ -1,0 +1,2 @@
+[Enum] Improve error message when calling super().__new__() in custom
+__new__.

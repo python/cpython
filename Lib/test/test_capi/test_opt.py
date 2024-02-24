@@ -210,6 +210,8 @@ class TestExecutorInvalidation(unittest.TestCase):
         exe = get_first_executor(f)
         self.assertIsNone(exe)
 
+
+@unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
@@ -570,7 +572,7 @@ class TestUops(unittest.TestCase):
         self.assertLessEqual(count, 2)
 
 
-@unittest.skipIf(os.getenv("PYTHONUOPSOPTIMIZE", default=0) == 0, "Needs uop optimizer to run.")
+@unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
     def _run_with_optimizer(self, testfunc, arg):
@@ -889,6 +891,27 @@ class TestUopsOptimization(unittest.TestCase):
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_UNICODE"]
         self.assertLessEqual(len(guard_both_float_count), 1)
         self.assertIn("_COMPARE_OP_STR", uops)
+
+    def test_type_inconsistency(self):
+        ns = {}
+        exec(textwrap.dedent("""
+            def testfunc(n):
+                for i in range(n):
+                    x = _test_global + _test_global
+        """), globals(), ns)
+        testfunc = ns['testfunc']
+        # Must be a real global else it won't be optimized to _LOAD_CONST_INLINE
+        global _test_global
+        _test_global = 0
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNone(ex)
+        _test_global = 1.2
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_BOTH_INT", uops)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+
 
 if __name__ == "__main__":
     unittest.main()
