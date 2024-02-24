@@ -8,6 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+// Export for '_ctypes' shared extension
+PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, PyObject **);
+
+// Export for 'pyexact' shared extension
+PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
+
 /* Write the Python traceback into the file 'fd'. For example:
 
        Traceback (most recent call first):
@@ -25,7 +31,7 @@ extern "C" {
 
    This function is signal safe. */
 
-PyAPI_FUNC(void) _Py_DumpTraceback(
+extern void _Py_DumpTraceback(
     int fd,
     PyThreadState *tstate);
 
@@ -52,7 +58,7 @@ PyAPI_FUNC(void) _Py_DumpTraceback(
 
    This function is signal safe. */
 
-PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
+extern const char* _Py_DumpTracebackThreads(
     int fd,
     PyInterpreterState *interp,
     PyThreadState *current_tstate);
@@ -64,23 +70,23 @@ PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
    string which is not ready (PyUnicode_WCHAR_KIND).
 
    This function is signal safe. */
-PyAPI_FUNC(void) _Py_DumpASCII(int fd, PyObject *text);
+extern void _Py_DumpASCII(int fd, PyObject *text);
 
 /* Format an integer as decimal into the file descriptor fd.
 
    This function is signal safe. */
-PyAPI_FUNC(void) _Py_DumpDecimal(
+extern void _Py_DumpDecimal(
     int fd,
     size_t value);
 
 /* Format an integer as hexadecimal with width digits into fd file descriptor.
    The function is signal safe. */
-PyAPI_FUNC(void) _Py_DumpHexadecimal(
+extern void _Py_DumpHexadecimal(
     int fd,
     uintptr_t value,
     Py_ssize_t width);
 
-PyAPI_FUNC(PyObject*) _PyTraceBack_FromFrame(
+extern PyObject* _PyTraceBack_FromFrame(
     PyObject *tb_next,
     PyFrameObject *frame);
 
@@ -89,11 +95,10 @@ PyAPI_FUNC(PyObject*) _PyTraceBack_FromFrame(
 
 /* Write the traceback tb to file f. Prefix each line with
    indent spaces followed by the margin (if it is not NULL). */
-PyAPI_FUNC(int) _PyTraceBack_Print_Indented(
-    PyObject *tb, int indent, const char* margin,
-    const char *header_margin, const char *header, PyObject *f);
-PyAPI_FUNC(int) _Py_WriteIndentedMargin(int, const char*, PyObject *);
-PyAPI_FUNC(int) _Py_WriteIndent(int, PyObject *);
+extern int _PyTraceBack_Print(
+    PyObject *tb, const char *header, PyObject *f);
+extern int _Py_WriteIndentedMargin(int, const char*, PyObject *);
+extern int _Py_WriteIndent(int, PyObject *);
 
 #ifdef __cplusplus
 }
