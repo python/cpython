@@ -2751,9 +2751,8 @@
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
-            assert(dictoffset > 0);
-            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+            uint16_t dictoffset = (uint16_t)CURRENT_OPERAND();
+            PyObject *dict = *(PyObject **)((char *)owner + MANAGED_DICT_OFFSET + dictoffset);
             /* This object has a __dict__, just not yet created */
             if (dict != NULL) goto deoptimize;
             break;

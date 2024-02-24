@@ -465,12 +465,11 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_ATTR_NOT_MANAGED_DICT 18
 #define SPEC_FAIL_ATTR_NON_STRING_OR_SPLIT 19
 #define SPEC_FAIL_ATTR_MODULE_ATTR_NOT_FOUND 20
-
 #define SPEC_FAIL_ATTR_SHADOWED 21
 #define SPEC_FAIL_ATTR_BUILTIN_CLASS_METHOD 22
 #define SPEC_FAIL_ATTR_CLASS_METHOD_OBJ 23
 #define SPEC_FAIL_ATTR_OBJECT_SLOT 24
-#define SPEC_FAIL_ATTR_HAS_MANAGED_DICT 25
+
 #define SPEC_FAIL_ATTR_INSTANCE_ATTRIBUTE 26
 #define SPEC_FAIL_ATTR_METACLASS_ATTRIBUTE 27
 #define SPEC_FAIL_ATTR_PROPERTY_NOT_PY_FUNCTION 28
@@ -1236,12 +1235,8 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
 
     assert(descr != NULL);
     assert((is_method && kind == METHOD) || (!is_method && kind == NON_DESCRIPTOR));
-    if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+    if (owner_cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)owner_cls)->ht_cached_keys;
-        if ((owner_cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_HAS_MANAGED_DICT);
-            return 0;
-        }
         Py_ssize_t index = _PyDictKeys_StringLookup(keys, name);
         if (index != DKIX_EMPTY) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_SHADOWED);
@@ -1257,10 +1252,16 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
         instr->op.code = is_method ? LOAD_ATTR_METHOD_WITH_VALUES : LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
     }
     else {
-        Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
-        if (dictoffset < 0 || dictoffset > INT16_MAX) {
-            SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
-            return 0;
+        Py_ssize_t dictoffset;
+        if (owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+            dictoffset = MANAGED_DICT_OFFSET;
+        }
+        else {
+            dictoffset = owner_cls->tp_dictoffset;
+            if (dictoffset < 0 || dictoffset > INT16_MAX + MANAGED_DICT_OFFSET) {
+                SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_RANGE);
+                return 0;
+            }
         }
         if (dictoffset == 0) {
             instr->op.code = is_method ? LOAD_ATTR_METHOD_NO_DICT : LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
@@ -1271,8 +1272,12 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
                 return 0;
             }
-            assert(owner_cls->tp_dictoffset > 0);
-            assert(owner_cls->tp_dictoffset <= INT16_MAX);
+            /* Cache entries must be unsigned values, so we offset the
+             * dictoffset by MANAGED_DICT_OFFSET.
+             * We do the reverese offset in LOAD_ATTR_METHOD_LAZY_DICT */
+            dictoffset -= MANAGED_DICT_OFFSET;
+            assert(((uint16_t)dictoffset) == dictoffset);
+            cache->dict_offset = (uint16_t)dictoffset;
             instr->op.code = LOAD_ATTR_METHOD_LAZY_DICT;
         }
         else {

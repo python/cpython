@@ -79,7 +79,10 @@ typedef struct {
 typedef struct {
     uint16_t counter;
     uint16_t type_version[2];
-    uint16_t keys_version[2];
+    union {
+        uint16_t keys_version[2];
+        uint16_t dict_offset;
+    };
     uint16_t descr[4];
 } _PyLoadMethodCache;
 

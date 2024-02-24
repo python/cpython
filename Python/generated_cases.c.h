@@ -3574,13 +3574,12 @@
             }
             // _CHECK_ATTR_METHOD_LAZY_DICT
             {
-                Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
-                assert(dictoffset > 0);
-                PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+                uint16_t dictoffset = read_u16(&this_instr[4].cache);
+                PyObject *dict = *(PyObject **)((char *)owner + MANAGED_DICT_OFFSET + dictoffset);
                 /* This object has a __dict__, just not yet created */
                 DEOPT_IF(dict != NULL, LOAD_ATTR);
             }
-            /* Skip 2 cache entries */
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_METHOD_LAZY_DICT
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
