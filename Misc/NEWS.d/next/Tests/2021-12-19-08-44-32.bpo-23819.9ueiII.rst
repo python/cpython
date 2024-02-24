@@ -1,1 +1,0 @@
-Fixed :mod:`asyncio` tests in python optimized mode. Patch by Kumar Aditya.

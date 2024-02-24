@@ -1,1 +1,0 @@
-Reuse ``_winapi`` constants in ``asyncio.windows_events``.

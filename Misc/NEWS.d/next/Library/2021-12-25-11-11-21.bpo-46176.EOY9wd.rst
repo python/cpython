@@ -1,1 +1,0 @@
-Adding the ``MAP_STACK`` constant for the mmap module.

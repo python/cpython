@@ -27,7 +27,7 @@ procedure are part of the profile. One example of a ``stringprep`` profile is
 ``nameprep``, which is used for internationalized domain names.
 
 The module :mod:`stringprep` only exposes the tables from :rfc:`3454`. As these
-tables would be very large to represent them as dictionaries or lists, the
+tables would be very large to represent as dictionaries or lists, the
 module uses the Unicode character database internally. The module source code
 itself was generated using the ``mkstringprep.py`` utility.
 

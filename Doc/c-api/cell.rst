@@ -25,7 +25,7 @@ Cell objects are not likely to be useful elsewhere.
    The type object corresponding to cell objects.
 
 
-.. c:function:: int PyCell_Check(ob)
+.. c:function:: int PyCell_Check(PyObject *ob)
 
    Return true if *ob* is a cell object; *ob* must not be ``NULL``.  This
    function always succeeds.

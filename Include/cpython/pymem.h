@@ -2,24 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
-PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
-PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
-PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
-
-/* Try to get the allocators name set by _PyMem_SetupAllocators(). */
-PyAPI_FUNC(const char*) _PyMem_GetCurrentAllocatorName(void);
-
-/* strdup() using PyMem_RawMalloc() */
-PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
-
-/* strdup() using PyMem_Malloc() */
-PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
-
-/* wcsdup() using PyMem_RawMalloc() */
-PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const wchar_t *str);
-
-
 typedef enum {
     /* PyMem_RawMalloc(), PyMem_RawRealloc() and PyMem_RawFree() */
     PYMEM_DOMAIN_RAW,
@@ -40,6 +22,10 @@ typedef enum {
 #ifdef WITH_PYMALLOC
     PYMEM_ALLOCATOR_PYMALLOC = 5,
     PYMEM_ALLOCATOR_PYMALLOC_DEBUG = 6,
+#endif
+#ifdef WITH_MIMALLOC
+    PYMEM_ALLOCATOR_MIMALLOC = 7,
+    PYMEM_ALLOCATOR_MIMALLOC_DEBUG = 8,
 #endif
 } PyMemAllocatorName;
 

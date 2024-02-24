@@ -1,2 +1,0 @@
-Honor spec when generating requirement specs with urls and extras
-(importlib_metadata 4.8.3).
