@@ -779,58 +779,62 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
-def test_pdb_interact_command():
-    """Test interact command
 
-    >>> g = 0
-    >>> dict_g = {}
+# skip this test if sys.flags.no_site = True;
+# exit() isn't defined unless there's a site module.
+if not sys.flags.no_site:
+    def test_pdb_interact_command():
+        """Test interact command
 
-    >>> def test_function():
-    ...     x = 1
-    ...     lst_local = []
-    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+        >>> g = 0
+        >>> dict_g = {}
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
-    ...     'interact',
-    ...     'x',
-    ...     'g',
-    ...     'x = 2',
-    ...     'g = 3',
-    ...     'dict_g["a"] = True',
-    ...     'lst_local.append(x)',
-    ...     'exit()',
-    ...     'p x',
-    ...     'p g',
-    ...     'p dict_g',
-    ...     'p lst_local',
-    ...     'continue',
-    ... ]):
-    ...    test_function()
-    --Return--
-    > <doctest test.test_pdb.test_pdb_interact_command[2]>(4)test_function()->None
-    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    (Pdb) interact
-    *pdb interact start*
-    ... x
-    1
-    ... g
-    0
-    ... x = 2
-    ... g = 3
-    ... dict_g["a"] = True
-    ... lst_local.append(x)
-    ... exit()
-    *exit from pdb interact command*
-    (Pdb) p x
-    1
-    (Pdb) p g
-    0
-    (Pdb) p dict_g
-    {'a': True}
-    (Pdb) p lst_local
-    [2]
-    (Pdb) continue
-    """
+        >>> def test_function():
+        ...     x = 1
+        ...     lst_local = []
+        ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+        >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+        ...     'interact',
+        ...     'x',
+        ...     'g',
+        ...     'x = 2',
+        ...     'g = 3',
+        ...     'dict_g["a"] = True',
+        ...     'lst_local.append(x)',
+        ...     'exit()',
+        ...     'p x',
+        ...     'p g',
+        ...     'p dict_g',
+        ...     'p lst_local',
+        ...     'continue',
+        ... ]):
+        ...    test_function()
+        --Return--
+        > <doctest test.test_pdb.test_pdb_interact_command[2]>(4)test_function()->None
+        -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+        (Pdb) interact
+        *pdb interact start*
+        ... x
+        1
+        ... g
+        0
+        ... x = 2
+        ... g = 3
+        ... dict_g["a"] = True
+        ... lst_local.append(x)
+        ... exit()
+        *exit from pdb interact command*
+        (Pdb) p x
+        1
+        (Pdb) p g
+        0
+        (Pdb) p dict_g
+        {'a': True}
+        (Pdb) p lst_local
+        [2]
+        (Pdb) continue
+        """
 
 def test_convenience_variables():
     """Test convenience variables

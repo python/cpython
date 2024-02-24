@@ -665,12 +665,6 @@ translate_jump_labels_to_targets(basicblock *entryblock)
     return SUCCESS;
 }
 
-int
-_PyCfg_JumpLabelsToTargets(cfg_builder *g)
-{
-    return translate_jump_labels_to_targets(g->g_entryblock);
-}
-
 static int
 mark_except_handlers(basicblock *entryblock) {
 #ifndef NDEBUG
@@ -2729,7 +2723,7 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq
         RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+            if (OPCODE_HAS_JUMP(instr->i_opcode) || is_block_push(instr)) {
                 instr->i_oparg = instr->i_target->b_label.id;
             }
             RETURN_IF_ERROR(
@@ -2788,5 +2782,16 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
         return ERROR;
     }
 
+    return SUCCESS;
+}
+
+/* This is used by _PyCompile_Assemble to fill in the jump and exception
+ * targets in a synthetic CFG (which is not the ouptut of the builtin compiler).
+ */
+int
+_PyCfg_JumpLabelsToTargets(cfg_builder *g)
+{
+    RETURN_IF_ERROR(translate_jump_labels_to_targets(g->g_entryblock));
+    RETURN_IF_ERROR(label_exception_targets(g->g_entryblock));
     return SUCCESS;
 }

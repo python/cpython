@@ -112,7 +112,6 @@
             lhs = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -242,7 +241,6 @@
             /* Skip 1 cache entry */
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
-                TIER_ONE_ONLY
                 assert(next_instr->op.code == STORE_FAST);
                 PyObject **target_local = &GETLOCAL(next_instr->op.arg);
                 DEOPT_IF(*target_local != left, BINARY_OP);
@@ -429,7 +427,6 @@
             container = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -739,9 +736,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CACHE);
-            TIER_ONE_ONLY
             assert(0 && "Executing a cache.");
-            Py_UNREACHABLE();
+            Py_FatalError("Executing a cache.");
+            DISPATCH();
         }
 
         TARGET(CALL) {
@@ -760,7 +757,6 @@
             callable = stack_pointer[-2 - oparg];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -1004,7 +1000,6 @@
                 }
                 #endif
             }
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -1069,7 +1064,7 @@
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
-            res = ((_PyCFunctionFast)(void(*)(void))cfunc)(
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
                 args,
                 total_args);
@@ -1115,8 +1110,8 @@
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS), CALL);
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))
             PyCFunction_GET_FUNCTION(callable);
             res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1477,7 +1472,6 @@
             args = &stack_pointer[-oparg];
             self = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            TIER_ONE_ONLY
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
@@ -1523,8 +1517,8 @@
             PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
-            _PyCFunctionFast cfunc =
-            (_PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
             res = cfunc(self, args + 1, nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1568,8 +1562,8 @@
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
-            _PyCFunctionFastWithKeywords cfunc =
-            (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
             res = cfunc(self, args + 1, nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
@@ -1754,7 +1748,6 @@
                 }
                 #endif
             }
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -1954,7 +1947,6 @@
             exc_value = stack_pointer[-1];
             last_sent_val = stack_pointer[-2];
             sub_iter = stack_pointer[-3];
-            TIER_ONE_ONLY
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
@@ -1989,7 +1981,6 @@
             left = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -2027,20 +2018,26 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
-            /* Skip 1 cache entry */
+            // _GUARD_BOTH_FLOAT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            double dleft = PyFloat_AS_DOUBLE(left);
-            double dright = PyFloat_AS_DOUBLE(right);
-            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
-            int sign_ish = COMPARISON_BIT(dleft, dright);
-            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
-            res = (sign_ish & oparg) ? Py_True : Py_False;
-            // It's always a bool, so we don't care about oparg & 16.
+            {
+                DEOPT_IF(!PyFloat_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyFloat_CheckExact(right), COMPARE_OP);
+            }
+            /* Skip 1 cache entry */
+            // _COMPARE_OP_FLOAT
+            {
+                STAT_INC(COMPARE_OP, hit);
+                double dleft = PyFloat_AS_DOUBLE(left);
+                double dright = PyFloat_AS_DOUBLE(right);
+                // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
+                int sign_ish = COMPARISON_BIT(dleft, dright);
+                _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+                res = (sign_ish & oparg) ? Py_True : Py_False;
+                // It's always a bool, so we don't care about oparg & 16.
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             DISPATCH();
@@ -2054,24 +2051,30 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
-            /* Skip 1 cache entry */
+            // _GUARD_BOTH_INT
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
-            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
-            DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
+            {
+                DEOPT_IF(!PyLong_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyLong_CheckExact(right), COMPARE_OP);
+            }
+            /* Skip 1 cache entry */
+            // _COMPARE_OP_INT
+            {
+                DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)left), COMPARE_OP);
+                DEOPT_IF(!_PyLong_IsCompact((PyLongObject *)right), COMPARE_OP);
+                STAT_INC(COMPARE_OP, hit);
+                assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
                    _PyLong_DigitCount((PyLongObject *)right) <= 1);
-            Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left);
-            Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
-            // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
-            int sign_ish = COMPARISON_BIT(ileft, iright);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            res = (sign_ish & oparg) ? Py_True : Py_False;
-            // It's always a bool, so we don't care about oparg & 16.
+                Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left);
+                Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
+                // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
+                int sign_ish = COMPARISON_BIT(ileft, iright);
+                _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+                _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+                res = (sign_ish & oparg) ? Py_True : Py_False;
+                // It's always a bool, so we don't care about oparg & 16.
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             DISPATCH();
@@ -2085,21 +2088,27 @@
             PyObject *right;
             PyObject *left;
             PyObject *res;
-            /* Skip 1 cache entry */
+            // _GUARD_BOTH_UNICODE
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
-            DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
-            STAT_INC(COMPARE_OP, hit);
-            int eq = _PyUnicode_Equal(left, right);
-            assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
-            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            assert(eq == 0 || eq == 1);
-            assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
-            assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
-            res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
-            // It's always a bool, so we don't care about oparg & 16.
+            {
+                DEOPT_IF(!PyUnicode_CheckExact(left), COMPARE_OP);
+                DEOPT_IF(!PyUnicode_CheckExact(right), COMPARE_OP);
+            }
+            /* Skip 1 cache entry */
+            // _COMPARE_OP_STR
+            {
+                STAT_INC(COMPARE_OP, hit);
+                int eq = _PyUnicode_Equal(left, right);
+                assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
+                _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
+                _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
+                assert(eq == 0 || eq == 1);
+                assert((oparg & 0xf) == COMPARISON_NOT_EQUALS || (oparg & 0xf) == COMPARISON_EQUALS);
+                assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
+                res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
+                // It's always a bool, so we don't care about oparg & 16.
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             DISPATCH();
@@ -2321,7 +2330,6 @@
             PyObject *awaitable;
             exc = stack_pointer[-1];
             awaitable = stack_pointer[-2];
-            TIER_ONE_ONLY
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 Py_DECREF(awaitable);
@@ -2363,29 +2371,19 @@
         }
 
         TARGET(ENTER_EXECUTOR) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
-            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
-            if (executor->vm_data.valid) {
-                Py_INCREF(executor);
-                current_executor = executor;
-                GOTO_TIER_TWO();
-            }
-            else {
-                /* ENTER_EXECUTOR will be the first code unit of the instruction */
-                assert(oparg < 256);
-                code->co_executors->executors[oparg] = NULL;
-                opcode = this_instr->op.code = executor->vm_data.opcode;
-                this_instr->op.arg = executor->vm_data.oparg;
-                oparg = executor->vm_data.oparg;
-                Py_DECREF(executor);
-                next_instr = this_instr;
-                DISPATCH_GOTO();
-            }
+            assert(executor->vm_data.index == INSTR_OFFSET() - 1);
+            assert(executor->vm_data.code == code);
+            assert(executor->vm_data.valid);
+            assert(tstate->previous_executor == NULL);
+            tstate->previous_executor = Py_None;
+            Py_INCREF(executor);
+            GOTO_TIER_TWO(executor);
             DISPATCH();
         }
 
@@ -2410,7 +2408,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXTENDED_ARG);
-            TIER_ONE_ONLY
             assert(oparg);
             opcode = next_instr->op.code;
             oparg = oparg << 8 | next_instr->op.arg;
@@ -2469,7 +2466,6 @@
             iter = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -2552,11 +2548,14 @@
                 assert(Py_TYPE(iter) == &PyListIter_Type);
                 STAT_INC(FOR_ITER, hit);
                 PyListObject *seq = it->it_seq;
-                if (seq == NULL || it->it_index >= PyList_GET_SIZE(seq)) {
+                if (seq == NULL || (size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) {
+                    it->it_index = -1;
+                    #ifndef Py_GIL_DISABLED
                     if (seq != NULL) {
                         it->it_seq = NULL;
                         Py_DECREF(seq);
                     }
+                    #endif
                     Py_DECREF(iter);
                     STACK_SHRINK(1);
                     /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
@@ -2856,7 +2855,6 @@
             PyObject *from;
             PyObject *res;
             from = stack_pointer[-1];
-            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_from(tstate, from, name);
             if (res == NULL) goto error;
@@ -2874,7 +2872,6 @@
             PyObject *res;
             fromlist = stack_pointer[-1];
             level = stack_pointer[-2];
-            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             Py_DECREF(level);
@@ -2934,7 +2931,6 @@
             PyObject *receiver;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
-            TIER_ONE_ONLY
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
@@ -2957,7 +2953,6 @@
             PyObject *receiver;
             value = stack_pointer[-1];
             receiver = stack_pointer[-2];
-            TIER_ONE_ONLY
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
@@ -3128,7 +3123,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
-            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version && tstate->tracing == 0) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
@@ -3237,7 +3232,6 @@
             INSTRUCTION_STATS(INTERPRETER_EXIT);
             PyObject *retval;
             retval = stack_pointer[-1];
-            TIER_ONE_ONLY
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
@@ -3274,13 +3268,16 @@
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
-            this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
+            uint16_t counter = this_instr[1].cache;
+            this_instr[1].cache = counter + (1 << OPTIMIZER_BITS_IN_COUNTER);
             /* We are using unsigned values, but we really want signed values, so
-             * do the 2s complement comparison manually */
-            uint16_t ucounter = this_instr[1].cache + (1 << 15);
-            uint16_t threshold = tstate->interp->optimizer_backedge_threshold + (1 << 15);
+             * do the 2s complement adjustment manually */
+            uint32_t offset_counter = counter ^ (1 << 15);
+            uint32_t threshold = tstate->interp->optimizer_backedge_threshold;
+            assert((threshold & OPTIMIZER_BITS_MASK) == 0);
+            // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
             // Double-check that the opcode isn't instrumented or something:
-            if (ucounter > threshold && this_instr->op.code == JUMP_BACKWARD) {
+            if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
                 OPT_STAT_INC(attempts);
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
@@ -3288,24 +3285,24 @@
                     oparg >>= 8;
                     start--;
                 }
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer);
+                _PyExecutorObject *executor;
+                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
                 if (optimized < 0) goto error;
                 if (optimized) {
-                    // Rewind and enter the executor:
-                    assert(start->op.code == ENTER_EXECUTOR);
-                    next_instr = start;
-                    this_instr[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
+                    assert(tstate->previous_executor == NULL);
+                    tstate->previous_executor = Py_None;
+                    GOTO_TIER_TWO(executor);
                 }
                 else {
-                    int backoff = this_instr[1].cache & ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
-                    if (backoff < MINIMUM_TIER2_BACKOFF) {
-                        backoff = MINIMUM_TIER2_BACKOFF;
+                    int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
+                    backoff++;
+                    if (backoff < MIN_TIER2_BACKOFF) {
+                        backoff = MIN_TIER2_BACKOFF;
                     }
-                    else if (backoff < 15 - OPTIMIZER_BITS_IN_COUNTER) {
-                        backoff++;
+                    else if (backoff > MAX_TIER2_BACKOFF) {
+                        backoff = MAX_TIER2_BACKOFF;
                     }
-                    assert(backoff <= 15 - OPTIMIZER_BITS_IN_COUNTER);
-                    this_instr[1].cache = ((1 << 16) - ((1 << OPTIMIZER_BITS_IN_COUNTER) << backoff)) | backoff;
+                    this_instr[1].cache = ((UINT16_MAX << OPTIMIZER_BITS_IN_COUNTER) << backoff) | backoff;
                 }
             }
             #endif  /* ENABLE_SPECIALIZATION */
@@ -3316,7 +3313,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
-            TIER_ONE_ONLY
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
@@ -3330,7 +3326,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_FORWARD);
-            TIER_ONE_ONLY
             JUMPBY(oparg);
             DISPATCH();
         }
@@ -3399,7 +3394,6 @@
             owner = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -3431,7 +3425,7 @@
                            something was returned by a descriptor protocol).  Set
                            the second element of the stack to NULL, to signal
                            CALL that it's not a method call.
-                           NULL | meth | arg1 | ... | argN
+                           meth | NULL | arg1 | ... | argN
                          */
                         Py_DECREF(owner);
                         if (attr == NULL) goto pop_1_error;
@@ -3598,8 +3592,8 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -3633,8 +3627,8 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -3680,8 +3674,8 @@
                 self = owner;
             }
             stack_pointer[-1] = attr;
-            if (1) stack_pointer[0] = self;
-            stack_pointer += ((1) ? 1 : 0);
+            stack_pointer[0] = self;
+            stack_pointer += 1;
             DISPATCH();
         }
 
@@ -3697,11 +3691,11 @@
             // _CHECK_ATTR_MODULE
             owner = stack_pointer[-1];
             {
-                uint32_t type_version = read_u32(&this_instr[2].cache);
+                uint32_t dict_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
                 PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
                 assert(dict != NULL);
-                DEOPT_IF(dict->ma_keys->dk_version != type_version, LOAD_ATTR);
+                DEOPT_IF(dict->ma_keys->dk_version != dict_version, LOAD_ATTR);
             }
             // _LOAD_ATTR_MODULE
             {
@@ -3752,7 +3746,6 @@
                 attr = Py_NewRef(descr);
             }
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -3795,7 +3788,6 @@
                 attr = Py_NewRef(descr);
             }
             stack_pointer[-1] = attr;
-            stack_pointer += ((0) ? 1 : 0);
             DISPATCH();
         }
 
@@ -4096,7 +4088,6 @@
             // _SPECIALIZE_LOAD_GLOBAL
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -4298,7 +4289,6 @@
             global_super = stack_pointer[-3];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 int load_method = oparg & 1;
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -4313,7 +4303,6 @@
             // _LOAD_SUPER_ATTR
             self = stack_pointer[-1];
             {
-                TIER_ONE_ONLY
                 if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                     PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                     int err = _Py_call_instrumentation_2args(
@@ -4381,7 +4370,7 @@
             Py_DECREF(self);
             if (attr == NULL) goto pop_3_error;
             stack_pointer[-3] = attr;
-            stack_pointer += -2 + ((0) ? 1 : 0);
+            stack_pointer += -2;
             DISPATCH();
         }
 
@@ -4724,7 +4713,6 @@
             INSTRUCTION_STATS(RAISE_VARARGS);
             PyObject **args;
             args = &stack_pointer[-oparg];
-            TIER_ONE_ONLY
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
                 case 2:
@@ -4756,7 +4744,6 @@
             PyObject **values;
             exc = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg];
-            TIER_ONE_ONLY
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -4781,9 +4768,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESERVED);
-            TIER_ONE_ONLY
             assert(0 && "Executing RESERVED instruction.");
-            Py_UNREACHABLE();
+            Py_FatalError("Executing RESERVED instruction.");
+            DISPATCH();
         }
 
         TARGET(RESUME) {
@@ -4792,11 +4779,10 @@
             INSTRUCTION_STATS(RESUME);
             PREDICTED(RESUME);
             _Py_CODEUNIT *this_instr = next_instr - 1;
-            TIER_ONE_ONLY
             assert(frame == tstate->current_frame);
             if (tstate->tracing == 0) {
                 uintptr_t global_version =
-                _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) &
+                _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
                 ~_PY_EVAL_EVENTS_MASK;
                 uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
                 assert((code_version & 255) == 0);
@@ -4804,11 +4790,11 @@
                     int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                     if (err) goto error;
                     next_instr = this_instr;
-                } else {
+                }
+                else {
                     if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                         CHECK_EVAL_BREAKER();
                     }
-                    this_instr->op.code = RESUME_CHECK;
                 }
             } else {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
@@ -4827,7 +4813,7 @@
             DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
             #endif
-            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker);
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version, RESUME);
@@ -4875,7 +4861,6 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
-            TIER_ONE_ONLY
             assert(PyFunction_Check(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
@@ -4942,7 +4927,6 @@
             receiver = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5129,7 +5113,6 @@
             owner = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -5421,7 +5404,6 @@
             container = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5523,7 +5505,6 @@
             value = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5732,7 +5713,6 @@
             seq = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
-                TIER_ONE_ONLY
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5867,7 +5847,6 @@
             INSTRUCTION_STATS(YIELD_VALUE);
             PyObject *retval;
             retval = stack_pointer[-1];
-            TIER_ONE_ONLY
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.

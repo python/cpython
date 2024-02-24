@@ -1048,6 +1048,22 @@ class TestPlainEnumFunction(_EnumTests, _PlainOutputTests, unittest.TestCase):
 class TestPlainFlagClass(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
 
+    def test_none_member(self):
+        class FlagWithNoneMember(Flag):
+            A = 1
+            E = None
+
+        self.assertEqual(FlagWithNoneMember.A.value, 1)
+        self.assertIs(FlagWithNoneMember.E.value, None)
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with |"):
+            FlagWithNoneMember.A | FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with &"):
+            FlagWithNoneMember.E & FlagWithNoneMember.A
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with \^"):
+            FlagWithNoneMember.A ^ FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be inverted"):
+            ~FlagWithNoneMember.E
+
 
 class TestPlainFlagFunction(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
@@ -2343,6 +2359,40 @@ class TestSpecial(unittest.TestCase):
         self.assertEqual(SomeTuple.third, (3, 'for the music'))
         globals()['SomeTuple'] = SomeTuple
         test_pickle_dump_load(self.assertIs, SomeTuple.first)
+
+    def test_tuple_subclass_with_auto_1(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(T, Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = auto(), 'for the money'
+            second = auto(), 'for the show'
+            third = auto(), 'for the music'
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.index, 1)
+        self.assertEqual(SomeEnum.second.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
+
+    def test_tuple_subclass_with_auto_2(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = T(auto(), 'for the money')
+            second = T(auto(), 'for the show')
+            third = T(auto(), 'for the music')
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.value.index, 1)
+        self.assertEqual(SomeEnum.second.value.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
 
     def test_duplicate_values_give_unique_enum_items(self):
         class AutoNumber(Enum):
@@ -4817,22 +4867,22 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |
  |  ----------------------------------------------------------------------
- |  Methods inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
  |
- |  __contains__(value) from enum.EnumType
+ |  __contains__(value)
  |      Return True if `value` is in `cls`.
  |
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
  |
- |  __getitem__(name) from enum.EnumType
+ |  __getitem__(name)
  |      Return the member matching `name`.
  |
- |  __iter__() from enum.EnumType
+ |  __iter__()
  |      Return members in definition order.
  |
- |  __len__() from enum.EnumType
+ |  __len__()
  |      Return the number of members (no aliases)
  |
  |  ----------------------------------------------------------------------
@@ -4857,11 +4907,11 @@ class Color(enum.Enum)
  |
  |  Data and other attributes defined here:
  |
- |  YELLOW = <Color.YELLOW: 3>
+ |  CYAN = <Color.CYAN: 1>
  |
  |  MAGENTA = <Color.MAGENTA: 2>
  |
- |  CYAN = <Color.CYAN: 1>
+ |  YELLOW = <Color.YELLOW: 3>
  |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -4871,7 +4921,18 @@ class Color(enum.Enum)
  |  value
  |
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
+ |
+ |  __contains__(value)
+ |
+ |  __getitem__(name)
+ |
+ |  __iter__()
+ |
+ |  __len__()
+ |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from enum.EnumType:
  |
  |  __members__"""
 
