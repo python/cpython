@@ -1358,7 +1358,7 @@ class _NamespacePath:
     def _find_parent_path_names(self):
         """Returns a tuple of (parent-module-name, parent-path-attr-name)"""
         parent, dot, me = self._name.rpartition('.')
-        if dot == '' or parent not in sys.modules:
+        if dot == '':
             # This is a top-level module. sys.path contains the parent path.
             return 'sys', 'path'
         # Not a top-level module. parent-module.__path__ contains the
@@ -1367,7 +1367,11 @@ class _NamespacePath:
 
     def _get_parent_path(self):
         parent_module_name, path_attr_name = self._find_parent_path_names()
-        return getattr(sys.modules[parent_module_name], path_attr_name)
+        try:
+            module = sys.modules[parent_module_name]
+        except KeyError:
+            return None
+        return getattr(module, path_attr_name)
 
     def _recalculate(self):
         # If the parent's path has changed, recalculate _path
