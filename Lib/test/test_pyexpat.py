@@ -772,13 +772,9 @@ class ReparseDeferralTest(unittest.TestCase):
         enabled = (expat.version_info >= (2, 6, 0))
 
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
-
         parser.SetReparseDeferralEnabled(False)
-
         self.assertIs(parser.GetReparseDeferralEnabled(), False)
-
         parser.SetReparseDeferralEnabled(True)
-
         self.assertIs(parser.GetReparseDeferralEnabled(), enabled)
 
     def test_reparse_deferral_enabled(self):
