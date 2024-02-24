@@ -102,7 +102,7 @@ Location
 
 On standard CPython installations, when available, the details file will be
 installed in the same directory as the standard library, with the name
-``install-details.json``.
+``build-details.json``.
 
 Different implementations may place it in a different path, choose to provide
 the file via a different mechanism, or choose not to include it at all.

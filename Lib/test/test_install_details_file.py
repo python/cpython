@@ -88,7 +88,7 @@ class CPythonInstallDetailsFileTests(unittest.TestCase, FormatTestsBase):
             dirname = sysconfig.get_config_var('projectbase')
         else:
             dirname = sysconfig.get_path('stdlib')
-        return os.path.join(dirname, 'install-details.json')
+        return os.path.join(dirname, 'build-details.json')
 
     @property
     def contents(self):
@@ -97,7 +97,7 @@ class CPythonInstallDetailsFileTests(unittest.TestCase, FormatTestsBase):
 
     def setUp(self):
         if sys.platform in ('wasi', 'emscripten') and not os.path.isfile(self.location):
-            self.skipTest(f'{sys.platform} build without a install-details.json file')
+            self.skipTest(f'{sys.platform} build without a build-details.json file')
 
     @needs_installed_python
     def test_location(self):

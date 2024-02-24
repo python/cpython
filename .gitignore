@@ -128,7 +128,7 @@ Tools/unicode/data/
 /cross-build/
 /jit_stencils.h
 /install-details.toml
-/install-details.json
+/build-details.json
 /platform
 /profile-clean-stamp
 /profile-run-stamp
