@@ -1737,22 +1737,24 @@ class XMLPullParserTest(unittest.TestCase):
         parser = ET.XMLPullParser(events=('start', 'end'))
         is_python = hasattr(parser._parser, '_parser')  # rather than C
 
-        if not is_python:
-            self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled methods not available in C')
-
         for chunk in ("<doc", ">"):
             parser.feed(chunk)
 
         if pyexpat.version_info >= (2, 6, 0):
+            if not is_python:
+                self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled '
+                              'methods not available in C')
             parser._parser._parser.SetReparseDeferralEnabled(False)
 
         self.assert_event_tags(parser, [])  # i.e. no elements started
-        self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
+        if is_python:
+            self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.flush()
 
         self.assert_event_tags(parser, [('start', 'doc')])
-        self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
+        if is_python:
+            self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.feed("</doc>")
         parser.close()
