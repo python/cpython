@@ -1215,23 +1215,49 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start + b"<doc>text</doc>")
 
-    def test_expat_incremental_reparse_deferral(self):
+    def test_flush_reparse_deferral_enabled(self):
+        if pyexpat.version_info < (2, 6, 0):
+            return
+
         result = BytesIO()
         xmlgen = XMLGenerator(result)
         parser = create_parser()
         parser.setContentHandler(xmlgen)
 
-        # This artificial chunking triggers reparse deferral with Expat >=2.6.0
-        parser.feed("<doc ")
-        parser.feed(">")
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assertTrue(parser._parser.GetReparseDeferralEnabled())
+        self.assertEqual(result.getvalue(), start + b"<doc>")
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assertEqual(result.getvalue(), start + b"<doc></doc>")
+
+    def test_flush_reparse_deferral_disabled(self):
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
 
         if pyexpat.version_info >= (2, 6, 0):
-            self.assertEqual(result.getvalue(), start)
-        else:
-            self.assertEqual(result.getvalue(), start + b"<doc>")
+            parser._parser.SetReparseDeferralEnabled(False)
 
-        parser.flush()  # no-op for Expat <2.6.0
+        self.assertEqual(result.getvalue(), start)  # i.e. no elements started
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
 
+        parser.flush()
+
+        self.assertFalse(parser._parser.GetReparseDeferralEnabled())
         self.assertEqual(result.getvalue(), start + b"<doc>")
 
         parser.feed("</doc>")
