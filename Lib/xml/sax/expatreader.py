@@ -219,17 +219,14 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             return
 
         was_enabled = self._parser.GetReparseDeferralEnabled()
-
-        if was_enabled:
-            self._parser.SetReparseDeferralEnabled(False)
         try:
+            self._parser.SetReparseDeferralEnabled(False)
             self._parser.Parse(b"", False)
         except expat.error as e:
             exc = SAXParseException(expat.ErrorString(e.code), e, self)
             self._err_handler.fatalError(exc)
         finally:
-            if was_enabled:
-                self._parser.SetReparseDeferralEnabled(True)
+            self._parser.SetReparseDeferralEnabled(was_enabled)
 
     def _close_source(self):
         source = self._source

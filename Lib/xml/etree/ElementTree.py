@@ -1733,16 +1733,13 @@ class XMLParser:
 
     def flush(self):
         was_enabled = self.parser.GetReparseDeferralEnabled()
-
-        if was_enabled:
-            self.parser.SetReparseDeferralEnabled(False)
         try:
+            self.parser.SetReparseDeferralEnabled(False)
             self.parser.Parse(b"", False)
         except self._error as v:
             self._raiseerror(v)
         finally:
-            if was_enabled:
-                self.parser.SetReparseDeferralEnabled(True)
+            self.parser.SetReparseDeferralEnabled(was_enabled)
 
 # --------------------------------------------------------------------
 # C14N 2.0
