@@ -1373,6 +1373,80 @@ class EventLoopTestsMixin:
         self.assertIsInstance(pr, MyDatagramProto)
         tr.close()
         self.loop.run_until_complete(pr.done)
+        
+    def test_datagram_send_to_non_listening_address(self):
+        # see:
+        #   https://github.com/python/cpython/issues/91227
+        #   https://github.com/python/cpython/issues/88906
+        #   https://bugs.python.org/issue47071
+        #   https://bugs.python.org/issue44743
+        # The Proactor event loop would fail to receive datagram messages after
+        # sending a message to an address that wasn't listening.
+        loop = self.loop
+        
+        class Protocol(asyncio.DatagramProtocol):
+        
+            _received_datagram = None
+        
+            def datagram_received(self, data, addr):
+                self._received_datagram.set_result(data)
+                
+            async def wait_for_datagram_received(self):
+                self._received_datagram = loop.create_future()
+                result = await asyncio.wait_for(self._recevied_datagram, 10)
+                self._received_datagram = None
+                return result
+                
+        transport_1, protocol_1 = loop.run_until_complete(
+            loop.create_datagram_endpoint(
+                Protocol,
+                local_addr=('127.0.0.1', 0)
+            )
+        )
+        addr_1 = transport_1.sockets[0].getsockname()
+        
+        transport_2, protocol_2 = loop.run_until_complete(
+            loop.create_datagram_endpoint(
+                Protocol,
+                local_addr=('127.0.0.1', 0)
+            )
+        )[0]
+        addr_2 = transport_1.sockets[0].getsockname()
+        
+        # creating and immediately closing this to try to get an address that
+        # is not listening
+        transport_3, protocol_3 = loop.run_until_complete(
+            loop.create_datagram_endpoint(
+                Protocol,
+                local_addr=('127.0.0.1', 0)
+            )
+        )[0]
+        addr_3 = transport_1.sockets[0].getsockname()
+        loop.run_until_complete(transport_3.wait_closed())
+        
+        transport_1.sendto(b'a', addr=addr_2)
+        assert loop.run_until_complete(
+            protocol_2.wait_for_datagram_received()
+        ) == b'a'
+        
+        transport_2.sendto(b'b', addr=addr_1)
+        assert loop.run_until_complete(
+            protocol_1.wait_for_datagram_received()
+        ) == b'b'
+        
+        # this should send to an address that isn't listening
+        transport_1.sendto(b'c', addr=addr_3)
+        loop.run_until_complete(asyncio.sleep(0))
+        
+        # transport 1 should still be able to receive messages after sending to
+        # an address that wasn't listening
+        transport_2.sendto(b'd', addr=addr_1)
+        assert loop.run_until_complete(
+            protocol_1.wait_for_datagram_received()
+        ) == b'd'
+        
+        loop.run_until_complete(transport_1.wait_closed())
+        loop.run_until_complete(transport_2.wait_closed())
 
     def test_internal_fds(self):
         loop = self.create_event_loop()
