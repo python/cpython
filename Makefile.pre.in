@@ -649,7 +649,7 @@ all:		@DEF_MAKE_ALL_RULE@
 # Provide quick help for common Makefile targets.
 .PHONY: help
 help:
-	@echo "Run 'make' to build the python executable and extension modules"
+	@echo "Run 'make' to build the Python executable and extension modules"
 	@echo ""
 	@echo "or 'make <target>' where <target> is one of:"
 	@echo "  test         run the test suite"

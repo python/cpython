@@ -997,7 +997,7 @@ first one defined in the Makefile.  By tradition (including in the
 CPython project) this is usually the ``all`` target. The
 ``configure`` script expands an ``autoconf`` variable,
 ``@DEF_MAKE_ALL_RULE@`` to describe precisely which targets ``make
-all`` will build. The three choices are
+all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
 * ``build_wasm`` (configured with ``--with-emscripten-target``)
@@ -1005,7 +1005,7 @@ all`` will build. The three choices are
 
 Depending on the most recent source file changes, Make will rebuild
 any targets (object files and executables) deemed out-of-date,
-including running ``configure`` again if necessary, Source/target
+including running ``configure`` again if necessary. Source/target
 dependencies are many and maintained manually however, so Make
 sometimes doesn't have all the information necessary to correctly
 detect all targets which need to be rebuilt.  Depending on which
@@ -1027,7 +1027,7 @@ e.g., ``macosx-14.3-arm64-3.12`` or ``linux-x86_64-3.13``.
 make profile-opt
 ^^^^^^^^^^^^^^^^
 
-Build Python using Profile Guided Optimization (PGO).  You can use the
+Build Python using profile-guided optimization (PGO).  You can use the
 configure :option:`--enable-optimizations` option to make this the
 default target of the ``make`` command (``make all`` or just
 ``make``).
@@ -1060,8 +1060,8 @@ make test
 Build the ``all`` target and run the Python test suite with the
 ``--fast-ci`` option. Variables:
 
-* ``TESTOPTS``: additional regrtest command line options.
-* ``TESTPYTHONOPTS``: additional Python command line options.
+* ``TESTOPTS``: additional regrtest command-line options.
+* ``TESTPYTHONOPTS``: additional Python command-line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
 
 
@@ -1076,7 +1076,7 @@ make regen-all
 ^^^^^^^^^^^^^^
 
 Regenerate (almost) all generated files. These include (but are not
-limited to) bytecode cases, parser generator files, and SBOM file.
+limited to) bytecode cases, and parser generator file.
 ``make regen-stdlib-module-names`` and ``autoconf`` must be run
 separately for the remaining `generated files <#generated-files>`_.
 
