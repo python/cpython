@@ -13,8 +13,8 @@
 
 ----------------
 
-This module performs file and I/O control on file descriptors.  It is
-an interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.
+This module performs file and I/O control on file descriptors. It is an
+interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.
 See the :manpage:`fcntl(2)` and :manpage:`ioctl(2)` Unix manual pages
 for full details.
 
@@ -178,20 +178,20 @@ The module defines the following functions:
 
    .. data:: LOCK_UN
 
-             release an existing lock
+      Release an existing lock.
 
    .. data:: LOCK_SH
 
-             acquire a shared lock
+      Acquire a shared lock.
 
    .. data:: LOCK_EX
 
-             acquire an exclusive lock
+      Acquire an exclusive lock.
 
    .. data:: LOCK_NB
 
-             bitwise OR with any of the other three constantsoperations to make
-             the request non-blocking.
+      Bitwise OR with any of the other three ``LOCK_*`` constants to make
+      the request non-blocking.
 
    If :const:`!LOCK_NB` is used and the lock cannot be acquired, an
    :exc:`OSError` will be raised and the exception will have an *errno*
