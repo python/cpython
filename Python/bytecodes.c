@@ -1895,7 +1895,6 @@ dummy_func(
         }
 
         split op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
-            assert(_PyObject_InlineValuesConsistencyCheck(owner));
             attr = _PyObject_InlineValues(owner)->values[index];
             DEOPT_IF(attr == NULL);
             STAT_INC(LOAD_ATTR, hit);
@@ -2070,7 +2069,6 @@ dummy_func(
 
         op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
             STAT_INC(STORE_ATTR, hit);
-            assert(_PyObject_InlineValuesConsistencyCheck(owner));
             assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];

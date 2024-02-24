@@ -3574,7 +3574,6 @@
             // _LOAD_ATTR_INSTANCE_VALUE
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                assert(_PyObject_InlineValuesConsistencyCheck(owner));
                 attr = _PyObject_InlineValues(owner)->values[index];
                 DEOPT_IF(attr == NULL, LOAD_ATTR);
                 STAT_INC(LOAD_ATTR, hit);
@@ -5207,7 +5206,6 @@
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
                 STAT_INC(STORE_ATTR, hit);
-                assert(_PyObject_InlineValuesConsistencyCheck(owner));
                 assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
                 PyDictValues *values = _PyObject_InlineValues(owner);
                 PyObject *old_value = values->values[index];

@@ -363,6 +363,9 @@ static int
 dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
                     PyObject **result, int incref_result);
 
+
+static int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
+
 #include "clinic/dictobject.c.h"
 
 

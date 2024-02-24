@@ -653,8 +653,6 @@ _PyObject_InlineValues(PyObject *obj)
     return (PyDictValues *)((char *)obj + sizeof(PyObject));
 }
 
-extern int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
-
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);

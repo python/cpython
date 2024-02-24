@@ -1819,7 +1819,6 @@
             (void)null;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            assert(_PyObject_InlineValuesConsistencyCheck(owner));
             attr = _PyObject_InlineValues(owner)->values[index];
             if (attr == NULL) goto deoptimize;
             STAT_INC(LOAD_ATTR, hit);
@@ -1837,7 +1836,6 @@
             (void)null;
             owner = stack_pointer[-1];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
-            assert(_PyObject_InlineValuesConsistencyCheck(owner));
             attr = _PyObject_InlineValues(owner)->values[index];
             if (attr == NULL) goto deoptimize;
             STAT_INC(LOAD_ATTR, hit);
@@ -2036,7 +2034,6 @@
             value = stack_pointer[-2];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             STAT_INC(STORE_ATTR, hit);
-            assert(_PyObject_InlineValuesConsistencyCheck(owner));
             assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
