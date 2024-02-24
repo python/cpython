@@ -1706,6 +1706,49 @@ class XMLPullParserTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ET.XMLPullParser(events=('start', 'end', 'bogus'))
 
+    def test_flush_reparse_deferral_enabled(self):
+        if pyexpat.version_info < (2, 6, 0):
+            self.skipTest(f'Expat {pyexpat.version_info} does not support reparse deferral')
+
+        parser = ET.XMLPullParser(events=('start', 'end'))
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        self.assert_event_tags(parser, [])  # i.e. no elements started
+        self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assert_event_tags(parser, [('start', 'doc')])
+        self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assert_event_tags(parser, [('end', 'doc')])
+
+    def test_flush_reparse_deferral_disabled(self):
+        parser = ET.XMLPullParser(events=('start', 'end'))
+
+        for chunk in ("<doc", ">"):
+            parser.feed(chunk)
+
+        if pyexpat.version_info >= (2, 6, 0):
+            parser._parser._parser.SetReparseDeferralEnabled(False)
+
+        self.assert_event_tags(parser, [])  # i.e. no elements started
+        self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.flush()
+
+        self.assert_event_tags(parser, [('start', 'doc')])
+        self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
+
+        parser.feed("</doc>")
+        parser.close()
+
+        self.assert_event_tags(parser, [('end', 'doc')])
 
 #
 # xinclude tests (samples from appendix C of the xinclude specification)
