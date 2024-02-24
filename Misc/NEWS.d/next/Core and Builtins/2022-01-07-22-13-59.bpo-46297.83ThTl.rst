@@ -1,2 +1,0 @@
-Fixed an interpreter crash on bootup with multiple PythonPaths set in
-the Windows registry. Patch by Derzsi Dániel.

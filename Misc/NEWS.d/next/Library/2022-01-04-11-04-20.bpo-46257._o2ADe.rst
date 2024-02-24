@@ -1,4 +1,0 @@
-Optimized the mean, variance, and stdev functions in the statistics module.
-If the input is an iterator, it is consumed in a single pass rather than
-eating memory by conversion to a list.  The single pass algorithm is about
-twice as fast as the previous two pass code.

@@ -1,2 +1,0 @@
-The ``@typing.final`` decorator now sets the ``__final__`` attribute on the
-decorated object to allow runtime introspection. Patch by Jelle Zijlstra.

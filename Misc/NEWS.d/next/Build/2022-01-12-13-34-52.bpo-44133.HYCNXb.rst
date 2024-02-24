@@ -1,5 +1,0 @@
-When Python is built without :option:`--enable-shared`, the ``python``
-program is now linked to object files, rather than being linked to the Python
-static library (libpython.a), to make sure that all symbols are exported.
-Previously, the linker omitted some symbols like the :c:func:`Py_FrozenMain`
-function. Patch by Victor Stinner.

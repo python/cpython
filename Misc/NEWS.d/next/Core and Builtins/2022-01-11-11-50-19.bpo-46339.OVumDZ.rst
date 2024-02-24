@@ -1,3 +1,0 @@
-Fix a crash in the parser when retrieving the error text for multi-line
-f-strings expressions that do not start in the first line of the string.
-Patch by Pablo Galindo

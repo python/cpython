@@ -1,1 +1,0 @@
-The interpreter state's representation of handled exceptions (a.k.a exc_info, or _PyErr_StackItem) now has only the ``exc_value`` field, ``exc_type`` and ``exc_traceback`` have been removed as their values can be derived from ``exc_value``.

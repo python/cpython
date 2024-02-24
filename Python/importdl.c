@@ -2,6 +2,11 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
+#include "pycore_call.h"
+#include "pycore_import.h"
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
+#include "pycore_pystate.h"
+#include "pycore_runtime.h"
 
 /* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
    supported on this platform. configure will then compile and link in one
@@ -10,7 +15,7 @@
 */
 #ifdef HAVE_DYNAMIC_LOADING
 
-#include "importdl.h"
+#include "pycore_importdl.h"
 
 #ifdef MS_WINDOWS
 extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
@@ -38,7 +43,6 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     PyObject *encoded = NULL;
     PyObject *modname = NULL;
     Py_ssize_t name_len, lastdot;
-    _Py_IDENTIFIER(replace);
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);
@@ -76,7 +80,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     }
 
     /* Replace '-' by '_' */
-    modname = _PyObject_CallMethodId(encoded, &PyId_replace, "cc", '-', '_');
+    modname = _PyObject_CallMethod(encoded, &_Py_ID(replace), "cc", '-', '_');
     if (modname == NULL)
         goto error;
 
@@ -97,10 +101,10 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 #endif
     PyObject *name_unicode = NULL, *name = NULL, *path = NULL, *m = NULL;
     const char *name_buf, *hook_prefix;
-    const char *oldcontext;
+    const char *oldcontext, *newcontext;
     dl_funcptr exportfunc;
     PyModuleDef *def;
-    PyObject *(*p0)(void);
+    PyModInitFunction p0;
 
     name_unicode = PyObject_GetAttrString(spec, "name");
     if (name_unicode == NULL) {
@@ -109,6 +113,10 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     if (!PyUnicode_Check(name_unicode)) {
         PyErr_SetString(PyExc_TypeError,
                         "spec.name must be a string");
+        goto error;
+    }
+    newcontext = PyUnicode_AsUTF8(name_unicode);
+    if (newcontext == NULL) {
         goto error;
     }
 
@@ -155,17 +163,12 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         goto error;
     }
 
-    p0 = (PyObject *(*)(void))exportfunc;
+    p0 = (PyModInitFunction)exportfunc;
 
     /* Package context is needed for single-phase init */
-    oldcontext = _Py_PackageContext;
-    _Py_PackageContext = PyUnicode_AsUTF8(name_unicode);
-    if (_Py_PackageContext == NULL) {
-        _Py_PackageContext = oldcontext;
-        goto error;
-    }
+    oldcontext = _PyImport_SwapPackageContext(newcontext);
     m = p0();
-    _Py_PackageContext = oldcontext;
+    _PyImport_SwapPackageContext(oldcontext);
 
     if (m == NULL) {
         if (!PyErr_Occurred()) {
@@ -176,8 +179,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         }
         goto error;
     } else if (PyErr_Occurred()) {
-        PyErr_Clear();
-        PyErr_Format(
+        _PyErr_FormatFromCause(
             PyExc_SystemError,
             "initialization of %s raised unreported exception",
             name_buf);
@@ -202,6 +204,10 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
     }
 
     /* Fall back to single-phase init mechanism */
+
+    if (_PyImport_CheckSubinterpIncompatibleExtensionAllowed(name_buf) < 0) {
+        goto error;
+    }
 
     if (hook_prefix == nonascii_prefix) {
         /* don't allow legacy init for non-ASCII module names */

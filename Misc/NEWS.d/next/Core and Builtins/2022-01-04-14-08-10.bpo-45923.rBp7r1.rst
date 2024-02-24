@@ -1,3 +1,0 @@
-Add RESUME opcode. This is a logical no-op. It is emitted by the compiler
-anywhere a Python function can be entered. It is used by the interpreter to
-perform tracing and optimizer checks.
