@@ -166,6 +166,11 @@ data but would still like to have incremental parsing capabilities, take a look
 at :func:`iterparse`.  It can be useful when you're reading a large XML document
 and don't want to hold it wholly in memory.
 
+Where _immediate_ feedback through events is wanted, calling method
+:meth:`XMLPullParser.flush` can help reduce delay;
+please make sure to study the related security notes.
+
+
 Finding interesting elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
