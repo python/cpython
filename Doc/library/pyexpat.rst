@@ -198,11 +198,11 @@ XMLParser Objects
 
 .. method:: xmlparser.SetReparseDeferralEnabled(enabled)
 
-.. warning::
+   .. warning::
 
-   Calling ``SetReparseDeferralEnabled(False)`` has security implications,
-   as detailed below; please make sure to understand these consequences
-   prior to using the ``SetReparseDeferralEnabled`` method.
+      Calling ``SetReparseDeferralEnabled(False)`` has security implications,
+      as detailed below; please make sure to understand these consequences
+      prior to using the ``SetReparseDeferralEnabled`` method.
 
    Expat 2.6.0 introduced a security mechanism called "reparse deferral"
    where instead of causing denial of service through quadratic runtime
