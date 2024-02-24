@@ -1,2 +1,0 @@
-Added audit for :func:`os.walk`, :func:`os.fwalk`, :meth:`pathlib.Path.glob`
-and :meth:`pathlib.Path.rglob`.

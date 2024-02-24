@@ -7,6 +7,7 @@ def tearDownModule():
     asyncio.set_event_loop_policy(None)
 
 
+@unittest.skipUnless(decimal.HAVE_CONTEXTVAR, "decimal is built with a thread-local context")
 class DecimalContextTest(unittest.TestCase):
 
     def test_asyncio_task_decimal_context(self):
@@ -31,3 +32,7 @@ class DecimalContextTest(unittest.TestCase):
 
         self.assertEqual(str(r2[0]), '0.333333')
         self.assertEqual(str(r2[1]), '0.111111')
+
+
+if __name__ == '__main__':
+    unittest.main()

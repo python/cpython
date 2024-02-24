@@ -1,8 +1,8 @@
 #!/bin/sh
 
 #
-# Purpose: test all machine configurations, pydebug, refleaks, release build
-#          and release build with valgrind.
+# Purpose: test with and without contextvar, all machine configurations, pydebug,
+#          refleaks, release build and release build with valgrind.
 #
 # Synopsis: ./runall-memorydebugger.sh [--all-configs64 | --all-configs32]
 #
@@ -57,7 +57,8 @@ print_config ()
 cd ..
 
 # test_decimal: refleak, regular and Valgrind tests
-for config in $CONFIGS; do
+for args in "--without-decimal-contextvar" ""; do
+    for config in $CONFIGS; do
 
         unset PYTHON_DECIMAL_WITH_MACHINE
         libmpdec_config=$config
@@ -69,12 +70,12 @@ for config in $CONFIGS; do
         fi
 
         ############ refleak tests ###########
-        print_config "refleak tests: config=$config"
+        print_config "refleak tests: config=$config" $args
         printf "\nbuilding python ...\n\n"
 
         cd ../../
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --with-pydebug > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --with-pydebug $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== refleak tests ===========================\n\n"
@@ -82,11 +83,11 @@ for config in $CONFIGS; do
 
 
         ############ regular tests ###########
-        print_config "regular tests: config=$config"
+        print_config "regular tests: config=$config" $args
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== regular tests ===========================\n\n"
@@ -103,21 +104,23 @@ for config in $CONFIGS; do
                   esac
         esac
 
-        print_config "valgrind tests: config=$config"
+        print_config "valgrind tests: config=$config" $args
         printf "\nbuilding python ...\n\n"
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --without-pymalloc > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --without-pymalloc $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== valgrind tests ===========================\n\n"
         $valgrind ./python -m test -uall test_decimal
 
         cd Modules/_decimal
+    done
 done
 
 # deccheck
 cd ../../
-for config in $CONFIGS; do
+for args in "--without-decimal-contextvar" ""; do
+    for config in $CONFIGS; do
 
         unset PYTHON_DECIMAL_WITH_MACHINE
         if [ X"$config" != X"auto" ]; then
@@ -126,22 +129,22 @@ for config in $CONFIGS; do
         fi
 
         ############ debug ############
-        print_config "deccheck: config=$config --with-pydebug"
+        print_config "deccheck: config=$config --with-pydebug" $args
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --with-pydebug > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --with-pydebug $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ========================== debug ===========================\n\n"
         ./python Modules/_decimal/tests/deccheck.py
 
         ########### regular ###########
-        print_config "deccheck: config=$config "
+        print_config "deccheck: config=$config" $args
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== regular ===========================\n\n"
@@ -157,15 +160,16 @@ for config in $CONFIGS; do
                   esac
         esac
 
-        print_config "valgrind deccheck: config=$config "
+        print_config "valgrind deccheck: config=$config" $args
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --without-pymalloc > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --without-pymalloc $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== valgrind ==========================\n\n"
         $valgrind ./python Modules/_decimal/tests/deccheck.py
+    done
 done
 
 

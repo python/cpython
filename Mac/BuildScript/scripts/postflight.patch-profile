@@ -20,7 +20,7 @@ fi
 # Make sure the directory ${PYTHON_ROOT}/bin is on the users PATH.
 BSH="`basename "${theShell}"`"
 case "${BSH}" in
-bash|ksh|sh|*csh|zsh)
+bash|ksh|sh|*csh|zsh|fish)
 	if [ `id -ur` = 0 ]; then
 		P=`su - ${USER} -c 'echo A-X-4-X@@$PATH@@X-4-X-A' | grep 'A-X-4-X@@.*@@X-4-X-A' | sed -e 's/^A-X-4-X@@//g' -e 's/@@X-4-X-A$//g'`
 	else
@@ -75,6 +75,22 @@ bash)
 	else
 		PR="${HOME}/.bash_profile"
 	fi
+	;;
+fish)
+	CONFIG_DIR="${HOME}/.config/fish"
+	RC="${CONFIG_DIR}/config.fish"
+	mkdir -p "$CONFIG_DIR"
+	if [ -f "${RC}" ]; then
+		cp -fp "${RC}" "${RC}.pysave"
+	fi
+	echo "" >> "${RC}"
+	echo "# Setting PATH for Python ${PYVER}" >> "${RC}"
+	echo "# The original version is saved in ${RC}.pysave" >> "${RC}"
+	echo "set -x PATH \"${PYTHON_ROOT}/bin\" \"\$PATH\"" >> "${RC}"
+	if [ `id -ur` = 0 ]; then
+		chown "${USER}" "${RC}"
+	fi
+	exit 0
 	;;
 zsh)
         PR="${HOME}/.zprofile"

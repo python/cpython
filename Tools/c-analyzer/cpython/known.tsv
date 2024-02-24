@@ -1,0 +1,3 @@
+filename	funcname	name	kind	declaration
+#filename	funcname	name	kind	is_supported	declaration
+#???	-	PyWideStringList	typedef	???

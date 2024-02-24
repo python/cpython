@@ -1,3 +1,0 @@
-Exclude trashcan mechanism from the limited C API: it requires access to
-PyTypeObject and PyThreadState structure fields, whereas these structures
-are opaque in the limited C API.
