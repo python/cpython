@@ -1713,19 +1713,18 @@ class XMLPullParserTest(unittest.TestCase):
                           'support reparse deferral')
 
         parser = ET.XMLPullParser(events=('start', 'end'))
-        is_python = hasattr(parser._parser, '_parser')  # rather than C
 
         for chunk in ("<doc", ">"):
             parser.feed(chunk)
 
         self.assert_event_tags(parser, [])  # i.e. no elements started
-        if is_python:
+        if ET is pyET:
             self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.flush()
 
         self.assert_event_tags(parser, [('start', 'doc')])
-        if is_python:
+        if ET is pyET:
             self.assertTrue(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.feed("</doc>")
@@ -1735,25 +1734,24 @@ class XMLPullParserTest(unittest.TestCase):
 
     def test_flush_reparse_deferral_disabled(self):
         parser = ET.XMLPullParser(events=('start', 'end'))
-        is_python = hasattr(parser._parser, '_parser')  # rather than C
 
         for chunk in ("<doc", ">"):
             parser.feed(chunk)
 
         if pyexpat.version_info >= (2, 6, 0):
-            if not is_python:
+            if not ET is pyET:
                 self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled '
                               'methods not available in C')
             parser._parser._parser.SetReparseDeferralEnabled(False)
 
         self.assert_event_tags(parser, [])  # i.e. no elements started
-        if is_python:
+        if ET is pyET:
             self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.flush()
 
         self.assert_event_tags(parser, [('start', 'doc')])
-        if is_python:
+        if ET is pyET:
             self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
 
         parser.feed("</doc>")
