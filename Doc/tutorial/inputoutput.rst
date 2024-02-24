@@ -15,7 +15,7 @@ Fancier Output Formatting
 =========================
 
 So far we've encountered two ways of writing values: *expression statements* and
-the :func:`print` function.  (A third way is using the :meth:`write` method
+the :func:`print` function.  (A third way is using the :meth:`~io.TextIOBase.write` method
 of file objects; the standard output file can be referenced as ``sys.stdout``.
 See the Library Reference for more information on this.)
 
@@ -133,7 +133,17 @@ applies :func:`repr`::
    >>> print(f'My hovercraft is full of {animals!r}.')
    My hovercraft is full of 'eels'.
 
-For a reference on these format specifications, see
+The ``=`` specifier can be used to expand an expression to the text of the
+expression, an equal sign, then the representation of the evaluated expression:
+
+   >>> bugs = 'roaches'
+   >>> count = 13
+   >>> area = 'living room'
+   >>> print(f'Debugging {bugs=} {count=} {area=}')
+   Debugging bugs='roaches' count=13 area='living room'
+
+See :ref:`self-documenting expressions <bpo-36817-whatsnew>` for more information
+on the ``=`` specifier. For a reference on these format specifications, see
 the reference guide for the :ref:`formatspec`.
 
 .. _tut-string-format:
@@ -275,8 +285,8 @@ Reading and Writing Files
 =========================
 
 .. index::
-   builtin: open
-   object: file
+   pair: built-in function; open
+   pair: object; file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
 two positional arguments and one keyword argument:
@@ -446,8 +456,8 @@ to the very file end with ``seek(0, 2)``) and the only valid *offset* values are
 those returned from the ``f.tell()``, or zero. Any other *offset* value produces
 undefined behaviour.
 
-File objects have some additional methods, such as :meth:`~file.isatty` and
-:meth:`~file.truncate` which are less frequently used; consult the Library
+File objects have some additional methods, such as :meth:`~io.IOBase.isatty` and
+:meth:`~io.IOBase.truncate` which are less frequently used; consult the Library
 Reference for a complete guide to file objects.
 
 
@@ -456,10 +466,10 @@ Reference for a complete guide to file objects.
 Saving structured data with :mod:`json`
 ---------------------------------------
 
-.. index:: module: json
+.. index:: pair: module; json
 
 Strings can easily be written to and read from a file.  Numbers take a bit more
-effort, since the :meth:`read` method only returns strings, which will have to
+effort, since the :meth:`~io.TextIOBase.read` method only returns strings, which will have to
 be passed to a function like :func:`int`, which takes a string like ``'123'``
 and returns its numeric value 123.  When you want to save more complex data
 types like nested lists and dictionaries, parsing and serializing by hand
@@ -468,7 +478,7 @@ becomes complicated.
 Rather than having users constantly writing and debugging code to save
 complicated data types to files, Python allows you to use the popular data
 interchange format called `JSON (JavaScript Object Notation)
-<http://json.org>`_.  The standard module called :mod:`json` can take Python
+<https://json.org>`_.  The standard module called :mod:`json` can take Python
 data hierarchies, and convert them to string representations; this process is
 called :dfn:`serializing`.  Reconstructing the data from the string representation
 is called :dfn:`deserializing`.  Between serializing and deserializing, the

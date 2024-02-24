@@ -1,2 +1,0 @@
-Fix an issue where frame object manipulations could corrupt inline bytecode
-caches.

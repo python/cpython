@@ -721,10 +721,10 @@ class BZ2DecompressorTest(BaseTest):
     @bigmemtest(size=_4G + 100, memuse=3.3)
     def testDecompress4G(self, size):
         # "Test BZ2Decompressor.decompress() with >4GiB input"
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            data = block * (size // blocksize + 1)
+            data = block * ((size-1) // blocksize + 1)
             compressed = bz2.compress(data)
             bz2d = BZ2Decompressor()
             decompressed = bz2d.decompress(compressed)
@@ -843,6 +843,10 @@ class BZ2DecompressorTest(BaseTest):
         for i in range(100):
             bzd.__init__()
         self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    def test_uninitialized_BZ2Decompressor_crash(self):
+        self.assertEqual(BZ2Decompressor.__new__(BZ2Decompressor).
+                         decompress(bytes()), b'')
 
 
 class CompressDecompressTest(BaseTest):

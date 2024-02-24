@@ -1,1 +1,0 @@
-Clarify :mod:`sqlite3` behavior when :ref:`sqlite3-connection-context-manager`.
