@@ -169,7 +169,7 @@ test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
 :mod:`test` package. It does this by finding all modules in the package whose
 name starts with ``test_``, importing them, and executing the function
-:func:`!test_main` if present or loading the tests via
+``test_main`` if present or loading the tests via
 unittest.TestLoader.loadTestsFromModule if ``test_main`` does not exist.  The
 names of tests to execute may also be passed to the script. Specifying a single
 regression test (:program:`python -m test test_spam`) will minimize output and
@@ -372,7 +372,7 @@ The :mod:`test.support` module defines the following constants:
 .. data:: MISSING_C_DOCSTRINGS
 
    Set to ``True`` if Python is built without docstrings (the
-   :c:macro:`!WITH_DOC_STRINGS` macro is not defined).
+   :c:macro:`WITH_DOC_STRINGS` macro is not defined).
    See the :option:`configure --without-doc-strings <--without-doc-strings>` option.
 
    See also the :data:`HAVE_DOCSTRINGS` variable.
