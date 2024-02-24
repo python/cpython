@@ -1458,6 +1458,15 @@ XMLPullParser Objects
 
       Feed the given bytes data to the parser.
 
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
    .. method:: close()
 
       Signal the parser that the data stream is terminated. Unlike
