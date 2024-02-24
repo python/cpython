@@ -1409,7 +1409,7 @@ _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyOb
                 if (values == NULL)
                     goto read_failed;
 
-                uint8_t capacity = _Py_atomic_load_uint8_relaxed(&DICT_VALUES_SIZE(values));
+                uint8_t capacity = _Py_atomic_load_uint8_relaxed(&values->capacity);
                 if (ix >= (Py_ssize_t)capacity)
                     goto read_failed;
 
@@ -5323,12 +5323,6 @@ acquire_key_value(PyObject **key_loc, PyObject *value, PyObject **value_loc,
     return 0;
 }
 
-static Py_ssize_t
-load_values_used_size(PyDictValues *values)
-{
-    return (Py_ssize_t)_Py_atomic_load_uint8(&DICT_VALUES_USED_SIZE(values));
-}
-
 static int
 dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
                              PyObject **out_key, PyObject **out_value)
@@ -5357,7 +5351,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
             goto concurrent_modification;
         }
 
-        Py_ssize_t used = load_values_used_size(values);
+        Py_ssize_t used = (Py_ssize_t)_Py_atomic_load_uint8(&values->size);
         if (i >= used) {
             goto fail;
         }

@@ -66,9 +66,11 @@ def _type_unsigned_short_ptr():
 def _type_unsigned_int_ptr():
     return gdb.lookup_type('unsigned int').pointer()
 
-
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
+
+def _sizeof_pyobject():
+    return gdb.lookup_type('PyObject').sizeof
 
 def _managed_dict_offset():
     # See pycore_object.h
@@ -499,7 +501,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
         dict_ptr = dict_ptr_ptr.cast(_type_char_ptr().pointer()).dereference()
         if int(dict_ptr):
             return None
-        char_ptr = obj_ptr + 2 * _sizeof_void_p()
+        char_ptr = obj_ptr + _sizeof_pyobject()
         values_ptr = char_ptr.cast(gdb.lookup_type("PyDictValues").pointer())
         values = values_ptr['values']
         return PyKeysValuesPair(self.get_cached_keys(), values)
