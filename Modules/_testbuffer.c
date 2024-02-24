@@ -2821,7 +2821,7 @@ _testbuffer_exec(PyObject *mod)
 {
     Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     if (PyType_Ready(&NDArray_Type)) {
-        return NULL;
+        return -1;
     }
     if (PyModule_AddType(mod, &NDArray_Type) < 0) {
         return -1;
