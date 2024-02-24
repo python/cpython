@@ -1387,6 +1387,16 @@ XMLParser Objects
 
       Feeds data to the parser.  *data* is encoded data.
 
+
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
    for each opening tag, its ``end(tag)`` method for each closing tag, and data
    is processed by method ``data(data)``.  For further supported callback
