@@ -174,8 +174,6 @@ struct _dictkeysobject {
 #define SHARED_KEYS_MAX_SIZE 30
 #define NEXT_LOG2_SHARED_KEYS_MAX_SIZE 6
 
-#define DICTVALUES_SENTINEL 0x99
-
 /* Layout of dict values:
  *
  * The PyObject *values are preceded by an array of bytes holding
@@ -273,6 +271,7 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     int size = values->size;
     uint8_t *array = get_insertion_order_array(values);
     assert(size < values->capacity);
+    assert(((uint8_t)ix) == ix);
     array[size] = (uint8_t)ix;
     values->size = size+1;
 }
