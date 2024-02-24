@@ -196,13 +196,13 @@ XMLParser Objects
    :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
    ``errors.codes[errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING]``.
 
+.. method:: xmlparser.SetReparseDeferralEnabled(enabled)
+
 .. warning::
 
    Calling ``SetReparseDeferralEnabled(False)`` has security implications,
    as detailed below; please make sure to understand these consequences
    prior to using the ``SetReparseDeferralEnabled`` method.
-
-.. method:: xmlparser.SetReparseDeferralEnabled(enabled)
 
    Expat 2.6.0 introduced a security mechanism called "reparse deferral"
    where instead of causing denial of service through quadratic runtime
