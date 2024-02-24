@@ -13,6 +13,7 @@ from ._bootstrap_external import spec_from_file_location
 
 import _imp
 import sys
+import threading
 import types
 
 
@@ -171,36 +172,54 @@ class _LazyModule(types.ModuleType):
 
     def __getattribute__(self, attr):
         """Trigger the load of the module and return the attribute."""
-        # All module metadata must be garnered from __spec__ in order to avoid
-        # using mutated values.
-        # Stop triggering this method.
-        self.__class__ = types.ModuleType
-        # Get the original name to make sure no object substitution occurred
-        # in sys.modules.
-        original_name = self.__spec__.name
-        # Figure out exactly what attributes were mutated between the creation
-        # of the module and now.
-        attrs_then = self.__spec__.loader_state['__dict__']
-        attrs_now = self.__dict__
-        attrs_updated = {}
-        for key, value in attrs_now.items():
-            # Code that set the attribute may have kept a reference to the
-            # assigned object, making identity more important than equality.
-            if key not in attrs_then:
-                attrs_updated[key] = value
-            elif id(attrs_now[key]) != id(attrs_then[key]):
-                attrs_updated[key] = value
-        self.__spec__.loader.exec_module(self)
-        # If exec_module() was used directly there is no guarantee the module
-        # object was put into sys.modules.
-        if original_name in sys.modules:
-            if id(self) != id(sys.modules[original_name]):
-                raise ValueError(f"module object for {original_name!r} "
-                                  "substituted in sys.modules during a lazy "
-                                  "load")
-        # Update after loading since that's what would happen in an eager
-        # loading situation.
-        self.__dict__.update(attrs_updated)
+        __spec__ = object.__getattribute__(self, '__spec__')
+        loader_state = __spec__.loader_state
+        with loader_state['lock']:
+            # Only the first thread to get the lock should trigger the load
+            # and reset the module's class. The rest can now getattr().
+            if object.__getattribute__(self, '__class__') is _LazyModule:
+                # The first thread comes here multiple times as it descends the
+                # call stack. The first time, it sets is_loading and triggers
+                # exec_module(), which will access module.__dict__, module.__name__,
+                # and/or module.__spec__, reentering this method. These accesses
+                # need to be allowed to proceed without triggering the load again.
+                if loader_state['is_loading'] and attr.startswith('__') and attr.endswith('__'):
+                    return object.__getattribute__(self, attr)
+                loader_state['is_loading'] = True
+
+                __dict__ = object.__getattribute__(self, '__dict__')
+
+                # All module metadata must be gathered from __spec__ in order to avoid
+                # using mutated values.
+                # Get the original name to make sure no object substitution occurred
+                # in sys.modules.
+                original_name = __spec__.name
+                # Figure out exactly what attributes were mutated between the creation
+                # of the module and now.
+                attrs_then = loader_state['__dict__']
+                attrs_now = __dict__
+                attrs_updated = {}
+                for key, value in attrs_now.items():
+                    # Code that set an attribute may have kept a reference to the
+                    # assigned object, making identity more important than equality.
+                    if key not in attrs_then:
+                        attrs_updated[key] = value
+                    elif id(attrs_now[key]) != id(attrs_then[key]):
+                        attrs_updated[key] = value
+                __spec__.loader.exec_module(self)
+                # If exec_module() was used directly there is no guarantee the module
+                # object was put into sys.modules.
+                if original_name in sys.modules:
+                    if id(self) != id(sys.modules[original_name]):
+                        raise ValueError(f"module object for {original_name!r} "
+                                          "substituted in sys.modules during a lazy "
+                                          "load")
+                # Update after loading since that's what would happen in an eager
+                # loading situation.
+                __dict__.update(attrs_updated)
+                # Finally, stop triggering this method.
+                self.__class__ = types.ModuleType
+
         return getattr(self, attr)
 
     def __delattr__(self, attr):
@@ -244,5 +263,7 @@ class LazyLoader(Loader):
         loader_state = {}
         loader_state['__dict__'] = module.__dict__.copy()
         loader_state['__class__'] = module.__class__
+        loader_state['lock'] = threading.RLock()
+        loader_state['is_loading'] = False
         module.__spec__.loader_state = loader_state
         module.__class__ = _LazyModule
