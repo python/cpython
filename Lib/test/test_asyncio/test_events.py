@@ -1393,37 +1393,37 @@ class EventLoopTestsMixin:
                 
             async def wait_for_datagram_received(self):
                 self._received_datagram = loop.create_future()
-                result = await asyncio.wait_for(self._recevied_datagram, 10)
+                result = await asyncio.wait_for(self._received_datagram, 10)
                 self._received_datagram = None
                 return result
                 
+        def create_socket():
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setblocking(False)
+            sock.bind(('127.0.0.1', 0))
+            return sock
+    
+        socket_1 = create_socket()
         transport_1, protocol_1 = loop.run_until_complete(
-            loop.create_datagram_endpoint(
-                Protocol,
-                local_addr=('127.0.0.1', 0)
-            )
+            loop.create_datagram_endpoint(Protocol, sock=socket_1)
         )
-        addr_1 = transport_1.sockets[0].getsockname()
+        addr_1 = socket_1.getsockname()
         
+        socket_2 = create_socket()
         transport_2, protocol_2 = loop.run_until_complete(
-            loop.create_datagram_endpoint(
-                Protocol,
-                local_addr=('127.0.0.1', 0)
-            )
-        )[0]
-        addr_2 = transport_1.sockets[0].getsockname()
+            loop.create_datagram_endpoint(Protocol, sock=socket_2)
+        )
+        addr_2 = socket_2.getsockname()
         
         # creating and immediately closing this to try to get an address that
         # is not listening
+        socket_3 = create_socket()
         transport_3, protocol_3 = loop.run_until_complete(
-            loop.create_datagram_endpoint(
-                Protocol,
-                local_addr=('127.0.0.1', 0)
-            )
-        )[0]
-        addr_3 = transport_1.sockets[0].getsockname()
-        loop.run_until_complete(transport_3.wait_closed())
-        
+            loop.create_datagram_endpoint(Protocol, sock=socket_3)
+        )
+        addr_3 = socket_3.getsockname()
+        transport_3.abort()
+
         transport_1.sendto(b'a', addr=addr_2)
         assert loop.run_until_complete(
             protocol_2.wait_for_datagram_received()
@@ -1444,9 +1444,6 @@ class EventLoopTestsMixin:
         assert loop.run_until_complete(
             protocol_1.wait_for_datagram_received()
         ) == b'd'
-        
-        loop.run_until_complete(transport_1.wait_closed())
-        loop.run_until_complete(transport_2.wait_closed())
 
     def test_internal_fds(self):
         loop = self.create_event_loop()
