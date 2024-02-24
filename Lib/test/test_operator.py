@@ -1,6 +1,8 @@
 import unittest
 import pickle
 import sys
+from decimal import Decimal
+from fractions import Fraction
 
 from test import support
 from test.support import import_helper
@@ -522,6 +524,17 @@ class OperatorTestCase:
                 return 1
 
         self.assertEqual(operator.index(X()), 1)
+        self.assertEqual(operator.index(0), 0)
+        self.assertEqual(operator.index(1), 1)
+        self.assertEqual(operator.index(2), 2)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(1.5)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Fraction(3, 7))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Decimal(1))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(None)
 
     def test_not_(self):
         operator = self.module
