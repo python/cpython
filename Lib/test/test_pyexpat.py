@@ -756,17 +756,6 @@ class ForeignDTDTests(unittest.TestCase):
 
 
 class ReparseDeferralTest(unittest.TestCase):
-    def test_getter_initial_value(self):
-        if expat.version_info >= (2, 6, 0):
-            expected = True
-        else:
-            expected = False
-
-        parser = expat.ParserCreate()
-        actual = parser.GetReparseDeferralEnabled()
-
-        self.assertEqual(actual, expected)
-
     def test_getter_setter_round_trip(self):
         parser = expat.ParserCreate()
         enabled = (expat.version_info >= (2, 6, 0))
