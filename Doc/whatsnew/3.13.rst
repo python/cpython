@@ -177,10 +177,10 @@ Other Language Changes
 * Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425)
   by adding five new methods:
 
-  * :meth:`pyexpat.xmlparser.GetReparseDeferralEnabled`
-  * :meth:`pyexpat.xmlparser.SetReparseDeferralEnabled`
   * :meth:`xml.etree.ElementTree.XMLParser.flush`
   * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
+  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
   * :meth:`xml.sax.expatreader.ExpatParser.flush`
 
   (Contributed by Sebastian Pipping in :gh:`115623`.)
