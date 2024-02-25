@@ -362,6 +362,31 @@ class CompileallTestsBase:
             str(err, encoding=sys.getdefaultencoding())
         )
 
+    def test_strip_only_invalid(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *(fullpath[:2] + ['fake']))
+        with support.captured_stdout() as out:
+            compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        self.assertIn("not a valid prefix", out.getvalue())
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_not_in = os.path.join(self.directory, *fullpath[2:])
+        self.assertIn(
+            path,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            expected_not_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
     def test_prepend_only(self):
         fullpath = ["test", "build", "real", "path"]
         path = os.path.join(self.directory, *fullpath)

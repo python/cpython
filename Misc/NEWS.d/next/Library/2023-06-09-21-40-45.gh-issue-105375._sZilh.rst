@@ -1,1 +1,0 @@
-Fix bugs in :mod:`_ctypes` where exceptions could end up being overwritten.

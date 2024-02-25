@@ -11,6 +11,7 @@ faulthandler faulthandler.c
 posix posixmodule.c
 _signal signalmodule.c
 _tracemalloc _tracemalloc.c
+_suggestions _suggestions.c
 
 # modules used by importlib, deepfreeze, freeze, runpy, and sysconfig
 _codecs _codecsmodule.c

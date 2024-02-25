@@ -748,6 +748,35 @@ class TestEmailMessageBase:
         self.assertEqual(len(list(m.iter_attachments())), 2)
         self.assertEqual(m.get_payload(), orig)
 
+    get_payload_surrogate_params = {
+
+        'good_surrogateescape': (
+            "String that can be encod\udcc3\udcabd with surrogateescape",
+            b'String that can be encod\xc3\xabd with surrogateescape'
+            ),
+
+        'string_with_utf8': (
+            "String with utf-8 charactër",
+            b'String with utf-8 charact\xebr'
+            ),
+
+        'surrogate_and_utf8': (
+            "String that cannot be ëncod\udcc3\udcabd with surrogateescape",
+             b'String that cannot be \xebncod\\udcc3\\udcabd with surrogateescape'
+            ),
+
+        'out_of_range_surrogate': (
+            "String with \udfff cannot be encoded with surrogateescape",
+             b'String with \\udfff cannot be encoded with surrogateescape'
+            ),
+    }
+
+    def get_payload_surrogate_as_gh_94606(self, msg, expected):
+        """test for GH issue 94606"""
+        m = self._str_msg(msg)
+        payload = m.get_payload(decode=True)
+        self.assertEqual(expected, payload)
+
 
 class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
     message = EmailMessage

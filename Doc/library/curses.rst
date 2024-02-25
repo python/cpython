@@ -1771,9 +1771,9 @@ The following table lists mouse button constants used by :meth:`getmouse`:
 | .. data:: BUTTON_ALT             | Control was down during button state change |
 +----------------------------------+---------------------------------------------+
 
-   .. versionchanged:: 3.10
-      The ``BUTTON5_*`` constants are now exposed if they are provided by the
-      underlying curses library.
+.. versionchanged:: 3.10
+   The ``BUTTON5_*`` constants are now exposed if they are provided by the
+   underlying curses library.
 
 The following table lists the predefined colors:
 
