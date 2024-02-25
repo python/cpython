@@ -340,6 +340,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a Python generator function.
 
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a Python generator function.
 
 .. function:: isgenerator(object)
 
@@ -362,6 +365,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    .. versionchanged:: 3.12
       Sync functions marked with :func:`markcoroutinefunction` now return
       ``True``.
+
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a :term:`coroutine function`.
 
 
 .. function:: markcoroutinefunction(func)
@@ -429,6 +436,9 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`asynchronous generator` function.
 
+   .. versionchanged:: 3.13
+      Functions wrapped in :func:`functools.partialmethod` now return ``True``
+      if the wrapped function is a :term:`coroutine function`.
 
 .. function:: isasyncgen(object)
 
@@ -492,7 +502,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    Methods implemented via descriptors that also pass one of the other tests
    return ``False`` from the :func:`ismethoddescriptor` test, simply because the
    other tests promise more -- you can, e.g., count on having the
-   :ref:`__func__ <instance-methods>` attribute (etc) when an object passes
+   :attr:`~method.__func__` attribute (etc) when an object passes
    :func:`ismethod`.
 
 
@@ -1225,9 +1235,10 @@ Classes and functions
    * If ``obj`` is a class, ``globals`` defaults to
      ``sys.modules[obj.__module__].__dict__`` and ``locals`` defaults
      to the ``obj`` class namespace.
-   * If ``obj`` is a callable, ``globals`` defaults to ``obj.__globals__``,
+   * If ``obj`` is a callable, ``globals`` defaults to
+     :attr:`obj.__globals__ <function.__globals__>`,
      although if ``obj`` is a wrapped function (using
-     ``functools.update_wrapper()``) it is first unwrapped.
+     :func:`functools.update_wrapper`) it is first unwrapped.
 
    Calling ``get_annotations`` is best practice for accessing the
    annotations dict of any object.  See :ref:`annotations-howto` for
@@ -1596,8 +1607,8 @@ updated as expected:
 Code Objects Bit Flags
 ----------------------
 
-Python code objects have a ``co_flags`` attribute, which is a bitmap of
-the following flags:
+Python code objects have a :attr:`~codeobject.co_flags` attribute,
+which is a bitmap of the following flags:
 
 .. data:: CO_OPTIMIZED
 
@@ -1605,8 +1616,8 @@ the following flags:
 
 .. data:: CO_NEWLOCALS
 
-   If set, a new dict will be created for the frame's ``f_locals`` when
-   the code object is executed.
+   If set, a new dict will be created for the frame's :attr:`~frame.f_locals`
+   when the code object is executed.
 
 .. data:: CO_VARARGS
 

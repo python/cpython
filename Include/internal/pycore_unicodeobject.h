@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
@@ -277,7 +278,7 @@ extern PyTypeObject _PyUnicodeASCIIIter_Type;
 /* --- Other API ---------------------------------------------------------- */
 
 struct _Py_unicode_runtime_ids {
-    PyThread_type_lock lock;
+    PyMutex mutex;
     // next_index value must be preserved when Py_Initialize()/Py_Finalize()
     // is called multiple times: see _PyUnicode_FromId() implementation.
     Py_ssize_t next_index;

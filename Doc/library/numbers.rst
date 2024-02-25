@@ -8,7 +8,7 @@
 
 --------------
 
-The :mod:`numbers` module (:pep:`3141`) defines a hierarchy of numeric
+The :mod:`!numbers` module (:pep:`3141`) defines a hierarchy of numeric
 :term:`abstract base classes <abstract base class>` which progressively define
 more operations.  None of the types defined in this module are intended to be instantiated.
 
@@ -45,7 +45,7 @@ The numeric tower
 
 .. class:: Real
 
-   To :class:`Complex`, :class:`Real` adds the operations that work on real
+   To :class:`Complex`, :class:`!Real` adds the operations that work on real
    numbers.
 
    In short, those are: a conversion to :class:`float`, :func:`math.trunc`,
@@ -126,7 +126,8 @@ We want to implement the arithmetic operations so that mixed-mode
 operations either call an implementation whose author knew about the
 types of both arguments, or convert both to the nearest built in type
 and do the operation there. For subtypes of :class:`Integral`, this
-means that :meth:`__add__` and :meth:`__radd__` should be defined as::
+means that :meth:`~object.__add__` and :meth:`~object.__radd__` should be
+defined as::
 
     class MyIntegral(Integral):
 
@@ -160,15 +161,15 @@ refer to ``MyIntegral`` and ``OtherTypeIKnowAbout`` as
 of :class:`Complex` (``a : A <: Complex``), and ``b : B <:
 Complex``. I'll consider ``a + b``:
 
-1. If ``A`` defines an :meth:`__add__` which accepts ``b``, all is
+1. If ``A`` defines an :meth:`~object.__add__` which accepts ``b``, all is
    well.
 2. If ``A`` falls back to the boilerplate code, and it were to
-   return a value from :meth:`__add__`, we'd miss the possibility
-   that ``B`` defines a more intelligent :meth:`__radd__`, so the
+   return a value from :meth:`~object.__add__`, we'd miss the possibility
+   that ``B`` defines a more intelligent :meth:`~object.__radd__`, so the
    boilerplate should return :const:`NotImplemented` from
-   :meth:`__add__`. (Or ``A`` may not implement :meth:`__add__` at
+   :meth:`!__add__`. (Or ``A`` may not implement :meth:`!__add__` at
    all.)
-3. Then ``B``'s :meth:`__radd__` gets a chance. If it accepts
+3. Then ``B``'s :meth:`~object.__radd__` gets a chance. If it accepts
    ``a``, all is well.
 4. If it falls back to the boilerplate, there are no more possible
    methods to try, so this is where the default implementation
@@ -180,7 +181,7 @@ Complex``. I'll consider ``a + b``:
 
 If ``A <: Complex`` and ``B <: Real`` without sharing any other knowledge,
 then the appropriate shared operation is the one involving the built
-in :class:`complex`, and both :meth:`__radd__` s land there, so ``a+b
+in :class:`complex`, and both :meth:`~object.__radd__` s land there, so ``a+b
 == b+a``.
 
 Because most of the operations on any given type will be very similar,

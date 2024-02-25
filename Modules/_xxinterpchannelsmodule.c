@@ -8,7 +8,6 @@
 #include "Python.h"
 #include "interpreteridobject.h"
 #include "pycore_crossinterp.h"   // struct _xid
-#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 
 #ifdef MS_WINDOWS
@@ -17,6 +16,8 @@
 #elif defined(HAVE_SCHED_H)
 #include <sched.h>          // sched_yield()
 #endif
+
+#include "_interpreters_common.h"
 
 
 /*
@@ -81,7 +82,9 @@ channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
 API..  The module does not create any objects that are shared globally.
 */
 
-#define MODULE_NAME "_xxinterpchannels"
+#define MODULE_NAME _xxinterpchannels
+#define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
+#define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
 
 #define GLOBAL_MALLOC(TYPE) \
@@ -102,7 +105,7 @@ static int
 register_xid_class(PyTypeObject *cls, crossinterpdatafunc shared,
                    struct xid_class_registry *classes)
 {
-    int res = _PyCrossInterpreterData_RegisterClass(cls, shared);
+    int res = ensure_xid_class(cls, shared);
     if (res == 0) {
         assert(classes->count < MAX_XID_CLASSES);
         // The class has refs elsewhere, so we need to incref here.
@@ -168,7 +171,7 @@ _get_current_interp(void)
 static PyObject *
 _get_current_module(void)
 {
-    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    PyObject *name = PyUnicode_FromString(MODULE_NAME_STR);
     if (name == NULL) {
         return NULL;
     }
@@ -218,7 +221,7 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 }
 
 #define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
-    add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
+    add_new_exception(MOD, MODULE_NAME_STR "." Py_STRINGIFY(NAME), BASE)
 
 static PyTypeObject *
 add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
@@ -263,136 +266,6 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
 }
 
 
-/* Cross-interpreter Buffer Views *******************************************/
-
-// XXX Release when the original interpreter is destroyed.
-
-typedef struct {
-    PyObject_HEAD
-    Py_buffer *view;
-    int64_t interpid;
-} XIBufferViewObject;
-
-static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
-{
-    assert(data->data != NULL);
-    assert(data->obj == NULL);
-    assert(data->interpid >= 0);
-    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
-    if (self == NULL) {
-        return NULL;
-    }
-    PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)data->data;
-    self->interpid = data->interpid;
-    return (PyObject *)self;
-}
-
-static void
-xibufferview_dealloc(XIBufferViewObject *self)
-{
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
-    /* If the interpreter is no longer alive then we have problems,
-       since other objects may be using the buffer still. */
-    assert(interp != NULL);
-
-    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
-        // XXX Emit a warning?
-        PyErr_Clear();
-    }
-
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free(self);
-    /* "Instances of heap-allocated types hold a reference to their type."
-     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
-     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
-    */
-    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
-    // like we do for _abc._abc_data?
-    Py_DECREF(tp);
-}
-
-static int
-xibufferview_getbuf(XIBufferViewObject *self, Py_buffer *view, int flags)
-{
-    /* Only PyMemoryView_FromObject() should ever call this,
-       via _memoryview_from_xid() below. */
-    *view = *self->view;
-    view->obj = (PyObject *)self;
-    // XXX Should we leave it alone?
-    view->internal = NULL;
-    return 0;
-}
-
-static PyType_Slot XIBufferViewType_slots[] = {
-    {Py_tp_dealloc, (destructor)xibufferview_dealloc},
-    {Py_bf_getbuffer, (getbufferproc)xibufferview_getbuf},
-    // We don't bother with Py_bf_releasebuffer since we don't need it.
-    {0, NULL},
-};
-
-static PyType_Spec XIBufferViewType_spec = {
-    .name = MODULE_NAME ".CrossInterpreterBufferView",
-    .basicsize = sizeof(XIBufferViewObject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = XIBufferViewType_slots,
-};
-
-
-/* extra XID types **********************************************************/
-
-static PyTypeObject * _get_current_xibufferview_type(void);
-
-static PyObject *
-_memoryview_from_xid(_PyCrossInterpreterData *data)
-{
-    PyTypeObject *cls = _get_current_xibufferview_type();
-    if (cls == NULL) {
-        return NULL;
-    }
-    PyObject *obj = xibufferview_from_xid(cls, data);
-    if (obj == NULL) {
-        return NULL;
-    }
-    return PyMemoryView_FromObject(obj);
-}
-
-static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj,
-                   _PyCrossInterpreterData *data)
-{
-    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
-    if (view == NULL) {
-        return -1;
-    }
-    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
-        PyMem_RawFree(view);
-        return -1;
-    }
-    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
-                                 _memoryview_from_xid);
-    return 0;
-}
-
-static int
-register_builtin_xid_types(struct xid_class_registry *classes)
-{
-    PyTypeObject *cls;
-    crossinterpdatafunc func;
-
-    // builtin memoryview
-    cls = &PyMemoryView_Type;
-    func = _memoryview_shared;
-    if (register_xid_class(cls, func, classes)) {
-        return -1;
-    }
-
-    return 0;
-}
-
-
 /* module state *************************************************************/
 
 typedef struct {
@@ -405,7 +278,6 @@ typedef struct {
     /* heap types */
     PyTypeObject *ChannelInfoType;
     PyTypeObject *ChannelIDType;
-    PyTypeObject *XIBufferViewType;
 
     /* exceptions */
     PyObject *ChannelError;
@@ -431,7 +303,7 @@ _get_current_module_state(void)
     if (mod == NULL) {
         // XXX import it?
         PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME " module not imported yet");
+                        MODULE_NAME_STR " module not imported yet");
         return NULL;
     }
     module_state *state = get_module_state(mod);
@@ -449,7 +321,6 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
     /* heap types */
     Py_VISIT(state->ChannelInfoType);
     Py_VISIT(state->ChannelIDType);
-    Py_VISIT(state->XIBufferViewType);
 
     /* exceptions */
     Py_VISIT(state->ChannelError);
@@ -474,7 +345,6 @@ clear_module_state(module_state *state)
         (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
     }
     Py_CLEAR(state->ChannelIDType);
-    Py_CLEAR(state->XIBufferViewType);
 
     /* exceptions */
     Py_CLEAR(state->ChannelError);
@@ -484,17 +354,6 @@ clear_module_state(module_state *state)
     Py_CLEAR(state->ChannelNotEmptyError);
 
     return 0;
-}
-
-
-static PyTypeObject *
-_get_current_xibufferview_type(void)
-{
-    module_state *state = _get_current_module_state();
-    if (state == NULL) {
-        return NULL;
-    }
-    return state->XIBufferViewType;
 }
 
 
@@ -929,7 +788,7 @@ _channelqueue_clear_interpreter(_channelqueue *queue, int64_t interpid)
     while (next != NULL) {
         _channelitem *item = next;
         next = item->next;
-        if (item->data->interpid == interpid) {
+        if (_PyCrossInterpreterData_INTERPID(item->data) == interpid) {
             if (prev == NULL) {
                 queue->first = item->next;
             }
@@ -2271,7 +2130,7 @@ static PyStructSequence_Field channel_info_fields[] = {
 };
 
 static PyStructSequence_Desc channel_info_desc = {
-    .name = MODULE_NAME ".ChannelInfo",
+    .name = MODULE_NAME_STR ".ChannelInfo",
     .doc = channel_info_doc,
     .fields = channel_info_fields,
     .n_in_sequence = 8,
@@ -2299,7 +2158,7 @@ new_channel_info(PyObject *mod, struct channel_info *info)
     do { \
         PyObject *obj = PyLong_FromLongLong(val); \
         if (obj == NULL) { \
-            Py_CLEAR(info); \
+            Py_CLEAR(self); \
             return NULL; \
         } \
         PyStructSequence_SET_ITEM(self, pos++, obj); \
@@ -2619,10 +2478,11 @@ struct _channelid_xid {
 static PyObject *
 _channelid_from_xid(_PyCrossInterpreterData *data)
 {
-    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    struct _channelid_xid *xid = \
+                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
 
     // It might not be imported yet, so we can't use _get_current_module().
-    PyObject *mod = PyImport_ImportModule(MODULE_NAME);
+    PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
     if (mod == NULL) {
         return NULL;
     }
@@ -2675,7 +2535,8 @@ _channelid_shared(PyThreadState *tstate, PyObject *obj,
     {
         return -1;
     }
-    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    struct _channelid_xid *xid = \
+                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
     xid->cid = ((channelid *)obj)->cid;
     xid->end = ((channelid *)obj)->end;
     xid->resolve = ((channelid *)obj)->resolve;
@@ -2746,7 +2607,7 @@ static PyType_Slot channelid_typeslots[] = {
 };
 
 static PyType_Spec channelid_typespec = {
-    .name = MODULE_NAME ".ChannelID",
+    .name = MODULE_NAME_STR ".ChannelID",
     .basicsize = sizeof(channelid),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
@@ -2774,10 +2635,11 @@ _get_current_channelend_type(int end)
         cls = state->recv_channel_type;
     }
     if (cls == NULL) {
-        PyObject *highlevel = PyImport_ImportModule("interpreters");
+        // Force the module to be loaded, to register the type.
+        PyObject *highlevel = PyImport_ImportModule("interpreters.channel");
         if (highlevel == NULL) {
             PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters");
+            highlevel = PyImport_ImportModule("test.support.interpreters.channel");
             if (highlevel == NULL) {
                 return NULL;
             }
@@ -2824,7 +2686,7 @@ _channelend_shared(PyThreadState *tstate, PyObject *obj,
     if (res < 0) {
         return -1;
     }
-    data->new_object = _channelend_from_xid;
+    _PyCrossInterpreterData_SET_NEW_OBJECT(data, _channelend_from_xid);
     return 0;
 }
 
@@ -3463,18 +3325,6 @@ module_exec(PyObject *mod)
         goto error;
     }
 
-    // XIBufferView
-    state->XIBufferViewType = add_new_type(mod, &XIBufferViewType_spec, NULL,
-                                           xid_classes);
-    if (state->XIBufferViewType == NULL) {
-        goto error;
-    }
-
-    // Register external types.
-    if (register_builtin_xid_types(xid_classes) < 0) {
-        goto error;
-    }
-
     /* Make sure chnnels drop objects owned by this interpreter. */
     PyInterpreterState *interp = _get_current_interp();
     PyUnstable_AtExit(interp, clear_interpreter, (void *)interp);
@@ -3535,7 +3385,7 @@ module_free(void *mod)
 
 static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = MODULE_NAME,
+    .m_name = MODULE_NAME_STR,
     .m_doc = module_doc,
     .m_size = sizeof(module_state),
     .m_methods = module_functions,
@@ -3546,7 +3396,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit__xxinterpchannels(void)
+MODINIT_FUNC_NAME(void)
 {
     return PyModuleDef_Init(&moduledef);
 }

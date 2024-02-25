@@ -1261,7 +1261,8 @@ except that the original function is not temporarily bound to the name ``func``.
 A list of :ref:`type parameters <type-params>` may be given in square brackets
 between the function's name and the opening parenthesis for its parameter list.
 This indicates to static type checkers that the function is generic. At runtime,
-the type parameters can be retrieved from the function's ``__type_params__``
+the type parameters can be retrieved from the function's
+:attr:`~function.__type_params__`
 attribute. See :ref:`generic-functions` for more.
 
 .. versionchanged:: 3.12
@@ -1361,12 +1362,15 @@ access the local variables of the function containing the def.  See section
 
    :pep:`526` - Syntax for Variable Annotations
       Ability to type hint variable declarations, including class
-      variables and instance variables
+      variables and instance variables.
 
    :pep:`563` - Postponed Evaluation of Annotations
       Support for forward references within annotations by preserving
       annotations in a string form at runtime instead of eager evaluation.
 
+   :pep:`318` - Decorators for Functions and Methods
+      Function and method decorators were introduced.
+      Class decorators were introduced in :pep:`3129`.
 
 .. _class:
 
@@ -1868,8 +1872,8 @@ like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
    are mappings.
 
 .. [#] A string literal appearing as the first statement in the function body is
-   transformed into the function's ``__doc__`` attribute and therefore the
-   function's :term:`docstring`.
+   transformed into the function's :attr:`~function.__doc__` attribute and
+   therefore the function's :term:`docstring`.
 
 .. [#] A string literal appearing as the first statement in the class body is
    transformed into the namespace's ``__doc__`` item and therefore the class's

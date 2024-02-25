@@ -729,7 +729,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIs(t, s)
 
         interp = interpreters.create()
-        interp.run(textwrap.dedent(f'''
+        interp.exec_sync(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) != {id(s)}, (id(t), {id(s)})
@@ -744,7 +744,7 @@ class SysModuleTest(unittest.TestCase):
         t = sys.intern(s)
 
         interp = interpreters.create()
-        interp.run(textwrap.dedent(f'''
+        interp.exec_sync(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) == {id(t)}, (id(t), {id(t)})
@@ -1392,6 +1392,7 @@ class SizeofTest(unittest.TestCase):
         self.longdigit = sys.int_info.sizeof_digit
         import _testinternalcapi
         self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
+        self.managed_pre_header_size = _testinternalcapi.SIZEOF_MANAGED_PRE_HEADER
 
     check_sizeof = test.support.check_sizeof
 
@@ -1427,7 +1428,7 @@ class SizeofTest(unittest.TestCase):
             def __sizeof__(self):
                 return int(self)
         self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
-                         sys.maxsize + self.gc_headsize*2)
+                         sys.maxsize + self.gc_headsize + self.managed_pre_header_size)
         with self.assertRaises(OverflowError):
             sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
         with self.assertRaises(ValueError):
@@ -1650,7 +1651,7 @@ class SizeofTest(unittest.TestCase):
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
-        s = vsize('2P' + fmt)
+        s = vsize(fmt)
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject

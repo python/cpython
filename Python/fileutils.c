@@ -2878,9 +2878,9 @@ done:
  *    non-opened fd in the middle.
  * 2b. If fdwalk(3) isn't available, just do a plain close(2) loop.
  */
-#ifdef __FreeBSD__
+#ifdef HAVE_CLOSEFROM
 #  define USE_CLOSEFROM
-#endif /* __FreeBSD__ */
+#endif /* HAVE_CLOSEFROM */
 
 #ifdef HAVE_FDWALK
 #  define USE_FDWALK
@@ -2922,7 +2922,7 @@ _Py_closerange(int first, int last)
 #ifdef USE_CLOSEFROM
     if (last >= sysconf(_SC_OPEN_MAX)) {
         /* Any errors encountered while closing file descriptors are ignored */
-        closefrom(first);
+        (void)closefrom(first);
     }
     else
 #endif /* USE_CLOSEFROM */

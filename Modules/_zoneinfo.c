@@ -853,28 +853,19 @@ load_timedelta(zoneinfo_state *state, long seconds)
     if (pyoffset == NULL) {
         return NULL;
     }
-    rv = PyDict_GetItemWithError(state->TIMEDELTA_CACHE, pyoffset);
-    if (rv == NULL) {
-        if (PyErr_Occurred()) {
-            goto error;
-        }
+    if (PyDict_GetItemRef(state->TIMEDELTA_CACHE, pyoffset, &rv) == 0) {
         PyObject *tmp = PyDateTimeAPI->Delta_FromDelta(
             0, seconds, 0, 1, PyDateTimeAPI->DeltaType);
 
-        if (tmp == NULL) {
-            goto error;
+        if (tmp != NULL) {
+            rv = PyDict_SetDefault(state->TIMEDELTA_CACHE, pyoffset, tmp);
+            Py_XINCREF(rv);
+            Py_DECREF(tmp);
         }
-
-        rv = PyDict_SetDefault(state->TIMEDELTA_CACHE, pyoffset, tmp);
-        Py_DECREF(tmp);
     }
 
-    Py_XINCREF(rv);
     Py_DECREF(pyoffset);
     return rv;
-error:
-    Py_DECREF(pyoffset);
-    return NULL;
 }
 
 /* Constructor for _ttinfo object - this starts by initializing the _ttinfo

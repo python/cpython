@@ -2,6 +2,7 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_brc.h"           // _Py_brc_queue_object()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
@@ -298,13 +299,13 @@ _Py_DecRef(PyObject *o)
 
 #ifdef Py_GIL_DISABLED
 # ifdef Py_REF_DEBUG
-static inline int
-is_shared_refcnt_dead(Py_ssize_t shared)
+static int
+is_dead(PyObject *o)
 {
 #  if SIZEOF_SIZE_T == 8
-    return shared == (Py_ssize_t)0xDDDDDDDDDDDDDDDD;
+    return (uintptr_t)o->ob_type == 0xDDDDDDDDDDDDDDDD;
 #  else
-    return shared == (Py_ssize_t)0xDDDDDDDD;
+    return (uintptr_t)o->ob_type == 0xDDDDDDDD;
 #  endif
 }
 # endif
@@ -334,8 +335,8 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
         }
 
 #ifdef Py_REF_DEBUG
-        if ((_Py_REF_IS_MERGED(new_shared) && new_shared < 0) ||
-            is_shared_refcnt_dead(shared))
+        if ((new_shared < 0 && _Py_REF_IS_MERGED(new_shared)) ||
+            (should_queue && is_dead(o)))
         {
             _Py_NegativeRefcount(filename, lineno, o);
         }
@@ -344,12 +345,10 @@ _Py_DecRefSharedDebug(PyObject *o, const char *filename, int lineno)
                                                 &shared, new_shared));
 
     if (should_queue) {
-        // TODO: the inter-thread queue is not yet implemented. For now,
-        // we just merge the refcount here.
-        Py_ssize_t refcount = _Py_ExplicitMergeRefcount(o, -1);
-        if (refcount == 0) {
-            _Py_Dealloc(o);
-        }
+#ifdef Py_REF_DEBUG
+        _Py_IncRefTotal(_PyInterpreterState_GET());
+#endif
+        _Py_brc_queue_object(o);
     }
     else if (new_shared == _Py_REF_MERGED) {
         // refcount is zero AND merged
@@ -399,16 +398,16 @@ _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
     Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
     do {
         refcnt = Py_ARITHMETIC_RIGHT_SHIFT(Py_ssize_t, shared, _Py_REF_SHARED_SHIFT);
-        if (_Py_REF_IS_MERGED(shared)) {
-            return refcnt;
-        }
-
         refcnt += (Py_ssize_t)op->ob_ref_local;
         refcnt += extra;
 
         new_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     } while (!_Py_atomic_compare_exchange_ssize(&op->ob_ref_shared,
                                                 &shared, new_shared));
+
+#ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyInterpreterState_GET(), extra);
+#endif
 
     _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
     _Py_atomic_store_uintptr_relaxed(&op->ob_tid, 0);
@@ -509,9 +508,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
-    Py_ssize_t refcnt = Py_REFCNT(self);
-    _Py_NewReferenceNoTotal(self);
-    Py_SET_REFCNT(self, refcnt);
+    _Py_ResurrectReference(self);
 
     _PyObject_ASSERT(self,
                      (!_PyType_IS_GC(Py_TYPE(self))
@@ -796,6 +793,21 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
+void
+_PyObject_ClearFreeLists(struct _Py_object_freelists *freelists, int is_finalization)
+{
+    // In the free-threaded build, freelists are per-PyThreadState and cleared in PyThreadState_Clear()
+    // In the default build, freelists are per-interpreter and cleared in finalize_interp_types()
+    _PyFloat_ClearFreeList(freelists, is_finalization);
+    _PyTuple_ClearFreeList(freelists, is_finalization);
+    _PyList_ClearFreeList(freelists, is_finalization);
+    _PyDict_ClearFreeList(freelists, is_finalization);
+    _PyContext_ClearFreeList(freelists, is_finalization);
+    _PyAsyncGen_ClearFreeLists(freelists, is_finalization);
+    // Only be cleared if is_finalization is true.
+    _PyObjectStackChunk_ClearFreeList(freelists, is_finalization);
+    _PySlice_ClearFreeList(freelists, is_finalization);
+}
 
 /*
 def _PyObject_FunctionStr(x):
@@ -1196,7 +1208,7 @@ PyObject_GetOptionalAttr(PyObject *v, PyObject *name, PyObject **result)
         }
         return 0;
     }
-    if (tp->tp_getattro == (getattrofunc)_Py_type_getattro) {
+    if (tp->tp_getattro == _Py_type_getattro) {
         int supress_missing_attribute_exception = 0;
         *result = _Py_type_getattro_impl((PyTypeObject*)v, name, &supress_missing_attribute_exception);
         if (supress_missing_attribute_exception) {
@@ -2026,7 +2038,7 @@ PyTypeObject _PyNone_Type = {
     0,                  /*tp_doc */
     0,                  /*tp_traverse */
     0,                  /*tp_clear */
-    0,                  /*tp_richcompare */
+    _Py_BaseObject_RichCompare, /*tp_richcompare */
     0,                  /*tp_weaklistoffset */
     0,                  /*tp_iter */
     0,                  /*tp_iternext */
@@ -2389,6 +2401,17 @@ _Py_NewReferenceNoTotal(PyObject *op)
     new_reference(op);
 }
 
+void
+_Py_ResurrectReference(PyObject *op)
+{
+    if (_PyRuntime.tracemalloc.config.tracing) {
+        _PyTraceMalloc_NewReference(op);
+    }
+#ifdef Py_TRACE_REFS
+    _Py_AddToAllObjects(op);
+#endif
+}
+
 
 #ifdef Py_TRACE_REFS
 void
@@ -2662,7 +2685,12 @@ _PyTrash_thread_deposit_object(struct _py_trashcan *trash, PyObject *op)
     _PyObject_ASSERT(op, _PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
+#ifdef Py_GIL_DISABLED
+    _PyObject_ASSERT(op, op->ob_tid == 0);
+    op->ob_tid = (uintptr_t)trash->delete_later;
+#else
     _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)trash->delete_later);
+#endif
     trash->delete_later = op;
 }
 
@@ -2688,8 +2716,12 @@ _PyTrash_thread_destroy_chain(struct _py_trashcan *trash)
         PyObject *op = trash->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
 
-        trash->delete_later =
-            (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+#ifdef Py_GIL_DISABLED
+        trash->delete_later = (PyObject*) op->ob_tid;
+        op->ob_tid = 0;
+#else
+        trash->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+#endif
 
         /* Call the deallocator directly.  This used to try to
          * fool Py_DECREF into calling it indirectly, but

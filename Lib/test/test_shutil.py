@@ -576,6 +576,41 @@ class TestRmTree(BaseTest, unittest.TestCase):
             self.assertFalse(shutil._use_fd_functions)
             self.assertFalse(shutil.rmtree.avoids_symlink_attacks)
 
+    @unittest.skipUnless(shutil._use_fd_functions, "requires safe rmtree")
+    def test_rmtree_fails_on_close(self):
+        # Test that the error handler is called for failed os.close() and that
+        # os.close() is only called once for a file descriptor.
+        tmp = self.mkdtemp()
+        dir1 = os.path.join(tmp, 'dir1')
+        os.mkdir(dir1)
+        dir2 = os.path.join(dir1, 'dir2')
+        os.mkdir(dir2)
+        def close(fd):
+            orig_close(fd)
+            nonlocal close_count
+            close_count += 1
+            raise OSError
+
+        close_count = 0
+        with support.swap_attr(os, 'close', close) as orig_close:
+            with self.assertRaises(OSError):
+                shutil.rmtree(dir1)
+        self.assertTrue(os.path.isdir(dir2))
+        self.assertEqual(close_count, 2)
+
+        close_count = 0
+        errors = []
+        def onexc(*args):
+            errors.append(args)
+        with support.swap_attr(os, 'close', close) as orig_close:
+            shutil.rmtree(dir1, onexc=onexc)
+        self.assertEqual(len(errors), 2)
+        self.assertIs(errors[0][0], close)
+        self.assertEqual(errors[0][1], dir2)
+        self.assertIs(errors[1][0], close)
+        self.assertEqual(errors[1][1], dir1)
+        self.assertEqual(close_count, 2)
+
     @unittest.skipUnless(shutil._use_fd_functions, "dir_fd is not supported")
     def test_rmtree_with_dir_fd(self):
         tmp_dir = self.mkdtemp()
@@ -1066,19 +1101,18 @@ class TestCopy(BaseTest, unittest.TestCase):
         shutil.copymode(src, dst)
         self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
         # On Windows, os.chmod does not follow symlinks (issue #15411)
-        if os.name != 'nt':
-            # follow src link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow dst link
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
-            # follow both links
-            os.chmod(dst, stat.S_IRWXO)
-            shutil.copymode(src_link, dst_link)
-            self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow src link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow dst link
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        # follow both links
+        os.chmod(dst, stat.S_IRWXO)
+        shutil.copymode(src_link, dst_link)
+        self.assertEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
 
     @unittest.skipUnless(hasattr(os, 'lchmod'), 'requires os.lchmod')
     @os_helper.skip_unless_symlink
@@ -1097,10 +1131,11 @@ class TestCopy(BaseTest, unittest.TestCase):
         os.lchmod(src_link, stat.S_IRWXO|stat.S_IRWXG)
         # link to link
         os.lchmod(dst_link, stat.S_IRWXO)
+        old_mode = os.stat(dst).st_mode
         shutil.copymode(src_link, dst_link, follow_symlinks=False)
         self.assertEqual(os.lstat(src_link).st_mode,
                          os.lstat(dst_link).st_mode)
-        self.assertNotEqual(os.stat(src).st_mode, os.stat(dst).st_mode)
+        self.assertEqual(os.stat(dst).st_mode, old_mode)
         # src link - use chmod
         os.lchmod(dst_link, stat.S_IRWXO)
         shutil.copymode(src_link, dst, follow_symlinks=False)
@@ -1635,6 +1670,17 @@ class TestArchives(BaseTest, unittest.TestCase):
         # now create another tarball using `tar`
         tarball2 = os.path.join(root_dir, 'archive2.tar')
         tar_cmd = ['tar', '-cf', 'archive2.tar', base_dir]
+        if sys.platform == 'darwin':
+            # macOS tar can include extended attributes,
+            # ACLs and other mac specific metadata into the
+            # archive (an recentish version of the OS).
+            #
+            # This feature can be disabled with the
+            # '--no-mac-metadata' option on macOS 11 or
+            # later.
+            import platform
+            if int(platform.mac_ver()[0].split('.')[0]) >= 11:
+                tar_cmd.insert(1, '--no-mac-metadata')
         subprocess.check_call(tar_cmd, cwd=root_dir,
                               stdout=subprocess.DEVNULL)
 
@@ -2102,6 +2148,7 @@ class TestMisc(BaseTest, unittest.TestCase):
             check_chown(dirname, uid, gid)
 
 
+@support.requires_subprocess()
 class TestWhich(BaseTest, unittest.TestCase):
 
     def setUp(self):
@@ -2642,6 +2689,35 @@ class TestMove(BaseTest, unittest.TestCase):
         finally:
             os.rmdir(dst_dir)
 
+    # bpo-26791: Check that a symlink to a directory can
+    #            be moved into that directory.
+    @mock_rename
+    def _test_move_symlink_to_dir_into_dir(self, dst):
+        src = os.path.join(self.src_dir, 'linktodir')
+        dst_link = os.path.join(self.dst_dir, 'linktodir')
+        os.symlink(self.dst_dir, src, target_is_directory=True)
+        shutil.move(src, dst)
+        self.assertTrue(os.path.islink(dst_link))
+        self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+        self.assertFalse(os.path.exists(src))
+
+        # Repeat the move operation with the destination
+        # symlink already in place (should raise shutil.Error).
+        os.symlink(self.dst_dir, src, target_is_directory=True)
+        with self.assertRaises(shutil.Error):
+            shutil.move(src, dst)
+        self.assertTrue(os.path.samefile(self.dst_dir, dst_link))
+        self.assertTrue(os.path.exists(src))
+
+    @os_helper.skip_unless_symlink
+    def test_move_symlink_to_dir_into_dir(self):
+        self._test_move_symlink_to_dir_into_dir(self.dst_dir)
+
+    @os_helper.skip_unless_symlink
+    def test_move_symlink_to_dir_into_symlink_to_dir(self):
+        dst = os.path.join(self.src_dir, 'otherlinktodir')
+        os.symlink(self.dst_dir, dst, target_is_directory=True)
+        self._test_move_symlink_to_dir_into_dir(dst)
 
     @os_helper.skip_unless_dac_override
     @unittest.skipUnless(hasattr(os, 'lchflags')
@@ -3106,6 +3182,7 @@ class TestGetTerminalSize(unittest.TestCase):
         self.assertGreaterEqual(size.lines, 0)
 
     @unittest.skipUnless(os.isatty(sys.__stdout__.fileno()), "not on tty")
+    @support.requires_subprocess()
     @unittest.skipUnless(hasattr(os, 'get_terminal_size'),
                          'need os.get_terminal_size()')
     def test_stty_match(self):
