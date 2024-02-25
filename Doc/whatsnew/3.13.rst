@@ -230,7 +230,7 @@ base64
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding z85 data.
   See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
-  (Contributed by Matan Perelman in :issue:`75299`.)
+  (Contributed by Matan Perelman in :gh:`75299`.)
 
 copy
 ----
