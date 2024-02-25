@@ -135,11 +135,11 @@ Node classes
    In the meantime, instantiating them will return an instance of
    a different class.
 
-.. deprecated:: 3.13
+.. deprecated-removed:: 3.13 3.15
 
-   Previous versions of Python allowed the creation of AST nodes missing
+   Previous versions of Python allowed the creation of AST nodes that were missing
    required fields. Similarly, AST node constructors allowed arbitrary keyword
-   arguments that were set as attributes of the AST node, even if they didd not
+   arguments that were set as attributes of the AST node, even if they did not
    match any of the fields of the AST node. This behavior is deprecated and will
    be removed in Python 3.15.
 
