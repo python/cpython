@@ -957,6 +957,8 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertEqual(P('/').with_stem('d'), P('/d'))
         self.assertEqual(P('a/b').with_stem(''), P('a/'))
         self.assertEqual(P('a/b').with_stem('.'), P('a/.'))
+        self.assertRaises(ValueError, P('foo.gz').with_stem, '')
+        self.assertRaises(ValueError, P('/a/b/foo.gz').with_stem, '')
 
     def test_with_stem_seps(self):
         P = self.cls

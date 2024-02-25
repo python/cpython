@@ -160,6 +160,21 @@ Other Language Changes
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
   :gh:`73965`.)
 
+* Add :exc:`PythonFinalizationError` exception. This exception derived from
+  :exc:`RuntimeError` is raised when an operation is blocked during
+  the :term:`Python finalization <interpreter shutdown>`.
+
+  The following functions now raise PythonFinalizationError, instead of
+  :exc:`RuntimeError`:
+
+  * :func:`_thread.start_new_thread`.
+  * :class:`subprocess.Popen`.
+  * :func:`os.fork`.
+  * :func:`os.forkpty`.
+
+  (Contributed by Victor Stinner in :gh:`114570`.)
+
+
 New Modules
 ===========
 
@@ -202,6 +217,12 @@ asyncio
 * :meth:`asyncio.loop.create_unix_server` will now automatically remove
   the Unix socket when the server is closed.
   (Contributed by Pierre Ossman in :gh:`111246`.)
+
+* :meth:`asyncio.DatagramTransport.sendto` will now send zero-length
+  datagrams if called with an empty bytes object. The transport flow
+  control also now accounts for the datagram header when calculating
+  the buffer size.
+  (Contributed by Jamie Phan in :gh:`115199`.)
 
 copy
 ----
@@ -291,6 +312,14 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+
+itertools
+---------
+
+* Added a ``strict`` option to :func:`itertools.batched`.
+  This raises a :exc:`ValueError` if the final batch is shorter
+  than the specified batch size.
+  (Contributed by Raymond Hettinger in :gh:`113202`.)
 
 marshal
 -------

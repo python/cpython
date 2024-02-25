@@ -16,11 +16,11 @@ always available.
    On POSIX systems where Python was built with the standard ``configure``
    script, this contains the ABI flags as specified by :pep:`3149`.
 
+   .. versionadded:: 3.2
+
    .. versionchanged:: 3.8
       Default flags became an empty string (``m`` flag for pymalloc has been
       removed).
-
-   .. versionadded:: 3.2
 
    .. availability:: Unix.
 
@@ -1201,6 +1201,8 @@ always available.
 
    Return :const:`True` if the main Python interpreter is
    :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
+
+   See also the :exc:`PythonFinalizationError` exception.
 
    .. versionadded:: 3.5
 

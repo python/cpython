@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_uops.h"
 #include "pycore_uop_ids.h"
+#include "internal/pycore_moduleobject.h"
 
 #define op(name, ...) /* NAME is ignored */
 
@@ -43,10 +44,8 @@ dummy_func(void) {
 
     op(_LOAD_FAST_AND_CLEAR, (-- value)) {
         value = GETLOCAL(oparg);
-        _Py_UOpsSymType *temp = sym_new_null(ctx);
-        if (temp == NULL) {
-            goto out_of_space;
-        }
+        _Py_UOpsSymType *temp;
+        OUT_OF_SPACE_IF_NULL(temp = sym_new_null(ctx));
         GETLOCAL(oparg) = temp;
     }
 
@@ -79,14 +78,123 @@ dummy_func(void) {
         sym_set_type(right, &PyFloat_Type);
     }
 
+    op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
+        if (sym_matches_type(left, &PyUnicode_Type) &&
+            sym_matches_type(right, &PyUnicode_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0 ,0);
+        }
+        sym_set_type(left, &PyUnicode_Type);
+        sym_set_type(right, &PyUnicode_Type);
+    }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        // TODO constant propagation
-        (void)left;
-        (void)right;
-        res = sym_new_known_type(ctx, &PyLong_Type);
-        if (res == NULL) {
-            goto out_of_space;
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyLong_CheckExact(sym_get_const(left)));
+            assert(PyLong_CheckExact(sym_get_const(right)));
+            PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
+                                         (PyLongObject *)sym_get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and add tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
+        }
+    }
+
+    op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyLong_CheckExact(sym_get_const(left)));
+            assert(PyLong_CheckExact(sym_get_const(right)));
+            PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
+                                              (PyLongObject *)sym_get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and add tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
+        }
+    }
+
+    op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyLong_CheckExact(sym_get_const(left)));
+            assert(PyLong_CheckExact(sym_get_const(right)));
+            PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
+                                              (PyLongObject *)sym_get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and add tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyLong_Type));
+        }
+    }
+
+    op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyFloat_CheckExact(sym_get_const(left)));
+            assert(PyFloat_CheckExact(sym_get_const(right)));
+            PyObject *temp = PyFloat_FromDouble(
+                PyFloat_AS_DOUBLE(sym_get_const(left)) +
+                PyFloat_AS_DOUBLE(sym_get_const(right)));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+        }
+    }
+
+    op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyFloat_CheckExact(sym_get_const(left)));
+            assert(PyFloat_CheckExact(sym_get_const(right)));
+            PyObject *temp = PyFloat_FromDouble(
+                PyFloat_AS_DOUBLE(sym_get_const(left)) -
+                PyFloat_AS_DOUBLE(sym_get_const(right)));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
+        }
+    }
+
+    op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+        if (sym_is_const(left) && sym_is_const(right)) {
+            assert(PyFloat_CheckExact(sym_get_const(left)));
+            assert(PyFloat_CheckExact(sym_get_const(right)));
+            PyObject *temp = PyFloat_FromDouble(
+                PyFloat_AS_DOUBLE(sym_get_const(left)) *
+                PyFloat_AS_DOUBLE(sym_get_const(right)));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            // TODO gh-115506:
+            // replace opcode with constant propagated one and update tests!
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_known_type(ctx, &PyFloat_Type));
         }
     }
 
@@ -97,39 +205,21 @@ dummy_func(void) {
     }
 
     op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
-        value = sym_new_const(ctx, ptr);
-        if (value == NULL) {
-            goto out_of_space;
-        }
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
-        value = sym_new_const(ctx, ptr);
-        if (value == NULL) {
-            goto out_of_space;
-        }
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
     }
 
     op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        if (value == NULL) {
-            goto out_of_space;
-        }
-        null = sym_new_null(ctx);
-        if (null == NULL) {
-            goto out_of_space;
-        }
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
     }
 
     op(_LOAD_CONST_INLINE_BORROW_WITH_NULL, (ptr/4 -- value, null)) {
-        value = sym_new_const(ctx, ptr);
-        if (value == NULL) {
-            goto out_of_space;
-        }
-        null = sym_new_null(ctx);
-        if (null == NULL) {
-            goto out_of_space;
-        }
+        OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+        OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
     }
 
 
@@ -148,10 +238,43 @@ dummy_func(void) {
         (void)owner;
     }
 
+    op(_CHECK_ATTR_MODULE, (dict_version/2, owner -- owner)) {
+        (void)dict_version;
+        if (sym_is_const(owner)) {
+            PyObject *cnst = sym_get_const(owner);
+            if (PyModule_CheckExact(cnst)) {
+                PyModuleObject *mod = (PyModuleObject *)cnst;
+                PyObject *dict = mod->md_dict;
+                uint64_t watched_mutations = get_mutations(dict);
+                if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                    PyDict_Watch(GLOBALS_WATCHER_ID, dict);
+                    _Py_BloomFilter_Add(dependencies, dict);
+                    this_instr->opcode = _NOP;
+                }
+            }
+        }
+    }
+
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
-        _LOAD_ATTR_NOT_NULL
         (void)index;
-        (void)owner;
+        OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
+        attr = NULL;
+        if (this_instr[-1].opcode == _NOP) {
+            // Preceding _CHECK_ATTR_MODULE was removed: mod is const and dict is watched.
+            assert(sym_is_const(owner));
+            PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
+            assert(PyModule_CheckExact(mod));
+            PyObject *dict = mod->md_dict;
+            PyObject *res = convert_global_to_const(this_instr, dict);
+            if (res != NULL) {
+                this_instr[-1].opcode = _POP_TOP;
+                OUT_OF_SPACE_IF_NULL(attr = sym_new_const(ctx, res));
+            }
+        }
+        if (attr == NULL) {
+            /* No conversion made. We don't know what `attr` is. */
+            OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        }
     }
 
     op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
@@ -171,6 +294,31 @@ dummy_func(void) {
         (void)descr;
         (void)owner;
     }
+
+    op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+        (void)descr;
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        self = owner;
+    }
+
+    op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
+        (void)descr;
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        self = owner;
+    }
+
+    op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+        (void)descr;
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx));
+        self = owner;
+    }
+
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
+        (void)callable;
+        OUT_OF_SPACE_IF_NULL(func = sym_new_known_notnull(ctx));
+        OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx));
+    }
+
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         sym_set_type(callable, &PyFunction_Type);
@@ -211,10 +359,8 @@ dummy_func(void) {
             localsplus_start = args;
             n_locals_already_filled = argcount;
         }
-        new_frame = ctx_frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0);
-        if (new_frame == NULL){
-            goto out_of_space;
-        }
+        OUT_OF_SPACE_IF_NULL(new_frame =
+                             ctx_frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
     }
 
     op(_POP_FRAME, (retval -- res)) {
@@ -237,10 +383,7 @@ dummy_func(void) {
         /* This has to be done manually */
         (void)seq;
         for (int i = 0; i < oparg; i++) {
-            values[i] = sym_new_unknown(ctx);
-            if (values[i] == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(values[i] = sym_new_unknown(ctx));
         }
     }
 
@@ -249,18 +392,12 @@ dummy_func(void) {
         (void)seq;
         int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
         for (int i = 0; i < totalargs; i++) {
-            values[i] = sym_new_unknown(ctx);
-            if (values[i] == NULL) {
-                goto out_of_space;
-            }
+            OUT_OF_SPACE_IF_NULL(values[i] = sym_new_unknown(ctx));
         }
     }
 
     op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
-       next = sym_new_known_type(ctx, &PyLong_Type);
-       if (next == NULL) {
-           goto out_of_space;
-       }
+       OUT_OF_SPACE_IF_NULL(next = sym_new_known_type(ctx, &PyLong_Type));
        (void)iter;
     }
 

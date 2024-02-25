@@ -1,0 +1,1 @@
+Fix crash when calling ``next()`` on exhausted list iterators.
