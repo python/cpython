@@ -405,11 +405,7 @@ partial_repr(partialobject *pto)
     mod = _PyType_GetModuleName(Py_TYPE(pto));
 
     if (mod == NULL) {
-        name = PyType_GetQualName(Py_TYPE(pto));
-        if (name == NULL) {
-            return NULL;
-        }
-        result = PyUnicode_FromFormat("%S(%R%U)", name, pto->fn, arglist);
+        return NULL;
     }
     else {
         name = PyType_GetQualName(Py_TYPE(pto));
@@ -420,9 +416,9 @@ partial_repr(partialobject *pto)
         result = PyUnicode_FromFormat("%U.%S(%R%U)", mod, name, pto->fn,
                                       arglist);
         Py_DECREF(mod);
+        Py_DECREF(name);
     }
 
-    Py_DECREF(name);
     Py_DECREF(arglist);
 
  done:
