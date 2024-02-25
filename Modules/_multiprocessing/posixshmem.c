@@ -11,6 +11,7 @@ posixshmem - A Python extension that provides shm_open() and shm_unlink()
 
 #include <Python.h>
 
+#include <string.h>               // strlen()
 #include <errno.h>                // EINTR
 #ifdef HAVE_SYS_MMAN_H
 #  include <sys/mman.h>           // shm_open(), shm_unlink()
@@ -48,8 +49,13 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 {
     int fd;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
+    Py_ssize_t name_size;
+    const char *name = PyUnicode_AsUTF8AndSize(path, &name_size);
     if (name == NULL) {
+        return -1;
+    }
+    if (strlen(name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return -1;
     }
     do {
@@ -87,8 +93,13 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 {
     int rv;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
+    Py_ssize_t name_size;
+    const char *name = PyUnicode_AsUTF8AndSize(path, &name_size);
     if (name == NULL) {
+        return NULL;
+    }
+    if (strlen(name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
     do {
