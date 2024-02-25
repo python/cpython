@@ -2235,7 +2235,8 @@ LIBSUBDIRS=	asyncio \
 		zipfile zipfile/_path \
 		zoneinfo \
 		__phello__
-TESTSUBDIRS=	idlelib/idle_test \
+TESTSUBDIRS=\
+		idlelib/idle_test \
 		test \
 		test/archivetestdata \
 		test/audiodata \
@@ -2372,14 +2373,6 @@ TESTSUBDIRS=	idlelib/idle_test \
 COMPILEALL_OPTS=-j0
 
 TEST_MODULES=@TEST_MODULES@
-
-# This is needed for `test_makefile`:
-.PHONY: listtestmodules
-listtestmodules:
-	@echo "@-----@"
-	@if test "$(TEST_MODULES)" = yes; then \
-		echo "$(TESTSUBDIRS)"; \
-	fi
 
 .PHONY: libinstall
 libinstall:	all $(srcdir)/Modules/xxmodule.c
