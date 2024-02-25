@@ -15,6 +15,9 @@ PyAPI_FUNC(double) PyTime_AsSecondsDouble(PyTime_t t);
 PyAPI_FUNC(int) PyTime_Monotonic(PyTime_t *result);
 PyAPI_FUNC(int) PyTime_PerfCounter(PyTime_t *result);
 PyAPI_FUNC(int) PyTime_Time(PyTime_t *result);
+PyAPI_FUNC(PyTime_t) PyTime_MonotonicUnchecked(void);
+PyAPI_FUNC(PyTime_t) PyTime_PerfCounterUnchecked(void);
+PyAPI_FUNC(PyTime_t) PyTime_TimeUnchecked(void);
 
 #ifdef __cplusplus
 }

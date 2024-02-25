@@ -247,13 +247,10 @@ typedef struct {
     double resolution;
 } _Py_clock_info_t;
 
-// Similar to PyTime_Time() but silently ignore the error and return 0 if the
-// internal clock fails.
-//
-// Use _PyTime_TimeWithInfo() or the public PyTime_Time() to check
-// for failure.
-// Export for '_random' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_TimeUnchecked(void);
+// Backward compatibility
+#define _PyTime_TimeUnchecked PyTime_TimeUnchecked
+#define _PyTime_MonotonicUnchecked PyTime_MonotonicUnchecked
+#define _PyTime_PerfCounterUnchecked PyTime_PerfCounterUnchecked
 
 // Get the current time from the system clock.
 // On success, set *t and *info (if not NULL), and return 0.
@@ -261,14 +258,6 @@ PyAPI_FUNC(PyTime_t) _PyTime_TimeUnchecked(void);
 extern int _PyTime_TimeWithInfo(
     PyTime_t *t,
     _Py_clock_info_t *info);
-
-// Similar to PyTime_Monotonic() but silently ignore the error and return 0 if
-// the internal clock fails.
-//
-// Use _PyTime_MonotonicWithInfo() or the public PyTime_Monotonic()
-// to check for failure.
-// Export for '_random' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_MonotonicUnchecked(void);
 
 // Get the time of a monotonic clock, i.e. a clock that cannot go backwards.
 // The clock is not affected by system clock updates. The reference point of
@@ -293,14 +282,6 @@ PyAPI_FUNC(int) _PyTime_localtime(time_t t, struct tm *tm);
 // Return 0 on success, raise an exception and return -1 on error.
 // Export for '_datetime' shared extension.
 PyAPI_FUNC(int) _PyTime_gmtime(time_t t, struct tm *tm);
-
-// Similar to PyTime_PerfCounter() but silently ignore the error and return 0
-// if the internal clock fails.
-//
-// Use _PyTime_PerfCounterWithInfo() or the public PyTime_PerfCounter() to
-// check for failure.
-// Export for '_lsprof' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_PerfCounterUnchecked(void);
 
 
 // Get the performance counter: clock with the highest available resolution to
@@ -352,6 +333,8 @@ extern PyTime_t _PyTimeFraction_Mul(
 extern double _PyTimeFraction_Resolution(
     const _PyTimeFraction *frac);
 
+
+extern PyStatus _PyTime_Init(void);
 
 #ifdef __cplusplus
 }

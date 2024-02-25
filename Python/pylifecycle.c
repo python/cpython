@@ -27,6 +27,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
 #include "pycore_sysmodule.h"     // _PySys_ClearAuditHooks()
+#include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
@@ -524,6 +525,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
     _PyRuntimeState_SetFinalizing(runtime, NULL);
 
     _Py_InitVersion();
+
+    status = _PyTime_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     status = _Py_HashRandomization_Init(config);
     if (_PyStatus_EXCEPTION(status)) {

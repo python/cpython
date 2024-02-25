@@ -61,15 +61,30 @@ with the :term:`GIL` held.
    Read the monotonic clock.
    See :func:`time.monotonic` for important details on this clock.
 
+.. c:function:: PyTime_t PyTime_MonotonicUnchecked()
+
+   Similar to :func:`PyTime_Monotonic()`, but return ``0`` and silently ignore
+   the error if reading the clock fails.
+
 .. c:function:: int PyTime_PerfCounter(PyTime_t *result)
 
    Read the performance counter.
    See :func:`time.perf_counter` for important details on this clock.
 
+.. c:function:: PyTime_t PyTime_PerfCounterUnchecked()
+
+   Similar to :func:`PyTime_PerfCounter()`, but return ``0`` and silently
+   ignore the error if reading the clock fails.
+
 .. c:function:: int PyTime_Time(PyTime_t *result)
 
    Read the “wall clock” time.
    See :func:`time.time` for details important on this clock.
+
+.. c:function:: PyTime_t PyTime_TimeUnchecked()
+
+   Similar to :func:`PyTime_Time()`, but return ``0`` and silently ignore the
+   error if reading the clock fails.
 
 
 Conversion functions

@@ -1,0 +1,7 @@
+Add functions:
+
+* :c:func:`PyTime_MonotonicUnchecked`
+* :c:func:`PyTime_PerfCounterUnchecked`
+* :c:func:`PyTime_TimeUnchecked`
+
+Patch by Victor Stinner.

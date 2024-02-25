@@ -8,7 +8,7 @@ PyTime_MIN = _testcapi.PyTime_MIN
 PyTime_MAX = _testcapi.PyTime_MAX
 SEC_TO_NS = 10 ** 9
 DAY_TO_SEC = (24 * 60 * 60)
-# Worst clock resolution: maximum delta between two clock reads.
+# Worst clock resolution in seconds: maximum delta between two clock reads.
 CLOCK_RES = 0.050
 
 
@@ -59,13 +59,16 @@ class CAPITest(unittest.TestCase):
                                  ns_to_sec(ns))
 
     def test_monotonic(self):
-        # Test PyTime_Monotonic()
+        # Test PyTime_Monotonic() and PyTime_MonotonicUnchecked()
         self.check_clock(_testcapi.PyTime_Monotonic, time.monotonic)
+        self.check_clock(_testcapi.PyTime_MonotonicUnchecked, time.monotonic)
 
     def test_perf_counter(self):
-        # Test PyTime_PerfCounter()
+        # Test PyTime_PerfCounter() and PyTime_PerfCounterUnchecked()
         self.check_clock(_testcapi.PyTime_PerfCounter, time.perf_counter)
+        self.check_clock(_testcapi.PyTime_PerfCounterUnchecked, time.perf_counter)
 
     def test_time(self):
-        # Test PyTime_time()
+        # Test PyTime_Time() and PyTime_TimeUnchecked()
         self.check_clock(_testcapi.PyTime_Time, time.time)
+        self.check_clock(_testcapi.PyTime_TimeUnchecked, time.time)

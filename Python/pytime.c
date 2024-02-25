@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_time.h"          // PyTime_t
 
 #include <time.h>                 // gmtime_r()
@@ -1289,14 +1290,25 @@ py_get_win_perf_counter(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 #endif  // MS_WINDOWS
 
 
+static int
+py_perf_counter(PyTime_t *result, _Py_clock_info_t *info, int raise_exc)
+{
+#ifdef MS_WINDOWS
+#   define INIT_CHECK_PERF_COUNTER 1
+    return py_get_win_perf_counter(result, info, raise_exc);
+#else
+    // On non-Windows, _PyTime_Init() doesn't have to check py_perf_counter()
+    // since py_get_monotonic_clock() is already checked.
+#   define INIT_CHECK_PERF_COUNTER 0
+    return py_get_monotonic_clock(result, info, raise_exc);
+#endif
+}
+
+
 int
 _PyTime_PerfCounterWithInfo(PyTime_t *t, _Py_clock_info_t *info)
 {
-#ifdef MS_WINDOWS
-    return py_get_win_perf_counter(t, info, 1);
-#else
-    return _PyTime_MonotonicWithInfo(t, info);
-#endif
+    return py_perf_counter(t, info, 1);
 }
 
 
@@ -1304,13 +1316,7 @@ PyTime_t
 _PyTime_PerfCounterUnchecked(void)
 {
     PyTime_t t;
-    int res;
-#ifdef MS_WINDOWS
-    res = py_get_win_perf_counter(&t, NULL, 0);
-#else
-    res = py_get_monotonic_clock(&t, NULL, 0);
-#endif
-    if (res  < 0) {
+    if (py_perf_counter(&t, NULL, 0) < 0) {
         // If py_win_perf_counter_frequency() or py_get_monotonic_clock()
         // fails: silently ignore the failure and return 0.
         t = 0;
@@ -1322,13 +1328,7 @@ _PyTime_PerfCounterUnchecked(void)
 int
 PyTime_PerfCounter(PyTime_t *result)
 {
-    int res;
-#ifdef MS_WINDOWS
-    res = py_get_win_perf_counter(result, NULL, 1);
-#else
-    res = py_get_monotonic_clock(result, NULL, 1);
-#endif
-    if (res  < 0) {
+    if (py_perf_counter(result, NULL, 1)  < 0) {
         // If py_win_perf_counter_frequency() or py_get_monotonic_clock()
         // fails: silently ignore the failure and return 0.
         *result = 0;
@@ -1418,4 +1418,23 @@ _PyDeadline_Get(PyTime_t deadline)
 {
     PyTime_t now = _PyTime_MonotonicUnchecked();
     return deadline - now;
+}
+
+
+PyStatus
+_PyTime_Init(void)
+{
+    PyTime_t t;
+    if (py_get_system_clock(&t, NULL, 0) < 0) {
+        return _PyStatus_ERR("cannot read system clock");
+    }
+    if (py_get_monotonic_clock(&t, NULL, 0) < 0) {
+        return _PyStatus_ERR("cannot read monotonic clock");
+    }
+#if INIT_CHECK_PERF_COUNTER
+    if (py_perf_counter(&t, NULL, 0) < 0) {
+        return _PyStatus_ERR("cannot read monotonic clock");
+    }
+#endif
+    return _PyStatus_OK();
 }

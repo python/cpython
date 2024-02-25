@@ -59,6 +59,14 @@ test_pytime_monotonic(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 
 
 static PyObject*
+test_pytime_monotonic_unchecked(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyTime_t t = PyTime_MonotonicUnchecked();
+    return pytime_as_float(t);
+}
+
+
+static PyObject*
 test_pytime_perf_counter(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 {
     PyTime_t t;
@@ -67,6 +75,14 @@ test_pytime_perf_counter(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
         return NULL;
     }
     assert(res == 0);
+    return pytime_as_float(t);
+}
+
+
+static PyObject*
+test_pytime_perf_counter_unchecked(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyTime_t t = PyTime_PerfCounterUnchecked();
     return pytime_as_float(t);
 }
 
@@ -84,11 +100,22 @@ test_pytime_time(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject*
+test_pytime_time_unchecked(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
+{
+    PyTime_t t = PyTime_TimeUnchecked();
+    return pytime_as_float(t);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"PyTime_AsSecondsDouble", test_pytime_assecondsdouble, METH_VARARGS},
     {"PyTime_Monotonic", test_pytime_monotonic, METH_NOARGS},
+    {"PyTime_MonotonicUnchecked", test_pytime_monotonic_unchecked, METH_NOARGS},
     {"PyTime_PerfCounter", test_pytime_perf_counter, METH_NOARGS},
+    {"PyTime_PerfCounterUnchecked", test_pytime_perf_counter_unchecked, METH_NOARGS},
     {"PyTime_Time", test_pytime_time, METH_NOARGS},
+    {"PyTime_TimeUnchecked", test_pytime_time_unchecked, METH_NOARGS},
     {NULL},
 };
 
