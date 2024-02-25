@@ -1,0 +1,2 @@
+Enable ``test_concurrent_futures`` on platforms that support threading but not
+multiprocessing.
