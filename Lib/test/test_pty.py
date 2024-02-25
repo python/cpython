@@ -1,4 +1,3 @@
-import sys
 import unittest
 from test.support import (
     is_android, is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
@@ -10,7 +9,7 @@ from test.support.os_helper import TESTFN, unlink
 import_module('termios')
 
 if is_android or is_apple_mobile or is_emscripten or is_wasi:
-    raise unittest.SkipTest(f"pty is not available on this platform")
+    raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
 import os
