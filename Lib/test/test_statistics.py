@@ -2405,6 +2405,13 @@ class TestKDE(unittest.TestCase):
         self.assertIn(kernel, f_hat.__doc__)
         self.assertIn(str(h), f_hat.__doc__)
 
+        # Test closed interval for the support boundaries.
+        # In particular, 'uniform' should non-zero at the boundaries.
+
+        f_hat = kde([0], 1.0, 'uniform')
+        self.assertEqual(f_hat(-1.0), 1/2)
+        self.assertEqual(f_hat(1.0), 1/2)
+
 
 class TestQuantiles(unittest.TestCase):
 
