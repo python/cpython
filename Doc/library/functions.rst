@@ -1569,7 +1569,7 @@ are always available.  They are listed here in alphabetical order.
    If :func:`sys.displayhook` is not accessible, this function will raise
    :exc:`RuntimeError`.
 
-   This class has a custom representation that can be evaluated.::
+   This class has a custom representation that can be evaluated::
 
       class Person:
          def __init__(self, name, age):
