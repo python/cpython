@@ -2235,8 +2235,7 @@ LIBSUBDIRS=	asyncio \
 		zipfile zipfile/_path \
 		zoneinfo \
 		__phello__
-TESTSUBDIRS=\
-		idlelib/idle_test \
+TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/archivetestdata \
 		test/audiodata \

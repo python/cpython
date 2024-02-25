@@ -22,6 +22,11 @@ class TestMakefile(unittest.TestCase):
             for line in f:
                 if line.startswith('TESTSUBDIRS='):
                     found_testsubdirs = True
+                    result.append(
+                        line.removeprefix('TESTSUBDIRS=').replace(
+                            '\\', '',
+                        ).strip(),
+                    )
                     continue
                 if found_testsubdirs:
                     if '\t' not in line:
