@@ -6850,30 +6850,16 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 void
 PyObject_ClearManagedDict(PyObject *obj)
 {
-    PyTypeObject *tp = Py_TYPE(obj);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
+    PyTypeObject *tp = Py_TYPE(obj);
+    Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(obj);
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {
-            PyDictObject *dict = (PyDictObject *)managed_dict->dict;
-            if (dict) {
-                assert(dict->ma_values == values);
-                dict->ma_values = copy_values(values);
-                values->valid = 0;
-                _PyDict_CheckConsistency((PyObject *)dict, 1);
-            }
-            else {
-                for (Py_ssize_t i = 0; i < values->capacity; i++) {
-                    Py_CLEAR(values->values[i]);
-                }
-                return;
+            for (Py_ssize_t i = 0; i < values->capacity; i++) {
+                Py_CLEAR(values->values[i]);
             }
         }
-        Py_CLEAR(managed_dict->dict);
-    }
-    else if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);
     }
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
 }

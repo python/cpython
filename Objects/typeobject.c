@@ -1998,6 +1998,10 @@ subtype_clear(PyObject *self)
         if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
             PyObject_ClearManagedDict(self);
         }
+        else {
+            assert((base->tp_flags & Py_TPFLAGS_INLINE_VALUES) ==
+                   (type->tp_flags & Py_TPFLAGS_INLINE_VALUES));
+        }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);

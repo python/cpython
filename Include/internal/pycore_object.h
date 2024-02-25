@@ -650,6 +650,7 @@ _PyObject_InlineValues(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(Py_TYPE(obj)->tp_basicsize == sizeof(PyObject));
     return (PyDictValues *)((char *)obj + sizeof(PyObject));
 }
 
