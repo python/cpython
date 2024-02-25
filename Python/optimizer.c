@@ -969,7 +969,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
 static int
 init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
 {
-    _Py_SetImmortal((PyObject *)executor);
+    _Py_SetImmortalUntracked((PyObject *)executor);
     Py_SET_TYPE(executor, &_PyUOpExecutor_Type);
     executor->trace = (_PyUOpInstruction *)executor->exits;
     executor->code_size = 1;
