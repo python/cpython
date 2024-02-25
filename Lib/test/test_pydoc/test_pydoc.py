@@ -1162,6 +1162,17 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(loaded_pydoc.__spec__, pydoc.__spec__)
 
 
+class Rect:
+    @property
+    def area(self):
+        '''Area of the rect'''
+        return self.w * self.h
+
+
+class Square(Rect):
+    area = property(lambda self: self.side**2)
+
+
 class TestDescriptions(unittest.TestCase):
 
     def test_module(self):
@@ -1550,13 +1561,13 @@ cm(x) class method of test.test_pydoc.test_pydoc.X
 
     @requires_docstrings
     def test_property(self):
-        class Rect:
-            @property
-            def area(self):
-                '''Area of the rect'''
-                return self.w * self.h
-
         self.assertEqual(self._get_summary_lines(Rect.area), """\
+area
+    Area of the rect
+""")
+        # inherits the docstring from Rect.area
+        self.assertEqual(self._get_summary_lines(Square.area), """\
+area
     Area of the rect
 """)
         self.assertIn("""
