@@ -1,2 +1,0 @@
-Revise IDLE bindings so that events from mouse button 4/5 on non-X11
-windowing systems (i.e. Win32 and Aqua) are not mistaken for scrolling.

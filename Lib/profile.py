@@ -387,8 +387,9 @@ class Profile:
 
     def print_stats(self, sort=-1):
         import pstats
-        pstats.Stats(self).strip_dirs().sort_stats(sort). \
-                  print_stats()
+        if not isinstance(sort, tuple):
+            sort = (sort,)
+        pstats.Stats(self).strip_dirs().sort_stats(*sort).print_stats()
 
     def dump_stats(self, file):
         with open(file, 'wb') as f:

@@ -9,8 +9,10 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+#include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
@@ -44,6 +46,7 @@ get_thread_state(PyObject *module)
 
 typedef struct {
     PyObject_HEAD
+    struct llist_node node;  // linked list node (see _pythread_runtime_state)
     PyThread_ident_t ident;
     PyThread_handle_t handle;
     char joinable;
@@ -59,6 +62,11 @@ new_thread_handle(thread_module_state* state)
     self->ident = 0;
     self->handle = 0;
     self->joinable = 0;
+
+    HEAD_LOCK(&_PyRuntime);
+    llist_insert_tail(&_PyRuntime.threads.handles, &self->node);
+    HEAD_UNLOCK(&_PyRuntime);
+
     return self;
 }
 
@@ -66,6 +74,14 @@ static void
 ThreadHandle_dealloc(ThreadHandleObject *self)
 {
     PyObject *tp = (PyObject *) Py_TYPE(self);
+
+    // Remove ourself from the global list of handles
+    HEAD_LOCK(&_PyRuntime);
+    if (self->node.next != NULL) {
+        llist_remove(&self->node);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+
     if (self->joinable) {
         int ret = PyThread_detach_thread(self->handle);
         if (ret) {
@@ -75,6 +91,28 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
     }
     PyObject_Free(self);
     Py_DECREF(tp);
+}
+
+void
+_PyThread_AfterFork(struct _pythread_runtime_state *state)
+{
+    // gh-115035: We mark ThreadHandles as not joinable early in the child's
+    // after-fork handler. We do this before calling any Python code to ensure
+    // that it happens before any ThreadHandles are deallocated, such as by a
+    // GC cycle.
+    PyThread_ident_t current = PyThread_get_thread_ident_ex();
+
+    struct llist_node *node;
+    llist_for_each_safe(node, &state->handles) {
+        ThreadHandleObject *hobj = llist_data(node, ThreadHandleObject, node);
+        if (hobj->ident == current) {
+            continue;
+        }
+
+        // Disallow calls to detach() and join() as they could crash.
+        hobj->joinable = 0;
+        llist_remove(node);
+    }
 }
 
 static PyObject *
@@ -90,21 +128,6 @@ ThreadHandle_get_ident(ThreadHandleObject *self, void *ignored)
     return PyLong_FromUnsignedLongLong(self->ident);
 }
 
-
-static PyObject *
-ThreadHandle_after_fork_alive(ThreadHandleObject *self, void* ignored)
-{
-    PyThread_update_thread_after_fork(&self->ident, &self->handle);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-ThreadHandle_after_fork_dead(ThreadHandleObject *self, void* ignored)
-{
-    // Disallow calls to detach() and join() as they could crash.
-    self->joinable = 0;
-    Py_RETURN_NONE;
-}
 
 static PyObject *
 ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
@@ -157,8 +180,6 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 
 static PyMethodDef ThreadHandle_methods[] =
 {
-    {"after_fork_alive", (PyCFunction)ThreadHandle_after_fork_alive, METH_NOARGS},
-    {"after_fork_dead", (PyCFunction)ThreadHandle_after_fork_dead, METH_NOARGS},
     {"detach", (PyCFunction)ThreadHandle_detach, METH_NOARGS},
     {"join", (PyCFunction)ThreadHandle_join, METH_NOARGS},
     {0, 0}
@@ -215,14 +236,14 @@ lock_dealloc(lockobject *self)
 }
 
 static inline PyLockStatus
-acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
+acquire_timed(PyThread_type_lock lock, PyTime_t timeout)
 {
     return PyThread_acquire_lock_timed_with_retries(lock, timeout);
 }
 
 static int
 lock_acquire_parse_args(PyObject *args, PyObject *kwds,
-                        _PyTime_t *timeout)
+                        PyTime_t *timeout)
 {
     char *kwlist[] = {"blocking", "timeout", NULL};
     int blocking = 1;
@@ -233,7 +254,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     // XXX Use PyThread_ParseTimeoutArg().
 
-    const _PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
+    const PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
     *timeout = unset_timeout;
 
     if (timeout_obj
@@ -254,7 +275,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     if (!blocking)
         *timeout = 0;
     else if (*timeout != unset_timeout) {
-        _PyTime_t microseconds;
+        PyTime_t microseconds;
 
         microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_TIMEOUT);
         if (microseconds > PY_TIMEOUT_MAX) {
@@ -269,7 +290,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 static PyObject *
 lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
         return NULL;
 
@@ -470,10 +491,18 @@ rlock_dealloc(rlockobject *self)
     Py_DECREF(tp);
 }
 
+static bool
+rlock_is_owned_by(rlockobject *self, PyThread_ident_t tid)
+{
+    PyThread_ident_t owner_tid =
+        _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
+    return owner_tid == tid && self->rlock_count > 0;
+}
+
 static PyObject *
 rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
     PyThread_ident_t tid;
     PyLockStatus r = PY_LOCK_ACQUIRED;
 
@@ -481,7 +510,7 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
         return NULL;
 
     tid = PyThread_get_thread_ident_ex();
-    if (self->rlock_count > 0 && tid == self->rlock_owner) {
+    if (rlock_is_owned_by(self, tid)) {
         unsigned long count = self->rlock_count + 1;
         if (count <= self->rlock_count) {
             PyErr_SetString(PyExc_OverflowError,
@@ -494,7 +523,7 @@ rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
     r = acquire_timed(self->rlock_lock, timeout);
     if (r == PY_LOCK_ACQUIRED) {
         assert(self->rlock_count == 0);
-        self->rlock_owner = tid;
+        _Py_atomic_store_ullong_relaxed(&self->rlock_owner, tid);
         self->rlock_count = 1;
     }
     else if (r == PY_LOCK_INTR) {
@@ -525,13 +554,13 @@ rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
 
-    if (self->rlock_count == 0 || self->rlock_owner != tid) {
+    if (!rlock_is_owned_by(self, tid)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return NULL;
     }
     if (--self->rlock_count == 0) {
-        self->rlock_owner = 0;
+        _Py_atomic_store_ullong_relaxed(&self->rlock_owner, 0);
         PyThread_release_lock(self->rlock_lock);
     }
     Py_RETURN_NONE;
@@ -570,7 +599,7 @@ rlock_acquire_restore(rlockobject *self, PyObject *args)
         return NULL;
     }
     assert(self->rlock_count == 0);
-    self->rlock_owner = owner;
+    _Py_atomic_store_ullong_relaxed(&self->rlock_owner, owner);
     self->rlock_count = count;
     Py_RETURN_NONE;
 }
@@ -595,7 +624,7 @@ rlock_release_save(rlockobject *self, PyObject *Py_UNUSED(ignored))
     owner = self->rlock_owner;
     count = self->rlock_count;
     self->rlock_count = 0;
-    self->rlock_owner = 0;
+    _Py_atomic_store_ullong_relaxed(&self->rlock_owner, 0);
     PyThread_release_lock(self->rlock_lock);
     return Py_BuildValue("k" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
@@ -609,8 +638,9 @@ static PyObject *
 rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
-    return PyLong_FromUnsignedLong(
-        self->rlock_owner == tid ? self->rlock_count : 0UL);
+    PyThread_ident_t owner =
+        _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
+    return PyLong_FromUnsignedLong(owner == tid ? self->rlock_count : 0UL);
 }
 
 PyDoc_STRVAR(rlock_recursion_count_doc,
@@ -623,7 +653,7 @@ rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
 
-    if (self->rlock_count > 0 && self->rlock_owner == tid) {
+    if (rlock_is_owned_by(self, tid)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -657,10 +687,12 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 rlock_repr(rlockobject *self)
 {
+    PyThread_ident_t owner =
+            _Py_atomic_load_ullong_relaxed(&self->rlock_owner);
     return PyUnicode_FromFormat(
         "<%s %s object owner=%" PY_FORMAT_THREAD_IDENT_T " count=%lu at %p>",
         self->rlock_count ? "locked" : "unlocked",
-        Py_TYPE(self)->tp_name, self->rlock_owner,
+        Py_TYPE(self)->tp_name, owner,
         self->rlock_count, self);
 }
 
@@ -1225,7 +1257,7 @@ thread_run(void *boot_raw)
 
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
-    tstate->interp->threads.count++;
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
 
     PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
     if (res == NULL) {
@@ -1243,7 +1275,7 @@ thread_run(void *boot_raw)
 
     thread_bootstate_free(boot, 1);
 
-    tstate->interp->threads.count--;
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
@@ -1285,7 +1317,7 @@ do_start_new_thread(thread_module_state* state,
         return -1;
     }
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't create new thread at interpreter shutdown");
         return -1;
     }
@@ -1520,7 +1552,7 @@ static PyObject *
 thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyLong_FromLong(interp->threads.count);
+    return PyLong_FromSsize_t(_Py_atomic_load_ssize(&interp->threads.count));
 }
 
 PyDoc_STRVAR(_count_doc,
@@ -1916,7 +1948,7 @@ thread_module_exec(PyObject *module)
 
     // TIMEOUT_MAX
     double timeout_max = (double)PY_TIMEOUT_MAX * 1e-6;
-    double time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
+    double time_max = PyTime_AsSecondsDouble(PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
     // Round towards minus infinity
     timeout_max = floor(timeout_max);

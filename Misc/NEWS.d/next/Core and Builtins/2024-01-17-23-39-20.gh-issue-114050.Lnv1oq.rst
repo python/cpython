@@ -1,2 +1,0 @@
-Fix segmentation fault caused by an incorrect format string
-in ``TypeError`` exception when more than two arguments are passed to ``int``.

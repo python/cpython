@@ -1514,6 +1514,13 @@ class TestPosixDirFd(unittest.TestCase):
             self.assertRaises(OverflowError,
                     posix.stat, name, dir_fd=10**20)
 
+            for fd in False, True:
+                with self.assertWarnsRegex(RuntimeWarning,
+                        'bool is used as a file descriptor') as cm:
+                    with self.assertRaises(OSError):
+                        posix.stat('nonexisting', dir_fd=fd)
+                self.assertEqual(cm.filename, __file__)
+
     @unittest.skipUnless(os.utime in os.supports_dir_fd, "test needs dir_fd support in os.utime()")
     def test_utime_dir_fd(self):
         with self.prepare_file() as (dir_fd, name, fullname):
