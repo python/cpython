@@ -234,7 +234,6 @@ class Queue:
         with self.mutex:
             self.is_shutdown = True
             if immediate:
-                n_items = self._qsize()
                 while self._qsize():
                     self._get()
                     if self.unfinished_tasks > 0:
