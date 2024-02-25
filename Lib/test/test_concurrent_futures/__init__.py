@@ -5,7 +5,7 @@ from test.support import threading_helper
 
 
 # Adjust if we ever have a platform with processes but not threads.
-threading_helper.requires_working_threading()
+threading_helper.requires_working_threading(module=True)
 
 
 if support.check_sanitizer(address=True, memory=True):
