@@ -29,7 +29,6 @@ Doc/library/email.parser.rst
 Doc/library/email.policy.rst
 Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
-Doc/library/fcntl.rst
 Doc/library/functools.rst
 Doc/library/http.cookiejar.rst
 Doc/library/http.server.rst
