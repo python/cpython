@@ -34,7 +34,7 @@ represented by objects.)
 
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
-memory.  The ':keyword:`is`' operator compares the identity of two objects; the
+memory.  The :keyword:`is` operator compares the identity of two objects; the
 :func:`id` function returns an integer representing its identity.
 
 .. impl-detail::
@@ -81,7 +81,7 @@ are still reachable.
 
 Note that the use of the implementation's tracing or debugging facilities may
 keep objects alive that would normally be collectable. Also note that catching
-an exception with a ':keyword:`try`...\ :keyword:`except`' statement may keep
+an exception with a :keyword:`try`...\ :keyword:`except` statement may keep
 objects alive.
 
 Some objects contain references to "external" resources such as open files or
@@ -89,8 +89,8 @@ windows.  It is understood that these resources are freed when the object is
 garbage-collected, but since garbage collection is not guaranteed to happen,
 such objects also provide an explicit way to release the external resource,
 usually a :meth:`!close` method. Programs are strongly recommended to explicitly
-close such objects.  The ':keyword:`try`...\ :keyword:`finally`' statement
-and the ':keyword:`with`' statement provide convenient ways to do this.
+close such objects.  The :keyword:`try`...\ :keyword:`finally` statement
+and the :keyword:`with` statement provide convenient ways to do this.
 
 .. index:: single: container
 
@@ -159,7 +159,7 @@ NotImplemented
 .. index:: pair: object; NotImplemented
 
 This type has a single value.  There is a single object with this value. This
-object is accessed through the built-in name ``NotImplemented``. Numeric methods
+object is accessed through the built-in name :data:`NotImplemented`. Numeric methods
 and rich comparison methods should return this value if they do not implement the
 operation for the operands provided.  (The interpreter will then try the
 reflected operation, or some other fallback, depending on the operator.)  It
@@ -170,7 +170,7 @@ See
 for more details.
 
 .. versionchanged:: 3.9
-   Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+   Evaluating :data:`NotImplemented` in a boolean context is deprecated. While
    it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
    It will raise a :exc:`TypeError` in a future version of Python.
 
@@ -1134,6 +1134,8 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_qualname
      - The fully qualified function name
 
+       .. versionadded:: 3.11
+
    * - .. attribute:: codeobject.co_argcount
      - The total number of positional :term:`parameters <parameter>`
        (including positional-only parameters and parameters with default values)
@@ -1263,20 +1265,20 @@ Methods on code objects
 
    * ``start`` (an :class:`int`) represents the offset (inclusive) of the start
      of the :term:`bytecode` range
-   * ``end`` (an :class:`int`) represents the offset (inclusive) of the end of
+   * ``end`` (an :class:`int`) represents the offset (exclusive) of the end of
      the :term:`bytecode` range
    * ``lineno`` is an :class:`int` representing the line number of the
      :term:`bytecode` range, or ``None`` if the bytecodes in the given range
      have no line number
 
-   The items yielded generated will have the following properties:
+   The items yielded will have the following properties:
 
    * The first range yielded will have a ``start`` of 0.
    * The ``(start, end)`` ranges will be non-decreasing and consecutive. That
      is, for any pair of :class:`tuple`\s, the ``start`` of the second will be
      equal to the ``end`` of the first.
    * No range will be backwards: ``end >= start`` for all triples.
-   * The :class:`tuple` yielded will have ``end`` equal to the size of the
+   * The last :class:`tuple` yielded will have ``end`` equal to the size of the
      :term:`bytecode`.
 
    Zero-width ranges, where ``start == end``, are allowed. Zero-width ranges
@@ -1289,6 +1291,14 @@ Methods on code objects
 
       :pep:`626` - Precise line numbers for debugging and other tools.
          The PEP that introduced the :meth:`!co_lines` method.
+
+.. method:: codeobject.replace(**kwargs)
+
+   Return a copy of the code object with new values for the specified fields.
+
+   Code objects are also supported by the generic function :func:`copy.replace`.
+
+   .. versionadded:: 3.8
 
 
 .. _frame-objects:
@@ -1529,7 +1539,7 @@ Class method objects
 A class method object, like a static method object, is a wrapper around another
 object that alters the way in which that object is retrieved from classes and
 class instances. The behaviour of class method objects upon such retrieval is
-described above, under "User-defined methods". Class method objects are created
+described above, under :ref:`"instance methods" <instance-methods>`. Class method objects are created
 by the built-in :func:`classmethod` constructor.
 
 
@@ -1777,7 +1787,7 @@ Basic customization
    ``x.__ne__(y)``, ``x>y`` calls ``x.__gt__(y)``, and ``x>=y`` calls
    ``x.__ge__(y)``.
 
-   A rich comparison method may return the singleton ``NotImplemented`` if it does
+   A rich comparison method may return the singleton :data:`NotImplemented` if it does
    not implement the operation for a given pair of arguments. By convention,
    ``False`` and ``True`` are returned for a successful comparison. However, these
    methods can return any value, so if the comparison operator is used in a Boolean
@@ -1785,10 +1795,10 @@ Basic customization
    :func:`bool` on the value to determine if the result is true or false.
 
    By default, ``object`` implements :meth:`__eq__` by using ``is``, returning
-   ``NotImplemented`` in the case of a false comparison:
+   :data:`NotImplemented` in the case of a false comparison:
    ``True if x is y else NotImplemented``. For :meth:`__ne__`, by default it
    delegates to :meth:`__eq__` and inverts the result unless it is
-   ``NotImplemented``.  There are no other implied relationships among the
+   :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
    operations from a single root operation, see :func:`functools.total_ordering`.
@@ -1876,7 +1886,7 @@ Basic customization
 
       This is intended to provide protection against a denial-of-service caused
       by carefully chosen inputs that exploit the worst case performance of a
-      dict insertion, O(n\ :sup:`2`) complexity.  See
+      dict insertion, *O*\ (*n*\ :sup:`2`) complexity.  See
       http://ocert.org/advisories/ocert-2011-003.html for details.
 
       Changing hash values affects the iteration order of sets.
@@ -1988,8 +1998,8 @@ access (use of, assignment to, or deletion of ``x.name``) for class instances.
 
 .. method:: object.__dir__(self)
 
-   Called when :func:`dir` is called on the object. A sequence must be
-   returned. :func:`dir` converts the returned sequence to a list and sorts it.
+   Called when :func:`dir` is called on the object. An iterable must be
+   returned. :func:`dir` converts the returned iterable to a list and sorts it.
 
 
 Customizing module attribute access
@@ -2009,7 +2019,7 @@ not found on a module object through the normal lookup, i.e.
 the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
 it is called with the attribute name and the result is returned.
 
-The ``__dir__`` function should accept no arguments, and return a sequence of
+The ``__dir__`` function should accept no arguments, and return an iterable of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
 
@@ -2308,7 +2318,7 @@ class defining the method.
    this method is implicitly converted to a class method.
 
    Keyword arguments which are given to a new class are passed to
-   the parent's class ``__init_subclass__``. For compatibility with
+   the parent class's ``__init_subclass__``. For compatibility with
    other classes using ``__init_subclass__``, one should take out the
    needed keyword arguments and pass the others over to the base
    class, as in::
@@ -2818,7 +2828,7 @@ through the object's keys; for sequences, it should iterate through the values.
    Called to implement :func:`operator.length_hint`. Should return an estimated
    length for the object (which may be greater or less than the actual length).
    The length must be an integer ``>=`` 0. The return value may also be
-   :const:`NotImplemented`, which is treated the same as if the
+   :data:`NotImplemented`, which is treated the same as if the
    ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
 
@@ -2970,7 +2980,7 @@ left undefined.
    function is to be supported.
 
    If one of those methods does not support the operation with the supplied
-   arguments, it should return ``NotImplemented``.
+   arguments, it should return :data:`NotImplemented`.
 
 
 .. method:: object.__radd__(self, other)
@@ -3000,7 +3010,7 @@ left undefined.
    types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method,
    ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
-   *NotImplemented*.
+   :data:`NotImplemented`.
 
    .. index:: pair: built-in function; pow
 
@@ -3493,7 +3503,7 @@ An example of an asynchronous context manager class::
    the behavior that ``None`` is not callable.
 
 .. [#] "Does not support" here means that the class has no such method, or
-   the method returns ``NotImplemented``.  Do not set the method to
+   the method returns :data:`NotImplemented`.  Do not set the method to
    ``None`` if you want to force fallback to the right operand's reflected
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.

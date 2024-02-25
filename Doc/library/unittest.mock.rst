@@ -2009,8 +2009,8 @@ Mocking Magic Methods
 ~~~~~~~~~~~~~~~~~~~~~
 
 :class:`Mock` supports mocking the Python protocol methods, also known as
-"magic methods". This allows mock objects to replace containers or other
-objects that implement Python protocols.
+:term:`"magic methods" <magic method>`. This allows mock objects to replace
+containers or other objects that implement Python protocols.
 
 Because magic methods are looked up differently from normal methods [#]_, this
 support has been specially implemented. This means that only specific magic
@@ -2108,8 +2108,8 @@ There are two ``MagicMock`` variants: :class:`MagicMock` and :class:`NonCallable
 .. class:: MagicMock(*args, **kw)
 
    ``MagicMock`` is a subclass of :class:`Mock` with default implementations
-   of most of the magic methods. You can use ``MagicMock`` without having to
-   configure the magic methods yourself.
+   of most of the :term:`magic methods <magic method>`. You can use
+   ``MagicMock`` without having to configure the magic methods yourself.
 
    The constructor parameters have the same meaning as for :class:`Mock`.
 
@@ -2143,10 +2143,10 @@ to change the default.
 
 Methods and their defaults:
 
-* ``__lt__``: ``NotImplemented``
-* ``__gt__``: ``NotImplemented``
-* ``__le__``: ``NotImplemented``
-* ``__ge__``: ``NotImplemented``
+* ``__lt__``: :data:`NotImplemented`
+* ``__gt__``: :data:`!NotImplemented`
+* ``__le__``: :data:`!NotImplemented`
+* ``__ge__``: :data:`!NotImplemented`
 * ``__int__``: ``1``
 * ``__contains__``: ``False``
 * ``__len__``: ``0``
@@ -2426,6 +2426,14 @@ passed in.
     >>> m.mock_calls == [call(1), call(1, 2), ANY]
     True
 
+:data:`ANY` is not limited to comparisons with call objects and so
+can also be used in test assertions::
+
+    class TestStringMethods(unittest.TestCase):
+
+        def test_split(self):
+            s = 'hello world'
+            self.assertEqual(s.split(), ['hello', ANY])
 
 
 FILTER_DIR

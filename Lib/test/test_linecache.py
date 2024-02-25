@@ -5,6 +5,7 @@ import unittest
 import os.path
 import tempfile
 import tokenize
+from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
 
@@ -95,6 +96,16 @@ class BadUnicode_NoDeclaration(GetLineTestsBadData, unittest.TestCase):
 
 class BadUnicode_WithDeclaration(GetLineTestsBadData, unittest.TestCase):
     file_byte_string = b'# coding=utf-8\n\x80abc'
+
+
+class FakeLoader:
+    def get_source(self, fullname):
+        return f'source for {fullname}'
+
+
+class NoSourceLoader:
+    def get_source(self, fullname):
+        return None
 
 
 class LineCacheTests(unittest.TestCase):
@@ -237,6 +248,33 @@ class LineCacheTests(unittest.TestCase):
             lines3 = linecache.getlines(FILENAME)
         self.assertEqual(lines3, [])
         self.assertEqual(linecache.getlines(FILENAME), lines)
+
+    def test_loader(self):
+        filename = 'scheme://path'
+
+        for loader in (None, object(), NoSourceLoader()):
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': loader}
+            self.assertEqual(linecache.getlines(filename, module_globals), [])
+
+        linecache.clearcache()
+        module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader()}
+        self.assertEqual(linecache.getlines(filename, module_globals),
+                         ['source for a.b.c\n'])
+
+        for spec in (None, object(), ModuleSpec('', FakeLoader())):
+            linecache.clearcache()
+            module_globals = {'__name__': 'a.b.c', '__loader__': FakeLoader(),
+                              '__spec__': spec}
+            self.assertEqual(linecache.getlines(filename, module_globals),
+                             ['source for a.b.c\n'])
+
+        linecache.clearcache()
+        spec = ModuleSpec('x.y.z', FakeLoader())
+        module_globals = {'__name__': 'a.b.c', '__loader__': spec.loader,
+                          '__spec__': spec}
+        self.assertEqual(linecache.getlines(filename, module_globals),
+                         ['source for x.y.z\n'])
 
 
 class LineCacheInvalidationTests(unittest.TestCase):

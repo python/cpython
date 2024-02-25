@@ -9,6 +9,7 @@ import textwrap
 import types
 import unittest
 import asyncio
+from test.support import requires_specialization
 
 PAIR = (0,1)
 
@@ -34,6 +35,9 @@ def g1():
 TEST_TOOL = 2
 TEST_TOOL2 = 3
 TEST_TOOL3 = 4
+
+def nth_line(func, offset):
+    return func.__code__.co_firstlineno + offset
 
 class MonitoringBasicTest(unittest.TestCase):
 
@@ -529,8 +533,8 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             f1()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            start = LineMonitoringTest.test_lines_single.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 16, start+8])
+            start = nth_line(LineMonitoringTest.test_lines_single, 0)
+            self.assertEqual(events, [start+7, nth_line(f1, 1), start+8])
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -547,8 +551,13 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             floop()
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
-            start = LineMonitoringTest.test_lines_loop.__code__.co_firstlineno
-            self.assertEqual(events, [start+7, 23, 24, 23, 24, 23, start+8])
+            start = nth_line(LineMonitoringTest.test_lines_loop, 0)
+            floop_1 = nth_line(floop, 1)
+            floop_2 = nth_line(floop, 2)
+            self.assertEqual(
+                events,
+                [start+7, floop_1, floop_2, floop_1, floop_2, floop_1, start+8]
+            )
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
@@ -569,8 +578,8 @@ class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
             sys.monitoring.set_events(TEST_TOOL, 0); sys.monitoring.set_events(TEST_TOOL2, 0)
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.register_callback(TEST_TOOL2, E.LINE, None)
-            start = LineMonitoringTest.test_lines_two.__code__.co_firstlineno
-            expected = [start+10, 16, start+11]
+            start = nth_line(LineMonitoringTest.test_lines_two, 0)
+            expected = [start+10, nth_line(f1, 1), start+11]
             self.assertEqual(events, expected)
             self.assertEqual(events2, expected)
         finally:
@@ -807,6 +816,9 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
+    # gh-116090: This test doesn't really require specialization, but running
+    # it without specialization exposes a monitoring bug.
+    @requires_specialization
     def test_implicit_stop_iteration(self):
 
         def gen():
@@ -955,6 +967,7 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
+    @requires_specialization
     def test_no_unwind_for_shim_frame(self):
 
         class B:
@@ -1466,9 +1479,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 4, 4),
             ('line', 'func', 5),
             ('line', 'meth', 1),
-            ('jump', 'func', 5, 5),
-            ('jump', 'func', 5, '[offset=114]'),
-            ('branch', 'func', '[offset=120]', '[offset=124]'),
+            ('jump', 'func', 5, '[offset=118]'),
+            ('branch', 'func', '[offset=122]', '[offset=126]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1482,9 +1494,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 5),
             ('line', 'meth', 1),
             ('return', 'meth', None),
-            ('jump', 'func', 5, 5),
-            ('jump', 'func', 5, '[offset=114]'),
-            ('branch', 'func', '[offset=120]', '[offset=124]'),
+            ('jump', 'func', 5, '[offset=118]'),
+            ('branch', 'func', '[offset=122]', '[offset=126]'),
             ('return', 'func', None),
             ('line', 'get_events', 11)])
 
@@ -1801,7 +1812,7 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
     def setUp(self):
         import _testinternalcapi
         self.old_opt = _testinternalcapi.get_optimizer()
-        opt = _testinternalcapi.get_counter_optimizer()
+        opt = _testinternalcapi.new_counter_optimizer()
         _testinternalcapi.set_optimizer(opt)
         super(TestOptimizer, self).setUp()
 

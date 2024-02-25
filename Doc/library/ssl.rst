@@ -1790,6 +1790,9 @@ to speed up repeated connections from the same clients.
 
    *session*, see :attr:`~SSLSocket.session`.
 
+   To wrap an :class:`SSLSocket` in another :class:`SSLSocket`, use
+   :meth:`SSLContext.wrap_bio`.
+
    .. versionchanged:: 3.5
       Always allow a server_hostname to be passed, even if OpenSSL does not
       have SNI.
@@ -1975,7 +1978,7 @@ to speed up repeated connections from the same clients.
 
    .. versionchanged:: 3.10
 
-      The flag had no effect with OpenSSL before version 1.1.1k. Python 3.8.9,
+      The flag had no effect with OpenSSL before version 1.1.1l. Python 3.8.9,
       3.9.3, and 3.10 include workarounds for previous versions.
 
 .. attribute:: SSLContext.security_level
@@ -2574,12 +2577,8 @@ provided.
      :exc:`SSLWantReadError` if it needs more data than the incoming BIO has
      available.
 
-   - There is no module-level ``wrap_bio()`` call like there is for
-     :meth:`~SSLContext.wrap_socket`. An :class:`SSLObject` is always created
-     via an :class:`SSLContext`.
-
    .. versionchanged:: 3.7
-      :class:`SSLObject` instances must to created with
+      :class:`SSLObject` instances must be created with
       :meth:`~SSLContext.wrap_bio`. In earlier versions, it was possible to
       create instances directly. This was never documented or officially
       supported.
