@@ -72,8 +72,11 @@ class Queue:
         have been processed (meaning that a task_done() call was received
         for every item that had been put() into the queue).
 
+        shutdown(immediate=True) calls task_done() for each remaining item in
+        the queue.
+
         Raises a ValueError if called more times than there were items
-        placed in the queue, or after an immediate shutdown.
+        placed in the queue.
         '''
         with self.all_tasks_done:
             unfinished = self.unfinished_tasks - 1
