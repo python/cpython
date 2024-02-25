@@ -1960,6 +1960,64 @@ class TestSourcePositions(unittest.TestCase):
         )
 
 
+class TestExpectedAttributes(unittest.TestCase):
+
+    def test_basic(self):
+        class C:
+            def f(self):
+                self.a = self.b = 42
+
+        self.assertIsInstance(C.__expected_attributes__, tuple)
+        self.assertEqual(sorted(C.__expected_attributes__), ['a', 'b'])
+
+    def test_nested_function(self):
+        class C:
+            def f(self):
+                self.x = 1
+                self.y = 2
+                self.x = 3
+
+            def g(self, obj):
+                self.y = 4
+                self.z = 5
+
+                def h(self, a):
+                    self.u = 6
+                    self.v = 7
+
+                obj.self = 8
+
+        self.assertEqual(sorted(C.__expected_attributes__), ['u', 'v', 'x', 'y', 'z'])
+
+    def test_nested_class(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+            class D:
+                def g(self):
+                    self.y = 42
+                    self.z = 42
+
+        self.assertEqual(sorted(C.__expected_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(C.D.__expected_attributes__), ['y', 'z'])
+
+    def test_subclass(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+        class D(C):
+            def g(self):
+                self.y = 42
+                self.z = 42
+
+        self.assertEqual(sorted(C.__expected_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(D.__expected_attributes__), ['y', 'z'])
+
+
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
     # stays within reasonable bounds (see issue #21523 for an example

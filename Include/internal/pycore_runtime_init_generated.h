@@ -621,6 +621,7 @@ extern "C" {
     INIT_ID(__enter__), \
     INIT_ID(__eq__), \
     INIT_ID(__exit__), \
+    INIT_ID(__expected_attributes__), \
     INIT_ID(__file__), \
     INIT_ID(__float__), \
     INIT_ID(__floordiv__), \

@@ -112,6 +112,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__enter__)
         STRUCT_FOR_ID(__eq__)
         STRUCT_FOR_ID(__exit__)
+        STRUCT_FOR_ID(__expected_attributes__)
         STRUCT_FOR_ID(__file__)
         STRUCT_FOR_ID(__float__)
         STRUCT_FOR_ID(__floordiv__)
