@@ -89,16 +89,13 @@ int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
 {
-    PyObject *filename_obj;
+    PyObject *filename_obj = NULL;
     if (filename != NULL) {
         filename_obj = PyUnicode_DecodeFSDefault(filename);
         if (filename_obj == NULL) {
             PyErr_Print();
             return -1;
         }
-    }
-    else {
-        filename_obj = NULL;
     }
     int res = _PyRun_AnyFileObject(fp, filename_obj, closeit, flags);
     Py_XDECREF(filename_obj);
