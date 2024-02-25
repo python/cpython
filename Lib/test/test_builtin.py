@@ -218,6 +218,16 @@ class BuiltinTest(unittest.TestCase):
         S = [50, 40, 60]
         self.assertEqual(all(x > 42 for x in S), False)
 
+    def test_all_equal(self):
+        self.assertEqual(all_equal([1, 1, 1]), True)
+        self.assertEqual(all_equal([1, 2, 3]), False)
+        self.assertEqual(all_equal([1, None, 1]), False)
+        self.assertRaises(RuntimeError, all_equal, TestFailingIter())
+        self.assertRaises(TypeError, all_equal, 10)                 # Non-iterable
+        self.assertRaises(TypeError, all_equal)                     # No args
+        self.assertRaises(TypeError, all_equal, [2, 4, 6], [])      # Too many args
+        self.assertEqual(all_equal([]), True)                       # Empty iterator
+
     def test_any(self):
         self.assertEqual(any([None, None, None]), False)
         self.assertEqual(any([None, 4, None]), True)

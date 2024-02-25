@@ -1852,6 +1852,23 @@ PyObject_Not(PyObject *v)
     return res == 0;
 }
 
+/* Test whether two objects are equal */
+
+int PyObject_IsEqual(PyObject *self, PyObject *other)
+{
+    PyObject* res = _Py_BaseObject_RichCompare(self, other, Py_EQ);
+
+    if (res == Py_True)
+        return 1;
+    else if (res == Py_False)
+        return 0;
+    else if (res == Py_NotImplemented)
+        return 0;
+    else
+        return 0;
+}
+
+
 /* Test whether an object can be called */
 
 int

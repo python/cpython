@@ -138,6 +138,17 @@ PyDoc_STRVAR(builtin_any__doc__,
 "\n"
 "If the iterable is empty, return False.");
 
+#define BUILTIN_ALL_EQUAL_METHODDEF     \
+    {"all_equal", (PyCFunction)builtin_all_equal, METH_O, builtin_all_equal__doc__},
+
+PyDoc_STRVAR(builtin_all_equal__doc__,
+"all_equal($module, iterable, /)\n"
+"--\n"
+"\n"
+"Return True if x in the iterable are equal.\n"
+"\n"
+"If the iterable is empty, return False.");
+
 #define BUILTIN_ANY_METHODDEF    \
     {"any", (PyCFunction)builtin_any, METH_O, builtin_any__doc__},
 

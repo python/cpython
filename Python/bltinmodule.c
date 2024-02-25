@@ -347,6 +347,53 @@ builtin_all(PyObject *module, PyObject *iterable)
     Py_RETURN_TRUE;
 }
 
+static PyObject *
+builtin_all_equal(PyObject *module, PyObject *iterable)
+{
+    PyObject *it, *item, *prev_item;
+    PyObject *(*iternext)(PyObject *);
+    int cmp;
+
+    it = PyObject_GetIter(iterable);
+    if (it == NULL)
+        return NULL;
+    iternext = *Py_TYPE(it)->tp_iternext;
+
+    prev_item = iternext(it);
+    if (prev_item == NULL) {
+        Py_RETURN_TRUE;
+    }
+
+    for (;;) {
+        item = iternext(it);
+        if (item == NULL)
+            break;
+        cmp = PyObject_IsEqual(item, prev_item);
+        Py_DECREF(prev_item);
+        prev_item = item;
+        // optimized out: item = NULL
+        if (cmp < 0) {
+            Py_DECREF(item);
+            Py_DECREF(it);
+            return NULL;
+        }
+        if (cmp == 0) {
+            Py_DECREF(item);
+            Py_DECREF(it);
+            Py_RETURN_FALSE;
+        }
+    }
+    Py_DECREF(prev_item);
+    Py_DECREF(it);
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else
+            return NULL;
+    }
+    Py_RETURN_TRUE;
+}
+
 /*[clinic input]
 any as builtin_any
 
@@ -3049,6 +3096,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN___IMPORT___METHODDEF
     BUILTIN_ABS_METHODDEF
     BUILTIN_ALL_METHODDEF
+    BUILTIN_ALL_EQUAL_METHODDEF
     BUILTIN_ANY_METHODDEF
     BUILTIN_ASCII_METHODDEF
     BUILTIN_BIN_METHODDEF
