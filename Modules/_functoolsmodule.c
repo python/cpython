@@ -403,15 +403,14 @@ partial_repr(partialobject *pto)
     }
 
     mod = _PyType_GetModuleName(Py_TYPE(pto));
-
     if (mod == NULL) {
-        return NULL;
+        goto error;
     }
     else {
         name = PyType_GetQualName(Py_TYPE(pto));
         if (name == NULL) {
             Py_DECREF(mod);
-            return NULL;
+            goto error;
         }
         result = PyUnicode_FromFormat("%U.%S(%R%U)", mod, name, pto->fn,
                                       arglist);
@@ -424,6 +423,10 @@ partial_repr(partialobject *pto)
  done:
     Py_ReprLeave((PyObject *)pto);
     return result;
+ error:
+    Py_DECREF(arglist);
+    Py_ReprLeave((PyObject *)pto);
+    return NULL;
 }
 
 /* Pickle strategy:
