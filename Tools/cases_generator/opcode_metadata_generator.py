@@ -284,7 +284,7 @@ def is_viable_expansion(inst: Instruction) -> bool:
                 continue
             if "replaced" in part.annotations:
                 continue
-            if part.properties.tier_one_only or not part.is_viable():
+            if part.properties.tier == 1 or not part.is_viable():
                 return False
     return True
 

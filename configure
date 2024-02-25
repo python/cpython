@@ -7386,11 +7386,15 @@ else # shared is disabled
       ;;
   esac
 fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
+printf "%s\n" "$LDLIBRARY" >&6; }
 
 if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
+printf %s "checking HOSTRUNNER... " >&6; }
 
 if test -z "$HOSTRUNNER"
 then
@@ -7574,17 +7578,12 @@ fi
 esac
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
-printf %s "checking HOSTRUNNER... " >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 printf "%s\n" "$HOSTRUNNER" >&6; }
 
 if test -n "$HOSTRUNNER"; then
     PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
 fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
-printf "%s\n" "$LDLIBRARY" >&6; }
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 case $ac_sys_system/$ac_sys_emscripten_target in #(
@@ -11496,11 +11495,15 @@ then :
 
 printf "%s\n" "#define HAVE_SSIZE_T 1" >>confdefs.h
 
+
 fi
 
 ac_fn_c_check_type "$LINENO" "__uint128_t" "ac_cv_type___uint128_t" "$ac_includes_default"
 if test "x$ac_cv_type___uint128_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE___UINT128_T 1" >>confdefs.h
+
 
 printf "%s\n" "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
 
@@ -16751,16 +16754,18 @@ printf "%s\n" "$ipv6type" >&6; }
 fi
 
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 library" >&5
+printf %s "checking ipv6 library... " >&6; }
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: using lib$ipv6lib" >&5
-printf "%s\n" "$as_me: using lib$ipv6lib" >&6;}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: lib$ipv6lib" >&5
+printf "%s\n" "lib$ipv6lib" >&6; }
 	else
     if test "x$ipv6trylibc" = xyes
 then :
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: using libc" >&5
-printf "%s\n" "$as_me: using libc" >&6;}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: libc" >&5
+printf "%s\n" "libc" >&6; }
 
 else $as_nop
 
@@ -24961,6 +24966,7 @@ then :
 
 printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
 
+
 fi
 
 
@@ -26782,6 +26788,9 @@ ac_fn_c_check_type "$LINENO" "socklen_t" "ac_cv_type_socklen_t" "
 "
 if test "x$ac_cv_type_socklen_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE_SOCKLEN_T 1" >>confdefs.h
+
 
 else $as_nop
 
