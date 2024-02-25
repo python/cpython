@@ -268,7 +268,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    Create a continuous probability density function from discrete samples.
 
    The basic idea is to smooth the data using `a kernel function
-   <https://en.wikipedia.org/wiki/Kernel_(statistics)`_.
+   <https://en.wikipedia.org/wiki/Kernel_(statistics)>`_.
    to help draw inferences about a population from a sample.
 
    The degree of smoothing is controlled by the scaling parameter *h*
