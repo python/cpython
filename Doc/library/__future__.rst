@@ -39,11 +39,11 @@ the *MandatoryRelease* version, then no longer need to include the
    where, normally, *OptionalRelease* is less than *MandatoryRelease*, and both are
    5-tuples of the same form as :data:`sys.version_info`::
 
-      (PY_MAJOR_VERSION, # the 2 in 2.1.0a3; an int
-      PY_MINOR_VERSION,  # the 1; an int
-      PY_MICRO_VERSION,  # the 0; an int
-      PY_RELEASE_LEVEL,  # "alpha", "beta", "candidate" or "final"; string
-      PY_RELEASE_SERIAL  # the 3; an int
+      (PY_MAJOR_VERSION,  # The 2 in 2.1.0a3; an int.
+       PY_MINOR_VERSION,  # The 1; an int.
+       PY_MICRO_VERSION,  # The 0; an int.
+       PY_RELEASE_LEVEL,  # One of "alpha", "beta", "candidate" or "final"; string.
+       PY_RELEASE_SERIAL  # The 3; an int.
       )
 
 The release information for features is captured through *OptionalRelease* and
