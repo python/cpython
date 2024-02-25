@@ -187,7 +187,7 @@ fully processed by daemon consumer threads.
    processed (meaning that a :meth:`task_done` call was received for every item
    that had been :meth:`put` into the queue).
 
-   :meth:`shutdown(immediate=True)` calls :meth:`task_done` for each remaining item
+   ``shutdown(immediate=True)`` calls :meth:`task_done` for each remaining item
    in the queue.
 
    Raises a :exc:`ValueError` if called more times than there were items placed in
