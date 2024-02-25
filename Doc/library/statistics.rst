@@ -264,13 +264,12 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: kde(data, h, kernel='normal')
 
    `Kernel Density Estimation (KDE)
-   <https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf>`_
-   creates an estimated continuous probability density function from *data*
-   containing a fixed number of discrete samples.
+   <https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf>`_:
+   Create a continuous probability density function from discrete samples.
 
-   The basic idea is to smooth the data using `a kernel function such as a
-   normal distribution, triangular distribution, or uniform distribution
-   <https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
+   The basic idea is to smooth the data using `a kernel function
+   <https://en.wikipedia.org/wiki/Kernel_(statistics)`_.
+   to help draw inferences about a population from a sample.
 
    The degree of smoothing is controlled by the scaling parameter *h*
    which is called the bandwidth.  Smaller values emphasize local

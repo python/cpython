@@ -814,6 +814,10 @@ def kde(data, h, kernel='normal'):
     which is called the bandwidth.  Smaller values emphasize local
     features while larger values give smoother results.
 
+    The kernel determines the relative weights of the sample data
+    points.  Generally, the choice of kernel shape does not matter
+    as much as the more influential bandwidth smoothing parameter.
+
     Kernels that give some weight to every sample point:
 
        normal or gauss
@@ -829,6 +833,8 @@ def kde(data, h, kernel='normal'):
        quartic or biweight
        triweight
        cosine
+
+    A StatisticsError will be raised if the data sequence is empty.
 
     Example
     -------
