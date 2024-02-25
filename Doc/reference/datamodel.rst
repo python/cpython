@@ -2073,6 +2073,9 @@ For a more fine grained customization of the module behavior, one can set the
    :pep:`562` - Module __getattr__ and __dir__
       Describes the ``__getattr__`` and ``__dir__`` functions on modules.
 
+   :pep:`726` - Module __setattr__ and __delattr__
+      Proposes the ``__setattr__`` and ``__delattr__`` functions on modules.
+
 
 .. _descriptors:
 
