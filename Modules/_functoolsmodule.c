@@ -411,7 +411,7 @@ partial_repr(partialobject *pto)
         Py_DECREF(mod);
         goto error;
     }
-    result = PyUnicode_FromFormat("%U.%S(%R%U)", mod, name, pto->fn, arglist);
+    result = PyUnicode_FromFormat("%S.%S(%R%U)", mod, name, pto->fn, arglist);
     Py_DECREF(mod);
     Py_DECREF(name);
     Py_DECREF(arglist);
