@@ -178,7 +178,7 @@ Python classes can now individually overload each of the ``<``, ``<=``, ``>``,
 +-----------+------------------------+
 | Operation | Method name            |
 +===========+========================+
-| ``<``     | :func:`~object.__lt__` |
+| ``<``     | :meth:`~object.__lt__` |
 +-----------+------------------------+
 | ``<=``    | :meth:`~object.__le__` |
 +-----------+------------------------+
@@ -585,7 +585,7 @@ New and Improved Modules
 ========================
 
 * Ka-Ping Yee contributed two new modules: :mod:`!inspect.py`, a module for
-  getting information about live Python code, and :mod:`!1pydoc.py`, a module for
+  getting information about live Python code, and :mod:`!pydoc.py`, a module for
   interactively converting docstrings to HTML or text.  As a bonus,
   :file:`Tools/scripts/pydoc`, which is now automatically installed, uses
   :mod:`!pydoc.py` to display documentation given a Python module, package, or
