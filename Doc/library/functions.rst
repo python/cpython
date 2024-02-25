@@ -1569,6 +1569,16 @@ are always available.  They are listed here in alphabetical order.
    If :func:`sys.displayhook` is not accessible, this function will raise
    :exc:`RuntimeError`.
 
+   This class has a custom representation that can be evaluated::
+
+      class Person:
+         def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+         def __repr__(self):
+            return f"Person('{self.name}', {self.age})"
+
 
 .. function:: reversed(seq)
 
