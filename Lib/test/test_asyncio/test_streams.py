@@ -10,7 +10,6 @@ import threading
 import unittest
 from unittest import mock
 import warnings
-from test.support import socket_helper
 try:
     import ssl
 except ImportError:
@@ -18,6 +17,7 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test.support import requires_subprocess, socket_helper
 
 
 def tearDownModule():
@@ -770,6 +770,7 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(msg2, b"hello world 2!\n")
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
+    @requires_subprocess()
     def test_read_all_from_pipe_reader(self):
         # See asyncio issue 168.  This test is derived from the example
         # subprocess_attach_read_pipe.py, but we configure the
@@ -1129,7 +1130,7 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
-    def test_unhandled_exceptions(self) -> None:
+    def _basetest_unhandled_exceptions(self, handle_echo):
         port = socket_helper.find_unused_port()
 
         messages = []
@@ -1143,9 +1144,6 @@ os.close(fd)
             await wr.wait_closed()
 
         async def main():
-            async def handle_echo(reader, writer):
-                raise Exception('test')
-
             server = await asyncio.start_server(
                 handle_echo, 'localhost', port)
             await server.start_serving()
@@ -1154,11 +1152,20 @@ os.close(fd)
             await server.wait_closed()
 
         self.loop.run_until_complete(main())
+        return messages
 
+    def test_unhandled_exception(self):
+        async def handle_echo(reader, writer):
+            raise Exception('test')
+        messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages[0]['message'],
-                         'Unhandled exception in client_connected_cb')
-        # Break explicitly reference cycle
-        messages = None
+                    'Unhandled exception in client_connected_cb')
+
+    def test_unhandled_cancel(self):
+        async def handle_echo(reader, writer):
+            asyncio.current_task().cancel()
+        messages = self._basetest_unhandled_exceptions(handle_echo)
+        self.assertEqual(messages, [])
 
 
 if __name__ == '__main__':

@@ -20,9 +20,12 @@ typedef enum {
 #include "pycore_pymem.h"
 
 #ifdef WITH_MIMALLOC
-#define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
-#define MI_DEBUG_FREED      PYMEM_DEADBYTE
-#define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
+#  ifdef Py_GIL_DISABLED
+#    define MI_PRIM_THREAD_ID   _Py_ThreadId
+#  endif
+#  define MI_DEBUG_UNINIT     PYMEM_CLEANBYTE
+#  define MI_DEBUG_FREED      PYMEM_DEADBYTE
+#  define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
 #ifdef Py_DEBUG
 #  define MI_DEBUG 1
 #else
@@ -35,6 +38,12 @@ typedef enum {
 #endif
 
 #ifdef Py_GIL_DISABLED
+struct _mimalloc_interp_state {
+    // When exiting, threads place any segments with live blocks in this
+    // shared pool for other threads to claim and reuse.
+    mi_abandoned_pool_t abandoned_pool;
+};
+
 struct _mimalloc_thread_state {
     mi_heap_t *current_object_heap;
     mi_heap_t heaps[_Py_MIMALLOC_HEAP_COUNT];

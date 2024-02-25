@@ -61,7 +61,7 @@ The module defines the following items:
 
 .. exception:: BadGzipFile
 
-   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
    :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
    files.
 
@@ -287,4 +287,3 @@ Command line options
 .. option:: -h, --help
 
    Show the help message.
-
