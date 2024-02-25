@@ -125,6 +125,12 @@ typedef struct _Py_DebugOffsets {
     } tuple_object;
 } _Py_DebugOffsets;
 
+/* Reference tracer state */
+struct _reftracer_runtime_state {
+    PyRefTracer tracer_func;
+    void* data;
+};
+
 /* Full Python runtime state */
 
 /* _PyRuntimeState holds the global state for the CPython runtime.
@@ -229,6 +235,7 @@ typedef struct pyruntimestate {
     struct _fileutils_state fileutils;
     struct _faulthandler_runtime_state faulthandler;
     struct _tracemalloc_runtime_state tracemalloc;
+    struct _reftracer_runtime_state reftracer;
 
     // The rwmutex is used to prevent overlapping global and per-interpreter
     // stop-the-world events. Global stop-the-world events lock the mutex

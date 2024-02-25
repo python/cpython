@@ -3284,6 +3284,80 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     _Py_COMP_DIAG_POP
 }
 
+struct simpletracer_data {
+    int create_count;
+    int destroy_count;
+    void* addresses[10];
+};
+
+static int _simpletracer(PyObject *obj, PyRefTracerEvent event, void* data) {
+    struct simpletracer_data* the_data = (struct simpletracer_data*)data;
+    assert(the_data->create_count + the_data->destroy_count < 10);
+    the_data->addresses[the_data->create_count + the_data->destroy_count] = obj;
+    if (event == PyRefTracer_CREATE) {
+        the_data->create_count++;
+    } else {
+        the_data->destroy_count++;
+    }
+    return 0;
+}
+
+static PyObject *
+test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
+{
+    struct simpletracer_data tracer_data = {0};
+    void* the_data = (void*)&tracer_data;
+    // Install a simple tracer function
+    PyRefTracer_SetTracer(_simpletracer, the_data);
+
+    // Check that the tracer was correctly installed
+    void* data;
+    if (PyRefTracer_GetTracer(&data) != _simpletracer || data != the_data) {
+        PyErr_SetString(PyExc_ValueError, "The reftracer not correctly installed");
+        PyRefTracer_SetTracer(NULL, NULL);
+        return NULL;
+    }
+
+    // Create a bunch of objects
+    PyObject* obj = PyList_New(0);
+    if (obj == NULL) {
+        return NULL;
+    }
+    PyObject* obj2 = PyDict_New();
+    if (obj2 == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    // Kill all objects
+    Py_DECREF(obj);
+    Py_DECREF(obj2);
+
+    // Remove the tracer
+    PyRefTracer_SetTracer(NULL, NULL);
+
+    // Check that the tracer was removed
+    if (PyRefTracer_GetTracer(&data) != NULL || data != NULL) {
+        PyErr_SetString(PyExc_ValueError, "The reftracer was not correctly removed");
+        return NULL;
+    }
+
+    if (tracer_data.create_count != 2 ||
+        tracer_data.addresses[0] != obj ||
+        tracer_data.addresses[1] != obj2) {
+        PyErr_SetString(PyExc_ValueError, "The object creation was not correctly traced");
+        return NULL;
+    }
+
+    if (tracer_data.destroy_count != 2 ||
+        tracer_data.addresses[2] != obj ||
+        tracer_data.addresses[3] != obj2) {
+        PyErr_SetString(PyExc_ValueError, "The object destruction was not correctly traced");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -3320,6 +3394,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
+    {"test_reftracer",          test_reftracer,                  METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
 #ifndef MS_WINDOWS
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},

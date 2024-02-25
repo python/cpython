@@ -2367,9 +2367,6 @@ _PyTypes_FiniTypes(PyInterpreterState *interp)
 static inline void
 new_reference(PyObject *op)
 {
-    if (_PyRuntime.tracemalloc.config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
     // Skip the immortal object check in Py_SET_REFCNT; always set refcnt to 1
 #if !defined(Py_GIL_DISABLED)
     op->ob_refcnt = 1;
@@ -2384,6 +2381,10 @@ new_reference(PyObject *op)
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
+    if (_PyRuntime.reftracer.tracer_func != NULL) {
+        void* data = _PyRuntime.reftracer.data;
+        _PyRuntime.reftracer.tracer_func(op, PyRefTracer_CREATE, data);
+    }
 }
 
 void
@@ -2404,12 +2405,13 @@ _Py_NewReferenceNoTotal(PyObject *op)
 void
 _Py_ResurrectReference(PyObject *op)
 {
-    if (_PyRuntime.tracemalloc.config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op);
 #endif
+    if (_PyRuntime.reftracer.tracer_func != NULL) {
+        void* data = _PyRuntime.reftracer.data;
+        _PyRuntime.reftracer.tracer_func(op, PyRefTracer_CREATE, data);
+    }
 }
 
 
@@ -2883,6 +2885,11 @@ _Py_Dealloc(PyObject *op)
     Py_INCREF(type);
 #endif
 
+    if (_PyRuntime.reftracer.tracer_func != NULL) {
+        void* data = _PyRuntime.reftracer.data;
+        _PyRuntime.reftracer.tracer_func(op, PyRefTracer_DESTROY, data);
+    }
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif
@@ -2970,3 +2977,19 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 {
     Py_SET_REFCNT(ob, refcnt);
 }
+
+int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
+    assert(PyGILState_Check());
+    _PyRuntime.reftracer.tracer_func = tracer;
+    _PyRuntime.reftracer.data = data;
+    return 0;
+}
+
+PyRefTracer PyRefTracer_GetTracer(void** data) {
+    assert(PyGILState_Check());
+    if (data != NULL) {
+        *data = _PyRuntime.reftracer.data;
+    }
+    return _PyRuntime.reftracer.tracer_func;
+}
+

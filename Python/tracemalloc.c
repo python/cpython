@@ -906,6 +906,8 @@ _PyTraceMalloc_Start(int max_nframe)
         return -1;
     }
 
+    _PyRuntime.reftracer.tracer_func = _PyTraceMalloc_NewReference;
+
     if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
         return 0;
@@ -1352,8 +1354,13 @@ _PyTraceMalloc_Fini(void)
    Do nothing if tracemalloc is not tracing memory allocations
    or if the object memory block is not already traced. */
 int
-_PyTraceMalloc_NewReference(PyObject *op)
+_PyTraceMalloc_NewReference(PyObject *op, PyRefTracerEvent event, void* Py_UNUSED(ignore))
+
 {
+    if (event != PyRefTracer_CREATE) {
+        return 0;
+    }
+
     assert(PyGILState_Check());
 
     if (!tracemalloc_config.tracing) {
