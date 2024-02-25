@@ -13,10 +13,10 @@
 
 ----------------
 
-This module performs file control and I/O control on file descriptors. It is an
-interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.  For a
-complete description of these calls, see :manpage:`fcntl(2)` and
-:manpage:`ioctl(2)` Unix manual pages.
+This module performs file and I/O control on file descriptors. It is an
+interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.
+See the :manpage:`fcntl(2)` and :manpage:`ioctl(2)` Unix manual pages
+for full details.
 
 .. availability:: Unix, not Emscripten, not WASI.
 
@@ -80,7 +80,7 @@ The module defines the following functions:
    most likely to result in a segmentation violation or a more subtle data
    corruption.
 
-   If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
+   If the :c:func:`fcntl` call fails, an :exc:`OSError` is raised.
 
    .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
@@ -118,7 +118,7 @@ The module defines the following functions:
    buffer 1024 bytes long which is then passed to :func:`ioctl` and copied back
    into the supplied buffer.
 
-   If the :c:func:`ioctl` fails, an :exc:`OSError` exception is raised.
+   If the :c:func:`ioctl` call fails, an :exc:`OSError` exception is raised.
 
    An example::
 
@@ -143,7 +143,7 @@ The module defines the following functions:
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
    using :c:func:`fcntl`.)
 
-   If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
+   If the :c:func:`flock` call fails, an :exc:`OSError` exception is raised.
 
    .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
@@ -155,17 +155,28 @@ The module defines the following functions:
    method are accepted as well) of the file to lock or unlock, and *cmd*
    is one of the following values:
 
-   * :const:`LOCK_UN` -- unlock
-   * :const:`LOCK_SH` -- acquire a shared lock
-   * :const:`LOCK_EX` -- acquire an exclusive lock
+   .. data:: LOCK_UN
 
-   When *cmd* is :const:`LOCK_SH` or :const:`LOCK_EX`, it can also be
-   bitwise ORed with :const:`LOCK_NB` to avoid blocking on lock acquisition.
-   If :const:`LOCK_NB` is used and the lock cannot be acquired, an
+      Release an existing lock.
+
+   .. data:: LOCK_SH
+
+      Acquire a shared lock.
+
+   .. data:: LOCK_EX
+
+      Acquire an exclusive lock.
+
+   .. data:: LOCK_NB
+
+      Bitwise OR with any of the other three ``LOCK_*`` constants to make
+      the request non-blocking.
+
+   If :const:`!LOCK_NB` is used and the lock cannot be acquired, an
    :exc:`OSError` will be raised and the exception will have an *errno*
-   attribute set to :const:`EACCES` or :const:`EAGAIN` (depending on the
+   attribute set to :const:`~errno.EACCES` or :const:`~errno.EAGAIN` (depending on the
    operating system; for portability, check for both values).  On at least some
-   systems, :const:`LOCK_EX` can only be used if the file descriptor refers to a
+   systems, :const:`!LOCK_EX` can only be used if the file descriptor refers to a
    file opened for writing.
 
    *len* is the number of bytes to lock, *start* is the byte offset at
