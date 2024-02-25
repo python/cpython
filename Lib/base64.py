@@ -499,7 +499,13 @@ def b85decode(b):
 
 _z85alphabet = (b'0123456789abcdefghijklmnopqrstuvwxyz'
                 b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
-_z85_decode_translation = bytes.maketrans(_z85alphabet, _b85alphabet)
+# Translating b85 valid but z85 invalid chars to b'\x00' is required
+# to prevent them from being decoded as b85 valid chars.
+_z85_b85_decode_diff = b';_`|~'
+_z85_decode_translation = bytes.maketrans(
+    _z85alphabet + _z85_b85_decode_diff,
+    _b85alphabet + b'\x00' * len(_z85_b85_decode_diff)
+)
 _z85_encode_translation = bytes.maketrans(_b85alphabet, _z85alphabet)
 
 def z85encode(s):
@@ -513,7 +519,10 @@ def z85decode(s):
     """
     s = _bytes_from_decode_data(s)
     s = s.translate(_z85_decode_translation)
-    return b85decode(s)
+    try:
+        return b85decode(s)
+    except ValueError as e:
+        raise ValueError(e.args[0].replace('base85', 'z85')) from None
 
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it

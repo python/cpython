@@ -776,6 +776,21 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(ValueError, base64.b85decode, b'|NsC')
         self.assertRaises(ValueError, base64.b85decode, b'|NsC1')
 
+    def test_z85decode_errors(self):
+        illegal = list(range(33)) + \
+                  list(b'"\',;_`|\\~') + \
+                  list(range(128, 256))
+        for c in illegal:
+            with self.assertRaises(ValueError, msg=bytes([c])):
+                base64.z85decode(b'0000' + bytes([c]))
+
+        # b'\xff\xff\xff\xff' encodes to b'%nSc0', the following will overflow:
+        self.assertRaises(ValueError, base64.z85decode, b'%')
+        self.assertRaises(ValueError, base64.z85decode, b'%n')
+        self.assertRaises(ValueError, base64.z85decode, b'%nS')
+        self.assertRaises(ValueError, base64.z85decode, b'%nSc')
+        self.assertRaises(ValueError, base64.z85decode, b'%nSc1')
+
     def test_decode_nonascii_str(self):
         decode_funcs = (base64.b64decode,
                         base64.standard_b64decode,
