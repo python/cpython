@@ -42,8 +42,13 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 {
     int fd;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    Py_ssize_t name_size;
+    const char *name = PyUnicode_AsUTF8AndSize(path, &name_size);
     if (name == NULL) {
+        return -1;
+    }
+    if (strlen(name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return -1;
     }
     do {
@@ -81,8 +86,13 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 {
     int rv;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    Py_ssize_t name_size;
+    const char *name = PyUnicode_AsUTF8AndSize(path, &name_size);
     if (name == NULL) {
+        return NULL;
+    }
+    if (strlen(name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
     do {
