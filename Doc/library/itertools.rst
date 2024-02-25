@@ -680,6 +680,14 @@ loops that truncate the stream.
               else:
                   break
 
+   Note, the element that first fails the predicate condition is
+   consumed from the input iterator and there is no way to access it.
+   This could be an issue if an application wants to further consume the
+   input iterator after takewhile has been run to exhaustion.  To work
+   around this problem, consider using `more-iterools before_and_after()
+   <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
+   instead.
+
 
 .. function:: tee(iterable, n=2)
 
@@ -996,32 +1004,6 @@ which incur interpreter overhead.
        except exception:
            pass
 
-   def before_and_after(predicate, it):
-       """ Variant of takewhile() that allows complete
-           access to the remainder of the iterator.
-
-           >>> it = iter('ABCdEfGhI')
-           >>> all_upper, remainder = before_and_after(str.isupper, it)
-           >>> ''.join(all_upper)
-           'ABC'
-           >>> ''.join(remainder)     # takewhile() would lose the 'd'
-           'dEfGhI'
-
-           Note that the true iterator must be fully consumed
-           before the remainder iterator can generate valid results.
-       """
-       it = iter(it)
-       transition = []
-
-       def true_iterator():
-           for elem in it:
-               if predicate(elem):
-                   yield elem
-               else:
-                   transition.append(elem)
-                   return
-
-       return true_iterator(), chain(transition, it)
 
 
 The following recipes have a more mathematical flavor:
@@ -1531,13 +1513,6 @@ The following recipes have a more mathematical flavor:
     >>> list(odds)
     [1, 3, 5, 7, 9]
 
-    >>> it = iter('ABCdEfGhI')
-    >>> all_upper, remainder = before_and_after(str.isupper, it)
-    >>> ''.join(all_upper)
-    'ABC'
-    >>> ''.join(remainder)
-    'dEfGhI'
-
     >>> list(subslices('ABCD'))
     ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
 
@@ -1628,6 +1603,32 @@ The following recipes have a more mathematical flavor:
             result.append(pool[-1-n])
         return tuple(result)
 
+    def before_and_after(predicate, it):
+       """ Variant of takewhile() that allows complete
+           access to the remainder of the iterator.
+
+           >>> it = iter('ABCdEfGhI')
+           >>> all_upper, remainder = before_and_after(str.isupper, it)
+           >>> ''.join(all_upper)
+           'ABC'
+           >>> ''.join(remainder)     # takewhile() would lose the 'd'
+           'dEfGhI'
+
+           Note that the true iterator must be fully consumed
+           before the remainder iterator can generate valid results.
+       """
+       it = iter(it)
+       transition = []
+
+       def true_iterator():
+           for elem in it:
+               if predicate(elem):
+                   yield elem
+               else:
+                   transition.append(elem)
+                   return
+
+       return true_iterator(), chain(transition, it)
 
 .. doctest::
     :hide:
@@ -1657,3 +1658,10 @@ The following recipes have a more mathematical flavor:
     >>> combos = list(combinations(iterable, r))
     >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
     True
+
+    >>> it = iter('ABCdEfGhI')
+    >>> all_upper, remainder = before_and_after(str.isupper, it)
+    >>> ''.join(all_upper)
+    'ABC'
+    >>> ''.join(remainder)
+    'dEfGhI'
