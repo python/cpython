@@ -1,1 +1,0 @@
-``ensurepip`` now uses ``importlib.resources.files()`` traversable APIs

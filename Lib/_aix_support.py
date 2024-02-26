@@ -3,12 +3,24 @@
 import sys
 import sysconfig
 
-try:
-    import subprocess
-except ImportError:  # pragma: no cover
-    # _aix_support is used in distutils by setup.py to build C extensions,
-    # before subprocess dependencies like _posixsubprocess are available.
-    import _bootsubprocess as subprocess
+
+# Taken from _osx_support _read_output function
+def _read_cmd_output(commandstring, capture_stderr=False):
+    """Output from successful command execution or None"""
+    # Similar to os.popen(commandstring, "r").read(),
+    # but without actually using os.popen because that
+    # function is not usable during python bootstrap.
+    import os
+    import contextlib
+    fp = open("/tmp/_aix_support.%s"%(
+        os.getpid(),), "w+b")
+
+    with contextlib.closing(fp) as fp:
+        if capture_stderr:
+            cmd = "%s >'%s' 2>&1" % (commandstring, fp.name)
+        else:
+            cmd = "%s 2>/dev/null >'%s'" % (commandstring, fp.name)
+        return fp.read() if not os.system(cmd) else None
 
 
 def _aix_tag(vrtl, bd):
@@ -36,7 +48,12 @@ def _aix_bos_rte():
     If no builddate is found give a value that will satisfy pep425 related queries
     """
     # All AIX systems to have lslpp installed in this location
-    out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.rte"])
+    # subprocess may not be available during python bootstrap
+    try:
+        import subprocess
+        out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.rte"])
+    except ImportError:
+        out = _read_cmd_output("/usr/bin/lslpp -Lqc bos.rte")
     out = out.decode("utf-8")
     out = out.strip().split(":")  # type: ignore
     _bd = int(out[-1]) if out[-1] != '' else 9988

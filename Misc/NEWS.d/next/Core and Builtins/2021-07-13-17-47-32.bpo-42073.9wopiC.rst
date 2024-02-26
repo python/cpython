@@ -1,2 +1,0 @@
-The ``@classmethod`` decorator can now wrap other classmethod-like
-descriptors.

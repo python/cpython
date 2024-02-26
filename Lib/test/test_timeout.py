@@ -5,9 +5,6 @@ import unittest
 from test import support
 from test.support import socket_helper
 
-# This requires the 'network' resource as given on the regrtest command line.
-skip_expected = not support.is_resource_enabled('network')
-
 import time
 import errno
 import socket
@@ -53,10 +50,10 @@ class CreationTestCase(unittest.TestCase):
     def testReturnType(self):
         # Test return type of gettimeout()
         self.sock.settimeout(1)
-        self.assertEqual(type(self.sock.gettimeout()), type(1.0))
+        self.assertIs(type(self.sock.gettimeout()), float)
 
         self.sock.settimeout(3.9)
-        self.assertEqual(type(self.sock.gettimeout()), type(1.0))
+        self.assertIs(type(self.sock.gettimeout()), float)
 
     def testTypeCheck(self):
         # Test type checking by settimeout()
@@ -151,13 +148,12 @@ class TCPTimeoutTestCase(TimeoutTestCase):
     def tearDown(self):
         self.sock.close()
 
-    @unittest.skipIf(True, 'need to replace these hosts; see bpo-35518')
     def testConnectTimeout(self):
         # Testing connect timeout is tricky: we need to have IP connectivity
         # to a host that silently drops our packets.  We can't simulate this
         # from Python because it's a function of the underlying TCP/IP stack.
-        # So, the following Snakebite host has been defined:
-        blackhole = resolve_address('blackhole.snakebite.net', 56666)
+        # So, the following port on the pythontest.net host has been defined:
+        blackhole = resolve_address('pythontest.net', 56666)
 
         # Blackhole has been configured to silently drop any incoming packets.
         # No RSTs (for TCP) or ICMP UNREACH (for UDP/ICMP) will be sent back
@@ -169,7 +165,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # to firewalling or general network configuration.  In order to improve
         # our confidence in testing the blackhole, a corresponding 'whitehole'
         # has also been set up using one port higher:
-        whitehole = resolve_address('whitehole.snakebite.net', 56667)
+        whitehole = resolve_address('pythontest.net', 56667)
 
         # This address has been configured to immediately drop any incoming
         # packets as well, but it does it respectfully with regards to the
@@ -183,20 +179,15 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # timeframe).
 
         # For the records, the whitehole/blackhole configuration has been set
-        # up using the 'pf' firewall (available on BSDs), using the following:
+        # up using the 'iptables' firewall, using the following rules:
         #
-        #   ext_if="bge0"
+        # -A INPUT -p tcp --destination-port 56666 -j DROP
+        # -A INPUT -p udp --destination-port 56666 -j DROP
+        # -A INPUT -p tcp --destination-port 56667 -j REJECT
+        # -A INPUT -p udp --destination-port 56667 -j REJECT
         #
-        #   blackhole_ip="35.8.247.6"
-        #   whitehole_ip="35.8.247.6"
-        #   blackhole_port="56666"
-        #   whitehole_port="56667"
-        #
-        #   block return in log quick on $ext_if proto { tcp udp } \
-        #       from any to $whitehole_ip port $whitehole_port
-        #   block drop in log quick on $ext_if proto { tcp udp } \
-        #       from any to $blackhole_ip port $blackhole_port
-        #
+        # See https://github.com/python/psf-salt/blob/main/pillar/base/firewall/snakebite.sls
+        # for the current configuration.
 
         skip = True
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -290,13 +281,10 @@ class UDPTimeoutTestCase(TimeoutTestCase):
         self._sock_operation(1, 1.5, 'recvfrom', 1024)
 
 
-def test_main():
+def setUpModule():
     support.requires('network')
-    support.run_unittest(
-        CreationTestCase,
-        TCPTimeoutTestCase,
-        UDPTimeoutTestCase,
-    )
+    support.requires_working_socket(module=True)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
