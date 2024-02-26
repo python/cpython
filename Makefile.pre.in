@@ -2661,7 +2661,7 @@ frameworkinstallunversionedstructure:	$(LDLIBRARY)
 		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; \
 	fi
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)
-	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(srcdir)/$(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
+	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(BINDIR)
 	for file in $(srcdir)/$(RESSRCDIR)/bin/* ; do \
