@@ -1,0 +1,2 @@
+:mod:`pydoc` no longer skips global functions implemented as builtin methods,
+such as :class:`~type.MethodDescriptorType` and :class:`~type.WrapperDescriptorType`.
