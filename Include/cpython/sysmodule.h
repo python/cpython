@@ -4,10 +4,6 @@
 
 typedef int(*Py_AuditHookFunction)(const char *, PyObject *, void *);
 
-PyAPI_FUNC(int) PySys_Audit(
-    const char *event,
-    const char *format,
-    ...);
 PyAPI_FUNC(int) PySys_AddAuditHook(Py_AuditHookFunction, void*);
 
 typedef struct {
@@ -21,3 +17,6 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
     unsigned int code_size,
     const char *entry_name);
 PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void);
+PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename);
+PyAPI_FUNC(int) PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *);
+PyAPI_FUNC(int) PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable);

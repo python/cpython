@@ -622,7 +622,11 @@ Functions
    *parser* is an optional parser instance.  If not given, the standard
    :class:`XMLParser` parser is used.  *parser* must be a subclass of
    :class:`XMLParser` and can only use the default :class:`TreeBuilder` as a
-   target.  Returns an :term:`iterator` providing ``(event, elem)`` pairs.
+   target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
+   it has a ``root`` attribute that references the root element of the
+   resulting XML tree once *source* is fully read.
+   The iterator has the :meth:`!close` method that closes the internal
+   file object if *source* is a filename.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
@@ -645,6 +649,9 @@ Functions
    .. versionchanged:: 3.8
       The ``comment`` and ``pi`` events were added.
 
+   .. versionchanged:: 3.13
+      Added the :meth:`!close` method.
+
 
 .. function:: parse(source, parser=None)
 
@@ -662,7 +669,7 @@ Functions
    given.  Returns an element instance, representing a processing instruction.
 
    Note that :class:`XMLParser` skips over processing instructions
-   in the input instead of creating comment objects for them. An
+   in the input instead of creating PI objects for them. An
    :class:`ElementTree` will only contain processing instruction nodes if
    they have been inserted into to the tree using one of the
    :class:`Element` methods.
@@ -703,11 +710,11 @@ Functions
    meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
    containing the XML data.
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
 
    .. versionchanged:: 3.8
       The :func:`tostring` function now preserves the attribute order
@@ -730,11 +737,11 @@ Functions
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
 
    .. versionchanged:: 3.8
       The :func:`tostringlist` function now preserves the attribute order
@@ -856,8 +863,8 @@ Functions
    this is a Unicode string.  If the loader fails, it can return None or
    raise an exception.
 
-   .. versionadded:: 3.9
-      The *base_url* and *max_depth* parameters.
+   .. versionchanged:: 3.9
+      Added the *base_url* and *max_depth* parameters.
 
 
 .. _elementtree-element-objects:
@@ -1187,8 +1194,8 @@ ElementTree Objects
       :term:`file object`; make sure you do not try to write a string to a
       binary stream and vice versa.
 
-      .. versionadded:: 3.4
-         The *short_empty_elements* parameter.
+      .. versionchanged:: 3.4
+         Added the *short_empty_elements* parameter.
 
       .. versionchanged:: 3.8
          The :meth:`write` method now preserves the attribute order specified
@@ -1300,8 +1307,8 @@ TreeBuilder Objects
 
    .. method:: pi(target, text)
 
-      Creates a comment with the given *target* name and *text*.  If
-      ``insert_pis`` is true, this will also add it to the tree.
+      Creates a process instruction with the given *target* name and *text*.
+      If ``insert_pis`` is true, this will also add it to the tree.
 
       .. versionadded:: 3.8
 

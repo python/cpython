@@ -1,2 +1,0 @@
-Correctly display the traceback for :exc:`MemoryError` exceptions using the
-:mod:`traceback` module. Patch by Pablo Galindo

@@ -77,8 +77,8 @@ and work with streams:
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
-   .. versionadded:: 3.8
-      Added *happy_eyeballs_delay* and *interleave* parameters.
+   .. versionchanged:: 3.8
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -203,6 +203,10 @@ StreamReader
    It is not recommended to instantiate *StreamReader* objects
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
+
+   .. method:: feed_eof()
+
+      Acknowledge the EOF.
 
    .. coroutinemethod:: read(n=-1)
 

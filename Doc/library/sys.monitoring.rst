@@ -44,21 +44,28 @@ Identifiers are integers in the range 0 to 5 inclusive.
 Registering and using tools
 '''''''''''''''''''''''''''
 
-.. function:: use_tool_id(id: int, name: str) -> None
+.. function:: use_tool_id(tool_id: int, name: str, /) -> None
 
-   Must be called before *id* can be used.
-   *id* must be in the range 0 to 5 inclusive.
-   Raises a :exc:`ValueError` if *id* is in use.
+   Must be called before *tool_id* can be used.
+   *tool_id* must be in the range 0 to 5 inclusive.
+   Raises a :exc:`ValueError` if *tool_id* is in use.
 
-.. function:: free_tool_id(id: int) -> None
+.. function:: free_tool_id(tool_id: int, /) -> None
 
-   Should be called once a tool no longer requires *id*.
+   Should be called once a tool no longer requires *tool_id*.
 
-.. function:: get_tool(id: int) -> str | None
+.. note::
 
-   Returns the name of the tool if *id* is in use,
+   :func:`free_tool_id` will not disable global or local events associated
+   with *tool_id*, nor will it unregister any callback functions. This
+   function is only intended to be used to notify the VM that the
+   particular *tool_id* is no longer in use.
+
+.. function:: get_tool(tool_id: int, /) -> str | None
+
+   Returns the name of the tool if *tool_id* is in use,
    otherwise it returns ``None``.
-   *id* must be in the range 0 to 5 inclusive.
+   *tool_id* must be in the range 0 to 5 inclusive.
 
 All IDs are treated the same by the VM with regard to events, but the
 following IDs are pre-defined to make co-operation of tools easier::
@@ -68,9 +75,6 @@ following IDs are pre-defined to make co-operation of tools easier::
   sys.monitoring.PROFILER_ID = 2
   sys.monitoring.OPTIMIZER_ID = 5
 
-There is no obligation to set an ID, nor is there anything preventing a tool
-from using an ID even it is already in use.
-However, tools are encouraged to use a unique ID and respect other tools.
 
 Events
 ------
@@ -237,11 +241,11 @@ Setting events globally
 
 Events can be controlled globally by modifying the set of events being monitored.
 
-.. function:: get_events(tool_id: int) -> int
+.. function:: get_events(tool_id: int, /) -> int
 
    Returns the ``int`` representing all the active events.
 
-.. function:: set_events(tool_id: int, event_set: int)
+.. function:: set_events(tool_id: int, event_set: int, /) -> None
 
    Activates all events which are set in *event_set*.
    Raises a :exc:`ValueError` if *tool_id* is not in use.
@@ -253,11 +257,11 @@ Per code object events
 
 Events can also be controlled on a per code object basis.
 
-.. function:: get_local_events(tool_id: int, code: CodeType) -> int
+.. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 
    Returns all the local events for *code*
 
-.. function:: set_local_events(tool_id: int, code: CodeType, event_set: int)
+.. function:: set_local_events(tool_id: int, code: CodeType, event_set: int, /) -> None
 
    Activates all the local events for *code* which are set in *event_set*.
    Raises a :exc:`ValueError` if *tool_id* is not in use.
@@ -284,6 +288,11 @@ performance monitoring. For example, a program can be run under a
 debugger with no overhead if the debugger disables all monitoring
 except for a few breakpoints.
 
+.. function:: restart_events() -> None
+
+   Enable all the events that were disabled by :data:`sys.monitoring.DISABLE`
+   for all tools.
+
 
 .. _callbacks:
 
@@ -292,7 +301,7 @@ Registering callback functions
 
 To register a callable for events call
 
-.. function:: register_callback(tool_id: int, event: int, func: Callable | None) -> Callable | None
+.. function:: register_callback(tool_id: int, event: int, func: Callable | None, /) -> Callable | None
 
    Registers the callable *func* for the *event* with the given *tool_id*
 

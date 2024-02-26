@@ -369,7 +369,9 @@ class CompileallTestsBase:
         script = script_helper.make_script(path, "test", "1 / 0")
         bc = importlib.util.cache_from_source(script)
         stripdir = os.path.join(self.directory, *(fullpath[:2] + ['fake']))
-        compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        with support.captured_stdout() as out:
+            compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        self.assertIn("not a valid prefix", out.getvalue())
         rc, out, err = script_helper.assert_python_failure(bc)
         expected_not_in = os.path.join(self.directory, *fullpath[2:])
         self.assertIn(

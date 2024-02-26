@@ -79,6 +79,11 @@ The module defines the following items:
    of the last modification to the file; the fields are described in section
    :ref:`zipinfo-objects`.
 
+   .. versionchanged:: 3.13
+      A public :attr:`!compress_level` attribute has been added to expose the
+      formerly protected :attr:`!_compresslevel`.  The older protected name
+      continues to work as a property for backwards compatibility.
+
 .. function:: is_zipfile(filename)
 
    Returns ``True`` if *filename* is a valid ZIP file based on its magic number,
@@ -213,7 +218,7 @@ ZipFile Objects
       That flag takes precedence over *metadata_encoding*, which is
       a Python-specific extension.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       Added the ability to use :class:`ZipFile` as a context manager.
 
    .. versionchanged:: 3.3
@@ -236,8 +241,8 @@ ZipFile Objects
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      The *strict_timestamps* keyword-only parameter.
 
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
@@ -643,8 +648,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 .. class:: PyZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                      optimize=-1)
 
-   .. versionadded:: 3.2
-      The *optimize* parameter.
+   .. versionchanged:: 3.2
+      Added the *optimize* parameter.
 
    .. versionchanged:: 3.4
       ZIP64 extensions are enabled by default.
@@ -699,8 +704,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
          test/bogus/__init__.pyc      # Subpackage directory
          test/bogus/myfile.pyc        # Submodule test.bogus.myfile
 
-      .. versionadded:: 3.4
-         The *filterfunc* parameter.
+      .. versionchanged:: 3.4
+         Added the *filterfunc* parameter.
 
       .. versionchanged:: 3.6.2
          The *pathname* parameter accepts a :term:`path-like object`.
@@ -744,8 +749,8 @@ file:
    .. versionchanged:: 3.6.2
       The *filename* parameter accepts a :term:`path-like object`.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      Added the *strict_timestamps* keyword-only parameter.
 
 
 Instances have the following methods and attributes:
