@@ -68,7 +68,7 @@ typedef long stwodigits; /* signed variant of twodigits */
    the lv_tag field (lvtag >> _PyLong_NON_SIZE_BITS).
 
    The absolute value of a number is equal to
-        SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(SHIFT*i)
+        SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(PyLong_SHIFT*i)
 
    The sign of the value is stored in the lower 2 bits of lv_tag.
 
