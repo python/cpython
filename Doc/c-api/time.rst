@@ -63,8 +63,8 @@ with the :term:`GIL` held.
 
 .. c:function:: PyTime_t PyTime_MonotonicUnchecked()
 
-   Similar to :func:`PyTime_Monotonic()`, but return ``0`` and silently ignore
-   the error if reading the clock fails.
+   Similar to :c:func:`PyTime_Monotonic()`, but return ``0`` and silently
+   ignore the error if reading the clock fails.
 
    The caller doesn't have to hold the GIL; the function does not raise an
    exception on error.
@@ -76,7 +76,7 @@ with the :term:`GIL` held.
 
 .. c:function:: PyTime_t PyTime_PerfCounterUnchecked()
 
-   Similar to :func:`PyTime_PerfCounter()`, but return ``0`` and silently
+   Similar to :c:func:`PyTime_PerfCounter()`, but return ``0`` and silently
    ignore the error if reading the clock fails.
 
    The caller doesn't have to hold the GIL; the function does not raise an
@@ -89,7 +89,7 @@ with the :term:`GIL` held.
 
 .. c:function:: PyTime_t PyTime_TimeUnchecked()
 
-   Similar to :func:`PyTime_Time()`, but return ``0`` and silently ignore the
+   Similar to :c:func:`PyTime_Time()`, but return ``0`` and silently ignore the
    error if reading the clock fails.
 
    The caller doesn't have to hold the GIL; the function does not raise an
