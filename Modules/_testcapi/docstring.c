@@ -169,6 +169,13 @@ static PyMethodDef DocStringUnrepresentableSignatureTest_methods[] = {
             "--\n\n"
             "This docstring has a signature with unrepresentable default."
         )},
+    {"with_default",
+        (PyCFunction)test_with_docstring, METH_VARARGS,
+        PyDoc_STR(
+            "with_default($self, /, x=ONE)\n"
+            "--\n\n"
+            "This instance method has a default parameter value from the module scope."
+        )},
     {NULL},
 };
 
@@ -191,6 +198,9 @@ _PyTestCapi_Init_Docstring(PyObject *mod)
         return -1;
     }
     if (PyModule_AddType(mod, &DocStringUnrepresentableSignatureTest) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObject(mod, "ONE", PyLong_FromLong(1)) < 0) {
         return -1;
     }
     return 0;

@@ -6,6 +6,7 @@ from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
+import inspect
 import json
 import os
 import pickle
@@ -179,6 +180,12 @@ class CAPITest(unittest.TestCase):
             "\nThis docstring has a valid signature and some extra newlines.")
         self.assertEqual(_testcapi.docstring_with_signature_and_extra_newlines.__text_signature__,
             "($module, /, parameter)")
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_parsing_with_defaults(self):
+        meth = _testcapi.DocStringUnrepresentableSignatureTest.with_default
+        self.assertEqual(str(inspect.signature(meth)), '(self, /, x=1)')
 
     def test_c_type_with_matrix_multiplication(self):
         M = _testcapi.matmulType
