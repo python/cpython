@@ -1599,7 +1599,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     if (code->co_executors != NULL) {
         _PyCode_Clear_Executors(code);
     }
-    _Py_Executors_InvalidateDependency(interp, code);
+    _Py_Executors_InvalidateDependency(interp, code, 1);
     int code_len = (int)Py_SIZE(code);
     /* Exit early to avoid creating instrumentation
      * data for potential statically allocated code
@@ -1820,7 +1820,7 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
         return -1;
     }
     set_global_version(tstate, new_version);
-    _Py_Executors_InvalidateAll(interp);
+    _Py_Executors_InvalidateAll(interp, 1);
     return instrument_all_executing_code_objects(interp);
 }
 
@@ -1850,7 +1850,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         /* Force instrumentation update */
         code->_co_instrumentation_version -= MONITORING_VERSION_INCREMENT;
     }
-    _Py_Executors_InvalidateDependency(interp, code);
+    _Py_Executors_InvalidateDependency(interp, code, 1);
     if (_Py_Instrument(code, interp)) {
         return -1;
     }
