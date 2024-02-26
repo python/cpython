@@ -931,7 +931,6 @@ class Thread:
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
         self._tstate_lock = None
-        self._join_lock = None
         self._handle = None
         self._started = Event()
         self._is_stopped = False
