@@ -9,6 +9,59 @@ extern "C" {
 #endif
 
 
+/* Error handling definitions */
+
+extern _PyErr_StackItem* _PyErr_GetTopmostException(PyThreadState *tstate);
+extern PyObject* _PyErr_GetHandledException(PyThreadState *);
+extern void _PyErr_SetHandledException(PyThreadState *, PyObject *);
+extern void _PyErr_GetExcInfo(PyThreadState *, PyObject **, PyObject **, PyObject **);
+
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
+
+
+// Like PyErr_Format(), but saves current exception as __context__ and
+// __cause__.
+// Export for '_sqlite3' shared extension.
+PyAPI_FUNC(PyObject*) _PyErr_FormatFromCause(
+    PyObject *exception,
+    const char *format,   /* ASCII-encoded string  */
+    ...
+    );
+
+extern int _PyException_AddNote(
+     PyObject *exc,
+     PyObject *note);
+
+extern int _PyErr_CheckSignals(void);
+
+/* Support for adding program text to SyntaxErrors */
+
+// Export for test_peg_generator
+PyAPI_FUNC(PyObject*) _PyErr_ProgramDecodedTextObject(
+    PyObject *filename,
+    int lineno,
+    const char* encoding);
+
+extern PyObject* _PyUnicodeTranslateError_Create(
+    PyObject *object,
+    Py_ssize_t start,
+    Py_ssize_t end,
+    const char *reason          /* UTF-8 encoded string */
+    );
+
+extern void _Py_NO_RETURN _Py_FatalErrorFormat(
+    const char *func,
+    const char *format,
+    ...);
+
+extern PyObject* _PyErr_SetImportErrorWithNameFrom(
+        PyObject *,
+        PyObject *,
+        PyObject *,
+        PyObject *);
+
+
 /* runtime lifecycle */
 
 extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
@@ -31,85 +84,91 @@ static inline void _PyErr_ClearExcState(_PyErr_StackItem *exc_state)
     Py_CLEAR(exc_state->exc_value);
 }
 
-PyAPI_FUNC(PyObject*) _PyErr_StackItemToExcInfoTuple(
+extern PyObject* _PyErr_StackItemToExcInfoTuple(
     _PyErr_StackItem *err_info);
 
-PyAPI_FUNC(void) _PyErr_Fetch(
+extern void _PyErr_Fetch(
     PyThreadState *tstate,
     PyObject **type,
     PyObject **value,
     PyObject **traceback);
 
-extern PyObject *
-_PyErr_GetRaisedException(PyThreadState *tstate);
+extern PyObject* _PyErr_GetRaisedException(PyThreadState *tstate);
 
-PyAPI_FUNC(int) _PyErr_ExceptionMatches(
+extern int _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
-void
-_PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
+extern void _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc);
 
-PyAPI_FUNC(void) _PyErr_Restore(
+extern void _PyErr_Restore(
     PyThreadState *tstate,
     PyObject *type,
     PyObject *value,
     PyObject *traceback);
 
-PyAPI_FUNC(void) _PyErr_SetObject(
+extern void _PyErr_SetObject(
     PyThreadState *tstate,
     PyObject *type,
     PyObject *value);
 
-PyAPI_FUNC(void) _PyErr_ChainStackItem(
-    _PyErr_StackItem *exc_info);
+extern void _PyErr_ChainStackItem(void);
 
-PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
+extern void _PyErr_Clear(PyThreadState *tstate);
 
-PyAPI_FUNC(void) _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
+extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
-PyAPI_FUNC(PyObject *) _PyErr_NoMemory(PyThreadState *tstate);
+extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
-PyAPI_FUNC(void) _PyErr_SetString(
+extern void _PyErr_SetString(
     PyThreadState *tstate,
     PyObject *exception,
     const char *string);
 
-PyAPI_FUNC(PyObject *) _PyErr_Format(
+extern PyObject* _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,
     ...);
 
-PyAPI_FUNC(void) _PyErr_NormalizeException(
+extern void _PyErr_NormalizeException(
     PyThreadState *tstate,
     PyObject **exc,
     PyObject **val,
     PyObject **tb);
 
-PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
+extern PyObject* _PyErr_FormatFromCauseTstate(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,
     ...);
 
-PyAPI_FUNC(PyObject *) _PyExc_CreateExceptionGroup(
+extern PyObject* _PyExc_CreateExceptionGroup(
     const char *msg,
     PyObject *excs);
 
-PyAPI_FUNC(PyObject *) _PyExc_PrepReraiseStar(
+extern PyObject* _PyExc_PrepReraiseStar(
     PyObject *orig,
     PyObject *excs);
 
-PyAPI_FUNC(int) _PyErr_CheckSignalsTstate(PyThreadState *tstate);
+extern int _PyErr_CheckSignalsTstate(PyThreadState *tstate);
 
-PyAPI_FUNC(void) _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
-
+extern void _Py_DumpExtensionModules(int fd, PyInterpreterState *interp);
+extern PyObject* _Py_CalculateSuggestions(PyObject *dir, PyObject *name);
 extern PyObject* _Py_Offer_Suggestions(PyObject* exception);
+
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
                                           Py_ssize_t max_cost);
 
 void _PyErr_FormatNote(const char *format, ...);
+
+/* Context manipulation (PEP 3134) */
+
+Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+
+// Export for '_zoneinfo' shared extension
+PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 #ifdef __cplusplus
 }

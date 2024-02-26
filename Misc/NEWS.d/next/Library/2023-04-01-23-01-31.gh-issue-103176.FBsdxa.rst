@@ -1,2 +1,0 @@
-:func:`sys._current_exceptions` now returns a mapping from thread-id to an
-exception instance, rather than to a ``(typ, exc, tb)`` tuple.

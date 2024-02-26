@@ -33,7 +33,7 @@ can be set to handler functions.  When an XML document is then fed to the
 parser, the handler functions are called for the character data and markup in
 the XML document.
 
-.. index:: module: pyexpat
+.. index:: pair: module; pyexpat
 
 This module uses the :mod:`pyexpat` module to provide access to the Expat
 parser.  Direct use of the :mod:`pyexpat` module is deprecated.
@@ -214,7 +214,8 @@ XMLParser Objects
    :meth:`CharacterDataHandler` callback whenever possible.  This can improve
    performance substantially since Expat normally breaks character data into chunks
    at every line ending.  This attribute is false by default, and may be changed at
-   any time.
+   any time. Note that when it is false, data that does not contain newlines
+   may be chunked too.
 
 
 .. attribute:: xmlparser.buffer_used
@@ -372,7 +373,10 @@ otherwise stated.
    marked content, and ignorable whitespace.  Applications which must distinguish
    these cases can use the :attr:`StartCdataSectionHandler`,
    :attr:`EndCdataSectionHandler`, and :attr:`ElementDeclHandler` callbacks to
-   collect the required information.
+   collect the required information. Note that the character data may be
+   chunked even if it is short and so you may receive more than one call to
+   :meth:`CharacterDataHandler`. Set the :attr:`buffer_text` instance attribute
+   to ``True`` to avoid that.
 
 
 .. method:: xmlparser.UnparsedEntityDeclHandler(entityName, base, systemId, publicId, notationName)

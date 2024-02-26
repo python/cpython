@@ -7,7 +7,7 @@
  */
 
 #include "Python.h"
-#include "pycore_atexit.h"
+#include "pycore_atexit.h"        // export _Py_AtExit()
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY
 #include "pycore_interp.h"        // PyInterpreterState.atexit
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
@@ -24,8 +24,8 @@ get_atexit_state(void)
 
 
 int
-_Py_AtExit(PyInterpreterState *interp,
-           atexit_datacallbackfunc func, void *data)
+PyUnstable_AtExit(PyInterpreterState *interp,
+                  atexit_datacallbackfunc func, void *data)
 {
     assert(interp == _PyInterpreterState_GET());
     atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));
@@ -136,7 +136,8 @@ atexit_callfuncs(struct atexit_state *state)
         PyObject* the_func = Py_NewRef(cb->func);
         PyObject *res = PyObject_Call(cb->func, cb->args, cb->kwargs);
         if (res == NULL) {
-            _PyErr_WriteUnraisableMsg("in atexit callback", the_func);
+            PyErr_FormatUnraisable(
+                "Exception ignored in atexit callback %R", the_func);
         }
         else {
             Py_DECREF(res);
@@ -314,12 +315,18 @@ upon normal program termination.\n\
 Two public functions, register and unregister, are defined.\n\
 ");
 
+static PyModuleDef_Slot atexitmodule_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL}
+};
+
 static struct PyModuleDef atexitmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "atexit",
     .m_doc = atexit__doc__,
     .m_size = 0,
     .m_methods = atexit_methods,
+    .m_slots = atexitmodule_slots,
 };
 
 PyMODINIT_FUNC

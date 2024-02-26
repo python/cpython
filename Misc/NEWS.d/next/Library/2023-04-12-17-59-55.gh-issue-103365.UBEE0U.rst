@@ -1,1 +1,0 @@
-Set default Flag boundary to ``STRICT`` and fix bitwise operations.

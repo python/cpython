@@ -39,7 +39,8 @@ class Test_iskeyword(unittest.TestCase):
         self.assertIn("async", keyword.kwlist)
         self.assertIn("await", keyword.kwlist)
 
-    def test_match_and_case_are_soft_keywords(self):
+    def test_soft_keywords(self):
+        self.assertIn("type", keyword.softkwlist)
         self.assertIn("match", keyword.softkwlist)
         self.assertIn("case", keyword.softkwlist)
         self.assertIn("_", keyword.softkwlist)
