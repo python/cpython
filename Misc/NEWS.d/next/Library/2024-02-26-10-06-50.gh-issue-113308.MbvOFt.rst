@@ -1,0 +1,4 @@
+:mod:`uuid`: Deprecate some internal protected parts:
+``_has_uuid_generate_time_safe``, ``_netbios_getnode``,
+``_ipconfig_getnode``, and ``_load_system_functions``. They will be removed
+in Python 3.15.

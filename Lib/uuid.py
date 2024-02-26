@@ -46,6 +46,7 @@ Typical usage:
 
 import os
 import sys
+import warnings
 
 from enum import Enum, _simple_enum
 
@@ -566,11 +567,13 @@ def _netstat_getnode():
 
 def _ipconfig_getnode():
     """[DEPRECATED] Get the hardware address on Windows."""
+    warnings._deprecated("_ipconfig_getnode", remove=(3, 15))
     # bpo-40501: UuidCreateSequential() is now the only supported approach
     return _windll_getnode()
 
 def _netbios_getnode():
     """[DEPRECATED] Get the hardware address on Windows."""
+    warnings._deprecated("_netbios_getnode", remove=(3, 15))
     # bpo-40501: UuidCreateSequential() is now the only supported approach
     return _windll_getnode()
 
@@ -580,16 +583,28 @@ try:
     import _uuid
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
-    _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
 except ImportError:
     _uuid = None
     _generate_time_safe = None
     _UuidCreate = None
-    _has_uuid_generate_time_safe = None
+
+
+def __getattr__(attr):
+    if attr == "_has_uuid_generate_time_safe":
+        try:
+            import _uuid
+        except ImportError:
+            _has_uuid_generate_time_safe = None
+        else:
+            _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+        warnings._deprecated("_has_uuid_generate_time_safe", remove=(3, 15))
+        return _has_uuid_generate_time_safe
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 
 def _load_system_functions():
     """[DEPRECATED] Platform-specific functions loaded at import time"""
+    warnings._deprecated("_load_system_functions", remove=(3, 15))
 
 
 def _unix_getnode():

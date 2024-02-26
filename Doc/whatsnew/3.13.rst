@@ -924,6 +924,11 @@ Pending Removal in Python 3.15
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
 
+* :mod:`uuid`: Deprecate some internal protected parts:
+  ``_has_uuid_generate_time_safe``, ``_netbios_getnode``, ``_ipconfig_getnode``,
+  and ``_load_system_functions``. They will be removed in Python 3.15.
+  (Contributed by Nikita Sobolev in :gh:`113308`.)
+
 Pending Removal in Python 3.16
 ------------------------------
 
