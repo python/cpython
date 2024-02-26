@@ -223,7 +223,8 @@ class HelpFormatter(object):
             # add the heading if the section was non-empty
             if self.heading is not SUPPRESS and self.heading is not None:
                 current_indent = self.formatter._current_indent
-                heading = '%*s%s:\n' % (current_indent, '', self.heading)
+                heading_text = _('%(heading)s:') % dict(heading=self.heading)
+                heading = '%*s%s\n' % (current_indent, '', heading_text)
             else:
                 heading = ''
 
