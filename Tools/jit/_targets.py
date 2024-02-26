@@ -118,12 +118,20 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
+            # This debug info isn't necessary, and bloats out the JIT'ed code.
+            # We *may* be able to re-enable this, process it, and JIT it for a
+            # nicer debugging experience... but that needs a lot more research:
             "-fno-asynchronous-unwind-tables",
+            # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
+            # This breaks SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds.
+            # It's not clear why:
             "-fno-jump-tables",
+            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
+            # about emitting in-range trampolines for out-of-range targets.
+            # We can probably remove this and emit trampolines in the future:
             "-fno-plt",
-            # Don't make calls to weird stack-smashing canaries:
+            # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-o",
             f"{o}",

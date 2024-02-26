@@ -310,19 +310,19 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 {
                     unsigned char rd = get_bits(loc32[0], 0, 5);
                     assert(IS_AARCH64_LDR_OR_STR(loc32[1]));
-                    unsigned char rt = get_bits(loc32[1], 0, 5);
-                    unsigned char rn = get_bits(loc32[1], 5, 5);
-                    assert(rd == rn && rn == rt);
+                    // There should be only one register involved:
+                    assert(rd == get_bits(loc32[1], 0, 5));  // rt
+                    assert(rd == get_bits(loc32[1], 5, 5));  // rn
                     uint64_t relaxed = *(uint64_t *)value;
                     if (relaxed < (1UL << 16)) {
-                        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; nop
+                        // adrp rd, AAA; ldr rd, [rd + BBB] -> movz rd, XXX; nop
                         loc32[0] = 0xD2800000 | (get_bits(relaxed, 0, 16) << 5) | rd;
                         loc32[1] = 0xD503201F;
                         i++;
                         continue;
                     }
                     if (relaxed < (1ULL << 32)) {
-                        // adrp reg, AAA; ldr reg, [reg + BBB] -> movz reg, XXX; movk reg, YYY
+                        // adrp rd, AAA; ldr rd, [rd + BBB] -> movz rd, XXX; movk rd, YYY
                         loc32[0] = 0xD2800000 | (get_bits(relaxed,  0, 16) << 5) | rd;
                         loc32[1] = 0xF2A00000 | (get_bits(relaxed, 16, 16) << 5) | rd;
                         i++;
@@ -333,7 +333,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                         (int64_t)relaxed >= -(1L << 19) &&
                         (int64_t)relaxed < (1L << 19))
                     {
-                        // adrp reg, AAA; ldr reg, [reg + BBB] -> ldr x0, XXX; nop
+                        // adrp rd, AAA; ldr rd, [rd + BBB] -> ldr rd, XXX; nop
                         loc32[0] = 0x58000000 | (get_bits(relaxed, 2, 19) << 5) | rd;
                         loc32[1] = 0xD503201F;
                         i++;
