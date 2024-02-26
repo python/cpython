@@ -1,5 +1,5 @@
 /*
- * This file contains the support code for CPython's uops redundancy eliminator.
+ * This file contains the support code for CPython's uops optimizer.
  * It also performs some simple optimizations.
  * It performs a traditional data-flow analysis[1] over the trace of uops.
  * Using the information gained, it chooses to emit, or skip certain instructions
@@ -405,7 +405,7 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
 {
     RARE_EVENT_STAT_INC(watched_globals_modification);
     assert(get_mutations(dict) < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS);
-    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict, 1);
     increment_mutations(dict);
     PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
     return 0;
@@ -606,7 +606,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
-uop_redundancy_eliminator(
+optimize_uops(
     PyCodeObject *co,
     _PyUOpInstruction *trace,
     int trace_len,
@@ -638,7 +638,7 @@ uop_redundancy_eliminator(
                 _PyUOpName(opcode),
                 oparg);
         switch (opcode) {
-#include "tier2_redundancy_eliminator_cases.c.h"
+#include "optimizer_cases.c.h"
 
             default:
                 DPRINTF(1, "Unknown opcode in abstract interpreter\n");
@@ -812,7 +812,7 @@ _Py_uop_analyze_and_optimize(
 
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize != NULL && *uop_optimize > '0') {
-        err = uop_redundancy_eliminator(
+        err = optimize_uops(
             (PyCodeObject *)frame->f_executable, buffer,
             buffer_size, curr_stacklen, dependencies);
     }
