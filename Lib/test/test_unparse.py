@@ -650,13 +650,15 @@ class CosmeticTestCase(ASTTestCase):
         self.check_ast_roundtrip("""f'''""\"''\\'{""\"\\n\\"'''""\" '''\\n'''}''' """)
 
     def test_backslash_in_format_spec(self):
-        with self.assertWarns(SyntaxWarning):
+        import re
+        msg = re.escape("invalid escape sequence '\\ '")
+        with self.assertWarnsRegex(SyntaxWarning, msg):
             self.check_ast_roundtrip("""f"{x:\\ }" """)
         self.check_ast_roundtrip("""f"{x:\\n}" """)
 
         self.check_ast_roundtrip("""f"{x:\\\\ }" """)
 
-        with self.assertWarns(SyntaxWarning):
+        with self.assertWarnsRegex(SyntaxWarning, msg):
             self.check_ast_roundtrip("""f"{x:\\\\\\ }" """)
         self.check_ast_roundtrip("""f"{x:\\\\\\n}" """)
 
