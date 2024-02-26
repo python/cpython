@@ -1,0 +1,3 @@
+Building extensions intended for free-threaded builds of CPython now require
+compiling with ``/DPy_GIL_DISABLED`` manually when using a regular install. This
+is expected to change in future releases.

@@ -677,7 +677,7 @@
       <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
     </PropertyGroup>
     <PropertyGroup Condition="$(DisableGil) == 'true'">
-      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
+      <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_GIL_DISABLED 1 */', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
     </PropertyGroup>
     <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
     <WriteLinesToFile File="$(IntDir)pyconfig.h"
