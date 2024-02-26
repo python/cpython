@@ -592,9 +592,7 @@ except ImportError:
 def __getattr__(attr):
     if attr == "_has_uuid_generate_time_safe":
         warnings._deprecated("_has_uuid_generate_time_safe", remove=(3, 15))
-        try:
-            import _uuid
-        except ImportError:
+        if _uuid is None:
             return None
         else:
             return _uuid.has_uuid_generate_time_safe
