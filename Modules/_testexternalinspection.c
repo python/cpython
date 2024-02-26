@@ -66,7 +66,7 @@ analyze_macho64(mach_port_t proc_ref, void* base, void* map)
     vm_region_basic_info_data_64_t region_info;
     mach_port_t object_name;
 
-    for (register int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
+    for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
         if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__DATA") == 0) {
             while (cmd->filesize != size) {
                 address += size;
@@ -81,7 +81,7 @@ analyze_macho64(mach_port_t proc_ref, void* base, void* map)
                     != KERN_SUCCESS)
                 {
                     printf("Cannot get any more VM maps.\n");
-                    return 0;
+                    return NULL;
                 }
             }
             base = (void*)address - cmd->vmaddr;
@@ -201,7 +201,8 @@ get_py_runtime_macos(pid_t pid)
         char* filename = strrchr(map_filename, '/');
         if (filename != NULL) {
             filename++;  // Move past the '/'
-        } else {
+        }
+        else {
             filename = map_filename;  // No path, use the whole string
         }
 
@@ -246,7 +247,8 @@ find_python_map_start_address(pid_t pid, char* result_filename)
         char* filename = strrchr(map_filename, '/');
         if (filename != NULL) {
             filename++;  // Move past the '/'
-        } else {
+        }
+        else {
             filename = map_filename;  // No path, use the whole string
         }
 
@@ -404,7 +406,7 @@ read_string(pid_t pid, _Py_DebugOffsets* debug_offsets, void* address, char* buf
     if (bytes_read == -1) {
         return -1;
     }
-    if (len > size) {
+    if (len >= size) {
         PyErr_SetString(PyExc_RuntimeError, "Buffer too small");
         return -1;
     }
@@ -486,8 +488,12 @@ parse_frame_object(
     }
 
     char owner;
-    bytes_read =
-            read_memory(pid, (void*)(address + offsets->interpreter_frame.owner), sizeof(char), &owner);
+    bytes_read = read_memory(pid,
+            (void*)(address + offsets->interpreter_frame.owner),
+            sizeof(char), &owner);
+    if (bytes_read < 0) {
+        return -1;
+    }
 
     if (owner == 3) {
         return 0;
@@ -570,7 +576,7 @@ get_stack_trace(PyObject* self, PyObject* args)
 
     if (address_of_thread != NULL) {
         void* address_of_current_frame;
-        read_memory(
+        (void)read_memory(
                 pid,
                 (void*)(address_of_thread + local_debug_offsets.thread_state.current_frame),
                 sizeof(void*),
@@ -595,14 +601,24 @@ get_stack_trace(PyObject* self, PyObject* args)
 
 static PyMethodDef methods[] = {
         {"get_stack_trace", get_stack_trace, METH_VARARGS, "Get the Python stack from a given PID"},
-        {NULL, NULL, 0, NULL}};
+        {NULL, NULL, 0, NULL},
+};
 
-static struct PyModuleDef module = {PyModuleDef_HEAD_INIT, "_testexternalinspection", NULL, -1, methods};
+static struct PyModuleDef module = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_testexternalinspection",
+    .m_size = -1,
+    .m_methods = methods,
+};
 
 PyMODINIT_FUNC
 PyInit__testexternalinspection(void)
 {
     PyObject* mod = PyModule_Create(&module);
-    PyModule_AddIntConstant(mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
+    int rc = PyModule_AddIntConstant(mod, "PROCESS_VM_READV_SUPPORTED", HAVE_PROCESS_VM_READV);
+    if (rc < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
     return mod;
 }
