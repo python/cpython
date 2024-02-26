@@ -1,2 +1,0 @@
-Fix a bug in the detection of CSV file headers by
-:meth:`csv.Sniffer.has_header` and improve documentation of same.

@@ -7,6 +7,12 @@ import asyncio
 from asyncio import transports
 
 
+def tearDownModule():
+    # not needed for the test file but added for uniformness with all other
+    # asyncio test files for the sake of unified cleanup
+    asyncio.set_event_loop_policy(None)
+
+
 class TransportTests(unittest.TestCase):
 
     def test_ctor_extra_is_none(self):

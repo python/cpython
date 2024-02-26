@@ -73,12 +73,24 @@ function::
    newdatatype_dealloc(newdatatypeobject *obj)
    {
        free(obj->obj_UnderlyingDatatypePtr);
-       Py_TYPE(obj)->tp_free(obj);
+       Py_TYPE(obj)->tp_free((PyObject *)obj);
+   }
+
+If your type supports garbage collection, the destructor should call
+:c:func:`PyObject_GC_UnTrack` before clearing any member fields::
+
+   static void
+   newdatatype_dealloc(newdatatypeobject *obj)
+   {
+       PyObject_GC_UnTrack(obj);
+       Py_CLEAR(obj->other_obj);
+       ...
+       Py_TYPE(obj)->tp_free((PyObject *)obj);
    }
 
 .. index::
-   single: PyErr_Fetch()
-   single: PyErr_Restore()
+   single: PyErr_Fetch (C function)
+   single: PyErr_Restore (C function)
 
 One important requirement of the deallocator function is that it leaves any
 pending exceptions alone.  This is important since deallocators are frequently
@@ -137,7 +149,7 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
 
 .. index::
    single: string; object representation
-   builtin: repr
+   pair: built-in function; repr
 
 Object Presentation
 -------------------
@@ -156,14 +168,14 @@ representation of the instance for which it is called.  Here is a simple
 example::
 
    static PyObject *
-   newdatatype_repr(newdatatypeobject * obj)
+   newdatatype_repr(newdatatypeobject *obj)
    {
        return PyUnicode_FromFormat("Repr-ified_newdatatype{{size:%d}}",
                                    obj->obj_UnderlyingDatatypePtr->size);
    }
 
 If no :c:member:`~PyTypeObject.tp_repr` handler is specified, the interpreter will supply a
-representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely-identifying
+representation that uses the type's :c:member:`~PyTypeObject.tp_name` and a uniquely identifying
 value for the object.
 
 The :c:member:`~PyTypeObject.tp_str` handler is to :func:`str` what the :c:member:`~PyTypeObject.tp_repr` handler
@@ -176,7 +188,7 @@ used instead.
 Here is a simple example::
 
    static PyObject *
-   newdatatype_str(newdatatypeobject * obj)
+   newdatatype_str(newdatatypeobject *obj)
    {
        return PyUnicode_FromFormat("Stringified_newdatatype{{size:%d}}",
                                    obj->obj_UnderlyingDatatypePtr->size);
@@ -195,8 +207,8 @@ a special case, for which the new value passed to the handler is ``NULL``.
 
 Python supports two pairs of attribute handlers; a type that supports attributes
 only needs to implement the functions for one pair.  The difference is that one
-pair takes the name of the attribute as a :c:type:`char\*`, while the other
-accepts a :c:type:`PyObject\*`.  Each type can use whichever pair makes more
+pair takes the name of the attribute as a :c:expr:`char\*`, while the other
+accepts a :c:expr:`PyObject*`.  Each type can use whichever pair makes more
 sense for the implementation's convenience. ::
 
    getattrfunc  tp_getattr;        /* char * version */
@@ -207,7 +219,7 @@ sense for the implementation's convenience. ::
 
 If accessing attributes of an object is always a simple operation (this will be
 explained shortly), there are generic implementations which can be used to
-provide the :c:type:`PyObject\*` version of the attribute management functions.
+provide the :c:expr:`PyObject*` version of the attribute management functions.
 The actual need for type-specific attribute handlers almost completely
 disappeared starting with Python 2.2, though there are many examples which have
 not been updated to use some of the new generic mechanism that is available.
@@ -258,7 +270,7 @@ structure::
 One entry should be defined for each method provided by the type; no entries are
 needed for methods inherited from a base type.  One additional entry is needed
 at the end; it is a sentinel that marks the end of the array.  The
-:attr:`ml_name` field of the sentinel must be ``NULL``.
+:c:member:`~PyMethodDef.ml_name` field of the sentinel must be ``NULL``.
 
 The second table is used to define attributes which map directly to data stored
 in the instance.  A variety of primitive C types are supported, and access may
@@ -274,44 +286,19 @@ be read-only or read-write.  The structures in the table are defined as::
 
 For each entry in the table, a :term:`descriptor` will be constructed and added to the
 type which will be able to extract a value from the instance structure.  The
-:attr:`type` field should contain one of the type codes defined in the
-:file:`structmember.h` header; the value will be used to determine how to
-convert Python values to and from C values.  The :attr:`flags` field is used to
-store flags which control how the attribute can be accessed.
-
-The following flag constants are defined in :file:`structmember.h`; they may be
-combined using bitwise-OR.
-
-+---------------------------+----------------------------------------------+
-| Constant                  | Meaning                                      |
-+===========================+==============================================+
-| :const:`READONLY`         | Never writable.                              |
-+---------------------------+----------------------------------------------+
-| :const:`PY_AUDIT_READ`    | Emit an ``object.__getattr__``               |
-|                           | :ref:`audit events <audit-events>` before    |
-|                           | reading.                                     |
-+---------------------------+----------------------------------------------+
-
-.. versionchanged:: 3.10
-   :const:`RESTRICTED`, :const:`READ_RESTRICTED` and :const:`WRITE_RESTRICTED`
-   are deprecated. However, :const:`READ_RESTRICTED` is an alias for
-   :const:`PY_AUDIT_READ`, so fields that specify either :const:`RESTRICTED`
-   or :const:`READ_RESTRICTED` will also raise an audit event.
-
-.. index::
-   single: READONLY
-   single: READ_RESTRICTED
-   single: WRITE_RESTRICTED
-   single: RESTRICTED
-   single: PY_AUDIT_READ
+:c:member:`~PyMemberDef.type` field should contain a type code like :c:macro:`Py_T_INT` or
+:c:macro:`Py_T_DOUBLE`; the value will be used to determine how to
+convert Python values to and from C values.  The :c:member:`~PyMemberDef.flags` field is used to
+store flags which control how the attribute can be accessed: you can set it to
+:c:macro:`Py_READONLY` to prevent Python code from setting it.
 
 An interesting advantage of using the :c:member:`~PyTypeObject.tp_members` table to build
 descriptors that are used at runtime is that any attribute defined this way can
 have an associated doc string simply by providing the text in the table.  An
 application can use the introspection API to retrieve the descriptor from the
-class object, and get the doc string using its :attr:`__doc__` attribute.
+class object, and get the doc string using its :attr:`!__doc__` attribute.
 
-As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :attr:`name` value
+As with the :c:member:`~PyTypeObject.tp_methods` table, a sentinel entry with a :c:member:`~PyMethodDef.ml_name` value
 of ``NULL`` is required.
 
 .. XXX Descriptors need to be explained in more detail somewhere, but not here.
@@ -327,16 +314,16 @@ of ``NULL`` is required.
 Type-specific Attribute Management
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For simplicity, only the :c:type:`char\*` version will be demonstrated here; the
-type of the name parameter is the only difference between the :c:type:`char\*`
-and :c:type:`PyObject\*` flavors of the interface. This example effectively does
+For simplicity, only the :c:expr:`char\*` version will be demonstrated here; the
+type of the name parameter is the only difference between the :c:expr:`char\*`
+and :c:expr:`PyObject*` flavors of the interface. This example effectively does
 the same thing as the generic example above, but does not use the generic
 support added in Python 2.2.  It explains how the handler functions are
 called, so that if you do need to extend their functionality, you'll understand
 what needs to be done.
 
 The :c:member:`~PyTypeObject.tp_getattr` handler is called when the object requires an attribute
-look-up.  It is called in the same situations where the :meth:`__getattr__`
+look-up.  It is called in the same situations where the :meth:`~object.__getattr__`
 method of a class would be called.
 
 Here is an example::
@@ -350,13 +337,13 @@ Here is an example::
        }
 
        PyErr_Format(PyExc_AttributeError,
-                    "'%.50s' object has no attribute '%.400s'",
-                    tp->tp_name, name);
+                    "'%.100s' object has no attribute '%.400s'",
+                    Py_TYPE(obj)->tp_name, name);
        return NULL;
    }
 
-The :c:member:`~PyTypeObject.tp_setattr` handler is called when the :meth:`__setattr__` or
-:meth:`__delattr__` method of a class instance would be called.  When an
+The :c:member:`~PyTypeObject.tp_setattr` handler is called when the :meth:`~object.__setattr__` or
+:meth:`~object.__delattr__` method of a class instance would be called.  When an
 attribute should be deleted, the third parameter will be ``NULL``.  Here is an
 example that simply raises an exception; if this were really all you wanted, the
 :c:member:`~PyTypeObject.tp_setattr` handler should be set to ``NULL``. ::
@@ -377,11 +364,11 @@ Object Comparison
 
 The :c:member:`~PyTypeObject.tp_richcompare` handler is called when comparisons are needed.  It is
 analogous to the :ref:`rich comparison methods <richcmpfuncs>`, like
-:meth:`__lt__`, and also called by :c:func:`PyObject_RichCompare` and
+:meth:`!__lt__`, and also called by :c:func:`PyObject_RichCompare` and
 :c:func:`PyObject_RichCompareBool`.
 
 This function is called with two Python objects and the operator as arguments,
-where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GT``,
+where the operator is one of ``Py_EQ``, ``Py_NE``, ``Py_LE``, ``Py_GE``,
 ``Py_LT`` or ``Py_GT``.  It should compare the two objects with respect to the
 specified operator and return ``Py_True`` or ``Py_False`` if the comparison is
 successful, ``Py_NotImplemented`` to indicate that comparison is not
@@ -392,7 +379,7 @@ Here is a sample implementation, for a datatype that is considered equal if the
 size of an internal pointer is equal::
 
    static PyObject *
-   newdatatype_richcmp(PyObject *obj1, PyObject *obj2, int op)
+   newdatatype_richcmp(newdatatypeobject *obj1, newdatatypeobject *obj2, int op)
    {
        PyObject *result;
        int c, size1, size2;
@@ -491,7 +478,7 @@ This function takes three arguments:
 Here is a toy ``tp_call`` implementation::
 
    static PyObject *
-   newdatatype_call(newdatatypeobject *self, PyObject *args, PyObject *kwds)
+   newdatatype_call(newdatatypeobject *obj, PyObject *args, PyObject *kwds)
    {
        PyObject *result;
        const char *arg1;
@@ -518,7 +505,7 @@ These functions provide support for the iterator protocol.  Both handlers
 take exactly one parameter, the instance for which they are being called,
 and return a new reference.  In the case of an error, they should set an
 exception and return ``NULL``.  :c:member:`~PyTypeObject.tp_iter` corresponds
-to the Python :meth:`__iter__` method, while :c:member:`~PyTypeObject.tp_iternext`
+to the Python :meth:`~object.__iter__` method, while :c:member:`~PyTypeObject.tp_iternext`
 corresponds to the Python :meth:`~iterator.__next__` method.
 
 Any :term:`iterable` object must implement the :c:member:`~PyTypeObject.tp_iter`
@@ -558,43 +545,28 @@ performance-critical objects (such as numbers).
 .. seealso::
    Documentation for the :mod:`weakref` module.
 
-For an object to be weakly referencable, the extension type must do two things:
+For an object to be weakly referencable, the extension type must set the
+``Py_TPFLAGS_MANAGED_WEAKREF`` bit of the :c:member:`~PyTypeObject.tp_flags`
+field. The legacy :c:member:`~PyTypeObject.tp_weaklistoffset` field should
+be left as zero.
 
-#. Include a :c:type:`PyObject\*` field in the C object structure dedicated to
-   the weak reference mechanism.  The object's constructor should leave it
-   ``NULL`` (which is automatic when using the default
-   :c:member:`~PyTypeObject.tp_alloc`).
-
-#. Set the :c:member:`~PyTypeObject.tp_weaklistoffset` type member
-   to the offset of the aforementioned field in the C object structure,
-   so that the interpreter knows how to access and modify that field.
-
-Concretely, here is how a trivial object structure would be augmented
-with the required field::
-
-   typedef struct {
-       PyObject_HEAD
-       PyObject *weakreflist;  /* List of weak references */
-   } TrivialObject;
-
-And the corresponding member in the statically-declared type object::
+Concretely, here is how the statically declared type object would look::
 
    static PyTypeObject TrivialType = {
        PyVarObject_HEAD_INIT(NULL, 0)
        /* ... other members omitted for brevity ... */
-       .tp_weaklistoffset = offsetof(TrivialObject, weakreflist),
+       .tp_flags = Py_TPFLAGS_MANAGED_WEAKREF | ...,
    };
 
+
 The only further addition is that ``tp_dealloc`` needs to clear any weak
-references (by calling :c:func:`PyObject_ClearWeakRefs`) if the field is
-non-``NULL``::
+references (by calling :c:func:`PyObject_ClearWeakRefs`)::
 
    static void
    Trivial_dealloc(TrivialObject *self)
    {
        /* Clear weakrefs first before calling any destructors */
-       if (self->weakreflist != NULL)
-           PyObject_ClearWeakRefs((PyObject *) self);
+       PyObject_ClearWeakRefs((PyObject *) self);
        /* ... remainder of destruction code omitted for brevity ... */
        Py_TYPE(self)->tp_free((PyObject *) self);
    }

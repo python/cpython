@@ -58,6 +58,17 @@ class TestXXLimited(CommonTests, unittest.TestCase):
         with self.assertRaises(self.module.Error):
             raise self.module.Error
 
+    def test_buffer(self):
+        xxo = self.module.Xxo()
+        self.assertEqual(xxo.x_exports, 0)
+        b1 = memoryview(xxo)
+        self.assertEqual(xxo.x_exports, 1)
+        b2 = memoryview(xxo)
+        self.assertEqual(xxo.x_exports, 2)
+        b1[0] = 1
+        self.assertEqual(b1[0], 1)
+        self.assertEqual(b2[0], 1)
+
 
 class TestXXLimited35(CommonTests, unittest.TestCase):
     module = xxlimited_35

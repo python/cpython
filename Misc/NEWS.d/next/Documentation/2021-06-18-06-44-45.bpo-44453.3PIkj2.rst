@@ -1,1 +1,0 @@
-Fix documentation for the return type of :func:`sysconfig.get_path`.
