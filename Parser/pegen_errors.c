@@ -373,12 +373,11 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
     if (col_number < 0) {
         goto error;
     }
-    if (end_col_number > 0) {
-        Py_ssize_t end_col_offset = _PyPegen_byte_offset_to_character_offset(error_line, end_col_number);
-        if (end_col_offset < 0) {
+
+    if (end_col_offset > 0) {
+        end_col_number = _PyPegen_byte_offset_to_character_offset(error_line, end_col_offset);
+        if (end_col_number < 0) {
             goto error;
-        } else {
-            end_col_number = end_col_offset;
         }
     }
 
