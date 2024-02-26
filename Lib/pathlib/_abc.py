@@ -36,6 +36,12 @@ def _ignore_error(exception):
             getattr(exception, 'winerror', None) in _IGNORED_WINERRORS)
 
 
+def _is_wildcard_pattern(pat):
+    """Whether this pattern needs actual matching using fnmatch, or can be
+    looked up directly as a file."""
+    return "*" in pat or "?" in pat or "[" in pat
+
+
 @functools.cache
 def _is_case_sensitive(pathmod):
     return pathmod.normcase('Aa') == 'Aa'
@@ -60,10 +66,40 @@ def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     return re.compile(regex, flags=flags).match
 
 
-def _select_special(paths, part):
-    """Yield special literal children of the given paths."""
+def _select_literal(paths, part):
+    """Yield literal children of the given paths."""
     for path in paths:
         yield path._make_child_relpath(part)
+
+
+def _select_directories(paths):
+    """Yield the given paths, filtering out non-directories."""
+    for path in paths:
+        try:
+            if path.is_dir():
+                yield path
+        except OSError:
+            pass
+
+
+def _deselect_missing(paths):
+    """Yield the given paths, filtering out missing files."""
+    for path in paths:
+        try:
+            path.stat(follow_symlinks=False)
+            yield path
+        except OSError:
+            pass
+
+
+def _deselect_symlinks(paths):
+    """Yield the given paths, filtering out symlinks."""
+    for path in paths:
+        try:
+            if not path.is_symlink():
+                yield path
+        except OSError:
+            pass
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -799,8 +835,18 @@ class PathBase(PurePathBase):
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
 
+            # User doesn't care about case sensitivity, so for non-wildcard
+            # patterns like "foo/bar" we can stat() once rather than scandir()
+            # twice. Returned paths may not match real filesystem case.
+            case_preserving = False
+        else:
+            # Explicit case sensitivity choice provided. We must use scandir()
+            # to retrieve and match filenames with real filesystem case.
+            case_preserving = True
+
         stack = pattern._pattern_stack
         specials = ('', '.', '..')
+        check_paths = False
         deduplicate_paths = False
         sep = self.pathmod.sep
         paths = iter([self] if self.is_dir() else [])
@@ -808,7 +854,7 @@ class PathBase(PurePathBase):
             part = stack.pop()
             if part in specials:
                 # Join special component (e.g. '..') onto paths.
-                paths = _select_special(paths, part)
+                paths = _select_literal(paths, part)
 
             elif part == '**':
                 # Consume following '**' components, which have no effect.
@@ -826,6 +872,11 @@ class PathBase(PurePathBase):
                 # re.Pattern object based on those components.
                 match = _compile_pattern(part, sep, case_sensitive) if part != '**' else None
 
+                # Ensure directories exist.
+                if check_paths:
+                    paths = _select_directories(paths)
+                    check_paths = False
+
                 # Recursively walk directories, filtering by type and regex.
                 paths = _select_recursive(paths, bool(stack), follow_symlinks, match)
 
@@ -837,13 +888,32 @@ class PathBase(PurePathBase):
             elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
 
-            else:
+            elif case_preserving or _is_wildcard_pattern(part):
                 # If the pattern component isn't '*', compile an re.Pattern
                 # object based on the component.
                 match = _compile_pattern(part, sep, case_sensitive) if part != '*' else None
 
                 # Iterate over directories' children filtering by type and regex.
                 paths = _select_children(paths, bool(stack), follow_symlinks, match)
+
+                # Paths are known to exist: they're directory children from _scandir()
+                check_paths = False
+
+            else:
+                # Join non-wildcard component onto paths.
+                paths = _select_literal(paths, part)
+
+                # Filter out non-symlinks if requested.
+                if follow_symlinks is False:
+                    paths = _deselect_symlinks(paths)
+
+                # Paths might not exist; mark them to be checked.
+                check_paths = True
+
+        if check_paths:
+            # Filter out paths that don't exist.
+            paths = _deselect_missing(paths)
+
         return paths
 
     def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
