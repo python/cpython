@@ -579,6 +579,17 @@ current thread, release() needs to be called as many times for the lock\n\
 to be available for other threads.");
 
 static PyObject *
+rlock_locked(rlockobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyBool_FromLong(self->rlock_count);
+}
+
+PyDoc_STRVAR(rlock_locked_doc,
+"locked()\n\
+\n\
+Returns whether this lock is locked right now or not.");
+
+static PyObject *
 rlock_acquire_restore(rlockobject *self, PyObject *args)
 {
     PyThread_ident_t owner;
@@ -719,6 +730,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      (PyCFunction)rlock_release,
      METH_NOARGS, rlock_release_doc},
+    {"locked",       (PyCFunction)rlock_locked,
+     METH_NOARGS, rlock_locked_doc},
     {"_is_owned",     (PyCFunction)rlock_is_owned,
      METH_NOARGS, rlock_is_owned_doc},
     {"_acquire_restore", (PyCFunction)rlock_acquire_restore,

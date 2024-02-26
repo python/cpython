@@ -91,6 +91,9 @@ class SemLock(object):
         self.acquire = self._semlock.acquire
         self.release = self._semlock.release
 
+    def locked(self):
+        return self._semlock._count() != 0
+
     def __enter__(self):
         return self._semlock.__enter__()
 

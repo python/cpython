@@ -1348,23 +1348,32 @@ class _TestLock(BaseTestCase):
     def test_lock(self):
         lock = self.Lock()
         self.assertEqual(lock.acquire(), True)
+        self.assertEqual(lock.locked(), True)
         self.assertEqual(lock.acquire(False), False)
         self.assertEqual(lock.release(), None)
+        self.assertFalse(lock.locked())
         self.assertRaises((ValueError, threading.ThreadError), lock.release)
 
     def test_rlock(self):
         lock = self.RLock()
         self.assertEqual(lock.acquire(), True)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.acquire(), True)
         self.assertEqual(lock.acquire(), True)
         self.assertEqual(lock.release(), None)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.release(), None)
         self.assertEqual(lock.release(), None)
+        self.assertFalse(lock.locked())
         self.assertRaises((AssertionError, RuntimeError), lock.release)
 
     def test_lock_context(self):
-        with self.Lock():
-            pass
+        with self.Lock() as locked:
+            self.assertTrue(locked)
+
+    def test_rlock_context(self):
+        with self.RLock() as locked:
+            self.assertTrue(locked)
 
 
 class _TestSemaphore(BaseTestCase):
