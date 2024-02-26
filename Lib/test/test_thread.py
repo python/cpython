@@ -235,7 +235,8 @@ class ThreadRunningTests(BasicThreadTest):
 
     def test_join_then_self_join(self):
         # make sure we can't deadlock in the following scenario with
-        # threads t0 and t1:
+        # threads t0 and t1 (see comment in `ThreadHandle_join()` for more
+        # details):
         #
         # - t0 joins t1
         # - t1 self joins
