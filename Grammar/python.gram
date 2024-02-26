@@ -392,7 +392,7 @@ for_stmt[stmt_ty]:
 with_stmt[stmt_ty]:
     | invalid_with_stmt_indent
     | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
-        CHECK_VERSION(stmt_ty, 9, "Parenthesized context managers are", _PyAST_With(a, b, NULL, EXTRA)) }
+        _PyAST_With(a, b, NULL, EXTRA) }
     | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
         _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | ASYNC 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
