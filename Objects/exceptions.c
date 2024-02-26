@@ -1836,6 +1836,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
     }
     self->myerrno = Py_XNewRef(myerrno);
     self->strerror = Py_XNewRef(strerror);
+    self->cwd = Py_None;
 #ifdef MS_WINDOWS
     self->winerror = Py_XNewRef(winerror);
 #endif
@@ -1986,6 +1987,7 @@ OSError_clear(PyOSErrorObject *self)
     Py_CLEAR(self->strerror);
     Py_CLEAR(self->filename);
     Py_CLEAR(self->filename2);
+    Py_CLEAR(self->cwd);
 #ifdef MS_WINDOWS
     Py_CLEAR(self->winerror);
 #endif
@@ -2137,6 +2139,9 @@ static PyMemberDef OSError_members[] = {
         PyDoc_STR("exception filename")},
     {"filename2", _Py_T_OBJECT, offsetof(PyOSErrorObject, filename2), 0,
         PyDoc_STR("second exception filename")},
+    {"cwd", _Py_T_OBJECT, offsetof(PyOSErrorObject, cwd), 0,
+        PyDoc_STR("optional working directory")},
+
 #ifdef MS_WINDOWS
     {"winerror", _Py_T_OBJECT, offsetof(PyOSErrorObject, winerror), 0,
         PyDoc_STR("Win32 exception code")},
