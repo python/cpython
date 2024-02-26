@@ -34,7 +34,7 @@ represented by objects.)
 
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
-memory.  The ':keyword:`is`' operator compares the identity of two objects; the
+memory.  The :keyword:`is` operator compares the identity of two objects; the
 :func:`id` function returns an integer representing its identity.
 
 .. impl-detail::
@@ -81,7 +81,7 @@ are still reachable.
 
 Note that the use of the implementation's tracing or debugging facilities may
 keep objects alive that would normally be collectable. Also note that catching
-an exception with a ':keyword:`try`...\ :keyword:`except`' statement may keep
+an exception with a :keyword:`try`...\ :keyword:`except` statement may keep
 objects alive.
 
 Some objects contain references to "external" resources such as open files or
@@ -89,8 +89,8 @@ windows.  It is understood that these resources are freed when the object is
 garbage-collected, but since garbage collection is not guaranteed to happen,
 such objects also provide an explicit way to release the external resource,
 usually a :meth:`!close` method. Programs are strongly recommended to explicitly
-close such objects.  The ':keyword:`try`...\ :keyword:`finally`' statement
-and the ':keyword:`with`' statement provide convenient ways to do this.
+close such objects.  The :keyword:`try`...\ :keyword:`finally` statement
+and the :keyword:`with` statement provide convenient ways to do this.
 
 .. index:: single: container
 
@@ -1134,6 +1134,8 @@ Special read-only attributes
    * - .. attribute:: codeobject.co_qualname
      - The fully qualified function name
 
+       .. versionadded:: 3.11
+
    * - .. attribute:: codeobject.co_argcount
      - The total number of positional :term:`parameters <parameter>`
        (including positional-only parameters and parameters with default values)
@@ -1289,6 +1291,14 @@ Methods on code objects
 
       :pep:`626` - Precise line numbers for debugging and other tools.
          The PEP that introduced the :meth:`!co_lines` method.
+
+.. method:: codeobject.replace(**kwargs)
+
+   Return a copy of the code object with new values for the specified fields.
+
+   Code objects are also supported by the generic function :func:`copy.replace`.
+
+   .. versionadded:: 3.8
 
 
 .. _frame-objects:

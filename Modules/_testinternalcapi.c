@@ -960,13 +960,13 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
-get_counter_optimizer(PyObject *self, PyObject *arg)
+new_counter_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewCounter();
 }
 
 static PyObject *
-get_uop_optimizer(PyObject *self, PyObject *arg)
+new_uop_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewUOpOptimizer();
 }
@@ -977,7 +977,9 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    PyUnstable_SetOptimizer((_PyOptimizerObject*)opt);
+    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1709,8 +1711,8 @@ static PyMethodDef module_functions[] = {
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
-    {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
-    {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
+    {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
+    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
