@@ -5,13 +5,13 @@ on:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
-      - 'Python/tier2_redundancy_eliminator_bytecodes.c'
+      - 'Python/optimizer_bytecodes.c'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
-      - 'Python/tier2_redundancy_eliminator_bytecodes.c'
+      - 'Python/optimizer_bytecodes.c'
   workflow_dispatch:
 
 concurrency:
