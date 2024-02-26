@@ -158,11 +158,13 @@ dummy_func(
                     if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                         CHECK_EVAL_BREAKER();
                     }
+                    this_instr->op.code = RESUME_CHECK;
                 }
             } else {
                 if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
+                this_instr->op.code = RESUME_CHECK;
             }
         }
 
