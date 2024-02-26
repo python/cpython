@@ -1625,7 +1625,7 @@ The following wildcards are supported in patterns for
 ``*`` (entire segment)
   Matches one file or directory segment.
 ``*`` (part of a segment)
-  Matches any number of non-separator characters.
+  Matches any number of non-separator characters, including zero.
 ``?``
   Matches one non-separator character.
 ``[seq]``
