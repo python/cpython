@@ -912,6 +912,21 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)
 	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
+# This rule is for iOS, which requires an annoyingly just slighly different
+# format for frameworks to macOS. It *doesn't* use a versioned framework, and
+# the Info.plist must be in the root of the framework.
+$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK): \
+		$(LIBRARY) \
+		$(RESSRCDIR)/Info.plist
+	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)
+	$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
+		-all_load $(LIBRARY) \
+		-install_name $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
+		-compatibility_version $(VERSION) \
+		-current_version $(VERSION) \
+		-framework CoreFoundation $(LIBS);
+	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(PYTHONFRAMEWORKDIR)/Info.plist
+
 # This rule builds the Cygwin Python DLL and import library if configured
 # for a shared core library; otherwise, this rule is a noop.
 $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
@@ -2607,10 +2622,11 @@ frameworkinstall: install
 # only have to cater for the structural bits of the framework.
 
 .PHONY: frameworkinstallframework
-frameworkinstallframework: frameworkinstallstructure install frameworkinstallmaclib
+frameworkinstallframework: @FRAMEWORKINSTALLFIRST@ install frameworkinstallmaclib
 
-.PHONY: frameworkinstallstructure
-frameworkinstallstructure:	$(LDLIBRARY)
+# macOS uses a versioned frameworks structure that includes a full install
+.PHONY: frameworkinstallversionedstructure
+frameworkinstallversionedstructure:	$(LDLIBRARY)
 	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
 		exit 1; \
@@ -2630,6 +2646,27 @@ frameworkinstallstructure:	$(LDLIBRARY)
 	$(LN) -fsn Versions/Current/Headers $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers
 	$(LN) -fsn Versions/Current/Resources $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+
+# iOS/tvOS/watchOS uses a non-versioned framework with Info.plist in the
+# framework root, no .lproj data, and only stub compilation assistance binaries
+.PHONY: frameworkinstallunversionedstructure
+frameworkinstallunversionedstructure:	$(LDLIBRARY)
+	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
+		echo Not configured with --enable-framework; \
+		exit 1; \
+	else true; \
+	fi
+	if test -d $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; then \
+		echo "Clearing stale header symlink directory"; \
+		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; \
+	fi
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)
+	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
+	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(BINDIR)
+	for file in $(srcdir)/$(RESSRCDIR)/bin/* ; do \
+		$(INSTALL) -m $(EXEMODE) $$file $(DESTDIR)$(BINDIR); \
+	done
 
 # This installs Mac/Lib into the framework
 # Install a number of symlinks to keep software that expects a normal unix
@@ -2670,6 +2707,19 @@ frameworkaltinstallunixtools:
 .PHONY: frameworkinstallextras
 frameworkinstallextras:
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
+
+# On iOS, bin/lib can't live inside the framework; include needs to be called
+# "Headers", but *must* be in the framework, and *not* include the `python3.X`
+# subdirectory. The install has put these folders in the same folder as
+# Python.framework; Move the headers to their final framework-compatible home.
+.PHONY: frameworkinstallmobileheaders
+frameworkinstallmobileheaders:
+	if test -d $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; then \
+		echo "Removing old framework headers"; \
+		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
+	fi
+	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
+	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)"
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
