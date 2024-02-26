@@ -474,7 +474,8 @@ update_refs(PyGC_Head *containers)
 
     while (gc != containers) {
         next = GC_NEXT(gc);
-        assert(!_Py_IsImmortal(FROM_GC(gc)));
+        PyObject *op = FROM_GC(gc);
+        assert(!_Py_IsImmortal(op));
         gc_reset_refs(gc, Py_REFCNT(op));
         /* Python's cyclic gc should never see an incoming refcount
          * of 0:  if something decref'ed to 0, it should have been
@@ -1369,7 +1370,6 @@ completed_cycle(GCState *gcstate)
 {
     PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     assert(gc_list_is_empty(not_visited));
-    assert(gc_list_is_empty(&gcstate->young.head));
     gcstate->visited_space = flip_old_space(gcstate->visited_space);
     if (gcstate->work_to_do > 0) {
         gcstate->work_to_do = 0;
@@ -1380,20 +1380,26 @@ static void
 gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
 {
     GCState *gcstate = &tstate->interp->gc;
-    assert(gc_list_is_empty(&gcstate->young.head));
-    if (gcstate->work_to_do <= 0) {
-        /* No work to do */
-        return;
-    }
     PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     PyGC_Head increment;
     gc_list_init(&increment);
-    if (gc_list_is_empty(not_visited)) {
-        completed_cycle(gcstate);
-        return;
-    }
     Py_ssize_t region_size = 0;
+    gc_list_merge(&gcstate->young.head, &increment);
+    gcstate->young.count = 0;
+    if (gcstate->visited_space) {
+        /* objects in visited space have bit set, so we set it here */
+        region_size = gc_list_set_space(&increment, 1);
+    }
+    else {
+        PyGC_Head *gc;
+        for (gc = GC_NEXT(&increment); gc != &increment; gc = GC_NEXT(gc)) {
+#ifdef GC_DEBUG
+            assert(gc_old_space(gc) == 0);
+#endif
+            region_size++;
+        }
+    }
     while (region_size < gcstate->work_to_do) {
         if (gc_list_is_empty(not_visited)) {
             break;
@@ -1403,13 +1409,19 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         gc_set_old_space(gc, gcstate->visited_space);
         region_size += expand_region_transitively_reachable(&increment, gc, gcstate);
     }
-    assert(region_size = gc_list_size(&increment));
+    assert(region_size == gc_list_size(&increment));
     GC_STAT_ADD(1, objects_queued, region_size);
     PyGC_Head survivors;
     gc_list_init(&survivors);
     gc_collect_region(tstate, &increment, &survivors, UNTRACK_TUPLES, stats);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
+    Py_ssize_t survivor_count = gc_list_size(&survivors);
+    Py_ssize_t scale_factor = gcstate->old[0].threshold;
+    if (scale_factor < 1) {
+        scale_factor = 1;
+    }
+    gcstate->work_to_do += survivor_count + survivor_count * SCAN_RATE_MULTIPLIER / scale_factor;
     gcstate->work_to_do -= region_size;
     validate_old(gcstate);
     add_stats(gcstate, 1, stats);
@@ -1448,7 +1460,7 @@ gc_collect_full(PyThreadState *tstate,
     gcstate->old[1].count = 0;
 
     gcstate->work_to_do = - gcstate->young.threshold * 2;
-    clear_freelists(tstate->interp);
+    _PyGC_ClearAllFreeLists(tstate->interp);
     validate_old(gcstate);
     add_stats(gcstate, 2, stats);
 }
@@ -1768,7 +1780,6 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             gc_collect_young(tstate, &stats);
             break;
         case 1:
-            gc_collect_young(tstate, &stats);
             gc_collect_increment(tstate, &stats);
             break;
         case 2:
