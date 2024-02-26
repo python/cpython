@@ -382,18 +382,15 @@ class Future(object):
 
     def cancelled(self):
         """Return True if the future was cancelled."""
-        with self._condition:
-            return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]
+        return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]
 
     def running(self):
         """Return True if the future is currently executing."""
-        with self._condition:
-            return self._state == RUNNING
+        return self._state == RUNNING
 
     def done(self):
         """Return True if the future was cancelled or finished executing."""
-        with self._condition:
-            return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
+        return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
 
     def __get_result(self):
         if self._exception:
