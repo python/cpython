@@ -36,7 +36,6 @@ Doc/library/email.parser.rst
 Doc/library/email.policy.rst
 Doc/library/exceptions.rst
 Doc/library/faulthandler.rst
-Doc/library/fcntl.rst
 Doc/library/functools.rst
 Doc/library/getopt.rst
 Doc/library/http.cookiejar.rst
@@ -96,8 +95,6 @@ Doc/reference/compound_stmts.rst
 Doc/reference/datamodel.rst
 Doc/tutorial/datastructures.rst
 Doc/using/windows.rst
-Doc/whatsnew/2.0.rst
-Doc/whatsnew/2.1.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst

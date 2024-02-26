@@ -983,18 +983,15 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: wait(timeout=None)
 
-      Block until the internal flag is true.  If the internal flag is true on
-      entry, return immediately.  Otherwise, block until another thread calls
-      :meth:`.set` to set the flag to true, or until the optional timeout occurs.
+      Block as long as the internal flag is false and the timeout, if given,
+      has not expired. The return value represents the
+      reason that this blocking method returned; ``True`` if returning because
+      the internal flag is set to true, or ``False`` if a timeout is given and
+      the the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
-      (or fractions thereof).
-
-      This method returns ``True`` if and only if the internal flag has been set to
-      true, either before the wait call or after the wait starts, so it will
-      always return ``True`` except if a timeout is given and the operation
-      times out.
+      floating point number specifying a timeout for the operation in seconds,
+      or fractions thereof.
 
       .. versionchanged:: 3.1
          Previously, the method always returned ``None``.
