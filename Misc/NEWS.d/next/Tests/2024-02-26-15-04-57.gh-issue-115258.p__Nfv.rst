@@ -1,1 +1,2 @@
-Fix hang tests of `test_shutdown_[immediate_]all_methods_in_many_thread` unittests of 'test_queue.py'.  This unit test is dedicated to the new feature "Shutdown a queue"  to the threading queue.
+Fix hang the test from ``test_queue.GenericQueueTest.test_shutdown_[immediate_]all_methods_in_many_thread`` unittests. 
+This unit test is dedicated to the new ``Shutdown`` feature in the threading queue.
