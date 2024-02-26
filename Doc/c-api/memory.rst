@@ -41,10 +41,10 @@ buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
 
 .. index::
-   single: malloc()
-   single: calloc()
-   single: realloc()
-   single: free()
+   single: malloc (C function)
+   single: calloc (C function)
+   single: realloc (C function)
+   single: free (C function)
 
 To avoid memory corruption, extension writers should never try to operate on
 Python objects with the functions exported by the C library: :c:func:`malloc`,

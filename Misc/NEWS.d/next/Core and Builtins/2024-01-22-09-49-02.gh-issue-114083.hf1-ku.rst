@@ -1,1 +1,0 @@
-Compiler applies folding of LOAD_CONST with following instruction in a separate pass before other optimisations. This enables jump threading in certain circumstances.

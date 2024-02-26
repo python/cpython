@@ -86,6 +86,12 @@
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
+#ifdef Py_GIL_DISABLED
+#define QSBR_QUIESCENT_STATE(tstate) _Py_qsbr_quiescent_state(((_PyThreadStateImpl *)tstate)->qsbr)
+#else
+#define QSBR_QUIESCENT_STATE(tstate)
+#endif
+
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
@@ -117,7 +123,8 @@
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
+    QSBR_QUIESCENT_STATE(tstate); \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
             GOTO_ERROR(error); \
         } \
@@ -365,12 +372,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
 
-/* Marker to specify tier 1 only instructions */
-#define TIER_ONE_ONLY
-
-/* Marker to specify tier 2 only instructions */
-#define TIER_TWO_ONLY
-
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
  * These need to treated differently by tier 1 and 2.
@@ -387,7 +388,36 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 
 /* Tier-switching macros. */
 
-#define GOTO_TIER_TWO() goto enter_tier_two;
+#ifdef _Py_JIT
+#define GOTO_TIER_TWO(EXECUTOR)                        \
+do {                                                   \
+    jit_func jitted = (EXECUTOR)->jit_code;            \
+    next_instr = jitted(frame, stack_pointer, tstate); \
+    Py_DECREF(tstate->previous_executor);              \
+    tstate->previous_executor = NULL;                  \
+    frame = tstate->current_frame;                     \
+    if (next_instr == NULL) {                          \
+        goto resume_with_error;                        \
+    }                                                  \
+    stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    DISPATCH();                                        \
+} while (0)
+#else
+#define GOTO_TIER_TWO(EXECUTOR) \
+do { \
+    next_uop = (EXECUTOR)->trace; \
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
+    goto enter_tier_two; \
+} while (0)
+#endif
+
+#define GOTO_TIER_ONE(TARGET) \
+do { \
+    Py_DECREF(tstate->previous_executor); \
+    tstate->previous_executor = NULL;  \
+    next_instr = target; \
+    DISPATCH(); \
+} while (0)
 
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 

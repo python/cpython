@@ -4,10 +4,14 @@ on:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
+      - 'Python/optimizer*.c'
+      - 'Python/optimizer_bytecodes.c'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
+      - 'Python/optimizer*.c'
+      - 'Python/optimizer_bytecodes.c'
   workflow_dispatch:
 
 concurrency:
