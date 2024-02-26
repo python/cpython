@@ -2863,14 +2863,10 @@ clean-retain-profile: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64/bin
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64/lib
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64/include
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64/Python.framework
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/bin
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/lib
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/include
-	-rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/Python.framework
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/bin
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/lib
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/include
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/Python.framework
 
 .PHONY: profile-removal
 profile-removal:
