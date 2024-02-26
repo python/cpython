@@ -224,6 +224,14 @@ asyncio
   the buffer size.
   (Contributed by Jamie Phan in :gh:`115199`.)
 
+base64
+---
+
+* Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
+  and decoding z85 data.
+  See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+  (Contributed by Matan Perelman in :gh:`75299`.)
+
 copy
 ----
 
@@ -467,6 +475,14 @@ sqlite3
 * Add *filter* keyword-only parameter to :meth:`sqlite3.Connection.iterdump`
   for filtering database objects to dump.
   (Contributed by Mariusz Felisiak in :gh:`91602`.)
+
+statistics
+----------
+
+* Add :func:`statistics.kde` for kernel density estimation.
+  This makes it possible to estimate a continuous probability density function
+  from a fixed number of discrete samples.
+  (Contributed by Raymond Hettinger in :gh:`115863`.)
 
 subprocess
 ----------
