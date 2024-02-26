@@ -2697,7 +2697,7 @@ compiler_class(struct compiler *c, stmt_ty s)
                                                          s->v.ClassDef.keywords));
 
         PyCodeObject *co = optimize_and_assemble(c, 0);
-        
+
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
