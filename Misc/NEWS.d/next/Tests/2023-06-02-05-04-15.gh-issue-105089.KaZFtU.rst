@@ -1,4 +1,0 @@
-Fix
-``test.test_zipfile.test_core.TestWithDirectory.test_create_directory_with_write``
-test in AIX by doing a bitwise AND of 0xFFFF on mode , so that it will be in
-sync with ``zinfo.external_attr``

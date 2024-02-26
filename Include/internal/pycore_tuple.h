@@ -14,7 +14,6 @@ extern void _PyTuple_DebugMallocStats(FILE *out);
 /* runtime lifecycle */
 
 extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
-extern void _PyTuple_Fini(_PyFreeListState *);
 
 
 /* other API */
