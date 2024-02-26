@@ -66,6 +66,9 @@ with the :term:`GIL` held.
    Similar to :func:`PyTime_Monotonic()`, but return ``0`` and silently ignore
    the error if reading the clock fails.
 
+   The caller doesn't have to hold the GIL; the function does not raise an
+   exception on error.
+
 .. c:function:: int PyTime_PerfCounter(PyTime_t *result)
 
    Read the performance counter.
@@ -76,6 +79,9 @@ with the :term:`GIL` held.
    Similar to :func:`PyTime_PerfCounter()`, but return ``0`` and silently
    ignore the error if reading the clock fails.
 
+   The caller doesn't have to hold the GIL; the function does not raise an
+   exception on error.
+
 .. c:function:: int PyTime_Time(PyTime_t *result)
 
    Read the “wall clock” time.
@@ -85,6 +91,9 @@ with the :term:`GIL` held.
 
    Similar to :func:`PyTime_Time()`, but return ``0`` and silently ignore the
    error if reading the clock fails.
+
+   The caller doesn't have to hold the GIL; the function does not raise an
+   exception on error.
 
 
 Conversion functions

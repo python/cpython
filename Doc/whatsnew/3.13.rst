@@ -1573,7 +1573,7 @@ New Features
     :c:func:`PyTime_Time` functions.
   * :c:func:`PyTime_MonotonicUnchecked`, :c:func:`PyTime_PerfCounterUnchecked`
     and :c:func:`PyTime_TimeUnchecked`: similar to previous functions, but
-    ignores errors.
+    ignores errors and doesn't require to hold the GIL.
 
   (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
 
