@@ -32,6 +32,10 @@
 #endif
 #endif
 
+#ifdef MS_WIN32
+#include <Unknwn.h> // for IUnknown interface
+#endif
+
 typedef struct {
     PyTypeObject *DictRemover_Type;
     PyTypeObject *PyCArg_Type;
