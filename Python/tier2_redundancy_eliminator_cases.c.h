@@ -1732,7 +1732,7 @@
         case _LOAD_CONST_INLINE: {
             _Py_UOpsSymType *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+            OUT_OF_SPACE_IF_NULL(value = sym_new_const_borrow(ctx, ptr));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1751,7 +1751,7 @@
             _Py_UOpsSymType *value;
             _Py_UOpsSymType *null;
             PyObject *ptr = (PyObject *)this_instr->operand;
-            OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
+            OUT_OF_SPACE_IF_NULL(value = sym_new_const_borrow(ctx, ptr));
             OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
             stack_pointer[0] = value;
             stack_pointer[1] = null;
