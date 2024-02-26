@@ -1691,7 +1691,7 @@ pathlib implements path operations using :class:`PurePath` and :class:`Path`
 objects, and so it's said to be *object-oriented*. On the other hand, the
 :mod:`os` and :mod:`os.path` modules supply functions that work with low-level
 ``str`` and ``bytes`` objects, which is a more *procedural* approach. Some
-users consider the object-oriented style more readable.
+users consider the object-oriented style to be more readable.
 
 Many functions in :mod:`os` and :mod:`os.path` support ``bytes`` paths and
 :ref:`paths relative to directory descriptors <dir_fd>`. These features aren't
@@ -1708,16 +1708,16 @@ involved, :meth:`Path.absolute` preserves these segments for greater safety.
 
 pathlib's path normalization may render it unsuitable for some applications:
 
-1. pathlib normalizes ``Path("foo/")`` to ``Path("foo")``, which changes a
-   path's meaning when supplied to various operating system APIs and
+1. pathlib normalizes ``Path("my_folder/")`` to ``Path("my_folder")``, which
+   changes a path's meaning when supplied to various operating system APIs and
    command-line utilities. Specifically, the absence of a trailing separator
-   allows the path to be resolved as either a file or directory, rather than a
-   directory only.
-2. pathlib normalizes ``Path("./foo")`` to ``Path("foo")``, which changes a
-   path's meaning when used as an executable search path, such as in a shell
-   or when spawning a child process. Specifically, the absence of a separator
-   in the path may force it to be looked up in :envvar:`PATH` rather than the
-   current directory.
+   may allow the path to be resolved as either a file or directory, rather
+   than a directory only.
+2. pathlib normalizes ``Path("./my_program")`` to ``Path("my_program")``,
+   which changes a path's meaning when used as an executable search path, such
+   as in a shell or when spawning a child process. Specifically, the absence
+   of a separator in the path may force it to be looked up in :envvar:`PATH`
+   rather than the current directory.
 
 As a consequence of these differences, pathlib is not a drop-in replacement
 for :mod:`os.path`.
