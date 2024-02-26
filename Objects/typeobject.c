@@ -1835,6 +1835,8 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     if (presize) {
         ((PyObject **)alloc)[0] = NULL;
         ((PyObject **)alloc)[1] = NULL;
+    }
+    if (PyType_IS_GC(type)) {
         _PyObject_GC_Link(obj);
     }
     memset(obj, '\0', size);
@@ -4943,7 +4945,7 @@ update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
 #endif
 
 void
-_PyTypes_AfterFork()
+_PyTypes_AfterFork(void)
 {
 #ifdef Py_GIL_DISABLED
     struct type_cache *cache = get_type_cache();

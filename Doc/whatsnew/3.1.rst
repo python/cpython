@@ -81,7 +81,7 @@ Support was also added for third-party tools like `PyYAML <https://pyyaml.org/>`
       written by Raymond Hettinger.
 
 Since an ordered dictionary remembers its insertion order, it can be used
-in conjuction with sorting to make a sorted dictionary::
+in conjunction with sorting to make a sorted dictionary::
 
     >>> # regular unsorted dictionary
     >>> d = {'banana': 3, 'apple':4, 'pear': 1, 'orange': 2}
@@ -174,7 +174,7 @@ Some smaller changes made to the core Python language are:
 
   (Contributed by Eric Smith; :issue:`5237`.)
 
-* The :func:`string.maketrans` function is deprecated and is replaced by new
+* The :func:`!string.maketrans` function is deprecated and is replaced by new
   static methods, :meth:`bytes.maketrans` and :meth:`bytearray.maketrans`.
   This change solves the confusion around which types were supported by the
   :mod:`string` module. Now, :class:`str`, :class:`bytes`, and
@@ -381,16 +381,20 @@ New, Improved, and Deprecated Modules
               x / 0
 
   In addition, several new assertion methods were added including
-  :func:`assertSetEqual`, :func:`assertDictEqual`,
-  :func:`assertDictContainsSubset`, :func:`assertListEqual`,
-  :func:`assertTupleEqual`, :func:`assertSequenceEqual`,
-  :func:`assertRaisesRegexp`, :func:`assertIsNone`,
-  and :func:`assertIsNotNone`.
+  :meth:`~unittest.TestCase.assertSetEqual`,
+  :meth:`~unittest.TestCase.assertDictEqual`,
+  :meth:`!assertDictContainsSubset`,
+  :meth:`~unittest.TestCase.assertListEqual`,
+  :meth:`~unittest.TestCase.assertTupleEqual`,
+  :meth:`~unittest.TestCase.assertSequenceEqual`,
+  :meth:`assertRaisesRegexp() <unittest.TestCase.assertRaisesRegex>`,
+  :meth:`~unittest.TestCase.assertIsNone`,
+  and :meth:`~unittest.TestCase.assertIsNotNone`.
 
   (Contributed by Benjamin Peterson and Antoine Pitrou.)
 
-* The :mod:`io` module has three new constants for the :meth:`seek`
-  method :data:`SEEK_SET`, :data:`SEEK_CUR`, and :data:`SEEK_END`.
+* The :mod:`io` module has three new constants for the :meth:`~io.IOBase.seek`
+  method: :data:`~os.SEEK_SET`, :data:`~os.SEEK_CUR`, and :data:`~os.SEEK_END`.
 
 * The :data:`sys.version_info` tuple is now a named tuple::
 

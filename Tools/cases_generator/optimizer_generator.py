@@ -1,6 +1,6 @@
-"""Generate the cases for the tier 2 redundancy eliminator/abstract interpreter.
-Reads the instruction definitions from bytecodes.c. and tier2_redundancy_eliminator.bytecodes.c
-Writes the cases to tier2_redundancy_eliminator_cases.c.h, which is #included in Python/optimizer_analysis.c.
+"""Generate the cases for the tier 2 optimizer.
+Reads the instruction definitions from bytecodes.c and optimizer_bytecodes.c
+Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_analysis.c.
 """
 
 import argparse
@@ -30,8 +30,8 @@ from typing import TextIO, Iterator
 from lexer import Token
 from stack import StackOffset, Stack, SizeMismatch, UNUSED
 
-DEFAULT_OUTPUT = ROOT / "Python/tier2_redundancy_eliminator_cases.c.h"
-DEFAULT_ABSTRACT_INPUT = ROOT / "Python/tier2_redundancy_eliminator_bytecodes.c"
+DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
+DEFAULT_ABSTRACT_INPUT = ROOT / "Python/optimizer_bytecodes.c"
 
 
 def validate_uop(override: Uop, uop: Uop) -> None:
@@ -176,7 +176,9 @@ def generate_abstract_interpreter(
         if uop.name in abstract.uops:
             override = abstract.uops[uop.name]
             validate_uop(override, uop)
-        if uop.properties.tier_one_only:
+        if uop.properties.tier == 1:
+            continue
+        if uop.replicates:
             continue
         if uop.is_super():
             continue

@@ -762,18 +762,14 @@ def unwrap(func, *, stop=None):
    :exc:`ValueError` is raised if a cycle is encountered.
 
     """
-    if stop is None:
-        def _is_wrapper(f):
-            return hasattr(f, '__wrapped__')
-    else:
-        def _is_wrapper(f):
-            return hasattr(f, '__wrapped__') and not stop(f)
     f = func  # remember the original func for error reporting
     # Memoise by id to tolerate non-hashable objects, but store objects to
     # ensure they aren't destroyed, which would allow their IDs to be reused.
     memo = {id(f): f}
     recursion_limit = sys.getrecursionlimit()
-    while _is_wrapper(func):
+    while not isinstance(func, type) and hasattr(func, '__wrapped__'):
+        if stop is not None and stop(func):
+            break
         func = func.__wrapped__
         id_func = id(func)
         if (id_func in memo) or (len(memo) >= recursion_limit):
@@ -834,9 +830,8 @@ def _finddoc(obj):
             cls = self.__class__
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
-        func = obj.fget
-        name = func.__name__
-        cls = _findclass(func)
+        name = obj.__name__
+        cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif ismethoddescriptor(obj) or isdatadescriptor(obj):
