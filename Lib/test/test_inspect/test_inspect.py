@@ -3137,6 +3137,10 @@ class TestSignatureObject(unittest.TestCase):
                           int))
 
     def test_signature_on_classmethod(self):
+        self.assertEqual(self.signature(classmethod),
+                         ((('function', ..., ..., "positional_only"),),
+                          ...))
+
         class Test:
             @classmethod
             def foo(cls, arg1, *, arg2=1):
@@ -3155,6 +3159,10 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_staticmethod(self):
+        self.assertEqual(self.signature(staticmethod),
+                         ((('function', ..., ..., "positional_only"),),
+                          ...))
+
         class Test:
             @staticmethod
             def foo(cls, *, arg):
@@ -3678,16 +3686,20 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
 
-        class Wrapped:
-            pass
-        Wrapped.__wrapped__ = lambda a: None
-        self.assertEqual(self.signature(Wrapped),
+    def test_signature_on_wrapper(self):
+        class Wrapper:
+            def __call__(self, b):
+                pass
+        wrapper = Wrapper()
+        wrapper.__wrapped__ = lambda a: None
+        self.assertEqual(self.signature(wrapper),
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
         # wrapper loop:
-        Wrapped.__wrapped__ = Wrapped
+        wrapper = Wrapper()
+        wrapper.__wrapped__ = wrapper
         with self.assertRaisesRegex(ValueError, 'wrapper loop'):
-            self.signature(Wrapped)
+            self.signature(wrapper)
 
     def test_signature_on_lambdas(self):
         self.assertEqual(self.signature((lambda a=10: a)),
@@ -4998,6 +5010,14 @@ class TestUnwrap(unittest.TestCase):
         obj = NTimesUnwrappable(sys.getrecursionlimit() + 1)
         with self.assertRaisesRegex(ValueError, 'wrapper loop'):
             inspect.unwrap(obj)
+
+    def test_wrapped_descriptor(self):
+        self.assertIs(inspect.unwrap(NTimesUnwrappable), NTimesUnwrappable)
+        self.assertIs(inspect.unwrap(staticmethod), staticmethod)
+        self.assertIs(inspect.unwrap(classmethod), classmethod)
+        self.assertIs(inspect.unwrap(staticmethod(classmethod)), classmethod)
+        self.assertIs(inspect.unwrap(classmethod(staticmethod)), staticmethod)
+
 
 class TestMain(unittest.TestCase):
     def test_only_source(self):
