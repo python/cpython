@@ -156,7 +156,10 @@ In this invocation:
   Python, you can compile a python interpreter and then use that interpreter to
   run Python code. However, the binaries produced for iOS won't run on macOS, so
   you need to provide an external Python interpreter. This interpreter must be
-  the *exact* same version as the Python that is being compiled.
+  the same version as the Python that is being compiled. To be completely safe,
+  this should be the *exact* same commit hash. However, the longer a Python
+  release has been stable, the more likely it is that this constraint can be
+  relaxed - the same micro version will often be sufficient.
 
 For a full CPython build, you also need to specify the paths to iOS builds of
 the binary libraries that CPython depends on (XZ, BZip2, LibFFI and OpenSSL).
