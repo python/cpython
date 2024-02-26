@@ -389,7 +389,6 @@ class AbstractTestsWithSourceFile:
                 with zipfp.open(fname) as zipopen:
                     r = repr(zipopen)
                     self.assertIn('name=%r' % fname, r)
-                    self.assertIn("mode='r'", r)
                     if self.compression != zipfile.ZIP_STORED:
                         self.assertIn('compress_type=', r)
                 self.assertIn('[closed]', repr(zipopen))
@@ -455,14 +454,14 @@ class AbstractTestsWithSourceFile:
             with zipfp.open(fname) as fid:
                 self.assertEqual(fid.name, fname)
                 self.assertRaises(io.UnsupportedOperation, fid.fileno)
-                self.assertEqual(fid.mode, 'r')
+                self.assertEqual(fid.mode, 'rb')
                 self.assertIs(fid.readable(), True)
                 self.assertIs(fid.writable(), False)
                 self.assertIs(fid.seekable(), True)
                 self.assertIs(fid.closed, False)
             self.assertIs(fid.closed, True)
             self.assertEqual(fid.name, fname)
-            self.assertEqual(fid.mode, 'r')
+            self.assertEqual(fid.mode, 'rb')
             self.assertRaises(io.UnsupportedOperation, fid.fileno)
             self.assertRaises(ValueError, fid.readable)
             self.assertIs(fid.writable(), False)
@@ -1308,12 +1307,16 @@ class AbstractWriterTests:
         fname = "somefile.txt"
         with zipfile.ZipFile(TESTFN2, mode="w", compression=self.compression) as zipfp:
             with zipfp.open(fname, 'w') as fid:
+                self.assertEqual(fid.name, fname)
                 self.assertRaises(io.UnsupportedOperation, fid.fileno)
+                self.assertEqual(fid.mode, 'wb')
                 self.assertIs(fid.readable(), False)
                 self.assertIs(fid.writable(), True)
                 self.assertIs(fid.seekable(), False)
                 self.assertIs(fid.closed, False)
             self.assertIs(fid.closed, True)
+            self.assertEqual(fid.name, fname)
+            self.assertEqual(fid.mode, 'wb')
             self.assertRaises(io.UnsupportedOperation, fid.fileno)
             self.assertIs(fid.readable(), False)
             self.assertIs(fid.writable(), True)

@@ -301,6 +301,10 @@ ZipFile Objects
    attempting to read or write other files in the ZIP file will raise a
    :exc:`ValueError`.
 
+   In both cases the file-like object has also attributes :attr:`!name`,
+   which is equivalent to the name of a file within the archive, and
+   :attr:`!mode`, which is ``'rb'`` or ``'wb'`` depending on the input mode.
+
    When writing a file, if the file size is not known in advance but may exceed
    2 GiB, pass ``force_zip64=True`` to ensure that the header format is
    capable of supporting large files.  If the file size is known in advance,
@@ -324,6 +328,12 @@ ZipFile Objects
    .. versionchanged:: 3.6
       Calling :meth:`.open` on a closed ZipFile will raise a :exc:`ValueError`.
       Previously, a :exc:`RuntimeError` was raised.
+
+   .. versionchanged:: 3.13
+      Added attributes :attr:`!name` and :attr:`!mode` for the writeable
+      file-like object.
+      The value of the :attr:`!mode` attribute for the readable file-like
+      object was changed from ``'r'`` to ``'rb'``.
 
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)

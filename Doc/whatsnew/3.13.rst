@@ -174,6 +174,11 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
+* Added :attr:`!name` and :attr:`!mode` attributes for compressed
+  and archived file-like objects in modules :mod:`bz2`, :mod:`lzma`,
+  :mod:`tarfile` and :mod:`zipfile`.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
+
 
 New Modules
 ===========
@@ -1394,6 +1399,11 @@ Changes in the Python API
   than directories only. Users may add a trailing slash to match only
   directories.
 
+* The value of the :attr:`!mode` attribute of :class:`gzip.GzipFile` was
+  changed from integer (``1`` or ``2``) to string (``'rb'`` or ``'wb'``).
+  The value of the :attr:`!mode` attribute of the readable file-like object
+  returned by :meth:`zipfile.ZipFile.open` was changed from ``'r'`` to ``'rb'``.
+  (Contributed by Serhiy Storchaka in :gh:`115961`.)
 
 Build Changes
 =============
