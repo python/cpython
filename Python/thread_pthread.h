@@ -1,5 +1,6 @@
 #include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
 #include "pycore_pythread.h"      // _POSIX_SEMAPHORES
+#include "pycore_time.h"          // _PyTime_FromMicrosecondsClamup()
 
 /* Posix threads interface */
 
@@ -149,16 +150,16 @@ _PyThread_cond_init(PyCOND_T *cond)
 void
 _PyThread_cond_after(long long us, struct timespec *abs)
 {
-    _PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
-    _PyTime_t t;
+    PyTime_t timeout = _PyTime_FromMicrosecondsClamp(us);
+    PyTime_t t;
 #ifdef CONDATTR_MONOTONIC
     if (condattr_monotonic) {
-        t = _PyTime_GetMonotonicClock();
+        t = _PyTime_MonotonicUnchecked();
     }
     else
 #endif
     {
-        t = _PyTime_GetSystemClock();
+        t = _PyTime_TimeUnchecked();
     }
     t = _PyTime_Add(t, timeout);
     _PyTime_AsTimespec_clamp(t, abs);
@@ -481,31 +482,31 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
 
     (void) error; /* silence unused-but-set-variable warning */
 
-    _PyTime_t timeout;  // relative timeout
+    PyTime_t timeout;  // relative timeout
     if (microseconds >= 0) {
         // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
         // overflow to the caller, so clamp the timeout to
-        // [_PyTime_MIN, _PyTime_MAX].
+        // [PyTime_MIN, PyTime_MAX].
         //
-        // _PyTime_MAX nanoseconds is around 292.3 years.
+        // PyTime_MAX nanoseconds is around 292.3 years.
         //
         // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
         // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
         timeout = _PyTime_FromMicrosecondsClamp(microseconds);
     }
     else {
-        timeout = _PyTime_FromNanoseconds(-1);
+        timeout = -1;
     }
 
 #ifdef HAVE_SEM_CLOCKWAIT
     struct timespec abs_timeout;
     // Local scope for deadline
     {
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetMonotonicClock(), timeout);
+        PyTime_t deadline = _PyTime_Add(_PyTime_MonotonicUnchecked(), timeout);
         _PyTime_AsTimespec_clamp(deadline, &abs_timeout);
     }
 #else
-    _PyTime_t deadline = 0;
+    PyTime_t deadline = 0;
     if (timeout > 0 && !intr_flag) {
         deadline = _PyDeadline_Init(timeout);
     }
@@ -517,7 +518,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
             status = fix_status(sem_clockwait(thelock, CLOCK_MONOTONIC,
                                               &abs_timeout));
 #else
-            _PyTime_t abs_time = _PyTime_Add(_PyTime_GetSystemClock(),
+            PyTime_t abs_time = _PyTime_Add(_PyTime_TimeUnchecked(),
                                              timeout);
             struct timespec ts;
             _PyTime_AsTimespec_clamp(abs_time, &ts);

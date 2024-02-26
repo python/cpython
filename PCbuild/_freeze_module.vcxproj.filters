@@ -376,6 +376,9 @@
     <ClCompile Include="..\Python\pytime.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>

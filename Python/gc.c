@@ -12,6 +12,7 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_time.h"          // _PyTime_PerfCounterUnchecked()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
 
@@ -1285,7 +1286,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     PyGC_Head unreachable; /* non-problematic unreachable trash */
     PyGC_Head finalizers;  /* objects with, & reachable from, __del__ */
     PyGC_Head *gc;
-    _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
+    PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
     // gc_collect_main() must not be called before _PyGC_Init
@@ -1326,7 +1327,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
-        t1 = _PyTime_GetPerfCounter();
+        t1 = _PyTime_PerfCounterUnchecked();
     }
 
     if (PyDTrace_GC_START_ENABLED()) {
@@ -1427,7 +1428,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        double d = _PyTime_AsSecondsDouble(_PyTime_GetPerfCounter() - t1);
+        double d = PyTime_AsSecondsDouble(_PyTime_PerfCounterUnchecked() - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);
@@ -1771,9 +1772,12 @@ PyObject_IS_GC(PyObject *obj)
 }
 
 void
-_Py_ScheduleGC(PyInterpreterState *interp)
+_Py_ScheduleGC(PyThreadState *tstate)
 {
-    _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 1);
+    if (!_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT))
+    {
+        _Py_set_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
+    }
 }
 
 void
@@ -1794,7 +1798,7 @@ _PyObject_GC_Link(PyObject *op)
         !_Py_atomic_load_int_relaxed(&gcstate->collecting) &&
         !_PyErr_Occurred(tstate))
     {
-        _Py_ScheduleGC(tstate->interp);
+        _Py_ScheduleGC(tstate);
     }
 }
 

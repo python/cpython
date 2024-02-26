@@ -1,1 +1,0 @@
-Don't set ``LDSHARED`` when building for WASI.
