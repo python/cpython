@@ -4083,6 +4083,52 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
 
+# On cross-compile builds, configure will look for a host-specific compiler by
+# prepending the user-provided host triple to the required binary name.
+#
+# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# which isn't a binary that exists, and isn't very convenient, as it contains the
+# iOS version. As the default cross-compiler name won't exist, configure falls
+# back to gcc, which *definitely* won't work. We're providing wrapper scripts for
+# these tools; the binary names of these scripts are better defaults than "gcc".
+# This only requires that the user put the platform scripts folder (e.g.,
+# "iOS/Resources/bin") in their path, rather than defining platform-specific
+# names/paths for AR, CC, CPP, and CXX explicitly; and if the user forgets to
+# either put the platform scripts folder in the path, or specify CC etc,
+# configure will fail.
+if test -z "$AR"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) AR=arm64-apple-ios-simulator-ar ;;
+		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
+		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
+		*)
+	esac
+fi
+if test -z "$CC"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CC=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CC=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CC=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
+if test -z "$CPP"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CPP=arm64-apple-ios-simulator-cpp ;;
+		aarch64-apple-ios*)           CPP=arm64-apple-ios-cpp ;;
+		x86_64-apple-ios*-simulator)  CPP=x86_64-apple-ios-simulator-cpp ;;
+		*)
+	esac
+fi
+if test -z "$CXX"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-universalsdk" >&5
 printf %s "checking for --enable-universalsdk... " >&6; }
 # Check whether --enable-universalsdk was given.
@@ -4313,6 +4359,8 @@ then :
 				RESSRCDIR=iOS/Resources
 
 				ac_config_files="$ac_config_files iOS/Resources/Info.plist"
+
+				ac_config_files="$ac_config_files iOS/testbed/iOSTestbed/iOSTestbed-Info.plist"
 
 				;;
 			*)
@@ -31903,6 +31951,7 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES iOS/Resources/Info.plist" ;;
+    "iOS/testbed/iOSTestbed/iOSTestbed-Info.plist") CONFIG_FILES="$CONFIG_FILES iOS/testbed/iOSTestbed/iOSTestbed-Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;

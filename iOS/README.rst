@@ -85,12 +85,8 @@ provide the ``--enable-framework`` flag when configuring the build. The build
 also requires the use of cross-compilation. The minimal commands for building
 Python for the ARM64 iOS simulator will look something like::
 
-  $ export PATH="`pwd`/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+  $ export PATH="$(pwd)/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
   $ ./configure \
-        AR=arm64-apple-ios-simulator-ar \
-        CC=arm64-apple-ios-simulator-clang \
-        CPP=arm64-apple-ios-simulator-cpp \
-        CXX=arm64-apple-ios-simulator-clang \
         --enable-framework=/path/to/install \
         --host=arm64-apple-ios-simulator \
         --build=arm64-apple-darwin \
@@ -258,7 +254,7 @@ To run the test suite, configure a Python build for an iOS simulator (i.e.,
 ``--host=arm64-apple-ios-simulator`` or ``--host=x86_64-apple-ios-simulator``
 ), setting the framework location to the testbed project::
 
-    --enable-framework="./iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator"
+    --enable-framework="$(pwd)/iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator"
 
 Then run ``make all install testiOS``. This will build an iOS framework for your
 chosen architecture, install the Python iOS framework into the testbed project,
