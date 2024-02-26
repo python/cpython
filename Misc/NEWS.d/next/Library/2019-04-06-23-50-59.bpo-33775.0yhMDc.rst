@@ -1,0 +1,1 @@
+Add 'default' and 'version' help text for localization in argparse.
