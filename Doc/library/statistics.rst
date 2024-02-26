@@ -76,6 +76,7 @@ or sample.
 :func:`fmean`            Fast, floating point arithmetic mean, with optional weighting.
 :func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
+:func:`kde`              Estimate the probability density distribution of the data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
 :func:`median_high`      High median of data.
@@ -258,6 +259,54 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionchanged:: 3.10
       Added support for *weights*.
+
+
+.. function:: kde(data, h, kernel='normal')
+
+   `Kernel Density Estimation (KDE)
+   <https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf>`_:
+   Create a continuous probability density function from discrete samples.
+
+   The basic idea is to smooth the data using `a kernel function
+   <https://en.wikipedia.org/wiki/Kernel_(statistics)>`_.
+   to help draw inferences about a population from a sample.
+
+   The degree of smoothing is controlled by the scaling parameter *h*
+   which is called the bandwidth.  Smaller values emphasize local
+   features while larger values give smoother results.
+
+   The *kernel* determines the relative weights of the sample data
+   points.  Generally, the choice of kernel shape does not matter
+   as much as the more influential bandwidth smoothing parameter.
+
+   Kernels that give some weight to every sample point include
+   *normal* or *gauss*, *logistic*, and *sigmoid*.
+
+   Kernels that only give weight to sample points within the bandwidth
+   include *rectangular* or *uniform*, *triangular*, *parabolic* or
+   *epanechnikov*, *quartic* or *biweight*, *triweight*, and *cosine*.
+
+   A :exc:`StatisticsError` will be raised if the *data* sequence is empty.
+
+   `Wikipedia has an example
+   <https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
+   where we can use :func:`kde` to generate and plot a probability
+   density function estimated from a small sample:
+
+   .. doctest::
+
+      >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+      >>> f_hat = kde(sample, h=1.5)
+      >>> xarr = [i/100 for i in range(-750, 1100)]
+      >>> yarr = [f_hat(x) for x in xarr]
+
+   The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
+
+   .. image:: kde_example.png
+      :alt: Scatter plot of the estimated probability density function.
+
+   .. versionadded:: 3.13
+
 
 .. function:: median(data)
 
@@ -1094,46 +1143,6 @@ The final prediction goes to the largest posterior. This is known as the
   >>> 'male' if posterior_male > posterior_female else 'female'
   'female'
 
-
-Kernel density estimation
-*************************
-
-It is possible to estimate a continuous probability density function
-from a fixed number of discrete samples.
-
-The basic idea is to smooth the data using `a kernel function such as a
-normal distribution, triangular distribution, or uniform distribution
-<https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
-The degree of smoothing is controlled by a scaling parameter, ``h``,
-which is called the *bandwidth*.
-
-.. testcode::
-
-   def kde_normal(sample, h):
-       "Create a continuous probability density function from a sample."
-       # Smooth the sample with a normal distribution kernel scaled by h.
-       kernel_h = NormalDist(0.0, h).pdf
-       n = len(sample)
-       def pdf(x):
-           return sum(kernel_h(x - x_i) for x_i in sample) / n
-       return pdf
-
-`Wikipedia has an example
-<https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
-where we can use the ``kde_normal()`` recipe to generate and plot
-a probability density function estimated from a small sample:
-
-.. doctest::
-
-   >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
-   >>> f_hat = kde_normal(sample, h=1.5)
-   >>> xarr = [i/100 for i in range(-750, 1100)]
-   >>> yarr = [f_hat(x) for x in xarr]
-
-The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
-
-.. image:: kde_example.png
-   :alt: Scatter plot of the estimated probability density function.
 
 ..
    # This modelines must appear within the last ten lines of the file.
