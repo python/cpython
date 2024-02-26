@@ -2666,7 +2666,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
         return;
     }
     if (eval_frame != NULL) {
-        _Py_Executors_InvalidateAll(interp);
+        _Py_Executors_InvalidateAll(interp, 1);
     }
     RARE_EVENT_INC(set_eval_frame_func);
     interp->eval_frame = eval_frame;

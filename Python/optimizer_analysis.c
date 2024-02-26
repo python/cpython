@@ -405,7 +405,7 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
 {
     RARE_EVENT_STAT_INC(watched_globals_modification);
     assert(get_mutations(dict) < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS);
-    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict);
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), dict, 1);
     increment_mutations(dict);
     PyDict_Unwatch(GLOBALS_WATCHER_ID, dict);
     return 0;
