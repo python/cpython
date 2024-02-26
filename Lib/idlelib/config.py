@@ -183,9 +183,9 @@ class IdleConf:
 
         cfgDir = ''
         if (os.getenv('XDG_CONFIG_HOME') == "None"):
-            cfgDir = os.getenv('.config/idlerc')
+            cfgDir = '.config/idlerc'
         else:
-            cfgDir = os.getenv('XDG_CONFIG_HOME')+'/.idlerc'
+            cfgDir = os.getenv('XDG_CONFIG_HOME')+'/idlerc'
 
         userDir = os.path.expanduser('~')
         if userDir != '~': # expanduser() found user home dir
