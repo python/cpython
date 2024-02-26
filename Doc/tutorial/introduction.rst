@@ -307,8 +307,8 @@ index *n*, for example::
     +---+---+---+---+---+---+
     | P | y | t | h | o | n |
     +---+---+---+---+---+---+
-    0   1   2   3   4   5   6
-   -6  -5  -4  -3  -2  -1
+      0   1   2   3   4   5
+     -6  -5  -4  -3  -2  -1
 
 The first row of numbers gives the position of the indices 0...6 in the string;
 the second row gives the corresponding negative indices. The slice from *i* to
