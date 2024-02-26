@@ -239,7 +239,7 @@ find_python_map_start_address(pid_t pid, char* result_filename)
     int match_found = 0;
 
     char line[256];
-    char map_filename[256];
+    char map_filename[PATH_MAX];
     void* result_address = 0;
     while (fgets(line, sizeof(line), maps_file) != NULL) {
         unsigned long start_address = 0;
