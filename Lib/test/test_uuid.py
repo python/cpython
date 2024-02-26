@@ -551,6 +551,10 @@ class BaseTestUUID:
         """
         if os.name != 'posix':
             self.skipTest('POSIX-only test')
+        msg = re.escape("'_load_system_functions' is deprecated and "
+                        "slated for removal in Python 3.15")
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.uuid._load_system_functions()
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')

@@ -591,14 +591,13 @@ except ImportError:
 
 def __getattr__(attr):
     if attr == "_has_uuid_generate_time_safe":
+        warnings._deprecated("_has_uuid_generate_time_safe", remove=(3, 15))
         try:
             import _uuid
         except ImportError:
-            _has_uuid_generate_time_safe = None
+            return None
         else:
-            _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
-        warnings._deprecated("_has_uuid_generate_time_safe", remove=(3, 15))
-        return _has_uuid_generate_time_safe
+            return _uuid.has_uuid_generate_time_safe
     raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
 
 

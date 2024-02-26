@@ -919,15 +919,15 @@ Pending Removal in Python 3.15
   in Python 3.15. To create a TypedDict class with 0 fields, use ``class
   TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
-* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
-  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
-  They will be removed in Python 3.15.
-  (Contributed by Victor Stinner in :gh:`105096`.)
-
 * :mod:`uuid`: Deprecate some internal protected parts:
   ``_has_uuid_generate_time_safe``, ``_netbios_getnode``, ``_ipconfig_getnode``,
   and ``_load_system_functions``. They will be removed in Python 3.15.
   (Contributed by Nikita Sobolev in :gh:`113308`.)
+
+* :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
+  methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
+  They will be removed in Python 3.15.
+  (Contributed by Victor Stinner in :gh:`105096`.)
 
 Pending Removal in Python 3.16
 ------------------------------
