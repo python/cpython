@@ -1,2 +1,0 @@
-Clarify the error message for :exc:`asyncio.IncompleteReadError` when
-``expected`` is ``None``.

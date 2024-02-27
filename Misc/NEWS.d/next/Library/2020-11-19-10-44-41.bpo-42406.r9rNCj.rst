@@ -1,3 +1,0 @@
-We fixed an issue in `pickle.whichmodule` in which importing
-`multiprocessing` could change the how pickle identifies which module an
-object belongs to, potentially breaking the unpickling of those objects.

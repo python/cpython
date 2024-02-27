@@ -1,2 +1,0 @@
-Remove loop parameter from ``asyncio.open_connection`` and
-``asyncio.start_server`` functions. Patch provided by Yurii Karabas.

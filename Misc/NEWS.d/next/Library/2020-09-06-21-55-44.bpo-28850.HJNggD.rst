@@ -1,1 +1,0 @@
-Fix :meth:`pprint.PrettyPrinter.format` overrides being ignored for contents of small containers. The :func:`pprint._safe_repr` function was removed.

@@ -1,2 +1,0 @@
-Port :mod:`grp` and :mod:`pwd` extension modules to multiphase
-initialization (:pep:`489`)

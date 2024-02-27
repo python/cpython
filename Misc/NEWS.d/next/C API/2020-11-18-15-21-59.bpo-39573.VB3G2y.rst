@@ -1,4 +1,0 @@
-Convert :c:func:`Py_TYPE` and :c:func:`Py_SIZE` back to macros to allow
-using them as an l-value. Many third party C extension modules rely on the
-ability of using Py_TYPE() and Py_SIZE() to set an object type and size:
-``Py_TYPE(obj) = type;`` and ``Py_SIZE(obj) = size;``.
