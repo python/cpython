@@ -1348,7 +1348,7 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
  * May cause other executors to be invalidated as well
  */
 void
-_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
+_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
@@ -1360,6 +1360,9 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
             _Py_ExecutorClear(exec);
+            if (is_invalidation) {
+                OPT_STAT_INC(executors_invalidated);
+            }
         }
         exec = next;
     }
@@ -1367,7 +1370,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
 
 /* Invalidate all executors */
 void
-_Py_Executors_InvalidateAll(PyInterpreterState *interp)
+_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
     while (interp->executor_list_head) {
         _PyExecutorObject *executor = interp->executor_list_head;
@@ -1377,6 +1380,9 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
         }
         else {
             _Py_ExecutorClear(executor);
+        }
+        if (is_invalidation) {
+            OPT_STAT_INC(executors_invalidated);
         }
     }
 }
