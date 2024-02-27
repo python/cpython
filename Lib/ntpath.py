@@ -249,9 +249,15 @@ def split(p):
 def splitext(p):
     p = os.fspath(p)
     if isinstance(p, bytes):
-        return genericpath._splitext(p, b'\\', b'/', b'.')
+        seps = (b'\\', b'/')
+        root, ext = genericpath._splitext(p, b'\\', b'/', b'.')
     else:
-        return genericpath._splitext(p, '\\', '/', '.')
+        seps = ('\\', '/')
+        root, ext = genericpath._splitext(p, '\\', '/', '.')
+    if (ext and root[:1] in seps and root[1:2] in seps and
+        root.count(seps[0], 2) + root.count(seps[1], 2) <= 1):
+        return p, p[:0]
+    return root, ext
 splitext.__doc__ = genericpath._splitext.__doc__
 
 
