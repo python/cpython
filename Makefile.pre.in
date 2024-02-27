@@ -2690,6 +2690,11 @@ regen-deps:
 	for obj in $(LIBRARY_OBJS) $(IO_OBJS) $(LIBMPDEC_OBJS) $(LIBEXPAT_OBJS) $(LIBHACL_SHA2_OBJS) Programs/python.o Objects/mimalloc/page.o ; do \
 	    CC=$(CC) CPPFLAGS="$(PY_CPPFLAGS) -I./Include/internal -I./Include/internal/mimalloc -I./Modules/_hacl/include -DPREFIX='$(prefix)' -DEXEC_PREFIX='$(exec_prefix)' -DVERSION='$(VERSION)' -DVPATH='$(VPATH)' -DPLATLIBDIR='$(PLATLIBDIR)' -DPYTHONFRAMEWORK='$(PYTHONFRAMEWORK)' -DUNIVERSAL=1 -DPy_BUILD_CORE -std=c11" bash Tools/build/makedep.sh $$obj >> Makefile.deps.`uname -s` ; \
 	done
+	# pluck modules from Setup.stdlib
+	for obj in `egrep -v '^ *$$|^ *[*#]' Modules/Setup.stdlib | sed -e 's/^[^ ]*  *//' | tr ' ' '\012' | egrep '[.]c *$$' | sed -e 's:^:Modules/:' -e 's/[.]c$$/.o/'` ; do \
+	    CC=$(CC) CPPFLAGS="$(PY_CPPFLAGS) -DUSE_NDBM -I./Include/internal -I./Include/internal/mimalloc -I./Modules/_hacl/include $(MODULE__SSL_CFLAGS) $(MODULE__TKINTER_CFLAGS) -I./Modules/_decimal/libmpdec -DPREFIX='$(prefix)' -DEXEC_PREFIX='$(exec_prefix)' -DVERSION='$(VERSION)' -DVPATH='$(VPATH)' -DPLATLIBDIR='$(PLATLIBDIR)' -DPYTHONFRAMEWORK='$(PYTHONFRAMEWORK)' -DUNIVERSAL=1 -std=c11" bash Tools/build/makedep.sh $$obj >> Makefile.deps.`uname -s` ; \
+	done
+
 
 # Create a tags file for vi
 tags::
