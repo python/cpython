@@ -224,24 +224,30 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(srv.close)
 
         addr = srv.sockets[0].getsockname()
-        (c_rd, c_wr) = await asyncio.open_connection(addr[0], addr[1])
+        (c_rd, c_wr) = await asyncio.open_connection(addr[0], addr[1], limit=4096)
         self.addCleanup(c_wr.close)
 
-        # Make sure both sides are in a paused state
-        while (s_wr.transport.get_write_buffer_size() == 0 or
-               c_wr.transport.is_reading()):
-            while s_wr.transport.get_write_buffer_size() == 0:
-                s_wr.write(b'a' * 65536)
-                await asyncio.sleep(0)
-            await asyncio.sleep(0.1) # FIXME: More socket buffer space magically appears?
+        # Limit the send buffer so we can reliably overfill it
+        s_sock = s_wr.get_extra_info('socket')
+        s_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+
+        # Get the reader in to a paused state by sending more than twice
+        # the configured limit
+        s_wr.write(b'a' * 4096)
+        s_wr.write(b'a' * 4096)
+        s_wr.write(b'a' * 4096)
+        while c_wr.transport.is_reading():
+            await asyncio.sleep(0)
+
+        # Get the writer in a waiting state by sending data until the
+        # kernel stops accepting more in to the send buffer
+        while s_wr.transport.get_write_buffer_size() == 0:
+            s_wr.write(b'a' * 4096)
+            await asyncio.sleep(0)
 
         task = asyncio.create_task(srv.wait_closed())
         await asyncio.sleep(0)
         self.assertFalse(task.done())
-
-        # Sanity check
-        self.assertNotEqual(s_wr.transport.get_write_buffer_size(), 0)
-        self.assertFalse(c_wr.transport.is_reading())
 
         srv.close()
         srv.abort_clients()
