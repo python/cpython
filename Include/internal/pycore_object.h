@@ -237,6 +237,7 @@ Py_ssize_t _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra);
 extern int _PyType_CheckConsistency(PyTypeObject *type);
 extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
+
 /* Update the Python traceback of an object. This function must be called
    when a memory block is reused from a free list.
 
@@ -254,6 +255,8 @@ extern void _PyType_InitCache(PyInterpreterState *interp);
 extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
 extern void _PyObject_FiniState(PyInterpreterState *interp);
 extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
+
+extern Py_ssize_t _PyType_SharedKeysMaxSize(PyTypeObject *type);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
