@@ -1515,8 +1515,8 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
         Py_DECREF(hobj);
         return NULL;
     }
-    Py_DECREF(args);
     set_thread_handle_state(hobj, THREAD_HANDLE_RUNNING);
+    Py_DECREF(args);
     return (PyObject*) hobj;
 }
 
