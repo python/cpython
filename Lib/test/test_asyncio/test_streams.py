@@ -1131,6 +1131,7 @@ os.close(fd)
 
     def test_unclosed_server_resource_warnings(self):
         async def inner(rd, wr):
+            fut.set_result(True)
             with self.assertWarns(ResourceWarning) as cm:
                 del wr
                 gc.collect()
@@ -1143,11 +1144,12 @@ os.close(fd)
                 addr = srv.sockets[0].getsockname()
                 with socket.create_connection(addr):
                     # Give the loop some time to notice the connection
-                    await asyncio.sleep(0.1)
+                    await fut
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
+        fut = self.loop.create_future()
         self.loop.run_until_complete(outer())
 
         self.assertEqual(messages, [])
