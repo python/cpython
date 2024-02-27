@@ -1083,6 +1083,21 @@ class EnumType(type):
         #
         cls._member_map_[name] = member
 
+    @property
+    def __signature__(cls):
+        from inspect import Parameter, Signature
+        if cls._member_names_:
+            return Signature([Parameter('values', Parameter.VAR_POSITIONAL)])
+        else:
+            return Signature([Parameter('new_class_name', Parameter.POSITIONAL_ONLY),
+                              Parameter('names', Parameter.POSITIONAL_OR_KEYWORD),
+                              Parameter('module', Parameter.KEYWORD_ONLY, default=None),
+                              Parameter('qualname', Parameter.KEYWORD_ONLY, default=None),
+                              Parameter('type', Parameter.KEYWORD_ONLY, default=None),
+                              Parameter('start', Parameter.KEYWORD_ONLY, default=1),
+                              Parameter('boundary', Parameter.KEYWORD_ONLY, default=None)])
+
+
 EnumMeta = EnumType         # keep EnumMeta name for backwards compatibility
 
 
@@ -1125,13 +1140,6 @@ class Enum(metaclass=EnumType):
     Methods can be added to enumerations, and members can have their own
     attributes -- see the documentation for details.
     """
-
-    @classmethod
-    def __signature__(cls):
-        if cls._member_names_:
-            return '(*values)'
-        else:
-            return '(new_class_name, /, names, *, module=None, qualname=None, type=None, start=1, boundary=None)'
 
     def __new__(cls, value):
         # all enum instances are actually created during class construction
