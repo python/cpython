@@ -72,10 +72,11 @@ class Queue:
         have been processed (meaning that a task_done() call was received
         for every item that had been put() into the queue).
 
+        shutdown(immediate=True) calls task_done() for each remaining item in
+        the queue.
+
         Raises a ValueError if called more times than there were items
         placed in the queue.
-
-        Raises ShutDown if the queue has been shut down immediately.
         '''
         with self.all_tasks_done:
             unfinished = self.unfinished_tasks - 1
@@ -93,8 +94,6 @@ class Queue:
         to indicate the item was retrieved and all work on it is complete.
 
         When the count of unfinished tasks drops to zero, join() unblocks.
-
-        Raises ShutDown if the queue has been shut down immediately.
         '''
         with self.all_tasks_done:
             while self.unfinished_tasks:
@@ -227,18 +226,17 @@ class Queue:
         return self.get(block=False)
 
     def shutdown(self, immediate=False):
-        '''Shut-down the queue, making queue gets and puts raise.
+        '''Shut-down the queue, making queue gets and puts raise ShutDown.
 
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
         All blocked callers of put() will be unblocked, and also get()
-        and join() if 'immediate'. The ShutDown exception is raised.
+        and join() if 'immediate'.
         '''
         with self.mutex:
             self.is_shutdown = True
             if immediate:
-                n_items = self._qsize()
                 while self._qsize():
                     self._get()
                     if self.unfinished_tasks > 0:
