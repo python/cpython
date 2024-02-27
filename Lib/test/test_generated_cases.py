@@ -890,8 +890,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UOpsSymType *arg1;
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *arg1;
+            _Py_UopsSymbol *out;
             arg1 = stack_pointer[-1];
             eggs();
             stack_pointer[-1] = out;
@@ -899,7 +899,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *out;
             out = _Py_uop_sym_new_unknown(ctx);
             if (out == NULL) goto out_of_space;
             stack_pointer[-1] = out;
@@ -924,7 +924,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         case OP: {
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *out;
             out = _Py_uop_sym_new_unknown(ctx);
             if (out == NULL) goto out_of_space;
             stack_pointer[-1] = out;
@@ -932,8 +932,8 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         }
 
         case OP2: {
-            _Py_UOpsSymType *arg1;
-            _Py_UOpsSymType *out;
+            _Py_UopsSymbol *arg1;
+            _Py_UopsSymbol *out;
             arg1 = stack_pointer[-1];
             stack_pointer[-1] = out;
             break;
