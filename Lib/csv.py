@@ -73,6 +73,7 @@ from _csv import Error, writer, reader, register_dialect, \
 from _csv import Dialect as _Dialect
 
 from io import StringIO
+import os
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
            "QUOTE_STRINGS", "QUOTE_NOTNULL",
@@ -233,7 +234,7 @@ class DictWriter:
 
 class Sniffer:
     '''
-    "Sniffs" the format of a CSV file (i.e. delimiter, quotechar)
+    "Sniffs" the format of a CSV file (i.e. delimiter, quotechar, lineterminator)
     Returns a Dialect object.
     '''
     def __init__(self):
@@ -246,18 +247,19 @@ class Sniffer:
         Returns a dialect (or None) corresponding to the sample
         """
 
+        lineterminator = self._guess_lineterminator(sample)
         quotechar, doublequote, delimiter, skipinitialspace = \
                    self._guess_quote_and_delimiter(sample, delimiters)
         if not delimiter:
             delimiter, skipinitialspace = self._guess_delimiter(sample,
-                                                                delimiters)
+                                                                delimiters,
+                                                                lineterminator)
 
         if not delimiter:
             raise Error("Could not determine delimiter")
 
         class dialect(Dialect):
             _name = "sniffed"
-            lineterminator = '\r\n'
             quoting = QUOTE_MINIMAL
             # escapechar = ''
 
@@ -266,6 +268,7 @@ class Sniffer:
         # _csv.reader won't accept a quotechar of ''
         dialect.quotechar = quotechar or '"'
         dialect.skipinitialspace = skipinitialspace
+        dialect.lineterminator = lineterminator
 
         return dialect
 
@@ -346,7 +349,7 @@ class Sniffer:
         return (quotechar, doublequote, delim, skipinitialspace)
 
 
-    def _guess_delimiter(self, data, delimiters):
+    def _guess_delimiter(self, data, delimiters, lineterminator):
         """
         The delimiter /should/ occur the same number of times on
         each row. However, due to malformed data, it may not. We don't want
@@ -365,7 +368,7 @@ class Sniffer:
         additional chunks as necessary.
         """
 
-        data = list(filter(None, data.split('\n')))
+        data = list(filter(None, data.split(lineterminator)))
 
         ascii = [chr(c) for c in range(127)] # 7-bit ASCII
 
@@ -511,3 +514,14 @@ class Sniffer:
                     hasHeader -= 1
 
         return hasHeader > 0
+
+
+    def _guess_lineterminator(self, sample):
+        # Guess line terminator based on presence
+        terminators = ('\r\n', '\n', '\r')
+
+        for terminator in terminators:
+            if terminator in sample:
+                return terminator
+
+        return os.linesep
