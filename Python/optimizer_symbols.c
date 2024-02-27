@@ -74,6 +74,20 @@ sym_set_flag(_Py_UopsSymbol *sym, int flag)
     sym->flags |= flag;
 }
 
+static inline void
+_Py_uop_sym_set_bottom(_Py_UopsSymbol *sym)
+{
+    sym_set_flag(sym, IS_NULL | NOT_NULL);
+    sym->typ = NULL;
+    Py_CLEAR(sym->const_val);
+}
+
+static inline bool
+_Py_uop_sym_is_bottom(_Py_UopsSymbol *sym)
+{
+    return (sym->flags & IS_NULL) && (sym->flags & NOT_NULL);
+}
+
 bool
 _Py_uop_sym_is_not_null(_Py_UopsSymbol *sym)
 {
@@ -102,8 +116,15 @@ void
 _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
-    sym->typ = typ;
+    if (sym->flags & IS_NULL ||
+        (sym->typ != NULL && sym->typ != typ))
+    {
+        _Py_uop_sym_set_bottom(sym);
+        return;
+    }
+    // May be a no-op
     sym_set_flag(sym, NOT_NULL);
+    sym->typ = typ;
 }
 
 void
@@ -177,6 +198,9 @@ bool
 _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
+    if (_Py_uop_sym_is_bottom(sym)) {
+        return false;
+    }
     return sym->typ == typ;
 }
 
@@ -318,7 +342,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_sym_set_type(int_type, &PyLong_Type);
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
     _Py_uop_sym_set_type(int_type, &PyFloat_Type);
-    // TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "(int and float) doesn't match int");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(int_type, &PyLong_Type), "(int and float) matches int");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_RETURN_NONE;
