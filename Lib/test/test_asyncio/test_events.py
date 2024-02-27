@@ -2307,7 +2307,8 @@ class HandleTests(test_utils.TestCase):
         create_lineno = sys._getframe().f_lineno + 1
         h = asyncio.Handle(cb, (3,), self.loop)
         regex = (r'^<Handle noop\(1, 2\)\(3\) at %s:%s created at %s:%s>$'
-                 % (re.escape(filename), lineno, create_filename, create_lineno))
+                 % (re.escape(filename), lineno,
+                    re.escape(create_filename), create_lineno))
         self.assertRegex(repr(h), regex)
 
         # partial function with keyword args
@@ -2315,7 +2316,8 @@ class HandleTests(test_utils.TestCase):
         create_lineno = sys._getframe().f_lineno + 1
         h = asyncio.Handle(cb, (2, 3), self.loop)
         regex = (r'^<Handle noop\(x=1\)\(2, 3\) at %s:%s created at %s:%s>$'
-                 % (re.escape(filename), lineno, create_filename, create_lineno))
+                 % (re.escape(filename), lineno,
+                    re.escape(create_filename), create_lineno))
         self.assertRegex(repr(h), regex)
 
     def test_handle_source_traceback(self):
