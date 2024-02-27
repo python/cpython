@@ -1,1 +1,0 @@
-Use 8-byte step to detect ASCII sequence in 64-bit Windows build.

@@ -21,13 +21,11 @@ def main():
                    'to validate and pretty-print JSON objects.')
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument('infile', nargs='?',
-                        type=argparse.FileType(encoding="utf-8"),
                         help='a JSON file to be validated or pretty-printed',
-                        default=sys.stdin)
+                        default='-')
     parser.add_argument('outfile', nargs='?',
-                        type=argparse.FileType('w', encoding="utf-8"),
                         help='write the output of infile to outfile',
-                        default=sys.stdout)
+                        default=None)
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     parser.add_argument('--no-ensure-ascii', dest='ensure_ascii', action='store_false',
@@ -58,17 +56,30 @@ def main():
         dump_args['indent'] = None
         dump_args['separators'] = ',', ':'
 
-    with options.infile as infile, options.outfile as outfile:
+    try:
+        if options.infile == '-':
+            infile = sys.stdin
+        else:
+            infile = open(options.infile, encoding='utf-8')
         try:
             if options.json_lines:
                 objs = (json.loads(line) for line in infile)
             else:
-                objs = (json.load(infile), )
+                objs = (json.load(infile),)
+        finally:
+            if infile is not sys.stdin:
+                infile.close()
+
+        if options.outfile is None:
+            outfile = sys.stdout
+        else:
+            outfile = open(options.outfile, 'w', encoding='utf-8')
+        with outfile:
             for obj in objs:
                 json.dump(obj, outfile, **dump_args)
                 outfile.write('\n')
-        except ValueError as e:
-            raise SystemExit(e)
+    except ValueError as e:
+        raise SystemExit(e)
 
 
 if __name__ == '__main__':

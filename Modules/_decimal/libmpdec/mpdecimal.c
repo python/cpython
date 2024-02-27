@@ -64,7 +64,7 @@
 
 #if defined(_MSC_VER)
   #define ALWAYS_INLINE __forceinline
-#elif defined(__IBMC__) || defined(LEGACY_COMPILER)
+#elif defined (__IBMC__) || defined(LEGACY_COMPILER)
   #define ALWAYS_INLINE
   #undef inline
   #define inline
@@ -75,6 +75,12 @@
     #define ALWAYS_INLINE inline __attribute__ ((always_inline))
   #endif
 #endif
+
+/* ClangCL claims to support 128-bit int, but doesn't */
+#if defined(__SIZEOF_INT128__) && defined(__clang__) && defined(_MSC_VER)
+#undef __SIZEOF_INT128__
+#endif
+
 
 
 #define MPD_NEWTONDIV_CUTOFF 1024L
@@ -4843,7 +4849,7 @@ _mpd_qln(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
          uint32_t *status)
 {
     mpd_context_t varcontext, maxcontext;
-    mpd_t *z = (mpd_t *) result;
+    mpd_t *z = result;
     MPD_NEW_STATIC(v,0,0,0,0);
     MPD_NEW_STATIC(vtmp,0,0,0,0);
     MPD_NEW_STATIC(tmp,0,0,0,0);
@@ -6368,7 +6374,7 @@ _mpd_qpow_int(mpd_t *result, const mpd_t *base, const mpd_t *exp,
     mpd_context_t workctx;
     MPD_NEW_STATIC(tbase,0,0,0,0);
     MPD_NEW_STATIC(texp,0,0,0,0);
-    mpd_ssize_t n;
+    mpd_uint_t n;
 
 
     mpd_workcontext(&workctx, ctx);
@@ -8090,7 +8096,6 @@ mpd_sizeinbase(const mpd_t *a, uint32_t base)
     }
 
     digits = a->digits+a->exp;
-    assert(digits > 0);
 
 #ifdef CONFIG_64
     /* ceil(2711437152599294 / log10(2)) + 4 == 2**53 */

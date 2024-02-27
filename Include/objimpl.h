@@ -1,12 +1,8 @@
-/* The PyObject_ memory family:  high-level object memory interfaces.
-   See pymem.h for the low-level PyMem_ family.
-*/
+// The PyObject_ memory family:  high-level object memory interfaces.
+// See pymem.h for the low-level PyMem_ family.
 
 #ifndef Py_OBJIMPL_H
 #define Py_OBJIMPL_H
-
-#include "pymem.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,8 +34,8 @@ Functions and macros for modules that implement new object types.
    object with room for n items.  In addition to the refcount and type pointer
    fields, this also fills in the ob_size field.
 
- - PyObject_Del(op) releases the memory allocated for an object.  It does not
-   run a destructor -- it only frees the memory.  PyObject_Free is identical.
+ - PyObject_Free(op) releases the memory allocated for an object.  It does not
+   run a destructor -- it only frees the memory.
 
  - PyObject_Init(op, typeobj) and PyObject_InitVar(op, typeobj, n) don't
    allocate memory.  Instead of a 'type' parameter, they take a pointer to a
@@ -48,8 +44,8 @@ Functions and macros for modules that implement new object types.
 
 Note that objects created with PyObject_{New, NewVar} are allocated using the
 specialized Python allocator (implemented in obmalloc.c), if WITH_PYMALLOC is
-enabled.  In addition, a special debugging allocator is used if PYMALLOC_DEBUG
-is also #defined.
+enabled.  In addition, a special debugging allocator is used if Py_DEBUG
+macro is also defined.
 
 In case a specific form of memory management is needed (for example, if you
 must use the platform malloc heap(s), or shared memory, or C++ local storage or
@@ -102,7 +98,9 @@ PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyObject_Free(void *ptr);
 
 
-/* Macros */
+// Deprecated aliases only kept for backward compatibility.
+// PyObject_Del and PyObject_DEL are defined with no parameter to be able to
+// use them as function pointers (ex: tp_free = PyObject_Del).
 #define PyObject_MALLOC         PyObject_Malloc
 #define PyObject_REALLOC        PyObject_Realloc
 #define PyObject_FREE           PyObject_Free
@@ -133,14 +131,14 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 
 // Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
 // PyObject_MALLOC() with _PyObject_SIZE().
-#define PyObject_NEW(type, typeobj) PyObject_New(type, typeobj)
+#define PyObject_NEW(type, typeobj) PyObject_New(type, (typeobj))
 
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
-// Alias to PyObject_New(). In Python 3.8, PyObject_NEW() called directly
-// PyObject_MALLOC() with _PyObject_VAR_SIZE().
-#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, typeobj, n)
+// Alias to PyObject_NewVar(). In Python 3.8, PyObject_NEW_VAR() called
+// directly PyObject_MALLOC() with _PyObject_VAR_SIZE().
+#define PyObject_NEW_VAR(type, typeobj, n) PyObject_NewVar(type, (typeobj), (n))
 
 
 /*
@@ -148,8 +146,12 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
  * ==========================
  */
 
-/* C equivalent of gc.collect() which ignores the state of gc.enabled. */
+/* C equivalent of gc.collect(). */
 PyAPI_FUNC(Py_ssize_t) PyGC_Collect(void);
+/* C API for controlling the state of the garbage collector */
+PyAPI_FUNC(int) PyGC_Enable(void);
+PyAPI_FUNC(int) PyGC_Disable(void);
+PyAPI_FUNC(int) PyGC_IsEnabled(void);
 
 /* Test if a type has a GC head */
 #define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_HAVE_GC)
@@ -176,9 +178,9 @@ PyAPI_FUNC(void) PyObject_GC_UnTrack(void *);
 PyAPI_FUNC(void) PyObject_GC_Del(void *);
 
 #define PyObject_GC_New(type, typeobj) \
-                ( (type *) _PyObject_GC_New(typeobj) )
+    _Py_CAST(type*, _PyObject_GC_New(typeobj))
 #define PyObject_GC_NewVar(type, typeobj, n) \
-                ( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
+    _Py_CAST(type*, _PyObject_GC_NewVar((typeobj), (n)))
 
 PyAPI_FUNC(int) PyObject_GC_IsTracked(PyObject *);
 PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
@@ -199,11 +201,11 @@ PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_OBJIMPL_H
-#  include  "cpython/objimpl.h"
+#  include "cpython/objimpl.h"
 #  undef Py_CPYTHON_OBJIMPL_H
 #endif
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_OBJIMPL_H */
+#endif   // !Py_OBJIMPL_H

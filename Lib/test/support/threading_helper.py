@@ -4,6 +4,7 @@ import functools
 import sys
 import threading
 import time
+import unittest
 
 from test import support
 
@@ -21,34 +22,37 @@ from test import support
 
 
 def threading_setup():
-    return _thread._count(), threading._dangling.copy()
+    return _thread._count(), len(threading._dangling)
 
 
 def threading_cleanup(*original_values):
-    _MAX_COUNT = 100
+    orig_count, orig_ndangling = original_values
 
-    for count in range(_MAX_COUNT):
-        values = _thread._count(), threading._dangling
-        if values == original_values:
-            break
+    timeout = 1.0
+    for _ in support.sleeping_retry(timeout, error=False):
+        # Copy the thread list to get a consistent output. threading._dangling
+        # is a WeakSet, its value changes when it's read.
+        dangling_threads = list(threading._dangling)
+        count = _thread._count()
 
-        if not count:
-            # Display a warning at the first iteration
-            support.environment_altered = True
-            dangling_threads = values[1]
-            support.print_warning(f"threading_cleanup() failed to cleanup "
-                                  f"{values[0] - original_values[0]} threads "
-                                  f"(count: {values[0]}, "
-                                  f"dangling: {len(dangling_threads)})")
-            for thread in dangling_threads:
-                support.print_warning(f"Dangling thread: {thread!r}")
+        if count <= orig_count:
+            return
 
-            # Don't hold references to threads
-            dangling_threads = None
-        values = None
+    # Timeout!
+    support.environment_altered = True
+    support.print_warning(
+        f"threading_cleanup() failed to clean up threads "
+        f"in {timeout:.1f} seconds\n"
+        f"  before: thread count={orig_count}, dangling={orig_ndangling}\n"
+        f"  after: thread count={count}, dangling={len(dangling_threads)}")
+    for thread in dangling_threads:
+        support.print_warning(f"Dangling thread: {thread!r}")
 
-        time.sleep(0.01)
-        support.gc_collect()
+    # The warning happens when a test spawns threads and some of these threads
+    # are still running after the test completes. To fix this warning, join
+    # threads explicitly to wait until they complete.
+    #
+    # To make the warning more likely, reduce the timeout.
 
 
 def reap_threads(func):
@@ -87,19 +91,17 @@ def wait_threads_exit(timeout=None):
         yield
     finally:
         start_time = time.monotonic()
-        deadline = start_time + timeout
-        while True:
+        for _ in support.sleeping_retry(timeout, error=False):
+            support.gc_collect()
             count = _thread._count()
             if count <= old_count:
                 break
-            if time.monotonic() > deadline:
-                dt = time.monotonic() - start_time
-                msg = (f"wait_threads() failed to cleanup {count - old_count} "
-                       f"threads after {dt:.1f} seconds "
-                       f"(count: {count}, old count: {old_count})")
-                raise AssertionError(msg)
-            time.sleep(0.010)
-            support.gc_collect()
+        else:
+            dt = time.monotonic() - start_time
+            msg = (f"wait_threads() failed to cleanup {count - old_count} "
+                   f"threads after {dt:.1f} seconds "
+                   f"(count: {count}, old count: {old_count})")
+            raise AssertionError(msg)
 
 
 def join_thread(thread, timeout=None):
@@ -116,7 +118,11 @@ def join_thread(thread, timeout=None):
 
 @contextlib.contextmanager
 def start_threads(threads, unlock=None):
-    import faulthandler
+    try:
+        import faulthandler
+    except ImportError:
+        # It isn't supported on subinterpreters yet.
+        faulthandler = None
     threads = list(threads)
     started = []
     try:
@@ -148,7 +154,8 @@ def start_threads(threads, unlock=None):
         finally:
             started = [t for t in started if t.is_alive()]
             if started:
-                faulthandler.dump_traceback(sys.stdout)
+                if faulthandler is not None:
+                    faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))
 
 
@@ -157,7 +164,7 @@ class catch_threading_exception:
     Context manager catching threading.Thread exception using
     threading.excepthook.
 
-    Attributes set when an exception is catched:
+    Attributes set when an exception is caught:
 
     * exc_type
     * exc_value
@@ -207,3 +214,37 @@ class catch_threading_exception:
         del self.exc_value
         del self.exc_traceback
         del self.thread
+
+
+def _can_start_thread() -> bool:
+    """Detect whether Python can start new threads.
+
+    Some WebAssembly platforms do not provide a working pthread
+    implementation. Thread support is stubbed and any attempt
+    to create a new thread fails.
+
+    - wasm32-wasi does not have threading.
+    - wasm32-emscripten can be compiled with or without pthread
+      support (-s USE_PTHREADS / __EMSCRIPTEN_PTHREADS__).
+    """
+    if sys.platform == "emscripten":
+        return sys._emscripten_info.pthreads
+    elif sys.platform == "wasi":
+        return False
+    else:
+        # assume all other platforms have working thread support.
+        return True
+
+can_start_thread = _can_start_thread()
+
+def requires_working_threading(*, module=False):
+    """Skip tests or modules that require working threading.
+
+    Can be used as a function/class decorator or to skip an entire module.
+    """
+    msg = "requires threading support"
+    if module:
+        if not can_start_thread:
+            raise unittest.SkipTest(msg)
+    else:
+        return unittest.skipUnless(can_start_thread, msg)

@@ -1,3 +1,5 @@
+from types import GenericAlias
+
 __all__ = ["TopologicalSorter", "CycleError"]
 
 _NODE_OUT = -1
@@ -17,7 +19,7 @@ class _NodeInfo:
         self.npredecessors = 0
 
         # List of successor nodes. The list can contain duplicated elements as
-        # long as they're all reflected in the successor's npredecessors attribute).
+        # long as they're all reflected in the successor's npredecessors attribute.
         self.successors = []
 
 
@@ -244,3 +246,5 @@ class TopologicalSorter:
             node_group = self.get_ready()
             yield from node_group
             self.done(*node_group)
+
+    __class_getitem__ = classmethod(GenericAlias)
