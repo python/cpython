@@ -578,6 +578,7 @@ get_stack_trace(PyObject* self, PyObject* args)
         return NULL;
     }
 
+    // No Python frames are available for us (can happen at tear-down).
     if (address_of_thread != NULL) {
         void* address_of_current_frame;
         (void)read_memory(
