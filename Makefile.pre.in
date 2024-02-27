@@ -446,6 +446,7 @@ PYTHON_OBJS=	\
 		Python/object_stack.o \
 		Python/optimizer.o \
 		Python/optimizer_analysis.o \
+		Python/optimizer_symbols.o \
 		Python/parking_lot.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
