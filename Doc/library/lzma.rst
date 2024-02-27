@@ -349,6 +349,8 @@ options. Valid filter IDs are as follows:
   * :const:`FILTER_ARMTHUMB`
   * :const:`FILTER_POWERPC`
   * :const:`FILTER_SPARC`
+  * :const:`FILTER_ARM64`
+  * :const:`FILTER_RISCV`
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
