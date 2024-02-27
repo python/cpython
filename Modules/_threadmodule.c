@@ -1263,6 +1263,9 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 
 /* Module functions */
 
+// bootstate is used to "bootstrap" new threads. Any arguments needed by
+// `thread_run()`, which can only take a single argument due to platform
+// limitations, are contained in bootstate.
 struct bootstate {
     PyThreadState *tstate;
     PyObject *func;
