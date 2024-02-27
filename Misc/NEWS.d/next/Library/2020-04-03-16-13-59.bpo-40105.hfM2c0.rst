@@ -1,2 +1,0 @@
-ZipFile truncates files to avoid corruption when a shorter comment is provided
-in append ("a") mode. Patch by Jan Mazur.

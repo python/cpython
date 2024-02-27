@@ -1,2 +1,0 @@
-StrEnum added: it ensures that all members are already strings or string
-candidates

@@ -1,1 +1,0 @@
-Removed ``Py_UNICODE_str*`` functions manipulating ``Py_UNICODE*`` strings.

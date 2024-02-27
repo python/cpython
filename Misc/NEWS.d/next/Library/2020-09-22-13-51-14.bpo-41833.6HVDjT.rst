@@ -1,2 +1,0 @@
-The :class:`threading.Thread` constructor now uses the target name if the
-*target* argument is specified but the *name* argument is omitted.

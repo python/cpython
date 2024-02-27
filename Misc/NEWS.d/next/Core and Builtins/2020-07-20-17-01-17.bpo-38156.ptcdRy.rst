@@ -1,1 +1,0 @@
-Handle interrupts that come after EOF correctly in ``PyOS_StdioReadline``.

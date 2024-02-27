@@ -1,3 +1,0 @@
-:func:`csv.writer` now correctly escapes *escapechar* when input
-contains *escapechar*.  Patch by Catalin Iacob, Berker Peksag,
-and Itay Elbirt.

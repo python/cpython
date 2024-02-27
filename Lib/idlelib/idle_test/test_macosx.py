@@ -12,6 +12,15 @@ nontypes = {'other'}
 alltypes = mactypes | nontypes
 
 
+def setUpModule():
+    global orig_tktype
+    orig_tktype = macosx._tk_type
+
+
+def tearDownModule():
+    macosx._tk_type = orig_tktype
+
+
 class InitTktypeTest(unittest.TestCase):
     "Test _init_tk_type."
 
@@ -34,7 +43,7 @@ class InitTktypeTest(unittest.TestCase):
         for platform, types in ('darwin', alltypes), ('other', nontypes):
             with self.subTest(platform=platform):
                 macosx.platform = platform
-                macosx._tk_type == None
+                macosx._tk_type = None
                 macosx._init_tk_type()
                 self.assertIn(macosx._tk_type, types)
 

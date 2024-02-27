@@ -1,7 +1,8 @@
 """asyncio exceptions."""
 
 
-__all__ = ('CancelledError', 'InvalidStateError', 'TimeoutError',
+__all__ = ('BrokenBarrierError',
+           'CancelledError', 'InvalidStateError', 'TimeoutError',
            'IncompleteReadError', 'LimitOverrunError',
            'SendfileNotAvailableError')
 
@@ -10,8 +11,7 @@ class CancelledError(BaseException):
     """The Future or Task was cancelled."""
 
 
-class TimeoutError(Exception):
-    """The operation exceeded the given deadline."""
+TimeoutError = TimeoutError  # make local alias for the standard exception
 
 
 class InvalidStateError(Exception):
@@ -34,8 +34,9 @@ class IncompleteReadError(EOFError):
     - expected: total number of expected bytes (or None if unknown)
     """
     def __init__(self, partial, expected):
+        r_expected = 'undefined' if expected is None else repr(expected)
         super().__init__(f'{len(partial)} bytes read on a total of '
-                         f'{expected!r} expected bytes')
+                         f'{r_expected} expected bytes')
         self.partial = partial
         self.expected = expected
 
@@ -55,3 +56,7 @@ class LimitOverrunError(Exception):
 
     def __reduce__(self):
         return type(self), (self.args[0], self.consumed)
+
+
+class BrokenBarrierError(RuntimeError):
+    """Barrier is broken by barrier.abort() call."""

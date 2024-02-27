@@ -64,6 +64,7 @@ SMTP_SSL_PORT = 465
 CRLF = "\r\n"
 bCRLF = b"\r\n"
 _MAXLINE = 8192 # more than 8 times larger than RFC 821, 4.5.3
+_MAXCHALLENGE = 5  # Maximum number of AUTH challenges sent
 
 OLDSTYLE_AUTH = re.compile(r"auth=(.*)", re.I)
 
@@ -167,7 +168,7 @@ def quotedata(data):
     """Quote data for email.
 
     Double leading '.', and change Unix newline '\\n', or Mac '\\r' into
-    Internet CRLF end-of-line.
+    internet CRLF end-of-line.
     """
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
@@ -230,8 +231,8 @@ class SMTP:
                  source_address=None):
         """Initialize a new instance.
 
-        If specified, `host' is the name of the remote host to which to
-        connect.  If specified, `port' specifies the port to which to connect.
+        If specified, `host` is the name of the remote host to which to
+        connect.  If specified, `port` specifies the port to which to connect.
         By default, smtplib.SMTP_PORT is used.  If a host is specified the
         connect method is called, and if it returns anything other than a
         success code an SMTPConnectError is raised.  If specified,
@@ -248,6 +249,7 @@ class SMTP:
         self.esmtp_features = {}
         self.command_encoding = 'ascii'
         self.source_address = source_address
+        self._auth_challenge_count = 0
 
         if host:
             (code, msg) = self.connect(host, port)
@@ -365,10 +367,15 @@ class SMTP:
     def putcmd(self, cmd, args=""):
         """Send a command to the server."""
         if args == "":
-            str = '%s%s' % (cmd, CRLF)
+            s = cmd
         else:
-            str = '%s %s%s' % (cmd, args, CRLF)
-        self.send(str)
+            s = f'{cmd} {args}'
+        if '\r' in s or '\n' in s:
+            s = s.replace('\n', '\\n').replace('\r', '\\r')
+            raise ValueError(
+                f'command and arguments contain prohibited newline characters: {s}'
+            )
+        self.send(f'{s}{CRLF}')
 
     def getreply(self):
         """Get a reply from the server.
@@ -535,7 +542,7 @@ class SMTP:
                     raise SMTPNotSupportedError(
                         'SMTPUTF8 not supported by server')
             optionlist = ' ' + ' '.join(options)
-        self.putcmd("mail", "FROM:%s%s" % (quoteaddr(sender), optionlist))
+        self.putcmd("mail", "from:%s%s" % (quoteaddr(sender), optionlist))
         return self.getreply()
 
     def rcpt(self, recip, options=()):
@@ -543,7 +550,7 @@ class SMTP:
         optionlist = ''
         if options and self.does_esmtp:
             optionlist = ' ' + ' '.join(options)
-        self.putcmd("rcpt", "TO:%s%s" % (quoteaddr(recip), optionlist))
+        self.putcmd("rcpt", "to:%s%s" % (quoteaddr(recip), optionlist))
         return self.getreply()
 
     def data(self, msg):
@@ -633,14 +640,23 @@ class SMTP:
         if initial_response is not None:
             response = encode_base64(initial_response.encode('ascii'), eol='')
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
+            self._auth_challenge_count = 1
         else:
             (code, resp) = self.docmd("AUTH", mechanism)
+            self._auth_challenge_count = 0
         # If server responds with a challenge, send the response.
-        if code == 334:
+        while code == 334:
+            self._auth_challenge_count += 1
             challenge = base64.decodebytes(resp)
             response = encode_base64(
                 authobject(challenge).encode('ascii'), eol='')
             (code, resp) = self.docmd(response)
+            # If server keeps sending challenges, something is wrong.
+            if self._auth_challenge_count > _MAXCHALLENGE:
+                raise SMTPException(
+                    "Server AUTH mechanism infinite loop. Last response: "
+                    + repr((code, resp))
+                )
         if code in (235, 503):
             return (code, resp)
         raise SMTPAuthenticationError(code, resp)
@@ -662,7 +678,7 @@ class SMTP:
     def auth_login(self, challenge=None):
         """ Authobject to use with LOGIN authentication. Requires self.user and
         self.password to be set."""
-        if challenge is None:
+        if challenge is None or self._auth_challenge_count < 2:
             return self.user
         else:
             return self.password
@@ -733,14 +749,14 @@ class SMTP:
         # We could not login successfully.  Return result of last attempt.
         raise last_exception
 
-    def starttls(self, keyfile=None, certfile=None, context=None):
+    def starttls(self, *, context=None):
         """Puts the connection to the SMTP server into TLS mode.
 
         If there has been no previous EHLO or HELO command this session, this
         method tries ESMTP EHLO first.
 
         If the server supports TLS, this will encrypt the rest of the SMTP
-        session. If you provide the keyfile and certfile parameters,
+        session. If you provide the context parameter,
         the identity of the SMTP server and client can be checked. This,
         however, depends on whether the socket module really checks the
         certificates.
@@ -758,19 +774,8 @@ class SMTP:
         if resp == 220:
             if not _have_ssl:
                 raise RuntimeError("No SSL support included in this Python")
-            if context is not None and keyfile is not None:
-                raise ValueError("context and keyfile arguments are mutually "
-                                 "exclusive")
-            if context is not None and certfile is not None:
-                raise ValueError("context and certfile arguments are mutually "
-                                 "exclusive")
-            if keyfile is not None or certfile is not None:
-                import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a "
-                              "custom context instead", DeprecationWarning, 2)
             if context is None:
-                context = ssl._create_stdlib_context(certfile=certfile,
-                                                     keyfile=keyfile)
+                context = ssl._create_stdlib_context()
             self.sock = context.wrap_socket(self.sock,
                                             server_hostname=self._host)
             self.file = None
@@ -1001,35 +1006,18 @@ if _have_ssl:
         compiled with SSL support). If host is not specified, '' (the local
         host) is used. If port is omitted, the standard SMTP-over-SSL port
         (465) is used.  local_hostname and source_address have the same meaning
-        as they do in the SMTP class.  keyfile and certfile are also optional -
-        they can contain a PEM formatted private key and certificate chain file
-        for the SSL connection. context also optional, can contain a
-        SSLContext, and is an alternative to keyfile and certfile; If it is
-        specified both keyfile and certfile must be None.
+        as they do in the SMTP class.  context also optional, can contain a
+        SSLContext.
 
         """
 
         default_port = SMTP_SSL_PORT
 
         def __init__(self, host='', port=0, local_hostname=None,
-                     keyfile=None, certfile=None,
-                     timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                     *, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
                      source_address=None, context=None):
-            if context is not None and keyfile is not None:
-                raise ValueError("context and keyfile arguments are mutually "
-                                 "exclusive")
-            if context is not None and certfile is not None:
-                raise ValueError("context and certfile arguments are mutually "
-                                 "exclusive")
-            if keyfile is not None or certfile is not None:
-                import warnings
-                warnings.warn("keyfile and certfile are deprecated, use a "
-                              "custom context instead", DeprecationWarning, 2)
-            self.keyfile = keyfile
-            self.certfile = certfile
             if context is None:
-                context = ssl._create_stdlib_context(certfile=certfile,
-                                                     keyfile=keyfile)
+                context = ssl._create_stdlib_context()
             self.context = context
             SMTP.__init__(self, host, port, local_hostname, timeout,
                           source_address)
@@ -1082,7 +1070,8 @@ class LMTP(SMTP):
         # Handle Unix-domain sockets.
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.sock.settimeout(self.timeout)
+            if self.timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                self.sock.settimeout(self.timeout)
             self.file = None
             self.sock.connect(host)
         except OSError:
@@ -1110,10 +1099,7 @@ if __name__ == '__main__':
     toaddrs = prompt("To").split(',')
     print("Enter message, end with ^D:")
     msg = ''
-    while 1:
-        line = sys.stdin.readline()
-        if not line:
-            break
+    while line := sys.stdin.readline():
         msg = msg + line
     print("Message length is %d" % len(msg))
 

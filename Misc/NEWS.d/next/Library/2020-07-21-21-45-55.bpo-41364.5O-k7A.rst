@@ -1,1 +1,0 @@
-Reduce import overhead of :mod:`uuid`.
