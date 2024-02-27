@@ -30,10 +30,9 @@ extern PyTypeObject _PyUOpOptimizer_Type;
 /* See explanation in optimizer_symbols.c */
 
 struct _Py_UopsSymbol {
-    int flags;
-    PyTypeObject *typ;
-    // constant propagated value (might be NULL)
-    PyObject *const_val;
+    int flags;  // 0 bits: Top; 2 or more bits: Bottom
+    PyTypeObject *typ;  // Borrowed reference
+    PyObject *const_val;  // Owned reference (!)
 };
 
 // Holds locals, stack, locals, stack ... co_consts (in that order)
