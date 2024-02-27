@@ -476,8 +476,9 @@ class Listener(object):
         '''
         if self._listener is None:
             raise OSError('listener is closed')
+
         c = self._listener.accept()
-        if self._authkey:
+        if self._authkey is not None:
             deliver_challenge(c, self._authkey)
             answer_challenge(c, self._authkey)
         return c
