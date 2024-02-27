@@ -2686,9 +2686,9 @@ regen-sbom:
 
 .PHONY: regen-deps
 regen-deps:
-	rm -f Makefile.deps
+	rm -f Makefile.deps.`uname -s`
 	for obj in $(LIBRARY_OBJS) $(IO_OBJS) $(LIBMPDEC_OBJS) $(LIBEXPAT_OBJS) $(LIBHACL_SHA2_OBJS) Programs/python.o Objects/mimalloc/page.o ; do \
-	    CC=$(CC) CPPFLAGS="$(PY_CPPFLAGS) -I./Include/internal -I./Include/internal/mimalloc -I./Modules/_hacl/include -DPREFIX='$(prefix)' -DEXEC_PREFIX='$(exec_prefix)' -DVERSION='$(VERSION)' -DVPATH='$(VPATH)' -DPLATLIBDIR='$(PLATLIBDIR)' -DPYTHONFRAMEWORK='$(PYTHONFRAMEWORK)' -DUNIVERSAL=1 -DPy_BUILD_CORE -std=c11" bash Tools/build/makedep.sh $$obj >> Makefile.deps ; \
+	    CC=$(CC) CPPFLAGS="$(PY_CPPFLAGS) -I./Include/internal -I./Include/internal/mimalloc -I./Modules/_hacl/include -DPREFIX='$(prefix)' -DEXEC_PREFIX='$(exec_prefix)' -DVERSION='$(VERSION)' -DVPATH='$(VPATH)' -DPLATLIBDIR='$(PLATLIBDIR)' -DPYTHONFRAMEWORK='$(PYTHONFRAMEWORK)' -DUNIVERSAL=1 -DPy_BUILD_CORE -std=c11" bash Tools/build/makedep.sh $$obj >> Makefile.deps.`uname -s` ; \
 	done
 
 # Create a tags file for vi
@@ -2863,7 +2863,7 @@ update-config:
 
 # Dependencies
 
-include Makefile.deps
+include Makefile.deps.`uname -s`
 
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
