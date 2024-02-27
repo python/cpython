@@ -31,8 +31,11 @@ def _format_args_and_kwargs(args, kwargs, *, debug=False):
     """Format function arguments and keyword arguments.
 
     Special case for a single parameter: ('hello',) is formatted as ('hello').
+
+    Note that this function only returns argument details when
+    debug=True is specified, as arguments may contain sensitive
+    information.
     """
-    # Avoid printing sensitive argument contents unless debugging
     if not debug:
         return '()'
 
