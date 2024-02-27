@@ -495,7 +495,12 @@ def register_standard_browsers():
             register("microsoft-edge", None, Edge("MicrosoftEdge.exe"))
     else:
         # Prefer X browsers if present
-        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
+        #
+        # NOTE: Do not check for X11 browser on macOS,
+        # XQuartz installation sets a DISPLAY environment variable and will
+        # autostart when someone tries to access the display. Mac users in
+        # general don't need an X11 browser.
+        if sys.platform != "darwin" and (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
             try:
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
@@ -569,6 +574,7 @@ if sys.platform == 'darwin':
             super().__init__(name)
 
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:

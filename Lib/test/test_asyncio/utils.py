@@ -546,6 +546,7 @@ class TestCase(unittest.TestCase):
             else:
                 loop._default_executor.shutdown(wait=True)
         loop.close()
+
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:
             try:
@@ -557,9 +558,13 @@ class TestCase(unittest.TestCase):
                 pass
             else:
                 if isinstance(watcher, asyncio.ThreadedChildWatcher):
-                    threads = list(watcher._threads.values())
-                    for thread in threads:
-                        thread.join()
+                    # Wait for subprocess to finish, but not forever
+                    for thread in list(watcher._threads.values()):
+                        thread.join(timeout=support.SHORT_TIMEOUT)
+                        if thread.is_alive():
+                            raise RuntimeError(f"thread {thread} still alive: "
+                                               "subprocess still running")
+
 
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:
@@ -612,3 +617,18 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+async def await_without_task(coro):
+    exc = None
+    def func():
+        try:
+            for _ in coro.__await__():
+                pass
+        except BaseException as err:
+            nonlocal exc
+            exc = err
+    asyncio.get_running_loop().call_soon(func)
+    await asyncio.sleep(0)
+    if exc is not None:
+        raise exc

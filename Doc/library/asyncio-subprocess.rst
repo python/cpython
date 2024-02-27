@@ -240,7 +240,7 @@ their completion.
 
       .. note::
 
-         On Windows, :py:data:`SIGTERM` is an alias for :meth:`terminate`.
+         On Windows, :py:const:`~signal.SIGTERM` is an alias for :meth:`terminate`.
          ``CTRL_C_EVENT`` and ``CTRL_BREAK_EVENT`` can be sent to processes
          started with a *creationflags* parameter which includes
          ``CREATE_NEW_PROCESS_GROUP``.
@@ -249,10 +249,10 @@ their completion.
 
       Stop the child process.
 
-      On POSIX systems this method sends :py:const:`signal.SIGTERM` to the
+      On POSIX systems this method sends :py:const:`~signal.SIGTERM` to the
       child process.
 
-      On Windows the Win32 API function :c:func:`TerminateProcess` is
+      On Windows the Win32 API function :c:func:`!TerminateProcess` is
       called to stop the child process.
 
    .. method:: kill()

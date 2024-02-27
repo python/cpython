@@ -605,10 +605,6 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (PyObject_GetBuffer(args[1], &source, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&source, 'C')) {
-        _PyArg_BadArgument("source_hash", "argument 'source'", "contiguous buffer", args[1]);
-        goto exit;
-    }
     return_value = _imp_source_hash_impl(module, key, &source);
 
 exit:
@@ -627,4 +623,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=c37ad1bf06f9e947 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dbd63707bd40b07c input=a9049054013a1b77]*/

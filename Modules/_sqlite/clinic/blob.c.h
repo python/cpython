@@ -88,10 +88,6 @@ blob_write(pysqlite_Blob *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = blob_write_impl(self, &data);
 
 exit:
@@ -215,4 +211,4 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=27c24afc687bd772 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31abd55660e0c5af input=a9049054013a1b77]*/

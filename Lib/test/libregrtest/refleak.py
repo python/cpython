@@ -5,6 +5,7 @@ from typing import Any
 
 from test import support
 from test.support import os_helper
+from test.support import refleak_helper
 
 from .runtests import HuntRefleak
 from .utils import clear_caches
@@ -52,7 +53,8 @@ def runtest_refleak(test_name, test_func,
     except ImportError:
         zdc = None # Run unmodified on platforms without zipimport support
     else:
-        zdc = zipimport._zip_directory_cache.copy()
+        # private attribute that mypy doesn't know about:
+        zdc = zipimport._zip_directory_cache.copy()  # type: ignore[attr-defined]
     abcs = {}
     for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):
@@ -86,16 +88,24 @@ def runtest_refleak(test_name, test_func,
     rc_before = alloc_before = fd_before = interned_before = 0
 
     if not quiet:
-        print("beginning", repcount, "repetitions", file=sys.stderr)
-        print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
-              flush=True)
+        print("beginning", repcount, "repetitions. Showing number of leaks "
+                "(. for 0 or less, X for 10 or more)",
+              file=sys.stderr)
+        numbers = ("1234567890"*(repcount//10 + 1))[:repcount]
+        numbers = numbers[:warmups] + ':' + numbers[warmups:]
+        print(numbers, file=sys.stderr, flush=True)
 
     results = None
     dash_R_cleanup(fs, ps, pic, zdc, abcs)
     support.gc_collect()
 
     for i in rep_range:
-        results = test_func()
+        current = refleak_helper._hunting_for_refleaks
+        refleak_helper._hunting_for_refleaks = True
+        try:
+            results = test_func()
+        finally:
+            refleak_helper._hunting_for_refleaks = current
 
         dash_R_cleanup(fs, ps, pic, zdc, abcs)
         support.gc_collect()
@@ -109,12 +119,26 @@ def runtest_refleak(test_name, test_func,
         rc_after = gettotalrefcount() - interned_after * 2
         fd_after = fd_count()
 
-        if not quiet:
-            print('.', end='', file=sys.stderr, flush=True)
-
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
         alloc_deltas[i] = get_pooled_int(alloc_after - alloc_before)
         fd_deltas[i] = get_pooled_int(fd_after - fd_before)
+
+        if not quiet:
+            # use max, not sum, so total_leaks is one of the pooled ints
+            total_leaks = max(rc_deltas[i], alloc_deltas[i], fd_deltas[i])
+            if total_leaks <= 0:
+                symbol = '.'
+            elif total_leaks < 10:
+                symbol = (
+                    '.', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                    )[total_leaks]
+            else:
+                symbol = 'X'
+            if i == warmups:
+                print(' ', end='', file=sys.stderr, flush=True)
+            print(symbol, end='', file=sys.stderr, flush=True)
+            del total_leaks
+            del symbol
 
         alloc_before = alloc_after
         rc_before = rc_after
@@ -151,14 +175,20 @@ def runtest_refleak(test_name, test_func,
     ]:
         # ignore warmup runs
         deltas = deltas[warmups:]
-        if checker(deltas):
+        failing = checker(deltas)
+        suspicious = any(deltas)
+        if failing or suspicious:
             msg = '%s leaked %s %s, sum=%s' % (
                 test_name, deltas, item_name, sum(deltas))
-            print(msg, file=sys.stderr, flush=True)
-            with open(filename, "a", encoding="utf-8") as refrep:
-                print(msg, file=refrep)
-                refrep.flush()
-            failed = True
+            print(msg, end='', file=sys.stderr)
+            if failing:
+                print(file=sys.stderr, flush=True)
+                with open(filename, "a", encoding="utf-8") as refrep:
+                    print(msg, file=refrep)
+                    refrep.flush()
+                failed = True
+            else:
+                print(' (this is fine)', file=sys.stderr, flush=True)
     return (failed, results)
 
 
@@ -194,8 +224,8 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     # Clear caches
     clear_caches()
 
-    # Clear type cache at the end: previous function calls can modify types
-    sys._clear_type_cache()
+    # Clear other caches last (previous function calls can re-populate them):
+    sys._clear_internal_caches()
 
 
 def warm_caches():
