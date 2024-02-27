@@ -208,7 +208,8 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
 
         srv.close()
         srv.close_clients()
-        await asyncio.sleep(0.1) # FIXME: flush call_soon()?
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
         self.assertTrue(task.done())
 
     async def test_abort_clients(self):
@@ -244,7 +245,8 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
 
         srv.close()
         srv.abort_clients()
-        await asyncio.sleep(0.1) # FIXME: flush call_soon()?
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
         self.assertTrue(task.done())
 
 
