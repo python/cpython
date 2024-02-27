@@ -522,11 +522,9 @@ the ``--cgi`` option::
 
 .. warning::
 
-   :class:`CGIHTTPRequestHandler` and ``--cgi`` command line option
-   have known security issues and will be removed in the future,
-   thus it's not recommended for production use
-   or to expose :class:`CGIHTTPRequestHandler` to untrusted clients.
-   Use it at your own risk.
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   have known security issues, therefore you should not expose them
+   to untrusted clients. Use it at your own risk.
 
 .. _http.server-security:
 
