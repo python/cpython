@@ -45,10 +45,10 @@ get_thread_state(PyObject *module)
 // Handles transition from RUNNING to one of JOINED, DETACHED, or INVALID (post
 // fork).
 typedef enum {
-    THREAD_HANDLE_RUNNING,
-    THREAD_HANDLE_JOINED,
-    THREAD_HANDLE_DETACHED,
-    THREAD_HANDLE_INVALID,
+    THREAD_HANDLE_RUNNING = 1,
+    THREAD_HANDLE_JOINED = 2,
+    THREAD_HANDLE_DETACHED = 3,
+    THREAD_HANDLE_INVALID = 4,
 } ThreadHandleState;
 
 // A handle around an OS thread.
