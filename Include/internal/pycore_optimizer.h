@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_uop_ids.h"
+#include <stdbool.h>
 
 // This is the length of the trace we project initially.
 #define UOP_MAX_TRACE_LENGTH 512
@@ -24,6 +25,90 @@ extern PyTypeObject _PyCounterOptimizer_Type;
 extern PyTypeObject _PyDefaultOptimizer_Type;
 extern PyTypeObject _PyUOpExecutor_Type;
 extern PyTypeObject _PyUOpOptimizer_Type;
+
+/* Symbols */
+
+struct _Py_UOpsSymType {
+    int flags;
+    PyTypeObject *typ;
+    // constant propagated value (might be NULL)
+    PyObject *const_val;
+};
+
+// Holds locals, stack, locals, stack ... co_consts (in that order)
+#define MAX_ABSTRACT_INTERP_SIZE 4096
+
+#define OVERALLOCATE_FACTOR 5
+
+#define TY_ARENA_SIZE (UOP_MAX_TRACE_LENGTH * OVERALLOCATE_FACTOR)
+
+// Need extras for root frame and for overflow frame (see TRACE_STACK_PUSH())
+#define MAX_ABSTRACT_FRAME_DEPTH (TRACE_STACK_SIZE + 2)
+
+typedef struct _Py_UOpsSymType _Py_UOpsSymType;
+
+struct _Py_UOpsAbstractFrame {
+    // Max stacklen
+    int stack_len;
+    int locals_len;
+
+    _Py_UOpsSymType **stack_pointer;
+    _Py_UOpsSymType **stack;
+    _Py_UOpsSymType **locals;
+};
+
+typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
+
+typedef struct ty_arena {
+    int ty_curr_number;
+    int ty_max_number;
+    _Py_UOpsSymType arena[TY_ARENA_SIZE];
+} ty_arena;
+
+struct _Py_UOpsAbstractInterpContext {
+    PyObject_HEAD
+    // The current "executing" frame.
+    _Py_UOpsAbstractFrame *frame;
+    _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];
+    int curr_frame_depth;
+
+    // Arena for the symbolic types.
+    ty_arena t_arena;
+
+    _Py_UOpsSymType **n_consumed;
+    _Py_UOpsSymType **limit;
+    _Py_UOpsSymType *locals_and_stack[MAX_ABSTRACT_INTERP_SIZE];
+};
+
+typedef struct _Py_UOpsAbstractInterpContext _Py_UOpsAbstractInterpContext;
+
+extern bool _Py_uop_sym_is_null(_Py_UOpsSymType *sym);
+extern bool _Py_uop_sym_is_not_null(_Py_UOpsSymType *sym);
+extern bool _Py_uop_sym_is_const(_Py_UOpsSymType *sym);
+extern PyObject *_Py_uop_sym_get_const(_Py_UOpsSymType *sym);
+extern _Py_UOpsSymType *_Py_uop_sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx);
+extern _Py_UOpsSymType *_Py_uop_sym_new_not_null(_Py_UOpsAbstractInterpContext *ctx);
+extern _Py_UOpsSymType *_Py_uop_sym_new_type(
+    _Py_UOpsAbstractInterpContext *ctx, PyTypeObject *typ);
+extern _Py_UOpsSymType *_Py_uop_sym_new_const(_Py_UOpsAbstractInterpContext *ctx, PyObject *const_val);
+extern _Py_UOpsSymType *_Py_uop_sym_new_null(_Py_UOpsAbstractInterpContext *ctx);
+extern bool _Py_uop_sym_matches_type(_Py_UOpsSymType *sym, PyTypeObject *typ);
+extern void _Py_uop_sym_set_null(_Py_UOpsSymType *sym);
+extern void _Py_uop_sym_set_type(_Py_UOpsSymType *sym, PyTypeObject *tp);
+
+extern int _Py_uop_abstractcontext_init(_Py_UOpsAbstractInterpContext *ctx);
+extern void _Py_uop_abstractcontext_fini(_Py_UOpsAbstractInterpContext *ctx);
+
+extern _Py_UOpsAbstractFrame *_Py_uop_ctx_frame_new(
+    _Py_UOpsAbstractInterpContext *ctx,
+    PyCodeObject *co,
+    _Py_UOpsSymType **localsplus_start,
+    int n_locals_already_filled,
+    int curr_stackentries);
+extern int _Py_uop_ctx_frame_pop(_Py_UOpsAbstractInterpContext *ctx);
+
+PyAPI_FUNC(PyObject *)
+_Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 #ifdef __cplusplus
 }

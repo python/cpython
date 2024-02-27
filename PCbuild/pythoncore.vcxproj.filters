@@ -1382,6 +1382,9 @@
     <ClCompile Include="..\Python\optimizer_analysis.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\optimizer_symbols.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\parking_lot.c">
       <Filter>Python</Filter>
     </ClCompile>
