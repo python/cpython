@@ -94,7 +94,7 @@ analyze_macho64(mach_port_t proc_ref, void* base, void* map)
             int nsects = cmd->nsects;
             struct section_64* sec =
                     (struct section_64*)((void*)cmd + sizeof(struct segment_command_64));
-            for (register int j = 0; j < nsects; j++) {
+            for (int j = 0; j < nsects; j++) {
                 if (strcmp(sec[j].sectname, "PyRuntime") == 0) {
                     return base + sec[j].addr;
                 }
