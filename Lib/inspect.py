@@ -2039,15 +2039,17 @@ def _signature_get_user_defined_method(cls, method_name):
     named ``method_name`` and returns it only if it is a
     pure python function.
     """
-    try:
-        meth = getattr(cls, method_name)
-    except AttributeError:
-        return
+    if method_name == '__new__':
+        meth = getattr(cls, method_name, None)
     else:
-        if not isinstance(meth, _NonUserDefinedCallables):
-            # Once '__signature__' will be added to 'C'-level
-            # callables, this check won't be necessary
-            return meth
+        meth = getattr_static(cls, method_name, None)
+    if meth is None or isinstance(meth, _NonUserDefinedCallables):
+        # Once '__signature__' will be added to 'C'-level
+        # callables, this check won't be necessary
+        return None
+    if method_name != '__new__':
+        meth = _descriptor_get(meth, cls)
+    return meth
 
 
 def _signature_get_partial(wrapped_sig, partial, extra_args=()):
@@ -2609,92 +2611,72 @@ def _signature_from_callable(obj, *,
         wrapped_sig = _get_signature_of(obj.func)
         return _signature_get_partial(wrapped_sig, obj)
 
-    sig = None
     if isinstance(obj, type):
         # obj is a class or a metaclass
 
         # First, let's see if it has an overloaded __call__ defined
         # in its metaclass
-        call = getattr_static(type(obj), '__call__', None)
-        if call is not None and not isinstance(call, _NonUserDefinedCallables):
-            call = _descriptor_get(call, obj)
+        call = _signature_get_user_defined_method(type(obj), '__call__')
+        if call is not None:
             return _get_signature_of(call)
-        else:
-            new = _signature_get_user_defined_method(obj, '__new__')
-            init = getattr_static(obj, '__init__', None)
-            if isinstance(init, _NonUserDefinedCallables):
-                init = None
 
-            # Go through the MRO and see if any class has user-defined
-            # pure Python __new__ or __init__ method
-            for base in obj.__mro__:
-                # Now we check if the 'obj' class has an own '__new__' method
-                if new is not None and '__new__' in base.__dict__:
-                    sig = _get_signature_of(new)
-                    break
-                # or an own '__init__' method
-                elif init is not None and '__init__' in base.__dict__:
-                    init = _descriptor_get(init, obj)
-                    return _get_signature_of(init)
+        new = _signature_get_user_defined_method(obj, '__new__')
+        init = _signature_get_user_defined_method(obj, '__init__')
 
-        if sig is None:
-            # At this point we know, that `obj` is a class, with no user-
-            # defined '__init__', '__new__', or class-level '__call__'
+        # Go through the MRO and see if any class has user-defined
+        # pure Python __new__ or __init__ method
+        for base in obj.__mro__:
+            # Now we check if the 'obj' class has an own '__new__' method
+            if new is not None and '__new__' in base.__dict__:
+                sig = _get_signature_of(new)
+                if skip_bound_arg:
+                    sig = _signature_bound_method(sig)
+                return sig
+            # or an own '__init__' method
+            elif init is not None and '__init__' in base.__dict__:
+                return _get_signature_of(init)
 
-            for base in obj.__mro__[:-1]:
-                # Since '__text_signature__' is implemented as a
-                # descriptor that extracts text signature from the
-                # class docstring, if 'obj' is derived from a builtin
-                # class, its own '__text_signature__' may be 'None'.
-                # Therefore, we go through the MRO (except the last
-                # class in there, which is 'object') to find the first
-                # class with non-empty text signature.
-                try:
-                    text_sig = base.__text_signature__
-                except AttributeError:
-                    pass
-                else:
-                    if text_sig:
-                        # If 'base' class has a __text_signature__ attribute:
-                        # return a signature based on it
-                        return _signature_fromstr(sigcls, base, text_sig)
+        # At this point we know, that `obj` is a class, with no user-
+        # defined '__init__', '__new__', or class-level '__call__'
 
-            # No '__text_signature__' was found for the 'obj' class.
-            # Last option is to check if its '__init__' is
-            # object.__init__ or type.__init__.
-            if type not in obj.__mro__:
-                # We have a class (not metaclass), but no user-defined
-                # __init__ or __new__ for it
-                if (obj.__init__ is object.__init__ and
-                    obj.__new__ is object.__new__):
-                    # Return a signature of 'object' builtin.
-                    return sigcls.from_callable(object)
-                else:
-                    raise ValueError(
-                        'no signature found for builtin type {!r}'.format(obj))
+        for base in obj.__mro__[:-1]:
+            # Since '__text_signature__' is implemented as a
+            # descriptor that extracts text signature from the
+            # class docstring, if 'obj' is derived from a builtin
+            # class, its own '__text_signature__' may be 'None'.
+            # Therefore, we go through the MRO (except the last
+            # class in there, which is 'object') to find the first
+            # class with non-empty text signature.
+            try:
+                text_sig = base.__text_signature__
+            except AttributeError:
+                pass
+            else:
+                if text_sig:
+                    # If 'base' class has a __text_signature__ attribute:
+                    # return a signature based on it
+                    return _signature_fromstr(sigcls, base, text_sig)
 
-    elif not isinstance(obj, _NonUserDefinedCallables):
+        # No '__text_signature__' was found for the 'obj' class.
+        # Last option is to check if its '__init__' is
+        # object.__init__ or type.__init__.
+        if type not in obj.__mro__:
+            # We have a class (not metaclass), but no user-defined
+            # __init__ or __new__ for it
+            if (obj.__init__ is object.__init__ and
+                obj.__new__ is object.__new__):
+                # Return a signature of 'object' builtin.
+                return sigcls.from_callable(object)
+            else:
+                raise ValueError(
+                    'no signature found for builtin type {!r}'.format(obj))
+
+    else:
         # An object with __call__
-        # We also check that the 'obj' is not an instance of
-        # types.WrapperDescriptorType or types.MethodWrapperType to avoid
-        # infinite recursion (and even potential segfault)
         call = getattr_static(type(obj), '__call__', None)
         if call is not None:
             call = _descriptor_get(call, obj)
             return _get_signature_of(call)
-
-    if sig is not None:
-        # For classes and objects we skip the first parameter of their
-        # __call__, __new__, or __init__ methods
-        if skip_bound_arg:
-            return _signature_bound_method(sig)
-        else:
-            return sig
-
-    if isinstance(obj, types.BuiltinFunctionType):
-        # Raise a nicer error message for builtins
-        msg = 'no signature found for builtin function {!r}'.format(obj)
-        raise ValueError(msg)
 
     raise ValueError('callable {!r} is not supported by signature'.format(obj))
 
