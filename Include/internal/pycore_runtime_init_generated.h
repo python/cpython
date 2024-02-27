@@ -740,6 +740,7 @@ extern "C" {
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
     INIT_ID(_active), \
+    INIT_ID(_align_), \
     INIT_ID(_annotation), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \

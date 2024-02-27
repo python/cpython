@@ -563,10 +563,10 @@ Complex function calls are now faster and consume no C stack space.
 .. nonce: fvgsCl
 .. section: Core and Builtins
 
-``len()`` for 0-dimensional :class:`memoryview`` objects (such as
+``len()`` for 0-dimensional :class:`memoryview` objects (such as
 ``memoryview(ctypes.c_uint8(42))``) now raises a :exc:`TypeError`.
 Previously this returned ``1``, which was not consistent with ``mem_0d[0]``
-raising an :exc:`IndexError``.
+raising an :exc:`IndexError`.
 
 ..
 
