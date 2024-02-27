@@ -168,6 +168,7 @@ list of annotations and their meanings are as follows:
 * `override`. For external use by other interpreter definitions to override the current
    instruction definition.
 * `pure`. This instruction has no side effects.
+* 'tierN'. This instruction only used by tier N interpreter.
 
 ### Special functions/macros
 

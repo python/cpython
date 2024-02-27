@@ -68,9 +68,9 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
     def abuse(self, a, b, c):
         pass
 
-    @property
-    def contradiction(self):
+    def _getter(self):
         pass
+    contradiction = property(_getter)
 
 async def lobbest(grenade):
     pass
