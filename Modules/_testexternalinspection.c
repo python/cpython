@@ -46,11 +46,6 @@
 #include "Python.h"
 #include <internal/pycore_runtime.h>
 
-
-// This values comes from FRAME_OWNED_BY_CSTACK in Include/internal/pycore_frame.h, which is not
-// included here as tools that do what we are testing won't have access to it.
-static FRAME_OWNED_BY_CSTACK = 3;
-
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
 #endif
@@ -207,8 +202,7 @@ get_py_runtime_macos(pid_t pid)
         char* filename = strrchr(map_filename, '/');
         if (filename != NULL) {
             filename++;  // Move past the '/'
-        }
-        else {
+        } else {
             filename = map_filename;  // No path, use the whole string
         }
 
@@ -253,8 +247,7 @@ find_python_map_start_address(pid_t pid, char* result_filename)
         char* filename = strrchr(map_filename, '/');
         if (filename != NULL) {
             filename++;  // Move past the '/'
-        }
-        else {
+        } else {
             filename = map_filename;  // No path, use the whole string
         }
 
@@ -500,9 +493,8 @@ parse_frame_object(
     }
 
     char owner;
-    bytes_read = read_memory(pid,
-            (void*)(address + offsets->interpreter_frame.owner),
-            sizeof(char), &owner);
+    bytes_read =
+            read_memory(pid, (void*)(address + offsets->interpreter_frame.owner), sizeof(char), &owner);
     if (bytes_read < 0) {
         return -1;
     }
@@ -617,10 +609,10 @@ static PyMethodDef methods[] = {
 };
 
 static struct PyModuleDef module = {
-    .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_testexternalinspection",
-    .m_size = -1,
-    .m_methods = methods,
+        .m_base = PyModuleDef_HEAD_INIT,
+        .m_name = "_testexternalinspection",
+        .m_size = -1,
+        .m_methods = methods,
 };
 
 PyMODINIT_FUNC
