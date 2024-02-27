@@ -104,6 +104,7 @@
             INSTRUCTION_STATS(BINARY_OP);
             PREDICTED(BINARY_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *rhs;
             PyObject *lhs;
             PyObject *res;
@@ -112,6 +113,7 @@
             lhs = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -419,6 +421,7 @@
             INSTRUCTION_STATS(BINARY_SUBSCR);
             PREDICTED(BINARY_SUBSCR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *sub;
             PyObject *container;
             PyObject *res;
@@ -427,6 +430,7 @@
             container = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -747,6 +751,7 @@
             INSTRUCTION_STATS(CALL);
             PREDICTED(CALL);
             _Py_CODEUNIT *this_instr = next_instr - 4;
+            (void)this_instr;
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -757,6 +762,7 @@
             callable = stack_pointer[-2 - oparg];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -1176,6 +1182,7 @@
             INSTRUCTION_STATS(CALL_FUNCTION_EX);
             PREDICTED(CALL_FUNCTION_EX);
             _Py_CODEUNIT *this_instr = next_instr - 1;
+            (void)this_instr;
             PyObject *kwargs = NULL;
             PyObject *callargs;
             PyObject *func;
@@ -1336,6 +1343,7 @@
             INSTRUCTION_STATS(CALL_KW);
             PREDICTED(CALL_KW);
             _Py_CODEUNIT *this_instr = next_instr - 1;
+            (void)this_instr;
             PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
@@ -1939,6 +1947,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CLEANUP_THROW);
+            (void)this_instr;
             PyObject *exc_value;
             PyObject *last_sent_val;
             PyObject *sub_iter;
@@ -1973,6 +1982,7 @@
             INSTRUCTION_STATS(COMPARE_OP);
             PREDICTED(COMPARE_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -1981,6 +1991,7 @@
             left = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -2326,6 +2337,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_ASYNC_FOR);
+            (void)this_instr;
             PyObject *exc;
             PyObject *awaitable;
             exc = stack_pointer[-1];
@@ -2460,12 +2472,14 @@
             INSTRUCTION_STATS(FOR_ITER);
             PREDICTED(FOR_ITER);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *iter;
             PyObject *next;
             // _SPECIALIZE_FOR_ITER
             iter = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -2886,6 +2900,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL);
+            (void)this_instr;
             /* Skip 3 cache entries */
             int is_meth = PEEK(oparg + 1) != NULL;
             int total_args = oparg + is_meth;
@@ -2911,6 +2926,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_KW);
+            (void)this_instr;
             int is_meth = PEEK(oparg + 2) != NULL;
             int total_args = oparg + is_meth;
             PyObject *function = PEEK(oparg + 3);
@@ -2927,6 +2943,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_FOR);
+            (void)this_instr;
             PyObject *value;
             PyObject *receiver;
             value = stack_pointer[-1];
@@ -2949,6 +2966,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_SEND);
+            (void)this_instr;
             PyObject *value;
             PyObject *receiver;
             value = stack_pointer[-1];
@@ -2970,6 +2988,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_FOR_ITER);
+            (void)this_instr;
             /* Skip 1 cache entry */
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
@@ -3002,6 +3021,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_INSTRUCTION);
+            (void)this_instr;
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, this_instr);
             if (next_opcode < 0) goto error;
@@ -3018,6 +3038,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_BACKWARD);
+            (void)this_instr;
             /* Skip 1 cache entry */
             CHECK_EVAL_BREAKER();
             INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
@@ -3028,6 +3049,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_FORWARD);
+            (void)this_instr;
             INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
@@ -3036,6 +3058,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_LOAD_SUPER_ATTR);
+            (void)this_instr;
             /* Skip 1 cache entry */
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
@@ -3047,6 +3070,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_FALSE);
+            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
@@ -3063,6 +3087,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NONE);
+            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *value = POP();
             int flag = Py_IsNone(value);
@@ -3085,6 +3110,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NOT_NONE);
+            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *value = POP();
             int offset;
@@ -3107,6 +3133,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_TRUE);
+            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
@@ -3123,6 +3150,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
+            (void)this_instr;
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
@@ -3153,6 +3181,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RETURN_CONST);
+            (void)this_instr;
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
             int err = _Py_call_instrumentation_arg(
                 tstate, PY_MONITORING_EVENT_PY_RETURN,
@@ -3176,6 +3205,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RETURN_VALUE);
+            (void)this_instr;
             PyObject *retval;
             retval = stack_pointer[-1];
             int err = _Py_call_instrumentation_arg(
@@ -3200,6 +3230,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_YIELD_VALUE);
+            (void)this_instr;
             PyObject *retval;
             retval = stack_pointer[-1];
             assert(frame != &entry_frame);
@@ -3263,6 +3294,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
+            (void)this_instr;
             /* Skip 1 cache entry */
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
@@ -3387,6 +3419,7 @@
             INSTRUCTION_STATS(LOAD_ATTR);
             PREDICTED(LOAD_ATTR);
             _Py_CODEUNIT *this_instr = next_instr - 10;
+            (void)this_instr;
             PyObject *owner;
             PyObject *attr;
             PyObject *self_or_null = NULL;
@@ -3394,6 +3427,7 @@
             owner = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -4083,11 +4117,13 @@
             INSTRUCTION_STATS(LOAD_GLOBAL);
             PREDICTED(LOAD_GLOBAL);
             _Py_CODEUNIT *this_instr = next_instr - 5;
+            (void)this_instr;
             PyObject *res;
             PyObject *null = NULL;
             // _SPECIALIZE_LOAD_GLOBAL
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -4279,6 +4315,7 @@
             INSTRUCTION_STATS(LOAD_SUPER_ATTR);
             PREDICTED(LOAD_SUPER_ATTR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *class;
             PyObject *global_super;
             PyObject *self;
@@ -4289,6 +4326,7 @@
             global_super = stack_pointer[-3];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 int load_method = oparg & 1;
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
@@ -4567,6 +4605,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
+            (void)this_instr;
             PyObject *cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -4584,6 +4623,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NONE);
+            (void)this_instr;
             PyObject *value;
             PyObject *b;
             PyObject *cond;
@@ -4617,6 +4657,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NOT_NONE);
+            (void)this_instr;
             PyObject *value;
             PyObject *b;
             PyObject *cond;
@@ -4650,6 +4691,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
+            (void)this_instr;
             PyObject *cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -4711,6 +4753,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RAISE_VARARGS);
+            (void)this_instr;
             PyObject **args;
             args = &stack_pointer[-oparg];
             PyObject *cause = NULL, *exc = NULL;
@@ -4740,6 +4783,7 @@
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RERAISE);
+            (void)this_instr;
             PyObject *exc;
             PyObject **values;
             exc = stack_pointer[-1];
@@ -4779,6 +4823,7 @@
             INSTRUCTION_STATS(RESUME);
             PREDICTED(RESUME);
             _Py_CODEUNIT *this_instr = next_instr - 1;
+            (void)this_instr;
             assert(frame == tstate->current_frame);
             uintptr_t global_version =
             _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
@@ -4915,6 +4960,7 @@
             INSTRUCTION_STATS(SEND);
             PREDICTED(SEND);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *receiver;
             PyObject *v;
             PyObject *retval;
@@ -4922,6 +4968,7 @@
             receiver = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5102,12 +5149,14 @@
             INSTRUCTION_STATS(STORE_ATTR);
             PREDICTED(STORE_ATTR);
             _Py_CODEUNIT *this_instr = next_instr - 5;
+            (void)this_instr;
             PyObject *owner;
             PyObject *v;
             // _SPECIALIZE_STORE_ATTR
             owner = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -5391,6 +5440,7 @@
             INSTRUCTION_STATS(STORE_SUBSCR);
             PREDICTED(STORE_SUBSCR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *sub;
             PyObject *container;
             PyObject *v;
@@ -5399,6 +5449,7 @@
             container = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5494,12 +5545,14 @@
             INSTRUCTION_STATS(TO_BOOL);
             PREDICTED(TO_BOOL);
             _Py_CODEUNIT *this_instr = next_instr - 4;
+            (void)this_instr;
             PyObject *value;
             PyObject *res;
             // _SPECIALIZE_TO_BOOL
             value = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
@@ -5703,11 +5756,13 @@
             INSTRUCTION_STATS(UNPACK_SEQUENCE);
             PREDICTED(UNPACK_SEQUENCE);
             _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *seq;
             // _SPECIALIZE_UNPACK_SEQUENCE
             seq = stack_pointer[-1];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 #if ENABLE_SPECIALIZATION
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                     next_instr = this_instr;
