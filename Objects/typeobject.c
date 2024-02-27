@@ -7760,6 +7760,12 @@ type_ready_set_new(PyTypeObject *type, int rerunbuiltin)
     return 0;
 }
 
+static Py_ssize_t
+expected_number_of_shared_keys(PyTypeObject *type)
+{
+    return SHARED_KEYS_MAX_SIZE;
+}
+
 static int
 type_ready_managed_dict(PyTypeObject *type)
 {
@@ -7775,7 +7781,7 @@ type_ready_managed_dict(PyTypeObject *type)
     }
     PyHeapTypeObject* et = (PyHeapTypeObject*)type;
     if (et->ht_cached_keys == NULL) {
-        et->ht_cached_keys = _PyDict_NewKeysForClass();
+        et->ht_cached_keys = _PyDict_NewKeysForClass(expected_number_of_shared_keys(type));
         if (et->ht_cached_keys == NULL) {
             PyErr_NoMemory();
             return -1;
