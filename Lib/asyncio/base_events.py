@@ -277,7 +277,8 @@ class Server(events.AbstractServer):
                  ssl_handshake_timeout, ssl_shutdown_timeout=None):
         self._loop = loop
         self._sockets = sockets
-        # Weak references so abandoned transports can be detected
+        # Weak references so we don't break Transport's ability to
+        # detect abandoned transports
         self._clients = weakref.WeakSet()
         self._waiters = []
         self._protocol_factory = protocol_factory
@@ -296,8 +297,6 @@ class Server(events.AbstractServer):
         self._clients.add(transport)
 
     def _detach(self, transport):
-        # Note that 'transport' may already be missing from
-        # self._clients if it has been garbage collected
         self._clients.discard(transport)
         if len(self._clients) == 0 and self._sockets is None:
             self._wakeup()
