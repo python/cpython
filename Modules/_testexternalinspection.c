@@ -46,6 +46,11 @@
 #include "Python.h"
 #include <internal/pycore_runtime.h>
 
+
+// This values comes from FRAME_OWNED_BY_CSTACK in Include/internal/pycore_frame.h, which is not
+// included here as tools that do what we are testing won't have access to it.
+static FRAME_OWNED_BY_CSTACK = 3;
+
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
 #endif
@@ -80,7 +85,7 @@ analyze_macho64(mach_port_t proc_ref, void* base, void* map)
                             &object_name)
                     != KERN_SUCCESS)
                 {
-                    printf("Cannot get any more VM maps.\n");
+                    PyErr_SetString(PyExc_RuntimeError, "Cannot get any more VM maps.\n");
                     return NULL;
                 }
             }
@@ -107,20 +112,20 @@ analyze_macho(char* path, void* base, mach_vm_size_t size, mach_port_t proc_ref)
 {
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
-        printf("Cannot open binary %s\n", path);
+        PyErr_SetString(PyExc_RuntimeError, "Cannot open binary %s\n", path);
         return NULL;
     }
 
     struct stat fs;
     if (fstat(fd, &fs) == -1) {
-        printf("Cannot get size of binary %s\n", path);
+        PyErr_Format(PyExc_RuntimeError, "Cannot get size of binary %s\n", path);
         close(fd);
         return NULL;
     }
 
     void* map = mmap(0, fs.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (map == MAP_FAILED) {
-        printf("Cannot map binary %s\n", path);
+        PyErr_Format(PyExc_RuntimeError, "Cannot map binary %s\n", path);
         close(fd);
         return NULL;
     }
@@ -133,19 +138,21 @@ analyze_macho(char* path, void* base, mach_vm_size_t size, mach_port_t proc_ref)
         case MH_CIGAM:
         case FAT_MAGIC:
         case FAT_CIGAM:
-            printf("Mach-O 32 or FAT binaries are not supported\n");
+            PyErr_SetString(PyExc_RuntimeError, "32-bit Mach-O binaries are not supported");
             break;
         case MH_MAGIC_64:
         case MH_CIGAM_64:
             result = analyze_macho64(proc_ref, base, map);
             break;
         default:
-            printf("Unknown Mach-O magic\n");
+            PyErr_SetString(PyExc_RuntimeError, "Unknown Mach-O magic");
             break;
     }
 
     munmap(map, fs.st_size);
-    close(fd);
+    if (close(fd) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+    }
     return result;
 }
 
@@ -157,8 +164,7 @@ pid_to_task(pid_t pid)
 
     result = task_for_pid(mach_task_self(), pid, &task);
     if (result != KERN_SUCCESS) {
-        printf("Call to task_for_pid failed on PID %d: %s\n", pid, mach_error_string(result));
-        PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        PyErr_Format(PyExc_PermissionError, "Cannot get task for PID %d", pid);
         return 0;
     }
     return task;
@@ -175,7 +181,7 @@ get_py_runtime_macos(pid_t pid)
 
     mach_port_t proc_ref = pid_to_task(pid);
     if (proc_ref == 0) {
-        printf("Cannot get task for PID\n");
+        PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
         return NULL;
     }
 
@@ -287,23 +293,24 @@ get_py_runtime_linux(pid_t pid)
     }
 
     void* result = NULL;
+    void* file_memory = NULL;
 
     int fd = open(elf_file, O_RDONLY);
     if (fd < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
+        goto exit;
     }
 
     struct stat file_stats;
     if (fstat(fd, &file_stats) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
+        goto exit;
     }
 
-    void* file_memory = mmap(NULL, file_stats.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    file_memory = mmap(NULL, file_stats.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     if (file_memory == MAP_FAILED) {
         PyErr_SetFromErrno(PyExc_OSError);
-        return NULL;
+        goto exit;
     }
 
     Elf_Ehdr* elf_header = (Elf_Ehdr*)file_memory;
@@ -337,8 +344,13 @@ get_py_runtime_linux(pid_t pid)
         result = start_address + py_runtime_section->sh_addr - elf_load_addr;
     }
 
-    close(fd);
-    munmap(file_memory, file_stats.st_size);
+exit:
+    if (close(fd) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+    }
+    if (file_memory != NULL) {
+        munmap(file_memory, file_stats.st_size);
+    }
     return result;
 }
 #endif
@@ -495,7 +507,7 @@ parse_frame_object(
         return -1;
     }
 
-    if (owner == 3) {
+    if (owner == FRAME_OWNED_BY_CSTACK) {
         return 0;
     }
 
