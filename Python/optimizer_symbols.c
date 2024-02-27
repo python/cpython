@@ -10,11 +10,26 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/* Symbols
+   =======
+
+   See the diagram at
+   https://github.com/faster-cpython/ideas/blob/main/3.13/redundancy_eliminator.md
+
+   We represent the nodes in the diagram as follows
+   (the flag bits are only defined in optimizer_symbols.c):
+   - Top: no flag bits, typ and const_val are NULL.
+   - NULL: IS_NULL flag set, type and const_val NULL.
+   - Not NULL: NOT_NULL flag set, type and const_val NULL.
+   - None/not None: not used. (None could be represented as any other constant.)
+   - Known type: NOT_NULL flag set and typ set; const_val is NULL.
+   - Known constant: NOT_NULL flag set, type set, const_val set.
+   - Bottom: IS_NULL and NOT_NULL flags set, type and const_val NULL.
+ */
+
 // Flags for below.
-#define KNOWN      1 << 0
-#define TRUE_CONST 1 << 1
-#define IS_NULL    1 << 2
-#define NOT_NULL   1 << 3
+#define IS_NULL    1 << 0
+#define NOT_NULL   1 << 1
 
 #ifdef Py_DEBUG
 static inline int get_lltrace(void) {
@@ -59,35 +74,27 @@ sym_set_flag(_Py_UopsSymbol *sym, int flag)
     sym->flags |= flag;
 }
 
-static inline bool
-sym_has_flag(_Py_UopsSymbol *sym, int flag)
-{
-    return (sym->flags & flag) != 0;
-}
-
 bool
 _Py_uop_sym_is_not_null(_Py_UopsSymbol *sym)
 {
-    return (sym->flags & (IS_NULL | NOT_NULL)) == NOT_NULL;
+    return sym->flags == NOT_NULL;
 }
 
 bool
 _Py_uop_sym_is_null(_Py_UopsSymbol *sym)
 {
-    return (sym->flags & (IS_NULL | NOT_NULL)) == IS_NULL;
+    return sym->flags == IS_NULL;
 }
 
 bool
 _Py_uop_sym_is_const(_Py_UopsSymbol *sym)
 {
-    return (sym->flags & TRUE_CONST) != 0;
+    return sym->const_val != NULL;
 }
 
 PyObject *
 _Py_uop_sym_get_const(_Py_UopsSymbol *sym)
 {
-    assert(_Py_uop_sym_is_const(sym));
-    assert(sym->const_val);
     return sym->const_val;
 }
 
@@ -96,7 +103,6 @@ _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *tp)
 {
     assert(PyType_Check(tp));
     sym->typ = tp;
-    sym_set_flag(sym, KNOWN);
     sym_set_flag(sym, NOT_NULL);
 }
 
@@ -104,7 +110,6 @@ void
 _Py_uop_sym_set_null(_Py_UopsSymbol *sym)
 {
     sym_set_flag(sym, IS_NULL);
-    sym_set_flag(sym, KNOWN);
 }
 
 
@@ -121,7 +126,6 @@ _Py_uop_sym_new_not_null(_Py_UOpsContext *ctx)
     if (res == NULL) {
         return NULL;
     }
-    sym_set_flag(res, KNOWN);
     sym_set_flag(res, NOT_NULL);
     return res;
 }
@@ -148,8 +152,6 @@ _Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val)
         return NULL;
     }
     _Py_uop_sym_set_type(temp, Py_TYPE(const_val));
-    sym_set_flag(temp, TRUE_CONST);
-    sym_set_flag(temp, KNOWN);
     sym_set_flag(temp, NOT_NULL);
     return temp;
 }
@@ -168,10 +170,7 @@ _Py_uop_sym_new_null(_Py_UOpsContext *ctx)
 bool
 _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
-    assert(typ == NULL || PyType_Check(typ));
-    if (!sym_has_flag(sym, KNOWN)) {
-        return false;
-    }
+    assert(typ != NULL && PyType_Check(typ));
     return sym->typ == typ;
 }
 
