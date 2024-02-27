@@ -132,6 +132,10 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
     }
     HEAD_UNLOCK(&_PyRuntime);
 
+    // It's safe to access state non-atomically:
+    //   1. This is the destructor; nothing else holds a reference.
+    //   2. The refcount going to zero is a "synchronizes-with" event;
+    //      all changes from other threads are visible.
     if (self->state == THREAD_HANDLE_RUNNING) {
         // This is typically short so no need to release the GIL
         if (PyThread_detach_thread(self->handle)) {
