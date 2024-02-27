@@ -1686,6 +1686,8 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn(' |  global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn(' |  global_func_alias = global_func(x, y)', lines)
         self.assertIn(' |  global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
+        self.assertIn(' |  count(self, value, /) from builtins.list', lines)
+        self.assertIn(' |  list_count = count(self, value, /)', lines)
         self.assertIn(' |  __repr__(self, /) from builtins.object', lines)
         self.assertIn(' |  object_repr = __repr__(self, /)', lines)
 
@@ -1714,6 +1716,8 @@ class PydocFodderTest(unittest.TestCase):
         self.assertIn('global_func(x, y) from test.test_pydoc.pydocfodder', lines)
         self.assertIn('global_func_alias = global_func(x, y)', lines)
         self.assertIn('global_func2_alias = global_func2(x, y) from test.test_pydoc.pydocfodder', lines)
+        self.assertIn('count(self, value, /) from builtins.list', lines)
+        self.assertIn('list_count = count(self, value, /)', lines)
         self.assertIn('__repr__(self, /) from builtins.object', lines)
         self.assertIn('object_repr = __repr__(self, /)', lines)
 
@@ -1757,6 +1761,10 @@ class PydocFodderTest(unittest.TestCase):
         # unbound methods
         self.assertIn('    B_method(self)', lines)
         self.assertIn('    B_method2 = B_method(self)', lines)
+        self.assertIn('    count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn('    list_count = count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn('    __repr__(self, /) unbound builtins.object method', lines)
+        self.assertIn('    object_repr = __repr__(self, /) unbound builtins.object method', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -1782,6 +1790,10 @@ class PydocFodderTest(unittest.TestCase):
         # unbound methods
         self.assertIn(' B_method(self)', lines)
         self.assertIn(' B_method2 = B_method(self)', lines)
+        self.assertIn(' count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn(' list_count = count(self, value, /) unbound builtins.list method', lines)
+        self.assertIn(' __repr__(self, /) unbound builtins.object method', lines)
+        self.assertIn(' object_repr = __repr__(self, /) unbound builtins.object method', lines)
 
 
 @unittest.skipIf(
