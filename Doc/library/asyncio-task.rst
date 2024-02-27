@@ -882,9 +882,9 @@ Waiting Primitives
        async for earliest_connect in as_completed(tasks):
            reader, writer = await earliest_connect
            if earliest_connect is ipv6_connect:
-               print('IPv6 connection established.')
+               print("IPv6 connection established.")
            else:
-               print('IPv4 connection established.')
+               print("IPv4 connection established.")
            # ...
 
    During asynchronous iteration, implicitly-created tasks will be yielded for
