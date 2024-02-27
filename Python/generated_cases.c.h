@@ -1945,9 +1945,9 @@
 
         TARGET(CLEANUP_THROW) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CLEANUP_THROW);
-            (void)this_instr;
             PyObject *exc_value;
             PyObject *last_sent_val;
             PyObject *sub_iter;
@@ -2335,9 +2335,9 @@
 
         TARGET(END_ASYNC_FOR) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_ASYNC_FOR);
-            (void)this_instr;
             PyObject *exc;
             PyObject *awaitable;
             exc = stack_pointer[-1];
@@ -2898,9 +2898,9 @@
 
         TARGET(INSTRUMENTED_CALL) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(INSTRUMENTED_CALL);
-            (void)this_instr;
             /* Skip 3 cache entries */
             int is_meth = PEEK(oparg + 1) != NULL;
             int total_args = oparg + is_meth;
@@ -2924,9 +2924,9 @@
 
         TARGET(INSTRUMENTED_CALL_KW) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_CALL_KW);
-            (void)this_instr;
             int is_meth = PEEK(oparg + 2) != NULL;
             int total_args = oparg + is_meth;
             PyObject *function = PEEK(oparg + 3);
@@ -2941,9 +2941,9 @@
 
         TARGET(INSTRUMENTED_END_FOR) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_FOR);
-            (void)this_instr;
             PyObject *value;
             PyObject *receiver;
             value = stack_pointer[-1];
@@ -2964,9 +2964,9 @@
 
         TARGET(INSTRUMENTED_END_SEND) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_SEND);
-            (void)this_instr;
             PyObject *value;
             PyObject *receiver;
             value = stack_pointer[-1];
@@ -2986,9 +2986,9 @@
 
         TARGET(INSTRUMENTED_FOR_ITER) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_FOR_ITER);
-            (void)this_instr;
             /* Skip 1 cache entry */
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
@@ -3019,9 +3019,9 @@
 
         TARGET(INSTRUMENTED_INSTRUCTION) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_INSTRUCTION);
-            (void)this_instr;
             int next_opcode = _Py_call_instrumentation_instruction(
                 tstate, frame, this_instr);
             if (next_opcode < 0) goto error;
@@ -3036,9 +3036,9 @@
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_BACKWARD);
-            (void)this_instr;
             /* Skip 1 cache entry */
             CHECK_EVAL_BREAKER();
             INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
@@ -3047,18 +3047,18 @@
 
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_FORWARD);
-            (void)this_instr;
             INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_LOAD_SUPER_ATTR) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_LOAD_SUPER_ATTR);
-            (void)this_instr;
             /* Skip 1 cache entry */
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
@@ -3068,9 +3068,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_FALSE);
-            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
@@ -3085,9 +3085,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NONE);
-            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *value = POP();
             int flag = Py_IsNone(value);
@@ -3108,9 +3108,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_NOT_NONE);
-            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *value = POP();
             int offset;
@@ -3131,9 +3131,9 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_POP_JUMP_IF_TRUE);
-            (void)this_instr;
             /* Skip 1 cache entry */
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
@@ -3148,9 +3148,9 @@
 
         TARGET(INSTRUMENTED_RESUME) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
-            (void)this_instr;
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
@@ -3179,9 +3179,9 @@
 
         TARGET(INSTRUMENTED_RETURN_CONST) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RETURN_CONST);
-            (void)this_instr;
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
             int err = _Py_call_instrumentation_arg(
                 tstate, PY_MONITORING_EVENT_PY_RETURN,
@@ -3203,9 +3203,9 @@
 
         TARGET(INSTRUMENTED_RETURN_VALUE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RETURN_VALUE);
-            (void)this_instr;
             PyObject *retval;
             retval = stack_pointer[-1];
             int err = _Py_call_instrumentation_arg(
@@ -3228,9 +3228,9 @@
 
         TARGET(INSTRUMENTED_YIELD_VALUE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_YIELD_VALUE);
-            (void)this_instr;
             PyObject *retval;
             retval = stack_pointer[-1];
             assert(frame != &entry_frame);
@@ -3292,9 +3292,9 @@
 
         TARGET(JUMP_BACKWARD) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
-            (void)this_instr;
             /* Skip 1 cache entry */
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
@@ -4603,9 +4603,9 @@
 
         TARGET(POP_JUMP_IF_FALSE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
-            (void)this_instr;
             PyObject *cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -4621,9 +4621,9 @@
 
         TARGET(POP_JUMP_IF_NONE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NONE);
-            (void)this_instr;
             PyObject *value;
             PyObject *b;
             PyObject *cond;
@@ -4655,9 +4655,9 @@
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NOT_NONE);
-            (void)this_instr;
             PyObject *value;
             PyObject *b;
             PyObject *cond;
@@ -4689,9 +4689,9 @@
 
         TARGET(POP_JUMP_IF_TRUE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
-            (void)this_instr;
             PyObject *cond;
             /* Skip 1 cache entry */
             cond = stack_pointer[-1];
@@ -4751,9 +4751,9 @@
 
         TARGET(RAISE_VARARGS) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RAISE_VARARGS);
-            (void)this_instr;
             PyObject **args;
             args = &stack_pointer[-oparg];
             PyObject *cause = NULL, *exc = NULL;
@@ -4781,9 +4781,9 @@
 
         TARGET(RERAISE) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RERAISE);
-            (void)this_instr;
             PyObject *exc;
             PyObject **values;
             exc = stack_pointer[-1];
