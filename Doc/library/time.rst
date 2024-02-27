@@ -428,6 +428,10 @@ Functions
    | ``%d``    | Day of the month as a decimal number [01,31].  |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
+   | ``%f``    | Microseconds as a decimal number               | \(1)  |
+   |           |    [000000,999999].                            |       |
+   |           |                                                |       |
+   +-----------+------------------------------------------------+-------+
    | ``%H``    | Hour (24-hour clock) as a decimal number       |       |
    |           | [00,23].                                       |       |
    +-----------+------------------------------------------------+-------+
@@ -443,13 +447,13 @@ Functions
    | ``%M``    | Minute as a decimal number [00,59].            |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%p``    | Locale's equivalent of either AM or PM.        | \(1)  |
+   | ``%p``    | Locale's equivalent of either AM or PM.        | \(2)  |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%S``    | Second as a decimal number [00,61].            | \(2)  |
+   | ``%S``    | Second as a decimal number [00,61].            | \(3)  |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%U``    | Week number of the year (Sunday as the first   | \(3)  |
+   | ``%U``    | Week number of the year (Sunday as the first   | \(4)  |
    |           | day of the week) as a decimal number [00,53].  |       |
    |           | All days in a new year preceding the first     |       |
    |           | Sunday are considered to be in week 0.         |       |
@@ -460,7 +464,7 @@ Functions
    | ``%w``    | Weekday as a decimal number [0(Sunday),6].     |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%W``    | Week number of the year (Monday as the first   | \(3)  |
+   | ``%W``    | Week number of the year (Monday as the first   | \(4)  |
    |           | day of the week) as a decimal number [00,53].  |       |
    |           | All days in a new year preceding the first     |       |
    |           | Monday are considered to be in week 0.         |       |
@@ -495,17 +499,23 @@ Functions
    Notes:
 
    (1)
+       The ``%f`` format directive only applies to :func:`strptime`,
+       not to :func:`strftime`. However, see also :meth:`datetime.datetime.strptime` and
+       :meth:`datetime.datetime.strftime` where the ``%f`` format directive
+       :ref:`applies to microseconds <format-codes>`.
+
+   (2)
       When used with the :func:`strptime` function, the ``%p`` directive only affects
       the output hour field if the ``%I`` directive is used to parse the hour.
 
    .. _leap-second:
 
-   (2)
+   (3)
       The range really is ``0`` to ``61``; value ``60`` is valid in
       timestamps representing `leap seconds`_ and value ``61`` is supported
       for historical reasons.
 
-   (3)
+   (4)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
       calculations when the day of the week and the year are specified.
 
