@@ -112,6 +112,12 @@ _Py_uop_sym_set_null(_Py_UopsSymbol *sym)
     sym_set_flag(sym, IS_NULL);
 }
 
+void
+_Py_uop_sym_set_non_null(_Py_UopsSymbol *sym)
+{
+    sym_set_flag(sym, NOT_NULL);
+}
+
 
 _Py_UopsSymbol *
 _Py_uop_sym_new_unknown(_Py_UOpsContext *ctx)
@@ -276,15 +282,14 @@ do { \
     } \
 } while (0)
 
-/*
 static _Py_UopsSymbol *
-make_contradiction(_Py_UOpsContext *ctx)
+make_bottom(_Py_UOpsContext *ctx)
 {
     _Py_UopsSymbol *sym = _Py_uop_sym_new_unknown(ctx);
     _Py_uop_sym_set_null(sym);
-    _Py_uop_sym_set_type(sym, &PyLong_Type);
+    _Py_uop_sym_set_non_null(sym);
     return sym;
-}*/
+}
 
 PyObject *
 _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
@@ -297,15 +302,16 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (top == NULL) {
         return NULL;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(top), "unknown is NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_not_null(top), "unknown is not NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(top), "unknown is a constant");
-    // TEST_PREDICATE(_Py_uop_sym_get_const(top) == NULL, "unknown as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(top), "top is NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_not_null(top), "top is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(top), "top is a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(top) == NULL, "top as constant is not NULL");
 
-    // _Py_UopsSymbol *contradiction = make_contradiction(ctx);
-    // TEST_PREDICATE(_Py_uop_sym_is_null(contradiction), "contradiction is NULL is not true");
-    // TEST_PREDICATE(_Py_uop_sym_is_not_null(contradiction), "contradiction is not NULL is not true");
-    // TEST_PREDICATE(_Py_uop_sym_is_const(contradiction), "contradiction is a constant is not true");
+    _Py_UopsSymbol *bottom = make_bottom(ctx);
+    TEST_PREDICATE(!_Py_uop_sym_is_null(bottom), "bottom is NULL is not false");
+    TEST_PREDICATE(!_Py_uop_sym_is_not_null(bottom), "bottom is not NULL is not false");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(bottom), "bottom is a constant is not false");
+    TEST_PREDICATE(_Py_uop_sym_get_const(bottom) == NULL, "bottom as constant is not NULL");
 
     _Py_UopsSymbol *int_type = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
