@@ -41,10 +41,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"_Py_UOpsSymType **"
+        return f"_Py_UopsSymbol **"
     if var.type:
         return var.type
-    return f"_Py_UOpsSymType *"
+    return f"_Py_UopsSymbol *"
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -148,7 +148,7 @@ def write_uop(
                 if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UOpsSymType *")
+        stack.flush(out, cast_type="_Py_UopsSymbol *")
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
