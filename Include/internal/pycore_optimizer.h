@@ -27,6 +27,7 @@ extern PyTypeObject _PyUOpExecutor_Type;
 extern PyTypeObject _PyUOpOptimizer_Type;
 
 /* Symbols */
+/* See explanation in optimizer_symbols.c */
 
 struct _Py_UopsSymbol {
     int flags;
