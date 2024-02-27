@@ -1445,7 +1445,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
     // Initialize eval stack
     PyThreadState* result = (PyThreadState*)(tstate);
     if (result && result->eval_stack == NULL) {
-        result->eval_stack = PyMem_RawMalloc(result->py_recursion_limit * sizeof(PyObject*));
+        result->eval_stack = PyMem_RawMalloc(result->eval_stack_size * sizeof(PyObject*));
         if (result->eval_stack == NULL) {
             PyMem_RawFree(result);
             return NULL;
