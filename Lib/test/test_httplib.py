@@ -1615,11 +1615,21 @@ class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
         resp.fp.read(1)
         with self.assertRaises(client.IncompleteRead) as cm:
             while True:
-                data = resp.read1()
+                data = read_meth()
                 if not data:
                     break
         exception = cm.exception
-        self.assertEqual(exception.partial, b"")
+        # Unlike `read1` and `readline`, `read` tries to read the whole
+        # content during one call, so it's partial is not empty in this
+        # case.
+        # `read1` and `readline` raise `IncompleteRead` only when they
+        # read 0 bytes before all expected content has been read, so the
+        # partial is empty.
+        if read_meth == self.resp.read:
+            expected_partial = self._body[1:].encode()
+        else:
+            expected_partial = b""
+        self.assertEqual(exception.partial, expected_partial)
         self.assertEqual(exception.expected, 1)
         self.assertTrue(resp.isclosed())
 
