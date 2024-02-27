@@ -99,10 +99,10 @@ _Py_uop_sym_get_const(_Py_UopsSymbol *sym)
 }
 
 void
-_Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *tp)
+_Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
-    assert(PyType_Check(tp));
-    sym->typ = tp;
+    assert(typ != NULL && PyType_Check(typ));
+    sym->typ = typ;
     sym_set_flag(sym, NOT_NULL);
 }
 
