@@ -2411,7 +2411,7 @@ class TarFile(object):
         if upperdirs and not os.path.exists(upperdirs):
             # Create directories that are not part of the archive with
             # default permissions.
-            os.makedirs(upperdirs)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if tarinfo.islnk() or tarinfo.issym():
             self._dbg(1, "%s -> %s" % (tarinfo.name, tarinfo.linkname))
@@ -2456,7 +2456,8 @@ class TarFile(object):
                 # later in _extract_member().
                 os.mkdir(targetpath, 0o700)
         except FileExistsError:
-            pass
+            if not os.path.isdir(targetpath):
+                raise
 
     def makefile(self, tarinfo, targetpath):
         """Make a file called targetpath.

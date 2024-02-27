@@ -325,7 +325,8 @@ Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
 Objects/obmalloc.c	-	last_final_leaks	-
-Objects/obmalloc.c	-	usedpools	-
+Objects/obmalloc.c	-	obmalloc_state_main	-
+Objects/obmalloc.c	-	obmalloc_state_initialized	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
@@ -360,6 +361,7 @@ Python/import.c	-	_PyImport_Inittab	-
 Python/import.c	-	_PySys_ImplCacheTag	-
 Python/intrinsics.c	-	_PyIntrinsics_UnaryFunctions	-
 Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
+Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 Python/opcode_targets.h	-	opcode_targets	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Python/pyhash.c	-	PyHash_Func	-
@@ -381,6 +383,11 @@ Python/optimizer.c	-	_PyCounterOptimizer_Type	-
 Python/optimizer.c	-	_PyUOpExecutor_Type	-
 Python/optimizer.c	-	_PyUOpOptimizer_Type	-
 Python/optimizer.c	-	_PyOptimizer_Default	-
+Python/optimizer.c	-	_ColdExit_Type	-
+Python/optimizer.c	-	COLD_EXITS	-
+Python/optimizer.c	-	Py_FatalErrorExecutor	-
+Python/optimizer.c	-	EMPTY_FILTER	-
+Python/optimizer.c	-	cold_exits_initialized	-
 
 ##-----------------------
 ## test code
@@ -733,6 +740,6 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
-Python/optimizer_analysis.c	-	_Py_PartitionRootNode_Type	-
+Python/optimizer_analysis.c	-	_Py_UOpsAbstractFrame_Type	-
 Python/optimizer_analysis.c	-	_Py_UOpsAbstractInterpContext_Type	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
