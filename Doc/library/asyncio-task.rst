@@ -335,6 +335,10 @@ and reliable way to wait for all tasks in the group to finish.
       Create a task in this task group.
       The signature matches that of :func:`asyncio.create_task`.
 
+      .. versionchanged:: 3.13
+
+         Close the given coroutine if the task group is not active.
+
 Example::
 
     async def main():
