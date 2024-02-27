@@ -93,6 +93,7 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *con
 extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
 extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
 extern void _Py_uop_sym_set_null(_Py_UopsSymbol *sym);
+extern void _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym);
 extern void _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *tp);
 
 extern int _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
