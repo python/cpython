@@ -107,7 +107,7 @@ analyze_macho(char* path, void* base, mach_vm_size_t size, mach_port_t proc_ref)
 {
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
-        PyErr_SetString(PyExc_RuntimeError, "Cannot open binary %s\n", path);
+        PyErr_Format(PyExc_RuntimeError, "Cannot open binary %s\n", path);
         return NULL;
     }
 
