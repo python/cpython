@@ -9,5 +9,4 @@ else
     src=$(echo $obj | sed -e 's/[.]o$/[.]c/')
 fi
 
-echo $CC $CPPFLAGS -MM -MG -MT $obj $src 1>&2
 $CC $CPPFLAGS -MM -MG -MT $obj $src
