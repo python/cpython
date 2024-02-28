@@ -20,7 +20,7 @@
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            if (eval_breaker != version) goto deoptimize;
+            if (eval_breaker != version && tstate->tracing == 0) goto deoptimize;
             break;
         }
 
