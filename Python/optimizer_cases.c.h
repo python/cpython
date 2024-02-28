@@ -183,7 +183,9 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right)) {
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+            {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
                 PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
@@ -210,7 +212,9 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right)) {
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+            {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
                 PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
@@ -237,7 +241,9 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right)) {
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+            {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
                 PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
@@ -278,7 +284,9 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right)) {
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+            {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
                 assert(PyFloat_CheckExact(sym_get_const(right)));
                 PyObject *temp = PyFloat_FromDouble(
@@ -306,7 +314,9 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right)) {
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+            {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
                 assert(PyFloat_CheckExact(sym_get_const(right)));
                 PyObject *temp = PyFloat_FromDouble(
@@ -334,7 +344,9 @@
             _Py_UopsSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right)) {
+            if (sym_is_const(left) && sym_is_const(right) &&
+                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+            {
                 assert(PyFloat_CheckExact(sym_get_const(left)));
                 assert(PyFloat_CheckExact(sym_get_const(right)));
                 PyObject *temp = PyFloat_FromDouble(
