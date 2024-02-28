@@ -51,7 +51,7 @@ Functions
                      compact=False, sort_dicts=True, underscore_numbers=False)
 
    Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is ``None``, ``sys.stdout`` is used. This may be used
+   newline.  If *stream* is ``None``, :data:`sys.stdout` is used. This may be used
    in the interactive interpreter instead of the :func:`print` function for
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
    within a scope).
@@ -136,9 +136,9 @@ This module defines one class:
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
    several keyword parameters.
 
-   *stream* (default ``sys.stdout``) is a :term:`file-like object` to
+   *stream* (default :data:`sys.stdout`) is a :term:`file-like object` to
    which the output will be written by calling its :meth:`!write` method.
-   If both *stream* and ``sys.stdout`` are ``None``, then
+   If both *stream* and :data:`sys.stdout` are ``None``, then
    :meth:`~PrettyPrinter.pprint` silently returns.
 
    Other values configure the manner in which nesting of complex data
@@ -179,7 +179,7 @@ This module defines one class:
       Added the *underscore_numbers* parameter.
 
    .. versionchanged:: 3.11
-      No longer attempts to write to ``sys.stdout`` if it is ``None``.
+      No longer attempts to write to :data:`sys.stdout` if it is ``None``.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
