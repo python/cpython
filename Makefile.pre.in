@@ -1999,8 +1999,8 @@ testuniversal: all
 # (3rd edition) simulator available, after running `make install` on a configuration
 # with --enable-framework="./iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator"
 XCRESULT=$(srcdir)/build/$(MULTIARCH).$(shell date +%s).xcresult
-.PHONY: testiOS
-testiOS:
+.PHONY: testios
+testios:
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
 	# If the suite fails, extract and print the console output, then re-raise the failure
 	if ! xcodebuild test -project $(srcdir)/iOS/testbed/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \

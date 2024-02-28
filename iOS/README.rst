@@ -256,7 +256,7 @@ To run the test suite, configure a Python build for an iOS simulator (i.e.,
 
     --enable-framework="$(pwd)/iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator"
 
-Then run ``make all install testiOS``. This will build an iOS framework for your
+Then run ``make all install testios``. This will build an iOS framework for your
 chosen architecture, install the Python iOS framework into the testbed project,
 and run the test suite on an "iPhone SE (3rd generation)" simulator.
 
