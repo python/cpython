@@ -701,7 +701,8 @@ function.
 
    .. note::
 
-      If the passed object has a :attr:`!__signature__` attribute, we may use it to create the signature.
+      If the passed object has a :attr:`!__signature__` attribute,
+      we may use it to create the signature.
       The exact semantics are an implementation detail and are subject to
       unannounced changes. Consult the source code for current semantics.
 
