@@ -3686,8 +3686,9 @@ int main(void)
 [ac_cv_aligned_required=no],
 [ac_cv_aligned_required=yes],
 [
-# "yes" changes the hash function to FNV, which breaks Numba.
-if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+# "yes" changes the hash function to FNV, which causes problems with Numba
+# (https://github.com/numba/numba/blob/0.59.0/numba/cpython/hashing.py#L470).
+if test "$ac_sys_system" = "Linux-android"; then
   ac_cv_aligned_required=no
 else
   ac_cv_aligned_required=yes
