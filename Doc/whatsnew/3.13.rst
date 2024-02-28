@@ -206,6 +206,21 @@ array
 ast
 ---
 
+* The constructors of node types in the :mod:`ast` module are now stricter
+  in the arguments they accept, and have more intuitive behaviour when
+  arguments are omitted.
+
+  If an optional field on an AST node is not included as an argument when
+  constructing an instance, the field will now be set to ``None``. Similarly,
+  if a list field is omitted, that field will now be set to an empty list.
+  (Previously, in both cases, the attribute would be missing on the newly
+  constructed AST node instance.)
+
+  If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
+  This will cause an exception in Python 3.15. Similarly, passing a keyword
+  argument that does not map to a field on the AST node is now deprecated,
+  and will raise an exception in Python 3.15.
+
 * :func:`ast.parse` now accepts an optional argument ``optimize``
   which is passed on to the :func:`compile` built-in. This makes it
   possible to obtain an optimized ``AST``.
