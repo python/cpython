@@ -17,6 +17,7 @@ jobs:
       HOMEBREW_NO_ANALYTICS: 1
       HOMEBREW_NO_AUTO_UPDATE: 1
       HOMEBREW_NO_INSTALL_CLEANUP: 1
+      HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
     strategy:
       fail-fast: false
@@ -36,7 +37,7 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ matrix.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@3.0 xz@5.4.5 gdbm tcl-tk
+      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
     - name: Configure CPython
       run: |
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
