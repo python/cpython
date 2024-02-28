@@ -13918,652 +13918,6 @@ Python/frozen.o: Python/frozen.c Include/Python.h Include/patchlevel.h \
   Python/frozen_modules/__phello__.ham.eggs.h \
   Python/frozen_modules/__phello__.spam.h \
   Python/frozen_modules/frozen_only.h
-Modules/_io/_iomodule.o: Modules/_io/_iomodule.c Include/Python.h \
-  Include/patchlevel.h pyconfig.h Include/pymacconfig.h Include/pyport.h \
-  Include/exports.h Include/pymacro.h Include/pymath.h Include/pymem.h \
-  Include/cpython/pymem.h Include/pytypedefs.h Include/pybuffer.h \
-  Include/pystats.h Include/pyatomic.h Include/cpython/pyatomic.h \
-  Include/cpython/pyatomic_gcc.h Include/object.h \
-  Include/cpython/object.h Include/objimpl.h Include/cpython/objimpl.h \
-  Include/typeslots.h Include/pyhash.h Include/cpython/pyhash.h \
-  Include/cpython/pydebug.h Include/bytearrayobject.h \
-  Include/cpython/bytearrayobject.h Include/bytesobject.h \
-  Include/cpython/bytesobject.h Include/unicodeobject.h \
-  Include/cpython/unicodeobject.h Include/longobject.h \
-  Include/cpython/longobject.h Include/cpython/longintrepr.h \
-  Include/boolobject.h Include/floatobject.h \
-  Include/cpython/floatobject.h Include/complexobject.h \
-  Include/cpython/complexobject.h Include/rangeobject.h \
-  Include/memoryobject.h Include/cpython/memoryobject.h \
-  Include/tupleobject.h Include/cpython/tupleobject.h \
-  Include/listobject.h Include/cpython/listobject.h Include/dictobject.h \
-  Include/cpython/dictobject.h Include/cpython/odictobject.h \
-  Include/enumobject.h Include/setobject.h Include/cpython/setobject.h \
-  Include/methodobject.h Include/cpython/methodobject.h \
-  Include/moduleobject.h Include/cpython/funcobject.h \
-  Include/cpython/classobject.h Include/fileobject.h \
-  Include/cpython/fileobject.h Include/pycapsule.h \
-  Include/cpython/code.h Include/pyframe.h Include/cpython/pyframe.h \
-  Include/traceback.h Include/cpython/traceback.h Include/sliceobject.h \
-  Include/cpython/cellobject.h Include/iterobject.h \
-  Include/cpython/initconfig.h Include/pystate.h \
-  Include/cpython/pystate.h Include/cpython/genobject.h \
-  Include/descrobject.h Include/cpython/descrobject.h \
-  Include/genericaliasobject.h Include/warnings.h \
-  Include/cpython/warnings.h Include/weakrefobject.h \
-  Include/cpython/weakrefobject.h Include/structseq.h \
-  Include/cpython/picklebufobject.h Include/cpython/pytime.h \
-  Include/codecs.h Include/pyerrors.h Include/cpython/pyerrors.h \
-  Include/pythread.h Include/cpython/pythread.h \
-  Include/cpython/context.h Include/modsupport.h Include/compile.h \
-  Include/cpython/compile.h Include/pythonrun.h \
-  Include/cpython/pythonrun.h Include/pylifecycle.h \
-  Include/cpython/pylifecycle.h Include/ceval.h Include/cpython/ceval.h \
-  Include/sysmodule.h Include/cpython/sysmodule.h Include/osmodule.h \
-  Include/intrcheck.h Include/import.h Include/cpython/import.h \
-  Include/abstract.h Include/cpython/abstract.h Include/bltinmodule.h \
-  Include/cpython/pyctype.h Include/pystrtod.h Include/pystrcmp.h \
-  Include/fileutils.h Include/cpython/fileutils.h \
-  Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
-  Include/cpython/optimizer.h Include/internal/pycore_abstract.h \
-  Include/internal/pycore_initconfig.h Include/internal/pycore_long.h \
-  Include/internal/pycore_bytesobject.h \
-  Include/internal/pycore_global_objects.h \
-  Include/internal/pycore_context.h Include/internal/pycore_freelist.h \
-  Include/internal/pycore_hamt.h Include/internal/pycore_gc.h \
-  Include/internal/pycore_global_strings.h \
-  Include/internal/pycore_hashtable.h \
-  Include/internal/pycore_typeobject.h \
-  Include/internal/pycore_moduleobject.h Include/internal/pycore_lock.h \
-  Include/internal/pycore_runtime.h Include/internal/pycore_atexit.h \
-  Include/internal/pycore_ceval_state.h Include/internal/pycore_gil.h \
-  Include/internal/pycore_condvar.h Include/internal/pycore_pythread.h \
-  Include/dynamic_annotations.h Include/internal/pycore_llist.h \
-  Include/internal/pycore_crossinterp.h \
-  Include/internal/pycore_pyerrors.h \
-  Include/internal/pycore_faulthandler.h \
-  Include/internal/pycore_floatobject.h \
-  Include/internal/pycore_unicodeobject.h \
-  Include/internal/pycore_fileutils.h \
-  Include/internal/pycore_identifier.h Include/internal/pycore_ucnhash.h \
-  Include/internal/pycore_import.h Include/internal/pycore_interp.h \
-  Include/internal/pycore_ast_state.h Include/internal/pycore_code.h \
-  Include/internal/pycore_dict_state.h Include/internal/pycore_dtoa.h \
-  Include/internal/pycore_pymath.h Include/internal/pycore_exceptions.h \
-  Include/internal/pycore_function.h Include/internal/pycore_genobject.h \
-  Include/internal/pycore_instruments.h Include/internal/pycore_frame.h \
-  Include/internal/pycore_list.h Include/internal/pycore_mimalloc.h \
-  Include/internal/pycore_pymem.h Include/internal/mimalloc/mimalloc.h \
-  Include/internal/mimalloc/mimalloc/types.h \
-  Include/internal/mimalloc/mimalloc/atomic.h \
-  Include/internal/mimalloc/mimalloc/internal.h \
-  Include/internal/mimalloc/mimalloc/track.h \
-  Include/internal/pycore_object_state.h \
-  Include/internal/pycore_obmalloc.h Include/internal/pycore_qsbr.h \
-  Include/internal/pycore_tstate.h Include/internal/pycore_brc.h \
-  Include/internal/pycore_object_stack.h Include/internal/pycore_tuple.h \
-  Include/internal/pycore_warnings.h Include/internal/pycore_parser.h \
-  Include/internal/pycore_ast.h Include/internal/pycore_asdl.h \
-  Include/internal/pycore_pyarena.h Include/internal/pycore_pyhash.h \
-  Include/internal/pycore_signal.h Include/internal/pycore_tracemalloc.h \
-  Include/internal/pycore_pystate.h Modules/_io/_iomodule.h \
-  Include/structmember.h Modules/_io/clinic/_iomodule.c.h \
-  Include/internal/pycore_modsupport.h
-Modules/_io/iobase.o: Modules/_io/iobase.c Include/Python.h \
-  Include/patchlevel.h pyconfig.h Include/pymacconfig.h Include/pyport.h \
-  Include/exports.h Include/pymacro.h Include/pymath.h Include/pymem.h \
-  Include/cpython/pymem.h Include/pytypedefs.h Include/pybuffer.h \
-  Include/pystats.h Include/pyatomic.h Include/cpython/pyatomic.h \
-  Include/cpython/pyatomic_gcc.h Include/object.h \
-  Include/cpython/object.h Include/objimpl.h Include/cpython/objimpl.h \
-  Include/typeslots.h Include/pyhash.h Include/cpython/pyhash.h \
-  Include/cpython/pydebug.h Include/bytearrayobject.h \
-  Include/cpython/bytearrayobject.h Include/bytesobject.h \
-  Include/cpython/bytesobject.h Include/unicodeobject.h \
-  Include/cpython/unicodeobject.h Include/longobject.h \
-  Include/cpython/longobject.h Include/cpython/longintrepr.h \
-  Include/boolobject.h Include/floatobject.h \
-  Include/cpython/floatobject.h Include/complexobject.h \
-  Include/cpython/complexobject.h Include/rangeobject.h \
-  Include/memoryobject.h Include/cpython/memoryobject.h \
-  Include/tupleobject.h Include/cpython/tupleobject.h \
-  Include/listobject.h Include/cpython/listobject.h Include/dictobject.h \
-  Include/cpython/dictobject.h Include/cpython/odictobject.h \
-  Include/enumobject.h Include/setobject.h Include/cpython/setobject.h \
-  Include/methodobject.h Include/cpython/methodobject.h \
-  Include/moduleobject.h Include/cpython/funcobject.h \
-  Include/cpython/classobject.h Include/fileobject.h \
-  Include/cpython/fileobject.h Include/pycapsule.h \
-  Include/cpython/code.h Include/pyframe.h Include/cpython/pyframe.h \
-  Include/traceback.h Include/cpython/traceback.h Include/sliceobject.h \
-  Include/cpython/cellobject.h Include/iterobject.h \
-  Include/cpython/initconfig.h Include/pystate.h \
-  Include/cpython/pystate.h Include/cpython/genobject.h \
-  Include/descrobject.h Include/cpython/descrobject.h \
-  Include/genericaliasobject.h Include/warnings.h \
-  Include/cpython/warnings.h Include/weakrefobject.h \
-  Include/cpython/weakrefobject.h Include/structseq.h \
-  Include/cpython/picklebufobject.h Include/cpython/pytime.h \
-  Include/codecs.h Include/pyerrors.h Include/cpython/pyerrors.h \
-  Include/pythread.h Include/cpython/pythread.h \
-  Include/cpython/context.h Include/modsupport.h Include/compile.h \
-  Include/cpython/compile.h Include/pythonrun.h \
-  Include/cpython/pythonrun.h Include/pylifecycle.h \
-  Include/cpython/pylifecycle.h Include/ceval.h Include/cpython/ceval.h \
-  Include/sysmodule.h Include/cpython/sysmodule.h Include/osmodule.h \
-  Include/intrcheck.h Include/import.h Include/cpython/import.h \
-  Include/abstract.h Include/cpython/abstract.h Include/bltinmodule.h \
-  Include/cpython/pyctype.h Include/pystrtod.h Include/pystrcmp.h \
-  Include/fileutils.h Include/cpython/fileutils.h \
-  Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
-  Include/cpython/optimizer.h Include/internal/pycore_call.h \
-  Include/internal/pycore_identifier.h Include/internal/pycore_pystate.h \
-  Include/internal/pycore_freelist.h Include/internal/pycore_runtime.h \
-  Include/internal/pycore_atexit.h Include/internal/pycore_lock.h \
-  Include/internal/pycore_ceval_state.h Include/internal/pycore_gil.h \
-  Include/internal/pycore_condvar.h Include/internal/pycore_pythread.h \
-  Include/dynamic_annotations.h Include/internal/pycore_llist.h \
-  Include/internal/pycore_crossinterp.h \
-  Include/internal/pycore_pyerrors.h \
-  Include/internal/pycore_faulthandler.h \
-  Include/internal/pycore_floatobject.h \
-  Include/internal/pycore_unicodeobject.h \
-  Include/internal/pycore_fileutils.h Include/internal/pycore_ucnhash.h \
-  Include/internal/pycore_import.h Include/internal/pycore_hashtable.h \
-  Include/internal/pycore_interp.h Include/internal/pycore_ast_state.h \
-  Include/internal/pycore_code.h Include/internal/pycore_context.h \
-  Include/internal/pycore_hamt.h Include/internal/pycore_dict_state.h \
-  Include/internal/pycore_dtoa.h Include/internal/pycore_pymath.h \
-  Include/internal/pycore_exceptions.h \
-  Include/internal/pycore_function.h Include/internal/pycore_gc.h \
-  Include/internal/pycore_genobject.h \
-  Include/internal/pycore_global_objects.h \
-  Include/internal/pycore_global_strings.h \
-  Include/internal/pycore_typeobject.h \
-  Include/internal/pycore_moduleobject.h \
-  Include/internal/pycore_instruments.h Include/internal/pycore_frame.h \
-  Include/internal/pycore_list.h Include/internal/pycore_mimalloc.h \
-  Include/internal/pycore_pymem.h Include/internal/mimalloc/mimalloc.h \
-  Include/internal/mimalloc/mimalloc/types.h \
-  Include/internal/mimalloc/mimalloc/atomic.h \
-  Include/internal/mimalloc/mimalloc/internal.h \
-  Include/internal/mimalloc/mimalloc/track.h \
-  Include/internal/pycore_object_state.h \
-  Include/internal/pycore_obmalloc.h Include/internal/pycore_qsbr.h \
-  Include/internal/pycore_tstate.h Include/internal/pycore_brc.h \
-  Include/internal/pycore_object_stack.h Include/internal/pycore_tuple.h \
-  Include/internal/pycore_warnings.h Include/internal/pycore_parser.h \
-  Include/internal/pycore_ast.h Include/internal/pycore_asdl.h \
-  Include/internal/pycore_pyarena.h Include/internal/pycore_pyhash.h \
-  Include/internal/pycore_signal.h Include/internal/pycore_tracemalloc.h \
-  Include/internal/pycore_long.h Include/internal/pycore_bytesobject.h \
-  Include/internal/pycore_object.h \
-  Include/internal/pycore_emscripten_trampoline.h \
-  Modules/_io/_iomodule.h Include/structmember.h \
-  Modules/_io/clinic/iobase.c.h Include/internal/pycore_abstract.h \
-  Include/internal/pycore_modsupport.h
-Modules/_io/fileio.o: Modules/_io/fileio.c Include/Python.h \
-  Include/patchlevel.h pyconfig.h Include/pymacconfig.h Include/pyport.h \
-  Include/exports.h Include/pymacro.h Include/pymath.h Include/pymem.h \
-  Include/cpython/pymem.h Include/pytypedefs.h Include/pybuffer.h \
-  Include/pystats.h Include/pyatomic.h Include/cpython/pyatomic.h \
-  Include/cpython/pyatomic_gcc.h Include/object.h \
-  Include/cpython/object.h Include/objimpl.h Include/cpython/objimpl.h \
-  Include/typeslots.h Include/pyhash.h Include/cpython/pyhash.h \
-  Include/cpython/pydebug.h Include/bytearrayobject.h \
-  Include/cpython/bytearrayobject.h Include/bytesobject.h \
-  Include/cpython/bytesobject.h Include/unicodeobject.h \
-  Include/cpython/unicodeobject.h Include/longobject.h \
-  Include/cpython/longobject.h Include/cpython/longintrepr.h \
-  Include/boolobject.h Include/floatobject.h \
-  Include/cpython/floatobject.h Include/complexobject.h \
-  Include/cpython/complexobject.h Include/rangeobject.h \
-  Include/memoryobject.h Include/cpython/memoryobject.h \
-  Include/tupleobject.h Include/cpython/tupleobject.h \
-  Include/listobject.h Include/cpython/listobject.h Include/dictobject.h \
-  Include/cpython/dictobject.h Include/cpython/odictobject.h \
-  Include/enumobject.h Include/setobject.h Include/cpython/setobject.h \
-  Include/methodobject.h Include/cpython/methodobject.h \
-  Include/moduleobject.h Include/cpython/funcobject.h \
-  Include/cpython/classobject.h Include/fileobject.h \
-  Include/cpython/fileobject.h Include/pycapsule.h \
-  Include/cpython/code.h Include/pyframe.h Include/cpython/pyframe.h \
-  Include/traceback.h Include/cpython/traceback.h Include/sliceobject.h \
-  Include/cpython/cellobject.h Include/iterobject.h \
-  Include/cpython/initconfig.h Include/pystate.h \
-  Include/cpython/pystate.h Include/cpython/genobject.h \
-  Include/descrobject.h Include/cpython/descrobject.h \
-  Include/genericaliasobject.h Include/warnings.h \
-  Include/cpython/warnings.h Include/weakrefobject.h \
-  Include/cpython/weakrefobject.h Include/structseq.h \
-  Include/cpython/picklebufobject.h Include/cpython/pytime.h \
-  Include/codecs.h Include/pyerrors.h Include/cpython/pyerrors.h \
-  Include/pythread.h Include/cpython/pythread.h \
-  Include/cpython/context.h Include/modsupport.h Include/compile.h \
-  Include/cpython/compile.h Include/pythonrun.h \
-  Include/cpython/pythonrun.h Include/pylifecycle.h \
-  Include/cpython/pylifecycle.h Include/ceval.h Include/cpython/ceval.h \
-  Include/sysmodule.h Include/cpython/sysmodule.h Include/osmodule.h \
-  Include/intrcheck.h Include/import.h Include/cpython/import.h \
-  Include/abstract.h Include/cpython/abstract.h Include/bltinmodule.h \
-  Include/cpython/pyctype.h Include/pystrtod.h Include/pystrcmp.h \
-  Include/fileutils.h Include/cpython/fileutils.h \
-  Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
-  Include/cpython/optimizer.h Include/internal/pycore_fileutils.h \
-  Include/internal/pycore_object.h Include/internal/pycore_gc.h \
-  Include/internal/pycore_freelist.h \
-  Include/internal/pycore_emscripten_trampoline.h \
-  Include/internal/pycore_runtime.h Include/internal/pycore_atexit.h \
-  Include/internal/pycore_lock.h Include/internal/pycore_ceval_state.h \
-  Include/internal/pycore_gil.h Include/internal/pycore_condvar.h \
-  Include/internal/pycore_pythread.h Include/dynamic_annotations.h \
-  Include/internal/pycore_llist.h Include/internal/pycore_crossinterp.h \
-  Include/internal/pycore_pyerrors.h \
-  Include/internal/pycore_faulthandler.h \
-  Include/internal/pycore_floatobject.h \
-  Include/internal/pycore_unicodeobject.h \
-  Include/internal/pycore_identifier.h Include/internal/pycore_ucnhash.h \
-  Include/internal/pycore_import.h Include/internal/pycore_hashtable.h \
-  Include/internal/pycore_interp.h Include/internal/pycore_ast_state.h \
-  Include/internal/pycore_code.h Include/internal/pycore_context.h \
-  Include/internal/pycore_hamt.h Include/internal/pycore_dict_state.h \
-  Include/internal/pycore_dtoa.h Include/internal/pycore_pymath.h \
-  Include/internal/pycore_exceptions.h \
-  Include/internal/pycore_function.h Include/internal/pycore_genobject.h \
-  Include/internal/pycore_global_objects.h \
-  Include/internal/pycore_global_strings.h \
-  Include/internal/pycore_typeobject.h \
-  Include/internal/pycore_moduleobject.h \
-  Include/internal/pycore_instruments.h Include/internal/pycore_frame.h \
-  Include/internal/pycore_list.h Include/internal/pycore_mimalloc.h \
-  Include/internal/pycore_pymem.h Include/internal/mimalloc/mimalloc.h \
-  Include/internal/mimalloc/mimalloc/types.h \
-  Include/internal/mimalloc/mimalloc/atomic.h \
-  Include/internal/mimalloc/mimalloc/internal.h \
-  Include/internal/mimalloc/mimalloc/track.h \
-  Include/internal/pycore_object_state.h \
-  Include/internal/pycore_obmalloc.h Include/internal/pycore_qsbr.h \
-  Include/internal/pycore_tstate.h Include/internal/pycore_brc.h \
-  Include/internal/pycore_object_stack.h Include/internal/pycore_tuple.h \
-  Include/internal/pycore_warnings.h Include/internal/pycore_parser.h \
-  Include/internal/pycore_ast.h Include/internal/pycore_asdl.h \
-  Include/internal/pycore_pyarena.h Include/internal/pycore_pyhash.h \
-  Include/internal/pycore_signal.h Include/internal/pycore_tracemalloc.h \
-  Include/internal/pycore_pystate.h Modules/_io/_iomodule.h \
-  Include/structmember.h Modules/_io/clinic/fileio.c.h \
-  Include/internal/pycore_abstract.h \
-  Include/internal/pycore_modsupport.h
-Modules/_io/bufferedio.o: Modules/_io/bufferedio.c Include/Python.h \
-  Include/patchlevel.h pyconfig.h Include/pymacconfig.h Include/pyport.h \
-  Include/exports.h Include/pymacro.h Include/pymath.h Include/pymem.h \
-  Include/cpython/pymem.h Include/pytypedefs.h Include/pybuffer.h \
-  Include/pystats.h Include/pyatomic.h Include/cpython/pyatomic.h \
-  Include/cpython/pyatomic_gcc.h Include/object.h \
-  Include/cpython/object.h Include/objimpl.h Include/cpython/objimpl.h \
-  Include/typeslots.h Include/pyhash.h Include/cpython/pyhash.h \
-  Include/cpython/pydebug.h Include/bytearrayobject.h \
-  Include/cpython/bytearrayobject.h Include/bytesobject.h \
-  Include/cpython/bytesobject.h Include/unicodeobject.h \
-  Include/cpython/unicodeobject.h Include/longobject.h \
-  Include/cpython/longobject.h Include/cpython/longintrepr.h \
-  Include/boolobject.h Include/floatobject.h \
-  Include/cpython/floatobject.h Include/complexobject.h \
-  Include/cpython/complexobject.h Include/rangeobject.h \
-  Include/memoryobject.h Include/cpython/memoryobject.h \
-  Include/tupleobject.h Include/cpython/tupleobject.h \
-  Include/listobject.h Include/cpython/listobject.h Include/dictobject.h \
-  Include/cpython/dictobject.h Include/cpython/odictobject.h \
-  Include/enumobject.h Include/setobject.h Include/cpython/setobject.h \
-  Include/methodobject.h Include/cpython/methodobject.h \
-  Include/moduleobject.h Include/cpython/funcobject.h \
-  Include/cpython/classobject.h Include/fileobject.h \
-  Include/cpython/fileobject.h Include/pycapsule.h \
-  Include/cpython/code.h Include/pyframe.h Include/cpython/pyframe.h \
-  Include/traceback.h Include/cpython/traceback.h Include/sliceobject.h \
-  Include/cpython/cellobject.h Include/iterobject.h \
-  Include/cpython/initconfig.h Include/pystate.h \
-  Include/cpython/pystate.h Include/cpython/genobject.h \
-  Include/descrobject.h Include/cpython/descrobject.h \
-  Include/genericaliasobject.h Include/warnings.h \
-  Include/cpython/warnings.h Include/weakrefobject.h \
-  Include/cpython/weakrefobject.h Include/structseq.h \
-  Include/cpython/picklebufobject.h Include/cpython/pytime.h \
-  Include/codecs.h Include/pyerrors.h Include/cpython/pyerrors.h \
-  Include/pythread.h Include/cpython/pythread.h \
-  Include/cpython/context.h Include/modsupport.h Include/compile.h \
-  Include/cpython/compile.h Include/pythonrun.h \
-  Include/cpython/pythonrun.h Include/pylifecycle.h \
-  Include/cpython/pylifecycle.h Include/ceval.h Include/cpython/ceval.h \
-  Include/sysmodule.h Include/cpython/sysmodule.h Include/osmodule.h \
-  Include/intrcheck.h Include/import.h Include/cpython/import.h \
-  Include/abstract.h Include/cpython/abstract.h Include/bltinmodule.h \
-  Include/cpython/pyctype.h Include/pystrtod.h Include/pystrcmp.h \
-  Include/fileutils.h Include/cpython/fileutils.h \
-  Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
-  Include/cpython/optimizer.h Include/internal/pycore_bytesobject.h \
-  Include/internal/pycore_call.h Include/internal/pycore_identifier.h \
-  Include/internal/pycore_pystate.h Include/internal/pycore_freelist.h \
-  Include/internal/pycore_runtime.h Include/internal/pycore_atexit.h \
-  Include/internal/pycore_lock.h Include/internal/pycore_ceval_state.h \
-  Include/internal/pycore_gil.h Include/internal/pycore_condvar.h \
-  Include/internal/pycore_pythread.h Include/dynamic_annotations.h \
-  Include/internal/pycore_llist.h Include/internal/pycore_crossinterp.h \
-  Include/internal/pycore_pyerrors.h \
-  Include/internal/pycore_faulthandler.h \
-  Include/internal/pycore_floatobject.h \
-  Include/internal/pycore_unicodeobject.h \
-  Include/internal/pycore_fileutils.h Include/internal/pycore_ucnhash.h \
-  Include/internal/pycore_import.h Include/internal/pycore_hashtable.h \
-  Include/internal/pycore_interp.h Include/internal/pycore_ast_state.h \
-  Include/internal/pycore_code.h Include/internal/pycore_context.h \
-  Include/internal/pycore_hamt.h Include/internal/pycore_dict_state.h \
-  Include/internal/pycore_dtoa.h Include/internal/pycore_pymath.h \
-  Include/internal/pycore_exceptions.h \
-  Include/internal/pycore_function.h Include/internal/pycore_gc.h \
-  Include/internal/pycore_genobject.h \
-  Include/internal/pycore_global_objects.h \
-  Include/internal/pycore_global_strings.h \
-  Include/internal/pycore_typeobject.h \
-  Include/internal/pycore_moduleobject.h \
-  Include/internal/pycore_instruments.h Include/internal/pycore_frame.h \
-  Include/internal/pycore_list.h Include/internal/pycore_mimalloc.h \
-  Include/internal/pycore_pymem.h Include/internal/mimalloc/mimalloc.h \
-  Include/internal/mimalloc/mimalloc/types.h \
-  Include/internal/mimalloc/mimalloc/atomic.h \
-  Include/internal/mimalloc/mimalloc/internal.h \
-  Include/internal/mimalloc/mimalloc/track.h \
-  Include/internal/pycore_object_state.h \
-  Include/internal/pycore_obmalloc.h Include/internal/pycore_qsbr.h \
-  Include/internal/pycore_tstate.h Include/internal/pycore_brc.h \
-  Include/internal/pycore_object_stack.h Include/internal/pycore_tuple.h \
-  Include/internal/pycore_warnings.h Include/internal/pycore_parser.h \
-  Include/internal/pycore_ast.h Include/internal/pycore_asdl.h \
-  Include/internal/pycore_pyarena.h Include/internal/pycore_pyhash.h \
-  Include/internal/pycore_signal.h Include/internal/pycore_tracemalloc.h \
-  Include/internal/pycore_object.h \
-  Include/internal/pycore_emscripten_trampoline.h \
-  Include/internal/pycore_pylifecycle.h Modules/_io/_iomodule.h \
-  Include/structmember.h Modules/_io/clinic/bufferedio.c.h \
-  Include/internal/pycore_abstract.h \
-  Include/internal/pycore_critical_section.h \
-  Include/internal/pycore_modsupport.h
-Modules/_io/textio.o: Modules/_io/textio.c Include/Python.h \
-  Include/patchlevel.h pyconfig.h Include/pymacconfig.h Include/pyport.h \
-  Include/exports.h Include/pymacro.h Include/pymath.h Include/pymem.h \
-  Include/cpython/pymem.h Include/pytypedefs.h Include/pybuffer.h \
-  Include/pystats.h Include/pyatomic.h Include/cpython/pyatomic.h \
-  Include/cpython/pyatomic_gcc.h Include/object.h \
-  Include/cpython/object.h Include/objimpl.h Include/cpython/objimpl.h \
-  Include/typeslots.h Include/pyhash.h Include/cpython/pyhash.h \
-  Include/cpython/pydebug.h Include/bytearrayobject.h \
-  Include/cpython/bytearrayobject.h Include/bytesobject.h \
-  Include/cpython/bytesobject.h Include/unicodeobject.h \
-  Include/cpython/unicodeobject.h Include/longobject.h \
-  Include/cpython/longobject.h Include/cpython/longintrepr.h \
-  Include/boolobject.h Include/floatobject.h \
-  Include/cpython/floatobject.h Include/complexobject.h \
-  Include/cpython/complexobject.h Include/rangeobject.h \
-  Include/memoryobject.h Include/cpython/memoryobject.h \
-  Include/tupleobject.h Include/cpython/tupleobject.h \
-  Include/listobject.h Include/cpython/listobject.h Include/dictobject.h \
-  Include/cpython/dictobject.h Include/cpython/odictobject.h \
-  Include/enumobject.h Include/setobject.h Include/cpython/setobject.h \
-  Include/methodobject.h Include/cpython/methodobject.h \
-  Include/moduleobject.h Include/cpython/funcobject.h \
-  Include/cpython/classobject.h Include/fileobject.h \
-  Include/cpython/fileobject.h Include/pycapsule.h \
-  Include/cpython/code.h Include/pyframe.h Include/cpython/pyframe.h \
-  Include/traceback.h Include/cpython/traceback.h Include/sliceobject.h \
-  Include/cpython/cellobject.h Include/iterobject.h \
-  Include/cpython/initconfig.h Include/pystate.h \
-  Include/cpython/pystate.h Include/cpython/genobject.h \
-  Include/descrobject.h Include/cpython/descrobject.h \
-  Include/genericaliasobject.h Include/warnings.h \
-  Include/cpython/warnings.h Include/weakrefobject.h \
-  Include/cpython/weakrefobject.h Include/structseq.h \
-  Include/cpython/picklebufobject.h Include/cpython/pytime.h \
-  Include/codecs.h Include/pyerrors.h Include/cpython/pyerrors.h \
-  Include/pythread.h Include/cpython/pythread.h \
-  Include/cpython/context.h Include/modsupport.h Include/compile.h \
-  Include/cpython/compile.h Include/pythonrun.h \
-  Include/cpython/pythonrun.h Include/pylifecycle.h \
-  Include/cpython/pylifecycle.h Include/ceval.h Include/cpython/ceval.h \
-  Include/sysmodule.h Include/cpython/sysmodule.h Include/osmodule.h \
-  Include/intrcheck.h Include/import.h Include/cpython/import.h \
-  Include/abstract.h Include/cpython/abstract.h Include/bltinmodule.h \
-  Include/cpython/pyctype.h Include/pystrtod.h Include/pystrcmp.h \
-  Include/fileutils.h Include/cpython/fileutils.h \
-  Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
-  Include/cpython/optimizer.h Include/internal/pycore_call.h \
-  Include/internal/pycore_identifier.h Include/internal/pycore_pystate.h \
-  Include/internal/pycore_freelist.h Include/internal/pycore_runtime.h \
-  Include/internal/pycore_atexit.h Include/internal/pycore_lock.h \
-  Include/internal/pycore_ceval_state.h Include/internal/pycore_gil.h \
-  Include/internal/pycore_condvar.h Include/internal/pycore_pythread.h \
-  Include/dynamic_annotations.h Include/internal/pycore_llist.h \
-  Include/internal/pycore_crossinterp.h \
-  Include/internal/pycore_pyerrors.h \
-  Include/internal/pycore_faulthandler.h \
-  Include/internal/pycore_floatobject.h \
-  Include/internal/pycore_unicodeobject.h \
-  Include/internal/pycore_fileutils.h Include/internal/pycore_ucnhash.h \
-  Include/internal/pycore_import.h Include/internal/pycore_hashtable.h \
-  Include/internal/pycore_interp.h Include/internal/pycore_ast_state.h \
-  Include/internal/pycore_code.h Include/internal/pycore_context.h \
-  Include/internal/pycore_hamt.h Include/internal/pycore_dict_state.h \
-  Include/internal/pycore_dtoa.h Include/internal/pycore_pymath.h \
-  Include/internal/pycore_exceptions.h \
-  Include/internal/pycore_function.h Include/internal/pycore_gc.h \
-  Include/internal/pycore_genobject.h \
-  Include/internal/pycore_global_objects.h \
-  Include/internal/pycore_global_strings.h \
-  Include/internal/pycore_typeobject.h \
-  Include/internal/pycore_moduleobject.h \
-  Include/internal/pycore_instruments.h Include/internal/pycore_frame.h \
-  Include/internal/pycore_list.h Include/internal/pycore_mimalloc.h \
-  Include/internal/pycore_pymem.h Include/internal/mimalloc/mimalloc.h \
-  Include/internal/mimalloc/mimalloc/types.h \
-  Include/internal/mimalloc/mimalloc/atomic.h \
-  Include/internal/mimalloc/mimalloc/internal.h \
-  Include/internal/mimalloc/mimalloc/track.h \
-  Include/internal/pycore_object_state.h \
-  Include/internal/pycore_obmalloc.h Include/internal/pycore_qsbr.h \
-  Include/internal/pycore_tstate.h Include/internal/pycore_brc.h \
-  Include/internal/pycore_object_stack.h Include/internal/pycore_tuple.h \
-  Include/internal/pycore_warnings.h Include/internal/pycore_parser.h \
-  Include/internal/pycore_ast.h Include/internal/pycore_asdl.h \
-  Include/internal/pycore_pyarena.h Include/internal/pycore_pyhash.h \
-  Include/internal/pycore_signal.h Include/internal/pycore_tracemalloc.h \
-  Include/internal/pycore_codecs.h Include/internal/pycore_long.h \
-  Include/internal/pycore_bytesobject.h Include/internal/pycore_object.h \
-  Include/internal/pycore_emscripten_trampoline.h \
-  Modules/_io/_iomodule.h Include/structmember.h \
-  Modules/_io/clinic/textio.c.h Include/internal/pycore_abstract.h \
-  Include/internal/pycore_critical_section.h \
-  Include/internal/pycore_modsupport.h
-Modules/_io/bytesio.o: Modules/_io/bytesio.c Include/Python.h \
-  Include/patchlevel.h pyconfig.h Include/pymacconfig.h Include/pyport.h \
-  Include/exports.h Include/pymacro.h Include/pymath.h Include/pymem.h \
-  Include/cpython/pymem.h Include/pytypedefs.h Include/pybuffer.h \
-  Include/pystats.h Include/pyatomic.h Include/cpython/pyatomic.h \
-  Include/cpython/pyatomic_gcc.h Include/object.h \
-  Include/cpython/object.h Include/objimpl.h Include/cpython/objimpl.h \
-  Include/typeslots.h Include/pyhash.h Include/cpython/pyhash.h \
-  Include/cpython/pydebug.h Include/bytearrayobject.h \
-  Include/cpython/bytearrayobject.h Include/bytesobject.h \
-  Include/cpython/bytesobject.h Include/unicodeobject.h \
-  Include/cpython/unicodeobject.h Include/longobject.h \
-  Include/cpython/longobject.h Include/cpython/longintrepr.h \
-  Include/boolobject.h Include/floatobject.h \
-  Include/cpython/floatobject.h Include/complexobject.h \
-  Include/cpython/complexobject.h Include/rangeobject.h \
-  Include/memoryobject.h Include/cpython/memoryobject.h \
-  Include/tupleobject.h Include/cpython/tupleobject.h \
-  Include/listobject.h Include/cpython/listobject.h Include/dictobject.h \
-  Include/cpython/dictobject.h Include/cpython/odictobject.h \
-  Include/enumobject.h Include/setobject.h Include/cpython/setobject.h \
-  Include/methodobject.h Include/cpython/methodobject.h \
-  Include/moduleobject.h Include/cpython/funcobject.h \
-  Include/cpython/classobject.h Include/fileobject.h \
-  Include/cpython/fileobject.h Include/pycapsule.h \
-  Include/cpython/code.h Include/pyframe.h Include/cpython/pyframe.h \
-  Include/traceback.h Include/cpython/traceback.h Include/sliceobject.h \
-  Include/cpython/cellobject.h Include/iterobject.h \
-  Include/cpython/initconfig.h Include/pystate.h \
-  Include/cpython/pystate.h Include/cpython/genobject.h \
-  Include/descrobject.h Include/cpython/descrobject.h \
-  Include/genericaliasobject.h Include/warnings.h \
-  Include/cpython/warnings.h Include/weakrefobject.h \
-  Include/cpython/weakrefobject.h Include/structseq.h \
-  Include/cpython/picklebufobject.h Include/cpython/pytime.h \
-  Include/codecs.h Include/pyerrors.h Include/cpython/pyerrors.h \
-  Include/pythread.h Include/cpython/pythread.h \
-  Include/cpython/context.h Include/modsupport.h Include/compile.h \
-  Include/cpython/compile.h Include/pythonrun.h \
-  Include/cpython/pythonrun.h Include/pylifecycle.h \
-  Include/cpython/pylifecycle.h Include/ceval.h Include/cpython/ceval.h \
-  Include/sysmodule.h Include/cpython/sysmodule.h Include/osmodule.h \
-  Include/intrcheck.h Include/import.h Include/cpython/import.h \
-  Include/abstract.h Include/cpython/abstract.h Include/bltinmodule.h \
-  Include/cpython/pyctype.h Include/pystrtod.h Include/pystrcmp.h \
-  Include/fileutils.h Include/cpython/fileutils.h \
-  Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
-  Include/cpython/optimizer.h Include/internal/pycore_object.h \
-  Include/internal/pycore_gc.h Include/internal/pycore_freelist.h \
-  Include/internal/pycore_emscripten_trampoline.h \
-  Include/internal/pycore_runtime.h Include/internal/pycore_atexit.h \
-  Include/internal/pycore_lock.h Include/internal/pycore_ceval_state.h \
-  Include/internal/pycore_gil.h Include/internal/pycore_condvar.h \
-  Include/internal/pycore_pythread.h Include/dynamic_annotations.h \
-  Include/internal/pycore_llist.h Include/internal/pycore_crossinterp.h \
-  Include/internal/pycore_pyerrors.h \
-  Include/internal/pycore_faulthandler.h \
-  Include/internal/pycore_floatobject.h \
-  Include/internal/pycore_unicodeobject.h \
-  Include/internal/pycore_fileutils.h \
-  Include/internal/pycore_identifier.h Include/internal/pycore_ucnhash.h \
-  Include/internal/pycore_import.h Include/internal/pycore_hashtable.h \
-  Include/internal/pycore_interp.h Include/internal/pycore_ast_state.h \
-  Include/internal/pycore_code.h Include/internal/pycore_context.h \
-  Include/internal/pycore_hamt.h Include/internal/pycore_dict_state.h \
-  Include/internal/pycore_dtoa.h Include/internal/pycore_pymath.h \
-  Include/internal/pycore_exceptions.h \
-  Include/internal/pycore_function.h Include/internal/pycore_genobject.h \
-  Include/internal/pycore_global_objects.h \
-  Include/internal/pycore_global_strings.h \
-  Include/internal/pycore_typeobject.h \
-  Include/internal/pycore_moduleobject.h \
-  Include/internal/pycore_instruments.h Include/internal/pycore_frame.h \
-  Include/internal/pycore_list.h Include/internal/pycore_mimalloc.h \
-  Include/internal/pycore_pymem.h Include/internal/mimalloc/mimalloc.h \
-  Include/internal/mimalloc/mimalloc/types.h \
-  Include/internal/mimalloc/mimalloc/atomic.h \
-  Include/internal/mimalloc/mimalloc/internal.h \
-  Include/internal/mimalloc/mimalloc/track.h \
-  Include/internal/pycore_object_state.h \
-  Include/internal/pycore_obmalloc.h Include/internal/pycore_qsbr.h \
-  Include/internal/pycore_tstate.h Include/internal/pycore_brc.h \
-  Include/internal/pycore_object_stack.h Include/internal/pycore_tuple.h \
-  Include/internal/pycore_warnings.h Include/internal/pycore_parser.h \
-  Include/internal/pycore_ast.h Include/internal/pycore_asdl.h \
-  Include/internal/pycore_pyarena.h Include/internal/pycore_pyhash.h \
-  Include/internal/pycore_signal.h Include/internal/pycore_tracemalloc.h \
-  Include/internal/pycore_pystate.h Include/internal/pycore_sysmodule.h \
-  Modules/_io/_iomodule.h Include/structmember.h \
-  Modules/_io/clinic/bytesio.c.h Include/internal/pycore_abstract.h \
-  Include/internal/pycore_modsupport.h
-Modules/_io/stringio.o: Modules/_io/stringio.c Include/Python.h \
-  Include/patchlevel.h pyconfig.h Include/pymacconfig.h Include/pyport.h \
-  Include/exports.h Include/pymacro.h Include/pymath.h Include/pymem.h \
-  Include/cpython/pymem.h Include/pytypedefs.h Include/pybuffer.h \
-  Include/pystats.h Include/pyatomic.h Include/cpython/pyatomic.h \
-  Include/cpython/pyatomic_gcc.h Include/object.h \
-  Include/cpython/object.h Include/objimpl.h Include/cpython/objimpl.h \
-  Include/typeslots.h Include/pyhash.h Include/cpython/pyhash.h \
-  Include/cpython/pydebug.h Include/bytearrayobject.h \
-  Include/cpython/bytearrayobject.h Include/bytesobject.h \
-  Include/cpython/bytesobject.h Include/unicodeobject.h \
-  Include/cpython/unicodeobject.h Include/longobject.h \
-  Include/cpython/longobject.h Include/cpython/longintrepr.h \
-  Include/boolobject.h Include/floatobject.h \
-  Include/cpython/floatobject.h Include/complexobject.h \
-  Include/cpython/complexobject.h Include/rangeobject.h \
-  Include/memoryobject.h Include/cpython/memoryobject.h \
-  Include/tupleobject.h Include/cpython/tupleobject.h \
-  Include/listobject.h Include/cpython/listobject.h Include/dictobject.h \
-  Include/cpython/dictobject.h Include/cpython/odictobject.h \
-  Include/enumobject.h Include/setobject.h Include/cpython/setobject.h \
-  Include/methodobject.h Include/cpython/methodobject.h \
-  Include/moduleobject.h Include/cpython/funcobject.h \
-  Include/cpython/classobject.h Include/fileobject.h \
-  Include/cpython/fileobject.h Include/pycapsule.h \
-  Include/cpython/code.h Include/pyframe.h Include/cpython/pyframe.h \
-  Include/traceback.h Include/cpython/traceback.h Include/sliceobject.h \
-  Include/cpython/cellobject.h Include/iterobject.h \
-  Include/cpython/initconfig.h Include/pystate.h \
-  Include/cpython/pystate.h Include/cpython/genobject.h \
-  Include/descrobject.h Include/cpython/descrobject.h \
-  Include/genericaliasobject.h Include/warnings.h \
-  Include/cpython/warnings.h Include/weakrefobject.h \
-  Include/cpython/weakrefobject.h Include/structseq.h \
-  Include/cpython/picklebufobject.h Include/cpython/pytime.h \
-  Include/codecs.h Include/pyerrors.h Include/cpython/pyerrors.h \
-  Include/pythread.h Include/cpython/pythread.h \
-  Include/cpython/context.h Include/modsupport.h Include/compile.h \
-  Include/cpython/compile.h Include/pythonrun.h \
-  Include/cpython/pythonrun.h Include/pylifecycle.h \
-  Include/cpython/pylifecycle.h Include/ceval.h Include/cpython/ceval.h \
-  Include/sysmodule.h Include/cpython/sysmodule.h Include/osmodule.h \
-  Include/intrcheck.h Include/import.h Include/cpython/import.h \
-  Include/abstract.h Include/cpython/abstract.h Include/bltinmodule.h \
-  Include/cpython/pyctype.h Include/pystrtod.h Include/pystrcmp.h \
-  Include/fileutils.h Include/cpython/fileutils.h \
-  Include/cpython/pyfpe.h Include/cpython/tracemalloc.h \
-  Include/cpython/optimizer.h Include/internal/pycore_object.h \
-  Include/internal/pycore_gc.h Include/internal/pycore_freelist.h \
-  Include/internal/pycore_emscripten_trampoline.h \
-  Include/internal/pycore_runtime.h Include/internal/pycore_atexit.h \
-  Include/internal/pycore_lock.h Include/internal/pycore_ceval_state.h \
-  Include/internal/pycore_gil.h Include/internal/pycore_condvar.h \
-  Include/internal/pycore_pythread.h Include/dynamic_annotations.h \
-  Include/internal/pycore_llist.h Include/internal/pycore_crossinterp.h \
-  Include/internal/pycore_pyerrors.h \
-  Include/internal/pycore_faulthandler.h \
-  Include/internal/pycore_floatobject.h \
-  Include/internal/pycore_unicodeobject.h \
-  Include/internal/pycore_fileutils.h \
-  Include/internal/pycore_identifier.h Include/internal/pycore_ucnhash.h \
-  Include/internal/pycore_import.h Include/internal/pycore_hashtable.h \
-  Include/internal/pycore_interp.h Include/internal/pycore_ast_state.h \
-  Include/internal/pycore_code.h Include/internal/pycore_context.h \
-  Include/internal/pycore_hamt.h Include/internal/pycore_dict_state.h \
-  Include/internal/pycore_dtoa.h Include/internal/pycore_pymath.h \
-  Include/internal/pycore_exceptions.h \
-  Include/internal/pycore_function.h Include/internal/pycore_genobject.h \
-  Include/internal/pycore_global_objects.h \
-  Include/internal/pycore_global_strings.h \
-  Include/internal/pycore_typeobject.h \
-  Include/internal/pycore_moduleobject.h \
-  Include/internal/pycore_instruments.h Include/internal/pycore_frame.h \
-  Include/internal/pycore_list.h Include/internal/pycore_mimalloc.h \
-  Include/internal/pycore_pymem.h Include/internal/mimalloc/mimalloc.h \
-  Include/internal/mimalloc/mimalloc/types.h \
-  Include/internal/mimalloc/mimalloc/atomic.h \
-  Include/internal/mimalloc/mimalloc/internal.h \
-  Include/internal/mimalloc/mimalloc/track.h \
-  Include/internal/pycore_object_state.h \
-  Include/internal/pycore_obmalloc.h Include/internal/pycore_qsbr.h \
-  Include/internal/pycore_tstate.h Include/internal/pycore_brc.h \
-  Include/internal/pycore_object_stack.h Include/internal/pycore_tuple.h \
-  Include/internal/pycore_warnings.h Include/internal/pycore_parser.h \
-  Include/internal/pycore_ast.h Include/internal/pycore_asdl.h \
-  Include/internal/pycore_pyarena.h Include/internal/pycore_pyhash.h \
-  Include/internal/pycore_signal.h Include/internal/pycore_tracemalloc.h \
-  Include/internal/pycore_pystate.h Modules/_io/_iomodule.h \
-  Include/structmember.h Modules/_io/clinic/stringio.c.h \
-  Include/internal/pycore_abstract.h \
-  Include/internal/pycore_critical_section.h \
-  Include/internal/pycore_modsupport.h
 Modules/_decimal/libmpdec/basearith.o: \
   Modules/_decimal/libmpdec/basearith.c \
   Modules/_decimal/libmpdec/mpdecimal.h pyconfig.h \
@@ -19958,76 +19312,76 @@ Modules/_ssl.o: Modules/_ssl.c Include/Python.h Include/patchlevel.h \
   Include/internal/pycore_object.h \
   Include/internal/pycore_emscripten_trampoline.h Modules/socketmodule.h \
   Modules/_ssl.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/evp.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/macros.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/opensslconf.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/configuration.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/opensslv.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/types.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/e_os2.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/safestack.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/stack.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/core.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/core_dispatch.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/symhacks.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bio.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/crypto.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/cryptoerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/cryptoerr_legacy.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bioerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/evperr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/params.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bn.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bnerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/objects.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/obj_mac.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/asn1.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/asn1err.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/objectserr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/x509.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/buffer.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/buffererr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/ec.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/ecerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/sha.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/x509err.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/x509_vfy.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/lhash.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/pkcs7.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/pkcs7err.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/http.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/conf.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/conferr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/conftypes.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/rsa.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/rsaerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/x509v3.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/x509v3err.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/pem.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/pemerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/ssl.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/e_ostime.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/comp.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/comperr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/hmac.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/async.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/asyncerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/ct.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/cterr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/sslerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/sslerr_legacy.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/prov_ssl.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/ssl2.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/ssl3.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/tls1.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/dtls1.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/srtp.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/quic.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/err.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/rand.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/randerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/dh.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/dherr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/evp.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/macros.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/opensslconf.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/configuration.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/opensslv.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/types.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/e_os2.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/safestack.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/stack.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/core.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/core_dispatch.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/symhacks.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bio.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/crypto.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/cryptoerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/cryptoerr_legacy.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bioerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/evperr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/params.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bn.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bnerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/objects.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/obj_mac.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/asn1.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/asn1err.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/objectserr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/x509.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/buffer.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/buffererr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/ec.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/ecerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/sha.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/x509err.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/x509_vfy.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/lhash.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/pkcs7.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/pkcs7err.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/http.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/conf.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/conferr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/conftypes.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/rsa.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/rsaerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/x509v3.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/x509v3err.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/pem.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/pemerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/ssl.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/e_ostime.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/comp.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/comperr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/hmac.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/async.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/asyncerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/ct.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/cterr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/sslerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/sslerr_legacy.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/prov_ssl.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/ssl2.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/ssl3.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/tls1.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/dtls1.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/srtp.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/quic.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/err.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/rand.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/randerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/dh.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/dherr.h \
   Modules/_ssl_data_31.h Modules/clinic/_ssl.c.h \
   Include/internal/pycore_abstract.h \
   Include/internal/pycore_modsupport.h Modules/_ssl/debughelpers.c \
@@ -20083,35 +19437,35 @@ Modules/_hashopenssl.o: Modules/_hashopenssl.c Include/Python.h \
   Include/cpython/optimizer.h Include/internal/pycore_hashtable.h \
   Include/internal/pycore_pyhash.h Include/internal/pycore_strhex.h \
   Modules/hashlib.h Include/internal/pycore_lock.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/evp.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/macros.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/opensslconf.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/configuration.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/opensslv.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/types.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/e_os2.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/safestack.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/stack.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/core.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/core_dispatch.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/symhacks.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bio.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/crypto.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/cryptoerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/cryptoerr_legacy.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bioerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/evperr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/params.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bn.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/bnerr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/objects.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/obj_mac.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/asn1.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/asn1err.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/objectserr.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/hmac.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/err.h \
-  /opt/homebrew/Cellar/openssl@3/3.2.0_1/include/openssl/lhash.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/evp.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/macros.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/opensslconf.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/configuration.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/opensslv.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/types.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/e_os2.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/safestack.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/stack.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/core.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/core_dispatch.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/symhacks.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bio.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/crypto.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/cryptoerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/cryptoerr_legacy.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bioerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/evperr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/params.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bn.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/bnerr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/objects.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/obj_mac.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/asn1.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/asn1err.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/objectserr.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/hmac.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/err.h \
+  /opt/homebrew/Cellar/openssl@3/3.2.1/include/openssl/lhash.h \
   Modules/clinic/_hashopenssl.c.h Include/internal/pycore_abstract.h \
   Include/internal/pycore_modsupport.h
 Modules/_uuidmodule.o: Modules/_uuidmodule.c pyconfig.h Include/Python.h \
