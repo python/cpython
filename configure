@@ -4360,8 +4360,6 @@ then :
 
 				ac_config_files="$ac_config_files iOS/Resources/Info.plist"
 
-				ac_config_files="$ac_config_files iOS/testbed/iOSTestbed/iOSTestbed-Info.plist"
-
 				;;
 			*)
 				as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
@@ -31951,7 +31949,6 @@ do
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
     "iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES iOS/Resources/Info.plist" ;;
-    "iOS/testbed/iOSTestbed/iOSTestbed-Info.plist") CONFIG_FILES="$CONFIG_FILES iOS/testbed/iOSTestbed/iOSTestbed-Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;

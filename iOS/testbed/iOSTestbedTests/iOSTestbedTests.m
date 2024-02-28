@@ -14,7 +14,7 @@
     // will be handled as if it were an argument to `python -m test`
     const char *argv[] = {
         "iOSTestbed", // argv[0] is the process that is running.
-        "-uall,-gui,-curses",  // Enable most resources; GUI and curses tests won't work on iOS
+        "-uall",  // Enable all resources
         "-v",  // run in verbose mode so we get test failure information
         // To run a subset of tests, add the test names below; e.g.,
         // "test_os",
@@ -27,16 +27,12 @@
     PyPreConfig preconfig;
     PyConfig config;
     NSString *python_home;
-    NSString *path;
     wchar_t *wtmp_str;
 
     NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
 
-    // Extract Python version from bundle
-    NSString *py_version_string = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
-
     // Generate an isolated Python configuration.
-    NSLog(@"Configuring isolated Python %@...", py_version_string);
+    NSLog(@"Configuring isolated Python...");
     PyPreConfig_InitIsolatedConfig(&preconfig);
     PyConfig_InitIsolatedConfig(&config);
 
@@ -69,18 +65,6 @@
     status = PyConfig_SetString(&config, &config.home, wtmp_str);
     if (PyStatus_Exception(status)) {
         XCTFail(@"Unable to set PYTHONHOME: %s", status.err_msg);
-        PyConfig_Clear(&config);
-        return;
-    }
-    PyMem_RawFree(wtmp_str);
-
-    // Set the stdlib location for the Python interpreter
-    path = [NSString stringWithFormat:@"%@/python/lib/python%@", resourcePath, py_version_string, nil];
-    NSLog(@"Stdlib dir: %@", path);
-    wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
-    status = PyConfig_SetString(&config, &config.stdlib_dir, wtmp_str);
-    if (PyStatus_Exception(status)) {
-        XCTFail(@"Unable to set stdlib dir: %s", status.err_msg);
         PyConfig_Clear(&config);
         return;
     }

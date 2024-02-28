@@ -644,7 +644,6 @@ AC_ARG_ENABLE([framework],
 				RESSRCDIR=iOS/Resources
 
 				AC_CONFIG_FILES([iOS/Resources/Info.plist])
-				AC_CONFIG_FILES([iOS/testbed/iOSTestbed/iOSTestbed-Info.plist])
 				;;
 			*)
 				AC_MSG_ERROR([Unknown platform for framework build])
