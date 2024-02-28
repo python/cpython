@@ -4,7 +4,7 @@
 .. release date: 2019-02-25
 .. section: Core and Builtins
 
-Raise a :exc:`SyntaxError` when assigning a value to `__debug__` with the
+Raise a :exc:`SyntaxError` when assigning a value to ``__debug__`` with the
 Assignment Operator. Contributed by Stéphane Wirtel and Pablo Galindo.
 
 ..
@@ -356,7 +356,7 @@ Add *headers* optional keyword-only parameter to
 .. section: Library
 
 Fix C implementation of pickle.loads to use importlib's locking mechanisms,
-and thereby avoid using partially-loaded modules. Patch by Tim Burgess.
+and thereby avoid using partially loaded modules. Patch by Tim Burgess.
 
 ..
 

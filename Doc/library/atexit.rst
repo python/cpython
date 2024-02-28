@@ -4,8 +4,8 @@
 .. module:: atexit
    :synopsis: Register and execute cleanup functions.
 
-.. moduleauthor:: Skip Montanaro <skip@pobox.com>
-.. sectionauthor:: Skip Montanaro <skip@pobox.com>
+.. moduleauthor:: Skip Montanaro <skip.montanaro@gmail.com>
+.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
@@ -19,6 +19,9 @@ at interpreter termination time they will be run in the order ``C``, ``B``,
 **Note:** The functions registered via this module are not called when the
 program is killed by a signal not handled by Python, when a Python fatal
 internal error is detected, or when :func:`os._exit` is called.
+
+**Note:** The effect of registering or unregistering functions from within
+a cleanup function is undefined.
 
 .. versionchanged:: 3.7
     When used with C-API subinterpreters, registered functions
@@ -45,14 +48,25 @@ internal error is detected, or when :func:`os._exit` is called.
    This function returns *func*, which makes it possible to use it as a
    decorator.
 
+   .. warning::
+       Starting new threads or calling :func:`os.fork` from a registered
+       function can lead to race condition between the main Python
+       runtime thread freeing thread states while internal :mod:`threading`
+       routines or the new process try to use that state. This can lead to
+       crashes rather than clean shutdown.
+
+   .. versionchanged:: 3.12
+       Attempts to start a new thread or :func:`os.fork` a new process
+       in a registered function now leads to :exc:`RuntimeError`.
 
 .. function:: unregister(func)
 
-   Remove *func* from the list of functions to be run at interpreter
-   shutdown.  After calling :func:`unregister`, *func* is guaranteed not to be
-   called when the interpreter shuts down, even if it was registered more than
-   once.  :func:`unregister` silently does nothing if *func* was not previously
-   registered.
+   Remove *func* from the list of functions to be run at interpreter shutdown.
+   :func:`unregister` silently does nothing if *func* was not previously
+   registered.  If *func* has been registered more than once, every occurrence
+   of that function in the :mod:`atexit` call stack will be removed.  Equality
+   comparisons (``==``) are used internally during unregistration, so function
+   references do not need to have matching identities.
 
 
 .. seealso::

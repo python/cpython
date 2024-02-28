@@ -79,7 +79,7 @@ def helper1():
     TICKS += 19
     lst = []
     lst.append(42)                      # 0
-    sys.exc_info()                      # 0
+    sys.exception()                     # 0
 
 def helper2_indirect():
     helper2()                           # 50

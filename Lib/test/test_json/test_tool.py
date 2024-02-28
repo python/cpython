@@ -10,6 +10,7 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok
 
 
+@support.requires_subprocess()
 class TestTool(unittest.TestCase):
     data = """
 
@@ -126,6 +127,15 @@ class TestTool(unittest.TestCase):
         rc, out, err = assert_python_ok('-m', 'json.tool', infile, outfile)
         self.addCleanup(os.remove, outfile)
         with open(outfile, "r", encoding="utf-8") as fp:
+            self.assertEqual(fp.read(), self.expect)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+    def test_writing_in_place(self):
+        infile = self._create_infile()
+        rc, out, err = assert_python_ok('-m', 'json.tool', infile, infile)
+        with open(infile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')

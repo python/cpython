@@ -54,8 +54,8 @@ commercial use, to sell copies of Python in source or binary form (modified or
 unmodified), or to sell products that incorporate Python in some form.  We would
 still like to know about all commercial use of Python, of course.
 
-See `the PSF license page <https://www.python.org/psf/license/>`_ to find further
-explanations and a link to the full text of the license.
+See `the license page <https://docs.python.org/3/license.html>`_ to find further
+explanations and the full text of the PSF License.
 
 The Python logo is trademarked, and in certain cases permission is required to
 use it.  Consult `the Trademark Usage Policy
@@ -113,8 +113,8 @@ to many different classes of problems.
 
 The language comes with a large standard library that covers areas such as
 string processing (regular expressions, Unicode, calculating differences between
-files), Internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP, CGI
-programming), software engineering (unit testing, logging, profiling, parsing
+files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP),
+software engineering (unit testing, logging, profiling, parsing
 Python code), and operating system interfaces (system calls, filesystems, TCP/IP
 sockets).  Look at the table of contents for :ref:`library-index` to get an idea
 of what's available.  A wide variety of third-party extensions are also
@@ -125,13 +125,17 @@ find packages of interest to you.
 How does the Python version numbering scheme work?
 --------------------------------------------------
 
-Python versions are numbered A.B.C or A.B.  A is the major version number -- it
-is only incremented for really major changes in the language.  B is the minor
-version number, incremented for less earth-shattering changes.  C is the
-micro-level -- it is incremented for each bugfix release.  See :pep:`6` for more
-information about bugfix releases.
+Python versions are numbered "A.B.C" or "A.B":
 
-Not all releases are bugfix releases.  In the run-up to a new major release, a
+* *A* is the major version number -- it is only incremented for really major
+  changes in the language.
+* *B* is the minor version number -- it is incremented for less earth-shattering
+  changes.
+* *C* is the micro version number -- it is incremented for each bugfix release.
+
+See :pep:`6` for more information about bugfix releases.
+
+Not all releases are bugfix releases.  In the run-up to a new feature release, a
 series of development releases are made, denoted as alpha, beta, or release
 candidate.  Alphas are early releases in which interfaces aren't yet finalized;
 it's not unexpected to see an interface change between two alpha releases.
@@ -139,12 +143,14 @@ Betas are more stable, preserving existing interfaces but possibly adding new
 modules, and release candidates are frozen, making no changes except as needed
 to fix critical bugs.
 
-Alpha, beta and release candidate versions have an additional suffix.  The
-suffix for an alpha version is "aN" for some small number N, the suffix for a
-beta version is "bN" for some small number N, and the suffix for a release
-candidate version is "rcN" for some small number N.  In other words, all versions
-labeled 2.0aN precede the versions labeled 2.0bN, which precede versions labeled
-2.0rcN, and *those* precede 2.0.
+Alpha, beta and release candidate versions have an additional suffix:
+
+* The suffix for an alpha version is "aN" for some small number *N*.
+* The suffix for a beta version is "bN" for some small number *N*.
+* The suffix for a release candidate version is "rcN" for some small number *N*.
+
+In other words, all versions labeled *2.0aN* precede the versions labeled
+*2.0bN*, which precede versions labeled *2.0rcN*, and *those* precede 2.0.
 
 You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
 unreleased versions, built directly from the CPython development repository.  In
@@ -182,7 +188,7 @@ at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions 
 also available at https://docs.python.org/3/download.html.
 
 The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <http://sphinx-doc.org/>`__.  The reStructuredText source for
+documentation tool <https://www.sphinx-doc.org/>`__.  The reStructuredText source for
 the documentation is part of the Python source distribution.
 
 
@@ -209,7 +215,7 @@ every day, and Usenet readers are often more able to cope with this volume.
 Announcements of new software releases and events can be found in
 comp.lang.python.announce, a low-traffic moderated list that receives about five
 postings per day.  It's available as `the python-announce mailing list
-<https://mail.python.org/mailman/listinfo/python-announce-list>`_.
+<https://mail.python.org/mailman3/lists/python-announce-list.python.org/>`_.
 
 More info about other mailing lists and newsgroups
 can be found at https://www.python.org/community/lists/.
@@ -230,14 +236,8 @@ You can also access the development version of Python through Git.  See
 How do I submit bug reports and patches for Python?
 ---------------------------------------------------
 
-To report a bug or submit a patch, please use the Roundup installation at
-https://bugs.python.org/.
-
-You must have a Roundup account to report bugs; this makes it possible for us to
-contact you if we have follow-up questions.  It will also enable Roundup to send
-you updates as we act on your bug. If you had previously used SourceForge to
-report bugs to Python, you can obtain your Roundup password through Roundup's
-`password reset procedure <https://bugs.python.org/user?@template=forgotten>`_.
+To report a bug or submit a patch, use the issue tracker at
+https://github.com/python/cpython/issues.
 
 For more information on how Python is developed, consult `the Python Developer's
 Guide <https://devguide.python.org/>`_.
@@ -248,8 +248,8 @@ Are there any published articles about Python that I can reference?
 
 It's probably best to cite your favorite book about Python.
 
-The very first article about Python was written in 1991 and is now quite
-outdated.
+The `very first article <https://ir.cwi.nl/pub/18204>`_ about Python was
+written in 1991 and is now quite outdated.
 
     Guido van Rossum and Jelke de Boer, "Interactively Testing Remote Servers
     Using the Python Programming Language", CWI Quarterly, Volume 4, Issue 4
@@ -270,7 +270,7 @@ Where in the world is www.python.org located?
 ---------------------------------------------
 
 The Python project's infrastructure is located all over the world and is managed
-by the Python Infrastructure Team. Details `here <http://infra.psf.io>`__.
+by the Python Infrastructure Team. Details `here <https://infra.psf.io>`__.
 
 
 Why is it called Python?
@@ -297,9 +297,9 @@ How stable is Python?
 
 Very stable.  New, stable releases have been coming out roughly every 6 to 18
 months since 1991, and this seems likely to continue.  As of version 3.9,
-Python will have a major new release every 12 months (:pep:`602`).
+Python will have a new feature release every 12 months (:pep:`602`).
 
-The developers issue "bugfix" releases of older versions, so the stability of
+The developers issue bugfix releases of older versions, so the stability of
 existing releases gradually improves.  Bugfix releases, indicated by a third
 component of the version number (e.g. 3.5.3, 3.6.2), are managed for stability;
 only fixes for known problems are included in a bugfix release, and it's
@@ -310,7 +310,7 @@ The latest stable releases can always be found on the `Python download page
 <https://www.python.org/downloads/>`_.  There are two production-ready versions
 of Python: 2.x and 3.x. The recommended version is 3.x, which is supported by
 most widely used libraries.  Although 2.x is still widely used, `it is not
-maintained anymore <https://www.python.org/dev/peps/pep-0373/>`_.
+maintained anymore <https://peps.python.org/pep-0373/>`_.
 
 How many people are using Python?
 ---------------------------------
@@ -335,8 +335,8 @@ Consulting the proceedings for `past Python conferences
 different companies and organizations.
 
 High-profile Python projects include `the Mailman mailing list manager
-<http://www.list.org>`_ and `the Zope application server
-<http://www.zope.org>`_.  Several Linux distributions, most notably `Red Hat
+<https://www.list.org>`_ and `the Zope application server
+<https://www.zope.dev>`_.  Several Linux distributions, most notably `Red Hat
 <https://www.redhat.com>`_, have written part or all of their installer and
 system administration software in Python.  Companies that use Python internally
 include Google, Yahoo, and Lucasfilm Ltd.
@@ -345,14 +345,14 @@ include Google, Yahoo, and Lucasfilm Ltd.
 What new developments are expected for Python in the future?
 ------------------------------------------------------------
 
-See https://www.python.org/dev/peps/ for the Python Enhancement Proposals
+See https://peps.python.org/ for the Python Enhancement Proposals
 (PEPs). PEPs are design documents describing a suggested new feature for Python,
 providing a concise technical specification and a rationale.  Look for a PEP
 titled "Python X.Y Release Schedule", where X.Y is a version that hasn't been
 publicly released yet.
 
 New development is discussed on `the python-dev mailing list
-<https://mail.python.org/mailman/listinfo/python-dev/>`_.
+<https://mail.python.org/mailman3/lists/python-dev.python.org/>`_.
 
 
 Is it reasonable to propose incompatible changes to Python?
@@ -435,7 +435,7 @@ With the interpreter, documentation is never far from the student as they are
 programming.
 
 There are also good IDEs for Python.  IDLE is a cross-platform IDE for Python
-that is written in Python using Tkinter.  PythonWin is a Windows-specific IDE.
+that is written in Python using Tkinter.
 Emacs users will be happy to know that there is a very good Python mode for
 Emacs.  All of these programming environments provide syntax highlighting,
 auto-indenting, and access to the interactive interpreter while coding.  Consult
