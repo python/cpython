@@ -8,7 +8,7 @@ import os
 
 import _testinternalcapi
 
-from test.support import script_helper
+from test.support import script_helper, requires_specialization
 
 
 @contextlib.contextmanager
@@ -31,6 +31,7 @@ def clear_executors(func):
         func.__code__ = func.__code__.replace()
 
 
+@requires_specialization
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_new_counter_optimizer_dealloc(self):
@@ -133,6 +134,7 @@ def get_opnames(ex):
     return set(iter_opnames(ex))
 
 
+@requires_specialization
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -210,6 +212,7 @@ class TestExecutorInvalidation(unittest.TestCase):
         exe = get_first_executor(f)
         self.assertIsNone(exe)
 
+@requires_specialization
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
