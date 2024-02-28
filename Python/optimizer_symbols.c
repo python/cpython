@@ -349,6 +349,8 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_UOpsContext context;
     _Py_UOpsContext *ctx = &context;
     _Py_uop_abstractcontext_init(ctx);
+    PyObject *val_42 = NULL;
+    PyObject *val_43 = NULL;
 
     // Use a single 'sym' variable so copy-pasting tests is easier.
     _Py_UopsSymbol *sym = _Py_uop_sym_new_unknown(ctx);
@@ -390,11 +392,11 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_sym_set_type(sym, &PyFloat_Type);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(int and float) isn't bottom");
 
-    PyObject *val_42 = PyLong_FromLong(42);
+    val_42 = PyLong_FromLong(42);
     assert(val_42 != NULL);
     assert(_Py_IsImmortal(val_42));
 
-    PyObject *val_43 = PyLong_FromLong(43);
+    val_43 = PyLong_FromLong(43);
     assert(val_43 != NULL);
     assert(_Py_IsImmortal(val_43));
 
@@ -433,7 +435,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 
 fail:
     _Py_uop_abstractcontext_fini(ctx);
-    Py_DECREF(val_42);
-    Py_DECREF(val_43);
+    Py_XDECREF(val_42);
+    Py_XDECREF(val_43);
     return NULL;
 }
