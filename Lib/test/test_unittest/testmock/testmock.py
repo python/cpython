@@ -248,7 +248,7 @@ class MockTest(unittest.TestCase):
     def test_create_autospec_wraps_class(self):
         """Autospec a class with wraps & test if the call is passed to the
         wrapped object."""
-        result = 'real result'
+        result = "real result"
 
         class Result:
             def get_result(self):
@@ -264,7 +264,7 @@ class MockTest(unittest.TestCase):
     def test_create_autospec_instance_wraps_class(self):
         """Autospec a class instance with wraps & test if the call is passed
         to the wrapped object."""
-        result = 'real result'
+        result = "real result"
 
         class Result:
             @staticmethod
@@ -285,7 +285,7 @@ class MockTest(unittest.TestCase):
     def test_create_autospec_wraps_function_type(self):
         """Autospec a function or a method with wraps & test if the call is
         passed to the wrapped object."""
-        result = 'real result'
+        result = "real result"
 
         class Result:
             def get_result(self):
@@ -300,7 +300,7 @@ class MockTest(unittest.TestCase):
         def my_func():
             return None
         func_mock = create_autospec(spec=my_func, wraps=my_func)
-        return_value = 'explicit return value'
+        return_value = "explicit return value"
         func_mock.return_value = return_value
         self.assertEqual(func_mock(), return_value)
 
