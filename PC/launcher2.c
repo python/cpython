@@ -2725,13 +2725,33 @@ manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launc
         }
 
         if (activate) {
+            int skip = dryRun;
             debug(L"# Creating alias at '%s'\n", aliasExe);
-            if (!dryRun && useHardLink) {
+            if (!skip) {
+                if (!DeleteFileW(aliasExe)) {
+                    switch (GetLastError()) {
+                    case ERROR_FILE_NOT_FOUND:
+                        // Best result - file didn't exist
+                        break;
+                    case ERROR_ACCESS_DENIED:
+                        // File exists but we can't touch it.
+                        debug(L"Failed to remove existing alias '%s'\n", aliasExe);
+                        skip = 1;
+                        break;
+                    default:
+                        // Some other reason we can't create aliases here
+                        winerror(0, L"Failed to remove existing alias '%s'", aliasExe);
+                        skip = 1;
+                        break;
+                    }
+                }
+            }
+            if (!skip && useHardLink) {
                 if (!CreateHardLinkW(aliasExe, pyExe, NULL)) {
                     useHardLink = 0;
                 }
             }
-            if (!dryRun && !useHardLink) {
+            if (!skip && !useHardLink) {
                 if (!CopyFileW(pyExe, aliasExe, FALSE)) {
                     winerror(0, L"Failed to create alias '%s'", aliasExe);
                     exitCode = RC_NO_ALIAS;
