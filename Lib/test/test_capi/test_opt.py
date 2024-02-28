@@ -893,9 +893,13 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_COMPARE_OP_STR", uops)
 
     def test_type_inconsistency(self):
-        def testfunc(n):
-            for i in range(n):
-                x = _test_global + _test_global
+        ns = {}
+        exec(textwrap.dedent("""
+            def testfunc(n):
+                for i in range(n):
+                    x = _test_global + _test_global
+        """), globals(), ns)
+        testfunc = ns['testfunc']
         # Must be a real global else it won't be optimized to _LOAD_CONST_INLINE
         global _test_global
         _test_global = 0
