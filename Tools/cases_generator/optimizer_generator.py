@@ -41,10 +41,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"_Py_UOpsSymType **"
+        return f"_Py_UopsSymbol **"
     if var.type:
         return var.type
-    return f"_Py_UOpsSymType *"
+    return f"_Py_UopsSymbol *"
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -87,14 +87,14 @@ def emit_default(out: CWriter, uop: Uop) -> None:
         if var.name != "unused" and not var.peek:
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"{var.name}[_i] = sym_new_unknown(ctx);\n")
+                out.emit(f"{var.name}[_i] = _Py_uop_sym_new_unknown(ctx);\n")
                 out.emit(f"if ({var.name}[_i] == NULL) goto out_of_space;\n")
                 out.emit("}\n")
             elif var.name == "null":
-                out.emit(f"{var.name} = sym_new_null(ctx);\n")
+                out.emit(f"{var.name} = _Py_uop_sym_new_null(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
             else:
-                out.emit(f"{var.name} = sym_new_unknown(ctx);\n")
+                out.emit(f"{var.name} = _Py_uop_sym_new_unknown(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
 
 
@@ -148,7 +148,7 @@ def write_uop(
                 if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UOpsSymType *")
+        stack.flush(out, cast_type="_Py_UopsSymbol *")
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 

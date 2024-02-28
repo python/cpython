@@ -24,6 +24,7 @@
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -1677,7 +1678,6 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 #endif
 
-
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1747,6 +1747,7 @@ static PyMethodDef module_functions[] = {
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
+    {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
