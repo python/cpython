@@ -114,7 +114,11 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
+def dump(
+    node, annotate_fields=True, include_attributes=False,
+    *,
+    indent=None, show_empty=True,
+):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
@@ -125,6 +129,8 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     include_attributes can be set to true.  If indent is a non-negative
     integer or string, then the tree will be pretty-printed with that indent
     level. None (the default) selects the single line representation.
+    If show_empty is False, then empty lists, fields that are None,
+    and empty strings will be ommitted from the output for better readability.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -149,6 +155,8 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
                     keywords = True
                     continue
                 value, simple = _format(value, level)
+                if not show_empty and value in empty_values:
+                    continue
                 allsimple = allsimple and simple
                 if keywords:
                     args.append('%s=%s' % (name, value))
@@ -178,6 +186,7 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
     if indent is not None and not isinstance(indent, str):
         indent = ' ' * indent
+    empty_values = {None, "''", "[]"}
     return _format(node)[0]
 
 

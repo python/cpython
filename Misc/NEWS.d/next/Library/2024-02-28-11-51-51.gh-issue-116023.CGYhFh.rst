@@ -1,0 +1,2 @@
+Add ``show_empty=True`` parameter to :func:`ast.dump` to optionally disable
+showing empty fields in the AST.

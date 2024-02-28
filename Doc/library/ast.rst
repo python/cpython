@@ -2422,7 +2422,7 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None, show_empty=True)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
    debugging purposes.  If *annotate_fields* is true (by default),
@@ -2439,8 +2439,14 @@ and classes for traversing abstract syntax trees:
    indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
    that string is used to indent each level.
 
+   If *show_empty* is ``False``, then empty lists, fields that are ``None``,
+   and empty strings will be ommitted from the output for better readability.
+
    .. versionchanged:: 3.9
       Added the *indent* option.
+
+   .. versionchanged:: 3.13
+      Added the *show_empty* option.
 
 
 .. _ast-compiler-flags:

@@ -1334,6 +1334,51 @@ Module(
             "Raise(cause=Name('e', Load()))"
         )
 
+    def test_dump_show_empty_false(self):
+        self.assertEqual(
+            ast.dump(ast.arguments(), show_empty=False),
+            "arguments()",
+        )
+
+        self.assertEqual(
+            # Corner case: there are no real `Name` instances with `id=''`:
+            ast.dump(ast.Name(id='', ctx=ast.Load()), show_empty=False),
+            "Name(ctx=Load())",
+        )
+
+        def check_text(code, expected, **kwargs):
+            nodes = ast.parse(code)
+            self.assertEqual(
+                ast.dump(nodes, show_empty=False, **kwargs),
+                expected,
+            )
+
+        check_text(
+            "def a(b: int = 0, *, c): ...",
+            "Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load()))], kwonlyargs=[arg(arg='c')], kw_defaults=[None], defaults=[Constant(value=0)]), body=[Expr(value=Constant(value=Ellipsis))])])",
+        )
+
+        check_text(
+            "def a(b: int = 0, *, c): ...",
+            "Module(body=[FunctionDef(name='a', args=arguments(args=[arg(arg='b', annotation=Name(id='int', ctx=Load(), lineno=1, col_offset=9, end_lineno=1, end_col_offset=12), lineno=1, col_offset=6, end_lineno=1, end_col_offset=12)], kwonlyargs=[arg(arg='c', lineno=1, col_offset=21, end_lineno=1, end_col_offset=22)], kw_defaults=[None], defaults=[Constant(value=0, lineno=1, col_offset=15, end_lineno=1, end_col_offset=16)]), body=[Expr(value=Constant(value=Ellipsis, lineno=1, col_offset=25, end_lineno=1, end_col_offset=28), lineno=1, col_offset=25, end_lineno=1, end_col_offset=28)], lineno=1, col_offset=0, end_lineno=1, end_col_offset=28)])",
+            include_attributes=True,
+        )
+
+        check_text(
+            'spam(eggs, "and cheese")',
+            "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load()), Constant(value='and cheese')]))])",
+        )
+
+        check_text(
+            'spam(eggs, text="and cheese")',
+            "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), args=[Name(id='eggs', ctx=Load())], keywords=[keyword(arg='text', value=Constant(value='and cheese'))]))])",
+        )
+
+        check_text(
+            "import _ast as ast; from module import sub",
+            "Module(body=[Import(names=[alias(name='_ast', asname='ast')]), ImportFrom(module='module', names=[alias(name='sub')], level=0)])",
+        )
+
     def test_copy_location(self):
         src = ast.parse('1 + 1', mode='eval')
         src.body.right = ast.copy_location(ast.Constant(2), src.body.right)
