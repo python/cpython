@@ -7644,6 +7644,8 @@ Platform "$host" with compiler "$ac_cv_cc_name" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 ])])
 
+${MAKE-make} regen-deps
+
 if test "$ac_cv_header_stdatomic_h" != "yes"; then
   AC_MSG_NOTICE(m4_normalize([
     Your compiler or platform does have a working C11 stdatomic.h. A future
