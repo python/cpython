@@ -140,7 +140,7 @@ _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
         return;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
-    if (sym->typ != typ) {
+    if (sym->typ != NULL && sym->typ != typ) {
         sym_set_bottom(sym);
         return;
     }
