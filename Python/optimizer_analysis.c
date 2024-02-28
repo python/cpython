@@ -301,14 +301,6 @@ sym_set_null(_Py_UOpsSymType *sym)
     sym_set_flag(sym, KNOWN);
 }
 
-static inline void
-sym_set_const(_Py_UOpsSymType *sym, PyObject *const_val)
-{
-    sym_set_type(sym, Py_TYPE(const_val));
-    sym_set_flag(sym, TRUE_CONST | KNOWN | NOT_NULL);
-    Py_XSETREF(sym->const_val, Py_NewRef(const_val));
-    assert(sym_is_const(sym));
-}
 
 static inline _Py_UOpsSymType*
 sym_new_unknown(_Py_UOpsAbstractInterpContext *ctx)
