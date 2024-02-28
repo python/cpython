@@ -1,5 +1,0 @@
-Add new function :c:func:`PyFunction_SetVectorcall` to the C API
-which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
-
-Warning: extensions using this API must preserve the behavior
-of the unaltered function!

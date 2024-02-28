@@ -1,2 +1,0 @@
-Fix :ref:`launcher` handling of command lines where it is only passed a
-short executable name.

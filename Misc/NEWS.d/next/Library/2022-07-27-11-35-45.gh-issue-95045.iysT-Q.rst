@@ -1,1 +1,0 @@
-Fix GC crash when deallocating ``_lsprof.Profiler`` by untracking it before calling any callbacks. Patch by Kumar Aditya.

@@ -12,8 +12,7 @@ _build_return_object(mod_ty module, int mode, PyObject *filename_ob, PyArena *ar
     } else if (mode == 1) {
         result = PyAST_mod2obj(module);
     } else {
-        result = Py_None;
-        Py_INCREF(result);
+        result = Py_NewRef(Py_None);
     }
 
     return result;
@@ -53,7 +52,7 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     mod_ty res = _PyPegen_run_parser_from_file_pointer(
                         fp, Py_file_input, filename_ob,
-                        NULL, NULL, NULL, &flags, NULL, arena);
+                        NULL, NULL, NULL, &flags, NULL, NULL, arena);
     fclose(fp);
     if (res == NULL) {
         goto error;

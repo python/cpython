@@ -32,6 +32,7 @@ class Bdb:
         self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
+        self.frame_trace_lines = {}
         self.frame_returning = None
 
         self._load_breaks()
@@ -331,6 +332,9 @@ class Bdb:
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
+            # We need f_trace_liens == True for the debugger to work
+            self.frame_trace_lines[frame] = frame.f_trace_lines
+            frame.f_trace_lines = True
             frame = frame.f_back
         self.set_step()
         sys.settrace(self.trace_dispatch)
@@ -349,6 +353,9 @@ class Bdb:
             while frame and frame is not self.botframe:
                 del frame.f_trace
                 frame = frame.f_back
+            for frame, prev_trace_lines in self.frame_trace_lines.items():
+                frame.f_trace_lines = prev_trace_lines
+            self.frame_trace_lines = {}
 
     def set_quit(self):
         """Set quitting attribute to True.
@@ -570,9 +577,12 @@ class Bdb:
             rv = frame.f_locals['__return__']
             s += '->'
             s += reprlib.repr(rv)
-        line = linecache.getline(filename, lineno, frame.f_globals)
-        if line:
-            s += lprefix + line.strip()
+        if lineno is not None:
+            line = linecache.getline(filename, lineno, frame.f_globals)
+            if line:
+                s += lprefix + line.strip()
+        else:
+            s += f'{lprefix}Warning: lineno is None'
         return s
 
     # The following methods can be called by clients to use
