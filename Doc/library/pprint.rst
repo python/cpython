@@ -100,8 +100,6 @@ Functions
    :exc:`RecursionError` if it fails to detect a recursive object.
 
 
-One more support function is also defined:
-
 .. function:: saferepr(object)
 
    Return a string representation of *object*, protected against recursion in
