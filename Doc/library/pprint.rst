@@ -61,10 +61,6 @@ Functions
    :class:`PrettyPrinter` constructor and their meanings are as
    described in its documentation above.
 
-   Note that *sort_dicts* default value is true, which might be an unintuitive
-   behavior; you will most likely want to use the :func:`~pprint.pp` function
-   or set this parameter to ``False``.
-
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
       >>> stuff.insert(0, stuff)
