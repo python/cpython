@@ -890,5 +890,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertLessEqual(len(guard_both_float_count), 1)
         self.assertIn("_COMPARE_OP_STR", uops)
 
+    def test_type_inconsistency(self):
+        def testfunc(n):
+            for i in range(n):
+                x = _test_global + _test_global
+        # Must be a real global else it won't be optimized to _LOAD_CONST_INLINE
+        global _test_global
+        _test_global = 0
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNone(ex)
+        _test_global = 1.2
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNotNone(ex)
+        self.assertIn("_BINARY_OP_ADD_INT", get_opnames(ex))
+
+
 if __name__ == "__main__":
     unittest.main()
