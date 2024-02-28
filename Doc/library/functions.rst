@@ -526,9 +526,20 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression, globals=None, locals=None)
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   :param expression:
+      A Python expression.
+   :type expression: :class:`str` | :ref:`code object <code-objects>`
+
+   :param globals:
+      The global namespace (default: ``None``).
+   :type globals: :class:`dict` | ``None``
+
+   :param locals:
+      The local namespace (default: ``None``).
+   :type locals: :term:`mapping` | ``None``
+
+   :returns: The result of the evaluated expression.
+   :raises: Syntax errors are reported as exceptions.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
@@ -545,8 +556,7 @@ are always available.  They are listed here in alphabetical order.
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
    environment.
 
-   The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example:
+   Example:
 
       >>> x = 1
       >>> eval('x+1')
@@ -668,16 +678,15 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
-      digitpart: `!digit` (["_"] `!digit`)*
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
+      digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
       floatnumber: number [`exponent`]
       floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
-   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
-   "INFINITY", and "iNfINity" are all acceptable spellings for positive
-   infinity.
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
@@ -1074,8 +1083,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1112,8 +1121,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1570,6 +1579,16 @@ are always available.  They are listed here in alphabetical order.
    If :func:`sys.displayhook` is not accessible, this function will raise
    :exc:`RuntimeError`.
 
+   This class has a custom representation that can be evaluated::
+
+      class Person:
+         def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+         def __repr__(self):
+            return f"Person('{self.name}', {self.age})"
+
 
 .. function:: reversed(seq)
 
@@ -1799,6 +1818,13 @@ are always available.  They are listed here in alphabetical order.
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
    the second argument is a type, ``issubclass(type2, type)`` must be true (this
    is useful for classmethods).
+
+   When called directly within an ordinary method of a class, both arguments may
+   be omitted ("zero-argument :func:`!super`"). In this case, *type* will be the
+   enclosing class, and *obj* will be the first argument of the immediately
+   enclosing function (typically ``self``). (This means that zero-argument
+   :func:`!super` will not work as expected within nested functions, including
+   generator expressions, which implicitly create nested functions.)
 
    There are two typical use cases for *super*.  In a class hierarchy with
    single inheritance, *super* can be used to refer to parent classes without

@@ -190,6 +190,7 @@ def generate_tier1_from_files(
     with open(outfilename, "w") as outfile:
         generate_tier1(filenames, data, outfile, lines)
 
+
 if __name__ == "__main__":
     args = arg_parser.parse_args()
     if len(args.input) == 0:

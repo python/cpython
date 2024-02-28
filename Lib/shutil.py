@@ -306,7 +306,12 @@ def copymode(src, dst, *, follow_symlinks=True):
         else:
             return
     else:
-        stat_func, chmod_func = _stat, os.chmod
+        stat_func = _stat
+        if os.name == 'nt' and os.path.islink(dst):
+            def chmod_func(*args):
+                os.chmod(*args, follow_symlinks=True)
+        else:
+            chmod_func = os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
@@ -856,12 +861,12 @@ def move(src, dst, copy_function=copy2):
     similar to the Unix "mv" command. Return the file or directory's
     destination.
 
-    If the destination is a directory or a symlink to a directory, the source
-    is moved inside the directory. The destination path must not already
-    exist.
+    If dst is an existing directory or a symlink to a directory, then src is
+    moved inside that directory. The destination path in that directory must
+    not already exist.
 
-    If the destination already exists but is not a directory, it may be
-    overwritten depending on os.rename() semantics.
+    If dst already exists but is not a directory, it may be overwritten
+    depending on os.rename() semantics.
 
     If the destination is on our current filesystem, then rename() is used.
     Otherwise, src is copied to the destination and then removed. Symlinks are
@@ -880,7 +885,7 @@ def move(src, dst, copy_function=copy2):
     sys.audit("shutil.move", src, dst)
     real_dst = dst
     if os.path.isdir(dst):
-        if _samefile(src, dst):
+        if _samefile(src, dst) and not os.path.islink(src):
             # We might be on a case insensitive filesystem,
             # perform the rename anyway.
             os.rename(src, dst)

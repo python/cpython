@@ -206,12 +206,33 @@ class TestPredicates(IsTestBase):
         gen_coro = gen_coroutine_function_example(1)
         coro = coroutine_function_example(1)
 
+        class PMClass:
+            async_generator_partialmethod_example = functools.partialmethod(
+                async_generator_function_example)
+            coroutine_partialmethod_example = functools.partialmethod(
+                coroutine_function_example)
+            gen_coroutine_partialmethod_example = functools.partialmethod(
+                gen_coroutine_function_example)
+
+        # partialmethods on the class, bound to an instance
+        pm_instance = PMClass()
+        async_gen_coro_pmi = pm_instance.async_generator_partialmethod_example
+        gen_coro_pmi = pm_instance.gen_coroutine_partialmethod_example
+        coro_pmi = pm_instance.coroutine_partialmethod_example
+
+        # partialmethods on the class, unbound but accessed via the class
+        async_gen_coro_pmc = PMClass.async_generator_partialmethod_example
+        gen_coro_pmc = PMClass.gen_coroutine_partialmethod_example
+        coro_pmc = PMClass.coroutine_partialmethod_example
+
         self.assertFalse(
             inspect.iscoroutinefunction(gen_coroutine_function_example))
         self.assertFalse(
             inspect.iscoroutinefunction(
                 functools.partial(functools.partial(
                     gen_coroutine_function_example))))
+        self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmi))
+        self.assertFalse(inspect.iscoroutinefunction(gen_coro_pmc))
         self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
@@ -220,6 +241,8 @@ class TestPredicates(IsTestBase):
             inspect.isgeneratorfunction(
                 functools.partial(functools.partial(
                     gen_coroutine_function_example))))
+        self.assertTrue(inspect.isgeneratorfunction(gen_coro_pmi))
+        self.assertTrue(inspect.isgeneratorfunction(gen_coro_pmc))
         self.assertTrue(inspect.isgenerator(gen_coro))
 
         async def _fn3():
@@ -285,6 +308,8 @@ class TestPredicates(IsTestBase):
             inspect.iscoroutinefunction(
                 functools.partial(functools.partial(
                     coroutine_function_example))))
+        self.assertTrue(inspect.iscoroutinefunction(coro_pmi))
+        self.assertTrue(inspect.iscoroutinefunction(coro_pmc))
         self.assertTrue(inspect.iscoroutine(coro))
 
         self.assertFalse(
@@ -297,6 +322,8 @@ class TestPredicates(IsTestBase):
             inspect.isgeneratorfunction(
                 functools.partial(functools.partial(
                     coroutine_function_example))))
+        self.assertFalse(inspect.isgeneratorfunction(coro_pmi))
+        self.assertFalse(inspect.isgeneratorfunction(coro_pmc))
         self.assertFalse(inspect.isgenerator(coro))
 
         self.assertFalse(
@@ -311,6 +338,8 @@ class TestPredicates(IsTestBase):
             inspect.isasyncgenfunction(
                 functools.partial(functools.partial(
                     async_generator_function_example))))
+        self.assertTrue(inspect.isasyncgenfunction(async_gen_coro_pmi))
+        self.assertTrue(inspect.isasyncgenfunction(async_gen_coro_pmc))
         self.assertTrue(inspect.isasyncgen(async_gen_coro))
 
         coro.close(); gen_coro.close(); # silence warnings
@@ -3108,6 +3137,10 @@ class TestSignatureObject(unittest.TestCase):
                           int))
 
     def test_signature_on_classmethod(self):
+        self.assertEqual(self.signature(classmethod),
+                         ((('function', ..., ..., "positional_only"),),
+                          ...))
+
         class Test:
             @classmethod
             def foo(cls, arg1, *, arg2=1):
@@ -3126,6 +3159,10 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_staticmethod(self):
+        self.assertEqual(self.signature(staticmethod),
+                         ((('function', ..., ..., "positional_only"),),
+                          ...))
+
         class Test:
             @staticmethod
             def foo(cls, *, arg):
@@ -3389,7 +3426,7 @@ class TestSignatureObject(unittest.TestCase):
 
     def test_signature_on_fake_partialmethod(self):
         def foo(a): pass
-        foo._partialmethod = 'spam'
+        foo.__partialmethod__ = 'spam'
         self.assertEqual(str(inspect.signature(foo)), '(a)')
 
     def test_signature_on_decorated(self):
@@ -3649,16 +3686,20 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
 
-        class Wrapped:
-            pass
-        Wrapped.__wrapped__ = lambda a: None
-        self.assertEqual(self.signature(Wrapped),
+    def test_signature_on_wrapper(self):
+        class Wrapper:
+            def __call__(self, b):
+                pass
+        wrapper = Wrapper()
+        wrapper.__wrapped__ = lambda a: None
+        self.assertEqual(self.signature(wrapper),
                          ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
         # wrapper loop:
-        Wrapped.__wrapped__ = Wrapped
+        wrapper = Wrapper()
+        wrapper.__wrapped__ = wrapper
         with self.assertRaisesRegex(ValueError, 'wrapper loop'):
-            self.signature(Wrapped)
+            self.signature(wrapper)
 
     def test_signature_on_lambdas(self):
         self.assertEqual(self.signature((lambda a=10: a)),
@@ -3990,6 +4031,8 @@ class TestSignatureObject(unittest.TestCase):
         foo_sig = MySignature.from_callable(foo)
         self.assertIsInstance(foo_sig, MySignature)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_signature_from_callable_class(self):
         # A regression test for a class inheriting its signature from `object`.
         class MySignature(inspect.Signature): pass
@@ -4080,7 +4123,8 @@ class TestSignatureObject(unittest.TestCase):
                             par('c', PORK, annotation="'MyClass'"),
                         )))
 
-                self.assertEqual(signature_func(isa.UnannotatedClass), sig())
+                if not MISSING_C_DOCSTRINGS:
+                    self.assertEqual(signature_func(isa.UnannotatedClass), sig())
                 self.assertEqual(signature_func(isa.unannotated_function),
                     sig(
                         parameters=(
@@ -4966,6 +5010,14 @@ class TestUnwrap(unittest.TestCase):
         obj = NTimesUnwrappable(sys.getrecursionlimit() + 1)
         with self.assertRaisesRegex(ValueError, 'wrapper loop'):
             inspect.unwrap(obj)
+
+    def test_wrapped_descriptor(self):
+        self.assertIs(inspect.unwrap(NTimesUnwrappable), NTimesUnwrappable)
+        self.assertIs(inspect.unwrap(staticmethod), staticmethod)
+        self.assertIs(inspect.unwrap(classmethod), classmethod)
+        self.assertIs(inspect.unwrap(staticmethod(classmethod)), classmethod)
+        self.assertIs(inspect.unwrap(classmethod(staticmethod)), staticmethod)
+
 
 class TestMain(unittest.TestCase):
     def test_only_source(self):

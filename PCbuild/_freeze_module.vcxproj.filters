@@ -46,6 +46,9 @@
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\brc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\boolobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -166,6 +169,15 @@
     <ClCompile Include="..\Python\future.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\gc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_free_threading.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_gil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\gcmodule.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -241,6 +253,9 @@
     <ClCompile Include="..\Objects\iterobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\listobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -280,6 +295,9 @@
     <ClCompile Include="..\Objects\object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\object_stack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\obmalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -291,6 +309,9 @@
     </ClCompile>
     <ClCompile Include="..\Python\optimizer_analysis.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\optimizer_symbols.c">
+      <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\parser.c">
       <Filter>Source Files</Filter>
@@ -356,6 +377,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pytime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">
