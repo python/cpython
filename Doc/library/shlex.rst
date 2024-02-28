@@ -96,6 +96,11 @@ The :mod:`shlex` module defines the following functions:
       >>> command
       ['ls', '-l', 'somefile; rm -rf ~']
 
+   .. note::
+
+      The :func:`quote` function will not quote shell keywords.
+      (like echo, done, while, etc.)
+
    .. versionadded:: 3.3
 
 The :mod:`shlex` module defines the following class:
