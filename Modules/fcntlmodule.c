@@ -19,6 +19,10 @@
 #include <stropts.h>
 #endif
 
+#ifdef HAVE_SYS_USER_H
+#include <sys/user.h>
+#endif
+
 /*[clinic input]
 module fcntl
 [clinic start generated code]*/
@@ -55,7 +59,6 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     int ret;
     char *str;
     Py_ssize_t len;
-    char buf[1024];
     int async_err = 0;
 
     if (PySys_Audit("fcntl.fcntl", "iiO", fd, code, arg ? arg : Py_None) < 0) {
@@ -66,6 +69,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         int parse_result;
 
         if (PyArg_Parse(arg, "s#", &str, &len)) {
+            char buf[4096];
             if ((size_t)len > sizeof buf) {
                 PyErr_SetString(PyExc_ValueError,
                                 "fcntl string arg too long");
@@ -438,6 +442,61 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
     Py_RETURN_NONE;
 }
 
+#ifdef F_KINFO
+/*[clinic input]
+fcntl.kinfoalloc
+
+Return a FreeBSD's kinfo_file buffer with the `kf_structsize` field pre-initialised.
+
+[clinic start generated code]*/
+
+static PyObject *
+fcntl_kinfoalloc_impl(PyObject *module)
+/*[clinic end generated code: output=c61603aeb3d91a0e input=28e2e82cc296f82c]*/
+{
+    char buf[KINFO_FILE_SIZE+1];
+    ((struct kinfo_file *)buf)->kf_structsize = KINFO_FILE_SIZE;
+    return PyBytes_FromStringAndSize(buf, KINFO_FILE_SIZE);
+}
+
+/*[clinic input]
+fcntl.kinfodict
+
+    arg: object(c_default='NULL') = 0
+    /
+
+Return a FreeBSD's kinfo_file as dictionary.
+
+[clinic start generated code]*/
+
+static PyObject *
+fcntl_kinfodict_impl(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=3873ae40aeac8e7f input=faba1f2ce099752f]*/
+{
+        PyObject *dict;
+
+        if (PySys_Audit("fcntl.kinfodict", "O", arg) < 0 || arg == NULL) {
+                return NULL;
+        }
+
+        dict = PyDict_New();
+        if (dict) {
+                struct kinfo_file *kf;
+                kf = (struct kinfo_file *)PyBytes_AsString(arg);
+
+                PyDict_SetItemString(dict, "status", PyLong_FromLong(kf->kf_status));
+                PyDict_SetItemString(dict, "type", PyLong_FromLong(kf->kf_type));
+                PyDict_SetItemString(dict, "offset", PyLong_FromLongLong(kf->kf_offset));
+                PyDict_SetItemString(dict, "path", PyBytes_FromString(kf->kf_path));
+                return dict;
+        }
+
+        PyErr_SetString(PyExc_ValueError, "fcntl.kinfodict could not create its dictionary");
+        return NULL;
+}
+
+#endif
+
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
@@ -445,6 +504,8 @@ static PyMethodDef fcntl_methods[] = {
     FCNTL_IOCTL_METHODDEF
     FCNTL_FLOCK_METHODDEF
     FCNTL_LOCKF_METHODDEF
+    FCNTL_KINFOALLOC_METHODDEF
+    FCNTL_KINFODICT_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -484,6 +545,9 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_DUPFD_CLOEXEC
     if (PyModule_AddIntMacro(m, F_DUPFD_CLOEXEC)) return -1;
+#endif
+#ifdef F_KINFO
+    if (PyModule_AddIntMacro(m, F_KINFO)) return -1;
 #endif
 #ifdef F_GETFD
     if (PyModule_AddIntMacro(m, F_GETFD)) return -1;

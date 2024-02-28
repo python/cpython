@@ -199,6 +199,15 @@ class TestFcntl(unittest.TestCase):
         res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
         self.assertEqual(expected, res)
 
+    @unittest.skipUnless(sys.platform.startswith("freebsd") and hasattr(fcntl, "F_KINFO"), "F_KINFO is only available on freebsd")
+    def test_fcntl_f_kinfo(self):
+        self.f = open(TESTFN, 'wb')
+        buffer = fcntl.kinfoalloc()
+        expected = os.path.abspath(TESTFN).encode('utf-8')
+        res = fcntl.fcntl(self.f.fileno(), fcntl.F_KINFO, buffer)
+        path = fcntl.kinfodict(res)["path"]
+        self.assertEqual(expected, path)
+
     @unittest.skipUnless(
         hasattr(fcntl, "F_SETPIPE_SZ") and hasattr(fcntl, "F_GETPIPE_SZ"),
         "F_SETPIPE_SZ and F_GETPIPE_SZ are not available on all platforms.")
