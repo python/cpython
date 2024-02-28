@@ -511,12 +511,9 @@ _Py_uop_analyze_and_optimize(
 
     peephole_opt(frame, buffer, buffer_size);
 
-    char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
-    if (uop_optimize != NULL && *uop_optimize > '0') {
-        err = optimize_uops(
-            (PyCodeObject *)frame->f_executable, buffer,
-            buffer_size, curr_stacklen, dependencies);
-    }
+    err = optimize_uops(
+        (PyCodeObject *)frame->f_executable, buffer,
+        buffer_size, curr_stacklen, dependencies);
 
     if (err == 0) {
         goto not_ready;
