@@ -1412,7 +1412,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RAISE_VARARGS',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=8, end_column=16, occurrence=1)
 
     def test_multiline_generator_expression(self):
         snippet = textwrap.dedent("""\
