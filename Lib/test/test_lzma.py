@@ -1045,8 +1045,6 @@ class FileTestCase(unittest.TestCase):
         with BytesIO() as dst:
             with LZMAFile(dst, "w") as f:
                 f.write(INPUT)
-                with self.assertRaises(AttributeError):
-                    f.name
             expected = lzma.compress(INPUT)
             self.assertEqual(dst.getvalue(), expected)
         with BytesIO() as dst:
