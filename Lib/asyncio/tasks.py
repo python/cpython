@@ -565,7 +565,7 @@ async def _cancel_and_wait(fut):
 
 
 class _AsCompletedIterator:
-    """Iterator of awaitables representing tasks of asyncio.as_completed
+    """Iterator of awaitables representing tasks of asyncio.as_completed.
 
     Doubles as an async iterator and plain iterator of as-completed results.
     Original tasks and futures from the supplied set of awaitables are yielded

@@ -862,8 +862,8 @@ Waiting Primitives
 .. function:: as_completed(aws, *, timeout=None)
 
    Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
-   concurrently. The returned object can be iterated to obtain earliest next
-   results of the awaitables as they finish.
+   concurrently. The returned object can be iterated to obtain the results
+   of the awaitables as they finish.
 
    The object returned by ``as_completed()`` can be iterated as an
    :term:`asynchronous iterator` or a plain :term:`iterator`. When asynchronous
@@ -871,12 +871,8 @@ Waiting Primitives
    are tasks or futures. This makes it easy to correlate previously-scheduled
    tasks with their results. Example::
 
-       ipv4_connect = create_task(
-           open_connection("127.0.0.1", 80)
-       )
-       ipv6_connect = create_task(
-           open_connection("::1", 80)
-       )
+       ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+       ipv6_connect = create_task(open_connection("::1", 80))
        tasks = [ipv4_connect, ipv6_connect]
 
        async for earliest_connect in as_completed(tasks):
@@ -913,8 +909,8 @@ Waiting Primitives
       Added support for generators yielding tasks.
 
    .. versionchanged:: 3.13
-      The result is now an :term:`asynchronous iterator` as well as
-      an :term:`iterator`.
+      The result can now be used as either an :term:`asynchronous iterator`
+      or as a plain :term:`iterator` (previously it was only a plain iterator).
 
 
 Running in Threads
