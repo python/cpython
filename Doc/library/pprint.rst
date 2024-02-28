@@ -31,7 +31,95 @@ Dictionaries are sorted by key before the display is computed.
 .. versionchanged:: 3.10
    Added support for pretty-printing :class:`dataclasses.dataclass`.
 
-The :mod:`pprint` module defines one class:
+.. _pprint-functions:
+
+Functions
+---------
+
+.. function:: pp(object, *args, sort_dicts=False, **kwargs)
+
+   Prints the formatted representation of *object* followed by a newline.
+   If *sort_dicts* is false (the default), dictionaries will be displayed with
+   their keys in insertion order, otherwise the dict keys will be sorted.
+   *args* and *kwargs* will be passed to :func:`pprint` as formatting
+   parameters.
+
+   .. versionadded:: 3.8
+
+
+.. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
+                     compact=False, sort_dicts=True, underscore_numbers=False)
+
+   Prints the formatted representation of *object* on *stream*, followed by a
+   newline.  If *stream* is ``None``, ``sys.stdout`` is used. This may be used
+   in the interactive interpreter instead of the :func:`print` function for
+   inspecting values (you can even reassign ``print = pprint.pprint`` for use
+   within a scope).
+
+   The configuration parameters *stream*, *indent*, *width*, *depth*,
+   *compact*, *sort_dicts* and *underscore_numbers* are passed to the
+   :class:`PrettyPrinter` constructor and their meanings are as
+   described in its documentation above.
+
+      >>> import pprint
+      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
+      >>> stuff.insert(0, stuff)
+      >>> pprint.pprint(stuff)
+      [<Recursion on list with id=...>,
+       'spam',
+       'eggs',
+       'lumberjack',
+       'knights',
+       'ni']
+
+.. function:: pformat(object, indent=1, width=80, depth=None, *, \
+                      compact=False, sort_dicts=True, underscore_numbers=False)
+
+   Return the formatted representation of *object* as a string.  *indent*,
+   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
+   passed to the :class:`PrettyPrinter` constructor as formatting parameters
+   and their meanings are as described in its documentation above.
+
+
+.. function:: isreadable(object)
+
+   .. index:: pair: built-in function; eval
+
+   Determine if the formatted representation of *object* is "readable", or can be
+   used to reconstruct the value using :func:`eval`.  This always returns ``False``
+   for recursive objects.
+
+      >>> pprint.isreadable(stuff)
+      False
+
+
+.. function:: isrecursive(object)
+
+   Determine if *object* requires a recursive representation.  This function is
+   subject to the same limitations as noted in :func:`saferepr` below and may raise an
+   :exc:`RecursionError` if it fails to detect a recursive object.
+
+
+One more support function is also defined:
+
+.. function:: saferepr(object)
+
+   Return a string representation of *object*, protected against recursion in
+   some common data structures, namely instances of :class:`dict`, :class:`list`
+   and :class:`tuple` or subclasses whose ``__repr__`` has not been overridden.  If the
+   representation of object exposes a recursive entry, the recursive reference
+   will be represented as ``<Recursion on typename with id=number>``.  The
+   representation is not otherwise formatted.
+
+   >>> pprint.saferepr(stuff)
+   "[<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']"
+
+.. _prettyprinter-objects:
+
+PrettyPrinter Objects
+---------------------
+
+This module defines one class:
 
 .. First the implementation class:
 
@@ -112,89 +200,6 @@ The :mod:`pprint` module defines one class:
       >>> pp.pprint(tup)
       ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
-.. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True, underscore_numbers=False)
-
-   Return the formatted representation of *object* as a string.  *indent*,
-   *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
-   passed to the :class:`PrettyPrinter` constructor as formatting parameters
-   and their meanings are as described in its documentation above.
-
-
-.. function:: pp(object, *args, sort_dicts=False, **kwargs)
-
-   Prints the formatted representation of *object* followed by a newline.
-   If *sort_dicts* is false (the default), dictionaries will be displayed with
-   their keys in insertion order, otherwise the dict keys will be sorted.
-   *args* and *kwargs* will be passed to :func:`pprint` as formatting
-   parameters.
-
-   .. versionadded:: 3.8
-
-
-.. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True, underscore_numbers=False)
-
-   Prints the formatted representation of *object* on *stream*, followed by a
-   newline.  If *stream* is ``None``, ``sys.stdout`` is used. This may be used
-   in the interactive interpreter instead of the :func:`print` function for
-   inspecting values (you can even reassign ``print = pprint.pprint`` for use
-   within a scope).
-
-   The configuration parameters *stream*, *indent*, *width*, *depth*,
-   *compact*, *sort_dicts* and *underscore_numbers* are passed to the
-   :class:`PrettyPrinter` constructor and their meanings are as
-   described in its documentation above.
-
-      >>> import pprint
-      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
-      >>> stuff.insert(0, stuff)
-      >>> pprint.pprint(stuff)
-      [<Recursion on list with id=...>,
-       'spam',
-       'eggs',
-       'lumberjack',
-       'knights',
-       'ni']
-
-.. function:: isreadable(object)
-
-   .. index:: pair: built-in function; eval
-
-   Determine if the formatted representation of *object* is "readable", or can be
-   used to reconstruct the value using :func:`eval`.  This always returns ``False``
-   for recursive objects.
-
-      >>> pprint.isreadable(stuff)
-      False
-
-
-.. function:: isrecursive(object)
-
-   Determine if *object* requires a recursive representation.  This function is
-   subject to the same limitations as noted in :func:`saferepr` below and may raise an
-   :exc:`RecursionError` if it fails to detect a recursive object.
-
-
-One more support function is also defined:
-
-.. function:: saferepr(object)
-
-   Return a string representation of *object*, protected against recursion in
-   some common data structures, namely instances of :class:`dict`, :class:`list`
-   and :class:`tuple` or subclasses whose ``__repr__`` has not been overridden.  If the
-   representation of object exposes a recursive entry, the recursive reference
-   will be represented as ``<Recursion on typename with id=number>``.  The
-   representation is not otherwise formatted.
-
-   >>> pprint.saferepr(stuff)
-   "[<Recursion on list with id=...>, 'spam', 'eggs', 'lumberjack', 'knights', 'ni']"
-
-
-.. _prettyprinter-objects:
-
-PrettyPrinter Objects
----------------------
 
 :class:`PrettyPrinter` instances have the following methods:
 
