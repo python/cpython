@@ -119,6 +119,7 @@ dummy_func(void) {
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
+            Py_DECREF(temp);
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
@@ -137,6 +138,7 @@ dummy_func(void) {
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
+            Py_DECREF(temp);
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
@@ -155,6 +157,7 @@ dummy_func(void) {
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
+            Py_DECREF(temp);
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
@@ -171,9 +174,10 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
+            Py_DECREF(temp);
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
@@ -190,9 +194,10 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
+            Py_DECREF(temp);
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
@@ -209,9 +214,10 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            res = sym_new_const(ctx, temp);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
+            Py_DECREF(temp);
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
