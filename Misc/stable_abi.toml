@@ -2489,3 +2489,10 @@
     added = '3.13'
 [function.PyList_GetItemRef]
     added = '3.13'
+[typedef.PyCFunctionFast]
+    added = '3.13'
+    # "abi-only" since 3.10.  (Callback type names aren't used in C code,
+    # but this function signature was expected with METH_FASTCALL.)
+[typedef.PyCFunctionFastWithKeywords]
+    added = '3.13'
+    # "abi-only" since 3.10.  (Same story as PyCFunctionFast.)
