@@ -117,51 +117,50 @@ Functions
 PrettyPrinter Objects
 ---------------------
 
-This module defines one class:
-
-.. First the implementation class:
-
-
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
                          compact=False, sort_dicts=True, underscore_numbers=False)
 
-   Construct a :class:`PrettyPrinter` instance.  This constructor understands
-   several keyword parameters.
+   Construct a :class:`PrettyPrinter` instance.
 
-   *stream* (default :data:`!sys.stdout`) is a :term:`file-like object` to
-   which the output will be written by calling its :meth:`!write` method.
-   If both *stream* and :data:`!sys.stdout` are ``None``, then
-   :meth:`~PrettyPrinter.pprint` silently returns.
+   :param int indent:
+      The amount of indentation added for each nesting level.
 
-   Other values configure the manner in which nesting of complex data
-   structures is displayed.
+   :param int width:
+      The desired maximum number of characters per line in the output.
+      If a structure cannot be formatted within the width constraint,
+      a best effort will be made.
 
-   *indent* (default 1) specifies the amount of indentation added for
-   each nesting level.
+   :param depth:
+      The number of nesting levels which may be printed.
+      If the data structure being printed is too deep,
+      the next contained level is replaced by ``...``.
+      If ``None`` (the default), there is no constraint
+      on the depth of the objects being formatted.
+   :type depth: int | None
 
-   *depth* controls the number of nesting levels which may be printed; if
-   the data structure being printed is too deep, the next contained level
-   is replaced by ``...``.  By default, there is no constraint on the
-   depth of the objects being formatted.
+   :param stream:
+      A file-like object to which the output will be written
+      by calling its :meth:`!write` method.
+      If ``None`` (the default), :data:`sys.stdout` is used.
+   :type stream: :term:`file-like object` | None
 
-   *width* (default 80) specifies the desired maximum number of characters per
-   line in the output. If a structure cannot be formatted within the width
-   constraint, a best effort will be made.
+   :param bool compact:
+      Control the way long :term:`sequences <sequence>` are formatted.
+      If ``False`` (the default),
+      each item of a sequence will be formatted on a separate line,
+      otherwise as many items as will fit within the *width*
+      will be formatted on each output line.
 
-   *compact* impacts the way that long sequences (lists, tuples, sets, etc)
-   are formatted. If *compact* is false (the default) then each item of a
-   sequence will be formatted on a separate line.  If *compact* is true, as
-   many items as will fit within the *width* will be formatted on each output
-   line.
+   :param bool sort_dicts:
+      If ``True`` (the default), dictionaries will be formatted with
+      their keys sorted, otherwise they will display in insertion order.
 
-   If *sort_dicts* is true (the default), dictionaries will be formatted with
-   their keys sorted, otherwise they will display in insertion order.
-
-   If *underscore_numbers* is true, integers will be formatted with the
-   ``_`` character for a thousands separator, otherwise underscores are not
-   displayed (the default).
+   :param bool underscore_numbers:
+      If ``True``,
+      integers will be formatted with the ``_`` character for a thousands separator,
+      otherwise underscores are not displayed (the default).
 
    .. versionchanged:: 3.4
       Added the *compact* parameter.
@@ -212,6 +211,8 @@ This module defines one class:
 
    Print the formatted representation of *object* on the configured stream,
    followed by a newline.
+
+   If :data:`sys.stdout` is ``None``, :meth:`!pprint` silently returns.
 
 The following methods provide the implementations for the corresponding
 functions of the same names.  Using these methods on an instance is slightly
