@@ -1199,17 +1199,18 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
             _PyLong_AsByteArray(v, buffer, (size_t)n, little_endian, 1, 0);
         }
 
-        // More efficient calculation for number of bytes required?
+        /* Calculates the number of bits required for the *absolute* value
+         * of v. This does not take sign into account, only magnitude. */
         size_t nb = _PyLong_NumBits((PyObject *)v);
         /* Normally this would be((nb - 1) / 8) + 1 to avoid rounding up
          * multiples of 8 to the next byte, but we add an implied bit for
          * the sign and it cancels out. */
-        size_t n_needed = (nb / 8) + 1;
-        res = (Py_ssize_t)n_needed;
-        if ((size_t)res != n_needed) {
-            PyErr_SetString(PyExc_OverflowError,
-                "value too large to convert");
-            res = -1;
+        res = (Py_ssize_t)(nb / 8) + 1;
+        /* The edge case of a negative value where the sign bit is at the
+         * MSB of one byte needs special handling to avoid requesting an
+         * extra byte, even though it could be properly represented. */
+        if (_PyLong_IsNegative(v) && !(nb % 8)) {
+            res -= 1;
         }
     }
 

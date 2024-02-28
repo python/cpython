@@ -451,11 +451,15 @@ class LongTests(unittest.TestCase):
             (MAX_SSIZE, SZ),
             (MAX_USIZE, SZ + 1),
             (-MAX_SSIZE, SZ),
-            (-MAX_USIZE, SZ + 1),
+            (-MAX_USIZE, SZ),
             (2**255-1, 32),
             (-(2**255-1), 32),
+            (2**255, 33),
+            (-(2**255), 32),    # edge case
             (2**256-1, 33),
-            (-(2**256-1), 33),
+            (-(2**256-1), 32),  # edge case
+            (2**256, 33),
+            (-(2**256), 33),
         ]:
             with self.subTest(f"sizeof-{v:X}"):
                 buffer = bytearray(b"\x5a")
@@ -500,10 +504,10 @@ class LongTests(unittest.TestCase):
             (256,       b'\x01\x00',            2),
             # Extracts successfully (unsigned), but requests 9 bytes
             (2**63,     b'\x80' + b'\x00' * 7,  9),
-            # "Extracts", but requests 9 bytes
-            (-2**63,    b'\x80' + b'\x00' * 7,  9),
             (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
-            (-2**63,    b'\xff\x80' + b'\x00' * 7, 9),
+            # Extracts successfully and only requests 8 bytes
+            (-2**63,    b'\x80' + b'\x00' * 7,  8),
+            (-2**63,    b'\xff\x80' + b'\x00' * 7, 8),
 
             (2**255-1,      b'\x7f' + b'\xff' * 31,                 32),
             (-(2**255-1),   b'\x80' + b'\x00' * 30 + b'\x01',       32),
@@ -516,9 +520,11 @@ class LongTests(unittest.TestCase):
             # into a 32-byte buffer, though negative number may be unrecoverable
             (2**256-1,      b'\xff' * 32,                           33),
             (2**256-1,      b'\x00' + b'\xff' * 32,                 33),
-            (-(2**256-1),   b'\x00' * 31 + b'\x01',                 33),
-            (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       33),
-            (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   33),
+            # Negative 256 bits of integer will only request 32 bytes, since the
+            # top-most bit is the sign bit as well as the magnitude.
+            (-(2**256-1),   b'\x00' * 31 + b'\x01',                 32),
+            (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       32),
+            (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   32),
 
             # The classic "Windows HRESULT as negative number" case
             #   HRESULT hr;
