@@ -75,7 +75,7 @@ sym_set_flag(_Py_UopsSymbol *sym, int flag)
 }
 
 static inline void
-_Py_uop_sym_set_bottom(_Py_UopsSymbol *sym)
+set_bottom(_Py_UopsSymbol *sym)
 {
     sym_set_flag(sym, IS_NULL | NOT_NULL);
     sym->typ = NULL;
@@ -116,16 +116,45 @@ void
 _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
-    if (sym->flags & IS_NULL ||
-        (sym->typ != NULL && sym->typ != typ))
-    {
-        _Py_uop_sym_set_bottom(sym);
+    if (sym->flags & IS_NULL) {
+        set_bottom(sym);
         return;
     }
-    // May be a no-op
+    if (sym->typ != NULL) {
+        if (sym->typ != typ) {
+            set_bottom(sym);
+        }
+        return;
+    }
     sym_set_flag(sym, NOT_NULL);
     sym->typ = typ;
 }
+
+void
+_Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
+{
+    assert(const_val != NULL);
+    if (sym->flags & IS_NULL) {
+        set_bottom(sym);
+        return;
+    }
+    PyTypeObject *typ = Py_TYPE(const_val);
+    if (sym->typ != NULL && sym->typ != typ) {
+        set_bottom(sym);
+        return;
+    }
+    if (sym->const_val != NULL) {
+        if (sym->const_val != const_val) {
+            // TODO: What if they're equal?
+            set_bottom(sym);
+        }
+        return;
+    }
+    sym_set_flag(sym, NOT_NULL);
+    sym->typ = typ;
+    sym->const_val = Py_NewRef(const_val);
+}
+
 
 void
 _Py_uop_sym_set_null(_Py_UopsSymbol *sym)
@@ -322,45 +351,86 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_UOpsContext *ctx = &context;
     _Py_uop_abstractcontext_init(ctx);
 
-    _Py_UopsSymbol *top = _Py_uop_sym_new_unknown(ctx);
-    if (top == NULL) {
-        return NULL;
+    _Py_UopsSymbol *sym = _Py_uop_sym_new_unknown(ctx);
+    if (sym == NULL) {
+        goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(top), "top is NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_not_null(top), "top is not NULL");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(top, &PyLong_Type), "top matches a type");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(top), "top is a constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(top) == NULL, "top as constant is not NULL");
-    TEST_PREDICATE(!_Py_uop_sym_is_bottom(top), "top is bottom");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "top is NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "top is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "top matches a type");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(sym), "top is a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "top as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_bottom(sym), "top is bottom");
 
-    _Py_UopsSymbol *bottom = make_bottom(ctx);
-    if (bottom == NULL) {
-        return NULL;
+    sym = make_bottom(ctx);
+    if (sym == NULL) {
+        goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(bottom), "bottom is NULL is not false");
-    TEST_PREDICATE(!_Py_uop_sym_is_not_null(bottom), "bottom is not NULL is not false");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(bottom, &PyLong_Type), "bottom matches a type");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(bottom), "bottom is a constant is not false");
-    TEST_PREDICATE(_Py_uop_sym_get_const(bottom) == NULL, "bottom as constant is not NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_bottom(bottom), "bottom isn't bottom");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "bottom is NULL is not false");
+    TEST_PREDICATE(!_Py_uop_sym_is_not_null(sym), "bottom is not NULL is not false");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "bottom matches a type");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(sym), "bottom is a constant is not false");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "bottom as constant is not NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "bottom isn't bottom");
 
-    _Py_UopsSymbol *int_type = _Py_uop_sym_new_type(ctx, &PyLong_Type);
-    if (int_type == NULL) {
-        return NULL;
+    sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (sym == NULL) {
+        goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(int_type), "int_type is NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_not_null(int_type), "int_type isn't not NULL");
-    TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(int_type, &PyFloat_Type), "int matches float");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(int_type), "int_type is a constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(int_type) == NULL, "int_type as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "int_type is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "int_type isn't not NULL");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "int matches float");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(sym), "int_type is a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "int_type as constant is not NULL");
 
-    _Py_uop_sym_set_type(int_type, &PyLong_Type);  // Should be a no-op
-    TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
+    _Py_uop_sym_set_type(sym, &PyLong_Type);  // Should be a no-op
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
 
-    _Py_uop_sym_set_type(int_type, &PyFloat_Type);  // Should make it bottom
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(int_type, &PyLong_Type), "(int and float) matches int");
-    TEST_PREDICATE(_Py_uop_sym_is_bottom(int_type), "(int and float) isn't bottom");
+    _Py_uop_sym_set_type(sym, &PyFloat_Type);  // Should make it bottom
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "(int and float) matches int");
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(int and float) isn't bottom");
+
+    PyObject *val_42 = PyLong_FromLong(42);
+    assert(val_42 != NULL);
+    assert(_Py_IsImmortal(val_42));
+
+    PyObject *val_43 = PyLong_FromLong(43);
+    assert(val_43 != NULL);
+    assert(_Py_IsImmortal(val_43));
+
+    sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (sym == NULL) {
+        goto fail;
+    }
+    _Py_uop_sym_set_const(sym, val_42);
+    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "int_val is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "int_val isn't not NULL");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "int matches float");
+    TEST_PREDICATE(_Py_uop_sym_is_const(sym), "int_val is not a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) != NULL, "int_val as constant is NULL");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "int_val as constant isn't val_42");
+
+    _Py_uop_sym_set_type(sym, &PyLong_Type);  // Should be a no-op
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "int_val as constant isn't val_42");
+
+    _Py_uop_sym_set_type(sym, &PyFloat_Type);  // Should make it bottom
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and float) matches int");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "(42 and float) as constant isn't NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and float) isn't bottom");
+
+    // Another int_val, to test contradiction by setting const
+    sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (sym == NULL) {
+        goto fail;
+    }
+    _Py_uop_sym_set_const(sym, val_42);
+    _Py_uop_sym_set_const(sym, val_43);  // Should make it bottom
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and 43) matches int");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "(42 and 43) as constant isn't NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and 43) isn't bottom");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_RETURN_NONE;
