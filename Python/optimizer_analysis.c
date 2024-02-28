@@ -282,6 +282,23 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     } while (0);
 
 
+/* Shortened forms for convenience, used in optimizer_bytecodes.c */
+#define sym_is_not_null _Py_uop_sym_is_not_null
+#define sym_is_const _Py_uop_sym_is_const
+#define sym_get_const _Py_uop_sym_get_const
+#define sym_new_unknown _Py_uop_sym_new_unknown
+#define sym_new_not_null _Py_uop_sym_new_not_null
+#define sym_new_type _Py_uop_sym_new_type
+#define sym_is_null _Py_uop_sym_is_null
+#define sym_new_const _Py_uop_sym_new_const
+#define sym_new_null _Py_uop_sym_new_null
+#define sym_matches_type _Py_uop_sym_matches_type
+#define sym_set_null _Py_uop_sym_set_null
+#define sym_set_type _Py_uop_sym_set_type
+#define frame_new _Py_uop_frame_new
+#define frame_pop _Py_uop_frame_pop
+
+
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 optimize_uops(
@@ -293,13 +310,13 @@ optimize_uops(
 )
 {
 
-    _Py_UOpsAbstractInterpContext context;
-    _Py_UOpsAbstractInterpContext *ctx = &context;
+    _Py_UOpsContext context;
+    _Py_UOpsContext *ctx = &context;
 
     if (_Py_uop_abstractcontext_init(ctx) < 0) {
         goto out_of_space;
     }
-    _Py_UOpsAbstractFrame *frame = _Py_uop_ctx_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
     if (frame == NULL) {
         return -1;
     }
@@ -313,7 +330,7 @@ optimize_uops(
         int oparg = this_instr->oparg;
         uint32_t opcode = this_instr->opcode;
 
-        _Py_UOpsSymType **stack_pointer = ctx->frame->stack_pointer;
+        _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
         DPRINTF(3, "Abstract interpreting %s:%d ",
                 _PyUOpName(opcode),
