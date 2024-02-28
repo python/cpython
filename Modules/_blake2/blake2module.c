@@ -74,6 +74,12 @@ _blake2_free(void *module)
     Py_DECREF(x); \
 } while(0)
 
+#define ADD_INT_CONST(NAME, VALUE) do { \
+    if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) { \
+        return -1; \
+    } \
+} while (0)
+
 static int
 blake2_exec(PyObject *m)
 {
@@ -95,10 +101,10 @@ blake2_exec(PyObject *m)
     ADD_INT(d, "MAX_KEY_SIZE", BLAKE2B_KEYBYTES);
     ADD_INT(d, "MAX_DIGEST_SIZE", BLAKE2B_OUTBYTES);
 
-    PyModule_AddIntConstant(m, "BLAKE2B_SALT_SIZE", BLAKE2B_SALTBYTES);
-    PyModule_AddIntConstant(m, "BLAKE2B_PERSON_SIZE", BLAKE2B_PERSONALBYTES);
-    PyModule_AddIntConstant(m, "BLAKE2B_MAX_KEY_SIZE", BLAKE2B_KEYBYTES);
-    PyModule_AddIntConstant(m, "BLAKE2B_MAX_DIGEST_SIZE", BLAKE2B_OUTBYTES);
+    ADD_INT_CONST("BLAKE2B_SALT_SIZE", BLAKE2B_SALTBYTES);
+    ADD_INT_CONST("BLAKE2B_PERSON_SIZE", BLAKE2B_PERSONALBYTES);
+    ADD_INT_CONST("BLAKE2B_MAX_KEY_SIZE", BLAKE2B_KEYBYTES);
+    ADD_INT_CONST("BLAKE2B_MAX_DIGEST_SIZE", BLAKE2B_OUTBYTES);
 
     /* BLAKE2s */
     st->blake2s_type = (PyTypeObject *)PyType_FromModuleAndSpec(
@@ -117,16 +123,20 @@ blake2_exec(PyObject *m)
     ADD_INT(d, "MAX_KEY_SIZE", BLAKE2S_KEYBYTES);
     ADD_INT(d, "MAX_DIGEST_SIZE", BLAKE2S_OUTBYTES);
 
-    PyModule_AddIntConstant(m, "BLAKE2S_SALT_SIZE", BLAKE2S_SALTBYTES);
-    PyModule_AddIntConstant(m, "BLAKE2S_PERSON_SIZE", BLAKE2S_PERSONALBYTES);
-    PyModule_AddIntConstant(m, "BLAKE2S_MAX_KEY_SIZE", BLAKE2S_KEYBYTES);
-    PyModule_AddIntConstant(m, "BLAKE2S_MAX_DIGEST_SIZE", BLAKE2S_OUTBYTES);
+    ADD_INT_CONST("BLAKE2S_SALT_SIZE", BLAKE2S_SALTBYTES);
+    ADD_INT_CONST("BLAKE2S_PERSON_SIZE", BLAKE2S_PERSONALBYTES);
+    ADD_INT_CONST("BLAKE2S_MAX_KEY_SIZE", BLAKE2S_KEYBYTES);
+    ADD_INT_CONST("BLAKE2S_MAX_DIGEST_SIZE", BLAKE2S_OUTBYTES);
 
     return 0;
 }
 
+#undef ADD_INT
+#undef ADD_INT_CONST
+
 static PyModuleDef_Slot _blake2_slots[] = {
     {Py_mod_exec, blake2_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

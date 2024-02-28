@@ -1389,6 +1389,16 @@ class IPv4Address(_BaseV4, _BaseAddress):
         """
         return self in self._constants._linklocal_network
 
+    @property
+    def ipv6_mapped(self):
+        """Return the IPv4-mapped IPv6 address.
+
+        Returns:
+            The IPv4-mapped IPv6 address per RFC 4291.
+
+        """
+        return IPv6Address(f'::ffff:{self}')
+
 
 class IPv4Interface(IPv4Address):
 
@@ -1821,9 +1831,6 @@ class _BaseV6:
     def _explode_shorthand_ip_string(self):
         """Expand a shortened IPv6 address.
 
-        Args:
-            ip_str: A string, the IPv6 address.
-
         Returns:
             A string, the expanded IPv6 address.
 
@@ -1926,8 +1933,40 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         self._ip = self._ip_int_from_string(addr_str)
 
+    def _explode_shorthand_ip_string(self):
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            long_form = super()._explode_shorthand_ip_string()
+        else:
+            prefix_len = 30
+            raw_exploded_str = super()._explode_shorthand_ip_string()
+            long_form = "%s%s" % (raw_exploded_str[:prefix_len], str(ipv4_mapped))
+        return long_form
+
+    def _ipv4_mapped_ipv6_to_str(self):
+        """Return convenient text representation of IPv4-mapped IPv6 address
+
+        See RFC 4291 2.5.5.2, 2.2 p.3 for details.
+
+        Returns:
+            A string, 'x:x:x:x:x:x:d.d.d.d', where the 'x's are the hexadecimal values of
+            the six high-order 16-bit pieces of the address, and the 'd's are
+            the decimal values of the four low-order 8-bit pieces of the
+            address (standard IPv4 representation) as defined in RFC 4291 2.2 p.3.
+
+        """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            raise AddressValueError("Can not apply to non-IPv4-mapped IPv6 address %s" % str(self))
+        high_order_bits = self._ip >> 32
+        return "%s:%s" % (self._string_from_ip_int(high_order_bits), str(ipv4_mapped))
+
     def __str__(self):
-        ip_str = super().__str__()
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            ip_str = super().__str__()
+        else:
+            ip_str = self._ipv4_mapped_ipv6_to_str()
         return ip_str + '%' + self._scope_id if self._scope_id else ip_str
 
     def __hash__(self):
@@ -1940,6 +1979,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
         if not address_equal:
             return False
         return self._scope_id == getattr(other, '_scope_id', None)
+
+    def __reduce__(self):
+        return (self.__class__, (str(self),))
 
     @property
     def scope_id(self):

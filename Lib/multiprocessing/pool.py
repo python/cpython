@@ -200,7 +200,7 @@ class Pool(object):
         self._initargs = initargs
 
         if processes is None:
-            processes = os.cpu_count() or 1
+            processes = os.process_cpu_count() or 1
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
         if maxtasksperchild is not None:

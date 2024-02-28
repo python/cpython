@@ -1,0 +1,8 @@
+Improve the constructors for :mod:`ast` nodes. Arguments of list types now
+default to an empty list if omitted, and optional fields default to ``None``.
+AST nodes now have an
+``__annotations__`` attribute with the expected types of their attributes.
+Passing unrecognized extra arguments to AST nodes is deprecated and will
+become an error in Python 3.15. Omitting a required argument to an AST node
+is deprecated and will become an error in Python 3.15. Patch by Jelle
+Zijlstra.
