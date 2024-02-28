@@ -1,2 +1,0 @@
-Fix incorrect line execution reporting in trace functions when tracing the
-last iteration of asynchronous for loops. Patch by Pablo Galindo.

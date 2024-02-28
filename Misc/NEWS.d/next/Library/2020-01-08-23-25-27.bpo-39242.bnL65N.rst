@@ -1,3 +1,0 @@
-Updated the Gmane domain from news.gmane.org to news.gmane.io 
-which is used for examples of :class:`~nntplib.NNTP` news reader server and
-nntplib tests.

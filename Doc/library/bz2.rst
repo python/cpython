@@ -25,8 +25,6 @@ The :mod:`bz2` module contains:
 * The :func:`compress` and :func:`decompress` functions for one-shot
   (de)compression.
 
-All of the classes in this module may safely be accessed from multiple threads.
-
 
 (De)compression of files
 ------------------------
@@ -89,10 +87,11 @@ All of the classes in this module may safely be accessed from multiple threads.
    compressed streams.
 
    :class:`BZ2File` provides all of the members specified by the
-   :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
+   :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
+   and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
-   :class:`BZ2File` also provides the following method:
+   :class:`BZ2File` also provides the following methods:
 
    .. method:: peek([n])
 
@@ -107,13 +106,51 @@ All of the classes in this module may safely be accessed from multiple threads.
 
       .. versionadded:: 3.3
 
+   .. method:: fileno()
+
+      Return the file descriptor for the underlying file.
+
+      .. versionadded:: 3.3
+
+   .. method:: readable()
+
+      Return whether the file was opened for reading.
+
+      .. versionadded:: 3.3
+
+   .. method:: seekable()
+
+      Return whether the file supports seeking.
+
+      .. versionadded:: 3.3
+
+   .. method:: writable()
+
+      Return whether the file was opened for writing.
+
+      .. versionadded:: 3.3
+
+   .. method:: read1(size=-1)
+
+      Read up to *size* uncompressed bytes, while trying to avoid
+      making multiple reads from the underlying stream. Reads up to a
+      buffer's worth of data if size is negative.
+
+      Returns ``b''`` if the file is at EOF.
+
+      .. versionadded:: 3.3
+
+   .. method:: readinto(b)
+
+      Read bytes into *b*.
+
+      Returns the number of bytes read (0 for EOF).
+
+      .. versionadded:: 3.3
+
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
-
-   .. versionchanged:: 3.3
-      The :meth:`fileno`, :meth:`readable`, :meth:`seekable`, :meth:`writable`,
-      :meth:`read1` and :meth:`readinto` methods were added.
 
    .. versionchanged:: 3.3
       Support was added for *filename* being a :term:`file object` instead of an
@@ -139,6 +176,11 @@ All of the classes in this module may safely be accessed from multiple threads.
       opened.
 
       The *compresslevel* parameter became keyword-only.
+
+   .. versionchanged:: 3.10
+      This class is thread unsafe in the face of multiple simultaneous
+      readers or writers, just like its equivalent classes in :mod:`gzip` and
+      :mod:`lzma` have always been.
 
 
 Incremental (de)compression
@@ -203,7 +245,7 @@ Incremental (de)compression
       will be set to ``True``.
 
       Attempting to decompress data after the end of stream is reached
-      raises an `EOFError`.  Any data found after the end of the
+      raises an :exc:`EOFError`.  Any data found after the end of the
       stream is ignored and saved in the :attr:`~.unused_data` attribute.
 
       .. versionchanged:: 3.5
@@ -266,7 +308,6 @@ Below are some examples of typical usage of the :mod:`bz2` module.
 Using :func:`compress` and :func:`decompress` to demonstrate round-trip compression:
 
     >>> import bz2
-
     >>> data = b"""\
     ... Donec rhoncus quis sapien sit amet molestie. Fusce scelerisque vel augue
     ... nec ullamcorper. Nam rutrum pretium placerat. Aliquam vel tristique lorem,
@@ -275,11 +316,9 @@ Using :func:`compress` and :func:`decompress` to demonstrate round-trip compress
     ... Aliquam pharetra lacus non risus vehicula rutrum. Maecenas aliquam leo
     ... felis. Pellentesque semper nunc sit amet nibh ullamcorper, ac elementum
     ... dolor luctus. Curabitur lacinia mi ornare consectetur vestibulum."""
-
     >>> c = bz2.compress(data)
     >>> len(data) / len(c)  # Data compression ratio
     1.513595166163142
-
     >>> d = bz2.decompress(c)
     >>> data == d  # Check equality to original object after round-trip
     True
@@ -287,7 +326,6 @@ Using :func:`compress` and :func:`decompress` to demonstrate round-trip compress
 Using :class:`BZ2Compressor` for incremental compression:
 
     >>> import bz2
-
     >>> def gen_data(chunks=10, chunksize=1000):
     ...     """Yield incremental blocks of chunksize bytes."""
     ...     for _ in range(chunks):
@@ -304,13 +342,12 @@ Using :class:`BZ2Compressor` for incremental compression:
     >>> out = out + comp.flush()
 
 The example above uses a very "nonrandom" stream of data
-(a stream of `b"z"` chunks).  Random data tends to compress poorly,
+(a stream of ``b"z"`` chunks).  Random data tends to compress poorly,
 while ordered, repetitive data usually yields a high compression ratio.
 
 Writing and reading a bzip2-compressed file in binary mode:
 
     >>> import bz2
-
     >>> data = b"""\
     ... Donec rhoncus quis sapien sit amet molestie. Fusce scelerisque vel augue
     ... nec ullamcorper. Nam rutrum pretium placerat. Aliquam vel tristique lorem,
@@ -319,14 +356,18 @@ Writing and reading a bzip2-compressed file in binary mode:
     ... Aliquam pharetra lacus non risus vehicula rutrum. Maecenas aliquam leo
     ... felis. Pellentesque semper nunc sit amet nibh ullamcorper, ac elementum
     ... dolor luctus. Curabitur lacinia mi ornare consectetur vestibulum."""
-
     >>> with bz2.open("myfile.bz2", "wb") as f:
     ...     # Write compressed data to file
     ...     unused = f.write(data)
-
+    ...
     >>> with bz2.open("myfile.bz2", "rb") as f:
     ...     # Decompress data from file
     ...     content = f.read()
-
+    ...
     >>> content == data  # Check equality to original object after round-trip
     True
+
+.. testcleanup::
+
+   import os
+   os.remove("myfile.bz2")

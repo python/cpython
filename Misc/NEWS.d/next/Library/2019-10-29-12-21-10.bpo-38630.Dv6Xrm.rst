@@ -1,5 +1,0 @@
-On Unix, :meth:`subprocess.Popen.send_signal` now polls the process status.
-Polling reduces the risk of sending a signal to the wrong process if the
-process completed, the :attr:`subprocess.Popen.returncode` attribute is still
-``None``, and the pid has been reassigned (recycled) to a new different
-process.
