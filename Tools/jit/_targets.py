@@ -124,9 +124,6 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-asynchronous-unwind-tables",
             # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # This breaks SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds.
-            # It's not clear why:
-            "-fno-jump-tables",
             # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
             # about emitting in-range trampolines for out-of-range targets.
             # We can probably remove this and emit trampolines in the future:
@@ -202,7 +199,8 @@ class _COFF(
             offset = base + symbol["Value"]
             name = symbol["Name"]
             name = name.removeprefix(self.prefix)
-            group.symbols[name] = value, offset
+            if name not in group.symbols:
+                group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
