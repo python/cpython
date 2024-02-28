@@ -3409,6 +3409,15 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(Types(2), Types.NetList)
         self.assertIs(Types('nl'), Types.NetList)
 
+    def test_second_tuple_item_is_falsey(self):
+        class Cardinal(Enum):
+            RIGHT = (1, 0)
+            UP = (0, 1)
+            LEFT = (-1, 0)
+            DOWN = (0, -1)
+        Cardinal(1, 0)
+        Cardinal(-1, 0)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
