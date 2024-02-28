@@ -4,7 +4,6 @@ import importlib.util
 import io
 import itertools
 import os
-import pathlib
 import posixpath
 import struct
 import subprocess
@@ -25,7 +24,7 @@ from test.support import (
     captured_stdout, captured_stderr, requires_subprocess
 )
 from test.support.os_helper import (
-    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count
+    TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
 )
 
 
@@ -160,7 +159,7 @@ class AbstractTestsWithSourceFile:
             self.zip_open_test(f, self.compression)
 
     def test_open_with_pathlike(self):
-        path = pathlib.Path(TESTFN2)
+        path = FakePath(TESTFN2)
         self.zip_open_test(path, self.compression)
         with zipfile.ZipFile(path, "r", self.compression) as zipfp:
             self.assertIsInstance(zipfp.filename, str)
@@ -447,6 +446,27 @@ class AbstractTestsWithSourceFile:
             self.assertEqual(zipfp.read('file1'), b'data1')
             self.assertEqual(zipfp.read('file2'), b'data2')
 
+    def test_zipextfile_attrs(self):
+        fname = "somefile.txt"
+        with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
+            zipfp.writestr(fname, "bogus")
+
+        with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
+            with zipfp.open(fname) as fid:
+                self.assertEqual(fid.name, fname)
+                self.assertRaises(io.UnsupportedOperation, fid.fileno)
+                self.assertEqual(fid.mode, 'r')
+                self.assertIs(fid.readable(), True)
+                self.assertIs(fid.writable(), False)
+                self.assertIs(fid.seekable(), True)
+                self.assertIs(fid.closed, False)
+            self.assertIs(fid.closed, True)
+            self.assertEqual(fid.name, fname)
+            self.assertEqual(fid.mode, 'r')
+            self.assertRaises(io.UnsupportedOperation, fid.fileno)
+            self.assertRaises(ValueError, fid.readable)
+            self.assertIs(fid.writable(), False)
+            self.assertRaises(ValueError, fid.seekable)
 
     def tearDown(self):
         unlink(TESTFN)
@@ -578,17 +598,16 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
 
     def test_io_on_closed_zipextfile(self):
         fname = "somefile.txt"
-        with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
+        with zipfile.ZipFile(TESTFN2, mode="w", compression=self.compression) as zipfp:
             zipfp.writestr(fname, "bogus")
 
         with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
             with zipfp.open(fname) as fid:
                 fid.close()
+                self.assertIs(fid.closed, True)
                 self.assertRaises(ValueError, fid.read)
                 self.assertRaises(ValueError, fid.seek, 0)
                 self.assertRaises(ValueError, fid.tell)
-                self.assertRaises(ValueError, fid.readable)
-                self.assertRaises(ValueError, fid.seekable)
 
     def test_write_to_readonly(self):
         """Check that trying to call write() on a readonly ZipFile object
@@ -1285,6 +1304,21 @@ class AbstractWriterTests:
                 self.assertEqual(data.write(q), LENGTH)
             self.assertEqual(zip.getinfo('data').file_size, LENGTH)
 
+    def test_zipwritefile_attrs(self):
+        fname = "somefile.txt"
+        with zipfile.ZipFile(TESTFN2, mode="w", compression=self.compression) as zipfp:
+            with zipfp.open(fname, 'w') as fid:
+                self.assertRaises(io.UnsupportedOperation, fid.fileno)
+                self.assertIs(fid.readable(), False)
+                self.assertIs(fid.writable(), True)
+                self.assertIs(fid.seekable(), False)
+                self.assertIs(fid.closed, False)
+            self.assertIs(fid.closed, True)
+            self.assertRaises(io.UnsupportedOperation, fid.fileno)
+            self.assertIs(fid.readable(), False)
+            self.assertIs(fid.writable(), True)
+            self.assertIs(fid.seekable(), False)
+
 class StoredWriterTests(AbstractWriterTests, unittest.TestCase):
     compression = zipfile.ZIP_STORED
 
@@ -1487,7 +1521,7 @@ class PyZipFileTests(unittest.TestCase):
                 fp.write("print(42)\n")
 
             with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
-                zipfp.writepy(pathlib.Path(TESTFN2) / "mod1.py")
+                zipfp.writepy(FakePath(os.path.join(TESTFN2, "mod1.py")))
                 names = zipfp.namelist()
                 self.assertCompiledIn('mod1.py', names)
         finally:
@@ -1545,7 +1579,7 @@ class ExtractTests(unittest.TestCase):
 
     def test_extract_with_target_pathlike(self):
         with temp_dir() as extdir:
-            self._test_extract_with_target(pathlib.Path(extdir))
+            self._test_extract_with_target(FakePath(extdir))
 
     def test_extract_all(self):
         with temp_cwd():
@@ -1580,7 +1614,7 @@ class ExtractTests(unittest.TestCase):
 
     def test_extract_all_with_target_pathlike(self):
         with temp_dir() as extdir:
-            self._test_extract_all_with_target(pathlib.Path(extdir))
+            self._test_extract_all_with_target(FakePath(extdir))
 
     def check_file(self, filename, content):
         self.assertTrue(os.path.isfile(filename))
@@ -1893,7 +1927,7 @@ class OtherTests(unittest.TestCase):
             fp.write("this is not a legal zip file\n")
         self.assertFalse(zipfile.is_zipfile(TESTFN))
         # - passing a path-like object
-        self.assertFalse(zipfile.is_zipfile(pathlib.Path(TESTFN)))
+        self.assertFalse(zipfile.is_zipfile(FakePath(TESTFN)))
         # - passing a file object
         with open(TESTFN, "rb") as fp:
             self.assertFalse(zipfile.is_zipfile(fp))
@@ -3013,7 +3047,7 @@ class ZipInfoTests(unittest.TestCase):
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
 
     def test_from_file_pathlike(self):
-        zi = zipfile.ZipInfo.from_file(pathlib.Path(__file__))
+        zi = zipfile.ZipInfo.from_file(FakePath(__file__))
         self.assertEqual(posixpath.basename(zi.filename), 'test_core.py')
         self.assertFalse(zi.is_dir())
         self.assertEqual(zi.file_size, os.path.getsize(__file__))
