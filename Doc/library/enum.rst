@@ -390,6 +390,9 @@ Data Types
 
       results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
 
+      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
+               call the appropriate ``__new__`` instead.
+
    .. method:: Enum.__repr__(self)
 
       Returns the string used for *repr()* calls.  By default, returns the
