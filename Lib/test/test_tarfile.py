@@ -487,14 +487,32 @@ class CommonReadTest(ReadTest):
             with tarfile.open(support.findfile('recursion.tar')) as tar:
                 pass
 
-    def test_extractfile_name(self):
+    def test_extractfile_attrs(self):
         # gh-74468: TarFile.name must name a file, not a parent archive.
         file = self.tar.getmember('ustar/regtype')
         with self.tar.extractfile(file) as fobj:
             self.assertEqual(fobj.name, 'ustar/regtype')
+            self.assertRaises(AttributeError, fobj.fileno)
+            self.assertIs(fobj.readable(), True)
+            self.assertIs(fobj.writable(), False)
+            if self.is_stream:
+                self.assertRaises(AttributeError, fobj.seekable)
+            else:
+                self.assertIs(fobj.seekable(), True)
+            self.assertIs(fobj.closed, False)
+        self.assertIs(fobj.closed, True)
+        self.assertEqual(fobj.name, 'ustar/regtype')
+        self.assertRaises(AttributeError, fobj.fileno)
+        self.assertIs(fobj.readable(), True)
+        self.assertIs(fobj.writable(), False)
+        if self.is_stream:
+            self.assertRaises(AttributeError, fobj.seekable)
+        else:
+            self.assertIs(fobj.seekable(), True)
 
 
 class MiscReadTestBase(CommonReadTest):
+    is_stream = False
     def requires_name_attribute(self):
         pass
 
@@ -787,6 +805,7 @@ class LzmaMiscReadTest(LzmaTest, MiscReadTestBase, unittest.TestCase):
 class StreamReadTest(CommonReadTest, unittest.TestCase):
 
     prefix="r|"
+    is_stream = True
 
     def test_read_through(self):
         # Issue #11224: A poorly designed _FileInFile.read() method
