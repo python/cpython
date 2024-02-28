@@ -83,6 +83,11 @@ extern PyTypeObject _PyExc_MemoryError;
             .tuple_object = { \
                 .ob_item = offsetof(PyTupleObject, ob_item), \
             }, \
+            .unicode_object = { \
+                .state = offsetof(PyUnicodeObject, _base._base.state), \
+                .length = offsetof(PyUnicodeObject, _base._base.length), \
+                .asciiobject_size = sizeof(PyASCIIObject), \
+            }, \
         }, \
         .allocators = { \
             .standard = _pymem_allocators_standard_INIT(runtime), \

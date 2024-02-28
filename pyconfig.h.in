@@ -933,6 +933,9 @@
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
 
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
+
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
