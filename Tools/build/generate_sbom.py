@@ -124,14 +124,14 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     return sorted([line.split()[-1] for line in git_check_ignore_lines if line.startswith("::")])
 
 
-def get_externals() -> list[tuple[str, str, str]]:
+def get_externals() -> list[str]:
     """
     Parses 'PCbuild/get_externals.bat' for external libraries.
     Returns a list of (git tag, name, version) tuples.
     """
     get_externals_bat_path = CPYTHON_ROOT_DIR / "PCbuild/get_externals.bat"
     externals = re.findall(
-        r"set\s+libraries\s*=\s*%libraries%\s+(([a-zA-Z0-9.-]+?)-([0-9][0-9.]*[0-9]))\s",
+        r"set\s+libraries\s*=\s*%libraries%\s+([a-zA-Z0-9.-]+)\s",
         get_externals_bat_path.read_text()
     )
     return externals
@@ -259,12 +259,16 @@ def create_externals_sbom() -> None:
     sbom_data = json.loads(sbom_path.read_bytes())
 
     externals = get_externals()
-    externals_name_to_version = {name: version for _, name, version in externals}
-    externals_name_to_git_tag = {name: git_tag for git_tag, name, _ in externals}
+    externals_name_to_version = {}
+    externals_name_to_git_tag = {}
+    for git_tag in externals:
+        name, _, version = git_tag.rpartition("-")
+        externals_name_to_version[name] = version
+        externals_name_to_git_tag[name] = git_tag
 
     # Ensure all packages in this tool are represented also in the SBOM file.
     actual_names = {package["name"] for package in sbom_data["packages"]}
-    expected_names = set(name for _, name, _ in externals)
+    expected_names = set(externals_name_to_version)
     error_if(
         actual_names != expected_names,
         f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
