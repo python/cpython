@@ -1,7 +1,6 @@
 import ast
 import sys
 import unittest
-from test import support
 
 
 funcdef = """\
@@ -64,6 +63,14 @@ for a in []:  # type: int
 
 withstmt = """\
 with context() as a:  # type: int
+    pass
+"""
+
+parenthesized_withstmt = """\
+with (a as b):  # type: int
+    pass
+
+with (a, b):  # type: int
     pass
 """
 
@@ -261,8 +268,8 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.body[1].type_comment, None)
 
     def test_asyncvar(self):
-        for tree in self.parse_all(asyncvar, maxver=6):
-            pass
+        with self.assertRaises(SyntaxError):
+            self.classic_parse(asyncvar)
 
     def test_asynccomp(self):
         for tree in self.parse_all(asynccomp, minver=6):
@@ -273,7 +280,7 @@ class TypeCommentTests(unittest.TestCase):
             pass
 
     def test_fstring(self):
-        for tree in self.parse_all(fstring, minver=6):
+        for tree in self.parse_all(fstring):
             pass
 
     def test_underscorednumber(self):
@@ -301,6 +308,14 @@ class TypeCommentTests(unittest.TestCase):
         tree = self.classic_parse(withstmt)
         self.assertEqual(tree.body[0].type_comment, None)
 
+    def test_parenthesized_withstmt(self):
+        for tree in self.parse_all(parenthesized_withstmt):
+            self.assertEqual(tree.body[0].type_comment, "int")
+            self.assertEqual(tree.body[1].type_comment, "int")
+        tree = self.classic_parse(parenthesized_withstmt)
+        self.assertEqual(tree.body[0].type_comment, None)
+        self.assertEqual(tree.body[1].type_comment, None)
+
     def test_vardecl(self):
         for tree in self.parse_all(vardecl):
             self.assertEqual(tree.body[0].type_comment, "int")
@@ -323,7 +338,7 @@ class TypeCommentTests(unittest.TestCase):
         self.assertEqual(tree.type_ignores, [])
 
     def test_longargs(self):
-        for tree in self.parse_all(longargs):
+        for tree in self.parse_all(longargs, minver=8):
             for t in tree.body:
                 # The expected args are encoded in the function name
                 todo = set(t.name[1:])

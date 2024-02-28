@@ -1,2 +1,0 @@
-Add ``--with-experimental-isolated-subinterpreters`` build option to
-``configure``: better isolate subinterpreters, experimental build mode.

@@ -1,2 +1,0 @@
-The :c:func:`PyThreadState_GetFrame` function now returns a strong reference
-to the frame.

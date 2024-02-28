@@ -6,7 +6,6 @@ __author__ = "Steve Dower <steve.dower@python.org>"
 __version__ = "3.8"
 
 import os
-import re
 import struct
 import sys
 
@@ -16,7 +15,7 @@ def _unpack_hexversion():
         hexversion = int(os.getenv("PYTHON_HEXVERSION"), 16)
     except (TypeError, ValueError):
         hexversion = sys.hexversion
-    return struct.pack(">i", sys.hexversion)
+    return struct.pack(">i", hexversion)
 
 
 def _get_suffix(field4):
@@ -40,3 +39,6 @@ PYTHON_PTH_NAME = "python{}{}._pth".format(VER_MAJOR, VER_MINOR)
 PYTHON_CHM_NAME = "python{}{}{}{}.chm".format(
     VER_MAJOR, VER_MINOR, VER_MICRO, VER_SUFFIX
 )
+
+FREETHREADED_PYTHON_DLL_NAME = "python{}{}t.dll".format(VER_MAJOR, VER_MINOR)
+FREETHREADED_PYTHON_STABLE_DLL_NAME = "python{}t.dll".format(VER_MAJOR)
