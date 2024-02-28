@@ -210,6 +210,8 @@ class TestExecutorInvalidation(unittest.TestCase):
         exe = get_first_executor(f)
         self.assertIsNone(exe)
 
+
+@unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
@@ -570,7 +572,7 @@ class TestUops(unittest.TestCase):
         self.assertLessEqual(count, 2)
 
 
-@unittest.skipIf(os.getenv("PYTHONUOPSOPTIMIZE", default=0) == 0, "Needs uop optimizer to run.")
+@unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
     def _run_with_optimizer(self, testfunc, arg):
