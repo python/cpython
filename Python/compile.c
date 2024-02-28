@@ -4050,6 +4050,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         ADDOP_I(c, PRECALL, 0);
         ADDOP_I(c, CALL, 0);
     }
+    SET_LOC(c, s->v.Assert.test);
     ADDOP_I(c, RAISE_VARARGS, 1);
     compiler_use_next_block(c, end);
     return 1;
