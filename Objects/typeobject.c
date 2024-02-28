@@ -2181,6 +2181,7 @@ subtype_dealloc(PyObject *self)
                              && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
 
     assert(basedealloc);
+    // TODO: Free with qsbr if dict was shared
     basedealloc(self);
 
     /* Can't reference self beyond this point. It's possible tp_del switched
@@ -6086,13 +6087,12 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-            PyDictObject *dict = _PyObject_ManagedDictPointer(self)->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(self);
             if (dict == NULL) {
-                dict = (PyDictObject *)_PyObject_MakeDictFromInstanceAttributes(self);
+                dict = (PyDictObject *)_PyObject_MaterializeManagedDict(self);
                 if (dict == NULL) {
                     return -1;
                 }
-                _PyObject_ManagedDictPointer(self)->dict = dict;
             }
             if (_PyDict_DetachFromObject(dict, self)) {
                 return -1;

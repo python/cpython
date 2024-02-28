@@ -1888,8 +1888,7 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             if (dict == NULL) goto deoptimize;
             assert(PyDict_CheckExact((PyObject *)dict));
             break;
@@ -1902,8 +1901,7 @@
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
-            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
-            PyDictObject *dict = managed_dict->dict;
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             if (hint >= (size_t)dict->ma_keys->dk_nentries) goto deoptimize;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -2022,7 +2020,7 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-            if (_PyObject_ManagedDictPointer(owner)->dict) goto deoptimize;
+            if (_PyObject_GetManagedDict(owner)) goto deoptimize;
             if (_PyObject_InlineValues(owner)->valid == 0) goto deoptimize;
             break;
         }
@@ -2034,7 +2032,7 @@
             value = stack_pointer[-2];
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             STAT_INC(STORE_ATTR, hit);
-            assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
+            assert(_PyObject_GetManagedDict(owner) == NULL);
             PyDictValues *values = _PyObject_InlineValues(owner);
             PyObject *old_value = values->values[index];
             values->values[index] = value;

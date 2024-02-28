@@ -332,8 +332,7 @@ def is_infallible(op: parser.InstDef) -> bool:
 
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
-    "_PyManagedDictPointer_IsValues",
-    "_PyObject_ManagedDictPointer",
+    "_PyObject_GetManagedDict",
     "_PyObject_InlineValues",
     "Py_DECREF",
     "_Py_DECREF_SPECIALIZED",
