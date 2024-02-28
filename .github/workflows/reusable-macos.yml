@@ -36,7 +36,7 @@ jobs:
         path: config.cache
         key: ${{ github.job }}-${{ matrix.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk
+      run: brew install pkg-config openssl@3.0 xz@5.4.5 gdbm tcl-tk
     - name: Configure CPython
       run: |
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
