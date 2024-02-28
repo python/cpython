@@ -154,9 +154,14 @@ def dump(
                 if value is None and getattr(cls, name, ...) is None:
                     keywords = True
                     continue
-                value, simple = _format(value, level)
-                if not show_empty and value in empty_values:
+                if (
+                    not show_empty
+                    and value in empty_values
+                    and not isinstance(node, Constant)
+                ):
+                    # Special case: `Constant(value=None)`
                     continue
+                value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
                     args.append('%s=%s' % (name, value))
@@ -186,7 +191,7 @@ def dump(
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
     if indent is not None and not isinstance(indent, str):
         indent = ' ' * indent
-    empty_values = {None, "''", "[]"}
+    empty_values = (None, [])
     return _format(node)[0]
 
 

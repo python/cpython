@@ -1343,7 +1343,17 @@ Module(
         self.assertEqual(
             # Corner case: there are no real `Name` instances with `id=''`:
             ast.dump(ast.Name(id='', ctx=ast.Load()), show_empty=False),
-            "Name(ctx=Load())",
+            "Name(id='', ctx=Load())",
+        )
+
+        self.assertEqual(
+            ast.dump(ast.Constant(value=None), show_empty=False),
+            'Constant(value=None)',
+        )
+
+        self.assertEqual(
+            ast.dump(ast.Constant(value=''), show_empty=False),
+            "Constant(value='')",
         )
 
         def check_text(code, expected, **kwargs):

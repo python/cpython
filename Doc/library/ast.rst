@@ -2440,7 +2440,7 @@ and classes for traversing abstract syntax trees:
    that string is used to indent each level.
 
    If *show_empty* is ``False``, then empty lists, fields that are ``None``,
-   and empty strings will be ommitted from the output for better readability.
+   and empty strings will be omitted from the output for better readability.
 
    .. versionchanged:: 3.9
       Added the *indent* option.
