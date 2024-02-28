@@ -661,6 +661,8 @@ MODULE__XXTESTFUZZ_FALSE
 MODULE__XXTESTFUZZ_TRUE
 MODULE_XXSUBTYPE_FALSE
 MODULE_XXSUBTYPE_TRUE
+MODULE__TESTEXTERNALINSPECTION_FALSE
+MODULE__TESTEXTERNALINSPECTION_TRUE
 MODULE__TESTMULTIPHASE_FALSE
 MODULE__TESTMULTIPHASE_TRUE
 MODULE__TESTIMPORTMULTIPLE_FALSE
@@ -11295,41 +11297,21 @@ then :
 fi
 
 
-# checks for typedefs
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_t in time.h" >&5
-printf %s "checking for clock_t in time.h... " >&6; }
-if test ${ac_cv_clock_t_time_h+y}
+# Check for clock_t in time.h.
+ac_fn_c_check_type "$LINENO" "clock_t" "ac_cv_type_clock_t" "#include <time.h>
+"
+if test "x$ac_cv_type_clock_t" = xyes
 then :
-  printf %s "(cached) " >&6
+
+printf "%s\n" "#define HAVE_CLOCK_T 1" >>confdefs.h
+
+
 else $as_nop
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "clock_t" >/dev/null 2>&1
-then :
-  ac_cv_clock_t_time_h=yes
-else $as_nop
-  ac_cv_clock_t_time_h=no
-fi
-rm -rf conftest*
-
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_clock_t_time_h" >&5
-printf "%s\n" "$ac_cv_clock_t_time_h" >&6; }
-if test "x$ac_cv_clock_t_time_h" = xno
-then :
-
 
 printf "%s\n" "#define clock_t long" >>confdefs.h
 
-
 fi
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for makedev" >&5
 printf %s "checking for makedev... " >&6; }
@@ -11531,6 +11513,7 @@ else $as_nop
 printf "%s\n" "#define size_t unsigned int" >>confdefs.h
 
 fi
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uid_t in sys/types.h" >&5
 printf %s "checking for uid_t in sys/types.h... " >&6; }
@@ -16182,24 +16165,47 @@ else
     # (e.g. gnu pth with pthread emulation)
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _POSIX_THREADS in unistd.h" >&5
 printf %s "checking for _POSIX_THREADS in unistd.h... " >&6; }
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _POSIX_THREADS defined in unistd.h" >&5
+printf %s "checking for _POSIX_THREADS defined in unistd.h... " >&6; }
+if test ${ac_cv_defined__POSIX_THREADS_unistd_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
 #include <unistd.h>
-#ifdef _POSIX_THREADS
-yes
-#endif
+int
+main (void)
+{
 
+  #ifdef _POSIX_THREADS
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined__POSIX_THREADS_unistd_h=yes
+else $as_nop
+  ac_cv_defined__POSIX_THREADS_unistd_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined__POSIX_THREADS_unistd_h" >&5
+printf "%s\n" "$ac_cv_defined__POSIX_THREADS_unistd_h" >&6; }
+if test $ac_cv_defined__POSIX_THREADS_unistd_h != "no"
 then :
   unistd_defines_pthreads=yes
 else $as_nop
   unistd_defines_pthreads=no
 fi
-rm -rf conftest*
-
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $unistd_defines_pthreads" >&5
 printf "%s\n" "$unistd_defines_pthreads" >&6; }
 
@@ -16706,59 +16712,131 @@ printf %s "checking ipv6 stack type... " >&6; }
 	do
 		case $i in
 		inria)
-						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for IPV6_INRIA_VERSION defined in netinet/in.h" >&5
+printf %s "checking for IPV6_INRIA_VERSION defined in netinet/in.h... " >&6; }
+if test ${ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 #include <netinet/in.h>
-#ifdef IPV6_INRIA_VERSION
-yes
-#endif
+int
+main (void)
+{
+
+  #ifdef IPV6_INRIA_VERSION
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h=yes
+else $as_nop
+  ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h" >&5
+printf "%s\n" "$ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h" >&6; }
+if test $ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h != "no"
 then :
   ipv6type=$i
 fi
-rm -rf conftest*
-
 			;;
 		kame)
-						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <netinet/in.h>
-#ifdef __KAME__
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __KAME__ defined in netinet/in.h" >&5
+printf %s "checking for __KAME__ defined in netinet/in.h... " >&6; }
+if test ${ac_cv_defined___KAME___netinet_in_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=inet6
-				ipv6libdir=/usr/local/v6/lib
-				ipv6trylibc=yes
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netinet/in.h>
+int
+main (void)
+{
 
+  #ifdef __KAME__
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined___KAME___netinet_in_h=yes
+else $as_nop
+  ac_cv_defined___KAME___netinet_in_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined___KAME___netinet_in_h" >&5
+printf "%s\n" "$ac_cv_defined___KAME___netinet_in_h" >&6; }
+if test $ac_cv_defined___KAME___netinet_in_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=inet6
+                             ipv6libdir=/usr/local/v6/lib
+                             ipv6trylibc=yes
+fi
 			;;
 		linux-glibc)
-						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <features.h>
-#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __GLIBC__ defined in features.h" >&5
+printf %s "checking for __GLIBC__ defined in features.h... " >&6; }
+if test ${ac_cv_defined___GLIBC___features_h+y}
 then :
-  ipv6type=$i;
-				ipv6trylibc=yes
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <features.h>
+int
+main (void)
+{
 
+  #ifdef __GLIBC__
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined___GLIBC___features_h=yes
+else $as_nop
+  ac_cv_defined___GLIBC___features_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined___GLIBC___features_h" >&5
+printf "%s\n" "$ac_cv_defined___GLIBC___features_h" >&6; }
+if test $ac_cv_defined___GLIBC___features_h != "no"
+then :
+  ipv6type=$i
+                             ipv6trylibc=yes
+fi
 			;;
 		linux-inet6)
 						if test -d /usr/inet6; then
@@ -16777,62 +16855,134 @@ rm -rf conftest*
                         fi
 			;;
 		toshiba)
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <sys/param.h>
-#ifdef _TOSHIBA_INET6
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _TOSHIBA_INET6 defined in sys/param.h" >&5
+printf %s "checking for _TOSHIBA_INET6 defined in sys/param.h... " >&6; }
+if test ${ac_cv_defined__TOSHIBA_INET6_sys_param_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/param.h>
+int
+main (void)
+{
 
+  #ifdef _TOSHIBA_INET6
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined__TOSHIBA_INET6_sys_param_h=yes
+else $as_nop
+  ac_cv_defined__TOSHIBA_INET6_sys_param_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined__TOSHIBA_INET6_sys_param_h" >&5
+printf "%s\n" "$ac_cv_defined__TOSHIBA_INET6_sys_param_h" >&6; }
+if test $ac_cv_defined__TOSHIBA_INET6_sys_param_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=inet6
+                             ipv6libdir=/usr/local/v6/lib
+fi
 			;;
 		v6d)
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include </usr/local/v6/include/sys/v6config.h>
-#ifdef __V6D__
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __V6D__ defined in /usr/local/v6/include/sys/v6config.h" >&5
+printf %s "checking for __V6D__ defined in /usr/local/v6/include/sys/v6config.h... " >&6; }
+if test ${ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=v6;
-				ipv6libdir=/usr/local/v6/lib;
-				BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include </usr/local/v6/include/sys/v6config.h>
+int
+main (void)
+{
 
+  #ifdef __V6D__
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h=yes
+else $as_nop
+  ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h" >&5
+printf "%s\n" "$ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h" >&6; }
+if test $ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=v6
+                             ipv6libdir=/usr/local/v6/lib
+                             BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"
+fi
 			;;
 		zeta)
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <sys/param.h>
-#ifdef _ZETA_MINAMI_INET6
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _ZETA_MINAMI_INET6 defined in sys/param.h" >&5
+printf %s "checking for _ZETA_MINAMI_INET6 defined in sys/param.h... " >&6; }
+if test ${ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/param.h>
+int
+main (void)
+{
 
+  #ifdef _ZETA_MINAMI_INET6
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h=yes
+else $as_nop
+  ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h" >&5
+printf "%s\n" "$ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h" >&6; }
+if test $ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=inet6
+                             ipv6libdir=/usr/local/v6/lib
+fi
 			;;
 		esac
 		if test "$ipv6type" != "unknown"; then
@@ -17996,6 +18146,12 @@ ac_fn_c_check_func "$LINENO" "preadv2" "ac_cv_func_preadv2"
 if test "x$ac_cv_func_preadv2" = xyes
 then :
   printf "%s\n" "#define HAVE_PREADV2 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "process_vm_readv" "ac_cv_func_process_vm_readv"
+if test "x$ac_cv_func_process_vm_readv" = xyes
+then :
+  printf "%s\n" "#define HAVE_PROCESS_VM_READV 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pthread_cond_timedwait_relative_np" "ac_cv_func_pthread_cond_timedwait_relative_np"
@@ -30688,6 +30844,44 @@ fi
 printf "%s\n" "$py_cv_module__testmultiphase" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testexternalinspection" >&5
+printf %s "checking for stdlib extension module _testexternalinspection... " >&6; }
+        if test "$py_cv_module__testexternalinspection" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if true
+then :
+  py_cv_module__testexternalinspection=yes
+else $as_nop
+  py_cv_module__testexternalinspection=missing
+fi
+else $as_nop
+  py_cv_module__testexternalinspection=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTEXTERNALINSPECTION_STATE=$py_cv_module__testexternalinspection$as_nl"
+  if test "x$py_cv_module__testexternalinspection" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testexternalinspection" = yes; then
+  MODULE__TESTEXTERNALINSPECTION_TRUE=
+  MODULE__TESTEXTERNALINSPECTION_FALSE='#'
+else
+  MODULE__TESTEXTERNALINSPECTION_TRUE='#'
+  MODULE__TESTEXTERNALINSPECTION_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testexternalinspection" >&5
+printf "%s\n" "$py_cv_module__testexternalinspection" >&6; }
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxsubtype" >&5
 printf %s "checking for stdlib extension module xxsubtype... " >&6; }
         if test "$py_cv_module_xxsubtype" != "n/a"
@@ -31298,6 +31492,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTEXTERNALINSPECTION_TRUE}" && test -z "${MODULE__TESTEXTERNALINSPECTION_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTEXTERNALINSPECTION\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_XXSUBTYPE_TRUE}" && test -z "${MODULE_XXSUBTYPE_FALSE}"; then
