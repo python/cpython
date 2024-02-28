@@ -902,7 +902,9 @@ class TestUopsOptimization(unittest.TestCase):
         _test_global = 1.2
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNotNone(ex)
-        self.assertIn("_BINARY_OP_ADD_INT", get_opnames(ex))
+        uops = get_opnames(ex)
+        self.assertIn("_GUARD_BOTH_INT", uops)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
 
 
 if __name__ == "__main__":
