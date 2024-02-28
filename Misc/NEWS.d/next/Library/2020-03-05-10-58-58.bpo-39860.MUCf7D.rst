@@ -1,0 +1,4 @@
+This allows the configparser.get method to accept an iterable of sections, (as well as continue to support a string) so that it can use cascading defaults, as expected by systems such as MySQL.  
+For example, cf. https://dev.mysql.com/doc/refman/8.0/en/option-files.html#option-file-syntax
+
+"List more general option groups first and more specific groups later. For example, a [client] group is more general because it is read by all client programs, whereas a [mysqldump] group is read only by mysqldump. Options specified later override options specified earlier, so putting the option groups in the order [client], [mysqldump] enables mysqldump-specific options to override [client] options."
