@@ -136,9 +136,9 @@ This module defines one class:
    Construct a :class:`PrettyPrinter` instance.  This constructor understands
    several keyword parameters.
 
-   *stream* (default :data:`sys.stdout`) is a :term:`file-like object` to
+   *stream* (default :data:`!sys.stdout`) is a :term:`file-like object` to
    which the output will be written by calling its :meth:`!write` method.
-   If both *stream* and :data:`sys.stdout` are ``None``, then
+   If both *stream* and :data:`!sys.stdout` are ``None``, then
    :meth:`~PrettyPrinter.pprint` silently returns.
 
    Other values configure the manner in which nesting of complex data
@@ -179,7 +179,7 @@ This module defines one class:
       Added the *underscore_numbers* parameter.
 
    .. versionchanged:: 3.11
-      No longer attempts to write to :data:`sys.stdout` if it is ``None``.
+      No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
