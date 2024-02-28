@@ -1,0 +1,1 @@
+Include the current working directory in ``FileNotFoundError``, to provide context for interpretation of relative paths.
