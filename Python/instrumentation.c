@@ -889,10 +889,18 @@ static inline int most_significant_bit(uint8_t bits) {
 }
 
 static uint32_t
-global_version(PyThreadState *tstate)
+global_version(PyInterpreterState *interp)
 {
-    return (uint32_t)(_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
-                      ~_PY_EVAL_EVENTS_MASK);
+    uint32_t version = (uint32_t)_Py_atomic_load_uintptr_relaxed(
+        &interp->ceval.instrumentation_version);
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    uint32_t thread_version =
+        (uint32_t)(_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
+                   ~_PY_EVAL_EVENTS_MASK);
+    assert(thread_version == version);
+#endif
+    return version;
 }
 
 /* Atomically set the given version in the given location, without touching
@@ -931,9 +939,9 @@ set_global_version(PyThreadState *tstate, uint32_t version)
 }
 
 static bool
-is_version_up_to_date(PyCodeObject *code, PyThreadState *tstate)
+is_version_up_to_date(PyCodeObject *code, PyInterpreterState *interp)
 {
-    return global_version(tstate) == code->_co_instrumentation_version;
+    return global_version(interp) == code->_co_instrumentation_version;
 }
 
 #ifndef NDEBUG
@@ -948,9 +956,8 @@ instrumentation_cross_checks(PyInterpreterState *interp, PyCodeObject *code)
 #endif
 
 static inline uint8_t
-get_tools_for_instruction(PyCodeObject *code, PyThreadState *tstate, int i, int event)
+get_tools_for_instruction(PyCodeObject *code, PyInterpreterState *interp, int i, int event)
 {
-    PyInterpreterState *interp = tstate->interp;
     uint8_t tools;
     assert(event != PY_MONITORING_EVENT_LINE);
     assert(event != PY_MONITORING_EVENT_INSTRUCTION);
@@ -960,7 +967,7 @@ get_tools_for_instruction(PyCodeObject *code, PyThreadState *tstate, int i, int 
         event = PY_MONITORING_EVENT_CALL;
     }
     if (PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
-        CHECK(is_version_up_to_date(code, tstate));
+        CHECK(is_version_up_to_date(code, interp));
         CHECK(instrumentation_cross_checks(interp, code));
         if (code->_co_monitoring->tools) {
             tools = code->_co_monitoring->tools[i];
@@ -1019,7 +1026,7 @@ call_instrumentation_vector(
     assert(args[2] == NULL);
     args[2] = offset_obj;
     PyInterpreterState *interp = tstate->interp;
-    uint8_t tools = get_tools_for_instruction(code, tstate, offset, event);
+    uint8_t tools = get_tools_for_instruction(code, interp, offset, event);
     Py_ssize_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject **callargs = &args[1];
     int err = 0;
@@ -1157,7 +1164,7 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    assert(is_version_up_to_date(code, tstate));
+    assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
 
@@ -1259,7 +1266,7 @@ int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
-    assert(is_version_up_to_date(code, tstate));
+    assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int offset = (int)(instr - _PyCode_CODE(code));
     _PyCoMonitoringData *instrumentation_data = code->_co_monitoring;
@@ -1588,12 +1595,11 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
 }
 
 int
-_Py_Instrument(PyCodeObject *code, PyThreadState *tstate)
+_Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = tstate->interp;
-    if (is_version_up_to_date(code, tstate)) {
+    if (is_version_up_to_date(code, interp)) {
         assert(
-            global_version(tstate) == 0 ||
+            interp->ceval.instrumentation_version == 0 ||
             instrumentation_cross_checks(interp, code)
         );
         return 0;
@@ -1630,7 +1636,7 @@ _Py_Instrument(PyCodeObject *code, PyThreadState *tstate)
         assert(monitors_are_empty(monitors_and(new_events, removed_events)));
     }
     code->_co_monitoring->active_monitors = active_events;
-    code->_co_instrumentation_version = global_version(tstate);
+    code->_co_instrumentation_version = global_version(interp);
     if (monitors_are_empty(new_events) && monitors_are_empty(removed_events)) {
 #ifdef INSTRUMENT_DEBUG
         sanity_check_instrumentation(code);
@@ -1739,18 +1745,16 @@ _Py_Instrument(PyCodeObject *code, PyThreadState *tstate)
 
 
 static int
-instrument_all_executing_code_objects(PyThreadState *this_tstate) {
+instrument_all_executing_code_objects(PyInterpreterState *interp) {
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(this_tstate->interp);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
     HEAD_UNLOCK(runtime);
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
             if (frame->owner != FRAME_OWNED_BY_CSTACK) {
-                // _Py_Instrument() takes the current tstate, regardless of
-                // which thread we fetched this code object from.
-                if (_Py_Instrument(_PyFrame_GetCode(frame), this_tstate)) {
+                if (_Py_Instrument(_PyFrame_GetCode(frame), interp)) {
                     return -1;
                 }
             }
@@ -1818,22 +1822,21 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
         return 0;
     }
     set_events(&interp->monitors, tool_id, events);
-    uint32_t new_version = global_version(tstate) + MONITORING_VERSION_INCREMENT;
+    uint32_t new_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     if (new_version == 0) {
         PyErr_Format(PyExc_OverflowError, "events set too many times");
         return -1;
     }
     set_global_version(tstate, new_version);
     _Py_Executors_InvalidateAll(interp);
-    return instrument_all_executing_code_objects(tstate);
+    return instrument_all_executing_code_objects(interp);
 }
 
 int
 _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyInterpreterState *interp = tstate->interp;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(events < (1 << _PY_MONITORING_LOCAL_EVENTS));
     if (code->_co_firsttraceable >= Py_SIZE(code)) {
         PyErr_Format(PyExc_SystemError, "cannot instrument shim code object '%U'", code->co_name);
@@ -1851,12 +1854,12 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         return 0;
     }
     set_local_events(local, tool_id, events);
-    if (is_version_up_to_date(code, tstate)) {
+    if (is_version_up_to_date(code, interp)) {
         /* Force instrumentation update */
         code->_co_instrumentation_version -= MONITORING_VERSION_INCREMENT;
     }
     _Py_Executors_InvalidateDependency(interp, code);
-    if (_Py_Instrument(code, tstate)) {
+    if (_Py_Instrument(code, interp)) {
         return -1;
     }
     return 0;
@@ -2155,7 +2158,7 @@ monitoring_restart_events_impl(PyObject *module)
      */
     PyThreadState *tstate = _PyThreadState_GET();
     PyInterpreterState *interp = tstate->interp;
-    uint32_t restart_version = global_version(tstate) + MONITORING_VERSION_INCREMENT;
+    uint32_t restart_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     uint32_t new_version = restart_version + MONITORING_VERSION_INCREMENT;
     if (new_version <= MONITORING_VERSION_INCREMENT) {
         PyErr_Format(PyExc_OverflowError, "events set too many times");
@@ -2163,7 +2166,7 @@ monitoring_restart_events_impl(PyObject *module)
     }
     interp->last_restart_version = restart_version;
     set_global_version(tstate, new_version);
-    if (instrument_all_executing_code_objects(tstate)) {
+    if (instrument_all_executing_code_objects(interp)) {
         return NULL;
     }
     Py_RETURN_NONE;
