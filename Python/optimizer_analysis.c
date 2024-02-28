@@ -294,7 +294,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_set_null _Py_uop_sym_set_null
+#define sym_set_non_null _Py_uop_sym_set_non_null
 #define sym_set_type _Py_uop_sym_set_type
+#define sym_set_const _Py_uop_sym_set_const
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
 
