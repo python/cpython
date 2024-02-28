@@ -140,7 +140,7 @@ _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
         return;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
-    if (sym->typ != NULL && sym->typ != typ) {
+    if (sym->typ != typ) {
         sym_set_bottom(sym);
         return;
     }
@@ -427,9 +427,13 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and 43) isn't bottom");
 
     _Py_uop_abstractcontext_fini(ctx);
+    Py_DECREF(val_42);
+    Py_DECREF(val_43);
     Py_RETURN_NONE;
 
 fail:
     _Py_uop_abstractcontext_fini(ctx);
+    Py_DECREF(val_42);
+    Py_DECREF(val_43);
     return NULL;
 }
