@@ -59,8 +59,8 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(OSError, cdll.LoadLibrary, self.unknowndll)
 
     def test_find(self):
+        found = False
         for name in ("c", "m"):
-            found = False
             lib = find_library(name)
             if lib:
                 found = True
