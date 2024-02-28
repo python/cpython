@@ -62,7 +62,7 @@ Functions
    described in its documentation above.
 
    Note that *sort_dicts* default value is true, which might be an unintuitive
-   behavior; you will most likely want to use the :func:`pprint.pp` function
+   behavior; you will most likely want to use the :func:`~pprint.pp` function
    or set this parameter to ``False``.
 
       >>> import pprint
