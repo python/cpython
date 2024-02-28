@@ -1,4 +1,0 @@
-
-Replace two complex bytecodes for building dicts with two simpler ones.
-The new bytecodes ``DICT_MERGE`` and ``DICT_UPDATE`` have been added
-The old bytecodes ``BUILD_MAP_UNPACK`` and ``BUILD_MAP_UNPACK_WITH_CALL`` have been removed.

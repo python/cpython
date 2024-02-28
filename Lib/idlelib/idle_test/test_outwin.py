@@ -58,11 +58,6 @@ class OutputWindowTest(unittest.TestCase):
         get = self.text.get
         write = self.window.write
 
-        # Test bytes.
-        b = b'Test bytes.'
-        eq(write(b), len(b))
-        eq(get('1.0', '1.end'), b.decode())
-
         # No new line - insert stays on same line.
         delete('1.0', 'end')
         test_text = 'test text'
@@ -164,7 +159,7 @@ class ModuleFunctionTest(unittest.TestCase):
         for line, expected_output in test_lines:
             self.assertEqual(flh(line), expected_output)
             if expected_output:
-                mock_open.assert_called_with(expected_output[0], 'r')
+                mock_open.assert_called_with(expected_output[0])
 
 
 if __name__ == '__main__':

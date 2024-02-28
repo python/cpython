@@ -16,6 +16,15 @@ except ImportError:
                 raise TypeError('requires _testcapi.with_tp_del')
         return C
 
+try:
+    from _testcapi import without_gc
+except ImportError:
+    def without_gc(cls):
+        class C:
+            def __new__(cls, *args, **kwargs):
+                raise TypeError('requires _testcapi.without_gc')
+        return C
+
 from test import support
 
 
@@ -94,9 +103,11 @@ class SimpleBase(NonGCSimpleBase):
         assert self.id_ == id(self)
 
 
+@without_gc
 class NonGC(NonGCSimpleBase):
     __slots__ = ()
 
+@without_gc
 class NonGCResurrector(NonGCSimpleBase):
     __slots__ = ()
 
@@ -109,8 +120,14 @@ class NonGCResurrector(NonGCSimpleBase):
 class Simple(SimpleBase):
     pass
 
-class SimpleResurrector(NonGCResurrector, SimpleBase):
-    pass
+# Can't inherit from NonGCResurrector, in case importing without_gc fails.
+class SimpleResurrector(SimpleBase):
+
+    def side_effect(self):
+        """
+        Resurrect self by storing self in a class-wide list.
+        """
+        self.survivors.append(self)
 
 
 class TestBase:
@@ -178,6 +195,7 @@ class SimpleFinalizationTest(TestBase, unittest.TestCase):
             self.assert_survivors([])
         self.assertIs(wr(), None)
 
+    @support.cpython_only
     def test_non_gc(self):
         with SimpleBase.test():
             s = NonGC()
@@ -191,6 +209,7 @@ class SimpleFinalizationTest(TestBase, unittest.TestCase):
             self.assert_del_calls(ids)
             self.assert_survivors([])
 
+    @support.cpython_only
     def test_non_gc_resurrect(self):
         with SimpleBase.test():
             s = NonGCResurrector()
