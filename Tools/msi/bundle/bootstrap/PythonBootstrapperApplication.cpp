@@ -736,10 +736,12 @@ public: // IBootstrapperApplication
                 blockedLauncher = 0;
             }
             if (FAILED(BalGetNumericVariable(L"DetectedLauncher", &detectedLauncher))) {
-                detectedLauncher = -1;
+                detectedLauncher = 0;
             }
 
-            _engine->SetVariableNumeric(L"DetectedLauncher", 1);
+            if (!detectedLauncher) {
+                _engine->SetVariableNumeric(L"DetectedLauncher", 1);
+            }
 
             if (blockedLauncher) {
                 // Nothing else to do, we're already blocking
@@ -869,24 +871,27 @@ public: // IBootstrapperApplication
                     associateFiles = -1;
                 }
 
-                if (includeLauncherAllUsers == -1) {
+                if (includeLauncherAllUsers < 0) {
                     includeLauncherAllUsers = 0;
                     _engine->SetVariableNumeric(L"InstallLauncherAllUsers", includeLauncherAllUsers);
                 }
 
-                if (includeLauncher == -1) {
+                if (includeLauncher < 0) {
                     if (BOOTSTRAPPER_ACTION_LAYOUT == _command.action ||
                         (BOOTSTRAPPER_ACTION_INSTALL == _command.action && !_upgrading)) {
                         // When installing/downloading, we include the launcher
+                        // (though downloads should ignore this setting anyway)
                         _engine->SetVariableNumeric(L"Include_launcher", 1);
                     } else {
-                        // Any other action, don't include by default
+                        // Any other action, we should have detected an existing
+                        // install (e.g. on remove/modify), so if we didn't, we
+                        // assume it's not selected.
                         _engine->SetVariableNumeric(L"Include_launcher", 0);
                         _engine->SetVariableNumeric(L"AssociateFiles", 0);
                     }
                 }
 
-                if (associateFiles == -1) {
+                if (associateFiles < 0) {
                     auto hr = LoadAssociateFilesStateFromKey(
                         _engine,
                         includeLauncherAllUsers ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER

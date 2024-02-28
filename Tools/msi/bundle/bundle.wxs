@@ -30,7 +30,7 @@
     <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="InstallLauncherAllUsers" Value="-1" bal:Overridable="yes" />
     <?else ?>
-    <Variable Name="InstallLauncherAllUsers" Value="0" />
+    <Variable Name="InstallLauncherAllUsers" Value="-1" />
     <?endif ?>
 
     <Variable Name="TargetDir" Value="" bal:Overridable="yes" />
