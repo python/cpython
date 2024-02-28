@@ -1156,15 +1156,13 @@ int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
+    assert(tstate->tracing == 0);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
     int i = (int)(instr - _PyCode_CODE(code));
 
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
-    if (tstate->tracing) {
-        goto done;
-    }
     PyInterpreterState *interp = tstate->interp;
     int8_t line_delta = line_data->line_delta;
     int line = compute_line(code, i, line_delta);
