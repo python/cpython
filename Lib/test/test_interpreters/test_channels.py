@@ -120,7 +120,7 @@ class TestSendRecv(TestBase):
 
     def test_send_recv_same_interpreter(self):
         interp = interpreters.create()
-        interp.exec_sync(dedent("""
+        interp.exec(dedent("""
             from test.support.interpreters import channels
             r, s = channels.create()
             orig = b'spam'
@@ -193,7 +193,7 @@ class TestSendRecv(TestBase):
 
     def test_send_recv_nowait_same_interpreter(self):
         interp = interpreters.create()
-        interp.exec_sync(dedent("""
+        interp.exec(dedent("""
             from test.support.interpreters import channels
             r, s = channels.create()
             orig = b'spam'

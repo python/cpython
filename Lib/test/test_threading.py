@@ -1478,7 +1478,7 @@ class SubinterpThreadingTests(BaseTestCase):
         DONE = b'D'
 
         interp = interpreters.create()
-        interp.exec_sync(f"""if True:
+        interp.exec(f"""if True:
             import os
             import threading
             import time
