@@ -77,7 +77,7 @@ sym_set_bottom(_Py_UopsSymbol *sym)
     Py_CLEAR(sym->const_val);
 }
 
-static inline bool
+bool
 _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym)
 {
     if ((sym->flags & IS_NULL) && (sym->flags & NOT_NULL)) {
