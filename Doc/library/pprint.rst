@@ -41,7 +41,7 @@ Functions
    Prints the formatted representation of *object* followed by a newline.
    If *sort_dicts* is false (the default), dictionaries will be displayed with
    their keys in insertion order, otherwise the dict keys will be sorted.
-   *args* and *kwargs* will be passed to :func:`pprint` as formatting
+   *args* and *kwargs* will be passed to :func:`pprint.pprint` as formatting
    parameters.
 
    .. versionadded:: 3.8
@@ -263,7 +263,7 @@ are converted to strings.  The default implementation uses the internals of the
 Example
 -------
 
-To demonstrate several uses of the :func:`pprint` function and its parameters,
+To demonstrate several uses of the :func:`pprint.pprint` function and its parameters,
 let's fetch information about a project from `PyPI <https://pypi.org>`_::
 
    >>> import json
@@ -272,7 +272,7 @@ let's fetch information about a project from `PyPI <https://pypi.org>`_::
    >>> with urlopen('https://pypi.org/pypi/sampleproject/json') as resp:
    ...     project_info = json.load(resp)['info']
 
-In its basic form, :func:`pprint` shows the whole object::
+In its basic form, :func:`pprint.pprint` shows the whole object::
 
    >>> pprint.pprint(project_info)
    {'author': 'The Python Packaging Authority',
