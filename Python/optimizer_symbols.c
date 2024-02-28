@@ -328,24 +328,43 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     }
     TEST_PREDICATE(!_Py_uop_sym_is_null(top), "top is NULL");
     TEST_PREDICATE(!_Py_uop_sym_is_not_null(top), "top is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(top, &PyLong_Type), "top matches a type");
     TEST_PREDICATE(!_Py_uop_sym_is_const(top), "top is a constant");
     TEST_PREDICATE(_Py_uop_sym_get_const(top) == NULL, "top as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_bottom(top), "top is bottom");
 
     _Py_UopsSymbol *bottom = make_bottom(ctx);
+    if (bottom == NULL) {
+        return NULL;
+    }
     TEST_PREDICATE(!_Py_uop_sym_is_null(bottom), "bottom is NULL is not false");
     TEST_PREDICATE(!_Py_uop_sym_is_not_null(bottom), "bottom is not NULL is not false");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(bottom, &PyLong_Type), "bottom matches a type");
     TEST_PREDICATE(!_Py_uop_sym_is_const(bottom), "bottom is a constant is not false");
     TEST_PREDICATE(_Py_uop_sym_get_const(bottom) == NULL, "bottom as constant is not NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(bottom), "bottom isn't bottom");
 
     _Py_UopsSymbol *int_type = _Py_uop_sym_new_type(ctx, &PyLong_Type);
+    if (int_type == NULL) {
+        return NULL;
+    }
+    TEST_PREDICATE(!_Py_uop_sym_is_null(int_type), "int_type is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(int_type), "int_type isn't not NULL");
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
-    _Py_uop_sym_set_type(int_type, &PyLong_Type);
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(int_type, &PyFloat_Type), "int matches float");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(int_type), "int_type is a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(int_type) == NULL, "int_type as constant is not NULL");
+
+    _Py_uop_sym_set_type(int_type, &PyLong_Type);  // Should be a no-op
     TEST_PREDICATE(_Py_uop_sym_matches_type(int_type, &PyLong_Type), "inconsistent type");
-    _Py_uop_sym_set_type(int_type, &PyFloat_Type);
+
+    _Py_uop_sym_set_type(int_type, &PyFloat_Type);  // Should make it bottom
     TEST_PREDICATE(!_Py_uop_sym_matches_type(int_type, &PyLong_Type), "(int and float) matches int");
+    TEST_PREDICATE(_Py_uop_sym_is_bottom(int_type), "(int and float) isn't bottom");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_RETURN_NONE;
+
 fail:
     _Py_uop_abstractcontext_fini(ctx);
     return NULL;
