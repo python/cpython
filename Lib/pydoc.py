@@ -1693,7 +1693,7 @@ def pipepager(text, cmd):
         '.'
         '?e (END):?pB %pB\\%..'
         ' (press h for help or q to quit)')
-    env['LESS'] = '-ix8RmPm{0}$PM{0}$'.format(prompt_string)
+    env['LESS'] = '-RmPm{0}$PM{0}$'.format(prompt_string)
     proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
                             errors='backslashreplace', env=env)
     try:
