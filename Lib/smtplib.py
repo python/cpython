@@ -55,7 +55,7 @@ import sys
 from email.base64mime import body_encode as encode_base64
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
-           "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
+           "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError", "LMTPDataError",
            "SMTPConnectError", "SMTPHeloError", "SMTPAuthenticationError",
            "quoteaddr", "quotedata", "SMTP"]
 
@@ -129,6 +129,18 @@ class SMTPRecipientsRefused(SMTPException):
 
 class SMTPDataError(SMTPResponseException):
     """The SMTP server didn't accept the data."""
+
+class LMTPDataError(SMTPResponseException):
+    """The LMTP server didn't accept the data.
+
+    The errors for each recipient are accessible through the attribute
+    'recipients', which is a dictionary of exactly the same sort as
+    SMTP.sendmail() returns.
+    """
+
+    def __init__(self, recipients):
+        self.recipients = recipients
+        self.args = (recipients,)
 
 class SMTPConnectError(SMTPResponseException):
     """Error during connection establishment."""
@@ -832,6 +844,9 @@ class SMTP:
          SMTPDataError          The server replied with an unexpected
                                 error code (other than a refusal of
                                 a recipient).
+         LMTPDataError          The server replied with an unexpected
+                                error code (other than a refusal of
+                                a recipient) for ALL recipients.
          SMTPNotSupportedError  The mail_options parameter includes 'SMTPUTF8'
                                 but the SMTPUTF8 extension is not supported by
                                 the server.
@@ -874,12 +889,15 @@ class SMTP:
             else:
                 self._rset()
             raise SMTPSenderRefused(code, resp, from_addr)
+        rcpts = []
         senderrs = {}
         if isinstance(to_addrs, str):
             to_addrs = [to_addrs]
         for each in to_addrs:
             (code, resp) = self.rcpt(each, rcpt_options)
-            if (code != 250) and (code != 251):
+            if (code == 250) or (code == 251):
+                rcpts.append(each)
+            else:
                 senderrs[each] = (code, resp)
             if code == 421:
                 self.close()
@@ -888,13 +906,26 @@ class SMTP:
             # the server refused all our recipients
             self._rset()
             raise SMTPRecipientsRefused(senderrs)
-        (code, resp) = self.data(msg)
-        if code != 250:
-            if code == 421:
-                self.close()
-            else:
+        if hasattr(self, 'multi_data'):
+            rcpt_errs_size = len(senderrs)
+            for rcpt, code, resp in self.multi_data(msg, rcpts):
+                if code != 250:
+                    senderrs[rcpt] = (code, resp)
+                if code == 421:
+                    self.close()
+                    raise LMTPDataError(senderrs)
+            if rcpt_errs_size + len(rcpts) == len(senderrs):
+                # the server refused all our recipients
                 self._rset()
-            raise SMTPDataError(code, resp)
+                raise LMTPDataError(senderrs)
+        else:
+            code, resp = self.data(msg)
+            if code != 250:
+                if code == 421:
+                    self.close()
+                else:
+                    self._rset()
+                raise SMTPDataError(code, resp)
         #if we got here then somebody got our mail
         return senderrs
 
@@ -1085,6 +1116,27 @@ class LMTP(SMTP):
         if self.debuglevel > 0:
             self._print_debug('connect:', msg)
         return (code, msg)
+
+    def multi_data(self, msg, rcpts):
+        """SMTP 'DATA' command -- sends message data to server
+
+        Differs from data in that it yields multiple results for each
+        recipient. This is necessary for LMTP processing and different
+        from SMTP processing.
+
+        Automatically quotes lines beginning with a period per rfc821.
+        Raises SMTPDataError if there is an unexpected reply to the
+        DATA command; the return value from this method is the final
+        response code received when the all data is sent.  If msg
+        is a string, lone '\\r' and '\\n' characters are converted to
+        '\\r\\n' characters.  If msg is bytes, it is transmitted as is.
+        """
+        yield (rcpts[0],) + super().data(msg)
+        for rcpt in rcpts[1:]:
+            (code, msg) = self.getreply()
+            if self.debuglevel > 0:
+                self._print_debug('connect:', msg)
+            yield (rcpt, code, msg)
 
 
 # Test the sendmail method, which tests most of the others.
