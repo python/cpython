@@ -5029,7 +5029,7 @@ dictiter_iternextkey(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, &value, NULL) == 0) {
+    if (dictiter_iternext_threadsafe(d, self, &value, NULL) < 0) {
         value = NULL;
     }
 #else
@@ -5152,7 +5152,7 @@ dictiter_iternextvalue(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, NULL, &value) == 0) {
+    if (dictiter_iternext_threadsafe(d, self, NULL, &value) < 0) {
         value = NULL;
     }
 #else

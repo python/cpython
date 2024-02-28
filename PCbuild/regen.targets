@@ -31,8 +31,8 @@
     <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
     <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(GeneratedPyConfigDir)pyconfig.h;$(PySourcePath)Tools\jit\**"/>
     <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h"/>
-    <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\tier2_redundancy_eliminator_bytecodes.c;"/>
-    <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\tier2_redundancy_eliminator_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
+    <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
+    <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
   </ItemGroup>
 
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
@@ -98,7 +98,7 @@
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_generator.py $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_abstract_generator.py $(PySourcePath)Python\tier2_redundancy_eliminator_bytecodes.c $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\optimizer_generator.py $(PySourcePath)Python\optimizer_bytecodes.c $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />

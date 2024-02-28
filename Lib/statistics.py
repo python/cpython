@@ -112,6 +112,7 @@ __all__ = [
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'kde',
     'linear_regression',
     'mean',
     'median',
@@ -137,7 +138,7 @@ from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
-from math import isfinite, isinf
+from math import isfinite, isinf, pi, cos, cosh
 from functools import reduce
 from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
@@ -800,6 +801,171 @@ def multimode(data):
         return []
     maxcount = max(counts.values())
     return [value for value, count in counts.items() if count == maxcount]
+
+
+def kde(data, h, kernel='normal'):
+    """Kernel Density Estimation:  Create a continuous probability
+    density function from discrete samples.
+
+    The basic idea is to smooth the data using a kernel function
+    to help draw inferences about a population from a sample.
+
+    The degree of smoothing is controlled by the scaling parameter h
+    which is called the bandwidth.  Smaller values emphasize local
+    features while larger values give smoother results.
+
+    The kernel determines the relative weights of the sample data
+    points.  Generally, the choice of kernel shape does not matter
+    as much as the more influential bandwidth smoothing parameter.
+
+    Kernels that give some weight to every sample point:
+
+       normal or gauss
+       logistic
+       sigmoid
+
+    Kernels that only give weight to sample points within
+    the bandwidth:
+
+       rectangular or uniform
+       triangular
+       parabolic or epanechnikov
+       quartic or biweight
+       triweight
+       cosine
+
+    A StatisticsError will be raised if the data sequence is empty.
+
+    Example
+    -------
+
+    Given a sample of six data points, construct a continuous
+    function that estimates the underlying probability density:
+
+        >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+        >>> f_hat = kde(sample, h=1.5)
+
+    Compute the area under the curve:
+
+        >>> sum(f_hat(x) for x in range(-20, 20))
+        1.0
+
+    Plot the estimated probability density function at
+    evenly spaced points from -6 to 10:
+
+        >>> for x in range(-6, 11):
+        ...     density = f_hat(x)
+        ...     plot = ' ' * int(density * 400) + 'x'
+        ...     print(f'{x:2}: {density:.3f} {plot}')
+        ...
+        -6: 0.002 x
+        -5: 0.009    x
+        -4: 0.031             x
+        -3: 0.070                             x
+        -2: 0.111                                             x
+        -1: 0.125                                                   x
+         0: 0.110                                            x
+         1: 0.086                                   x
+         2: 0.068                            x
+         3: 0.059                        x
+         4: 0.066                           x
+         5: 0.082                                 x
+         6: 0.082                                 x
+         7: 0.058                        x
+         8: 0.028            x
+         9: 0.009    x
+        10: 0.002 x
+
+    References
+    ----------
+
+    Kernel density estimation and its application:
+    https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf
+
+    Kernel functions in common use:
+    https://en.wikipedia.org/wiki/Kernel_(statistics)#kernel_functions_in_common_use
+
+    Interactive graphical demonstration and exploration:
+    https://demonstrations.wolfram.com/KernelDensityEstimation/
+
+    """
+
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    match kernel:
+
+        case 'normal' | 'gauss':
+            c = 1 / sqrt(2 * pi)
+            K = lambda t: c * exp(-1/2 * t * t)
+            support = None
+
+        case 'logistic':
+            # 1.0 / (exp(t) + 2.0 + exp(-t))
+            K = lambda t: 1/2 / (1.0 + cosh(t))
+            support = None
+
+        case 'sigmoid':
+            # (2/pi) / (exp(t) + exp(-t))
+            c = 1 / pi
+            K = lambda t: c / cosh(t)
+            support = None
+
+        case 'rectangular' | 'uniform':
+            K = lambda t: 1/2
+            support = 1.0
+
+        case 'triangular':
+            K = lambda t: 1.0 - abs(t)
+            support = 1.0
+
+        case 'parabolic' | 'epanechnikov':
+            K = lambda t: 3/4 * (1.0 - t * t)
+            support = 1.0
+
+        case 'quartic' | 'biweight':
+            K = lambda t: 15/16 * (1.0 - t * t) ** 2
+            support = 1.0
+
+        case 'triweight':
+            K = lambda t: 35/32 * (1.0 - t * t) ** 3
+            support = 1.0
+
+        case 'cosine':
+            c1 = pi / 4
+            c2 = pi / 2
+            K = lambda t: c1 * cos(c2 * t)
+            support = 1.0
+
+        case _:
+            raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+
+    if support is None:
+
+        def pdf(x):
+            return sum(K((x - x_i) / h) for x_i in data) / (n * h)
+
+    else:
+
+        sample = sorted(data)
+        bandwidth = h * support
+
+        def pdf(x):
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
+
+    pdf.__doc__ = f'PDF estimate with {kernel=!r} and {h=!r}'
+
+    return pdf
 
 
 # Notes on methods for computing quantiles
