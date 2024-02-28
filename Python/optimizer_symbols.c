@@ -80,7 +80,13 @@ set_bottom(_Py_UopsSymbol *sym)
 static inline bool
 _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym)
 {
-    return (sym->flags & IS_NULL) && (sym->flags & NOT_NULL);
+    if ((sym->flags & IS_NULL) && (sym->flags & NOT_NULL)) {
+        assert(sym->flags == (IS_NULL | NOT_NULL));
+        assert(sym->typ == NULL);
+        assert(sym->const_val == NULL);
+        return true;
+    }
+    return false;
 }
 
 bool
@@ -344,6 +350,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_UOpsContext *ctx = &context;
     _Py_uop_abstractcontext_init(ctx);
 
+    // Use a single 'sym' variable so copy-pasting tests is easier.
     _Py_UopsSymbol *sym = _Py_uop_sym_new_unknown(ctx);
     if (sym == NULL) {
         goto fail;
@@ -370,18 +377,17 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     if (sym == NULL) {
         goto fail;
     }
-    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "int_type is NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "int_type isn't not NULL");
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "int is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "int isn't not NULL");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "int isn't int");
     TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "int matches float");
-    TEST_PREDICATE(!_Py_uop_sym_is_const(sym), "int_type is a constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "int_type as constant is not NULL");
+    TEST_PREDICATE(!_Py_uop_sym_is_const(sym), "int is a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "int as constant is not NULL");
 
     _Py_uop_sym_set_type(sym, &PyLong_Type);  // Should be a no-op
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(int and int) isn't int");
 
     _Py_uop_sym_set_type(sym, &PyFloat_Type);  // Should make it bottom
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "(int and float) matches int");
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(int and float) isn't bottom");
 
     PyObject *val_42 = PyLong_FromLong(42);
@@ -397,32 +403,27 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         goto fail;
     }
     _Py_uop_sym_set_const(sym, val_42);
-    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "int_val is NULL");
-    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "int_val isn't not NULL");
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "int matches float");
-    TEST_PREDICATE(_Py_uop_sym_is_const(sym), "int_val is not a constant");
-    TEST_PREDICATE(_Py_uop_sym_get_const(sym) != NULL, "int_val as constant is NULL");
-    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "int_val as constant isn't val_42");
+    TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "42 is NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "42 isn't not NULL");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "42 isn't an int");
+    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyFloat_Type), "42 matches float");
+    TEST_PREDICATE(_Py_uop_sym_is_const(sym), "42 is not a constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) != NULL, "42 as constant is NULL");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "42 as constant isn't 42");
 
     _Py_uop_sym_set_type(sym, &PyLong_Type);  // Should be a no-op
-    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "inconsistent type");
-    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "int_val as constant isn't val_42");
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and 42) isn't an int");
+    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == val_42, "(42 and 42) as constant isn't 42");
 
     _Py_uop_sym_set_type(sym, &PyFloat_Type);  // Should make it bottom
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and float) matches int");
-    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "(42 and float) as constant isn't NULL");
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and float) isn't bottom");
 
-    // Another int_val, to test contradiction by setting const
     sym = _Py_uop_sym_new_type(ctx, &PyLong_Type);
     if (sym == NULL) {
         goto fail;
     }
     _Py_uop_sym_set_const(sym, val_42);
     _Py_uop_sym_set_const(sym, val_43);  // Should make it bottom
-    TEST_PREDICATE(!_Py_uop_sym_matches_type(sym, &PyLong_Type), "(42 and 43) matches int");
-    TEST_PREDICATE(_Py_uop_sym_get_const(sym) == NULL, "(42 and 43) as constant isn't NULL");
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and 43) isn't bottom");
 
     _Py_uop_abstractcontext_fini(ctx);
