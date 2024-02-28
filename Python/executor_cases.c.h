@@ -3764,7 +3764,6 @@
             PyObject *value;
             pop = stack_pointer[-1];
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY;
             Py_DECREF(pop);
             value = ptr;
             stack_pointer[-1] = value;

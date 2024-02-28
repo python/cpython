@@ -275,13 +275,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         }                              \
     } while (0);
 
-#define ERROR_IF(COND, LABEL) \
-    do { \
-        if (COND) { \
-            goto LABEL; \
-        } \
-    } while (0);
-
 #define _LOAD_ATTR_NOT_NULL \
     do {                    \
     OUT_OF_SPACE_IF_NULL(attr = _Py_uop_sym_new_not_null(ctx)); \
