@@ -303,6 +303,55 @@ PyZlib_Free(voidpf ctx, void *ptr)
 }
 
 static void
+arrange_gzip_trailer(int *gzip_trailer, int *wbits)
+{
+    if (*gzip_trailer && *wbits >= -15 && *wbits <= -9) {
+        /* Ask zlib to emit gzip header and gzip trailer. We need ony the
+           trailer, but it's not possible to request that, so we will have to
+           skip the header manually. */
+        *wbits = 16 - *wbits;
+    } else {
+        /* Ignore gzip_trailer. */
+        *gzip_trailer = 0;
+    }
+}
+
+static int
+skip_gzip_header(z_stream *zst)
+{
+    /* Emit gzip header into a throw-away buffer by compressing an empty
+       buffer with Z_BLOCK. The header should fully fit into the buffer, so
+       one deflate() call should be enough, but use a loop anyway just in
+       case. */
+    uInt saved_avail_in = zst->avail_in, saved_avail_out = zst->avail_out;
+    Bytef *saved_next_in = zst->next_in, *saved_next_out = zst->next_out;
+    int flush = Z_BLOCK;
+    Bytef tmp[32];
+    int err;
+
+    while (true) {
+        zst->next_in = NULL;
+        zst->avail_in = 0;
+        zst->next_out = tmp;
+        zst->avail_out = sizeof(tmp);
+        err = deflate(zst, flush);
+        if (err != Z_OK) {
+            return err;
+        }
+        if (zst->avail_out != 0) {
+            break;
+        }
+        flush = Z_NO_FLUSH;
+    }
+    zst->next_in = saved_next_in;
+    zst->avail_in = saved_avail_in;
+    zst->next_out = saved_next_out;
+    zst->avail_out = saved_avail_out;
+
+    return Z_OK;
+}
+
+static void
 arrange_input_buffer(z_stream *zst, Py_ssize_t *remains)
 {
     zst->avail_in = (uInt)Py_MIN((size_t)*remains, UINT_MAX);
@@ -319,13 +368,16 @@ zlib.compress
         Compression level, in 0-9 or -1.
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
         The window buffer size and container format.
+    gzip_trailer: bool = False
+        Whether to append a gzip trailer to a raw stream.
 
 Returns a bytes object containing compressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
-/*[clinic end generated code: output=46bd152fadd66df2 input=c4d06ee5782a7e3f]*/
+zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits,
+                   int gzip_trailer)
+/*[clinic end generated code: output=feb20f80fe7e4848 input=c17ae8b22942f857]*/
 {
     PyObject *return_value;
     int flush;
@@ -340,6 +392,8 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     if (OutputBuffer_InitAndGrow(&buffer, -1, &zst.next_out, &zst.avail_out) < 0) {
         goto error;
     }
+
+    arrange_gzip_trailer(&gzip_trailer, &wbits);
 
     zst.opaque = NULL;
     zst.zalloc = PyZlib_Malloc;
@@ -361,6 +415,12 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level, int wbits)
     default:
         deflateEnd(&zst);
         zlib_error(state, zst, err, "while compressing data");
+        goto error;
+    }
+
+    if (gzip_trailer && (err = skip_gzip_header(&zst)) != Z_OK) {
+        deflateEnd(&zst);
+        zlib_error(state, zst, err, "while skipping gzip header");
         goto error;
     }
 
@@ -555,14 +615,17 @@ zlib.compressobj
     zdict: Py_buffer = None
         The predefined compression dictionary - a sequence of bytes
         containing subsequences that are likely to occur in the input data.
+    gzip_trailer: bool = False
+        Whether to append a gzip trailer to a raw stream.
 
 Return a compressor object.
 [clinic start generated code]*/
 
 static PyObject *
 zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
-                      int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=8b5bed9c8fc3814d input=2fa3d026f90ab8d5]*/
+                      int memLevel, int strategy, Py_buffer *zdict,
+                      int gzip_trailer)
+/*[clinic end generated code: output=fb4c37ba07d34e28 input=8de44294b8fe50f4]*/
 {
     zlibstate *state = get_zlib_state(module);
     if (zdict->buf != NULL && (size_t)zdict->len > UINT_MAX) {
@@ -570,6 +633,8 @@ zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
                         "zdict length does not fit in an unsigned int");
         return NULL;
     }
+
+    arrange_gzip_trailer(&gzip_trailer, &wbits);
 
     compobject *self = newcompobject(state->Comptype);
     if (self == NULL)
@@ -583,14 +648,12 @@ zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
     switch (err) {
     case Z_OK:
         self->is_initialised = 1;
-        if (zdict->buf == NULL) {
-            goto success;
-        } else {
+        if (zdict->buf != NULL) {
             err = deflateSetDictionary(&self->zst,
                                        zdict->buf, (unsigned int)zdict->len);
             switch (err) {
             case Z_OK:
-                goto success;
+                break;
             case Z_STREAM_ERROR:
                 PyErr_SetString(PyExc_ValueError, "Invalid dictionary");
                 goto error;
@@ -599,6 +662,11 @@ zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
                 goto error;
             }
        }
+       if (gzip_trailer && (err = skip_gzip_header(&self->zst)) != Z_OK) {
+           zlib_error(state, self->zst, err, "while skipping gzip header");
+           goto error;
+       }
+       goto success;
     case Z_MEM_ERROR:
         PyErr_SetString(PyExc_MemoryError,
                         "Can't allocate memory for compression object");

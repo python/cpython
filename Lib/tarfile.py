@@ -370,7 +370,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("zlib module is not available") from None
                 self.zlib = zlib
-                self.crc = zlib.crc32(b"")
                 if mode == "r":
                     self.exception = zlib.error
                     self._init_read_gz()
@@ -421,7 +420,8 @@ class _Stream:
                                          self.zlib.DEFLATED,
                                          -self.zlib.MAX_WBITS,
                                          self.zlib.DEF_MEM_LEVEL,
-                                         0)
+                                         0,
+                                         gzip_trailer=True)
         timestamp = struct.pack("<L", int(time.time()))
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
@@ -434,8 +434,6 @@ class _Stream:
     def write(self, s):
         """Write string s to the stream.
         """
-        if self.comptype == "gz":
-            self.crc = self.zlib.crc32(s, self.crc)
         self.pos += len(s)
         if self.comptype != "tar":
             s = self.cmp.compress(s)
@@ -465,9 +463,6 @@ class _Stream:
             if self.mode == "w" and self.buf:
                 self.fileobj.write(self.buf)
                 self.buf = b""
-                if self.comptype == "gz":
-                    self.fileobj.write(struct.pack("<L", self.crc))
-                    self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFF))
         finally:
             if not self._extfileobj:
                 self.fileobj.close()
