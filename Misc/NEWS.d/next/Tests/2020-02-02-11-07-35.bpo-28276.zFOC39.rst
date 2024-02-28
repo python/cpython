@@ -1,3 +1,0 @@
-Fix `Lib/ctypes/test_loading.py` so that `test_find` reports skipped if no shared libraries
-are found by `find_library`.
-Patch by M. Felt.
