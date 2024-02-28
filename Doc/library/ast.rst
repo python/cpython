@@ -2186,7 +2186,9 @@ and classes for traversing abstract syntax trees:
    parsing of :keyword:`match` statements.
    Currently ``major`` must equal to ``3``. The lowest supported version is
    ``(3, 7)`` (and this may increase in future Python versions);
-   the highest is ``sys.version_info[0:2]``.
+   the highest is ``sys.version_info[0:2]``. "Best-effort" attempt means there
+   is no guarantee that the parse (or success of the parse) being the same as
+   when run on the Python version corresponding to ``feature_version``.
 
    If source contains a null character ('\0'), :exc:`ValueError` is raised.
 
