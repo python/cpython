@@ -102,6 +102,10 @@ def load_raw_data(input: Path) -> RawData:
                             file=sys.stderr,
                         )
                         continue
+                    # Hack to handle older data files where some uops
+                    # are missing an underscore prefix in their name
+                    if key.startswith("uops[") and key[5:6] != "_":
+                        key = "uops[_" + key[5:]
                     stats[key.strip()] += int(value)
             stats["__nfiles__"] += 1
 
@@ -447,6 +451,7 @@ class Stats:
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
         low_confidence = self._data["Optimization low confidence"]
+        executors_invalidated = self._data["Executors invalidated"]
 
         return {
             Doc(
@@ -489,11 +494,19 @@ class Stats:
                 "A trace is abandoned because the likelihood of the jump to top being taken "
                 "is too low.",
             ): (low_confidence, attempts),
+            Doc(
+                "Executors invalidated",
+                "The number of executors that were invalidated due to watched "
+                "dictionary changes.",
+            ): (executors_invalidated, created),
             Doc("Traces executed", "The number of traces that were executed"): (
                 executed,
                 None,
             ),
-            Doc("Uops executed", "The total number of uops (micro-operations) that were executed"): (
+            Doc(
+                "Uops executed",
+                "The total number of uops (micro-operations) that were executed",
+            ): (
                 uops,
                 executed,
             ),

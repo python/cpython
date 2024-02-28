@@ -28,6 +28,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_time.h"          // _PyDeadline_Init()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */
@@ -369,7 +370,7 @@ class _ssl.SSLSession "PySSLSession *" "get_state_type(type)->PySSLSession_Type"
 
 #include "clinic/_ssl.c.h"
 
-static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
+static int PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout);
 
 static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
 static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
@@ -963,7 +964,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     _PySSLError err;
     int sockstate, nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (sock) {
@@ -2273,12 +2274,12 @@ PySSL_dealloc(PySSLSocket *self)
  */
 
 static int
-PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
+PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout)
 {
     int rc;
 #ifdef HAVE_POLL
     struct pollfd pollfd;
-    _PyTime_t ms;
+    PyTime_t ms;
 #else
     int nfds;
     fd_set fds;
@@ -2357,7 +2358,7 @@ _ssl__SSLSocket_write_impl(PySSLSocket *self, Py_buffer *b)
     _PySSLError err;
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (sock != NULL) {
@@ -2495,7 +2496,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     _PySSLError err;
     int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (!group_right_1 && len < 0) {
@@ -2627,7 +2628,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
     int sockstate, nonblocking, ret;
     int zeros = 0;
     PySocketSockObject *sock = GET_SOCKET(self);
-    _PyTime_t timeout, deadline = 0;
+    PyTime_t timeout, deadline = 0;
     int has_timeout;
 
     if (sock != NULL) {

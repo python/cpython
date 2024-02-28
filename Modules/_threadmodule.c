@@ -9,6 +9,7 @@
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include <stdbool.h>
@@ -235,14 +236,14 @@ lock_dealloc(lockobject *self)
 }
 
 static inline PyLockStatus
-acquire_timed(PyThread_type_lock lock, _PyTime_t timeout)
+acquire_timed(PyThread_type_lock lock, PyTime_t timeout)
 {
     return PyThread_acquire_lock_timed_with_retries(lock, timeout);
 }
 
 static int
 lock_acquire_parse_args(PyObject *args, PyObject *kwds,
-                        _PyTime_t *timeout)
+                        PyTime_t *timeout)
 {
     char *kwlist[] = {"blocking", "timeout", NULL};
     int blocking = 1;
@@ -253,7 +254,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 
     // XXX Use PyThread_ParseTimeoutArg().
 
-    const _PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
+    const PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
     *timeout = unset_timeout;
 
     if (timeout_obj
@@ -274,7 +275,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     if (!blocking)
         *timeout = 0;
     else if (*timeout != unset_timeout) {
-        _PyTime_t microseconds;
+        PyTime_t microseconds;
 
         microseconds = _PyTime_AsMicroseconds(*timeout, _PyTime_ROUND_TIMEOUT);
         if (microseconds > PY_TIMEOUT_MAX) {
@@ -289,7 +290,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
 static PyObject *
 lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
     if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
         return NULL;
 
@@ -501,7 +502,7 @@ rlock_is_owned_by(rlockobject *self, PyThread_ident_t tid)
 static PyObject *
 rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 {
-    _PyTime_t timeout;
+    PyTime_t timeout;
     PyThread_ident_t tid;
     PyLockStatus r = PY_LOCK_ACQUIRED;
 
@@ -1947,7 +1948,7 @@ thread_module_exec(PyObject *module)
 
     // TIMEOUT_MAX
     double timeout_max = (double)PY_TIMEOUT_MAX * 1e-6;
-    double time_max = _PyTime_AsSecondsDouble(_PyTime_MAX);
+    double time_max = PyTime_AsSecondsDouble(PyTime_MAX);
     timeout_max = Py_MIN(timeout_max, time_max);
     // Round towards minus infinity
     timeout_max = floor(timeout_max);
