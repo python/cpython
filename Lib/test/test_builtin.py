@@ -4,6 +4,7 @@ import ast
 import asyncio
 import builtins
 import collections
+import contextlib
 import decimal
 import fractions
 import gc
@@ -1431,6 +1432,20 @@ class BuiltinTest(unittest.TestCase):
         # embedded null bytes and characters
         self.assertRaises(ValueError, open, 'a\x00b')
         self.assertRaises(ValueError, open, b'a\x00b')
+
+    def test_open_failure(self):
+        self.write_testfile()
+
+        # `TESTFN` is a relative path, so changing to the parent directory
+        # invalidates the path and `open()` will fail. This test ensures
+        # this behaviour and that the current working directory is captured
+        # as part of the exception.
+        with self.assertRaises(FileNotFoundError) as cm:
+            with contextlib.chdir('..'):
+                cwd = os.getcwd()
+                open(TESTFN)
+        self.assertEqual(cm.exception.filename, TESTFN)
+        self.assertEqual(cm.exception.cwd, cwd)
 
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
