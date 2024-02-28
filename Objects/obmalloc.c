@@ -2460,14 +2460,23 @@ write_size_t(void *p, size_t n)
 }
 
 static void
-fill_mem_debug(debug_alloc_api_t *api, void *data, int c, size_t nbytes)
+fill_mem_debug(debug_alloc_api_t *api, void *data, int c, size_t nbytes,
+               bool is_alloc)
 {
 #ifdef Py_GIL_DISABLED
     if (api->api_id == 'o') {
         // Don't overwrite the first few bytes of a PyObject allocation in the
         // free-threaded build
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-        size_t debug_offset = tstate->mimalloc.current_object_heap->debug_offset;
+        size_t debug_offset;
+        if (is_alloc) {
+            debug_offset = tstate->mimalloc.current_object_heap->debug_offset;
+        }
+        else {
+            char *alloc = (char *)data - 2*SST;  // start of the allocation
+            debug_offset = _mi_ptr_page(alloc)->debug_offset;
+        }
+        debug_offset -= 2*SST;  // account for pymalloc extra bytes
         if (debug_offset < nbytes) {
             memset((char *)data + debug_offset, c, nbytes - debug_offset);
         }
@@ -2553,7 +2562,7 @@ _PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
     memset(p + SST + 1, PYMEM_FORBIDDENBYTE, SST-1);
 
     if (nbytes > 0 && !use_calloc) {
-        fill_mem_debug(api, data, PYMEM_CLEANBYTE, nbytes);
+        fill_mem_debug(api, data, PYMEM_CLEANBYTE, nbytes, true);
     }
 
     /* at tail, write pad (SST bytes) and serialno (SST bytes) */
@@ -2603,7 +2612,7 @@ _PyMem_DebugRawFree(void *ctx, void *p)
     nbytes = read_size_t(q);
     nbytes += PYMEM_DEBUG_EXTRA_BYTES - 2*SST;
     memset(q, PYMEM_DEADBYTE, 2*SST);
-    fill_mem_debug(api, p, PYMEM_DEADBYTE, nbytes);
+    fill_mem_debug(api, p, PYMEM_DEADBYTE, nbytes, false);
     api->alloc.free(api->alloc.ctx, q);
 }
 
