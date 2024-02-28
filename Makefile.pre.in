@@ -2869,7 +2869,7 @@ update-config:
 
 # Dependencies
 
-include Makefile.deps.$(shell uname -s)
+-include Makefile.deps.$(shell uname -s)
 
 MODULE_PYEXPAT_DEPS=@LIBEXPAT_INTERNAL@
 MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
