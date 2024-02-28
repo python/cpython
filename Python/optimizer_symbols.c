@@ -46,9 +46,8 @@ static inline int get_lltrace(void) {
 #define DPRINTF(level, ...)
 #endif
 
-// Takes a borrowed reference to const_val, turns that into a strong reference.
 static _Py_UopsSymbol *
-sym_new(_Py_UOpsContext *ctx, PyObject *const_val)
+sym_new(_Py_UOpsContext *ctx)
 {
     _Py_UopsSymbol *self = &ctx->t_arena.arena[ctx->t_arena.ty_curr_number];
     if (ctx->t_arena.ty_curr_number >= ctx->t_arena.ty_max_number) {
@@ -57,13 +56,9 @@ sym_new(_Py_UOpsContext *ctx, PyObject *const_val)
         return NULL;
     }
     ctx->t_arena.ty_curr_number++;
-    self->const_val = NULL;
-    self->typ = NULL;
     self->flags = 0;
-
-    if (const_val != NULL) {
-        self->const_val = Py_NewRef(const_val);
-    }
+    self->typ = NULL;
+    self->const_val = NULL;
 
     return self;
 }
@@ -172,7 +167,7 @@ _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym)
 _Py_UopsSymbol *
 _Py_uop_sym_new_unknown(_Py_UOpsContext *ctx)
 {
-    return sym_new(ctx, NULL);
+    return sym_new(ctx);
 }
 
 _Py_UopsSymbol *
@@ -187,10 +182,9 @@ _Py_uop_sym_new_not_null(_Py_UOpsContext *ctx)
 }
 
 _Py_UopsSymbol *
-_Py_uop_sym_new_type(_Py_UOpsContext *ctx,
-                      PyTypeObject *typ)
+_Py_uop_sym_new_type(_Py_UOpsContext *ctx, PyTypeObject *typ)
 {
-    _Py_UopsSymbol *res = sym_new(ctx,NULL);
+    _Py_UopsSymbol *res = sym_new(ctx);
     if (res == NULL) {
         return NULL;
     }
@@ -198,18 +192,17 @@ _Py_uop_sym_new_type(_Py_UOpsContext *ctx,
     return res;
 }
 
-// Takes a borrowed reference to const_val.
+// Adds a new reference to const_val, owned by the symbol.
 _Py_UopsSymbol *
 _Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val)
 {
     assert(const_val != NULL);
-    _Py_UopsSymbol *temp = sym_new(ctx, const_val);
-    if (temp == NULL) {
+    _Py_UopsSymbol *res = sym_new(ctx);
+    if (res == NULL) {
         return NULL;
     }
-    _Py_uop_sym_set_type(temp, Py_TYPE(const_val));
-    sym_set_flag(temp, NOT_NULL);
-    return temp;
+    _Py_uop_sym_set_const(res, const_val);
+    return res;
 }
 
 _Py_UopsSymbol *
