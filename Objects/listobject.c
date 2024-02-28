@@ -497,19 +497,18 @@ static PyObject *
 list_item(PyObject *aa, Py_ssize_t i)
 {
     PyListObject *a = (PyListObject *)aa;
-    PyObject *item = NULL;
+    if (!valid_index(i, PyList_GET_SIZE(a))) {
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
+    }
+    PyObject *item;
     Py_BEGIN_CRITICAL_SECTION(a);
 #ifdef Py_GIL_DISABLED
-    if (!_PyObject_GC_IS_SHARED(a)) {
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
         _PyObject_GC_SET_SHARED(a);
     }
 #endif
-    if (!valid_index(i, PyList_GET_SIZE(a))) {
-        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
-        goto exit;
-    }
     item = Py_NewRef(a->ob_item[i]);
-exit:
     Py_END_CRITICAL_SECTION();
     return item;
 }
