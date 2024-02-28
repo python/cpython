@@ -70,7 +70,7 @@ sym_set_flag(_Py_UopsSymbol *sym, int flag)
 }
 
 static inline void
-set_bottom(_Py_UopsSymbol *sym)
+sym_set_bottom(_Py_UopsSymbol *sym)
 {
     sym_set_flag(sym, IS_NULL | NOT_NULL);
     sym->typ = NULL;
@@ -118,12 +118,12 @@ _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
     if (sym->flags & IS_NULL) {
-        set_bottom(sym);
+        sym_set_bottom(sym);
         return;
     }
     if (sym->typ != NULL) {
         if (sym->typ != typ) {
-            set_bottom(sym);
+            sym_set_bottom(sym);
         }
         return;
     }
@@ -136,18 +136,18 @@ _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
 {
     assert(const_val != NULL);
     if (sym->flags & IS_NULL) {
-        set_bottom(sym);
+        sym_set_bottom(sym);
         return;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
     if (sym->typ != NULL && sym->typ != typ) {
-        set_bottom(sym);
+        sym_set_bottom(sym);
         return;
     }
     if (sym->const_val != NULL) {
         if (sym->const_val != const_val) {
             // TODO: What if they're equal?
-            set_bottom(sym);
+            sym_set_bottom(sym);
         }
         return;
     }
