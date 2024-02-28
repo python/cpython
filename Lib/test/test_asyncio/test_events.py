@@ -2250,7 +2250,7 @@ class HandleTests(test_utils.TestCase):
         h = asyncio.Handle(noop, (1, 2), self.loop)
         filename, lineno = test_utils.get_function_source(noop)
         self.assertEqual(repr(h),
-                        '<Handle noop(1, 2) at %s:%s>'
+                        '<Handle noop() at %s:%s>'
                         % (filename, lineno))
 
         # cancelled handle
@@ -2268,14 +2268,14 @@ class HandleTests(test_utils.TestCase):
         # partial function
         cb = functools.partial(noop, 1, 2)
         h = asyncio.Handle(cb, (3,), self.loop)
-        regex = (r'^<Handle noop\(1, 2\)\(3\) at %s:%s>$'
+        regex = (r'^<Handle noop\(\)\(\) at %s:%s>$'
                  % (re.escape(filename), lineno))
         self.assertRegex(repr(h), regex)
 
         # partial function with keyword args
         cb = functools.partial(noop, x=1)
         h = asyncio.Handle(cb, (2, 3), self.loop)
-        regex = (r'^<Handle noop\(x=1\)\(2, 3\) at %s:%s>$'
+        regex = (r'^<Handle noop\(\)\(\) at %s:%s>$'
                  % (re.escape(filename), lineno))
         self.assertRegex(repr(h), regex)
 
@@ -2315,6 +2315,24 @@ class HandleTests(test_utils.TestCase):
             repr(h),
             '<Handle cancelled noop(1, 2) at %s:%s created at %s:%s>'
             % (filename, lineno, create_filename, create_lineno))
+
+        # partial function
+        cb = functools.partial(noop, 1, 2)
+        create_lineno = sys._getframe().f_lineno + 1
+        h = asyncio.Handle(cb, (3,), self.loop)
+        regex = (r'^<Handle noop\(1, 2\)\(3\) at %s:%s created at %s:%s>$'
+                 % (re.escape(filename), lineno,
+                    re.escape(create_filename), create_lineno))
+        self.assertRegex(repr(h), regex)
+
+        # partial function with keyword args
+        cb = functools.partial(noop, x=1)
+        create_lineno = sys._getframe().f_lineno + 1
+        h = asyncio.Handle(cb, (2, 3), self.loop)
+        regex = (r'^<Handle noop\(x=1\)\(2, 3\) at %s:%s created at %s:%s>$'
+                 % (re.escape(filename), lineno,
+                    re.escape(create_filename), create_lineno))
+        self.assertRegex(repr(h), regex)
 
     def test_handle_source_traceback(self):
         loop = asyncio.get_event_loop_policy().new_event_loop()
