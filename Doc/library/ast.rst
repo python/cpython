@@ -2045,7 +2045,7 @@ and classes for traversing abstract syntax trees:
    ``await`` as variable names.  The lowest supported version is
    ``(3, 4)``; the highest is ``sys.version_info[0:2]``.
 
-   If source contains a null character ('\0'), :exc:`ValueError` is raised.
+   If source contains a null character (``\0``), :exc:`ValueError` is raised.
 
    .. warning::
       Note that successfully parsing source code into an AST object doesn't
