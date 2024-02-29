@@ -1,4 +1,0 @@
-Add :meth:`~sqlite3.Connection.getconfig` and
-:meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection` to
-make configuration changes to a database connection. Patch by Erlend E.
-Aasland.

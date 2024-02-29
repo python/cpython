@@ -3,10 +3,12 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(select_select__doc__,
 "select($module, rlist, wlist, xlist, timeout=None, /)\n"
@@ -568,7 +570,7 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        sizehint = _PyLong_AsInt(fastargs[0]);
+        sizehint = PyLong_AsInt(fastargs[0]);
         if (sizehint == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -576,7 +578,7 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto skip_optional_pos;
         }
     }
-    flags = _PyLong_AsInt(fastargs[1]);
+    flags = PyLong_AsInt(fastargs[1]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -655,7 +657,7 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    fd = _PyLong_AsInt(arg);
+    fd = PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -954,7 +956,7 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
             goto skip_optional_pos;
         }
     }
-    maxevents = _PyLong_AsInt(args[1]);
+    maxevents = PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1145,7 +1147,7 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    fd = _PyLong_AsInt(arg);
+    fd = PyLong_AsInt(arg);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1193,7 +1195,7 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
         goto exit;
     }
     changelist = args[0];
-    maxevents = _PyLong_AsInt(args[1]);
+    maxevents = PyLong_AsInt(args[1]);
     if (maxevents == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1309,4 +1311,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=64516114287e894d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c2dcb31cb17c2c6 input=a9049054013a1b77]*/

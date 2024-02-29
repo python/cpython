@@ -7,13 +7,15 @@ from textwrap import dedent
 import threading
 import unittest
 
-import _testcapi
+import _testinternalcapi
 from test import support
 from test.support import import_helper
+from test.support import os_helper
 from test.support import script_helper
 
 
 interpreters = import_helper.import_module('_xxsubinterpreters')
+from _xxsubinterpreters import InterpreterNotFoundError
 
 
 ##################################
@@ -31,10 +33,10 @@ def _captured_script(script):
     return wrapped, open(r, encoding="utf-8")
 
 
-def _run_output(interp, request, shared=None):
+def _run_output(interp, request):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interpreters.run_string(interp, script, shared)
+        interpreters.run_string(interp, script)
         return rpipe.read()
 
 
@@ -102,6 +104,10 @@ class IsShareableTests(unittest.TestCase):
                 'spam',
                 10,
                 -10,
+                True,
+                False,
+                100.0,
+                (1, ('spam', 'eggs')),
                 ]
         for obj in shareables:
             with self.subTest(obj):
@@ -120,8 +126,6 @@ class IsShareableTests(unittest.TestCase):
 
         not_shareables = [
                 # singletons
-                True,
-                False,
                 NotImplemented,
                 ...,
                 # builtin types and objects
@@ -129,7 +133,6 @@ class IsShareableTests(unittest.TestCase):
                 object,
                 object(),
                 Exception(),
-                100.0,
                 # user-defined types and objects
                 Cheese,
                 Cheese('Wensleydale'),
@@ -146,8 +149,8 @@ class ShareableTypeTests(unittest.TestCase):
     def _assert_values(self, values):
         for obj in values:
             with self.subTest(obj):
-                xid = _testcapi.get_crossinterp_data(obj)
-                got = _testcapi.restore_crossinterp_data(xid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 self.assertEqual(got, obj)
                 self.assertIs(type(got), type(obj))
@@ -155,8 +158,8 @@ class ShareableTypeTests(unittest.TestCase):
     def test_singletons(self):
         for obj in [None]:
             with self.subTest(obj):
-                xid = _testcapi.get_crossinterp_data(obj)
-                got = _testcapi.restore_crossinterp_data(xid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 # XXX What about between interpreters?
                 self.assertIs(got, obj)
@@ -187,7 +190,40 @@ class ShareableTypeTests(unittest.TestCase):
         for i in ints:
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
-                    _testcapi.get_crossinterp_data(i)
+                    _testinternalcapi.get_crossinterp_data(i)
+
+    def test_bool(self):
+        self._assert_values([True, False])
+
+    def test_float(self):
+        self._assert_values([0.0, 1.1, -1.0, 0.12345678, -0.12345678])
+
+    def test_tuple(self):
+        self._assert_values([(), (1,), ("hello", "world", ), (1, True, "hello")])
+        # Test nesting
+        self._assert_values([
+            ((1,),),
+            ((1, 2), (3, 4)),
+            ((1, 2), (3, 4), (5, 6)),
+        ])
+
+    def test_tuples_containing_non_shareable_types(self):
+        non_shareables = [
+                Exception(),
+                object(),
+        ]
+        for s in non_shareables:
+            value = tuple([0, 1.0, s])
+            with self.subTest(repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
+            # Check nested as well
+            value = tuple([0, 1., (s,)])
+            with self.subTest("nested " + repr(value)):
+                # XXX Assert the NotShareableError when it is exported
+                with self.assertRaises(ValueError):
+                    _testinternalcapi.get_crossinterp_data(value)
 
 
 class ModuleTests(TestBase):
@@ -231,7 +267,7 @@ class GetCurrentTests(TestBase):
         main = interpreters.get_main()
         cur = interpreters.get_current()
         self.assertEqual(cur, main)
-        self.assertIsInstance(cur, interpreters.InterpreterID)
+        self.assertIsInstance(cur, int)
 
     def test_subinterpreter(self):
         main = interpreters.get_main()
@@ -240,7 +276,7 @@ class GetCurrentTests(TestBase):
             import _xxsubinterpreters as _interpreters
             cur = _interpreters.get_current()
             print(cur)
-            assert isinstance(cur, _interpreters.InterpreterID)
+            assert isinstance(cur, int)
             """))
         cur = int(out.strip())
         _, expected = interpreters.list_all()
@@ -254,7 +290,7 @@ class GetMainTests(TestBase):
         [expected] = interpreters.list_all()
         main = interpreters.get_main()
         self.assertEqual(main, expected)
-        self.assertIsInstance(main, interpreters.InterpreterID)
+        self.assertIsInstance(main, int)
 
     def test_from_subinterpreter(self):
         [expected] = interpreters.list_all()
@@ -263,7 +299,7 @@ class GetMainTests(TestBase):
             import _xxsubinterpreters as _interpreters
             main = _interpreters.get_main()
             print(main)
-            assert isinstance(main, _interpreters.InterpreterID)
+            assert isinstance(main, int)
             """))
         main = int(out.strip())
         self.assertEqual(main, expected)
@@ -298,11 +334,11 @@ class IsRunningTests(TestBase):
     def test_already_destroyed(self):
         interp = interpreters.create()
         interpreters.destroy(interp)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.is_running(interp)
 
     def test_does_not_exist(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.is_running(1_000_000)
 
     def test_bad_id(self):
@@ -310,70 +346,11 @@ class IsRunningTests(TestBase):
             interpreters.is_running(-1)
 
 
-class InterpreterIDTests(TestBase):
-
-    def test_with_int(self):
-        id = interpreters.InterpreterID(10, force=True)
-
-        self.assertEqual(int(id), 10)
-
-    def test_coerce_id(self):
-        class Int(str):
-            def __index__(self):
-                return 10
-
-        id = interpreters.InterpreterID(Int(), force=True)
-        self.assertEqual(int(id), 10)
-
-    def test_bad_id(self):
-        self.assertRaises(TypeError, interpreters.InterpreterID, object())
-        self.assertRaises(TypeError, interpreters.InterpreterID, 10.0)
-        self.assertRaises(TypeError, interpreters.InterpreterID, '10')
-        self.assertRaises(TypeError, interpreters.InterpreterID, b'10')
-        self.assertRaises(ValueError, interpreters.InterpreterID, -1)
-        self.assertRaises(OverflowError, interpreters.InterpreterID, 2**64)
-
-    def test_does_not_exist(self):
-        id = interpreters.create()
-        with self.assertRaises(RuntimeError):
-            interpreters.InterpreterID(int(id) + 1)  # unforced
-
-    def test_str(self):
-        id = interpreters.InterpreterID(10, force=True)
-        self.assertEqual(str(id), '10')
-
-    def test_repr(self):
-        id = interpreters.InterpreterID(10, force=True)
-        self.assertEqual(repr(id), 'InterpreterID(10)')
-
-    def test_equality(self):
-        id1 = interpreters.create()
-        id2 = interpreters.InterpreterID(int(id1))
-        id3 = interpreters.create()
-
-        self.assertTrue(id1 == id1)
-        self.assertTrue(id1 == id2)
-        self.assertTrue(id1 == int(id1))
-        self.assertTrue(int(id1) == id1)
-        self.assertTrue(id1 == float(int(id1)))
-        self.assertTrue(float(int(id1)) == id1)
-        self.assertFalse(id1 == float(int(id1)) + 0.1)
-        self.assertFalse(id1 == str(int(id1)))
-        self.assertFalse(id1 == 2**1000)
-        self.assertFalse(id1 == float('inf'))
-        self.assertFalse(id1 == 'spam')
-        self.assertFalse(id1 == id3)
-
-        self.assertFalse(id1 != id1)
-        self.assertFalse(id1 != id2)
-        self.assertTrue(id1 != id3)
-
-
 class CreateTests(TestBase):
 
     def test_in_main(self):
         id = interpreters.create()
-        self.assertIsInstance(id, interpreters.InterpreterID)
+        self.assertIsInstance(id, int)
 
         self.assertIn(id, interpreters.list_all())
 
@@ -409,7 +386,7 @@ class CreateTests(TestBase):
             import _xxsubinterpreters as _interpreters
             id = _interpreters.create()
             print(id)
-            assert isinstance(id, _interpreters.InterpreterID)
+            assert isinstance(id, int)
             """))
         id2 = int(out.strip())
 
@@ -501,11 +478,11 @@ class DestroyTests(TestBase):
     def test_already_destroyed(self):
         id = interpreters.create()
         interpreters.destroy(id)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.destroy(id)
 
     def test_does_not_exist(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.destroy(1_000_000)
 
     def test_bad_id(self):
@@ -653,10 +630,10 @@ class RunStringTests(TestBase):
         ]
         for obj in objects:
             with self.subTest(obj):
+                interpreters.set___main___attrs(interp, dict(obj=obj))
                 interpreters.run_string(
                     interp,
                     f'assert(obj == {obj!r})',
-                    shared=dict(obj=obj),
                 )
 
     def test_os_exec(self):
@@ -706,7 +683,7 @@ class RunStringTests(TestBase):
         id = 0
         while id in interpreters.list_all():
             id += 1
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(InterpreterNotFoundError):
             interpreters.run_string(id, 'print("spam")')
 
     def test_error_id(self):
@@ -724,43 +701,6 @@ class RunStringTests(TestBase):
     def test_bytes_for_script(self):
         with self.assertRaises(TypeError):
             interpreters.run_string(self.id, b'print("spam")')
-
-    @contextlib.contextmanager
-    def assert_run_failed(self, exctype, msg=None):
-        with self.assertRaises(interpreters.RunFailedError) as caught:
-            yield
-        if msg is None:
-            self.assertEqual(str(caught.exception).split(':')[0],
-                             str(exctype))
-        else:
-            self.assertEqual(str(caught.exception),
-                             "{}: {}".format(exctype, msg))
-
-    def test_invalid_syntax(self):
-        with self.assert_run_failed(SyntaxError):
-            # missing close paren
-            interpreters.run_string(self.id, 'print("spam"')
-
-    def test_failure(self):
-        with self.assert_run_failed(Exception, 'spam'):
-            interpreters.run_string(self.id, 'raise Exception("spam")')
-
-    def test_SystemExit(self):
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, 'raise SystemExit(42)')
-
-    def test_sys_exit(self):
-        with self.assert_run_failed(SystemExit):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit()
-                """))
-
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit(42)
-                """))
 
     def test_with_shared(self):
         r, w = os.pipe()
@@ -781,7 +721,8 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        interpreters.run_string(self.id, script, shared)
+        interpreters.set___main___attrs(self.id, shared)
+        interpreters.run_string(self.id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -802,7 +743,8 @@ class RunStringTests(TestBase):
             ns2 = dict(vars())
             del ns2['__builtins__']
         """)
-        interpreters.run_string(self.id, script, shared)
+        interpreters.set___main___attrs(self.id, shared)
+        interpreters.run_string(self.id, script)
 
         r, w = os.pipe()
         script = dedent(f"""
@@ -833,7 +775,8 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        interpreters.run_string(self.id, script, shared)
+        interpreters.set___main___attrs(self.id, shared)
+        interpreters.run_string(self.id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -923,6 +866,271 @@ class RunStringTests(TestBase):
                 retcode = proc.wait()
 
         self.assertEqual(retcode, 0)
+
+
+class RunFailedTests(TestBase):
+
+    def setUp(self):
+        super().setUp()
+        self.id = interpreters.create()
+
+    def add_module(self, modname, text):
+        import tempfile
+        tempdir = tempfile.mkdtemp()
+        self.addCleanup(lambda: os_helper.rmtree(tempdir))
+        interpreters.run_string(self.id, dedent(f"""
+            import sys
+            sys.path.insert(0, {tempdir!r})
+            """))
+        return script_helper.make_script(tempdir, modname, text)
+
+    def run_script(self, text, *, fails=False):
+        r, w = os.pipe()
+        try:
+            script = dedent(f"""
+                import os, sys
+                os.write({w}, b'0')
+
+                # This raises an exception:
+                {{}}
+
+                # Nothing from here down should ever run.
+                os.write({w}, b'1')
+                class NeverError(Exception): pass
+                raise NeverError  # never raised
+                """).format(dedent(text))
+            if fails:
+                err = interpreters.run_string(self.id, script)
+                self.assertIsNot(err, None)
+                return err
+            else:
+                err = interpreters.run_string(self.id, script)
+                self.assertIs(err, None)
+                return None
+        except:
+            raise  # re-raise
+        else:
+            msg = os.read(r, 100)
+            self.assertEqual(msg, b'0')
+        finally:
+            os.close(r)
+            os.close(w)
+
+    def _assert_run_failed(self, exctype, msg, script):
+        if isinstance(exctype, str):
+            exctype_name = exctype
+            exctype = None
+        else:
+            exctype_name = exctype.__name__
+
+        # Run the script.
+        excinfo = self.run_script(script, fails=True)
+
+        # Check the wrapper exception.
+        self.assertEqual(excinfo.type.__name__, exctype_name)
+        if msg is None:
+            self.assertEqual(excinfo.formatted.split(':')[0],
+                             exctype_name)
+        else:
+            self.assertEqual(excinfo.formatted,
+                             '{}: {}'.format(exctype_name, msg))
+
+        return excinfo
+
+    def assert_run_failed(self, exctype, script):
+        self._assert_run_failed(exctype, None, script)
+
+    def assert_run_failed_msg(self, exctype, msg, script):
+        self._assert_run_failed(exctype, msg, script)
+
+    def test_exit(self):
+        with self.subTest('sys.exit(0)'):
+            # XXX Should an unhandled SystemExit(0) be handled as not-an-error?
+            self.assert_run_failed(SystemExit, """
+                sys.exit(0)
+                """)
+
+        with self.subTest('sys.exit()'):
+            self.assert_run_failed(SystemExit, """
+                import sys
+                sys.exit()
+                """)
+
+        with self.subTest('sys.exit(42)'):
+            self.assert_run_failed_msg(SystemExit, '42', """
+                import sys
+                sys.exit(42)
+                """)
+
+        with self.subTest('SystemExit'):
+            self.assert_run_failed_msg(SystemExit, '42', """
+                raise SystemExit(42)
+                """)
+
+        # XXX Also check os._exit() (via a subprocess)?
+
+    def test_plain_exception(self):
+        self.assert_run_failed_msg(Exception, 'spam', """
+            raise Exception("spam")
+            """)
+
+    def test_invalid_syntax(self):
+        script = dedent("""
+            x = 1 + 2
+            y = 2 + 4
+            z = 4 + 8
+
+            # missing close paren
+            print("spam"
+
+            if x + y + z < 20:
+                ...
+            """)
+
+        with self.subTest('script'):
+            self.assert_run_failed(SyntaxError, script)
+
+        with self.subTest('module'):
+            modname = 'spam_spam_spam'
+            filename = self.add_module(modname, script)
+            self.assert_run_failed(SyntaxError, f"""
+                import {modname}
+                """)
+
+    def test_NameError(self):
+        self.assert_run_failed(NameError, """
+            res = spam + eggs
+            """)
+        # XXX check preserved suggestions
+
+    def test_AttributeError(self):
+        self.assert_run_failed(AttributeError, """
+            object().spam
+            """)
+        # XXX check preserved suggestions
+
+    def test_ExceptionGroup(self):
+        self.assert_run_failed(ExceptionGroup, """
+            raise ExceptionGroup('exceptions', [
+                Exception('spam'),
+                ImportError('eggs'),
+            ])
+            """)
+
+    def test_user_defined_exception(self):
+        self.assert_run_failed_msg('MyError', 'spam', """
+            class MyError(Exception):
+                pass
+            raise MyError('spam')
+            """)
+
+
+class RunFuncTests(TestBase):
+
+    def setUp(self):
+        super().setUp()
+        self.id = interpreters.create()
+
+    def test_success(self):
+        r, w = os.pipe()
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        interpreters.set___main___attrs(self.id, dict(w=w))
+        interpreters.run_func(self.id, script)
+
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_in_thread(self):
+        r, w = os.pipe()
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        def f():
+            interpreters.set___main___attrs(self.id, dict(w=w))
+            interpreters.run_func(self.id, script)
+        t = threading.Thread(target=f)
+        t.start()
+        t.join()
+
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_code_object(self):
+        r, w = os.pipe()
+
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        code = script.__code__
+        interpreters.set___main___attrs(self.id, dict(w=w))
+        interpreters.run_func(self.id, code)
+
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_closure(self):
+        spam = True
+        def script():
+            assert spam
+
+        with self.assertRaises(ValueError):
+            interpreters.run_func(self.id, script)
+
+    # XXX This hasn't been fixed yet.
+    @unittest.expectedFailure
+    def test_return_value(self):
+        def script():
+            return 'spam'
+        with self.assertRaises(ValueError):
+            interpreters.run_func(self.id, script)
+
+    def test_args(self):
+        with self.subTest('args'):
+            def script(a, b=0):
+                assert a == b
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('*args'):
+            def script(*args):
+                assert not args
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('**kwargs'):
+            def script(**kwargs):
+                assert not kwargs
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('kwonly'):
+            def script(*, spam=True):
+                assert spam
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('posonly'):
+            def script(spam, /):
+                assert spam
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
 
 
 if __name__ == '__main__':

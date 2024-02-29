@@ -1,2 +1,0 @@
-Add *case_sensitive* keyword-only argument to :meth:`pathlib.Path.glob` and
-:meth:`~pathlib.Path.rglob`.

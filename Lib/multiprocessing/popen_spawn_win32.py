@@ -14,6 +14,7 @@ __all__ = ['Popen']
 #
 #
 
+# Exit code used by Popen.terminate()
 TERMINATE = 0x10000
 WINEXE = (sys.platform == 'win32' and getattr(sys, 'frozen', False))
 WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
@@ -100,18 +101,20 @@ class Popen(object):
         return reduction.duplicate(handle, self.sentinel)
 
     def wait(self, timeout=None):
-        if self.returncode is None:
-            if timeout is None:
-                msecs = _winapi.INFINITE
-            else:
-                msecs = max(0, int(timeout * 1000 + 0.5))
+        if self.returncode is not None:
+            return self.returncode
 
-            res = _winapi.WaitForSingleObject(int(self._handle), msecs)
-            if res == _winapi.WAIT_OBJECT_0:
-                code = _winapi.GetExitCodeProcess(self._handle)
-                if code == TERMINATE:
-                    code = -signal.SIGTERM
-                self.returncode = code
+        if timeout is None:
+            msecs = _winapi.INFINITE
+        else:
+            msecs = max(0, int(timeout * 1000 + 0.5))
+
+        res = _winapi.WaitForSingleObject(int(self._handle), msecs)
+        if res == _winapi.WAIT_OBJECT_0:
+            code = _winapi.GetExitCodeProcess(self._handle)
+            if code == TERMINATE:
+                code = -signal.SIGTERM
+            self.returncode = code
 
         return self.returncode
 
@@ -119,12 +122,22 @@ class Popen(object):
         return self.wait(timeout=0)
 
     def terminate(self):
-        if self.returncode is None:
-            try:
-                _winapi.TerminateProcess(int(self._handle), TERMINATE)
-            except OSError:
-                if self.wait(timeout=1.0) is None:
-                    raise
+        if self.returncode is not None:
+            return
+
+        try:
+            _winapi.TerminateProcess(int(self._handle), TERMINATE)
+        except PermissionError:
+            # ERROR_ACCESS_DENIED (winerror 5) is received when the
+            # process already died.
+            code = _winapi.GetExitCodeProcess(int(self._handle))
+            if code == _winapi.STILL_ACTIVE:
+                raise
+
+        # gh-113009: Don't set self.returncode. Even if GetExitCodeProcess()
+        # returns an exit code different than STILL_ACTIVE, the process can
+        # still be running. Only set self.returncode once WaitForSingleObject()
+        # returns WAIT_OBJECT_0 in wait().
 
     kill = terminate
 

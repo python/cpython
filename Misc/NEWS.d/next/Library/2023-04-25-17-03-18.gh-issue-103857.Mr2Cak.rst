@@ -1,2 +1,0 @@
-Deprecated :meth:`datetime.datetime.utcnow` and
-:meth:`datetime.datetime.utcfromtimestamp`. (Patch by Paul Ganssle)

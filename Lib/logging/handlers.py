@@ -369,16 +369,20 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dirName, baseName = os.path.split(self.baseFilename)
         fileNames = os.listdir(dirName)
         result = []
-        # See bpo-44753: Don't use the extension when computing the prefix.
-        n, e = os.path.splitext(baseName)
-        prefix = n + '.'
-        plen = len(prefix)
-        for fileName in fileNames:
-            if self.namer is None:
-                # Our files will always start with baseName
-                if not fileName.startswith(baseName):
-                    continue
-            else:
+        if self.namer is None:
+            prefix = baseName + '.'
+            plen = len(prefix)
+            for fileName in fileNames:
+                if fileName[:plen] == prefix:
+                    suffix = fileName[plen:]
+                    if self.extMatch.match(suffix):
+                        result.append(os.path.join(dirName, fileName))
+        else:
+            # See bpo-44753: Don't use the extension when computing the prefix.
+            n, e = os.path.splitext(baseName)
+            prefix = n + '.'
+            plen = len(prefix)
+            for fileName in fileNames:
                 # Our files could be just about anything after custom naming, but
                 # likely candidates are of the form
                 # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
@@ -386,15 +390,16 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                     len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
                     continue
 
-            if fileName[:plen] == prefix:
-                suffix = fileName[plen:]
-                # See bpo-45628: The date/time suffix could be anywhere in the
-                # filename
-                parts = suffix.split('.')
-                for part in parts:
-                    if self.extMatch.match(part):
-                        result.append(os.path.join(dirName, fileName))
-                        break
+                if fileName[:plen] == prefix:
+                    suffix = fileName[plen:]
+                    # See bpo-45628: The date/time suffix could be anywhere in the
+                    # filename
+
+                    parts = suffix.split('.')
+                    for part in parts:
+                        if self.extMatch.match(part):
+                            result.append(os.path.join(dirName, fileName))
+                            break
         if len(result) < self.backupCount:
             result = []
         else:
@@ -683,15 +688,12 @@ class SocketHandler(logging.Handler):
         """
         Closes the socket.
         """
-        self.acquire()
-        try:
+        with self.lock:
             sock = self.sock
             if sock:
                 self.sock = None
                 sock.close()
             logging.Handler.close(self)
-        finally:
-            self.release()
 
 class DatagramHandler(SocketHandler):
     """
@@ -833,10 +835,8 @@ class SysLogHandler(logging.Handler):
         "local7":       LOG_LOCAL7,
         }
 
-    #The map below appears to be trivially lowercasing the key. However,
-    #there's more to it than meets the eye - in some locales, lowercasing
-    #gives unexpected results. See SF #1524081: in the Turkish locale,
-    #"INFO".lower() != "info"
+    # Originally added to work around GH-43683. Unnecessary since GH-50043 but kept
+    # for backwards compatibility.
     priority_map = {
         "DEBUG" : "debug",
         "INFO" : "info",
@@ -953,15 +953,12 @@ class SysLogHandler(logging.Handler):
         """
         Closes the socket.
         """
-        self.acquire()
-        try:
+        with self.lock:
             sock = self.socket
             if sock:
                 self.socket = None
                 sock.close()
             logging.Handler.close(self)
-        finally:
-            self.release()
 
     def mapPriority(self, levelName):
         """
@@ -1333,11 +1330,8 @@ class BufferingHandler(logging.Handler):
 
         This version just zaps the buffer to empty.
         """
-        self.acquire()
-        try:
+        with self.lock:
             self.buffer.clear()
-        finally:
-            self.release()
 
     def close(self):
         """
@@ -1387,11 +1381,8 @@ class MemoryHandler(BufferingHandler):
         """
         Set the target handler for this handler.
         """
-        self.acquire()
-        try:
+        with self.lock:
             self.target = target
-        finally:
-            self.release()
 
     def flush(self):
         """
@@ -1399,16 +1390,13 @@ class MemoryHandler(BufferingHandler):
         records to the target, if there is one. Override if you want
         different behaviour.
 
-        The record buffer is also cleared by this operation.
+        The record buffer is only cleared if a target has been set.
         """
-        self.acquire()
-        try:
+        with self.lock:
             if self.target:
                 for record in self.buffer:
                     self.target.handle(record)
                 self.buffer.clear()
-        finally:
-            self.release()
 
     def close(self):
         """
@@ -1419,12 +1407,9 @@ class MemoryHandler(BufferingHandler):
             if self.flushOnClose:
                 self.flush()
         finally:
-            self.acquire()
-            try:
+            with self.lock:
                 self.target = None
                 BufferingHandler.close(self)
-            finally:
-                self.release()
 
 
 class QueueHandler(logging.Handler):
@@ -1606,6 +1591,7 @@ class QueueListener(object):
         Note that if you don't call this before your application exits, there
         may be some records still left on the queue, which won't be processed.
         """
-        self.enqueue_sentinel()
-        self._thread.join()
-        self._thread = None
+        if self._thread:  # see gh-114706 - allow calling this more than once
+            self.enqueue_sentinel()
+            self._thread.join()
+            self._thread = None
