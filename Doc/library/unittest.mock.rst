@@ -2848,7 +2848,8 @@ remains unchanged.
 
     >>> from unittest.mock import Mock
     >>> class Order:
-    ...     def get_value(self):
+    ...     @staticmethod
+    ...     def get_value():
     ...         return "third"
     ...
     >>> order_mock = Mock(spec=Order, wraps=Order)
@@ -2898,9 +2899,8 @@ this mock will return the real instance of the class. The positional arguments
     >>> order_mock_instance.get_value()
     'third'
 
-    >>> from typing import Self
     >>> order_mock.get_value.return_value = DEFAULT
-    >>> order_mock.get_value(Self)  # To consume self.
+    >>> order_mock.get_value()
     'third'
 
     >>> order_mock.get_value.return_value = "second"
