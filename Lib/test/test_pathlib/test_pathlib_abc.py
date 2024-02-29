@@ -1752,10 +1752,10 @@ class DummyPathTest(DummyPurePathTest):
     def test_glob_windows(self):
         P = self.cls
         p = P(self.base)
-        self.assertEqual(set(p.glob("FILEa")), { P(self.base, "fileA") })
+        self.assertEqual(set(p.glob("FILEa")), { P(self.base, "FILEa") })
         self.assertEqual(set(p.glob("*a\\")), { P(self.base, "dirA/") })
         self.assertEqual(set(p.glob("F*a")), { P(self.base, "fileA") })
-        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\fileA"})
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
         self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_glob_empty_pattern(self):
@@ -1903,9 +1903,9 @@ class DummyPathTest(DummyPurePathTest):
     def test_rglob_windows(self):
         P = self.cls
         p = P(self.base, "dirC")
-        self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
+        self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/FILEd") })
         self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
-        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
 
     @needs_symlinks
     def test_rglob_follow_symlinks_common(self):
@@ -1993,8 +1993,19 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(p.glob("dirA/../file*")), { P(self.base, "dirA/../fileA") })
         self.assertEqual(set(p.glob("dirA/../file*/..")), set())
         self.assertEqual(set(p.glob("../xyzzy")), set())
-        self.assertEqual(set(p.glob("xyzzy/..")), set())
         self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
+
+    @needs_posix
+    def test_glob_dotdot_posix(self):
+        p = self.cls(self.base)
+        self.assertEqual(set(p.glob("xyzzy/..")), set())
+
+    @needs_windows
+    def test_glob_dotdot_windows(self):
+        # '..' segments are resolved first on Windows, so
+        # 'xyzzy' doesn't need to exist.
+        p = self.cls(self.base)
+        self.assertEqual(set(p.glob("xyzzy/..")), { p })
 
     @needs_symlinks
     def test_glob_permissions(self):
