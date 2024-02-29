@@ -340,6 +340,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                         continue;
                     }
                 }
+                // Fall through...
+            case HoleKind_ARM64_RELOC_PAGE21:
                 // Number of pages between this page and the value's page:
                 value = (value >> 12) - ((uint64_t)location >> 12);
                 // Check that we're not out of range of 21 signed bits:
@@ -351,6 +353,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 set_bits(loc32, 5, value, 2, 19);
                 continue;
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
+            case HoleKind_ARM64_RELOC_PAGEOFF12:
             case HoleKind_R_AARCH64_LD64_GOT_LO12_NC:
                 // 12-bit low part of an absolute address. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGE21 (above).

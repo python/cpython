@@ -4,6 +4,8 @@ import typing
 HoleKind: typing.TypeAlias = typing.Literal[
     "ARM64_RELOC_GOT_LOAD_PAGE21",
     "ARM64_RELOC_GOT_LOAD_PAGEOFF12",
+    "ARM64_RELOC_PAGE21",
+    "ARM64_RELOC_PAGEOFF12",
     "ARM64_RELOC_UNSIGNED",
     "IMAGE_REL_AMD64_REL32",
     "IMAGE_REL_I386_DIR32",
