@@ -94,8 +94,6 @@ def _deselect_missing(paths):
 
 def _deselect_symlinks(paths, dir_only, follow_symlinks):
     """Yield the given paths, filtering out symlinks."""
-    if follow_symlinks is None:
-        follow_symlinks = True
     for path in paths:
         if follow_symlinks or not dir_only:
             yield path
@@ -109,8 +107,6 @@ def _deselect_symlinks(paths, dir_only, follow_symlinks):
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
     """Yield direct children of given paths, filtering by name and type."""
-    if follow_symlinks is None:
-        follow_symlinks = True
     for parent_path in parent_paths:
         try:
             # We must close the scandir() object before proceeding to
@@ -137,8 +133,6 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
     """Yield given paths and all their children, recursively, filtering by
     string and type.
     """
-    if follow_symlinks is None:
-        follow_symlinks = False
     for parent_path in parent_paths:
         if match is not None:
             # If we're filtering paths through a regex, record the length of
@@ -849,6 +843,13 @@ class PathBase(PurePathBase):
             # to retrieve and match filenames with real filesystem case.
             case_preserving = True
 
+        if follow_symlinks is None:
+            # Legacy behaviour: follow symlinks unless we're expanding '**'.
+            follow_symlinks = True
+            follow_symlinks_recursive = False
+        else:
+            follow_symlinks_recursive = follow_symlinks
+
         stack = pattern._pattern_stack
         specials = ('', '.', '..')
         check_paths = True
@@ -869,7 +870,7 @@ class PathBase(PurePathBase):
                 # Consume following non-special components, provided we're
                 # treating symlinks consistently. Each component is joined
                 # onto 'part', which is used to generate an re.Pattern object.
-                if follow_symlinks is not None:
+                if follow_symlinks == follow_symlinks_recursive:
                     while stack and stack[-1] not in specials:
                         part += sep + stack.pop()
 
@@ -883,7 +884,7 @@ class PathBase(PurePathBase):
                     check_paths = False
 
                 # Recursively walk directories, filtering by type and regex.
-                paths = _select_recursive(paths, bool(stack), follow_symlinks, match)
+                paths = _select_recursive(paths, bool(stack), follow_symlinks_recursive, match)
 
                 # De-duplicate if we've already seen a '**' component.
                 if deduplicate_paths:
