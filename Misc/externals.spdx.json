@@ -1,0 +1,195 @@
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-PACKAGE-bzip2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ab8d1b0cc087c20d4c32c0e4fcf7d0c733a95da12cedc6d63b3f0a9af07427e2"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/bzip2-1.0.8.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:bzip:bzip2:1.0.8:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "bzip2",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "1.0.8"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-libffi",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9d802681adfea27d84cae0487a785fb9caa925bdad44c401b364c59ab2b8edda"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/libffi-3.4.4.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:libffi_project:libffi:3.4.4:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "libffi",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "3.4.4"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-openssl",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e6a77c273ebb284fedd8ea19b081fce74a9455936ffd47215f7c24713e2614b2"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.0.13.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:openssl:openssl:3.0.13:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "openssl",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "3.0.13"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-sqlite",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6f0364a27375435a34137b138ca4fedef8d23eec6493ca1dfff33bfc0c34fda4"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.45.1.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.45.1.0:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "sqlite",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "3.45.1.0"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-tcl-core",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6e33a88f116822167734cd72b693b5d30ced130a3cae6dc2ff696042f993bb42"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.13.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.0:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "tcl-core",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "8.6.13.0"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-tk",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "896c1f488bdd0159091bd5cce124b756dfdffa4a5350b7fd4d7d8e48421089a4"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.13.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.0:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "tk",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "8.6.13.0"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-tix",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f7b21d115867a41ae5fd7c635a4c234d3ca25126c3661eb36028c6e25601f85e"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tix-8.4.3.6.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.4.3.6:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "tix",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "8.4.3.6"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-xz",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a15c168e39e87d750c3dc766edc7f19bdda57dacf01e509678467eace91ad282"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/xz-5.2.5.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:xz_project:xz:5.2.5:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "xz",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "5.2.5"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-zlib",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e3f3fb32564952006eb18b091ca8464740e5eca29d328cfb0b2da22768e0b638"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/zlib-1.3.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:zlib:zlib:1.3.1:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "zlib",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "1.3.1"
+    }
+  ],
+  "spdxVersion": "SPDX-2.3"
+}
