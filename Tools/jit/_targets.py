@@ -46,8 +46,7 @@ class _Target(typing.Generic[_S, _R]):
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
-        hasher.update(self.alignment.to_bytes())
-        hasher.update(self.prefix.encode())
+        hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -119,12 +118,17 @@ class _Target(typing.Generic[_S, _R]):
             f"-I{CPYTHON / 'Python'}",
             "-O3",
             "-c",
+            # This debug info isn't necessary, and bloats out the JIT'ed code.
+            # We *may* be able to re-enable this, process it, and JIT it for a
+            # nicer debugging experience... but that needs a lot more research:
             "-fno-asynchronous-unwind-tables",
+            # Don't call built-in functions that we can't find or patch:
             "-fno-builtin",
-            # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
-            "-fno-jump-tables",
+            # Emit relaxable 64-bit calls/jumps, so we don't have to worry about
+            # about emitting in-range trampolines for out-of-range targets.
+            # We can probably remove this and emit trampolines in the future:
             "-fno-plt",
-            # Don't make calls to weird stack-smashing canaries:
+            # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
             "-o",
             f"{o}",
@@ -161,7 +165,7 @@ class _Target(typing.Generic[_S, _R]):
         with jit_stencils.open("w") as file:
             file.write(digest)
             if comment:
-                file.write(f"// {comment}\n")
+                file.write(f"// {comment}\n\n")
             file.write("")
             for line in _writer.dump(stencil_groups):
                 file.write(f"{line}\n")
@@ -195,11 +199,20 @@ class _COFF(
             offset = base + symbol["Value"]
             name = symbol["Name"]
             name = name.removeprefix(self.prefix)
-            group.symbols[name] = value, offset
+            if name not in group.symbols:
+                group.symbols[name] = value, offset
         for wrapped_relocation in section["Relocations"]:
             relocation = wrapped_relocation["Relocation"]
             hole = self._handle_relocation(base, relocation, stencil.body)
             stencil.holes.append(hole)
+
+    def _unwrap_dllimport(self, name: str) -> tuple[_stencils.HoleValue, str | None]:
+        if name.startswith("__imp_"):
+            name = name.removeprefix("__imp_")
+            name = name.removeprefix(self.prefix)
+            return _stencils.HoleValue.GOT, name
+        name = name.removeprefix(self.prefix)
+        return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
         self, base: int, relocation: _schema.COFFRelocation, raw: bytes
@@ -211,13 +224,7 @@ class _COFF(
                 "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
-                if s.startswith("__imp_"):
-                    s = s.removeprefix("__imp_")
-                    s = s.removeprefix(self.prefix)
-                    value, symbol = _stencils.HoleValue.GOT, s
-                else:
-                    s = s.removeprefix(self.prefix)
-                    value, symbol = _stencils.symbol_to_value(s)
+                value, symbol = self._unwrap_dllimport(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
             case {
                 "Offset": offset,
@@ -227,14 +234,10 @@ class _COFF(
                 },
             }:
                 offset += base
-                if s.startswith("__imp_"):
-                    s = s.removeprefix("__imp_")
-                    s = s.removeprefix(self.prefix)
-                    value, symbol = _stencils.HoleValue.GOT, s
-                else:
-                    s = s.removeprefix(self.prefix)
-                    value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                value, symbol = self._unwrap_dllimport(s)
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
             case {
                 "Offset": offset,
                 "Symbol": s,
@@ -246,13 +249,7 @@ class _COFF(
                 },
             }:
                 offset += base
-                if s.startswith("__imp_"):
-                    s = s.removeprefix("__imp_")
-                    s = s.removeprefix(self.prefix)
-                    value, symbol = _stencils.HoleValue.GOT, s
-                else:
-                    s = s.removeprefix(self.prefix)
-                    value, symbol = _stencils.symbol_to_value(s)
+                value, symbol = self._unwrap_dllimport(s)
                 addend = 0
             case _:
                 raise NotImplementedError(relocation)
@@ -352,6 +349,8 @@ class _MachO(
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
+        if "Debug" in flags:
+            return
         if "SomeInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
@@ -401,20 +400,18 @@ class _MachO(
             case {
                 "Offset": offset,
                 "Symbol": {"Value": s},
-                "Type": {
-                    "Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind
-                },
+                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
-                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
             case {
                 "Offset": offset,
                 "Section": {"Value": s},
-                "Type": {
-                    "Value": "X86_64_RELOC_SIGNED" as kind
-                },
+                "Type": {"Value": "X86_64_RELOC_SIGNED" as kind},
             } | {
                 "Offset": offset,
                 "Symbol": {"Value": s},
@@ -425,7 +422,9 @@ class _MachO(
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.symbol_to_value(s)
-                addend = int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
             case {
                 "Offset": offset,
                 "Section": {"Value": s},
@@ -441,9 +440,6 @@ class _MachO(
                 addend = 0
             case _:
                 raise NotImplementedError(relocation)
-        # Turn Clang's weird __bzero calls into normal bzero calls:
-        if symbol == "__bzero":
-            symbol = "bzero"
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
