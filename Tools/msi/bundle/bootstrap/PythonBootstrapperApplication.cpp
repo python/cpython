@@ -735,10 +735,13 @@ public: // IBootstrapperApplication
             if (FAILED(BalGetNumericVariable(L"BlockedLauncher", &blockedLauncher))) {
                 blockedLauncher = 0;
             }
+
+            // Get the prior DetectedLauncher value so we can see if we've
+            // detected more than one, and then update the stored variable
+            // (we use the original value later on via the local).
             if (FAILED(BalGetNumericVariable(L"DetectedLauncher", &detectedLauncher))) {
                 detectedLauncher = 0;
             }
-
             if (!detectedLauncher) {
                 _engine->SetVariableNumeric(L"DetectedLauncher", 1);
             }
@@ -752,7 +755,7 @@ public: // IBootstrapperApplication
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Launcher will not be installed");
                 _engine->SetVariableNumeric(L"BlockedLauncher", 1);
             }
-            else if (detectedLauncher == 1) {
+            else if (detectedLauncher) {
                 if (!blockedLauncher) {
                     BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Multiple launcher installs have been detected.");
                     BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "No launcher will be installed or upgraded until one has been removed.");
