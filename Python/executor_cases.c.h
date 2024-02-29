@@ -20,7 +20,7 @@
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            if (eval_breaker != version) goto deoptimize;
+            if (eval_breaker != version && tstate->tracing == 0) goto deoptimize;
             break;
         }
 
@@ -2548,7 +2548,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2591,7 +2591,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -3570,9 +3570,9 @@
             PyObject *result;
             oparg = CURRENT_OPARG();
             value = stack_pointer[-1];
-            convertion_func_ptr  conv_fn;
+            conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
-            conv_fn = CONVERSION_FUNCTIONS[oparg];
+            conv_fn = _PyEval_ConversionFuncs[oparg];
             result = conv_fn(value);
             Py_DECREF(value);
             if (result == NULL) goto pop_1_error_tier_two;
