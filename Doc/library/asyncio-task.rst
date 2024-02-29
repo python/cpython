@@ -876,12 +876,14 @@ Waiting Primitives
        tasks = [ipv4_connect, ipv6_connect]
 
        async for earliest_connect in as_completed(tasks):
+           # earliest_connect is done. The result can be obtained by
+           # awaiting it or calling earliest_connect.result()
            reader, writer = await earliest_connect
+
            if earliest_connect is ipv6_connect:
                print("IPv6 connection established.")
            else:
                print("IPv4 connection established.")
-           # ...
 
    During asynchronous iteration, implicitly-created tasks will be yielded for
    supplied awaitables that aren't tasks or futures.
@@ -890,9 +892,15 @@ Waiting Primitives
    returns the result or raises the exception of the next completed awaitable.
    This pattern is compatible with Python versions older than 3.13::
 
-        for coro in as_completed(aws):
-            earliest_result = await coro
-            # ...
+       ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+       ipv6_connect = create_task(open_connection("::1", 80))
+       tasks = [ipv4_connect, ipv6_connect]
+
+       for next_connect in as_completed(tasks):
+           # next_connect is not one of the original task objects. It must be
+           # awaited to obtain the result value or raise the exception of the
+           # awaitable that finishes next.
+           reader, writer = await next_connect
 
    A :exc:`TimeoutError` is raised if the timeout occurs before all awaitables
    are done. This is raised by the ``async for`` loop during asynchronous
