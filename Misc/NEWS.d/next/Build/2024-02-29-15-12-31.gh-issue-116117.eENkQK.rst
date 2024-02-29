@@ -1,0 +1,2 @@
+Backport PR #42 to libb2 to fix compiling CPython on windows-i686 with
+clang-cl
