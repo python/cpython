@@ -90,7 +90,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Windows
+      - name: Native Windows
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
