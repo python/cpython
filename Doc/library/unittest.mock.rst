@@ -2094,10 +2094,10 @@ to change the default.
 
 Methods and their defaults:
 
-* ``__lt__``: ``NotImplemented``
-* ``__gt__``: ``NotImplemented``
-* ``__le__``: ``NotImplemented``
-* ``__ge__``: ``NotImplemented``
+* ``__lt__``: :data:`NotImplemented`
+* ``__gt__``: :data:`!NotImplemented`
+* ``__le__``: :data:`!NotImplemented`
+* ``__ge__``: :data:`!NotImplemented`
 * ``__int__``: ``1``
 * ``__contains__``: ``False``
 * ``__len__``: ``0``
