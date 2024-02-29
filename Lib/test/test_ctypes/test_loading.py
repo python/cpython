@@ -55,11 +55,15 @@ class LoaderTest(unittest.TestCase):
         self.assertRaises(OSError, cdll.LoadLibrary, self.unknowndll)
 
     def test_find(self):
+        found = False
         for name in ("c", "m"):
             lib = find_library(name)
             if lib:
+                found = True
                 cdll.LoadLibrary(lib)
                 CDLL(lib)
+        if not found:
+            self.skipTest("Could not find c and m libraries")
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')
