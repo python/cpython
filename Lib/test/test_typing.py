@@ -8600,6 +8600,8 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
 
     def test_special_forms_nesting(self):
+        # These are uncommon types and are to ensure runtime
+        # is lax on validation. See gh-89547 for more context.
         class CF:
             x: ClassVar[Final[int]]
 
