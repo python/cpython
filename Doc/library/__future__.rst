@@ -8,19 +8,67 @@
 
 --------------
 
-:mod:`__future__` is a real module, and serves three purposes:
+Imports of the form ``from __future__ import feature`` are called
+:ref:`future statements <future>`. These are special-cased by the Python compiler
+to allow the use of new Python features in modules containing the future statement
+before the release in which the feature becomes standard.
+
+While these future statements are given additional special meaning by the
+Python compiler, they are still executed like any other import statement and
+the :mod:`__future__` exists and is handled by the import system the same way
+any other Python module would be. This design serves three purposes:
 
 * To avoid confusing existing tools that analyze import statements and expect to
   find the modules they're importing.
-
-* To ensure that :ref:`future statements <future>` run under releases prior to
-  2.1 at least yield runtime exceptions (the import of :mod:`__future__` will
-  fail, because there was no module of that name prior to 2.1).
 
 * To document when incompatible changes were introduced, and when they will be
   --- or were --- made mandatory.  This is a form of executable documentation, and
   can be inspected programmatically via importing :mod:`__future__` and examining
   its contents.
+
+* To ensure that :ref:`future statements <future>` run under releases prior to
+  Python 2.1 at least yield runtime exceptions (the import of :mod:`__future__`
+  will fail, because there was no module of that name prior to 2.1).
+
+Module Contents
+---------------
+
+No feature description will ever be deleted from :mod:`__future__`. Since its
+introduction in Python 2.1 the following features have found their way into the
+language using this mechanism:
+
++------------------+-------------+--------------+---------------------------------------------+
+| feature          | optional in | mandatory in | effect                                      |
++==================+=============+==============+=============================================+
+| nested_scopes    | 2.1.0b1     | 2.2          | :pep:`227`:                                 |
+|                  |             |              | *Statically Nested Scopes*                  |
++------------------+-------------+--------------+---------------------------------------------+
+| generators       | 2.2.0a1     | 2.3          | :pep:`255`:                                 |
+|                  |             |              | *Simple Generators*                         |
++------------------+-------------+--------------+---------------------------------------------+
+| division         | 2.2.0a2     | 3.0          | :pep:`238`:                                 |
+|                  |             |              | *Changing the Division Operator*            |
++------------------+-------------+--------------+---------------------------------------------+
+| absolute_import  | 2.5.0a1     | 3.0          | :pep:`328`:                                 |
+|                  |             |              | *Imports: Multi-Line and Absolute/Relative* |
++------------------+-------------+--------------+---------------------------------------------+
+| with_statement   | 2.5.0a1     | 2.6          | :pep:`343`:                                 |
+|                  |             |              | *The "with" Statement*                      |
++------------------+-------------+--------------+---------------------------------------------+
+| print_function   | 2.6.0a2     | 3.0          | :pep:`3105`:                                |
+|                  |             |              | *Make print a function*                     |
++------------------+-------------+--------------+---------------------------------------------+
+| unicode_literals | 2.6.0a2     | 3.0          | :pep:`3112`:                                |
+|                  |             |              | *Bytes literals in Python 3000*             |
++------------------+-------------+--------------+---------------------------------------------+
+| generator_stop   | 3.5.0b1     | 3.7          | :pep:`479`:                                 |
+|                  |             |              | *StopIteration handling inside generators*  |
++------------------+-------------+--------------+---------------------------------------------+
+| annotations      | 3.7.0b1     | TBD [1]_     | :pep:`563`:                                 |
+|                  |             |              | *Postponed evaluation of annotations*       |
++------------------+-------------+--------------+---------------------------------------------+
+
+.. XXX Adding a new entry?  Remember to update simple_stmts.rst, too.
 
 .. _future-classes:
 
@@ -65,43 +113,6 @@
    dynamically compiled code.  This flag is stored in the :attr:`_Feature.compiler_flag`
    attribute on :class:`_Feature` instances.
 
-No feature description will ever be deleted from :mod:`__future__`. Since its
-introduction in Python 2.1 the following features have found their way into the
-language using this mechanism:
-
-+------------------+-------------+--------------+---------------------------------------------+
-| feature          | optional in | mandatory in | effect                                      |
-+==================+=============+==============+=============================================+
-| nested_scopes    | 2.1.0b1     | 2.2          | :pep:`227`:                                 |
-|                  |             |              | *Statically Nested Scopes*                  |
-+------------------+-------------+--------------+---------------------------------------------+
-| generators       | 2.2.0a1     | 2.3          | :pep:`255`:                                 |
-|                  |             |              | *Simple Generators*                         |
-+------------------+-------------+--------------+---------------------------------------------+
-| division         | 2.2.0a2     | 3.0          | :pep:`238`:                                 |
-|                  |             |              | *Changing the Division Operator*            |
-+------------------+-------------+--------------+---------------------------------------------+
-| absolute_import  | 2.5.0a1     | 3.0          | :pep:`328`:                                 |
-|                  |             |              | *Imports: Multi-Line and Absolute/Relative* |
-+------------------+-------------+--------------+---------------------------------------------+
-| with_statement   | 2.5.0a1     | 2.6          | :pep:`343`:                                 |
-|                  |             |              | *The "with" Statement*                      |
-+------------------+-------------+--------------+---------------------------------------------+
-| print_function   | 2.6.0a2     | 3.0          | :pep:`3105`:                                |
-|                  |             |              | *Make print a function*                     |
-+------------------+-------------+--------------+---------------------------------------------+
-| unicode_literals | 2.6.0a2     | 3.0          | :pep:`3112`:                                |
-|                  |             |              | *Bytes literals in Python 3000*             |
-+------------------+-------------+--------------+---------------------------------------------+
-| generator_stop   | 3.5.0b1     | 3.7          | :pep:`479`:                                 |
-|                  |             |              | *StopIteration handling inside generators*  |
-+------------------+-------------+--------------+---------------------------------------------+
-| annotations      | 3.7.0b1     | TBD [1]_     | :pep:`563`:                                 |
-|                  |             |              | *Postponed evaluation of annotations*       |
-+------------------+-------------+--------------+---------------------------------------------+
-
-.. XXX Adding a new entry?  Remember to update simple_stmts.rst, too.
-
 .. [1]
    ``from __future__ import annotations`` was previously scheduled to
    become mandatory in Python 3.10, but the Python Steering Council
@@ -115,3 +126,6 @@ language using this mechanism:
 
    :ref:`future`
       How the compiler treats future imports.
+
+   :pep:`236` - Back to the __future__
+      The original proposal for the __future__ mechanism.

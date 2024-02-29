@@ -337,7 +337,7 @@ That is, heap types should:
 
 - Have the :c:macro:`Py_TPFLAGS_HAVE_GC` flag.
 - Define a traverse function using ``Py_tp_traverse``, which
-  visits the type (e.g. using :c:expr:`Py_VISIT(Py_TYPE(self))`).
+  visits the type (e.g. using ``Py_VISIT(Py_TYPE(self))``).
 
 Please refer to the the documentation of
 :c:macro:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
@@ -482,7 +482,7 @@ The largest roadblock is getting *the class a method was defined in*, or
 that method's "defining class" for short. The defining class can have a
 reference to the module it is part of.
 
-Do not confuse the defining class with :c:expr:`Py_TYPE(self)`. If the method
+Do not confuse the defining class with ``Py_TYPE(self)``. If the method
 is called on a *subclass* of your type, ``Py_TYPE(self)`` will refer to
 that subclass, which may be defined in different module than yours.
 

@@ -279,9 +279,10 @@ class _proto_member:
         enum_member._sort_order_ = len(enum_class._member_names_)
 
         if Flag is not None and issubclass(enum_class, Flag):
-            enum_class._flag_mask_ |= value
-            if _is_single_bit(value):
-                enum_class._singles_mask_ |= value
+            if isinstance(value, int):
+                enum_class._flag_mask_ |= value
+                if _is_single_bit(value):
+                    enum_class._singles_mask_ |= value
             enum_class._all_bits_ = 2 ** ((enum_class._flag_mask_).bit_length()) - 1
 
         # If another member with the same value was already defined, the
@@ -309,6 +310,7 @@ class _proto_member:
             elif (
                     Flag is not None
                     and issubclass(enum_class, Flag)
+                    and isinstance(value, int)
                     and _is_single_bit(value)
                 ):
                 # no other instances found, record this member in _member_names_
@@ -409,10 +411,11 @@ class EnumDict(dict):
             if isinstance(value, auto):
                 single = True
                 value = (value, )
-            if type(value) is tuple and any(isinstance(v, auto) for v in value):
+            if isinstance(value, tuple) and any(isinstance(v, auto) for v in value):
                 # insist on an actual tuple, no subclasses, in keeping with only supporting
                 # top-level auto() usage (not contained in any other data structure)
                 auto_valued = []
+                t = type(value)
                 for v in value:
                     if isinstance(v, auto):
                         non_auto_store = False
@@ -427,7 +430,12 @@ class EnumDict(dict):
                 if single:
                     value = auto_valued[0]
                 else:
-                    value = tuple(auto_valued)
+                    try:
+                        # accepts iterable as multiple arguments?
+                        value = t(auto_valued)
+                    except TypeError:
+                        # then pass them in singlely
+                        value = t(*auto_valued)
             self._member_names[key] = None
             if non_auto_store:
                 self._last_values.append(value)
@@ -539,7 +547,10 @@ class EnumType(type):
         classdict['_inverted_'] = None
         try:
             exc = None
+            classdict['_%s__in_progress' % cls] = True
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
+            classdict['_%s__in_progress' % cls] = False
+            delattr(enum_class, '_%s__in_progress' % cls)
         except Exception as e:
             # since 3.12 the line "Error calling __set_name__ on '_proto_member' instance ..."
             # is tacked on to the error instead of raising a RuntimeError
@@ -1147,6 +1158,8 @@ class Enum(metaclass=EnumType):
         # still not found -- verify that members exist, in-case somebody got here mistakenly
         # (such as via super when trying to override __new__)
         if not cls._member_map_:
+            if getattr(cls, '_%s__in_progress' % cls.__name__, False):
+                raise TypeError('do not use `super().__new__; call the appropriate __new__ directly') from None
             raise TypeError("%r has no members defined" % cls)
         #
         # still not found -- try _missing_ hook
@@ -1552,37 +1565,50 @@ class Flag(Enum, boundary=STRICT):
     def __bool__(self):
         return bool(self._value_)
 
+    def _get_value(self, flag):
+        if isinstance(flag, self.__class__):
+            return flag._value_
+        elif self._member_type_ is not object and isinstance(flag, self._member_type_):
+            return flag
+        return NotImplemented
+
     def __or__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif self._member_type_ is not object and isinstance(other, self._member_type_):
-            other = other
-        else:
+        other_value = self._get_value(other)
+        if other_value is NotImplemented:
             return NotImplemented
+
+        for flag in self, other:
+            if self._get_value(flag) is None:
+                raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         value = self._value_
-        return self.__class__(value | other)
+        return self.__class__(value | other_value)
 
     def __and__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif self._member_type_ is not object and isinstance(other, self._member_type_):
-            other = other
-        else:
+        other_value = self._get_value(other)
+        if other_value is NotImplemented:
             return NotImplemented
+
+        for flag in self, other:
+            if self._get_value(flag) is None:
+                raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         value = self._value_
-        return self.__class__(value & other)
+        return self.__class__(value & other_value)
 
     def __xor__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif self._member_type_ is not object and isinstance(other, self._member_type_):
-            other = other
-        else:
+        other_value = self._get_value(other)
+        if other_value is NotImplemented:
             return NotImplemented
+
+        for flag in self, other:
+            if self._get_value(flag) is None:
+                raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         value = self._value_
-        return self.__class__(value ^ other)
+        return self.__class__(value ^ other_value)
 
     def __invert__(self):
+        if self._get_value(self) is None:
+            raise TypeError(f"'{self}' cannot be inverted")
+
         if self._inverted_ is None:
             if self._boundary_ in (EJECT, KEEP):
                 self._inverted_ = self.__class__(~self._value_)

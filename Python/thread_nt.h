@@ -1,4 +1,5 @@
-#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
+#include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
+#include "pycore_time.h"          // _PyTime_AsMicroseconds()
 
 /* This code implemented by Dag.Gruneau@elsa.preseco.comm.se */
 /* Fast NonRecursiveMutex support by Yakov Markovitch, markovitch@iso.ru */
@@ -76,16 +77,16 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
         }
     } else if (milliseconds != 0) {
         /* wait at least until the deadline */
-        _PyTime_t nanoseconds = _PyTime_FromNanoseconds((_PyTime_t)milliseconds * 1000000);
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetPerfCounter(), nanoseconds);
+        PyTime_t nanoseconds = (PyTime_t)milliseconds * (1000 * 1000);
+        PyTime_t deadline = _PyTime_Add(_PyTime_PerfCounterUnchecked(), nanoseconds);
         while (mutex->locked) {
-            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
+            PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
                                                             _PyTime_ROUND_TIMEOUT);
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, microseconds) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            nanoseconds = deadline - _PyTime_GetPerfCounter();
+            nanoseconds = deadline - _PyTime_PerfCounterUnchecked();
             if (nanoseconds <= 0) {
                 break;
             }
@@ -240,10 +241,6 @@ int
 PyThread_detach_thread(PyThread_handle_t handle) {
     HANDLE hThread = (HANDLE) handle;
     return (CloseHandle(hThread) == 0);
-}
-
-void
-PyThread_update_thread_after_fork(PyThread_ident_t* ident, PyThread_handle_t* handle) {
 }
 
 /*
@@ -444,16 +441,7 @@ PyThread_set_key_value(int key, void *value)
 void *
 PyThread_get_key_value(int key)
 {
-    /* because TLS is used in the Py_END_ALLOW_THREAD macro,
-     * it is necessary to preserve the windows error state, because
-     * it is assumed to be preserved across the call to the macro.
-     * Ideally, the macro should be fixed, but it is simpler to
-     * do it here.
-     */
-    DWORD error = GetLastError();
-    void *result = TlsGetValue(key);
-    SetLastError(error);
-    return result;
+    return TlsGetValue(key);
 }
 
 void
@@ -525,14 +513,10 @@ void *
 PyThread_tss_get(Py_tss_t *key)
 {
     assert(key != NULL);
-    /* because TSS is used in the Py_END_ALLOW_THREAD macro,
-     * it is necessary to preserve the windows error state, because
-     * it is assumed to be preserved across the call to the macro.
-     * Ideally, the macro should be fixed, but it is simpler to
-     * do it here.
-     */
-    DWORD error = GetLastError();
-    void *result = TlsGetValue(key->_key);
-    SetLastError(error);
-    return result;
+    int err = GetLastError();
+    void *r = TlsGetValue(key->_key);
+    if (r || !GetLastError()) {
+        SetLastError(err);
+    }
+    return r;
 }
