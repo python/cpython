@@ -154,6 +154,7 @@ class _ScriptTarget(str):
             __name__='__main__',
             __file__=self,
             __builtins__=__builtins__,
+            __spec__=None,
         )
 
     @property

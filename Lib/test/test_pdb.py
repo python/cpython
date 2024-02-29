@@ -2013,6 +2013,18 @@ def bœr():
             ('bœr', 1),
         )
 
+    def test_spec(self):
+        # Test that __main__.__spec__ is set to None when running a script
+        script = """
+            import __main__
+            print(__main__.__spec__)
+        """
+
+        commands = "continue"
+
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn('None', stdout)
+
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
         with open(os_helper.TESTFN, 'wb') as f:
