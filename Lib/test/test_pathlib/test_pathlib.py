@@ -796,7 +796,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
-    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
+    @os_helper.skip_unless_hardlink
     def test_hardlink_to(self):
         P = self.cls(self.base)
         target = P / 'fileA'
