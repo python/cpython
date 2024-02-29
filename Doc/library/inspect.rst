@@ -665,6 +665,16 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   If the passed object has a :attr:`!__signature__` attribute containing
+   an instance of :class:`Signature`, this function returns it.
+   If the attribute contains None, it is ignored.
+
+   .. impl-detail::
+
+      The behavior when the :attr:`!__signature__` attribute contains a value of
+      any other type is an implementation detail and subject to
+      unannounced changes. Consult the source code for current semantics.
+
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
@@ -698,13 +708,6 @@ function.
       Some callables may not be introspectable in certain implementations of
       Python.  For example, in CPython, some built-in functions defined in
       C provide no metadata about their arguments.
-
-   .. impl-detail::
-
-      If the passed object has a :attr:`!__signature__` attribute,
-      we may use it to create the signature.
-      The exact semantics are an implementation detail and are subject to
-      unannounced changes. Consult the source code for current semantics.
 
 
 .. class:: Signature(parameters=None, *, return_annotation=Signature.empty)
