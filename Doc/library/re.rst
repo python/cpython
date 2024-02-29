@@ -1325,9 +1325,9 @@ Since :meth:`~Pattern.match` and :meth:`~Pattern.search` return ``None``
 when there is no match, you can test whether there was a match with a simple
 ``if`` statement::
 
-   match = re.search(pattern, string)
-   if match:
-       process(match)
+   matched = re.search(pattern, string)
+   if matched:
+       process(matched)
 
 .. class:: Match
 
@@ -1547,10 +1547,10 @@ Checking for a Pair
 In this example, we'll use the following helper function to display match
 objects a little more gracefully::
 
-   def displaymatch(match):
-       if match is None:
+   def displaymatch(matchobj):
+       if matchobj is None:
            return None
-       return '<Match: %r, groups=%r>' % (match.group(), match.groups())
+       return '<Match: %r, groups=%r>' % (matchobj.group(), matchobj.groups())
 
 Suppose you are writing a poker program where a player's hand is represented as
 a 5-character string with each character representing a card, "a" for ace, "k"
