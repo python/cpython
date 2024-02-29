@@ -373,7 +373,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       Special reducer that can be defined in :class:`Pickler` subclasses. This
       method has priority over any reducer in the :attr:`dispatch_table`.  It
       should conform to the same interface as a :meth:`~object.__reduce__` method, and
-      can optionally return ``NotImplemented`` to fallback on
+      can optionally return :data:`NotImplemented` to fallback on
       :attr:`dispatch_table`-registered reducers to pickle ``obj``.
 
       For a detailed example, see :ref:`reducer_override`.
@@ -495,7 +495,7 @@ What can be pickled and unpickled?
 The following types can be pickled:
 
 * built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
-  ``NotImplemented``);
+  :data:`NotImplemented`);
 
 * integers, floating-point numbers, complex numbers;
 
@@ -897,7 +897,7 @@ functions and classes.
 For those cases, it is possible to subclass from the :class:`Pickler` class and
 implement a :meth:`~Pickler.reducer_override` method. This method can return an
 arbitrary reduction tuple (see :meth:`~object.__reduce__`). It can alternatively return
-``NotImplemented`` to fallback to the traditional behavior.
+:data:`NotImplemented` to fallback to the traditional behavior.
 
 If both the :attr:`~Pickler.dispatch_table` and
 :meth:`~Pickler.reducer_override` are defined, then
