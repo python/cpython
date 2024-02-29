@@ -3883,7 +3883,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);
     }
-    ADDOP_I(c, LOC(s), RAISE_VARARGS, 1);
+    ADDOP_I(c, LOC(s->v.Assert.test), RAISE_VARARGS, 1);
 
     USE_LABEL(c, end);
     return SUCCESS;
