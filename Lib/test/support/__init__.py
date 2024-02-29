@@ -1718,8 +1718,8 @@ def run_in_subprocess(*, if_=True):
 
         @functools.wraps(case)
         def f(self):
-            args = [sys.executable, '-m', 'test', case.__module__, '-m',
-                    case.__name__]
+            pattern = f'{case.__module__}.{case.__qualname__}'
+            args = [sys.executable, '-m', 'test', case.__module__, '-m', pattern]
             envs = os.environ.copy()
             envs[env_key] = 'yes'
             p = subprocess.run(args, env=envs, capture_output=True)
