@@ -1,12 +1,17 @@
-from test.support import verbose, reap_children
-from test.support.os_helper import TESTFN, unlink
+import sys
+import unittest
+from test.support import (
+    is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
+)
 from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
 
-# Skip these tests if termios or fcntl are not available
+# Skip these tests if termios is not available
 import_module('termios')
-# fcntl is a proxy for not being one of the wasm32 platforms even though we
-# don't use this module... a proper check for what crashes those is needed.
-import_module("fcntl")
+
+# Skip tests on WASM platforms, plus iOS/tvOS/watchOS
+if is_apple_mobile or is_emscripten or is_wasi:
+    raise unittest.SkipTest(f"pty tests not required on {sys.platform}")
 
 import errno
 import os
@@ -17,7 +22,6 @@ import select
 import signal
 import socket
 import io # readline
-import unittest
 import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"

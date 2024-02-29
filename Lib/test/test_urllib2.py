@@ -1,6 +1,7 @@
 import unittest
 from test import support
 from test.support import os_helper
+from test.support import requires_subprocess
 from test.support import warnings_helper
 from test import test_urllib
 from unittest import mock
@@ -14,10 +15,11 @@ import tempfile
 import subprocess
 
 import urllib.request
-# The proxy bypass method imported below has logic specific to the OSX
-# proxy config data structure but is testable on all platforms.
+# The proxy bypass method imported below has logic specific to the
+# corresponding system but is testable on all platforms.
 from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
                             HTTPPasswordMgrWithPriorAuth, _parse_proxy,
+                            _proxy_bypass_winreg_override,
                             _proxy_bypass_macosx_sysconf,
                             AbstractDigestAuthHandler)
 from urllib.parse import urlparse
@@ -998,6 +1000,7 @@ class HandlerTests(unittest.TestCase):
 
         file_obj.close()
 
+    @requires_subprocess()
     def test_http_body_pipe(self):
         # A file reading from a pipe.
         # A pipe cannot be seek'ed.  There is no way to determine the
@@ -1482,6 +1485,30 @@ class HandlerTests(unittest.TestCase):
         self.assertIsNotNone(req._tunnel_host)
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual(req.get_header("Proxy-authorization"), "FooBar")
+
+    @unittest.skipUnless(os.name == "nt", "only relevant for Windows")
+    def test_winreg_proxy_bypass(self):
+        proxy_override = "www.example.com;*.example.net; 192.168.0.1"
+        proxy_bypass = _proxy_bypass_winreg_override
+        for host in ("www.example.com", "www.example.net", "192.168.0.1"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expected bypass of %s to be true" % host)
+
+        for host in ("example.com", "www.example.org", "example.net",
+                     "192.168.0.2"):
+            self.assertFalse(proxy_bypass(host, proxy_override),
+                             "expected bypass of %s to be False" % host)
+
+        # check intranet address bypass
+        proxy_override = "example.com; <local>"
+        self.assertTrue(proxy_bypass("example.com", proxy_override),
+                        "expected bypass of %s to be true" % host)
+        self.assertFalse(proxy_bypass("example.net", proxy_override),
+                         "expected bypass of %s to be False" % host)
+        for host in ("test", "localhost"):
+            self.assertTrue(proxy_bypass(host, proxy_override),
+                            "expect <local> to bypass intranet address '%s'"
+                            % host)
 
     @unittest.skipUnless(sys.platform == 'darwin', "only relevant for OSX")
     def test_osx_proxy_bypass(self):

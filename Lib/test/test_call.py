@@ -155,7 +155,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
                                min, 0, default=1, key=2, foo=3)
 
     def test_varargs17_kw(self):
-        msg = r"'foo' is an invalid keyword argument for print\(\)$"
+        msg = r"print\(\) got an unexpected keyword argument 'foo'$"
         self.assertRaisesRegex(TypeError, msg,
                                print, 0, sep=1, end=2, file=3, flush=4, foo=5)
 
@@ -928,7 +928,7 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
         self.assertIn(f"Did you mean '{message}'?", str(cm.exception))
 
     @contextlib.contextmanager
-    def check_suggestion_not_pressent(self):
+    def check_suggestion_not_present(self):
         with self.assertRaises(TypeError) as cm:
             yield
         self.assertNotIn("Did you mean", str(cm.exception))
@@ -946,7 +946,7 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
 
         for keyword, suggestion in cases:
             with self.subTest(keyword):
-                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_pressent()
+                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_present()
                 with ctx:
                     foo(**{keyword:None})
 
@@ -986,6 +986,32 @@ class TestErrorMessagesSuggestions(unittest.TestCase):
             with self.subTest(suggestion):
                 with self.check_suggestion_includes(suggestion):
                     func(bluch=None)
+
+    def test_unexpected_keyword_suggestion_via_getargs(self):
+        with self.check_suggestion_includes("maxsplit"):
+            "foo".split(maxsplt=1)
+
+        self.assertRaisesRegex(
+            TypeError, r"split\(\) got an unexpected keyword argument 'blech'$",
+            "foo".split, blech=1
+        )
+        with self.check_suggestion_not_present():
+            "foo".split(blech=1)
+        with self.check_suggestion_not_present():
+            "foo".split(more_noise=1, maxsplt=1)
+
+        # Also test the vgetargskeywords path
+        with self.check_suggestion_includes("name"):
+            ImportError(namez="oops")
+
+        self.assertRaisesRegex(
+            TypeError, r"ImportError\(\) got an unexpected keyword argument 'blech'$",
+            ImportError, blech=1
+        )
+        with self.check_suggestion_not_present():
+            ImportError(blech=1)
+        with self.check_suggestion_not_present():
+            ImportError(blech=1, namez="oops")
 
 @cpython_only
 class TestRecursion(unittest.TestCase):

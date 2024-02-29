@@ -528,6 +528,7 @@ def _default_mime_types():
         '.tiff'   : 'image/tiff',
         '.tif'    : 'image/tiff',
         '.ico'    : 'image/vnd.microsoft.icon',
+        '.webp'   : 'image/webp',
         '.ras'    : 'image/x-cmu-raster',
         '.pnm'    : 'image/x-portable-anymap',
         '.pbm'    : 'image/x-portable-bitmap',
@@ -587,7 +588,6 @@ def _default_mime_types():
         '.pict': 'image/pict',
         '.pct' : 'image/pict',
         '.pic' : 'image/pict',
-        '.webp': 'image/webp',
         '.xul' : 'text/xul',
         }
 

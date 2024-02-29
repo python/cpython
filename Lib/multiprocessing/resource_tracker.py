@@ -29,8 +29,12 @@ __all__ = ['ensure_running', 'register', 'unregister']
 _HAVE_SIGMASK = hasattr(signal, 'pthread_sigmask')
 _IGNORED_SIGNALS = (signal.SIGINT, signal.SIGTERM)
 
+def cleanup_noop(name):
+    raise RuntimeError('noop should never be registered or cleaned up')
+
 _CLEANUP_FUNCS = {
-    'noop': lambda: None,
+    'noop': cleanup_noop,
+    'dummy': lambda name: None,  # Dummy resource used in tests
 }
 
 if os.name == 'posix':
@@ -61,6 +65,7 @@ class ResourceTracker(object):
         self._lock = threading.RLock()
         self._fd = None
         self._pid = None
+        self._exitcode = None
 
     def _reentrant_call_error(self):
         # gh-109629: this happens if an explicit call to the ResourceTracker
@@ -84,8 +89,15 @@ class ResourceTracker(object):
             os.close(self._fd)
             self._fd = None
 
-            os.waitpid(self._pid, 0)
+            _, status = os.waitpid(self._pid, 0)
+
             self._pid = None
+
+            try:
+                self._exitcode = os.waitstatus_to_exitcode(status)
+            except ValueError:
+                # os.waitstatus_to_exitcode may raise an exception for invalid values
+                self._exitcode = None
 
     def getfd(self):
         self.ensure_running()
@@ -119,6 +131,7 @@ class ResourceTracker(object):
                     pass
                 self._fd = None
                 self._pid = None
+                self._exitcode = None
 
                 warnings.warn('resource_tracker: process died unexpectedly, '
                               'relaunching.  Some resources might leak.')
@@ -221,6 +234,8 @@ def main(fd):
             pass
 
     cache = {rtype: set() for rtype in _CLEANUP_FUNCS.keys()}
+    exit_code = 0
+
     try:
         # keep track of registered/unregistered resources
         with open(fd, 'rb') as f:
@@ -242,6 +257,7 @@ def main(fd):
                     else:
                         raise RuntimeError('unrecognized command %r' % cmd)
                 except Exception:
+                    exit_code = 3
                     try:
                         sys.excepthook(*sys.exc_info())
                     except:
@@ -251,10 +267,17 @@ def main(fd):
         for rtype, rtype_cache in cache.items():
             if rtype_cache:
                 try:
-                    warnings.warn(
-                        f'resource_tracker: There appear to be {len(rtype_cache)} '
-                        f'leaked {rtype} objects to clean up at shutdown: {rtype_cache}'
-                    )
+                    exit_code = 1
+                    if rtype == 'dummy':
+                        # The test 'dummy' resource is expected to leak.
+                        # We skip the warning (and *only* the warning) for it.
+                        pass
+                    else:
+                        warnings.warn(
+                            f'resource_tracker: There appear to be '
+                            f'{len(rtype_cache)} leaked {rtype} objects to '
+                            f'clean up at shutdown: {rtype_cache}'
+                        )
                 except Exception:
                     pass
             for name in rtype_cache:
@@ -265,6 +288,9 @@ def main(fd):
                     try:
                         _CLEANUP_FUNCS[rtype](name)
                     except Exception as e:
+                        exit_code = 2
                         warnings.warn('resource_tracker: %r: %s' % (name, e))
                 finally:
                     pass
+
+        sys.exit(exit_code)

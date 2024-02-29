@@ -1599,6 +1599,13 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         a = bytearray(b'')
         a.extend([Indexable(ord('a'))])
         self.assertEqual(a, b'a')
+        a = bytearray(b'abc')
+        self.assertRaisesRegex(TypeError,  # Override for string.
+                               "expected iterable of integers; got: 'str'",
+                               a.extend, 'def')
+        self.assertRaisesRegex(TypeError,  # But not for others.
+                               "can't extend bytearray with float",
+                               a.extend, 1.0)
 
     def test_remove(self):
         b = bytearray(b'hello')

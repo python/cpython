@@ -1,2 +1,0 @@
-Expose more platform specific constants in the :mod:`fcntl` module on Linux,
-macOS, FreeBSD and NetBSD.

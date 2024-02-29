@@ -579,6 +579,7 @@ class SSLProtocol(protocols.BufferedProtocol):
 
             peercert = sslobj.getpeercert()
         except Exception as exc:
+            handshake_exc = None
             self._set_state(SSLProtocolState.UNWRAPPED)
             if isinstance(exc, ssl.CertificateError):
                 msg = 'SSL handshake failed on verifying the certificate'

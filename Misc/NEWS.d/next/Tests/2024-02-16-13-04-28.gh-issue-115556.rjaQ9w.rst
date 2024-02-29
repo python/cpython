@@ -1,0 +1,2 @@
+On Windows, commas passed in arguments to ``Tools\buildbot\test.bat`` and
+``PCbuild\\rt.bat`` are now properly handled.

@@ -124,7 +124,7 @@ class StartupTests(TestBase):
             orig = sys.path[0]
 
             interp = interpreters.create()
-            interp.exec_sync(f"""if True:
+            interp.exec(f"""if True:
                 import json
                 import sys
                 print(json.dumps({{

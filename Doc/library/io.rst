@@ -466,7 +466,7 @@ I/O Base Classes
 
 .. class:: RawIOBase
 
-   Base class for raw binary streams.  It inherits :class:`IOBase`.
+   Base class for raw binary streams.  It inherits from :class:`IOBase`.
 
    Raw binary streams typically provide low-level access to an underlying OS
    device or API, and do not try to encapsulate it in high-level primitives
@@ -519,7 +519,7 @@ I/O Base Classes
 .. class:: BufferedIOBase
 
    Base class for binary streams that support some kind of buffering.
-   It inherits :class:`IOBase`.
+   It inherits from :class:`IOBase`.
 
    The main difference with :class:`RawIOBase` is that methods :meth:`read`,
    :meth:`readinto` and :meth:`write` will try (respectively) to read as much
@@ -633,7 +633,7 @@ Raw File I/O
 .. class:: FileIO(name, mode='r', closefd=True, opener=None)
 
    A raw binary stream representing an OS-level file containing bytes data.  It
-   inherits :class:`RawIOBase`.
+   inherits from :class:`RawIOBase`.
 
    The *name* can be one of two things:
 
@@ -696,7 +696,7 @@ than raw I/O does.
 
 .. class:: BytesIO(initial_bytes=b'')
 
-   A binary stream using an in-memory bytes buffer.  It inherits
+   A binary stream using an in-memory bytes buffer.  It inherits from
    :class:`BufferedIOBase`.  The buffer is discarded when the
    :meth:`~IOBase.close` method is called.
 
@@ -745,7 +745,7 @@ than raw I/O does.
 .. class:: BufferedReader(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a readable, non
-   seekable :class:`RawIOBase` raw binary stream.  It inherits
+   seekable :class:`RawIOBase` raw binary stream.  It inherits from
    :class:`BufferedIOBase`.
 
    When reading data from this object, a larger amount of data may be
@@ -783,7 +783,7 @@ than raw I/O does.
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a writeable, non
-   seekable :class:`RawIOBase` raw binary stream.  It inherits
+   seekable :class:`RawIOBase` raw binary stream.  It inherits from
    :class:`BufferedIOBase`.
 
    When writing to this object, data is normally placed into an internal
@@ -818,7 +818,7 @@ than raw I/O does.
 .. class:: BufferedRandom(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
    A buffered binary stream providing higher-level access to a seekable
-   :class:`RawIOBase` raw binary stream.  It inherits :class:`BufferedReader`
+   :class:`RawIOBase` raw binary stream.  It inherits from :class:`BufferedReader`
    and :class:`BufferedWriter`.
 
    The constructor creates a reader and writer for a seekable raw stream, given
@@ -834,7 +834,7 @@ than raw I/O does.
 
    A buffered binary stream providing higher-level access to two non seekable
    :class:`RawIOBase` raw binary streams---one readable, the other writeable.
-   It inherits :class:`BufferedIOBase`.
+   It inherits from :class:`BufferedIOBase`.
 
    *reader* and *writer* are :class:`RawIOBase` objects that are readable and
    writeable respectively.  If the *buffer_size* is omitted it defaults to
@@ -857,7 +857,7 @@ Text I/O
 .. class:: TextIOBase
 
    Base class for text streams.  This class provides a character and line based
-   interface to stream I/O.  It inherits :class:`IOBase`.
+   interface to stream I/O.  It inherits from :class:`IOBase`.
 
    :class:`TextIOBase` provides or overrides these data attributes and
    methods in addition to those from :class:`IOBase`:
@@ -946,7 +946,7 @@ Text I/O
                          line_buffering=False, write_through=False)
 
    A buffered text stream providing higher-level access to a
-   :class:`BufferedIOBase` buffered binary stream.  It inherits
+   :class:`BufferedIOBase` buffered binary stream.  It inherits from
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
@@ -1073,7 +1073,7 @@ Text I/O
 
 .. class:: StringIO(initial_value='', newline='\n')
 
-   A text stream using an in-memory text buffer.  It inherits
+   A text stream using an in-memory text buffer.  It inherits from
    :class:`TextIOBase`.
 
    The text buffer is discarded when the :meth:`~IOBase.close` method is
@@ -1124,7 +1124,7 @@ Text I/O
 .. class:: IncrementalNewlineDecoder
 
    A helper codec that decodes newlines for :term:`universal newlines` mode.
-   It inherits :class:`codecs.IncrementalDecoder`.
+   It inherits from :class:`codecs.IncrementalDecoder`.
 
 
 Performance

@@ -1,2 +1,0 @@
-The signature for the ``__replace__`` method on :mod:`dataclasses` now has
-the first argument named ``self``, rather than ``obj``.

@@ -1,0 +1,2 @@
+Stop logging potentially sensitive callback arguments in :mod:`asyncio`
+unless debug mode is active.

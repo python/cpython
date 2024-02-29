@@ -10,41 +10,46 @@ Using Python on a Mac
 
 Python on a Mac running macOS is in principle very similar to Python on
 any other Unix platform, but there are a number of additional features such as
-the IDE and the Package Manager that are worth pointing out.
+the integrated development environment (IDE) and the Package Manager that are
+worth pointing out.
+
 
 .. _getting-osx:
+.. _getting-and-installing-macpython:
 
-Getting and Installing MacPython
-================================
+Getting and Installing Python
+=============================
 
 macOS used to come with Python 2.7 pre-installed between versions
 10.8 and `12.3 <https://developer.apple.com/documentation/macos-release-notes/macos-12_3-release-notes#Python>`_.
-You are invited to install the most recent version of Python 3 from the Python
-website (https://www.python.org).  A current "universal binary" build of Python,
-which runs natively on the Mac's new Intel and legacy PPC CPU's, is available
-there.
+You are invited to install the most recent version of Python 3 from the `Python
+website <https://www.python.org/downloads/macos/>`__.
+A current "universal2 binary" build of Python, which runs natively on the Mac's
+new Apple Silicon and legacy Intel processors, is available there.
 
 What you get after installing is a number of things:
 
-* A :file:`Python 3.12` folder in your :file:`Applications` folder. In here
+* A |python_version_literal| folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
-  Python distributions; and PythonLauncher, which handles double-clicking Python
+  Python distributions; and :program:`Python Launcher`, which handles double-clicking Python
   scripts from the Finder.
 
 * A framework :file:`/Library/Frameworks/Python.framework`, which includes the
   Python executable and libraries. The installer adds this location to your shell
-  path. To uninstall MacPython, you can simply remove these three things. A
-  symlink to the Python executable is placed in /usr/local/bin/.
+  path. To uninstall Python, you can remove these three things. A
+  symlink to the Python executable is placed in :file:`/usr/local/bin/`.
 
-The Apple-provided build of Python is installed in
-:file:`/System/Library/Frameworks/Python.framework` and :file:`/usr/bin/python`,
-respectively. You should never modify or delete these, as they are
-Apple-controlled and are used by Apple- or third-party software.  Remember that
-if you choose to install a newer Python version from python.org, you will have
-two different but functional Python installations on your computer, so it will
-be important that your paths and usages are consistent with what you want to do.
+.. note::
 
-IDLE includes a help menu that allows you to access Python documentation. If you
+   On macOS 10.8-12.3, the Apple-provided build of Python is installed in
+   :file:`/System/Library/Frameworks/Python.framework` and :file:`/usr/bin/python`,
+   respectively. You should never modify or delete these, as they are
+   Apple-controlled and are used by Apple- or third-party software.  Remember that
+   if you choose to install a newer Python version from python.org, you will have
+   two different but functional Python installations on your computer, so it will
+   be important that your paths and usages are consistent with what you want to do.
+
+IDLE includes a Help menu that allows you to access Python documentation. If you
 are completely new to Python you should start reading the tutorial introduction
 in that document.
 
@@ -56,29 +61,29 @@ How to run a Python script
 --------------------------
 
 Your best way to get started with Python on macOS is through the IDLE
-integrated development environment, see section :ref:`ide` and use the Help menu
+integrated development environment; see section :ref:`ide` and use the Help menu
 when the IDE is running.
 
 If you want to run Python scripts from the Terminal window command line or from
 the Finder you first need an editor to create your script. macOS comes with a
-number of standard Unix command line editors, :program:`vim` and
-:program:`emacs` among them. If you want a more Mac-like editor,
-:program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
-http://www.barebones.com/products/bbedit/index.html) are good choices, as is
-:program:`TextMate` (see https://macromates.com/). Other editors include
-:program:`Gvim` (https://macvim.org/macvim/) and :program:`Aquamacs`
-(http://aquamacs.org/).
+number of standard Unix command line editors, :program:`vim`
+:program:`nano` among them. If you want a more Mac-like editor,
+:program:`BBEdit` from Bare Bones Software (see
+https://www.barebones.com/products/bbedit/index.html) are good choices, as is
+:program:`TextMate` (see https://macromates.com). Other editors include
+:program:`MacVim` (https://macvim.org) and :program:`Aquamacs`
+(https://aquamacs.org).
 
 To run your script from the Terminal window you must make sure that
 :file:`/usr/local/bin` is in your shell search path.
 
 To run your script from the Finder you have two options:
 
-* Drag it to :program:`PythonLauncher`
+* Drag it to :program:`Python Launcher`.
 
-* Select :program:`PythonLauncher` as the default application to open your
-  script (or any .py script) through the finder Info window and double-click it.
-  :program:`PythonLauncher` has various preferences to control how your script is
+* Select :program:`Python Launcher` as the default application to open your
+  script (or any ``.py`` script) through the finder Info window and double-click it.
+  :program:`Python Launcher` has various preferences to control how your script is
   launched. Option-dragging allows you to change these for one invocation, or use
   its Preferences menu to change things globally.
 
@@ -103,10 +108,11 @@ Python on macOS honors all standard Unix environment variables such as
 :envvar:`PYTHONPATH`, but setting these variables for programs started from the
 Finder is non-standard as the Finder does not read your :file:`.profile` or
 :file:`.cshrc` at startup. You need to create a file
-:file:`~/.MacOSX/environment.plist`. See Apple's Technical Document QA1067 for
-details.
+:file:`~/.MacOSX/environment.plist`. See Apple's
+`Technical Q&A QA1067 <https://developer.apple.com/library/archive/qa/qa1067/_index.html>`__
+for details.
 
-For more information on installation Python packages in MacPython, see section
+For more information on installation Python packages, see section
 :ref:`mac-package-manager`.
 
 
@@ -115,9 +121,9 @@ For more information on installation Python packages in MacPython, see section
 The IDE
 =======
 
-MacPython ships with the standard IDLE development environment. A good
+Python ships with the standard IDLE development environment. A good
 introduction to using IDLE can be found at
-http://www.hashcollision.org/hkn/python/idle_intro/index.html.
+https://www.hashcollision.org/hkn/python/idle_intro/index.html.
 
 
 .. _mac-package-manager:
@@ -130,8 +136,10 @@ This section has moved to the `Python Packaging User Guide`_.
 .. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/installing-packages/
 
 
-GUI Programming on the Mac
-==========================
+.. _gui-programming-on-the-mac:
+
+GUI Programming
+===============
 
 There are several options for building GUI applications on the Mac with Python.
 
@@ -151,20 +159,25 @@ macOS. Packages and documentation are available from https://www.wxpython.org.
 macOS. More information can be found at
 https://riverbankcomputing.com/software/pyqt/intro.
 
+*PySide* is another cross-platform Qt-based toolkit. More information at
+https://www.qt.io/qt-for-python.
 
-Distributing Python Applications on the Mac
-===========================================
+
+.. _distributing-python-applications-on-the-mac:
+
+Distributing Python Applications
+================================
 
 The standard tool for deploying standalone Python applications on the Mac is
-:program:`py2app`. More information on installing and using py2app can be found
-at https://pypi.org/project/py2app/.
+:program:`py2app`. More information on installing and using :program:`py2app`
+can be found at https://pypi.org/project/py2app/.
 
 
 Other Resources
 ===============
 
-The MacPython mailing list is an excellent support resource for Python users and
-developers on the Mac:
+The Pythonmac-SIG mailing list is an excellent support resource for Python users
+and developers on the Mac:
 
 https://www.python.org/community/sigs/current/pythonmac-sig/
 

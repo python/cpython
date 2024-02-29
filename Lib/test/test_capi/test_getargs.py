@@ -667,7 +667,7 @@ class Keywords_TestCase(unittest.TestCase):
         try:
             getargs_keywords((1,2),3,arg5=10,arg666=666)
         except TypeError as err:
-            self.assertEqual(str(err), "'arg666' is an invalid keyword argument for this function")
+            self.assertEqual(str(err), "this function got an unexpected keyword argument 'arg666'")
         else:
             self.fail('TypeError should have been raised')
 
@@ -675,7 +675,7 @@ class Keywords_TestCase(unittest.TestCase):
         try:
             getargs_keywords((1,2), 3, (4,(5,6)), (7,8,9), **{'\uDC80': 10})
         except TypeError as err:
-            self.assertEqual(str(err), "'\udc80' is an invalid keyword argument for this function")
+            self.assertEqual(str(err), "this function got an unexpected keyword argument '\udc80'")
         else:
             self.fail('TypeError should have been raised')
 
@@ -742,12 +742,12 @@ class KeywordOnly_TestCase(unittest.TestCase):
     def test_invalid_keyword(self):
         # extraneous keyword arg
         with self.assertRaisesRegex(TypeError,
-            "'monster' is an invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument 'monster'"):
             getargs_keyword_only(1, 2, monster=666)
 
     def test_surrogate_keyword(self):
         with self.assertRaisesRegex(TypeError,
-            "'\udc80' is an invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument '\udc80'"):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
     def test_weird_str_subclass(self):
@@ -761,7 +761,7 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
         with self.assertRaisesRegex(TypeError,
-            "invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument"):
             getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
 
     def test_weird_str_subclass2(self):
@@ -774,7 +774,7 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{BadStr("keyword_only"): 3})
         with self.assertRaisesRegex(TypeError,
-            "invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument"):
             getargs_keyword_only(1, 2, **{BadStr("monster"): 666})
 
 
@@ -807,7 +807,7 @@ class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
 
     def test_empty_keyword(self):
         with self.assertRaisesRegex(TypeError,
-            "'' is an invalid keyword argument for this function"):
+            "this function got an unexpected keyword argument ''"):
             self.getargs(1, 2, **{'': 666})
 
 
@@ -1204,7 +1204,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                 "function missing required argument 'a'"):
             parse((), {}, 'O', ['a'])
         with self.assertRaisesRegex(TypeError,
-                "'b' is an invalid keyword argument"):
+                "this function got an unexpected keyword argument 'b'"):
             parse((), {'b': 1}, '|O', ['a'])
         with self.assertRaisesRegex(TypeError,
                 fr"argument for function given by name \('a'\) "
@@ -1278,10 +1278,10 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                         fr"and position \(1\)"):
                     parse((1,), {name: 2}, 'O|O', [name, 'b'])
                 with self.assertRaisesRegex(TypeError,
-                        f"'{name}' is an invalid keyword argument"):
+                        f"this function got an unexpected keyword argument '{name}'"):
                     parse((), {name: 1}, '|O', ['b'])
                 with self.assertRaisesRegex(TypeError,
-                        "'b' is an invalid keyword argument"):
+                        "this function got an unexpected keyword argument 'b'"):
                     parse((), {'b': 1}, '|O', [name])
 
                 invalid = name.encode() + (name.encode()[:-1] or b'\x80')
@@ -1301,17 +1301,17 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                 for name2 in ('b', 'ë', 'ĉ', 'Ɐ', '𐀁'):
                     with self.subTest(name2=name2):
                         with self.assertRaisesRegex(TypeError,
-                                f"'{name2}' is an invalid keyword argument"):
+                                f"this function got an unexpected keyword argument '{name2}'"):
                             parse((), {name2: 1}, '|O', [name])
 
                 name2 = name.encode().decode('latin1')
                 if name2 != name:
                     with self.assertRaisesRegex(TypeError,
-                            f"'{name2}' is an invalid keyword argument"):
+                            f"this function got an unexpected keyword argument '{name2}'"):
                         parse((), {name2: 1}, '|O', [name])
                     name3 = name + '3'
                     with self.assertRaisesRegex(TypeError,
-                            f"'{name2}' is an invalid keyword argument"):
+                            f"this function got an unexpected keyword argument '{name2}'"):
                         parse((), {name2: 1, name3: 2}, '|OO', [name, name3])
 
     def test_nested_tuple(self):

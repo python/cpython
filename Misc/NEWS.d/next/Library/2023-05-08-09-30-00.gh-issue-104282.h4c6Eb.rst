@@ -1,3 +1,0 @@
-Fix null pointer dereference in :func:`lzma._decode_filter_properties`
-due to improper handling of BCJ filters with properties of zero length.
-Patch by Radislav Chugunov.

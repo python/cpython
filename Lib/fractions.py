@@ -579,7 +579,8 @@ class Fraction(numbers.Rational):
             f"for object of type {type(self).__name__!r}"
         )
 
-    def _operator_fallbacks(monomorphic_operator, fallback_operator):
+    def _operator_fallbacks(monomorphic_operator, fallback_operator,
+                            handle_complex=True):
         """Generates forward and reverse operators given a purely-rational
         operator and a function from the operator module.
 
@@ -666,7 +667,7 @@ class Fraction(numbers.Rational):
                 return monomorphic_operator(a, Fraction(b))
             elif isinstance(b, float):
                 return fallback_operator(float(a), b)
-            elif isinstance(b, complex):
+            elif handle_complex and isinstance(b, complex):
                 return fallback_operator(complex(a), b)
             else:
                 return NotImplemented
@@ -679,7 +680,7 @@ class Fraction(numbers.Rational):
                 return monomorphic_operator(Fraction(a), b)
             elif isinstance(a, numbers.Real):
                 return fallback_operator(float(a), float(b))
-            elif isinstance(a, numbers.Complex):
+            elif handle_complex and isinstance(a, numbers.Complex):
                 return fallback_operator(complex(a), complex(b))
             else:
                 return NotImplemented
@@ -830,7 +831,7 @@ class Fraction(numbers.Rational):
         """a // b"""
         return (a.numerator * b.denominator) // (a.denominator * b.numerator)
 
-    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv)
+    __floordiv__, __rfloordiv__ = _operator_fallbacks(_floordiv, operator.floordiv, False)
 
     def _divmod(a, b):
         """(a // b, a % b)"""
@@ -838,14 +839,14 @@ class Fraction(numbers.Rational):
         div, n_mod = divmod(a.numerator * db, da * b.numerator)
         return div, Fraction(n_mod, da * db)
 
-    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod)
+    __divmod__, __rdivmod__ = _operator_fallbacks(_divmod, divmod, False)
 
     def _mod(a, b):
         """a % b"""
         da, db = a.denominator, b.denominator
         return Fraction((a.numerator * db) % (b.numerator * da), da * db)
 
-    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod)
+    __mod__, __rmod__ = _operator_fallbacks(_mod, operator.mod, False)
 
     def __pow__(a, b):
         """a ** b

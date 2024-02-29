@@ -1,0 +1,1 @@
+Link extension modules against libpython on Android.

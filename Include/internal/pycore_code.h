@@ -8,6 +8,15 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+
+// We hide some of the newer PyCodeObject fields behind macros.
+// This helps with backporting certain changes to 3.12.
+#define _PyCode_HAS_EXECUTORS(CODE) \
+    (CODE->co_executors != NULL)
+#define _PyCode_HAS_INSTRUMENTATION(CODE) \
+    (CODE->_co_instrumentation_version > 0)
+
+
 #define CODE_MAX_WATCHERS 8
 
 /* PEP 659

@@ -2393,7 +2393,7 @@ textiowrapper_parse_cookie(cookie_type *cookie, PyObject *cookieObj)
         return -1;
 
     if (_PyLong_AsByteArray(cookieLong, buffer, sizeof(buffer),
-                            PY_LITTLE_ENDIAN, 0) < 0) {
+                            PY_LITTLE_ENDIAN, 0, 1) < 0) {
         Py_DECREF(cookieLong);
         return -1;
     }

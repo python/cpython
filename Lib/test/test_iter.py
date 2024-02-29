@@ -302,7 +302,7 @@ class TestCase(unittest.TestCase):
             # listiter_reduce_general
             self.assertEqual(
                 run("reversed", orig["reversed"](list(range(8)))),
-                (iter, ([],))
+                (reversed, ([],))
             )
 
             for case in types:

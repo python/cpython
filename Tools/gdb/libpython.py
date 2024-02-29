@@ -70,6 +70,14 @@ def _type_unsigned_int_ptr():
 def _sizeof_void_p():
     return gdb.lookup_type('void').pointer().sizeof
 
+def _managed_dict_offset():
+    # See pycore_object.h
+    pyobj = gdb.lookup_type("PyObject")
+    if any(field.name == "ob_ref_local" for field in pyobj.fields()):
+        return -1 * _sizeof_void_p()
+    else:
+        return -3 * _sizeof_void_p()
+
 
 Py_TPFLAGS_MANAGED_DICT      = (1 << 4)
 Py_TPFLAGS_HEAPTYPE          = (1 << 9)
@@ -457,7 +465,7 @@ class HeapTypeObjectPtr(PyObjectPtr):
                 if dictoffset < 0:
                     if int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT:
                         assert dictoffset == -1
-                        dictoffset = -3 * _sizeof_void_p()
+                        dictoffset = _managed_dict_offset()
                     else:
                         type_PyVarObject_ptr = gdb.lookup_type('PyVarObject').pointer()
                         tsize = int_from_int(self._gdbval.cast(type_PyVarObject_ptr)['ob_size'])
@@ -485,9 +493,8 @@ class HeapTypeObjectPtr(PyObjectPtr):
         has_values =  int_from_int(typeobj.field('tp_flags')) & Py_TPFLAGS_MANAGED_DICT
         if not has_values:
             return None
-        charptrptr_t = _type_char_ptr().pointer()
-        ptr = self._gdbval.cast(charptrptr_t) - 3
-        char_ptr = ptr.dereference()
+        ptr = self._gdbval.cast(_type_char_ptr()) + _managed_dict_offset()
+        char_ptr = ptr.cast(_type_char_ptr().pointer()).dereference()
         if (int(char_ptr) & 1) == 0:
             return None
         char_ptr += 1

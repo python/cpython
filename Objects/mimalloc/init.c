@@ -13,27 +13,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 
 // Empty page used to initialize the small free pages array
-const mi_page_t _mi_page_empty = {
-  0, false, false, false, 0,
-  0,       // capacity
-  0,       // reserved capacity
-  { 0 },   // flags
-  false,   // is_zero
-  0,       // retire_expire
-  NULL,    // free
-  0,       // used
-  0,       // xblock_size
-  NULL,    // local_free
-  #if (MI_PADDING || MI_ENCODE_FREELIST)
-  { 0, 0 },
-  #endif
-  MI_ATOMIC_VAR_INIT(0), // xthread_free
-  MI_ATOMIC_VAR_INIT(0), // xheap
-  NULL, NULL
-  #if MI_INTPTR_SIZE==8
-  , { 0 }  // padding
-  #endif
-};
+const mi_page_t _mi_page_empty;
 
 #define MI_PAGE_EMPTY() ((mi_page_t*)&_mi_page_empty)
 
@@ -122,6 +102,7 @@ mi_decl_cache_align const mi_heap_t _mi_heap_empty = {
   MI_BIN_FULL, 0,   // page retired min/max
   NULL,             // next
   false,
+  0,
   0
 };
 

@@ -87,6 +87,11 @@ struct _xid {
 PyAPI_FUNC(_PyCrossInterpreterData *) _PyCrossInterpreterData_New(void);
 PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyCrossInterpreterData *data);
 
+#define _PyCrossInterpreterData_DATA(DATA) ((DATA)->data)
+#define _PyCrossInterpreterData_OBJ(DATA) ((DATA)->obj)
+#define _PyCrossInterpreterData_INTERPID(DATA) ((DATA)->interpid)
+// Users should not need getters for "new_object" or "free".
+
 
 /* defining cross-interpreter data */
 
@@ -100,6 +105,25 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_InitWithSize(
         xid_newobjectfunc);
 PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
         PyInterpreterState *, _PyCrossInterpreterData *);
+
+// Normally the Init* functions are sufficient.  The only time
+// additional initialization might be needed is to set the "free" func,
+// though that should be infrequent.
+#define _PyCrossInterpreterData_SET_FREE(DATA, FUNC) \
+    do { \
+        (DATA)->free = (FUNC); \
+    } while (0)
+// Additionally, some shareable types are essentially light wrappers
+// around other shareable types.  The crossinterpdatafunc of the wrapper
+// can often be implemented by calling the wrapped object's
+// crossinterpdatafunc and then changing the "new_object" function.
+// We have _PyCrossInterpreterData_SET_NEW_OBJECT() here for that,
+// but might be better to have a function like
+// _PyCrossInterpreterData_AdaptToWrapper() instead.
+#define _PyCrossInterpreterData_SET_NEW_OBJECT(DATA, FUNC) \
+    do { \
+        (DATA)->new_object = (FUNC); \
+    } while (0)
 
 
 /* using cross-interpreter data */
@@ -169,6 +193,8 @@ extern void _PyXI_Fini(PyInterpreterState *interp);
 
 extern PyStatus _PyXI_InitTypes(PyInterpreterState *interp);
 extern void _PyXI_FiniTypes(PyInterpreterState *interp);
+
+#define _PyInterpreterState_GetXIState(interp) (&(interp)->xi)
 
 
 /***************************/

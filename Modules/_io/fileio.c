@@ -269,6 +269,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
+    if (PyBool_Check(nameobj)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return -1;
+        }
+    }
     fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {

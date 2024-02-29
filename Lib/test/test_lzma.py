@@ -2,7 +2,6 @@ import _compression
 import array
 from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
-import pathlib
 import pickle
 import random
 import sys
@@ -12,7 +11,7 @@ import unittest
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_module
 from test.support.os_helper import (
-    TESTFN, unlink
+    TESTFN, unlink, FakePath
 )
 
 lzma = import_module("lzma")
@@ -548,7 +547,7 @@ class FileTestCase(unittest.TestCase):
             pass
 
     def test_init_with_PathLike_filename(self):
-        filename = pathlib.Path(TESTFN)
+        filename = FakePath(TESTFN)
         with TempFile(filename, COMPRESSED_XZ):
             with LZMAFile(filename) as f:
                 self.assertEqual(f.read(), INPUT)
@@ -585,11 +584,10 @@ class FileTestCase(unittest.TestCase):
         self.addCleanup(unlink, TESTFN)
         for mode in ("x", "xb"):
             unlink(TESTFN)
-            with LZMAFile(TESTFN, mode):
+            with LZMAFile(TESTFN, mode) as f:
                 pass
             with self.assertRaises(FileExistsError):
-                with LZMAFile(TESTFN, mode):
-                    pass
+                LZMAFile(TESTFN, mode)
 
     def test_init_bad_mode(self):
         with self.assertRaises(ValueError):
@@ -867,16 +865,58 @@ class FileTestCase(unittest.TestCase):
             with LZMAFile(TESTFN) as f:
                 self.assertEqual(f.read(), INPUT)
                 self.assertEqual(f.read(), b"")
+                self.assertIsInstance(f.fileno(), int)
+                self.assertIs(f.readable(), True)
+                self.assertIs(f.writable(), False)
+                self.assertIs(f.seekable(), True)
+                self.assertIs(f.closed, False)
+            self.assertIs(f.closed, True)
+            self.assertRaises(ValueError, f.fileno)
+            self.assertRaises(ValueError, f.readable)
+            self.assertRaises(ValueError, f.writable)
+            self.assertRaises(ValueError, f.seekable)
 
     def test_read_from_file_with_bytes_filename(self):
-        try:
-            bytes_filename = TESTFN.encode("ascii")
-        except UnicodeEncodeError:
-            self.skipTest("Temporary file name needs to be ASCII")
+        bytes_filename = os.fsencode(TESTFN)
         with TempFile(TESTFN, COMPRESSED_XZ):
             with LZMAFile(bytes_filename) as f:
                 self.assertEqual(f.read(), INPUT)
                 self.assertEqual(f.read(), b"")
+
+    def test_read_from_fileobj(self):
+        with TempFile(TESTFN, COMPRESSED_XZ):
+            with open(TESTFN, 'rb') as raw:
+                with LZMAFile(raw) as f:
+                    self.assertEqual(f.read(), INPUT)
+                    self.assertEqual(f.read(), b"")
+                    self.assertEqual(f.fileno(), raw.fileno())
+                    self.assertIs(f.readable(), True)
+                    self.assertIs(f.writable(), False)
+                    self.assertIs(f.seekable(), True)
+                    self.assertIs(f.closed, False)
+                self.assertIs(f.closed, True)
+                self.assertRaises(ValueError, f.fileno)
+                self.assertRaises(ValueError, f.readable)
+                self.assertRaises(ValueError, f.writable)
+                self.assertRaises(ValueError, f.seekable)
+
+    def test_read_from_fileobj_with_int_name(self):
+        with TempFile(TESTFN, COMPRESSED_XZ):
+            fd = os.open(TESTFN, os.O_RDONLY)
+            with open(fd, 'rb') as raw:
+                with LZMAFile(raw) as f:
+                    self.assertEqual(f.read(), INPUT)
+                    self.assertEqual(f.read(), b"")
+                    self.assertEqual(f.fileno(), raw.fileno())
+                    self.assertIs(f.readable(), True)
+                    self.assertIs(f.writable(), False)
+                    self.assertIs(f.seekable(), True)
+                    self.assertIs(f.closed, False)
+                self.assertIs(f.closed, True)
+                self.assertRaises(ValueError, f.fileno)
+                self.assertRaises(ValueError, f.readable)
+                self.assertRaises(ValueError, f.writable)
+                self.assertRaises(ValueError, f.seekable)
 
     def test_read_incomplete(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ[:128])) as f:
@@ -1051,6 +1091,17 @@ class FileTestCase(unittest.TestCase):
         try:
             with LZMAFile(TESTFN, "w") as f:
                 f.write(INPUT)
+                self.assertIsInstance(f.fileno(), int)
+                self.assertIs(f.readable(), False)
+                self.assertIs(f.writable(), True)
+                self.assertIs(f.seekable(), False)
+                self.assertIs(f.closed, False)
+            self.assertIs(f.closed, True)
+            self.assertRaises(ValueError, f.fileno)
+            self.assertRaises(ValueError, f.readable)
+            self.assertRaises(ValueError, f.writable)
+            self.assertRaises(ValueError, f.seekable)
+
             expected = lzma.compress(INPUT)
             with open(TESTFN, "rb") as f:
                 self.assertEqual(f.read(), expected)
@@ -1058,13 +1109,55 @@ class FileTestCase(unittest.TestCase):
             unlink(TESTFN)
 
     def test_write_to_file_with_bytes_filename(self):
-        try:
-            bytes_filename = TESTFN.encode("ascii")
-        except UnicodeEncodeError:
-            self.skipTest("Temporary file name needs to be ASCII")
+        bytes_filename = os.fsencode(TESTFN)
         try:
             with LZMAFile(bytes_filename, "w") as f:
                 f.write(INPUT)
+            expected = lzma.compress(INPUT)
+            with open(TESTFN, "rb") as f:
+                self.assertEqual(f.read(), expected)
+        finally:
+            unlink(TESTFN)
+
+    def test_write_to_fileobj(self):
+        try:
+            with open(TESTFN, "wb") as raw:
+                with LZMAFile(raw, "w") as f:
+                    f.write(INPUT)
+                    self.assertEqual(f.fileno(), raw.fileno())
+                    self.assertIs(f.readable(), False)
+                    self.assertIs(f.writable(), True)
+                    self.assertIs(f.seekable(), False)
+                    self.assertIs(f.closed, False)
+                self.assertIs(f.closed, True)
+                self.assertRaises(ValueError, f.fileno)
+                self.assertRaises(ValueError, f.readable)
+                self.assertRaises(ValueError, f.writable)
+                self.assertRaises(ValueError, f.seekable)
+
+            expected = lzma.compress(INPUT)
+            with open(TESTFN, "rb") as f:
+                self.assertEqual(f.read(), expected)
+        finally:
+            unlink(TESTFN)
+
+    def test_write_to_fileobj_with_int_name(self):
+        try:
+            fd = os.open(TESTFN, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+            with open(fd, 'wb') as raw:
+                with LZMAFile(raw, "w") as f:
+                    f.write(INPUT)
+                    self.assertEqual(f.fileno(), raw.fileno())
+                    self.assertIs(f.readable(), False)
+                    self.assertIs(f.writable(), True)
+                    self.assertIs(f.seekable(), False)
+                    self.assertIs(f.closed, False)
+                self.assertIs(f.closed, True)
+                self.assertRaises(ValueError, f.fileno)
+                self.assertRaises(ValueError, f.readable)
+                self.assertRaises(ValueError, f.writable)
+                self.assertRaises(ValueError, f.seekable)
+
             expected = lzma.compress(INPUT)
             with open(TESTFN, "rb") as f:
                 self.assertEqual(f.read(), expected)
@@ -1276,7 +1369,7 @@ class OpenTestCase(unittest.TestCase):
                 self.assertEqual(f.read(), INPUT * 2)
 
     def test_with_pathlike_filename(self):
-        filename = pathlib.Path(TESTFN)
+        filename = FakePath(TESTFN)
         with TempFile(filename):
             with lzma.open(filename, "wb") as f:
                 f.write(INPUT)

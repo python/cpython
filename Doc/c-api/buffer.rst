@@ -29,7 +29,7 @@ without intermediate copying.
 Python provides such a facility at the C level in the form of the :ref:`buffer
 protocol <bufferobjects>`.  This protocol has two sides:
 
-.. index:: single: PyBufferProcs
+.. index:: single: PyBufferProcs (C type)
 
 - on the producer side, a type can export a "buffer interface" which allows
   objects of that type to expose information about their underlying buffer.

@@ -1,0 +1,1 @@
+Add Z85 encoding to ``base64``.

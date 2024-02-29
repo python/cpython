@@ -82,10 +82,8 @@ class CAPITest(unittest.TestCase):
         # CRASHES size(UserList())
         # CRASHES size(NULL)
 
-
-    def test_list_getitem(self):
-        # Test PyList_GetItem()
-        getitem = _testcapi.list_getitem
+    def check_list_get_item(self, getitem, exctype):
+        # Common test cases for PyList_GetItem() and PyList_GetItemRef()
         lst = [1, 2, 3]
         self.assertEqual(getitem(lst, 0), 1)
         self.assertEqual(getitem(lst, 2), 3)
@@ -93,11 +91,18 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(IndexError, getitem, lst, -1)
         self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MIN)
         self.assertRaises(IndexError, getitem, lst, PY_SSIZE_T_MAX)
-        self.assertRaises(SystemError, getitem, 42, 1)
-        self.assertRaises(SystemError, getitem, (1, 2, 3), 1)
-        self.assertRaises(SystemError, getitem, {1: 2}, 1)
-
+        self.assertRaises(exctype, getitem, 42, 1)
+        self.assertRaises(exctype, getitem, (1, 2, 3), 1)
+        self.assertRaises(exctype, getitem, {1: 2}, 1)
         # CRASHES getitem(NULL, 1)
+
+    def test_list_getitem(self):
+        # Test PyList_GetItem()
+        self.check_list_get_item(_testcapi.list_getitem, SystemError)
+
+    def test_list_get_item_ref(self):
+        # Test PyList_GetItemRef()
+        self.check_list_get_item(_testcapi.list_get_item_ref, TypeError)
 
     def test_list_get_item(self):
         # Test PyList_GET_ITEM()
@@ -111,7 +116,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES for get_item(lst, PY_SSIZE_T_MAX)
         # CRASHES get_item(21, 2)
         # CRASHES get_item(NULL, 1)
-
 
     def test_list_setitem(self):
         # Test PyList_SetItem()

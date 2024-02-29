@@ -1,0 +1,2 @@
+linecache: get module name from ``__spec__`` if available. This allows getting
+source code for the ``__main__`` module when a custom loader is used.

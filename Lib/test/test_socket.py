@@ -1,9 +1,8 @@
 import unittest
 from test import support
-from test.support import os_helper
-from test.support import socket_helper
-from test.support import threading_helper
-from test.support import refleak_helper
+from test.support import (
+    is_apple, os_helper, refleak_helper, socket_helper, threading_helper
+)
 
 import _thread as thread
 import array
@@ -47,6 +46,7 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
     import _socket
@@ -511,6 +511,7 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
         ThreadableTest.clientTearDown(self)
 
 @unittest.skipIf(fcntl is None, "need fcntl")
+@unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
 @unittest.skipUnless(get_cid() != 2,
@@ -527,6 +528,7 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
         self.serv.listen()
         self.serverExplicitReady()
+        self.serv.settimeout(support.LOOPBACK_TIMEOUT)
         self.conn, self.connaddr = self.serv.accept()
         self.addCleanup(self.conn.close)
 
@@ -1196,8 +1198,11 @@ class GeneralModuleTests(unittest.TestCase):
         # Find one service that exists, then check all the related interfaces.
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
-        if (sys.platform.startswith(('freebsd', 'netbsd', 'gnukfreebsd'))
-            or sys.platform in ('linux', 'darwin')):
+        if (
+            sys.platform.startswith(('freebsd', 'netbsd', 'gnukfreebsd'))
+            or sys.platform == 'linux'
+            or is_apple
+        ):
             # avoid the 'echo' service on this platform, as there is an
             # assumption breaking non-standard port/protocol entry
             services = ('daytime', 'qotd', 'domain')
@@ -3708,7 +3713,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def _testFDPassCMSG_LEN(self):
         self.createAndSendFDs(1)
 
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -3719,7 +3724,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2)
 
     @testFDPassSeparate.client_skip
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -3732,7 +3737,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                           array.array("i", [fd1]))]),
             len(MSG))
 
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -3746,7 +3751,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
-    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
@@ -3770,7 +3775,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             nbytes = self.sendmsgToServer([msg])
         self.assertEqual(nbytes, len(msg))
 
-    @unittest.skipIf(sys.platform == "darwin", "see issue #24725")
+    @unittest.skipIf(is_apple, "skipping, see issue #12958")
     def testFDPassEmpty(self):
         # Try to pass an empty FD array.  Can receive either no array
         # or an empty array.

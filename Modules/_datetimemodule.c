@@ -14,6 +14,8 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_time.h"          // _PyTime_ObjectToTime_t()
+
 #include "datetime.h"
 
 
@@ -60,16 +62,6 @@ typedef struct {
 static datetime_state _datetime_global_state;
 
 #define STATIC_STATE() (&_datetime_global_state)
-
-/*[clinic input]
-module datetime
-class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
-class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
-class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCalendarDateType"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=81bec0fa19837f63]*/
-
-#include "clinic/_datetimemodule.c.h"
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -160,6 +152,17 @@ static PyTypeObject PyDateTime_TZInfoType;
 static PyTypeObject PyDateTime_TimeZoneType;
 
 static int check_tzinfo_subclass(PyObject *p);
+
+/*[clinic input]
+module datetime
+class datetime.datetime "PyDateTime_DateTime *" "&PyDateTime_DateTimeType"
+class datetime.date "PyDateTime_Date *" "&PyDateTime_DateType"
+class datetime.time "PyDateTime_Time *" "&PyDateTime_TimeType"
+class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "&PyDateTime_IsoCalendarDateType"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6f65a48dd22fa40f]*/
+
+#include "clinic/_datetimemodule.c.h"
 
 
 /* ---------------------------------------------------------------------------
@@ -1045,6 +1048,40 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
                     &PyDateTime_DateTimeType)
 
 static PyObject *
+call_subclass_fold(PyObject *cls, int fold, const char *format, ...)
+{
+    PyObject *kwargs = NULL, *res = NULL;
+    va_list va;
+
+    va_start(va, format);
+    PyObject *args = Py_VaBuildValue(format, va);
+    va_end(va);
+    if (args == NULL) {
+        return NULL;
+    }
+    if (fold) {
+        kwargs = PyDict_New();
+        if (kwargs == NULL) {
+            goto Done;
+        }
+        PyObject *obj = PyLong_FromLong(fold);
+        if (obj == NULL) {
+            goto Done;
+        }
+        int err = PyDict_SetItemString(kwargs, "fold", obj);
+        Py_DECREF(obj);
+        if (err < 0) {
+            goto Done;
+        }
+    }
+    res = PyObject_Call(cls, args, kwargs);
+Done:
+    Py_DECREF(args);
+    Py_XDECREF(kwargs);
+    return res;
+}
+
+static PyObject *
 new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute,
                               int second, int usecond, PyObject *tzinfo,
                               int fold, PyObject *cls) {
@@ -1053,17 +1090,11 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
         // Use the fast path constructor
         dt = new_datetime(year, month, day, hour, minute, second, usecond,
                           tzinfo, fold);
-    } else {
+    }
+    else {
         // Subclass
-        dt = PyObject_CallFunction(cls, "iiiiiiiO",
-                                   year,
-                                   month,
-                                   day,
-                                   hour,
-                                   minute,
-                                   second,
-                                   usecond,
-                                   tzinfo);
+        dt = call_subclass_fold(cls, fold, "iiiiiiiO", year, month, day,
+                                hour, minute, second, usecond, tzinfo);
     }
 
     return dt;
@@ -1118,6 +1149,24 @@ new_time_ex(int hour, int minute, int second, int usecond,
 
 #define new_time(hh, mm, ss, us, tzinfo, fold)                       \
     new_time_ex2(hh, mm, ss, us, tzinfo, fold, &PyDateTime_TimeType)
+
+static PyObject *
+new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
+                          PyObject *tzinfo, int fold, PyObject *cls)
+{
+    PyObject *t;
+    if ((PyTypeObject*)cls == &PyDateTime_TimeType) {
+        // Use the fast path constructor
+        t = new_time(hour, minute, second, usecond, tzinfo, fold);
+    }
+    else {
+        // Subclass
+        t = call_subclass_fold(cls, fold, "iiiiO", hour, minute, second,
+                               usecond, tzinfo);
+    }
+
+    return t;
+}
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
@@ -1813,16 +1862,6 @@ static PyObject *
 diff_to_bool(int diff, int op)
 {
     Py_RETURN_RICHCOMPARE(diff, 0, op);
-}
-
-/* Raises a "can't compare" TypeError and returns NULL. */
-static PyObject *
-cmperror(PyObject *a, PyObject *b)
-{
-    PyErr_Format(PyExc_TypeError,
-                 "can't compare %s to %s",
-                 Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
-    return NULL;
 }
 
 /* ---------------------------------------------------------------------------
@@ -3447,7 +3486,15 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 date_richcompare(PyObject *self, PyObject *other, int op)
 {
-    if (PyDate_Check(other)) {
+    /* Since DateTime is a subclass of Date, if the other object is
+     * a DateTime, it would compute an equality testing or an ordering
+     * based on the date part alone, and we don't want that.
+     * So return NotImplemented here in that case.
+     * If a subclass wants to change this, it's up to the subclass to do so.
+     * The behavior is the same as if Date and DateTime were independent
+     * classes.
+     */
+    if (PyDate_Check(other) && !PyDateTime_Check(other)) {
         int diff = memcmp(((PyDateTime_Date *)self)->data,
                           ((PyDateTime_Date *)other)->data,
                           _PyDateTime_DATE_DATASIZE);
@@ -3466,24 +3513,22 @@ date_timetuple(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
                              0, 0, 0, -1);
 }
 
-static PyObject *
-date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
-{
-    PyObject *clone;
-    PyObject *tuple;
-    int year = GET_YEAR(self);
-    int month = GET_MONTH(self);
-    int day = GET_DAY(self);
+/*[clinic input]
+datetime.date.replace
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iii:replace", date_kws,
-                                      &year, &month, &day))
-        return NULL;
-    tuple = Py_BuildValue("iii", year, month, day);
-    if (tuple == NULL)
-        return NULL;
-    clone = date_new(Py_TYPE(self), tuple, NULL);
-    Py_DECREF(tuple);
-    return clone;
+    year: int(c_default="GET_YEAR(self)") = unchanged
+    month: int(c_default="GET_MONTH(self)") = unchanged
+    day: int(c_default="GET_DAY(self)") = unchanged
+
+Return date with new specified fields.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
+                           int day)
+/*[clinic end generated code: output=2a9430d1e6318aeb input=0d1f02685b3e90f6]*/
+{
+    return new_date_subclass_ex(year, month, day, (PyObject *)Py_TYPE(self));
 }
 
 static Py_hash_t
@@ -3596,10 +3641,9 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return the day of the week represented by the date.\n"
                "Monday == 0 ... Sunday == 6")},
 
-    {"replace",     _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return date with new specified fields.")},
+    DATETIME_DATE_REPLACE_METHODDEF
 
-    {"__replace__", _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(datetime_date_replace), METH_FASTCALL | METH_KEYWORDS},
 
     {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
@@ -4573,36 +4617,28 @@ time_hash(PyDateTime_Time *self)
     return self->hashcode;
 }
 
-static PyObject *
-time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
-{
-    PyObject *clone;
-    PyObject *tuple;
-    int hh = TIME_GET_HOUR(self);
-    int mm = TIME_GET_MINUTE(self);
-    int ss = TIME_GET_SECOND(self);
-    int us = TIME_GET_MICROSECOND(self);
-    PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
-    int fold = TIME_GET_FOLD(self);
+/*[clinic input]
+datetime.time.replace
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i:replace",
-                                      time_kws,
-                                      &hh, &mm, &ss, &us, &tzinfo, &fold))
-        return NULL;
-    if (fold != 0 && fold != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fold must be either 0 or 1");
-        return NULL;
-    }
-    tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
-    if (tuple == NULL)
-        return NULL;
-    clone = time_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL) {
-        TIME_SET_FOLD(clone, fold);
-    }
-    Py_DECREF(tuple);
-    return clone;
+    hour: int(c_default="TIME_GET_HOUR(self)") = unchanged
+    minute: int(c_default="TIME_GET_MINUTE(self)") = unchanged
+    second: int(c_default="TIME_GET_SECOND(self)") = unchanged
+    microsecond: int(c_default="TIME_GET_MICROSECOND(self)") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    *
+    fold: int(c_default="TIME_GET_FOLD(self)") = unchanged
+
+Return time with new specified fields.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
+                           int second, int microsecond, PyObject *tzinfo,
+                           int fold)
+/*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
+{
+    return new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo,
+                                     fold, (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
@@ -4732,10 +4768,9 @@ static PyMethodDef time_methods[] = {
     {"dst",             (PyCFunction)time_dst,          METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"replace",     _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return time with new specified fields.")},
+    DATETIME_TIME_REPLACE_METHODDEF
 
-    {"__replace__", _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(datetime_time_replace), METH_FASTCALL | METH_KEYWORDS},
 
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
      PyDoc_STR("string -> time from a string in ISO 8601 format")},
@@ -5098,7 +5133,11 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
 static PyObject *
 datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
 {
-    _PyTime_t ts = _PyTime_GetSystemClock();
+    PyTime_t ts;
+    if (PyTime_Time(&ts) < 0) {
+        return NULL;
+    }
+
     time_t secs;
     int us;
 
@@ -5891,21 +5930,7 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
     PyObject *offset1, *offset2;
     int diff;
 
-    if (! PyDateTime_Check(other)) {
-        if (PyDate_Check(other)) {
-            /* Prevent invocation of date_richcompare.  We want to
-               return NotImplemented here to give the other object
-               a chance.  But since DateTime is a subclass of
-               Date, if the other object is a Date, it would
-               compute an ordering based on the date part alone,
-               and we don't want that.  So force unequal or
-               uncomparable here in that case. */
-            if (op == Py_EQ)
-                Py_RETURN_FALSE;
-            if (op == Py_NE)
-                Py_RETURN_TRUE;
-            return cmperror(self, other);
-        }
+    if (!PyDateTime_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -6042,40 +6067,33 @@ datetime_hash(PyDateTime_DateTime *self)
     return self->hashcode;
 }
 
-static PyObject *
-datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
-{
-    PyObject *clone;
-    PyObject *tuple;
-    int y = GET_YEAR(self);
-    int m = GET_MONTH(self);
-    int d = GET_DAY(self);
-    int hh = DATE_GET_HOUR(self);
-    int mm = DATE_GET_MINUTE(self);
-    int ss = DATE_GET_SECOND(self);
-    int us = DATE_GET_MICROSECOND(self);
-    PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
-    int fold = DATE_GET_FOLD(self);
+/*[clinic input]
+datetime.datetime.replace
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiiiiO$i:replace",
-                                      datetime_kws,
-                                      &y, &m, &d, &hh, &mm, &ss, &us,
-                                      &tzinfo, &fold))
-        return NULL;
-    if (fold != 0 && fold != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fold must be either 0 or 1");
-        return NULL;
-    }
-    tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
-    if (tuple == NULL)
-        return NULL;
-    clone = datetime_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL) {
-        DATE_SET_FOLD(clone, fold);
-    }
-    Py_DECREF(tuple);
-    return clone;
+    year: int(c_default="GET_YEAR(self)") = unchanged
+    month: int(c_default="GET_MONTH(self)") = unchanged
+    day: int(c_default="GET_DAY(self)") = unchanged
+    hour: int(c_default="DATE_GET_HOUR(self)") = unchanged
+    minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
+    second: int(c_default="DATE_GET_SECOND(self)") = unchanged
+    microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    *
+    fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
+
+Return datetime with new specified fields.
+[clinic start generated code]*/
+
+static PyObject *
+datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
+                               int month, int day, int hour, int minute,
+                               int second, int microsecond, PyObject *tzinfo,
+                               int fold)
+/*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
+{
+    return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
+                                         second, microsecond, tzinfo, fold,
+                                         (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
@@ -6597,10 +6615,9 @@ static PyMethodDef datetime_methods[] = {
     {"dst",             (PyCFunction)datetime_dst, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-    {"replace",     _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS,
-     PyDoc_STR("Return datetime with new specified fields.")},
+    DATETIME_DATETIME_REPLACE_METHODDEF
 
-    {"__replace__", _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS},
+    {"__replace__", _PyCFunction_CAST(datetime_datetime_replace), METH_FASTCALL | METH_KEYWORDS},
 
     {"astimezone",  _PyCFunction_CAST(datetime_astimezone), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("tz -> convert to local time in new timezone tz\n")},

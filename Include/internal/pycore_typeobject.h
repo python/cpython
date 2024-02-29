@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_moduleobject.h"  // PyModuleObject
+#include "pycore_lock.h"          // PyMutex
 
 
 /* state */
@@ -28,6 +29,9 @@ struct _types_runtime_state {
 // see _PyType_Lookup().
 struct type_cache_entry {
     unsigned int version;  // initialized from type->tp_version_tag
+#ifdef Py_GIL_DISABLED
+   _PySeqLock sequence;
+#endif
     PyObject *name;        // reference to exactly a str or None
     PyObject *value;       // borrowed reference or NULL
 };
@@ -66,6 +70,7 @@ struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    PyMutex mutex;
 };
 
 
@@ -74,7 +79,7 @@ struct types_state {
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
 extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_Fini(PyInterpreterState *);
-
+extern void _PyTypes_AfterFork(void);
 
 /* other API */
 

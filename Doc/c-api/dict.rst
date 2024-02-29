@@ -174,6 +174,26 @@ Dictionary Objects
    .. versionadded:: 3.4
 
 
+.. c:function:: int PyDict_SetDefaultRef(PyObject *p, PyObject *key, PyObject *default_value, PyObject **result)
+
+   Inserts *default_value* into the dictionary *p* with a key of *key* if the
+   key is not already present in the dictionary. If *result* is not ``NULL``,
+   then *\*result* is set to a :term:`strong reference` to either
+   *default_value*, if the key was not present, or the existing value, if *key*
+   was already present in the dictionary.
+   Returns ``1`` if the key was present and *default_value* was not inserted,
+   or ``0`` if the key was not present and *default_value* was inserted.
+   On failure, returns ``-1``, sets an exception, and sets ``*result``
+   to ``NULL``.
+
+   For clarity: if you have a strong reference to *default_value* before
+   calling this function, then after it returns, you hold a strong reference
+   to both *default_value* and *\*result* (if it's not ``NULL``).
+   These may refer to the same object: in that case you hold two separate
+   references to it.
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyDict_Pop(PyObject *p, PyObject *key, PyObject **result)
 
    Remove *key* from dictionary *p* and optionally return the removed value.

@@ -122,4 +122,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
 
 PyAPI_FUNC(void) PyErr_FormatUnraisable(const char *, ...);
 
+PyAPI_DATA(PyObject *) PyExc_PythonFinalizationError;
+
 #define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

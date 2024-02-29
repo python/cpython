@@ -244,6 +244,24 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
+.. function:: z85encode(s)
+
+   Encode the :term:`bytes-like object` *s* using Z85 (as used in ZeroMQ)
+   and return the encoded :class:`bytes`.  See `Z85  specification
+   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: 3.13
+
+
+.. function:: z85decode(s)
+
+   Decode the Z85-encoded :term:`bytes-like object` or ASCII string *s* and
+   return the decoded :class:`bytes`.  See `Z85  specification
+   <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   .. versionadded:: 3.13
+
+
 The legacy interface:
 
 .. function:: decode(input, output)

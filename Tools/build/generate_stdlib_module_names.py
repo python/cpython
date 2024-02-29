@@ -34,6 +34,7 @@ IGNORE = {
     '_testinternalcapi',
     '_testmultiphase',
     '_testsinglephase',
+    '_testexternalinspection',
     '_xxsubinterpreters',
     '_xxinterpchannels',
     '_xxinterpqueues',

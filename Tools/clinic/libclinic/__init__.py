@@ -9,11 +9,17 @@ from .formatting import (
     docstring_for_c_string,
     format_escape,
     indent_all_lines,
+    linear_format,
     normalize_snippet,
     pprint_words,
     suffix_all_lines,
     wrap_declarations,
     wrapped_c_string_literal,
+)
+from .identifiers import (
+    ensure_legal_c_identifier,
+    is_legal_c_identifier,
+    is_legal_py_identifier,
 )
 from .utils import (
     FormatCounterFormatter,
@@ -33,11 +39,17 @@ __all__ = [
     "docstring_for_c_string",
     "format_escape",
     "indent_all_lines",
+    "linear_format",
     "normalize_snippet",
     "pprint_words",
     "suffix_all_lines",
     "wrap_declarations",
     "wrapped_c_string_literal",
+
+    # Identifier helpers
+    "ensure_legal_c_identifier",
+    "is_legal_c_identifier",
+    "is_legal_py_identifier",
 
     # Utility functions
     "FormatCounterFormatter",

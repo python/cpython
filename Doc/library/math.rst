@@ -239,10 +239,10 @@ Number-theoretic and representation functions
 
    See also :func:`math.ulp`.
 
+   .. versionadded:: 3.9
+
    .. versionchanged:: 3.12
       Added the *steps* argument.
-
-   .. versionadded:: 3.9
 
 .. function:: perm(n, k=None)
 
@@ -680,10 +680,10 @@ Constants
       >>> math.isnan(float('nan'))
       True
 
+   .. versionadded:: 3.5
+
    .. versionchanged:: 3.11
       It is now always available.
-
-   .. versionadded:: 3.5
 
 
 .. impl-detail::

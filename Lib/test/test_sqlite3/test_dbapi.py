@@ -31,7 +31,7 @@ import urllib.parse
 
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
-    is_emscripten, is_wasi
+    is_apple, is_emscripten, is_wasi
 )
 from test.support import gc_collect
 from test.support import threading_helper
@@ -667,7 +667,7 @@ class OpenTests(unittest.TestCase):
             cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_apple, "skipped on Apple platforms")
     @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_with_undecodable_path(self):
@@ -713,7 +713,7 @@ class OpenTests(unittest.TestCase):
                 cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_apple, "skipped on Apple platforms")
     @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):

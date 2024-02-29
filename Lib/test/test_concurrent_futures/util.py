@@ -136,6 +136,12 @@ def create_executor_tests(remote_globals, mixin, bases=(BaseTestCase,),
 
 
 def setup_module():
-    unittest.addModuleCleanup(multiprocessing.util._cleanup_tests)
+    try:
+        _check_system_limits()
+    except NotImplementedError:
+        pass
+    else:
+        unittest.addModuleCleanup(multiprocessing.util._cleanup_tests)
+
     thread_info = threading_helper.threading_setup()
     unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)

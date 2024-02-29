@@ -13,6 +13,7 @@ import itertools
 import operator
 import os
 import pickle
+import pyexpat
 import sys
 import textwrap
 import types
@@ -119,6 +120,10 @@ ATTLIST_XML = """\
 <bar>&qux;</bar>
 </foo>
 """
+
+fails_with_expat_2_6_0 = (unittest.expectedFailure
+                        if pyexpat.version_info >= (2, 6, 0) else
+                        lambda test: test)
 
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
@@ -536,7 +541,9 @@ class ElementTreeTest(unittest.TestCase):
         iterparse = ET.iterparse
 
         context = iterparse(SIMPLE_XMLFILE)
+        self.assertIsNone(context.root)
         action, elem = next(context)
+        self.assertIsNone(context.root)
         self.assertEqual((action, elem.tag), ('end', 'element'))
         self.assertEqual([(action, elem.tag) for action, elem in context], [
                 ('end', 'element'),
@@ -552,6 +559,17 @@ class ElementTreeTest(unittest.TestCase):
                 ('end', '{namespace}empty-element'),
                 ('end', '{namespace}root'),
             ])
+
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            context = iterparse(source)
+            action, elem = next(context)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            self.assertEqual([(action, elem.tag) for action, elem in context], [
+                    ('end', 'element'),
+                    ('end', 'empty-element'),
+                    ('end', 'root'),
+                ])
+            self.assertEqual(context.root.tag, 'root')
 
         events = ()
         context = iterparse(SIMPLE_XMLFILE, events)
@@ -644,11 +662,80 @@ class ElementTreeTest(unittest.TestCase):
 
         # Not exhausting the iterator still closes the resource (bpo-43292)
         with warnings_helper.check_no_resource_warning(self):
-            it = iterparse(TESTFN)
+            it = iterparse(SIMPLE_XMLFILE)
             del it
+
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(SIMPLE_XMLFILE)
+            it.close()
+            del it
+
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(SIMPLE_XMLFILE)
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
+
+        with warnings_helper.check_no_resource_warning(self):
+            it = iterparse(SIMPLE_XMLFILE)
+            action, elem = next(it)
+            it.close()
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            del it, elem
 
         with self.assertRaises(FileNotFoundError):
             iterparse("nonexistent")
+
+    def test_iterparse_close(self):
+        iterparse = ET.iterparse
+
+        it = iterparse(SIMPLE_XMLFILE)
+        it.close()
+        with self.assertRaises(StopIteration):
+            next(it)
+        it.close()  # idempotent
+
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            it = iterparse(source)
+            it.close()
+            self.assertFalse(source.closed)
+            with self.assertRaises(StopIteration):
+                next(it)
+            it.close()  # idempotent
+
+        it = iterparse(SIMPLE_XMLFILE)
+        action, elem = next(it)
+        self.assertEqual((action, elem.tag), ('end', 'element'))
+        it.close()
+        with self.assertRaises(StopIteration):
+            next(it)
+        it.close()  # idempotent
+
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            it = iterparse(source)
+            action, elem = next(it)
+            self.assertEqual((action, elem.tag), ('end', 'element'))
+            it.close()
+            self.assertFalse(source.closed)
+            with self.assertRaises(StopIteration):
+                next(it)
+            it.close()  # idempotent
+
+        it = iterparse(SIMPLE_XMLFILE)
+        list(it)
+        it.close()
+        with self.assertRaises(StopIteration):
+            next(it)
+        it.close()  # idempotent
+
+        with open(SIMPLE_XMLFILE, 'rb') as source:
+            it = iterparse(source)
+            list(it)
+            it.close()
+            self.assertFalse(source.closed)
+            with self.assertRaises(StopIteration):
+                next(it)
+            it.close()  # idempotent
 
     def test_writefile(self):
         elem = ET.Element("tag")
@@ -1398,28 +1485,37 @@ class XMLPullParserTest(unittest.TestCase):
         self.assertEqual([(action, elem.tag) for action, elem in events],
                          expected)
 
-    def test_simple_xml(self):
-        for chunk_size in (None, 1, 5):
-            with self.subTest(chunk_size=chunk_size):
-                parser = ET.XMLPullParser()
-                self.assert_event_tags(parser, [])
-                self._feed(parser, "<!-- comment -->\n", chunk_size)
-                self.assert_event_tags(parser, [])
-                self._feed(parser,
-                           "<root>\n  <element key='value'>text</element",
-                           chunk_size)
-                self.assert_event_tags(parser, [])
-                self._feed(parser, ">\n", chunk_size)
-                self.assert_event_tags(parser, [('end', 'element')])
-                self._feed(parser, "<element>text</element>tail\n", chunk_size)
-                self._feed(parser, "<empty-element/>\n", chunk_size)
-                self.assert_event_tags(parser, [
-                    ('end', 'element'),
-                    ('end', 'empty-element'),
-                    ])
-                self._feed(parser, "</root>\n", chunk_size)
-                self.assert_event_tags(parser, [('end', 'root')])
-                self.assertIsNone(parser.close())
+    def test_simple_xml(self, chunk_size=None):
+        parser = ET.XMLPullParser()
+        self.assert_event_tags(parser, [])
+        self._feed(parser, "<!-- comment -->\n", chunk_size)
+        self.assert_event_tags(parser, [])
+        self._feed(parser,
+                   "<root>\n  <element key='value'>text</element",
+                   chunk_size)
+        self.assert_event_tags(parser, [])
+        self._feed(parser, ">\n", chunk_size)
+        self.assert_event_tags(parser, [('end', 'element')])
+        self._feed(parser, "<element>text</element>tail\n", chunk_size)
+        self._feed(parser, "<empty-element/>\n", chunk_size)
+        self.assert_event_tags(parser, [
+            ('end', 'element'),
+            ('end', 'empty-element'),
+            ])
+        self._feed(parser, "</root>\n", chunk_size)
+        self.assert_event_tags(parser, [('end', 'root')])
+        self.assertIsNone(parser.close())
+
+    @fails_with_expat_2_6_0
+    def test_simple_xml_chunk_1(self):
+        self.test_simple_xml(chunk_size=1)
+
+    @fails_with_expat_2_6_0
+    def test_simple_xml_chunk_5(self):
+        self.test_simple_xml(chunk_size=5)
+
+    def test_simple_xml_chunk_22(self):
+        self.test_simple_xml(chunk_size=22)
 
     def test_feed_while_iterating(self):
         parser = ET.XMLPullParser()
@@ -3042,8 +3138,7 @@ class ElementIterTest(unittest.TestCase):
         # With an explicit parser too (issue #9708)
         sourcefile = serialize(doc, to_string=False)
         parser = ET.XMLParser(target=ET.TreeBuilder())
-        self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0],
-                         'end')
+        self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0], 'end')
 
         tree = ET.ElementTree(None)
         self.assertRaises(AttributeError, tree.iter)

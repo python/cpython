@@ -571,7 +571,7 @@ class TestDiscovery(unittest.TestCase):
         result = unittest.TestResult()
         suite.run(result)
         self.assertEqual(len(result.skipped), 1)
-        self.assertEqual(result.testsRun, 0)
+        self.assertEqual(result.testsRun, 1)
         self.assertEqual(import_calls, ['my_package'])
 
         # Check picklability

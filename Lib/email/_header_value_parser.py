@@ -949,6 +949,7 @@ class _InvalidEwError(errors.HeaderParseError):
 # up other parse trees.  Maybe should have  tests for that, too.
 DOT = ValueTerminal('.', 'dot')
 ListSeparator = ValueTerminal(',', 'list-separator')
+ListSeparator.as_ew_allowed = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 #
@@ -2022,7 +2023,7 @@ def get_address_list(value):
             address_list.defects.append(errors.InvalidHeaderDefect(
                 "invalid address in address-list"))
         if value:  # Must be a , at this point.
-            address_list.append(ValueTerminal(',', 'list-separator'))
+            address_list.append(ListSeparator)
             value = value[1:]
     return address_list, value
 

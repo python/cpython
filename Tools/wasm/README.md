@@ -83,7 +83,7 @@ embuilder --pic build zlib bzip2 MINIMAL_PIC
 ```
 
 
-#### Compile a build Python interpreter
+### Compile and build Python interpreter
 
 From within the container, run the following command:
 
