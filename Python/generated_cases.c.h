@@ -40,7 +40,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -86,7 +86,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2140,9 +2140,9 @@
             PyObject *value;
             PyObject *result;
             value = stack_pointer[-1];
-            convertion_func_ptr  conv_fn;
+            conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
-            conv_fn = CONVERSION_FUNCTIONS[oparg];
+            conv_fn = _PyEval_ConversionFuncs[oparg];
             result = conv_fn(value);
             Py_DECREF(value);
             if (result == NULL) goto pop_1_error;
