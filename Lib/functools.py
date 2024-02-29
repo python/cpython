@@ -1010,6 +1010,18 @@ class cached_property:
                 f"({self.attrname!r} and {name!r})."
             )
 
+        # copy across the annotation for runtime introspection
+        try:
+            prop_ann = self.func.__annotations__['return']
+        except KeyError:
+            return
+
+        try:
+            owner_anns = owner.__annotations__
+        except AttributeError:
+            owner_anns = owner.__annotations__ = {}
+        owner_anns[name] = prop_ann
+
     def __get__(self, instance, owner=None):
         if instance is None:
             return self
