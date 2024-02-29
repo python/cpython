@@ -27,12 +27,12 @@ extern PyTypeObject _PyUOpExecutor_Type;
 extern PyTypeObject _PyUOpOptimizer_Type;
 
 /* Symbols */
+/* See explanation in optimizer_symbols.c */
 
 struct _Py_UopsSymbol {
-    int flags;
-    PyTypeObject *typ;
-    // constant propagated value (might be NULL)
-    PyObject *const_val;
+    int flags;  // 0 bits: Top; 2 or more bits: Bottom
+    PyTypeObject *typ;  // Borrowed reference
+    PyObject *const_val;  // Owned reference (!)
 };
 
 // Holds locals, stack, locals, stack ... co_consts (in that order)
@@ -92,7 +92,11 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *con
 extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
 extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
 extern void _Py_uop_sym_set_null(_Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *tp);
+extern void _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym);
+extern void _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
+extern void _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val);
+extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
+
 
 extern int _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
 extern void _Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx);

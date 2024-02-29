@@ -250,6 +250,14 @@ load_keys_nentries(PyDictObject *mp)
 
 #endif
 
+#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_key, key)
+#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, value)
+#define STORE_SPLIT_VALUE(mp, idx, value) FT_ATOMIC_STORE_PTR_RELEASE(mp->ma_values->values[idx], value)
+#define STORE_HASH(ep, hash) FT_ATOMIC_STORE_SSIZE_RELAXED(ep->me_hash, hash)
+#define STORE_KEYS_USABLE(keys, usable) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_usable, usable)
+#define STORE_KEYS_NENTRIES(keys, nentries) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_nentries, nentries)
+#define STORE_USED(mp, used) FT_ATOMIC_STORE_SSIZE_RELAXED(mp->ma_used, used)
+
 #define PERTURB_SHIFT 5
 
 /*
@@ -1621,7 +1629,6 @@ insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name)
     return ix;
 }
 
-
 static inline int
 insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
                      Py_hash_t hash, PyObject *key, PyObject *value)
@@ -1639,18 +1646,18 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
     if (DK_IS_UNICODE(mp->ma_keys)) {
         PyDictUnicodeEntry *ep;
         ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
-        ep->me_key = key;
-        ep->me_value = value;
+        STORE_KEY(ep, key);
+        STORE_VALUE(ep, value);
     }
     else {
         PyDictKeyEntry *ep;
         ep = &DK_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
-        ep->me_key = key;
-        ep->me_hash = hash;
-        ep->me_value = value;
+        STORE_KEY(ep, key);
+        STORE_VALUE(ep, value);
+        STORE_HASH(ep, hash);
     }
-    mp->ma_keys->dk_usable--;
-    mp->ma_keys->dk_nentries++;
+    STORE_KEYS_USABLE(mp->ma_keys, mp->ma_keys->dk_usable - 1);
+    STORE_KEYS_NENTRIES(mp->ma_keys, mp->ma_keys->dk_nentries + 1);
     assert(mp->ma_keys->dk_usable >= 0);
     return 0;
 }
@@ -1682,7 +1689,7 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t index = keys->dk_nentries;
     _PyDictValues_AddToInsertionOrder(mp->ma_values, index);
     assert (mp->ma_values->values[index] == NULL);
-    mp->ma_values->values[index] = value;
+    STORE_SPLIT_VALUE(mp, index, value);
 
     split_keys_entry_added(keys);
     assert(keys->dk_usable >= 0);
@@ -2013,8 +2020,8 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         }
     }
 
-    mp->ma_keys->dk_usable -= numentries;
-    mp->ma_keys->dk_nentries = numentries;
+    STORE_KEYS_USABLE(mp->ma_keys, mp->ma_keys->dk_usable - numentries);
+    STORE_KEYS_NENTRIES(mp->ma_keys, numentries);
     ASSERT_CONSISTENT(mp);
     return 0;
 }
@@ -2507,15 +2514,15 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         if (DK_IS_UNICODE(mp->ma_keys)) {
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
             old_key = ep->me_key;
-            ep->me_key = NULL;
-            ep->me_value = NULL;
+            STORE_KEY(ep, NULL);
+            STORE_VALUE(ep, NULL);
         }
         else {
             PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
             old_key = ep->me_key;
-            ep->me_key = NULL;
-            ep->me_value = NULL;
-            ep->me_hash = 0;
+            STORE_KEY(ep, NULL);
+            STORE_VALUE(ep, NULL);
+            STORE_HASH(ep, 0);
         }
         Py_DECREF(old_key);
     }
@@ -4393,8 +4400,8 @@ dict_popitem_impl(PyDictObject *self)
     PyTuple_SET_ITEM(res, 0, key);
     PyTuple_SET_ITEM(res, 1, value);
     /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
-    self->ma_keys->dk_nentries = i;
-    self->ma_used--;
+    STORE_KEYS_NENTRIES(self->ma_keys, i);
+    STORE_USED(self, self->ma_used - 1);
     self->ma_version_tag = new_version;
     ASSERT_CONSISTENT(self);
     return res;
@@ -5029,7 +5036,7 @@ dictiter_iternextkey(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, &value, NULL) == 0) {
+    if (dictiter_iternext_threadsafe(d, self, &value, NULL) < 0) {
         value = NULL;
     }
 #else
@@ -5152,7 +5159,7 @@ dictiter_iternextvalue(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, NULL, &value) == 0) {
+    if (dictiter_iternext_threadsafe(d, self, NULL, &value) < 0) {
         value = NULL;
     }
 #else
