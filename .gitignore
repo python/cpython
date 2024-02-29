@@ -69,7 +69,7 @@ Lib/test/data/*
 /_bootstrap_python
 /Makefile
 /Makefile.pre
-/Makefile.deps.*
+/Makefile.deps
 iOS/Resources/Info.plist
 Mac/Makefile
 Mac/PythonLauncher/Info.plist
