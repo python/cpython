@@ -1,0 +1,2 @@
+Fix :meth:`email.Message.as_string` for non-ASCII message with ASCII
+charset.
