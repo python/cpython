@@ -297,10 +297,10 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
 
 #ifdef Py_GIL_DISABLED
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)                           \
-    do {                                                              \
-        /* gh-115999 tracks progress on addressing this. */           \
-        Py_FatalError("The adaptive interpreter is not thread-safe"); \
+#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)                             \
+    do {                                                                \
+        /* gh-115999 tracks progress on addressing this. */             \
+        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
 #else
 #define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
