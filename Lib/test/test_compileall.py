@@ -977,7 +977,7 @@ class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
 
 
 
-@unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
+@os_helper.skip_unless_hardlink
 class HardlinkDedupTestsBase:
     # Test hardlink_dupes parameter of compileall.compile_dir()
 
