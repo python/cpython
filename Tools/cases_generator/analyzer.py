@@ -247,6 +247,7 @@ class Family:
 class Analysis:
     instructions: dict[str, Instruction]
     uops: dict[str, Uop]
+    super_uops: dict[str, Instruction]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
     opmap: dict[str, int]
@@ -633,6 +634,33 @@ def add_macro(
     add_instruction(macro.name, parts, instructions)
 
 
+def add_super(
+    super: parser.Super, super_uops: dict[str, Instruction], uops: dict[str, Uop]
+) -> None:
+    parts: list[Uop] = []
+    for part in super.uops:
+        match part:
+            case parser.OpName():
+                if part.name not in uops:
+                    analysis_error(f"No Uop named {part.name}", super.tokens[0])
+                parts.append(uops[part.name])
+            case _:
+                assert False
+    assert parts
+    # All uop parts in a super-uop must respect the instruction format.
+    # 1. At most one operand can be used across all constituent uops (this can be repeated).
+    # 2. At most one oparg can be used across all constituent uops (we assume this, since it cannot be easily checked).
+    operand_uses = set()
+    for op in parts:
+        assert isinstance(op, Uop)
+        for cache_entry in op.caches:
+            if (cache_name := cache_entry.name)  == "unused":
+                continue
+            operand_uses.add(cache_name)
+    if len(operand_uses) > 1:
+        analysis_error(f"Uop super {super.name}'s cache entry cannot fit in one operand.")
+    add_instruction(super.name, parts, super_uops)
+
 def add_family(
     pfamily: parser.Family,
     instructions: dict[str, Instruction],
@@ -754,6 +782,7 @@ def assign_opcodes(
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
     uops: dict[str, Uop] = {}
+    super_uops: dict[str, Instruction] = {}
     families: dict[str, Family] = {}
     pseudos: dict[str, PseudoInstruction] = {}
     for node in forest:
@@ -766,6 +795,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                     add_op(node, uops)
             case parser.Macro():
                 pass
+            case parser.Super():
+                pass
             case parser.Family():
                 pass
             case parser.Pseudo():
@@ -775,6 +806,8 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     for node in forest:
         if isinstance(node, parser.Macro):
             add_macro(node, instructions, uops)
+        if isinstance(node, parser.Super):
+            add_super(node, super_uops, uops)
     for node in forest:
         match node:
             case parser.Family():
@@ -804,7 +837,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+        instructions, uops, super_uops, families, pseudos, opmap, first_arg, min_instrumented
     )
 
 

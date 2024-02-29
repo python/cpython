@@ -136,13 +136,19 @@ class Family(Node):
 
 
 @dataclass
+class Super(Node):
+    name: str
+    uops: list[UOp]
+
+
+@dataclass
 class Pseudo(Node):
     name: str
     flags: list[str]  # instr flags to set on the pseudo instruction
     targets: list[str]  # opcodes this can be replaced by
 
 
-AstNode = InstDef | Macro | Pseudo | Family
+AstNode = InstDef | Macro | Super | Pseudo | Family
 
 
 class Parser(PLexer):
@@ -150,6 +156,8 @@ class Parser(PLexer):
     def definition(self) -> AstNode | None:
         if macro := self.macro_def():
             return macro
+        if super := self.super_def():
+            return super
         if family := self.family_def():
             return family
         if pseudo := self.pseudo_def():
@@ -329,6 +337,19 @@ class Parser(PLexer):
                             if uops := self.uops():
                                 self.require(lx.SEMI)
                                 res = Macro(tkn.text, uops)
+                                return res
+        return None
+
+    @contextual
+    def super_def(self) -> Super | None:
+        if tkn := self.expect(lx.SUPER):
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if uops := self.uops():
+                                self.require(lx.SEMI)
+                                res = Super(tkn.text, uops)
                                 return res
         return None
 

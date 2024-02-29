@@ -1,6 +1,7 @@
 from parsing import (
     InstDef,
     Macro,
+    Super,
     Pseudo,
     Family,
     Parser,

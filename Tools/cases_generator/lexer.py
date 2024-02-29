@@ -213,6 +213,9 @@ kwds.append(OP)
 # A macro in the DSL
 MACRO = "MACRO"
 kwds.append(MACRO)
+SUPER = "SUPER"
+kwds.append(SUPER)
+
 keywords = {name.lower(): name for name in kwds}
 
 ANNOTATION = "ANNOTATION"

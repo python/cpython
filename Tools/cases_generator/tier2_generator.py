@@ -217,6 +217,21 @@ def generate_tier2(
         out.start_line()
         out.emit("}")
         out.emit("\n\n")
+    for name, super_uop in analysis.super_uops.items():
+        out.emit(f"case {name}: {{\n")
+        stack = Stack()
+        for part in super_uop.parts:
+            out.emit(f"// {part.name}\n")
+            out.emit("{\n")
+            declare_variables(part, out)
+            write_uop(part, out, stack)
+            stack.flush(out)
+            out.emit("}\n")
+        out.start_line()
+        out.emit("break;\n")
+        out.start_line()
+        out.emit("}")
+        out.emit("\n\n")
     outfile.write("#undef TIER_TWO\n")
 
 

@@ -445,6 +445,13 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_BOTH_INT + unused/1 + _BINARY_OP_SUBTRACT_INT;
 
+        super(_GUARD_BOTH_INT__BINARY_OP_MULTIPLY_INT) =
+            _GUARD_BOTH_INT + _BINARY_OP_MULTIPLY_INT;
+        super(_GUARD_BOTH_INT__BINARY_OP_ADD_INT) =
+            _GUARD_BOTH_INT + _BINARY_OP_ADD_INT;
+        super(_GUARD_BOTH_INT__BINARY_OP_SUBTRACT_INT) =
+            _GUARD_BOTH_INT + _BINARY_OP_SUBTRACT_INT;
+
         op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             EXIT_IF(!PyFloat_CheckExact(left));
             EXIT_IF(!PyFloat_CheckExact(right));
@@ -481,6 +488,13 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_FLOAT) =
             _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_SUBTRACT_FLOAT;
 
+        super(_GUARD_BOTH_FLOAT__BINARY_OP_MULTIPLY_FLOAT) =
+            _GUARD_BOTH_FLOAT + _BINARY_OP_MULTIPLY_FLOAT;
+        super(_GUARD_BOTH_FLOAT__BINARY_OP_ADD_FLOAT) =
+            _GUARD_BOTH_FLOAT + _BINARY_OP_ADD_FLOAT;
+        super(_GUARD_BOTH_FLOAT__BINARY_OP_SUBTRACT_FLOAT) =
+            _GUARD_BOTH_FLOAT + _BINARY_OP_SUBTRACT_FLOAT;
+
         op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
             EXIT_IF(!PyUnicode_CheckExact(left));
             EXIT_IF(!PyUnicode_CheckExact(right));
@@ -496,6 +510,9 @@ dummy_func(
 
         macro(BINARY_OP_ADD_UNICODE) =
             _GUARD_BOTH_UNICODE + unused/1 + _BINARY_OP_ADD_UNICODE;
+
+        super(_GUARD_BOTH_UNICODE__BINARY_OP_ADD_UNICODE) =
+            _GUARD_BOTH_UNICODE + _BINARY_OP_ADD_UNICODE;
 
         // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
@@ -3147,6 +3164,15 @@ dummy_func(
         macro(CALL_BOUND_METHOD_EXACT_ARGS) =
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
+            _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
+            _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _INIT_CALL_PY_EXACT_ARGS +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
+
+        super(_CALL_BOUND_METHOD_EXACT_ARGS) =
             _CHECK_CALL_BOUND_METHOD_EXACT_ARGS +
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
             _CHECK_FUNCTION_EXACT_ARGS +
