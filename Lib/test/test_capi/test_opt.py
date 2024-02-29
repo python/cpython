@@ -575,6 +575,7 @@ class TestUops(unittest.TestCase):
         self.assertLessEqual(count, 2)
 
 
+@requires_specialization
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
