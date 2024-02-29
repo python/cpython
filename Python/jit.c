@@ -112,26 +112,6 @@ mark_executable(unsigned char *memory, size_t size)
     return 0;
 }
 
-static int
-mark_readable(unsigned char *memory, size_t size)
-{
-    if (size == 0) {
-        return 0;
-    }
-    assert(size % get_page_size() == 0);
-#ifdef MS_WINDOWS
-    DWORD old;
-    int failed = !VirtualProtect(memory, size, PAGE_READONLY, &old);
-#else
-    int failed = mprotect(memory, size, PROT_READ);
-#endif
-    if (failed) {
-        jit_error("unable to protect readable memory");
-        return -1;
-    }
-    return 0;
-}
-
 // JIT compiler stuff: /////////////////////////////////////////////////////////
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
@@ -444,9 +424,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         code += group->code.body_size;
         data += group->data.body_size;
     }
-    if (mark_executable(memory, code_size) ||
-        mark_readable(memory + code_size, data_size))
-    {
+    if (mark_executable(memory, code_size + data_size)) {
         jit_free(memory, code_size + data_size);
         return -1;
     }
