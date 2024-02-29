@@ -37,6 +37,7 @@ class _Target(typing.Generic[_S, _R]):
     triple: str
     _: dataclasses.KW_ONLY
     alignment: int = 1
+    args: typing.Sequence[str] = ()
     prefix: str = ""
     debug: bool = False
     force: bool = False
@@ -45,8 +46,7 @@ class _Target(typing.Generic[_S, _R]):
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
-        hasher.update(self.alignment.to_bytes())
-        hasher.update(self.prefix.encode())
+        hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -119,23 +119,17 @@ class _Target(typing.Generic[_S, _R]):
             "-O3",
             "-c",
             "-fno-asynchronous-unwind-tables",
+            "-fno-builtin",
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
-            # Position-independent code adds indirection to every load and jump:
-            "-fno-pic",
+            "-fno-plt",
             # Don't make calls to weird stack-smashing canaries:
             "-fno-stack-protector",
-            # We have three options for code model:
-            # - "small": the default, assumes that code and data reside in the
-            #   lowest 2GB of memory (128MB on aarch64)
-            # - "medium": assumes that code resides in the lowest 2GB of memory,
-            #   and makes no assumptions about data (not available on aarch64)
-            # - "large": makes no assumptions about either code or data
-            "-mcmodel=large",
             "-o",
             f"{o}",
             "-std=c11",
             f"{c}",
+            *self.args,
         ]
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
@@ -166,7 +160,7 @@ class _Target(typing.Generic[_S, _R]):
         with jit_stencils.open("w") as file:
             file.write(digest)
             if comment:
-                file.write(f"// {comment}\n")
+                file.write(f"// {comment}\n\n")
             file.write("")
             for line in _writer.dump(stencil_groups):
                 file.write(f"{line}\n")
@@ -284,7 +278,23 @@ class _ELF(
     def _handle_relocation(
         self, base: int, relocation: _schema.ELFRelocation, raw: bytes
     ) -> _stencils.Hole:
+        symbol: str | None
         match relocation:
+            case {
+                "Addend": addend,
+                "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {
+                    "Value": "R_AARCH64_ADR_GOT_PAGE"
+                    | "R_AARCH64_LD64_GOT_LO12_NC"
+                    | "R_X86_64_GOTPCREL"
+                    | "R_X86_64_GOTPCRELX"
+                    | "R_X86_64_REX_GOTPCRELX" as kind
+                },
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.HoleValue.GOT, s
             case {
                 "Addend": addend,
                 "Offset": offset,
@@ -310,6 +320,8 @@ class _MachO(
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
+        if "Debug" in flags:
+            return
         if "SomeInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
@@ -358,6 +370,34 @@ class _MachO(
                 addend = 0
             case {
                 "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.HoleValue.GOT, s
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
+            case {
+                "Offset": offset,
+                "Section": {"Value": s},
+                "Type": {"Value": "X86_64_RELOC_SIGNED" as kind},
+            } | {
+                "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {
+                    "Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind
+                },
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.symbol_to_value(s)
+                addend = (
+                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                )
+            case {
+                "Offset": offset,
                 "Section": {"Value": s},
                 "Type": {"Value": kind},
             } | {
@@ -371,24 +411,25 @@ class _MachO(
                 addend = 0
             case _:
                 raise NotImplementedError(relocation)
-        # Turn Clang's weird __bzero calls into normal bzero calls:
-        if symbol == "__bzero":
-            symbol = "bzero"
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
 def get_target(host: str) -> _COFF | _ELF | _MachO:
     """Build a _Target for the given host "triple" and options."""
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
-        return _MachO(host, alignment=8, prefix="_")
+        args = ["-mcmodel=large"]
+        return _MachO(host, alignment=8, args=args, prefix="_")
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        return _ELF(host, alignment=8)
+        args = ["-mcmodel=large"]
+        return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
-        return _COFF(host, prefix="_")
+        args = ["-mcmodel=large"]
+        return _COFF(host, args=args, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
         return _MachO(host, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        return _COFF(host)
+        args = ["-mcmodel=large"]
+        return _COFF(host, args=args)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
         return _ELF(host)
     raise ValueError(host)

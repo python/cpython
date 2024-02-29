@@ -547,7 +547,10 @@ class EnumType(type):
         classdict['_inverted_'] = None
         try:
             exc = None
+            classdict['_%s__in_progress' % cls] = True
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
+            classdict['_%s__in_progress' % cls] = False
+            delattr(enum_class, '_%s__in_progress' % cls)
         except Exception as e:
             # since 3.12 the line "Error calling __set_name__ on '_proto_member' instance ..."
             # is tacked on to the error instead of raising a RuntimeError
@@ -1155,6 +1158,8 @@ class Enum(metaclass=EnumType):
         # still not found -- verify that members exist, in-case somebody got here mistakenly
         # (such as via super when trying to override __new__)
         if not cls._member_map_:
+            if getattr(cls, '_%s__in_progress' % cls.__name__, False):
+                raise TypeError('do not use `super().__new__; call the appropriate __new__ directly') from None
             raise TypeError("%r has no members defined" % cls)
         #
         # still not found -- try _missing_ hook
