@@ -3193,6 +3193,8 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS;
 
+        super(_SAVE_RETURN_OFFSET__PUSH_FRAME) = _SAVE_RETURN_OFFSET + _PUSH_FRAME;
+
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             int argcount = oparg;

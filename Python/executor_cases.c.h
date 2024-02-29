@@ -4058,4 +4058,40 @@
             break;
         }
 
+        case _SAVE_RETURN_OFFSET__PUSH_FRAME: {
+            // _SAVE_RETURN_OFFSET
+            {
+                oparg = CURRENT_OPARG();
+                #if TIER_ONE
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                #endif
+                #if TIER_TWO
+                frame->return_offset = oparg;
+                #endif
+            }
+            // _PUSH_FRAME
+            {
+                _PyInterpreterFrame *new_frame;
+                new_frame = (_PyInterpreterFrame *)stack_pointer[-1];
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
+                stack_pointer += -1;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+                #if LLTRACE && TIER_ONE
+                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+                if (lltrace < 0) {
+                    goto exit_unwind;
+                }
+                #endif
+            }
+            break;
+        }
+
 #undef TIER_TWO
