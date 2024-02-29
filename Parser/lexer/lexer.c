@@ -779,6 +779,24 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 if (c == '.') {
                     c = tok_nextc(tok);
         hexfraction:
+                    /* Allow attribute access on hexadecimal integer literals for
+                     * for existing public attributes on int's, e.g. 0x1.bit_length(). */
+                    if ((c == 'a' && lookahead(tok, "s_integer_ratio")) ||
+                        (c == 't' && lookahead(tok, "o_bytes")) ||
+                        (c == 'b' && (lookahead(tok, "it_count") ||
+                                      lookahead(tok, "it_length"))) ||
+                        (c == 'c' && lookahead(tok, "onjugate")) ||
+                        (c == 'd' && lookahead(tok, "enominator")) ||
+                        (c == 'f' && lookahead(tok, "rom_bytes")) ||
+                        (c == 'i' && (lookahead(tok, "mag") ||
+                                      lookahead(tok, "s_integer"))) ||
+                        (c == 'n' && lookahead(tok, "umerator")) ||
+                        (c == 'r' && lookahead(tok, "eal")))
+                    {
+                        tok_backup(tok, c);
+                        c = '.';
+                        goto hexint;
+                    }
                     if (Py_ISXDIGIT(c)) {
                         c = tok_digits_tail(tok, 16);
                         if (c == 0) {
@@ -791,6 +809,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 if (c == 'p' || c == 'P') {
                     goto exponent;
                 }
+         hexint:
                 if (!verify_end_of_number(tok, c, "hexadecimal")) {
                     return MAKE_TOKEN(ERRORTOKEN);
                 }

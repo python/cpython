@@ -178,6 +178,15 @@ class TokenTests(unittest.TestCase):
         else:
             self.fail('Weird maxsize value %r' % maxsize)
 
+    def test_attrs_on_hexintegers(self):
+        good_meth = [m for m in dir(int) if not m.startswith('_')]
+        for m in good_meth:
+            self.assertEqual(eval('0x1.' + m), eval('(0x1).' + m))
+        self.check_syntax_error('0x1.spam', "invalid hexadecimal literal",
+                                lineno=1, offset=4)
+        self.check_syntax_error('0x1.foo', "invalid hexadecimal literal",
+                                lineno=1, offset=5)
+
     def test_long_integers(self):
         x = 0
         x = 0xffffffffffffffff
