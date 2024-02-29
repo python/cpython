@@ -294,6 +294,33 @@ def skip_unless_working_chmod(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+@contextlib.contextmanager
+def save_mode(path, *, quiet=False):
+    """Context manager that restores the mode (permissions) of path on exit.
+
+    Arguments:
+
+      path: Path of the file to restore mode of.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+    saved_mode = os.stat(path)
+    try:
+        yield
+    finally:
+        try:
+            os.chmod(path, saved_mode.st_mode)
+        except OSError as exc:
+            if not quiet:
+                raise
+            warnings.warn(f'tests may fail, unable to restore the mode of '
+                          f'{path!r} to {saved_mode.st_mode}: {exc}',
+                          RuntimeWarning, stacklevel=3)
+
+
 # Check whether the current effective user has the capability to override
 # DAC (discretionary access control). Typically user root is able to
 # bypass file read, write, and execute permission checks. The capability
@@ -509,8 +536,37 @@ def temp_dir(path=None, quiet=False):
 
 
 @contextlib.contextmanager
+def save_cwd(*, quiet=False):
+    """Return a context manager that restores the current working directory on
+    exit.
+
+    Prefer change_cwd() if you can. For most use cases it is cleaner.
+
+    Arguments:
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+    saved_dir = os.getcwd()
+    try:
+        yield
+    finally:
+        try:
+            os.chdir(saved_dir)
+        except OSError as exc:
+            if not quiet:
+                raise
+            warnings.warn(f'tests may fail, unable to restore the current '
+                          f'working directory to {saved_dir!r}: {exc}',
+                          RuntimeWarning, stacklevel=3)
+
+
+@contextlib.contextmanager
 def change_cwd(path, quiet=False):
-    """Return a context manager that changes the current working directory.
+    """Return a context manager that changes the current working directory on
+    entry, and restores it on exit.
 
     Arguments:
 
