@@ -158,7 +158,7 @@ tests that are unrelated to :class:`ProcessPoolExecutor` on those platforms.
 .. nonce: hsCNgX
 .. section: Core and Builtins
 
-If :func:`object.__ipow__` returns :const:`NotImplemented`, the operator
+If :func:`object.__ipow__` returns :data:`NotImplemented`, the operator
 will correctly fall back to :func:`object.__pow__` and
 :func:`object.__rpow__` as expected.
 

@@ -660,7 +660,7 @@ Karabas.
 .. section: Core and Builtins
 
 Parameter substitution of the union type with wrong types now raises
-``TypeError`` instead of returning ``NotImplemented``.
+``TypeError`` instead of returning :data:`NotImplemented`.
 
 ..
 

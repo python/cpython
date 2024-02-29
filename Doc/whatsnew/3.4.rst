@@ -872,7 +872,7 @@ multiple implementations of an operation that allows it to work with
       PEP written and implemented by Łukasz Langa.
 
 :func:`~functools.total_ordering` now supports a return value of
-:const:`NotImplemented` from the underlying comparison function.  (Contributed
+:data:`NotImplemented` from the underlying comparison function.  (Contributed
 by Katie Miller in :issue:`10042`.)
 
 A pure-python version of the :func:`~functools.partial` function is now in the

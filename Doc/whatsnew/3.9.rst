@@ -1126,7 +1126,7 @@ Changes in the Python API
   ``logging.getLogger(__name__)`` in some top-level module called ``'root.py'``.
   (Contributed by Vinay Sajip in :issue:`37742`.)
 
-* Division handling of :class:`~pathlib.PurePath` now returns ``NotImplemented``
+* Division handling of :class:`~pathlib.PurePath` now returns :data:`NotImplemented`
   instead of raising a :exc:`TypeError` when passed something other than an
   instance of ``str`` or :class:`~pathlib.PurePath`.  This allows creating
   compatible classes that don't inherit from those mentioned types.
