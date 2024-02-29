@@ -157,6 +157,9 @@
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
 
+/* Define to 1 if the system has the type `clock_t'. */
+#undef HAVE_CLOCK_T
+
 /* Define to 1 if you have the `closefrom' function. */
 #undef HAVE_CLOSEFROM
 
@@ -932,6 +935,9 @@
 
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
+
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
 
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
@@ -1938,7 +1944,7 @@
 /* Define on FreeBSD to activate all library features */
 #undef __BSD_VISIBLE
 
-/* Define to 'long' if <time.h> doesn't define. */
+/* Define to 'long' if <time.h> does not define clock_t. */
 #undef clock_t
 
 /* Define to empty if `const' does not conform to ANSI C. */

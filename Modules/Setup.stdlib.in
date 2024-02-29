@@ -171,6 +171,7 @@
 @MODULE__TESTIMPORTMULTIPLE_TRUE@_testimportmultiple _testimportmultiple.c
 @MODULE__TESTMULTIPHASE_TRUE@_testmultiphase _testmultiphase.c
 @MODULE__TESTMULTIPHASE_TRUE@_testsinglephase _testsinglephase.c
+@MODULE__TESTEXTERNALINSPECTION_TRUE@_testexternalinspection _testexternalinspection.c
 @MODULE__CTYPES_TEST_TRUE@_ctypes_test _ctypes/_ctypes_test.c
 
 # Limited API template modules; must be built as shared modules.
