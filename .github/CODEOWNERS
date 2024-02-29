@@ -247,6 +247,7 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 /Tools/wasm/                  @brettcannon
 
 # SBOM
+/Misc/externals.spdx.json     @sethmlarson
 /Misc/sbom.spdx.json          @sethmlarson
 /Tools/build/generate_sbom.py @sethmlarson
 
