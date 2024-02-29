@@ -1532,7 +1532,7 @@ built-in types.
   ``x == x`` are all false, while ``x != x`` is true.  This behavior is
   compliant with IEEE 754.
 
-* ``None`` and ``NotImplemented`` are singletons.  :PEP:`8` advises that
+* ``None`` and :data:`NotImplemented` are singletons.  :PEP:`8` advises that
   comparisons for singletons should always be done with ``is`` or ``is not``,
   never the equality operators.
 

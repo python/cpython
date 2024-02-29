@@ -828,7 +828,7 @@ Other Language Changes
   :meth:`~object.__index__` method).
   (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
-* If :func:`object.__ipow__` returns :const:`NotImplemented`, the operator will
+* If :func:`object.__ipow__` returns :data:`NotImplemented`, the operator will
   correctly fall back to :func:`object.__pow__` and :func:`object.__rpow__` as expected.
   (Contributed by Alex Shkop in :issue:`38302`.)
 

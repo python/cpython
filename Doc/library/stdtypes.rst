@@ -5447,10 +5447,10 @@ The NotImplemented Object
 
 This object is returned from comparisons and binary operations when they are
 asked to operate on types they don't support. See :ref:`comparisons` for more
-information.  There is exactly one ``NotImplemented`` object.
-``type(NotImplemented)()`` produces the singleton instance.
+information.  There is exactly one :data:`NotImplemented` object.
+:code:`type(NotImplemented)()` produces the singleton instance.
 
-It is written as ``NotImplemented``.
+It is written as :code:`NotImplemented`.
 
 
 .. _typesinternal:

@@ -159,7 +159,7 @@ NotImplemented
 .. index:: pair: object; NotImplemented
 
 This type has a single value.  There is a single object with this value. This
-object is accessed through the built-in name ``NotImplemented``. Numeric methods
+object is accessed through the built-in name :data:`NotImplemented`. Numeric methods
 and rich comparison methods should return this value if they do not implement the
 operation for the operands provided.  (The interpreter will then try the
 reflected operation, or some other fallback, depending on the operator.)  It
@@ -170,7 +170,7 @@ See
 for more details.
 
 .. versionchanged:: 3.9
-   Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+   Evaluating :data:`NotImplemented` in a boolean context is deprecated. While
    it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
    It will raise a :exc:`TypeError` in a future version of Python.
 
@@ -1780,7 +1780,7 @@ Basic customization
    ``x.__ne__(y)``, ``x>y`` calls ``x.__gt__(y)``, and ``x>=y`` calls
    ``x.__ge__(y)``.
 
-   A rich comparison method may return the singleton ``NotImplemented`` if it does
+   A rich comparison method may return the singleton :data:`NotImplemented` if it does
    not implement the operation for a given pair of arguments. By convention,
    ``False`` and ``True`` are returned for a successful comparison. However, these
    methods can return any value, so if the comparison operator is used in a Boolean
@@ -1788,10 +1788,10 @@ Basic customization
    :func:`bool` on the value to determine if the result is true or false.
 
    By default, ``object`` implements :meth:`__eq__` by using ``is``, returning
-   ``NotImplemented`` in the case of a false comparison:
+   :data:`NotImplemented` in the case of a false comparison:
    ``True if x is y else NotImplemented``. For :meth:`__ne__`, by default it
    delegates to :meth:`__eq__` and inverts the result unless it is
-   ``NotImplemented``.  There are no other implied relationships among the
+   :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
    operations from a single root operation, see :func:`functools.total_ordering`.
@@ -2821,7 +2821,7 @@ through the object's keys; for sequences, it should iterate through the values.
    Called to implement :func:`operator.length_hint`. Should return an estimated
    length for the object (which may be greater or less than the actual length).
    The length must be an integer ``>=`` 0. The return value may also be
-   :const:`NotImplemented`, which is treated the same as if the
+   :data:`NotImplemented`, which is treated the same as if the
    ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
 
@@ -2973,7 +2973,7 @@ left undefined.
    function is to be supported.
 
    If one of those methods does not support the operation with the supplied
-   arguments, it should return ``NotImplemented``.
+   arguments, it should return :data:`NotImplemented`.
 
 
 .. method:: object.__radd__(self, other)
@@ -3003,7 +3003,7 @@ left undefined.
    types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method,
    ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
-   *NotImplemented*.
+   :data:`NotImplemented`.
 
    .. index:: pair: built-in function; pow
 
@@ -3495,7 +3495,7 @@ An example of an asynchronous context manager class::
    the behavior that ``None`` is not callable.
 
 .. [#] "Does not support" here means that the class has no such method, or
-   the method returns ``NotImplemented``.  Do not set the method to
+   the method returns :data:`NotImplemented`.  Do not set the method to
    ``None`` if you want to force fallback to the right operand's reflected
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.
