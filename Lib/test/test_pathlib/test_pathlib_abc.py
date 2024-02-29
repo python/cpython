@@ -1431,7 +1431,7 @@ class DummyPath(PathBase):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
     def stat(self, *, follow_symlinks=True):
-        if follow_symlinks or self.name == '..':
+        if follow_symlinks or not self.name or self.name == '.' or self.name == '..':
             path = str(self.resolve(strict=True))
         else:
             path = str(self.parent.resolve(strict=True) / self.name)

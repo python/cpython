@@ -846,10 +846,10 @@ class PathBase(PurePathBase):
 
         stack = pattern._pattern_stack
         specials = ('', '.', '..')
-        check_paths = False
+        check_paths = True
         deduplicate_paths = False
         sep = self.pathmod.sep
-        paths = iter([self] if self.is_dir() else [])
+        paths = iter([self])
         while stack:
             part = stack.pop()
             if part in specials:
