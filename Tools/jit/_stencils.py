@@ -140,7 +140,7 @@ class Stencil:
                 offset -= 3
             case Hole(
                 offset=offset,
-                kind="IMAGE_REL_I386_REL32",
+                kind="IMAGE_REL_I386_REL32" | "X86_64_RELOC_BRANCH",
                 value=HoleValue.CONTINUE,
                 symbol=None,
                 addend=-4,
