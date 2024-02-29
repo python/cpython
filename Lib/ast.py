@@ -1105,12 +1105,21 @@ class _Unparser(NodeVisitor):
         if node.bound:
             self.write(": ")
             self.traverse(node.bound)
+        if node.default_:
+            self.write(" = ")
+            self.traverse(node.default_)
 
     def visit_TypeVarTuple(self, node):
         self.write("*" + node.name)
+        if node.default_:
+            self.write(" = ")
+            self.traverse(node.default_)
 
     def visit_ParamSpec(self, node):
         self.write("**" + node.name)
+        if node.default_:
+            self.write(" = ")
+            self.traverse(node.default_)
 
     def visit_TypeAlias(self, node):
         self.fill("type ")

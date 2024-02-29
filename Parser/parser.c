@@ -10926,7 +10926,7 @@ type_param_bound_rule(Parser *p)
     return _res;
 }
 
-// type_param_default: "=" expression
+// type_param_default: '=' expression
 static expr_ty
 type_param_default_rule(Parser *p)
 {
@@ -10939,12 +10939,12 @@ type_param_default_rule(Parser *p)
     }
     expr_ty _res = NULL;
     int _mark = p->mark;
-    { // "=" expression
+    { // '=' expression
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> type_param_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "\"=\" expression"));
+        D(fprintf(stderr, "%*c> type_param_default[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'=' expression"));
         Token * _literal;
         expr_ty e;
         if (
@@ -10953,7 +10953,7 @@ type_param_default_rule(Parser *p)
             (e = expression_rule(p))  // expression
         )
         {
-            D(fprintf(stderr, "%*c+ type_param_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"=\" expression"));
+            D(fprintf(stderr, "%*c+ type_param_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'=' expression"));
             _res = e;
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
@@ -10964,7 +10964,7 @@ type_param_default_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s type_param_default[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "\"=\" expression"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'=' expression"));
     }
     _res = NULL;
   done:

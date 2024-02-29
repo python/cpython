@@ -723,6 +723,20 @@ class ManualASTCreationTestCase(unittest.TestCase):
         ast.fix_missing_locations(node)
         self.assertEqual(ast.unparse(node), "def f[T: int]():\n    pass")
 
+    def test_function_with_type_params_and_default(self):
+        node = ast.FunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_=ast.Constant(value=1)),
+                ast.ParamSpec("P", default_=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "def f[T = 1, *Ts = 1, **P = 1]():\n    pass")
+
     def test_async_function(self):
         node = ast.AsyncFunctionDef(
             name="f",
@@ -745,6 +759,20 @@ class ManualASTCreationTestCase(unittest.TestCase):
         )
         ast.fix_missing_locations(node)
         self.assertEqual(ast.unparse(node), "async def f[T]():\n    pass")
+
+    def test_async_function_with_type_params_and_default(self):
+        node = ast.AsyncFunctionDef(
+            name="f",
+            args=ast.arguments(),
+            body=[ast.Pass()],
+            type_params=[
+                ast.TypeVar("T", default_=ast.Constant(value=1)),
+                ast.TypeVarTuple("Ts", default_=ast.Constant(value=1)),
+                ast.ParamSpec("P", default_=ast.Constant(value=1)),
+            ],
+        )
+        ast.fix_missing_locations(node)
+        self.assertEqual(ast.unparse(node), "async def f[T = 1, *Ts = 1, **P = 1]():\n    pass")
 
 
 class DirectoryTestCase(ASTTestCase):
