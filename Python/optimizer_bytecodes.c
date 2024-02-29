@@ -265,7 +265,9 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         else {
-            sym_set_type(value, &PyBool_Type);
+            if(!sym_set_type(value, &PyBool_Type)) {
+                goto hit_bottom;
+            }
         }
     }
 
@@ -279,11 +281,15 @@ dummy_func(void) {
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
         }
-        sym_set_type(value, &PyLong_Type);
+        if(!sym_set_type(value, &PyLong_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_TO_BOOL_LIST, (value -- res)) {
-        sym_set_type(value, &PyList_Type);
+        if(!sym_set_type(value, &PyList_Type)) {
+            goto hit_bottom;
+        }
         OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
     }
 
@@ -304,7 +310,9 @@ dummy_func(void) {
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
         }
-        sym_set_type(value, &PyUnicode_Type);
+        if(!sym_set_type(value, &PyUnicode_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_LOAD_CONST, (-- value)) {

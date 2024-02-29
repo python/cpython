@@ -121,7 +121,9 @@
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             else {
-                sym_set_type(value, &PyBool_Type);
+                if(!sym_set_type(value, &PyBool_Type)) {
+                    goto hit_bottom;
+                }
             }
             break;
         }
@@ -139,7 +141,9 @@
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
             }
-            sym_set_type(value, &PyLong_Type);
+            if(!sym_set_type(value, &PyLong_Type)) {
+                goto hit_bottom;
+            }
             stack_pointer[-1] = res;
             break;
         }
@@ -148,7 +152,9 @@
             _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
             value = stack_pointer[-1];
-            sym_set_type(value, &PyList_Type);
+            if(!sym_set_type(value, &PyList_Type)) {
+                goto hit_bottom;
+            }
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
             stack_pointer[-1] = res;
             break;
@@ -179,7 +185,9 @@
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
             }
-            sym_set_type(value, &PyUnicode_Type);
+            if(!sym_set_type(value, &PyUnicode_Type)) {
+                goto hit_bottom;
+            }
             stack_pointer[-1] = res;
             break;
         }
