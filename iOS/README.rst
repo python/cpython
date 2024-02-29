@@ -252,13 +252,13 @@ suite passes.
 
 To run the test suite, configure a Python build for an iOS simulator (i.e.,
 ``--host=arm64-apple-ios-simulator`` or ``--host=x86_64-apple-ios-simulator``
-), setting the framework location to the testbed project::
-
-    --enable-framework="$(pwd)/iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator"
-
-Then run ``make all install testios``. This will build an iOS framework for your
-chosen architecture, install the Python iOS framework into the testbed project,
-and run the test suite on an "iPhone SE (3rd generation)" simulator.
+), specifying a framework build (i.e. ``--enable-framework``). Then run ``make
+testios`` (ensuring that your ``PATH`` has been configured to include the
+``iOS/Resources/bin`` folder, and exclude any non-iOS tools). This will build
+an iOS framework for your chosen architecture, copy the testbed project into
+the ``build`` directory, install the Python iOS framework into the build copy
+of the testbed project, and run the test suite on an "iPhone SE (3rd
+generation)" simulator.
 
 While the test suite is running, Xcode does not display any console output.
 After showing some Xcode build commands, the console output will print ``Testing
