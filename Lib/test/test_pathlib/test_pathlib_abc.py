@@ -1843,6 +1843,11 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
         _check(p, "*/dirD/**", ["dirC/dirD/", "dirC/dirD/fileD"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
+        _check(p, "linkA", ["linkA"])
+        _check(p, "linkB", ["linkB"])
+        _check(p, "linkB/fileB", [])
+        _check(p, "dirA/linkC", ["dirA/linkC"])
+        _check(p, "dirA/linkC/fileB", [])
 
     def test_rglob_common(self):
         def _check(glob, expected):

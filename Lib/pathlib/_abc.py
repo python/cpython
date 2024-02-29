@@ -92,14 +92,19 @@ def _deselect_missing(paths):
             pass
 
 
-def _deselect_symlinks(paths):
+def _deselect_symlinks(paths, dir_only, follow_symlinks):
     """Yield the given paths, filtering out symlinks."""
+    if follow_symlinks is None:
+        follow_symlinks = True
     for path in paths:
-        try:
-            if not path.is_symlink():
-                yield path
-        except OSError:
-            pass
+        if follow_symlinks or not dir_only:
+            yield path
+        else:
+            try:
+                if not path.is_symlink():
+                    yield path
+            except OSError:
+                pass
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -904,8 +909,7 @@ class PathBase(PurePathBase):
                 paths = _select_literal(paths, part)
 
                 # Filter out non-symlinks if requested.
-                if follow_symlinks is False:
-                    paths = _deselect_symlinks(paths)
+                paths = _deselect_symlinks(paths, bool(stack), follow_symlinks)
 
                 # Paths might not exist; mark them to be checked.
                 check_paths = True
