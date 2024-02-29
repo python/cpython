@@ -3,7 +3,7 @@ import sys
 from test import support
 
 from .util import (
-    BREAKPOINT_FN, gdb_major_version, gdb_minor_version,
+    BREAKPOINT_FN, GDB_VERSION,
     run_gdb, setup_module, DebuggerTests)
 
 
@@ -12,6 +12,42 @@ def setUpModule():
 
 
 class PrettyPrintTests(DebuggerTests):
+    def get_gdb_repr(self, source,
+                     cmds_after_breakpoint=None,
+                     import_site=False):
+        # Given an input python source representation of data,
+        # run "python -c'id(DATA)'" under gdb with a breakpoint on
+        # builtin_id and scrape out gdb's representation of the "op"
+        # parameter, and verify that the gdb displays the same string
+        #
+        # Verify that the gdb displays the expected string
+        #
+        # For a nested structure, the first time we hit the breakpoint will
+        # give us the top-level structure
+
+        # NOTE: avoid decoding too much of the traceback as some
+        # undecodable characters may lurk there in optimized mode
+        # (issue #19743).
+        cmds_after_breakpoint = cmds_after_breakpoint or ["backtrace 1"]
+        gdb_output = self.get_stack_trace(source, breakpoint=BREAKPOINT_FN,
+                                          cmds_after_breakpoint=cmds_after_breakpoint,
+                                          import_site=import_site)
+        # gdb can insert additional '\n' and space characters in various places
+        # in its output, depending on the width of the terminal it's connected
+        # to (using its "wrap_here" function)
+        m = re.search(
+            # Match '#0 builtin_id(self=..., v=...)'
+            r'#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)'
+            # Match ' at Python/bltinmodule.c'.
+            # bpo-38239: builtin_id() is defined in Python/bltinmodule.c,
+            # but accept any "Directory\file.c" to support Link Time
+            # Optimization (LTO).
+            r'\s+at\s+\S*[A-Za-z]+/[A-Za-z0-9_-]+\.c',
+            gdb_output, re.DOTALL)
+        if not m:
+            self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
+        return m.group(1), gdb_output
+
     def test_getting_backtrace(self):
         gdb_output = self.get_stack_trace('id(42)')
         self.assertTrue(BREAKPOINT_FN in gdb_output)
@@ -75,15 +111,17 @@ class PrettyPrintTests(DebuggerTests):
         # as GDB might have been linked against a different version
         # of Python with a different encoding and coercion policy
         # with respect to PEP 538 and PEP 540.
-        out, err = run_gdb(
+        stdout, stderr = run_gdb(
             '--eval-command',
             'python import locale; print(locale.getpreferredencoding())')
 
-        encoding = out.rstrip()
-        if err or not encoding:
+        encoding = stdout
+        if stderr or not encoding:
             raise RuntimeError(
-                f'unable to determine the preferred encoding '
-                f'of embedded Python in GDB: {err}')
+                f'unable to determine the Python locale preferred encoding '
+                f'of embedded Python in GDB\n'
+                f'stdout={stdout!r}\n'
+                f'stderr={stderr!r}')
 
         def check_repr(text):
             try:
@@ -122,7 +160,7 @@ class PrettyPrintTests(DebuggerTests):
     @support.requires_resource('cpu')
     def test_sets(self):
         'Verify the pretty-printing of sets'
-        if (gdb_major_version, gdb_minor_version) < (7, 3):
+        if GDB_VERSION < (7, 3):
             self.skipTest("pretty-printing of sets needs gdb 7.3 or later")
         self.assertGdbRepr(set(), "set()")
         self.assertGdbRepr(set(['a']), "{'a'}")
@@ -141,7 +179,7 @@ id(s)''')
     @support.requires_resource('cpu')
     def test_frozensets(self):
         'Verify the pretty-printing of frozensets'
-        if (gdb_major_version, gdb_minor_version) < (7, 3):
+        if GDB_VERSION < (7, 3):
             self.skipTest("pretty-printing of frozensets needs gdb 7.3 or later")
         self.assertGdbRepr(frozenset(), "frozenset()")
         self.assertGdbRepr(frozenset(['a']), "frozenset({'a'})")

@@ -184,11 +184,14 @@ PyType_stgdict(PyObject *obj)
 {
     PyTypeObject *type;
 
-    if (!PyType_Check(obj))
+    if (!PyType_Check(obj)) {
         return NULL;
+    }
+    ctypes_state *st = GLOBAL_STATE();
     type = (PyTypeObject *)obj;
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
         return NULL;
+    }
     return (StgDictObject *)type->tp_dict;
 }
 
@@ -201,8 +204,10 @@ StgDictObject *
 PyObject_stgdict(PyObject *self)
 {
     PyTypeObject *type = Py_TYPE(self);
-    if (!type->tp_dict || !PyCStgDict_CheckExact(type->tp_dict))
+    ctypes_state *st = GLOBAL_STATE();
+    if (!type->tp_dict || !PyCStgDict_CheckExact(st, type->tp_dict)) {
         return NULL;
+    }
     return (StgDictObject *)type->tp_dict;
 }
 
@@ -379,6 +384,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int bitofs;
     PyObject *tmp;
     int pack;
+    int forced_alignment = 1;
     Py_ssize_t ffi_ofs;
     int big_endian;
     int arrays_seen = 0;
@@ -417,6 +423,28 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     else {
         /* Setting `_pack_ = 0` amounts to using the default alignment */
         pack = 0;
+    }
+
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_align_), &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        forced_alignment = PyLong_AsInt(tmp);
+        Py_DECREF(tmp);
+        if (forced_alignment < 0) {
+            if (!PyErr_Occurred() ||
+                PyErr_ExceptionMatches(PyExc_TypeError) ||
+                PyErr_ExceptionMatches(PyExc_OverflowError))
+            {
+                PyErr_SetString(PyExc_ValueError,
+                                "_align_ must be a non-negative integer");
+            }
+            return -1;
+        }
+    }
+    else {
+        /* Setting `_align_ = 0` amounts to using the default alignment */
+        forced_alignment = 1;
     }
 
     len = PySequence_Size(fields);
@@ -464,6 +492,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         align = basedict->align;
         union_size = 0;
         total_align = align ? align : 1;
+        total_align = max(total_align, forced_alignment);
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, basedict->length + len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
@@ -483,7 +512,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         size = 0;
         align = 0;
         union_size = 0;
-        total_align = 1;
+        total_align = forced_alignment;
         stgdict->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *, len + 1);
         if (stgdict->ffi_type_pointer.elements == NULL) {
@@ -505,6 +534,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (stgdict->format == NULL)
         return -1;
 
+    ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < len; ++i) {
         PyObject *name = NULL, *desc = NULL;
         PyObject *pair = PySequence_GetItem(fields, i);
@@ -518,8 +548,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             Py_XDECREF(pair);
             return -1;
         }
-        if (PyCArrayTypeObject_Check(desc))
+        if (PyCArrayTypeObject_Check(st, desc)) {
             arrays_seen = 1;
+        }
         dict = PyType_stgdict(desc);
         if (dict == NULL) {
             Py_DECREF(pair);
@@ -695,31 +726,49 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
     stgdict->size = aligned_size;
     stgdict->align = total_align;
-    stgdict->length = len;      /* ADD ffi_ofs? */
+    stgdict->length = ffi_ofs + len;
 
-#define MAX_STRUCT_SIZE 16
+/*
+ * The value of MAX_STRUCT_SIZE depends on the platform Python is running on.
+ */
+#if defined(__aarch64__) || defined(__arm__) || defined(_M_ARM64)
+#  define MAX_STRUCT_SIZE 32
+#elif defined(__powerpc64__)
+#  define MAX_STRUCT_SIZE 64
+#else
+#  define MAX_STRUCT_SIZE 16
+#endif
 
     if (arrays_seen && (size <= MAX_STRUCT_SIZE)) {
         /*
-         * See bpo-22273. Arrays are normally treated as pointers, which is
-         * fine when an array name is being passed as parameter, but not when
-         * passing structures by value that contain arrays. On 64-bit Linux,
-         * small structures passed by value are passed in registers, and in
+         * See bpo-22273 and gh-110190. Arrays are normally treated as
+         * pointers, which is fine when an array name is being passed as
+         * parameter, but not when passing structures by value that contain
+         * arrays.
+         * Small structures passed by value are passed in registers, and in
          * order to do this, libffi needs to know the true type of the array
          * members of structs. Treating them as pointers breaks things.
          *
-         * By small structures, we mean ones that are 16 bytes or less. In that
-         * case, there can't be more than 16 elements after unrolling arrays,
-         * as we (will) disallow bitfields. So we can collect the true ffi_type
-         * values in a fixed-size local array on the stack and, if any arrays
-         * were seen, replace the ffi_type_pointer.elements with a more
-         * accurate set, to allow libffi to marshal them into registers
-         * correctly. It means one more loop over the fields, but if we got
-         * here, the structure is small, so there aren't too many of those.
+         * Small structures have different sizes depending on the platform
+         * where Python is running on:
          *
-         * Although the passing in registers is specific to 64-bit Linux, the
-         * array-in-struct vs. pointer problem is general. But we restrict the
-         * type transformation to small structs nonetheless.
+         *      * x86-64: 16 bytes or less
+         *      * Arm platforms (both 32 and 64 bit): 32 bytes or less
+         *      * PowerPC 64 Little Endian: 64 bytes or less
+         *
+         * In that case, there can't be more than 16, 32 or 64 elements after
+         * unrolling arrays, as we (will) disallow bitfields.
+         * So we can collect the true ffi_type values in a fixed-size local
+         * array on the stack and, if any arrays were seen, replace the
+         * ffi_type_pointer.elements with a more accurate set, to allow
+         * libffi to marshal them into registers correctly.
+         * It means one more loop over the fields, but if we got here,
+         * the structure is small, so there aren't too many of those.
+         *
+         * Although the passing in registers is specific to the above
+         * platforms, the array-in-struct vs. pointer problem is general.
+         * But we restrict the type transformation to small structs
+         * nonetheless.
          *
          * Note that although a union may be small in terms of memory usage, it
          * could contain many overlapping declarations of arrays, e.g.
@@ -744,6 +793,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
          *     struct { int_32 e1; int_32 e2; ... int_32 e_4; } f5;
          *     struct { uint_32 e1; uint_32 e2; ... uint_32 e_4; } f6;
          * }
+         *
+         * The same principle applies for a struct 32 or 64 bytes in size.
          *
          * So the struct/union needs setting up as follows: all non-array
          * elements copied across as is, and all array elements replaced with
@@ -786,7 +837,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                     i);
                 return -1;
             }
-            if (!PyCArrayTypeObject_Check(desc)) {
+            if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just need an ffi_type pointer. */
                 num_ffi_type_pointers++;
             }
@@ -886,7 +937,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 return -1;
             }
             assert(element_index < (ffi_ofs + len)); /* will be used below */
-            if (!PyCArrayTypeObject_Check(desc)) {
+            if (!PyCArrayTypeObject_Check(st, desc)) {
                 /* Not an array. Just copy over the element ffi_type. */
                 element_types[element_index++] = &dict->ffi_type_pointer;
             }

@@ -121,13 +121,13 @@ def deepcopy(x, memo=None, _nil=[]):
     See the module's __doc__ string for more info.
     """
 
+    d = id(x)
     if memo is None:
         memo = {}
-
-    d = id(x)
-    y = memo.get(d, _nil)
-    if y is not _nil:
-        return y
+    else:
+        y = memo.get(d, _nil)
+        if y is not _nil:
+            return y
 
     cls = type(x)
 

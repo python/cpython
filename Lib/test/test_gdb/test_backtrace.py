@@ -3,7 +3,7 @@ import unittest
 from test import support
 from test.support import python_is_optimized
 
-from .util import setup_module, DebuggerTests, CET_PROTECTION
+from .util import setup_module, DebuggerTests, CET_PROTECTION, SAMPLE_SCRIPT
 
 
 def setUpModule():
@@ -15,7 +15,7 @@ class PyBtTests(DebuggerTests):
                      "Python was compiled with optimizations")
     def test_bt(self):
         'Verify that the "py-bt" command works'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-bt'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
@@ -35,7 +35,7 @@ Traceback \(most recent call first\):
                      "Python was compiled with optimizations")
     def test_bt_full(self):
         'Verify that the "py-bt-full" command works'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-bt-full'])
         self.assertMultilineMatches(bt,
                                     r'''^.*

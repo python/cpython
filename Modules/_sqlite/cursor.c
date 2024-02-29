@@ -721,7 +721,6 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
     } else if (PyDict_Check(parameters)) {
         /* parameters passed as dictionary */
         for (i = 1; i <= num_params_needed; i++) {
-            PyObject *binding_name_obj;
             Py_BEGIN_ALLOW_THREADS
             binding_name = sqlite3_bind_parameter_name(self->st, i);
             Py_END_ALLOW_THREADS
@@ -733,17 +732,8 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             }
 
             binding_name++; /* skip first char (the colon) */
-            binding_name_obj = PyUnicode_FromString(binding_name);
-            if (!binding_name_obj) {
-                return;
-            }
-            if (PyDict_CheckExact(parameters)) {
-                PyObject *item = PyDict_GetItemWithError(parameters, binding_name_obj);
-                current_param = Py_XNewRef(item);
-            } else {
-                current_param = PyObject_GetItem(parameters, binding_name_obj);
-            }
-            Py_DECREF(binding_name_obj);
+            PyObject *current_param;
+            (void)PyMapping_GetOptionalItemString(parameters, binding_name, &current_param);
             if (!current_param) {
                 if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_LookupError)) {
                     PyErr_Format(state->ProgrammingError,

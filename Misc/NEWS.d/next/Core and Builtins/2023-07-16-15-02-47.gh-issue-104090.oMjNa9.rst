@@ -1,0 +1,2 @@
+The multiprocessing resource tracker now exits with non-zero status code if a resource
+leak was detected. It still exits with status code 0 otherwise.

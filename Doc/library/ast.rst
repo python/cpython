@@ -45,7 +45,7 @@ Node classes
 
    This is the base of all AST node classes.  The actual node classes are
    derived from the :file:`Parser/Python.asdl` file, which is reproduced
-   :ref:`above <abstract-grammar>`.  They are defined in the :mod:`_ast` C
+   :ref:`above <abstract-grammar>`.  They are defined in the :mod:`!_ast` C
    module and re-exported in :mod:`ast`.
 
    There is one class defined for each left-hand side symbol in the abstract
@@ -103,19 +103,14 @@ Node classes
    For example, to create and populate an :class:`ast.UnaryOp` node, you could
    use ::
 
-      node = ast.UnaryOp()
-      node.op = ast.USub()
-      node.operand = ast.Constant()
-      node.operand.value = 5
-      node.operand.lineno = 0
-      node.operand.col_offset = 0
-      node.lineno = 0
-      node.col_offset = 0
-
-   or the more compact ::
-
       node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
+
+   If a field that is optional in the grammar is omitted from the constructor,
+   it defaults to ``None``. If a list field is omitted, it defaults to the empty
+   list. If any other field is omitted, a :exc:`DeprecationWarning` is raised
+   and the AST node will not have this field. In Python 3.15, this condition will
+   raise an error.
 
 .. versionchanged:: 3.8
 
@@ -128,17 +123,25 @@ Node classes
 
 .. deprecated:: 3.8
 
-   Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
-   :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
+   Old classes :class:`!ast.Num`, :class:`!ast.Str`, :class:`!ast.Bytes`,
+   :class:`!ast.NameConstant` and :class:`!ast.Ellipsis` are still available,
    but they will be removed in future Python releases.  In the meantime,
    instantiating them will return an instance of a different class.
 
 .. deprecated:: 3.9
 
-   Old classes :class:`ast.Index` and :class:`ast.ExtSlice` are still
+   Old classes :class:`!ast.Index` and :class:`!ast.ExtSlice` are still
    available, but they will be removed in future Python releases.
    In the meantime, instantiating them will return an instance of
    a different class.
+
+.. deprecated-removed:: 3.13 3.15
+
+   Previous versions of Python allowed the creation of AST nodes that were missing
+   required fields. Similarly, AST node constructors allowed arbitrary keyword
+   arguments that were set as attributes of the AST node, even if they did not
+   match any of the fields of the AST node. This behavior is deprecated and will
+   be removed in Python 3.15.
 
 .. note::
     The descriptions of the specific node classes displayed here
@@ -1935,8 +1938,7 @@ Function and class definitions
 .. class:: arg(arg, annotation, type_comment)
 
    A single argument in a list. ``arg`` is a raw string of the argument
-   name, ``annotation`` is its annotation, such as a :class:`Str` or
-   :class:`Name` node.
+   name; ``annotation`` is its annotation, such as a :class:`Name` node.
 
    .. attribute:: type_comment
 
@@ -2210,7 +2212,7 @@ and classes for traversing abstract syntax trees:
       Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
 
    .. versionchanged:: 3.13
-      The minimum supported version for feature_version is now (3,7)
+      The minimum supported version for ``feature_version`` is now ``(3, 7)``.
       The ``optimize`` argument was added.
 
 
@@ -2286,8 +2288,8 @@ and classes for traversing abstract syntax trees:
 .. function:: get_source_segment(source, node, *, padded=False)
 
    Get source code segment of the *source* that generated *node*.
-   If some location information (:attr:`lineno`, :attr:`end_lineno`,
-   :attr:`col_offset`, or :attr:`end_col_offset`) is missing, return ``None``.
+   If some location information (:attr:`~ast.AST.lineno`, :attr:`~ast.AST.end_lineno`,
+   :attr:`~ast.AST.col_offset`, or :attr:`~ast.AST.end_col_offset`) is missing, return ``None``.
 
    If *padded* is ``True``, the first line of a multi-line statement will
    be padded with spaces to match its original position.
@@ -2298,7 +2300,7 @@ and classes for traversing abstract syntax trees:
 .. function:: fix_missing_locations(node)
 
    When you compile a node tree with :func:`compile`, the compiler expects
-   :attr:`lineno` and :attr:`col_offset` attributes for every node that supports
+   :attr:`~ast.AST.lineno` and :attr:`~ast.AST.col_offset` attributes for every node that supports
    them.  This is rather tedious to fill in for generated nodes, so this helper
    adds these attributes recursively where not already set, by setting them to
    the values of the parent node.  It works recursively starting at *node*.
@@ -2313,8 +2315,8 @@ and classes for traversing abstract syntax trees:
 
 .. function:: copy_location(new_node, old_node)
 
-   Copy source location (:attr:`lineno`, :attr:`col_offset`, :attr:`end_lineno`,
-   and :attr:`end_col_offset`) from *old_node* to *new_node* if possible,
+   Copy source location (:attr:`~ast.AST.lineno`, :attr:`~ast.AST.col_offset`, :attr:`~ast.AST.end_lineno`,
+   and :attr:`~ast.AST.end_col_offset`) from *old_node* to *new_node* if possible,
    and return *new_node*.
 
 
@@ -2360,14 +2362,18 @@ and classes for traversing abstract syntax trees:
       visited unless the visitor calls :meth:`generic_visit` or visits them
       itself.
 
+   .. method:: visit_Constant(node)
+
+      Handles all constant nodes.
+
    Don't use the :class:`NodeVisitor` if you want to apply changes to nodes
    during traversal.  For this a special visitor exists
    (:class:`NodeTransformer`) that allows modifications.
 
    .. deprecated:: 3.8
 
-      Methods :meth:`visit_Num`, :meth:`visit_Str`, :meth:`visit_Bytes`,
-      :meth:`visit_NameConstant` and :meth:`visit_Ellipsis` are deprecated
+      Methods :meth:`!visit_Num`, :meth:`!visit_Str`, :meth:`!visit_Bytes`,
+      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` are deprecated
       now and will not be called in future Python versions.  Add the
       :meth:`visit_Constant` method to handle all constant nodes.
 
@@ -2396,7 +2402,7 @@ and classes for traversing abstract syntax trees:
               )
 
    Keep in mind that if the node you're operating on has child nodes you must
-   either transform the child nodes yourself or call the :meth:`generic_visit`
+   either transform the child nodes yourself or call the :meth:`~ast.NodeVisitor.generic_visit`
    method for the node first.
 
    For nodes that were part of a collection of statements (that applies to all
@@ -2405,7 +2411,7 @@ and classes for traversing abstract syntax trees:
 
    If :class:`NodeTransformer` introduces new nodes (that weren't part of
    original tree) without giving them location information (such as
-   :attr:`lineno`), :func:`fix_missing_locations` should be called with
+   :attr:`~ast.AST.lineno`), :func:`fix_missing_locations` should be called with
    the new sub-tree to recalculate the location information::
 
       tree = ast.parse('foo', mode='eval')
@@ -2457,6 +2463,13 @@ effects on the compilation of a program:
    Generates and returns an abstract syntax tree instead of returning a
    compiled code object.
 
+.. data:: PyCF_OPTIMIZED_AST
+
+   The returned AST is optimized according to the *optimize* argument
+   in :func:`compile` or :func:`ast.parse`.
+
+   .. versionadded:: 3.13
+
 .. data:: PyCF_TYPE_COMMENTS
 
    Enables support for :pep:`484` and :pep:`526` style type comments
@@ -2483,26 +2496,26 @@ The following options are accepted:
 
 .. program:: ast
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message and exit.
 
-.. cmdoption:: -m <mode>
-               --mode <mode>
+.. option:: -m <mode>
+            --mode <mode>
 
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
-.. cmdoption:: --no-type-comments
+.. option:: --no-type-comments
 
    Don't parse type comments.
 
-.. cmdoption:: -a, --include-attributes
+.. option:: -a, --include-attributes
 
    Include attributes such as line numbers and column offsets.
 
-.. cmdoption:: -i <indent>
-               --indent <indent>
+.. option:: -i <indent>
+            --indent <indent>
 
    Indentation of nodes in AST (number of spaces).
 

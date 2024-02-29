@@ -383,8 +383,10 @@ def isfunction(object):
 
 def _has_code_flag(f, flag):
     """Return true if ``f`` is a function (or a method or functools.partial
-    wrapper wrapping a function) whose code object has the given ``flag``
+    wrapper wrapping a function or a functools.partialmethod wrapping a
+    function) whose code object has the given ``flag``
     set in its flags."""
+    f = functools._unwrap_partialmethod(f)
     while ismethod(f):
         f = f.__func__
     f = functools._unwrap_partial(f)
@@ -760,18 +762,14 @@ def unwrap(func, *, stop=None):
    :exc:`ValueError` is raised if a cycle is encountered.
 
     """
-    if stop is None:
-        def _is_wrapper(f):
-            return hasattr(f, '__wrapped__')
-    else:
-        def _is_wrapper(f):
-            return hasattr(f, '__wrapped__') and not stop(f)
     f = func  # remember the original func for error reporting
     # Memoise by id to tolerate non-hashable objects, but store objects to
     # ensure they aren't destroyed, which would allow their IDs to be reused.
     memo = {id(f): f}
     recursion_limit = sys.getrecursionlimit()
-    while _is_wrapper(func):
+    while not isinstance(func, type) and hasattr(func, '__wrapped__'):
+        if stop is not None and stop(func):
+            break
         func = func.__wrapped__
         id_func = id(func)
         if (id_func in memo) or (len(memo) >= recursion_limit):
@@ -832,9 +830,8 @@ def _finddoc(obj):
             cls = self.__class__
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
-        func = obj.fget
-        name = func.__name__
-        cls = _findclass(func)
+        name = obj.__name__
+        cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif ismethoddescriptor(obj) or isdatadescriptor(obj):
@@ -2561,7 +2558,7 @@ def _signature_from_callable(obj, *,
             return sig
 
     try:
-        partialmethod = obj._partialmethod
+        partialmethod = obj.__partialmethod__
     except AttributeError:
         pass
     else:
@@ -3316,6 +3313,16 @@ class Signature:
         return '<{} {}>'.format(self.__class__.__name__, self)
 
     def __str__(self):
+        return self.format()
+
+    def format(self, *, max_width=None):
+        """Create a string representation of the Signature object.
+
+        If *max_width* integer is passed,
+        signature will try to fit into the *max_width*.
+        If signature is longer than *max_width*,
+        all parameters will be on separate lines.
+        """
         result = []
         render_pos_only_separator = False
         render_kw_only_separator = True
@@ -3353,6 +3360,8 @@ class Signature:
             result.append('/')
 
         rendered = '({})'.format(', '.join(result))
+        if max_width is not None and len(rendered) > max_width:
+            rendered = '(\n    {}\n)'.format(',\n    '.join(result))
 
         if self.return_annotation is not _empty:
             anno = formatannotation(self.return_annotation)

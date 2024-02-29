@@ -98,7 +98,7 @@ class TestMROEntry(unittest.TestCase):
                 return ()
         d = C_too_few()
         with self.assertRaises(TypeError):
-            class D(d): ...
+            class E(d): ...
 
     def test_mro_entry_errors_2(self):
         class C_not_callable:
@@ -111,7 +111,7 @@ class TestMROEntry(unittest.TestCase):
                 return object
         c = C_not_tuple()
         with self.assertRaises(TypeError):
-            class D(c): ...
+            class E(c): ...
 
     def test_mro_entry_metaclass(self):
         meta_args = []

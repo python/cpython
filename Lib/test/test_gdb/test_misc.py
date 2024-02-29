@@ -2,7 +2,7 @@ import re
 import unittest
 from test.support import python_is_optimized
 
-from .util import run_gdb, setup_module, DebuggerTests
+from .util import run_gdb, setup_module, DebuggerTests, SAMPLE_SCRIPT
 
 
 def setUpModule():
@@ -32,7 +32,7 @@ class PyListTests(DebuggerTests):
 
     def test_basic_command(self):
         'Verify that the "py-list" command works'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-list'])
 
         self.assertListing('   5    \n'
@@ -47,7 +47,7 @@ class PyListTests(DebuggerTests):
 
     def test_one_abs_arg(self):
         'Verify the "py-list" command with one absolute argument'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-list 9'])
 
         self.assertListing('   9    def baz(*args):\n'
@@ -58,7 +58,7 @@ class PyListTests(DebuggerTests):
 
     def test_two_abs_args(self):
         'Verify the "py-list" command with two absolute arguments'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-list 1,3'])
 
         self.assertListing('   1    # Sample script for use by test_gdb\n'
@@ -101,7 +101,7 @@ $''')
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_down_at_bottom(self):
         'Verify handling of "py-down" at the bottom of the stack'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-down'])
         self.assertEndsWith(bt,
                             'Unable to find a newer python frame\n')
@@ -109,7 +109,7 @@ $''')
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     def test_up_at_top(self):
         'Verify handling of "py-up" at the top of the stack'
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-up'] * 5)
         self.assertEndsWith(bt,
                             'Unable to find an older python frame\n')
@@ -150,7 +150,7 @@ class PyPrintTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     def test_printing_global(self):
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-up', 'py-print __name__'])
         self.assertMultilineMatches(bt,
                                     r".*\nglobal '__name__' = '__main__'\n.*")
@@ -158,7 +158,7 @@ class PyPrintTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     def test_printing_builtin(self):
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-up', 'py-print len'])
         self.assertMultilineMatches(bt,
                                     r".*\nbuiltin 'len' = <built-in method len of module object at remote 0x-?[0-9a-f]+>\n.*")
@@ -167,7 +167,7 @@ class PyLocalsTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     def test_basic_command(self):
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
                                     r".*\nargs = \(1, 2, 3\)\n.*")
@@ -176,7 +176,7 @@ class PyLocalsTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     def test_locals_after_up(self):
-        bt = self.get_stack_trace(script=self.get_sample_script(),
+        bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-locals'])
         self.assertMultilineMatches(bt,
                                     r'''^.*

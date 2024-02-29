@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_testcapi_float_pack__doc__,
 "float_pack($module, size, d, le, /)\n"
 "--\n"
@@ -79,4 +81,4 @@ _testcapi_float_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=50146051f1341cce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b43dfd3a77fe04ba input=a9049054013a1b77]*/

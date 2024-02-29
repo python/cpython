@@ -591,9 +591,11 @@ class DocTest:
     def __lt__(self, other):
         if not isinstance(other, DocTest):
             return NotImplemented
-        return ((self.name, self.filename, self.lineno, id(self))
+        self_lno = self.lineno if self.lineno is not None else -1
+        other_lno = other.lineno if other.lineno is not None else -1
+        return ((self.name, self.filename, self_lno, id(self))
                 <
-                (other.name, other.filename, other.lineno, id(other)))
+                (other.name, other.filename, other_lno, id(other)))
 
 ######################################################################
 ## 3. DocTestParser
@@ -1134,9 +1136,11 @@ class DocTestFinder:
 
         # Find the line number for functions & methods.
         if inspect.ismethod(obj): obj = obj.__func__
+        if isinstance(obj, property):
+            obj = obj.fget
         if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
-            obj = obj.__code__
+            obj = inspect.unwrap(obj).__code__
         if inspect.istraceback(obj): obj = obj.tb_frame
         if inspect.isframe(obj): obj = obj.f_code
         if inspect.iscode(obj):
@@ -1393,7 +1397,24 @@ class DocTestRunner:
 
             # The example raised an exception:  check if it was expected.
             else:
-                exc_msg = traceback.format_exception_only(*exception[:2])[-1]
+                formatted_ex = traceback.format_exception_only(*exception[:2])
+                if issubclass(exception[0], SyntaxError):
+                    # SyntaxError / IndentationError is special:
+                    # we don't care about the carets / suggestions / etc
+                    # We only care about the error message and notes.
+                    # They start with `SyntaxError:` (or any other class name)
+                    exception_line_prefixes = (
+                        f"{exception[0].__qualname__}:",
+                        f"{exception[0].__module__}.{exception[0].__qualname__}:",
+                    )
+                    exc_msg_index = next(
+                        index
+                        for index, line in enumerate(formatted_ex)
+                        if line.startswith(exception_line_prefixes)
+                    )
+                    formatted_ex = formatted_ex[exc_msg_index:]
+
+                exc_msg = "".join(formatted_ex)
                 if not quiet:
                     got += _exception_traceback(exception)
 
@@ -2204,13 +2225,13 @@ class DocTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self)
         self._dt_optionflags = optionflags
         self._dt_checker = checker
-        self._dt_globs = test.globs.copy()
         self._dt_test = test
         self._dt_setUp = setUp
         self._dt_tearDown = tearDown
 
     def setUp(self):
         test = self._dt_test
+        self._dt_globs = test.globs.copy()
 
         if self._dt_setUp is not None:
             self._dt_setUp(test)
