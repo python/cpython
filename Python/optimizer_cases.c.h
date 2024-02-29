@@ -20,9 +20,6 @@
             if (sym_is_null(value)) {
                 goto out_of_space;
             }
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -31,9 +28,6 @@
         case _LOAD_FAST: {
             _Py_UopsSymbol *value;
             value = GETLOCAL(oparg);
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -45,9 +39,6 @@
             _Py_UopsSymbol *temp;
             OUT_OF_SPACE_IF_NULL(temp = sym_new_null(ctx));
             GETLOCAL(oparg) = temp;
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -58,9 +49,6 @@
             // There should be no LOAD_CONST. It should be all
             // replaced by peephole_opt.
             Py_UNREACHABLE();
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -85,9 +73,6 @@
             if (res == NULL) {
                 goto out_of_space;
             };
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -217,9 +202,6 @@
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
             }
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
-            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -250,9 +232,6 @@
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
             }
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
-            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -282,9 +261,6 @@
             }
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
-            }
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -331,9 +307,6 @@
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
             }
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
-            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -365,9 +338,6 @@
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
             }
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
-            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
@@ -398,9 +368,6 @@
             }
             else {
                 OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
-            }
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -547,9 +514,6 @@
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
             res = retval;
-            if (sym_is_bottom(res)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = res;
             stack_pointer += 1;
             break;
@@ -951,16 +915,8 @@
             _LOAD_ATTR_NOT_NULL
             (void)index;
             (void)owner;
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (oparg & 1) {
-                if (sym_is_bottom(null)) {
-                    goto hit_bottom;
-                }
-                stack_pointer[0] = null;
-            }
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             break;
         }
@@ -1011,16 +967,8 @@
                 /* No conversion made. We don't know what `attr` is. */
                 OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
             }
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (oparg & 1) {
-                if (sym_is_bottom(null)) {
-                    goto hit_bottom;
-                }
-                stack_pointer[0] = null;
-            }
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             break;
         }
@@ -1038,16 +986,8 @@
             _LOAD_ATTR_NOT_NULL
             (void)hint;
             (void)owner;
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (oparg & 1) {
-                if (sym_is_bottom(null)) {
-                    goto hit_bottom;
-                }
-                stack_pointer[0] = null;
-            }
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             break;
         }
@@ -1061,16 +1001,8 @@
             _LOAD_ATTR_NOT_NULL
             (void)index;
             (void)owner;
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (oparg & 1) {
-                if (sym_is_bottom(null)) {
-                    goto hit_bottom;
-                }
-                stack_pointer[0] = null;
-            }
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             break;
         }
@@ -1088,16 +1020,8 @@
             _LOAD_ATTR_NOT_NULL
             (void)descr;
             (void)owner;
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (oparg & 1) {
-                if (sym_is_bottom(null)) {
-                    goto hit_bottom;
-                }
-                stack_pointer[0] = null;
-            }
+            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             break;
         }
@@ -1336,9 +1260,6 @@
             iter = stack_pointer[-1];
             OUT_OF_SPACE_IF_NULL(next = sym_new_type(ctx, &PyLong_Type));
             (void)iter;
-            if (sym_is_bottom(next)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = next;
             stack_pointer += 1;
             break;
@@ -1411,13 +1332,7 @@
             (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
             self = owner;
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (sym_is_bottom(self)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = self;
             stack_pointer += 1;
             break;
@@ -1432,13 +1347,7 @@
             (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
             self = owner;
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (sym_is_bottom(self)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = self;
             stack_pointer += 1;
             break;
@@ -1473,13 +1382,7 @@
             (void)descr;
             OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
             self = owner;
-            if (sym_is_bottom(attr)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = attr;
-            if (sym_is_bottom(self)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = self;
             stack_pointer += 1;
             break;
@@ -1507,13 +1410,7 @@
             (void)callable;
             OUT_OF_SPACE_IF_NULL(func = sym_new_not_null(ctx));
             OUT_OF_SPACE_IF_NULL(self = sym_new_not_null(ctx));
-            if (sym_is_bottom(func)) {
-                goto hit_bottom;
-            }
             stack_pointer[-2 - oparg] = func;
-            if (sym_is_bottom(self)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1 - oparg] = self;
             break;
         }
@@ -1571,9 +1468,6 @@
             }
             OUT_OF_SPACE_IF_NULL(new_frame =
                              frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
-            if (sym_is_bottom((_Py_UopsSymbol *)new_frame)) {
-                goto hit_bottom;
-            }
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -1781,9 +1675,6 @@
             bottom = stack_pointer[-1 - (oparg-1)];
             assert(oparg > 0);
             top = bottom;
-            if (sym_is_bottom(top)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = top;
             stack_pointer += 1;
             break;
@@ -1803,13 +1694,7 @@
             _Py_UopsSymbol *bottom;
             top = stack_pointer[-1];
             bottom = stack_pointer[-2 - (oparg-2)];
-            if (sym_is_bottom(top)) {
-                goto hit_bottom;
-            }
             stack_pointer[-2 - (oparg-2)] = top;
-            if (sym_is_bottom(bottom)) {
-                goto hit_bottom;
-            }
             stack_pointer[-1] = bottom;
             break;
         }
@@ -1872,9 +1757,6 @@
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1884,9 +1766,6 @@
             _Py_UopsSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand;
             OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -1898,13 +1777,7 @@
             PyObject *ptr = (PyObject *)this_instr->operand;
             OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
             OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
-            if (sym_is_bottom(null)) {
-                goto hit_bottom;
-            }
             stack_pointer[1] = null;
             stack_pointer += 2;
             break;
@@ -1916,13 +1789,7 @@
             PyObject *ptr = (PyObject *)this_instr->operand;
             OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
             OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
-            if (sym_is_bottom(value)) {
-                goto hit_bottom;
-            }
             stack_pointer[0] = value;
-            if (sym_is_bottom(null)) {
-                goto hit_bottom;
-            }
             stack_pointer[1] = null;
             stack_pointer += 2;
             break;

@@ -144,7 +144,7 @@ def write_uop(
                 if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UopsSymbol *", add_bottom_check=bool(override))
+        stack.flush(out, cast_type="_Py_UopsSymbol *")
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
