@@ -699,7 +699,7 @@ function.
       Python.  For example, in CPython, some built-in functions defined in
       C provide no metadata about their arguments.
 
-   .. note::
+   .. impl-detail::
 
       If the passed object has a :attr:`!__signature__` attribute,
       we may use it to create the signature.
