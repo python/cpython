@@ -90,42 +90,63 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "1d3f2015e49e269cf681373d433cd54d88d5ef7443fe87f5f50f5fcfe9003e73"
+          "checksumValue": "6e33a88f116822167734cd72b693b5d30ced130a3cae6dc2ff696042f993bb42"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.13.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tcl-core-8.6.13.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tcl-core",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.13.1"
+      "versionInfo": "8.6.13.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tk",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "6056203b8a6aaf6ea89d90a7b55dc7f407e55c093f731a98fd830a712a3c81d3"
+          "checksumValue": "896c1f488bdd0159091bd5cce124b756dfdffa4a5350b7fd4d7d8e48421089a4"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.13.1.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tk-8.6.13.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.1:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.6.13.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "tk",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "8.6.13.1"
+      "versionInfo": "8.6.13.0"
+    },
+    {
+      "SPDXID": "SPDXRef-PACKAGE-tix",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f7b21d115867a41ae5fd7c635a4c234d3ca25126c3661eb36028c6e25601f85e"
+        }
+      ],
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/tix-8.4.3.6.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceLocator": "cpe:2.3:a:tcl_tk:tcl_tk:8.4.3.6:*:*:*:*:*:*:*",
+          "referenceType": "cpe23Type"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "name": "tix",
+      "primaryPackagePurpose": "SOURCE",
+      "versionInfo": "8.4.3.6"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-xz",
