@@ -240,22 +240,6 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                         loc8[-1] = 0xE9;
                         value = relaxed;
                     }
-                    // else if (loc8[-2] == 0x85) {
-                    //     // test %reg, foo@GOTPCREL(%rip) -> test $foo, %reg
-                    //     assert(0);
-                    //     loc8[-3] = (loc8[-3] & ~0x4) | (loc8[-3] & 0x4) >> 2;
-                    //     loc8[-2] = 0xF7;
-                    //     loc8[-1] = 0xC0 | (loc8[-1] & 0x38) >> 3;
-                    //     value = relaxed;
-                    // }
-                    // else if (hole->kind != HoleKind_X86_64_RELOC_GOT) {
-                    //     // binop foo@GOTPCREL(%rip), %reg -> binop $foo, %reg
-                    //     assert(hole->kind == HoleKind_R_X86_64_REX_GOTPCRELX);
-                    //     loc8[-3] = (loc8[-3] & ~0x4) | (loc8[-3] & 0x4) >> 2;
-                    //     loc8[-1] = 0xC0 | ((loc8[-1] & 0x38) >> 3) | (loc8[-2] & 0x3C);
-                    //     loc8[-2] = 0x81;
-                    //     value = relaxed;
-                    // }
                 }
             }
             // Fall through...
