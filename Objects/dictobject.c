@@ -1597,7 +1597,7 @@ insertion_resize(PyInterpreterState *interp, PyDictObject *mp, int unicode)
 }
 
 static Py_ssize_t
-insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name)
+insert_into_splitdictkeys_locked(PyDictKeysObject *keys, PyObject *name)
 {
     assert(PyUnicode_CheckExact(name));
     ASSERT_KEYS_LOCKED(keys);
@@ -1626,6 +1626,15 @@ insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name)
         split_keys_entry_added(keys);
     }
     assert (ix < SHARED_KEYS_MAX_SIZE);
+    return ix;
+}
+
+static Py_ssize_t
+insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name)
+{
+    LOCK_KEYS(keys);
+    Py_ssize_t ix = insert_into_splitdictkeys_locked(keys, name);
+    UNLOCK_KEYS(keys);
     return ix;
 }
 
@@ -6692,8 +6701,26 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     Py_ssize_t ix = DKIX_EMPTY;
     if (PyUnicode_CheckExact(name)) {
-        LOCK_KEYS(keys);
+#ifdef Py_GIL_DISABLED
+        Py_hash_t hash = unicode_get_hash(name);
+        if (hash == -1) {
+            hash = PyUnicode_Type.tp_hash(name);
+            if (hash == -1) {
+                PyErr_Clear();
+                return DKIX_EMPTY;
+            }
+        }
+
+        // Try a thread-safe lookup to see if the index is already allocated
+        ix = unicodekeys_lookup_unicode_threadsafe(keys, name, hash);
+        if (ix == DKIX_EMPTY) {
+            // Fall back to a version that will lock and maybe insert
+            ix = insert_into_splitdictkeys(keys, name);
+        }
+#else
         ix = insert_into_splitdictkeys(keys, name);
+#endif
+
 #ifdef Py_STATS
         if (ix == DKIX_EMPTY) {
             if (PyUnicode_CheckExact(name)) {
@@ -6709,7 +6736,6 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
             }
         }
 #endif
-        UNLOCK_KEYS(keys);
     }
     if (ix == DKIX_EMPTY) {
         PyObject *dict = make_dict_from_instance_attributes(
