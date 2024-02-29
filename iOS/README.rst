@@ -33,11 +33,14 @@ Platform by selecting an open the Platforms tab of the Xcode Settings panel.
 iOS specific arguments to configure
 ===================================
 
-* ``--enable-framework=DIR``
+* ``--enable-framework[=DIR]``
 
   This argument specifies the location where the Python.framework will be
-  installed. This argument is required for all iOS builds; a directory *must*
-  be specified.
+  installed. If ``DIR`` is not specified, the framework will be installed into
+  a subdirectory of the ``iOS/Frameworks`` folder.
+
+  This argument *must* be provided when configuring iOS builds. iOS does not
+  support non-framework builds.
 
 * ``--with-framework-name=NAME``
 
@@ -87,7 +90,7 @@ Python for the ARM64 iOS simulator will look something like::
 
   $ export PATH="$(pwd)/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
   $ ./configure \
-        --enable-framework=/path/to/install \
+        --enable-framework \
         --host=arm64-apple-ios-simulator \
         --build=arm64-apple-darwin \
         --with-build-python=/path/to/python.exe
@@ -127,9 +130,6 @@ In this invocation:
   bugs is for tools like Homebrew to accidentally leak macOS binaries into an iOS
   build. Resetting the path to a known "bare bones" value is the easiest way to
   avoid these problems.
-
-* ``/path/to/install`` is the location where the final ``Python.framework`` will
-  be output.
 
 * ``--host`` is the architecture and ABI that you want to build, in GNU compiler
   triple format. This will be one of:
