@@ -4069,8 +4069,6 @@ class str_converter(CConverter):
 # mapping from arguments to format unit *and* registers the
 # legacy C converter for that format unit.
 #
-ConverterKeywordDict = dict[str, TypeSet | bool]
-
 def r(format_unit: str,
       *,
       accept: TypeSet,
@@ -4086,7 +4084,7 @@ def r(format_unit: str,
         #
         # also don't add the converter for 's' because
         # the metaclass for CConverter adds it for us.
-        kwargs: ConverterKeywordDict = {}
+        kwargs: dict[str, Any] = {}
         if accept != {str}:
             kwargs['accept'] = accept
         if zeroes:

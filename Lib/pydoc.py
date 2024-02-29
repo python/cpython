@@ -127,9 +127,8 @@ def _finddoc(obj):
             cls = self.__class__
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
-        func = obj.fget
-        name = func.__name__
-        cls = _findclass(func)
+        name = obj.__name__
+        cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
@@ -856,9 +855,9 @@ class HTMLDoc(Doc):
                             cdict[key] = cdict[base] = modname + '.html#' + key
         funcs, fdict = [], {}
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
                     fdict[key] = '#-' + key
@@ -1300,9 +1299,9 @@ location listed above.
                     classes.append((key, value))
         funcs = []
         for key, value in inspect.getmembers(object, inspect.isroutine):
-            # if __all__ exists, believe it.  Otherwise use old heuristic.
-            if (all is not None or
-                inspect.isbuiltin(value) or inspect.getmodule(value) is object):
+            # if __all__ exists, believe it.  Otherwise use a heuristic.
+            if (all is not None
+                or (inspect.getmodule(value) or object) is object):
                 if visiblename(key, all, object):
                     funcs.append((key, value))
         data = []

@@ -124,7 +124,7 @@
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     QSBR_QUIESCENT_STATE(tstate); \
-    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
             GOTO_ERROR(error); \
         } \
@@ -339,12 +339,16 @@ do { \
 // for an exception handler, displaying the traceback, and so on
 #define INSTRUMENTED_JUMP(src, dest, event) \
 do { \
-    _PyFrame_SetStackPointer(frame, stack_pointer); \
-    next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    stack_pointer = _PyFrame_GetStackPointer(frame); \
-    if (next_instr == NULL) { \
-        next_instr = (dest)+1; \
-        goto error; \
+    if (tstate->tracing) {\
+        next_instr = dest; \
+    } else { \
+        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+        stack_pointer = _PyFrame_GetStackPointer(frame); \
+        if (next_instr == NULL) { \
+            next_instr = (dest)+1; \
+            goto error; \
+        } \
     } \
 } while (0);
 
@@ -371,12 +375,6 @@ static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
 static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
-
-/* Marker to specify tier 1 only instructions */
-#define TIER_ONE_ONLY
-
-/* Marker to specify tier 2 only instructions */
-#define TIER_TWO_ONLY
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.

@@ -362,6 +362,7 @@ Python/import.c	-	_PyImport_Inittab	-
 Python/import.c	-	_PySys_ImplCacheTag	-
 Python/intrinsics.c	-	_PyIntrinsics_UnaryFunctions	-
 Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
+Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 Python/opcode_targets.h	-	opcode_targets	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
 Python/pyhash.c	-	PyHash_Func	-
@@ -740,6 +741,4 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
-Python/optimizer_analysis.c	-	_Py_UOpsAbstractFrame_Type	-
-Python/optimizer_analysis.c	-	_Py_UOpsAbstractInterpContext_Type	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-

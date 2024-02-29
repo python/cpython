@@ -38,7 +38,7 @@ Python/ast_opt.c              @isidentical
 Python/bytecodes.c            @markshannon @gvanrossum
 Python/optimizer*.c           @markshannon @gvanrossum
 Python/optimizer_analysis.c   @Fidget-Spinner
-Python/tier2_redundancy_eliminator_bytecodes.c  @Fidget-Spinner
+Python/optimizer_bytecodes.c  @Fidget-Spinner
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
@@ -249,3 +249,7 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 # SBOM
 /Misc/sbom.spdx.json          @sethmlarson
 /Tools/build/generate_sbom.py @sethmlarson
+
+# Config Parser
+Lib/configparser.py           @jaraco
+Lib/test/test_configparser.py @jaraco
