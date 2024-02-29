@@ -226,12 +226,18 @@ directory.  This script extracts all the external sub-projects from
 and
     https://github.com/python/cpython-bin-deps
 via a Python script called "get_external.py", located in this directory.
-If Python 3.6 or later is not available via the "py.exe" launcher, the
-path or command to use for Python can be provided in the PYTHON_FOR_BUILD
-environment variable, or get_externals.bat will download the latest
-version of NuGet and use it to download the latest "pythonx86" package
-for use with get_external.py.  Everything downloaded by these scripts is
-stored in ..\externals (relative to this directory).
+Everything downloaded by these scripts is stored in ..\externals
+(relative to this directory), or the path specified by the EXTERNALS_DIR
+environment variable.
+
+The path or command to use for Python can be provided with the
+PYTHON_FOR_BUILD environment variable. If this is not set, an active
+virtual environment will be used. If none is active, and HOST_PYTHON is
+set to a recent enough version or "py.exe" is able to find a recent
+enough version, those will be used. If all else fails, a copy of Python
+will be downloaded from NuGet and extracted to the externals directory.
+This will then be used for later builds (see PCbuild/find_python.bat
+for the full logic).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change folder names or pass the names to MSBuild
