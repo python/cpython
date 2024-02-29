@@ -1997,15 +1997,17 @@ class DummyPathTest(DummyPurePathTest):
 
     @needs_posix
     def test_glob_dotdot_posix(self):
-        p = self.cls(self.base)
+        P = self.cls
+        p = P(self.base)
         self.assertEqual(set(p.glob("xyzzy/..")), set())
 
     @needs_windows
     def test_glob_dotdot_windows(self):
         # '..' segments are resolved first on Windows, so
         # 'xyzzy' doesn't need to exist.
-        p = self.cls(self.base)
-        self.assertEqual(set(p.glob("xyzzy/..")), { p })
+        P = self.cls
+        p = P(self.base)
+        self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
 
     @needs_symlinks
     def test_glob_permissions(self):
