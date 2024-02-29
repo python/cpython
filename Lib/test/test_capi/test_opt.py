@@ -894,23 +894,33 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_type_inconsistency(self):
         ns = {}
-        exec(textwrap.dedent("""
+        src = textwrap.dedent("""
             def testfunc(n):
                 for i in range(n):
                     x = _test_global + _test_global
-        """), globals(), ns)
+        """)
+        exec(src, ns, ns)
         testfunc = ns['testfunc']
-        # Must be a real global else it won't be optimized to _LOAD_CONST_INLINE
-        global _test_global
-        _test_global = 0
+        ns['_test_global'] = 0
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNone(ex)
-        _test_global = 1.2
+        ns['_test_global'] = 1
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_BOTH_INT", uops)
+        self.assertNotIn("_GUARD_BOTH_INT", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
+        # Try again, but between the runs, set the global to a float.
+        # This should result in no executor the second time.
+        ns = {}
+        exec(src, ns, ns)
+        testfunc = ns['testfunc']
+        ns['_test_global'] = 0
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNone(ex)
+        ns['_test_global'] = 3.14
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNone(ex)
 
 
 if __name__ == "__main__":

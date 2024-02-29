@@ -172,8 +172,12 @@
                 sym_matches_type(right, &PyLong_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(left, &PyLong_Type);
-            sym_set_type(right, &PyLong_Type);
+            if (!sym_set_type(left, &PyLong_Type)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(right, &PyLong_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -276,8 +280,12 @@
                 sym_matches_type(right, &PyFloat_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
-            sym_set_type(left, &PyFloat_Type);
-            sym_set_type(right, &PyFloat_Type);
+            if (!sym_set_type(left, &PyFloat_Type)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(right, &PyFloat_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -383,8 +391,12 @@
                 sym_matches_type(right, &PyUnicode_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
-            sym_set_type(left, &PyUnicode_Type);
-            sym_set_type(right, &PyUnicode_Type);
+            if (!sym_set_type(left, &PyUnicode_Type)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(right, &PyUnicode_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -1397,8 +1409,12 @@
             _Py_UopsSymbol *callable;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            sym_set_null(null);
-            sym_set_type(callable, &PyMethod_Type);
+            if (!sym_set_null(null)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(callable, &PyMethod_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -1425,7 +1441,9 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand;
-            sym_set_type(callable, &PyFunction_Type);
+            if (!sym_set_type(callable, &PyFunction_Type)) {
+                goto hit_bottom;
+            }
             (void)self_or_null;
             (void)func_version;
             break;
