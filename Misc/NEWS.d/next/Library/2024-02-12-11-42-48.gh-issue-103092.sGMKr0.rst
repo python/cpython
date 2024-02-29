@@ -1,0 +1,1 @@
+Isolate :mod:`_lsprof` (apply :pep:`687`).
