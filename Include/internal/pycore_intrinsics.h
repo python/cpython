@@ -44,7 +44,7 @@ typedef struct {
     const char *name;
 } intrinsic_func2_info;
 
-extern const intrinsic_func1_info _PyIntrinsics_UnaryFunctions[];
-extern const intrinsic_func2_info _PyIntrinsics_BinaryFunctions[];
+PyAPI_DATA(const intrinsic_func1_info) _PyIntrinsics_UnaryFunctions[];
+PyAPI_DATA(const intrinsic_func2_info) _PyIntrinsics_BinaryFunctions[];
 
 #endif  // !Py_INTERNAL_INTRINSIC_H

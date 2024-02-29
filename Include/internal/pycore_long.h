@@ -121,9 +121,9 @@ PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, size_t);
 // Export for 'math' shared extension
 PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, size_t);
 
-extern PyObject* _PyLong_Add(PyLongObject *left, PyLongObject *right);
-extern PyObject* _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
-extern PyObject* _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];

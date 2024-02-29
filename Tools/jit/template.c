@@ -9,6 +9,7 @@
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
+#include "pycore_optimizer.h"
 #include "pycore_range.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
@@ -58,11 +59,11 @@ do {  \
     } while (0)
 
 #define PATCH_VALUE(TYPE, NAME, ALIAS)  \
-    extern void ALIAS;                  \
+    PyAPI_DATA(void) ALIAS;             \
     TYPE NAME = (TYPE)(uint64_t)&ALIAS;
 
 #define PATCH_JUMP(ALIAS)                                    \
-    extern void ALIAS;                                       \
+    PyAPI_DATA(void) ALIAS;                                  \
     __attribute__((musttail))                                \
     return ((jit_func)&ALIAS)(frame, stack_pointer, tstate);
 

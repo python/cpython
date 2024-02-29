@@ -337,6 +337,12 @@ const binaryfunc _PyEval_BinaryOps[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
+const conversion_func _PyEval_ConversionFuncs[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
+
 
 // PEP 634: Structural Pattern Matching
 
