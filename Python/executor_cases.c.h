@@ -3739,8 +3739,8 @@
                 PyObject *left;
                 right = stack_pointer[-1];
                 left = stack_pointer[-2];
-                if (!PyLong_CheckExact(left)) goto side_exit;
-                if (!PyLong_CheckExact(right)) goto side_exit;
+                if (!PyLong_CheckExact(left)) goto deoptimize;
+                if (!PyLong_CheckExact(right)) goto deoptimize;
             }
             // _BINARY_OP_MULTIPLY_INT
             {
@@ -3767,8 +3767,8 @@
                 PyObject *left;
                 right = stack_pointer[-1];
                 left = stack_pointer[-2];
-                if (!PyLong_CheckExact(left)) goto side_exit;
-                if (!PyLong_CheckExact(right)) goto side_exit;
+                if (!PyLong_CheckExact(left)) goto deoptimize;
+                if (!PyLong_CheckExact(right)) goto deoptimize;
             }
             // _BINARY_OP_ADD_INT
             {
@@ -3795,8 +3795,8 @@
                 PyObject *left;
                 right = stack_pointer[-1];
                 left = stack_pointer[-2];
-                if (!PyLong_CheckExact(left)) goto side_exit;
-                if (!PyLong_CheckExact(right)) goto side_exit;
+                if (!PyLong_CheckExact(left)) goto deoptimize;
+                if (!PyLong_CheckExact(right)) goto deoptimize;
             }
             // _BINARY_OP_SUBTRACT_INT
             {
@@ -3823,8 +3823,8 @@
                 PyObject *left;
                 right = stack_pointer[-1];
                 left = stack_pointer[-2];
-                if (!PyFloat_CheckExact(left)) goto side_exit;
-                if (!PyFloat_CheckExact(right)) goto side_exit;
+                if (!PyFloat_CheckExact(left)) goto deoptimize;
+                if (!PyFloat_CheckExact(right)) goto deoptimize;
             }
             // _BINARY_OP_MULTIPLY_FLOAT
             {
@@ -3851,8 +3851,8 @@
                 PyObject *left;
                 right = stack_pointer[-1];
                 left = stack_pointer[-2];
-                if (!PyFloat_CheckExact(left)) goto side_exit;
-                if (!PyFloat_CheckExact(right)) goto side_exit;
+                if (!PyFloat_CheckExact(left)) goto deoptimize;
+                if (!PyFloat_CheckExact(right)) goto deoptimize;
             }
             // _BINARY_OP_ADD_FLOAT
             {
@@ -3879,8 +3879,8 @@
                 PyObject *left;
                 right = stack_pointer[-1];
                 left = stack_pointer[-2];
-                if (!PyFloat_CheckExact(left)) goto side_exit;
-                if (!PyFloat_CheckExact(right)) goto side_exit;
+                if (!PyFloat_CheckExact(left)) goto deoptimize;
+                if (!PyFloat_CheckExact(right)) goto deoptimize;
             }
             // _BINARY_OP_SUBTRACT_FLOAT
             {
@@ -3907,8 +3907,8 @@
                 PyObject *left;
                 right = stack_pointer[-1];
                 left = stack_pointer[-2];
-                if (!PyUnicode_CheckExact(left)) goto side_exit;
-                if (!PyUnicode_CheckExact(right)) goto side_exit;
+                if (!PyUnicode_CheckExact(left)) goto deoptimize;
+                if (!PyUnicode_CheckExact(right)) goto deoptimize;
             }
             // _BINARY_OP_ADD_UNICODE
             {

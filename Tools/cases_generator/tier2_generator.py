@@ -217,6 +217,7 @@ def generate_tier2(
         out.start_line()
         out.emit("}")
         out.emit("\n\n")
+    TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_deopt
     for name, super_uop in analysis.super_uops.items():
         out.emit(f"case {name}: {{\n")
         stack = Stack()
