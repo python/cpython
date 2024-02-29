@@ -136,7 +136,7 @@ def heappush(heap, item):
 
 def heappop(heap):
     """Pop the smallest item off the heap, maintaining the heap invariant."""
-    lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
+    lastelt = heap.pop()   # raises appropriate IndexError if heap is empty
     if heap:
         returnitem = heap[0]
         heap[0] = lastelt
@@ -601,3 +601,63 @@ if __name__ == "__main__":
 
     import doctest # pragma: no cover
     print(doctest.testmod()) # pragma: no cover
+
+
+
+
+class MaxHeap:
+    def __init__(self):
+        self.heap = []
+
+    def push(self, item):
+        self.heap.append(item)
+        self._siftup(len(self.heap) - 1)
+
+    def pop(self):
+        if len(self.heap) == 0:
+            raise IndexError("pop from empty heap")
+        if len(self.heap) == 1:
+            return self.heap.pop()
+        max_item = self.heap[0]
+        last_item = self.heap.pop()
+        self.heap[0] = last_item
+        self._siftdown(0)
+        return max_item
+
+    def peek(self):
+        if len(self.heap) == 0:
+            raise IndexError("peek from empty heap")
+        return self.heap[0]
+
+    def __len__(self):
+        return len(self.heap)
+
+    def heapify(self, arr):
+        self.heap = arr
+        n = len(arr)
+        start = (n - 2) // 2
+        for i in range(start, -1, -1):
+            self._siftdown(i)
+
+    def _siftup(self, pos):
+        while pos > 0:
+            parent_pos = (pos - 1) // 2
+            if self.heap[pos] > self.heap[parent_pos]:
+                self.heap[pos], self.heap[parent_pos] = self.heap[parent_pos], self.heap[pos]
+                pos = parent_pos
+            else:
+                break
+
+    def _siftdown(self, pos):
+        last_index = len(self.heap) - 1
+        left_child_pos = 2 * pos + 1
+        while left_child_pos <= last_index:
+            right_child_pos = left_child_pos + 1
+            max_child_pos = left_child_pos if right_child_pos > last_index or self.heap[left_child_pos] > self.heap[right_child_pos] else right_child_pos
+            if self.heap[pos] < self.heap[max_child_pos]:
+                self.heap[pos], self.heap[max_child_pos] = self.heap[max_child_pos], self.heap[pos]
+                pos = max_child_pos
+                left_child_pos = 2 * pos + 1
+            else:
+                break
+
