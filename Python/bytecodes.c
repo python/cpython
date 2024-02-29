@@ -4043,6 +4043,11 @@ dummy_func(
             value = ptr;
         }
 
+        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+            Py_DECREF(pop);
+            value = ptr;
+        }
+
         tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
             value = Py_NewRef(ptr);
             null = NULL;

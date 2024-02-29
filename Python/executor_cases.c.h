@@ -3759,6 +3759,17 @@
             break;
         }
 
+        case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
+            PyObject *pop;
+            PyObject *value;
+            pop = stack_pointer[-1];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            Py_DECREF(pop);
+            value = ptr;
+            stack_pointer[-1] = value;
+            break;
+        }
+
         case _LOAD_CONST_INLINE_WITH_NULL: {
             PyObject *value;
             PyObject *null;
