@@ -113,60 +113,68 @@ _Py_uop_sym_get_const(_Py_UopsSymbol *sym)
     return sym->const_val;
 }
 
-void
+bool
 _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
     if (sym->flags & IS_NULL) {
         sym_set_bottom(sym);
-        return;
+        return false;
     }
     if (sym->typ != NULL) {
         if (sym->typ != typ) {
             sym_set_bottom(sym);
+            return false;
         }
-        return;
     }
-    sym_set_flag(sym, NOT_NULL);
-    sym->typ = typ;
+    else {
+        sym_set_flag(sym, NOT_NULL);
+        sym->typ = typ;
+    }
+    return true;
 }
 
-void
+bool
 _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val)
 {
     assert(const_val != NULL);
     if (sym->flags & IS_NULL) {
         sym_set_bottom(sym);
-        return;
+        return false;
     }
     PyTypeObject *typ = Py_TYPE(const_val);
     if (sym->typ != NULL && sym->typ != typ) {
         sym_set_bottom(sym);
-        return;
+        return false;
     }
     if (sym->const_val != NULL) {
         if (sym->const_val != const_val) {
             // TODO: What if they're equal?
             sym_set_bottom(sym);
+            return false;
         }
-        return;
     }
-    sym_set_flag(sym, NOT_NULL);
-    sym->typ = typ;
-    sym->const_val = Py_NewRef(const_val);
+    else {
+        sym_set_flag(sym, NOT_NULL);
+        sym->typ = typ;
+        sym->const_val = Py_NewRef(const_val);
+    }
+    return true;
 }
 
 
-void
+bool
 _Py_uop_sym_set_null(_Py_UopsSymbol *sym)
 {
     sym_set_flag(sym, IS_NULL);
+    return !_Py_uop_sym_is_bottom(sym);
 }
 
-void
+bool
 _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym)
 {
     sym_set_flag(sym, NOT_NULL);
+    return !_Py_uop_sym_is_bottom(sym);
 }
 
 

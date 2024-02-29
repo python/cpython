@@ -91,10 +91,10 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_type(
 extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val);
 extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
 extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
-extern void _Py_uop_sym_set_null(_Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
-extern void _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val);
+extern bool _Py_uop_sym_set_null(_Py_UopsSymbol *sym);
+extern bool _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym);
+extern bool _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
 
 

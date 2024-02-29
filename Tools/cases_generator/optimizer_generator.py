@@ -4,16 +4,12 @@ Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
