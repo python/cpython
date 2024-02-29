@@ -339,6 +339,7 @@ optimize_uops(
                 _PyUOpName(opcode),
                 oparg);
         switch (opcode) {
+
 #include "optimizer_cases.c.h"
 
             default:
@@ -361,6 +362,15 @@ out_of_space:
 
 error:
     DPRINTF(1, "Encountered error in abstract interpreter\n");
+    _Py_uop_abstractcontext_fini(ctx);
+    return 0;
+
+hit_bottom:
+    // Attempted to push a "bottom" (contradition) symbol onto the stack.
+    // This means that the abstract interpreter has hit unreachable code.
+    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but it's
+    // simpler to just admit failure and not create the executor.
+    DPRINTF(1, "Hit bottom in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
 }

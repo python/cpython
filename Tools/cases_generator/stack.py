@@ -177,20 +177,30 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *", add_bottom_check: bool = False) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
                 cast = f"({cast_type})" if var.type else ""
                 if var.name not in UNUSED and not var.is_array():
+                    need_braces = False
                     if var.condition:
                         if var.condition == "0":
                             continue
                         elif var.condition != "1":
+                            need_braces = add_bottom_check
                             out.emit(f"if ({var.condition}) ")
+                    if need_braces:
+                        out.emit("{\n")
+                    if add_bottom_check:
+                        out.emit(f"if (sym_is_bottom({cast}{var.name})) {{\n")
+                        out.emit("goto hit_bottom;\n")
+                        out.emit("}\n")
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
                     )
+                    if need_braces:
+                        out.emit("}\n")
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():
             print("base", self.base_offset.to_c(), "top", self.top_offset.to_c())
