@@ -43,6 +43,8 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     for uop in sorted(analysis.uops.values(), key=lambda t: t.name):
         if uop.is_viable() and uop.properties.tier != 1:
             out.emit(f'[{uop.name}] = "{uop.name}",\n')
+    for super_uop in sorted(analysis.super_uops.values(), key=lambda t: t.name):
+        out.emit(f'[{super_uop.name}] = "{super_uop.name}",\n')
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 

@@ -486,6 +486,20 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
     }
 }
 
+static void
+match_supers(_PyUOpInstruction *buffer, int buffer_size)
+{
+    _PyUOpInstruction *end = buffer + buffer_size;
+    _PyUOpInstruction *this_instr = buffer;
+    while (this_instr < end) {
+        switch(this_instr->opcode) {
+#include "uop_super_matcher_cases.c.h"
+            default:
+                this_instr++;
+        }
+    }
+}
+
 //  0 - failure, no error raised, just fall back to Tier 1
 // -1 - failure, and raise error
 //  1 - optimizer success
@@ -523,6 +537,7 @@ _Py_uop_analyze_and_optimize(
     assert(err == 1);
 
     remove_unneeded_uops(buffer, buffer_size);
+    match_supers(buffer, buffer_size);
 
     OPT_STAT_INC(optimizer_successes);
     return 1;

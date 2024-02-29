@@ -394,7 +394,7 @@ class TestUops(unittest.TestCase):
         uops = get_opnames(ex)
         # Since there is no JUMP_FORWARD instruction,
         # look for indirect evidence: the += operator
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertIn("_GUARD_BOTH_INT__BINARY_OP_ADD_INT", uops)
 
     def test_for_iter_range(self):
         def testfunc(n):
@@ -490,7 +490,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_PUSH_FRAME", uops)
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertIn("_GUARD_BOTH_INT__BINARY_OP_ADD_INT", uops)
 
     def test_branch_taken(self):
         def testfunc(n):

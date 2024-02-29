@@ -3124,7 +3124,7 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int argcount = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3177,9 +3177,7 @@ dummy_func(
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
-            _INIT_CALL_PY_EXACT_ARGS +
-            _SAVE_RETURN_OFFSET +
-            _PUSH_FRAME;
+            _INIT_CALL_PY_EXACT_ARGS;
 
         macro(CALL_PY_EXACT_ARGS) =
             unused/1 + // Skip over the counter
@@ -3189,6 +3187,11 @@ dummy_func(
             _INIT_CALL_PY_EXACT_ARGS +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
+
+        super(_CHECK_CALL_PY_EXACT_ARGS) =
+            _CHECK_FUNCTION_EXACT_ARGS +
+            _CHECK_STACK_SPACE +
+            _INIT_CALL_PY_EXACT_ARGS;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
