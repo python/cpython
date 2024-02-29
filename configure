@@ -7423,7 +7423,13 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
       LDLIBRARY='libpython$(LDVERSION).so'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
       RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-      INSTSONAME="$LDLIBRARY".$SOVERSION
+
+      # The Android Gradle plugin will only package libraries whose names end
+      # with ".so".
+      if test "$ac_sys_system" != "Linux-android"; then
+          INSTSONAME="$LDLIBRARY".$SOVERSION
+      fi
+
       if test "$with_pydebug" != yes
       then
         PY3LIBRARY=libpython3.so
@@ -13726,7 +13732,14 @@ then :
 else $as_nop
   if test "$cross_compiling" = yes
 then :
+
+# "yes" changes the hash function to FNV, which causes problems with Numba
+# (https://github.com/numba/numba/blob/0.59.0/numba/cpython/hashing.py#L470).
+if test "$ac_sys_system" = "Linux-android"; then
+  ac_cv_aligned_required=no
+else
   ac_cv_aligned_required=yes
+fi
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -17527,6 +17540,23 @@ printf "%s\n" "none" >&6; }
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $MACHDEP_OBJS" >&5
 printf "%s\n" "$MACHDEP_OBJS" >&6; }
+fi
+
+if test "$ac_sys_system" = "Linux-android"; then
+  # When these functions are used in an unprivileged process, they crash rather
+  # than returning an error.
+  privileged_funcs="chroot initgroups setegid seteuid setgid setregid setresgid
+    setresuid setreuid setuid"
+
+  # These functions are unimplemented and always return an error.
+  unimplemented_funcs="sem_open sem_unlink"
+
+  for name in $privileged_funcs $unimplemented_funcs; do
+    as_func_var=`printf "%s\n" "ac_cv_func_$name" | $as_tr_sh`
+
+    eval "$as_func_var=no"
+
+  done
 fi
 
 # checks for library functions
@@ -22012,10 +22042,11 @@ fi
 
 done
 
-# On iOS, clock_settime can be linked (so it is found by
-# configure), but it raises a runtime error if used because apps can't change
-# the clock. Force the symbol off.
-if test "$ac_sys_system" != "iOS" ; then
+# On Android and iOS, clock_settime can be linked (so it is found by
+# configure), but when used in an unprivileged process, it crashes rather than
+# returning an error. Force the symbol off.
+if test "$ac_sys_system" != "Linux-android" && test "$ac_sys_system" != "iOS"
+then
 
   for ac_func in clock_settime
 do :
@@ -22295,7 +22326,9 @@ else $as_nop
   if test "$cross_compiling" = yes
 then :
 
-if test "${enable_ipv6+set}" = set; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_buggy_getaddrinfo="no"
+elif test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
 else
   ac_cv_buggy_getaddrinfo=yes
@@ -26968,7 +27001,7 @@ CPPFLAGS=$ac_save_cppflags
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
 
-if test "$ac_sys_system" = "iOS" ; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
   ac_cv_file__dev_ptmx=no
   ac_cv_file__dev_ptc=no
 else
