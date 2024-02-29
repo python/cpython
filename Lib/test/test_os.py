@@ -2492,8 +2492,11 @@ class Pep383Tests(unittest.TestCase):
         # test listdir without arguments
         current_directory = os.getcwd()
         try:
-            os.chdir(os.sep)
-            self.assertEqual(set(os.listdir()), set(os.listdir(os.sep)))
+            with tempfile.TemporaryDirectory() as tmpdir:
+                os.chdir(tmpdir)
+                open("a.txt", "w").close()
+                open("test_file.foo", "w").close()
+                self.assertEqual(set(os.listdir()), set(os.listdir(tmpdir)))
         finally:
             os.chdir(current_directory)
 
