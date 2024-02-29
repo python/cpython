@@ -778,7 +778,7 @@ The primary purpose of the itertools recipes is educational.  The recipes show
 various ways of thinking about individual tools — for example, that
 ``chain.from_iterable`` is related to the concept of flattening.  The recipes
 also give ideas about ways that the tools can be combined — for example, how
-``compress()`` and ``range()`` can work together.  The recipes also show patterns
+``starmap()`` and ``repeat()`` can work together.  The recipes also show patterns
 for using itertools with the :mod:`operator` and :mod:`collections` modules as
 well as with the built-in itertools such as ``map()``, ``filter()``,
 ``reversed()``, and ``enumerate()``.
@@ -863,10 +863,9 @@ which incur interpreter overhead.
        "Given a predicate that returns True or False, count the True results."
        return sum(map(pred, iterable))
 
-   def all_equal(iterable):
+   def all_equal(iterable, key=None):
        "Returns True if all the elements are equal to each other."
-       g = groupby(iterable)
-       return next(g, True) and not next(g, False)
+       return len(take(2, groupby(iterable, key))) <= 1
 
    def first_true(iterable, default=False, pred=None):
        """Returns the first true value in the iterable.
@@ -984,34 +983,15 @@ which incur interpreter overhead.
        """ Call a function repeatedly until an exception is raised.
 
        Converts a call-until-exception interface to an iterator interface.
-       Like builtins.iter(func, sentinel) but uses an exception instead
-       of a sentinel to end the loop.
-
-       Priority queue iterator:
-           iter_except(functools.partial(heappop, h), IndexError)
-
-       Non-blocking dictionary iterator:
-           iter_except(d.popitem, KeyError)
-
-       Non-blocking deque iterator:
-           iter_except(d.popleft, IndexError)
-
-       Non-blocking iterator over a producer Queue:
-           iter_except(q.get_nowait, Queue.Empty)
-
-       Non-blocking set iterator:
-           iter_except(s.pop, KeyError)
-
        """
+       # iter_except(d.popitem, KeyError) --> non-blocking dictionary iterator
        try:
            if first is not None:
-               # For database APIs needing an initial call to db.first()
                yield first()
            while True:
                yield func()
        except exception:
            pass
-
 
 
 The following recipes have a more mathematical flavor:
@@ -1224,6 +1204,8 @@ The following recipes have a more mathematical flavor:
     True
 
     >>> [all_equal(s) for s in ('', 'A', 'AAAA', 'AAAB', 'AAABA')]
+    [True, True, True, False, False]
+    >>> [all_equal(s, key=str.casefold) for s in ('', 'A', 'AaAa', 'AAAB', 'AAABA')]
     [True, True, True, False, False]
 
     >>> quantify(range(99), lambda x: x%2==0)

@@ -25,6 +25,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_set_non_null _Py_uop_sym_set_non_null
 #define sym_set_type _Py_uop_sym_set_type
 #define sym_set_const _Py_uop_sym_set_const
+#define sym_is_bottom _Py_uop_sym_is_bottom
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
 
@@ -84,8 +85,12 @@ dummy_func(void) {
             sym_matches_type(right, &PyLong_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(left, &PyLong_Type);
-        sym_set_type(right, &PyLong_Type);
+        if (!sym_set_type(left, &PyLong_Type)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(right, &PyLong_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
@@ -93,8 +98,12 @@ dummy_func(void) {
             sym_matches_type(right, &PyFloat_Type)) {
             REPLACE_OP(this_instr, _NOP, 0 ,0);
         }
-        sym_set_type(left, &PyFloat_Type);
-        sym_set_type(right, &PyFloat_Type);
+        if (!sym_set_type(left, &PyFloat_Type)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(right, &PyFloat_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
@@ -102,12 +111,18 @@ dummy_func(void) {
             sym_matches_type(right, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0 ,0);
         }
-        sym_set_type(left, &PyUnicode_Type);
-        sym_set_type(right, &PyUnicode_Type);
+        if (!sym_set_type(left, &PyUnicode_Type)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(right, &PyUnicode_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        if (sym_is_const(left) && sym_is_const(right)) {
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+        {
             assert(PyLong_CheckExact(sym_get_const(left)));
             assert(PyLong_CheckExact(sym_get_const(right)));
             PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
@@ -115,7 +130,9 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            OUT_OF_SPACE_IF_NULL(res);
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
@@ -125,7 +142,9 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        if (sym_is_const(left) && sym_is_const(right)) {
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+        {
             assert(PyLong_CheckExact(sym_get_const(left)));
             assert(PyLong_CheckExact(sym_get_const(right)));
             PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
@@ -133,7 +152,9 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            OUT_OF_SPACE_IF_NULL(res);
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
@@ -143,7 +164,9 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        if (sym_is_const(left) && sym_is_const(right)) {
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+        {
             assert(PyLong_CheckExact(sym_get_const(left)));
             assert(PyLong_CheckExact(sym_get_const(right)));
             PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
@@ -151,7 +174,9 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            OUT_OF_SPACE_IF_NULL(res);
             // TODO gh-115506:
             // replace opcode with constant propagated one and add tests!
         }
@@ -161,7 +186,9 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        if (sym_is_const(left) && sym_is_const(right)) {
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+        {
             assert(PyFloat_CheckExact(sym_get_const(left)));
             assert(PyFloat_CheckExact(sym_get_const(right)));
             PyObject *temp = PyFloat_FromDouble(
@@ -170,7 +197,9 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            OUT_OF_SPACE_IF_NULL(res);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
@@ -180,7 +209,9 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        if (sym_is_const(left) && sym_is_const(right)) {
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+        {
             assert(PyFloat_CheckExact(sym_get_const(left)));
             assert(PyFloat_CheckExact(sym_get_const(right)));
             PyObject *temp = PyFloat_FromDouble(
@@ -189,7 +220,9 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            OUT_OF_SPACE_IF_NULL(res);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
@@ -199,7 +232,9 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        if (sym_is_const(left) && sym_is_const(right)) {
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+        {
             assert(PyFloat_CheckExact(sym_get_const(left)));
             assert(PyFloat_CheckExact(sym_get_const(right)));
             PyObject *temp = PyFloat_FromDouble(
@@ -208,7 +243,9 @@ dummy_func(void) {
             if (temp == NULL) {
                 goto error;
             }
-            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, temp));
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            OUT_OF_SPACE_IF_NULL(res);
             // TODO gh-115506:
             // replace opcode with constant propagated one and update tests!
         }
@@ -393,14 +430,20 @@ dummy_func(void) {
 
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        sym_set_type(callable, &PyFunction_Type);
+        if (!sym_set_type(callable, &PyFunction_Type)) {
+            goto hit_bottom;
+        }
         (void)self_or_null;
         (void)func_version;
     }
 
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-        sym_set_null(null);
-        sym_set_type(callable, &PyMethod_Type);
+        if (!sym_set_null(null)) {
+            goto hit_bottom;
+        }
+        if (!sym_set_type(callable, &PyMethod_Type)) {
+            goto hit_bottom;
+        }
     }
 
     op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _Py_UOpsAbstractFrame *)) {
