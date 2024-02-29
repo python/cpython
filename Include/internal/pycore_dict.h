@@ -52,7 +52,7 @@ PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
    of a key wins, if override is 2, a KeyError with conflicting key as
    argument is raised.
 */
-extern int _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
 
 extern void _PyDict_DebugMallocStats(FILE *out);
 
@@ -100,10 +100,10 @@ extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t has
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
-extern PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
+PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 
 /* Consumes references to key and value */
-extern int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
+PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
@@ -247,8 +247,8 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
-extern bool _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
-extern PyObject *_PyDict_FromItems(
+PyAPI_FUNC(bool) _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
+PyAPI_FUNC(PyObject *)_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,
         Py_ssize_t length);
