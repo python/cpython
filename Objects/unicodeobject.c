@@ -14707,28 +14707,37 @@ _PyUnicode_ExactDealloc(PyObject *op)
 
 int PyUnicode_GetBuffer(PyObject *unicode, Py_buffer *view, int kind)
 {
-    view->obj = NULL;
-
-    if (kind != PyUnicode_KIND(unicode)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Unicode kind does not match buffer kind");
-        return -1;
-    }
-
     int itemsize;
-    switch (PyUnicode_KIND(unicode)) {
-        case PyUnicode_1BYTE_KIND:
-            itemsize = 1;
-            break;
-        case PyUnicode_2BYTE_KIND:
-            itemsize = 2;
-            break;
-        case PyUnicode_4BYTE_KIND:
-            itemsize = 4;
-            break;
-        default:
-            PyErr_BadInternalCall();
+    view->obj = NULL;
+    void *data = PyUnicode_DATA(unicode);
+    bool needs_dealloc = 0;
+
+    if (kind == PyUnicode_KIND(unicode)) {
+        switch (PyUnicode_KIND(unicode)) {
+            case PyUnicode_1BYTE_KIND:
+                itemsize = 1;
+                break;
+            case PyUnicode_2BYTE_KIND:
+                itemsize = 2;
+                break;
+            case PyUnicode_4BYTE_KIND:
+                itemsize = 4;
+                break;
+            default:
+                PyErr_BadInternalCall();
+                return -1;
+        }
+    } else if (kind == PyUnicode_4BYTE_KIND) {
+        needs_dealloc = 1;
+        itemsize = 4;
+        data = PyUnicode_AsUCS4Copy(unicode);
+        if (data == NULL) {
             return -1;
+        }
+    } else {
+        PyErr_SetString(PyExc_ValueError,
+                        "str contents cannot encode to requested kind");
+        return -1;
     }
 
     Py_ssize_t length = PyUnicode_GET_LENGTH(unicode) * itemsize;
@@ -14736,31 +14745,37 @@ int PyUnicode_GetBuffer(PyObject *unicode, Py_buffer *view, int kind)
     int res = PyBuffer_FillInfo(
         view,
         unicode,
-        PyUnicode_DATA(unicode),
+        data,
         length,
         1,
         0
     );
 
     if (res < 0) {
+        if (needs_dealloc) {
+            PyMem_Free(data);
+        }
         return res;
     }
 
     view->itemsize = itemsize;
+    view->internal = (void *) needs_dealloc;
 
     return 0;
 }
 
-// static void unicode_release_buffer(PyObject *unicode, Py_buffer *buffer)
-// {
-//
-// }
+static void unicode_release_buffer(PyObject *unicode, Py_buffer *view)
+{
+    bool needs_dealloc = (bool) view->internal;
+    if (needs_dealloc) {
+        PyMem_Free(view->buf);
+    }
+}
 
 
 static PyBufferProcs unicode_as_buffer = {
-    0,
 //    .bf_getbuffer = unicode_get_buffer,
-//    .bf_releasebuffer = unicode_release_buffer,
+   .bf_releasebuffer = unicode_release_buffer,
 };
 
 PyDoc_STRVAR(unicode_doc,
