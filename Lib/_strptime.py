@@ -536,7 +536,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         # the caller didn't supply a year but asked for Feb 29th. We couldn't
         # use the default of 1900 for computations. We set it back to ensure
         # that February 29th is smaller than March 1st.
-        year = 1900
+        year = 1904
 
     return (year, month, day,
             hour, minute, second,
