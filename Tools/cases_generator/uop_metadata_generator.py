@@ -29,7 +29,7 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {\n")
     for uop in analysis.uops.values():
-        if uop.is_viable() and not uop.properties.tier_one_only:
+        if uop.is_viable() and uop.properties.tier != 1:
             out.emit(f"[{uop.name}] = {cflags(uop.properties)},\n")
 
     out.emit("};\n\n")
@@ -41,7 +41,7 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("};\n\n")
     out.emit("const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {\n")
     for uop in sorted(analysis.uops.values(), key=lambda t: t.name):
-        if uop.is_viable() and not uop.properties.tier_one_only:
+        if uop.is_viable() and uop.properties.tier != 1:
             out.emit(f'[{uop.name}] = "{uop.name}",\n')
     out.emit("};\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")

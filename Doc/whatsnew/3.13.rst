@@ -174,6 +174,17 @@ Other Language Changes
 
   (Contributed by Victor Stinner in :gh:`114570`.)
 
+* Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425)
+  by adding five new methods:
+
+  * :meth:`xml.etree.ElementTree.XMLParser.flush`
+  * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
+  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
+  * :meth:`!xml.sax.expatreader.ExpatParser.flush`
+
+  (Contributed by Sebastian Pipping in :gh:`115623`.)
+
 
 New Modules
 ===========
@@ -206,6 +217,21 @@ array
 ast
 ---
 
+* The constructors of node types in the :mod:`ast` module are now stricter
+  in the arguments they accept, and have more intuitive behaviour when
+  arguments are omitted.
+
+  If an optional field on an AST node is not included as an argument when
+  constructing an instance, the field will now be set to ``None``. Similarly,
+  if a list field is omitted, that field will now be set to an empty list.
+  (Previously, in both cases, the attribute would be missing on the newly
+  constructed AST node instance.)
+
+  If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
+  This will cause an exception in Python 3.15. Similarly, passing a keyword
+  argument that does not map to a field on the AST node is now deprecated,
+  and will raise an exception in Python 3.15.
+
 * :func:`ast.parse` now accepts an optional argument ``optimize``
   which is passed on to the :func:`compile` built-in. This makes it
   possible to obtain an optimized ``AST``.
@@ -223,6 +249,14 @@ asyncio
   control also now accounts for the datagram header when calculating
   the buffer size.
   (Contributed by Jamie Phan in :gh:`115199`.)
+
+base64
+---
+
+* Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
+  and decoding z85 data.
+  See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+  (Contributed by Matan Perelman in :gh:`75299`.)
 
 copy
 ----
@@ -312,6 +346,14 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+
+itertools
+---------
+
+* Added a ``strict`` option to :func:`itertools.batched`.
+  This raises a :exc:`ValueError` if the final batch is shorter
+  than the specified batch size.
+  (Contributed by Raymond Hettinger in :gh:`113202`.)
 
 marshal
 -------
@@ -459,6 +501,14 @@ sqlite3
 * Add *filter* keyword-only parameter to :meth:`sqlite3.Connection.iterdump`
   for filtering database objects to dump.
   (Contributed by Mariusz Felisiak in :gh:`91602`.)
+
+statistics
+----------
+
+* Add :func:`statistics.kde` for kernel density estimation.
+  This makes it possible to estimate a continuous probability density function
+  from a fixed number of discrete samples.
+  (Contributed by Raymond Hettinger in :gh:`115863`.)
 
 subprocess
 ----------

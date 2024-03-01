@@ -262,8 +262,22 @@ is_valid(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyBool_FromLong(((_PyExecutorObject *)self)->vm_data.valid);
 }
 
+static PyObject *
+get_opcode(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromUnsignedLong(((_PyExecutorObject *)self)->vm_data.opcode);
+}
+
+static PyObject *
+get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyLong_FromUnsignedLong(((_PyExecutorObject *)self)->vm_data.oparg);
+}
+
 static PyMethodDef executor_methods[] = {
     { "is_valid", is_valid, METH_NOARGS, NULL },
+    { "get_opcode", get_opcode, METH_NOARGS, NULL },
+    { "get_oparg", get_oparg, METH_NOARGS, NULL },
     { NULL, NULL },
 };
 
@@ -282,8 +296,29 @@ uop_dealloc(_PyExecutorObject *self) {
 const char *
 _PyUOpName(int index)
 {
+    if (index < 0 || index > MAX_UOP_ID) {
+        return NULL;
+    }
     return _PyOpcode_uop_name[index];
 }
+
+#ifdef Py_DEBUG
+void
+_PyUOpPrint(const _PyUOpInstruction *uop)
+{
+    const char *name = _PyUOpName(uop->opcode);
+    if (name == NULL) {
+        printf("<uop %d>", uop->opcode);
+    }
+    else {
+        printf("%s", name);
+    }
+    printf(" (%d, target=%d, operand=%" PRIx64 ")",
+           uop->oparg,
+           uop->target,
+           (uint64_t)uop->operand);
+}
+#endif
 
 static Py_ssize_t
 uop_len(_PyExecutorObject *self)
@@ -312,14 +347,21 @@ uop_item(_PyExecutorObject *self, Py_ssize_t index)
         Py_DECREF(oname);
         return NULL;
     }
-    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
-    if (operand == NULL) {
+    PyObject *target = PyLong_FromUnsignedLong(self->trace[index].target);
+    if (oparg == NULL) {
         Py_DECREF(oparg);
         Py_DECREF(oname);
         return NULL;
     }
-    PyObject *args[3] = { oname, oparg, operand };
-    return _PyTuple_FromArraySteal(args, 3);
+    PyObject *operand = PyLong_FromUnsignedLongLong(self->trace[index].operand);
+    if (operand == NULL) {
+        Py_DECREF(target);
+        Py_DECREF(oparg);
+        Py_DECREF(oname);
+        return NULL;
+    }
+    PyObject *args[4] = { oname, oparg, target, operand };
+    return _PyTuple_FromArraySteal(args, 4);
 }
 
 PySequenceMethods uop_as_sequence = {
@@ -390,19 +432,29 @@ BRANCH_TO_GUARD[4][2] = {
 #endif
 
 
+// Beware: Macro arg order differs from struct member order
+#ifdef Py_DEBUG
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
-    DPRINTF(2, \
-            "  ADD_TO_TRACE(%s, %d, %" PRIu64 ", %d)\n", \
-            _PyUOpName(OPCODE), \
-            (OPARG), \
-            (uint64_t)(OPERAND), \
-            TARGET); \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
     trace[trace_length].oparg = (OPARG); \
-    trace[trace_length].operand = (OPERAND); \
     trace[trace_length].target = (TARGET); \
+    trace[trace_length].operand = (OPERAND); \
+    if (lltrace >= 2) { \
+        printf("%4d ADD_TO_TRACE: ", trace_length); \
+        _PyUOpPrint(&trace[trace_length]); \
+        printf("\n"); \
+    } \
     trace_length++;
+#else
+#define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
+    assert(trace_length < max_length); \
+    trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].oparg = (OPARG); \
+    trace[trace_length].target = (TARGET); \
+    trace[trace_length].operand = (OPERAND); \
+    trace_length++;
+#endif
 
 #define INSTR_IP(INSTR, CODE) \
     ((uint32_t)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
@@ -494,6 +546,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         uint32_t oparg = instr->op.arg;
         uint32_t extended = 0;
 
+        DPRINTF(3, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
+
         if (opcode == ENTER_EXECUTOR) {
             assert(oparg < 256);
             _PyExecutorObject *executor = code->co_executors->executors[oparg];
@@ -541,21 +595,25 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
+                /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
+                   If it's 16 or 0 (all or none were taken), adjust by 10%
+                   (since the future is still somewhat uncertain).
+                   For values in between, adjust proportionally. */
                 if (jump_likely) {
-                    confidence = confidence * bitcount / 16;
+                    confidence = confidence * (bitcount + 2) / 20;
                 }
                 else {
-                    confidence = confidence * (16 - bitcount) / 16;
+                    confidence = confidence * (18 - bitcount) / 20;
                 }
+                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
+                DPRINTF(2, "%d: %s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
+                        target, _PyOpcode_OpName[opcode], oparg,
+                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 if (confidence < CONFIDENCE_CUTOFF) {
-                    DPRINTF(2, "Confidence too low (%d)\n", confidence);
+                    DPRINTF(2, "Confidence too low (%d < %d)\n", confidence, CONFIDENCE_CUTOFF);
                     OPT_STAT_INC(low_confidence);
                     goto done;
                 }
-                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-                DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
-                        _PyOpcode_OpName[opcode], oparg,
-                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 _Py_CODEUNIT *target_instr = next_instr + oparg;
                 if (jump_likely) {
@@ -890,12 +948,9 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     if (lltrace >= 2) {
         printf("Optimized executor (length %d):\n", length);
         for (int i = 0; i < length; i++) {
-            printf("%4d %s(%d, %d, %" PRIu64 ")\n",
-                   i,
-                   _PyUOpName(executor->trace[i].opcode),
-                   executor->trace[i].oparg,
-                   executor->trace[i].target,
-                   executor->trace[i].operand);
+            printf("%4d OPTIMIZED: ", i);
+            _PyUOpPrint(&executor->trace[i]);
+            printf("\n");
         }
     }
 #endif
@@ -953,8 +1008,8 @@ uop_optimize(
         return err;
     }
     OPT_STAT_INC(traces_created);
-    char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
-    if (uop_optimize == NULL || *uop_optimize > '0') {
+    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
         err = _Py_uop_analyze_and_optimize(frame, buffer,
                                            UOP_MAX_TRACE_LENGTH,
                                            curr_stackentries, &dependencies);
@@ -1293,7 +1348,7 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
  * May cause other executors to be invalidated as well
  */
 void
-_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
+_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
@@ -1305,6 +1360,9 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
             _Py_ExecutorClear(exec);
+            if (is_invalidation) {
+                OPT_STAT_INC(executors_invalidated);
+            }
         }
         exec = next;
     }
@@ -1312,7 +1370,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
 
 /* Invalidate all executors */
 void
-_Py_Executors_InvalidateAll(PyInterpreterState *interp)
+_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
     while (interp->executor_list_head) {
         _PyExecutorObject *executor = interp->executor_list_head;
@@ -1322,6 +1380,9 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
         }
         else {
             _Py_ExecutorClear(executor);
+        }
+        if (is_invalidation) {
+            OPT_STAT_INC(executors_invalidated);
         }
     }
 }

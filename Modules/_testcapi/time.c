@@ -49,9 +49,11 @@ static PyObject*
 test_pytime_monotonic(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 {
     PyTime_t t;
-    if (PyTime_Monotonic(&t) < 0) {
+    int res = PyTime_Monotonic(&t);
+    if (res < 0) {
         return NULL;
     }
+    assert(res == 0);
     return pytime_as_float(t);
 }
 
@@ -60,9 +62,11 @@ static PyObject*
 test_pytime_perf_counter(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 {
     PyTime_t t;
-    if (PyTime_PerfCounter(&t) < 0) {
+    int res = PyTime_PerfCounter(&t);
+    if (res < 0) {
         return NULL;
     }
+    assert(res == 0);
     return pytime_as_float(t);
 }
 
@@ -71,10 +75,11 @@ static PyObject*
 test_pytime_time(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(args))
 {
     PyTime_t t;
-    if (PyTime_Time(&t) < 0) {
-        printf("ERR! %d\n", (int)t);
+    int res = PyTime_Time(&t);
+    if (res < 0) {
         return NULL;
     }
+    assert(res == 0);
     return pytime_as_float(t);
 }
 

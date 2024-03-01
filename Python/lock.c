@@ -5,18 +5,19 @@
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
+#include "pycore_time.h"          // _PyTime_MonotonicUnchecked()
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>        // SwitchToThread()
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
-#include <sched.h>          // sched_yield()
+#  include <sched.h>          // sched_yield()
 #endif
 
 // If a thread waits on a lock for longer than TIME_TO_BE_FAIR_NS (1 ms), then
 // the unlocking thread directly hands off ownership of the lock. This avoids
 // starvation.
-static const _PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
+static const PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
 
 // Spin for a bit before parking the thread. This is only enabled for
 // `--disable-gil` builds because it is unlikely to be helpful if the GIL is
@@ -30,7 +31,7 @@ static const int MAX_SPIN_COUNT = 0;
 struct mutex_entry {
     // The time after which the unlocking thread should hand off lock ownership
     // directly to the waiting thread. Written by the waiting thread.
-    _PyTime_t time_to_be_fair;
+    PyTime_t time_to_be_fair;
 
     // Set to 1 if the lock was handed off. Written by the unlocking thread.
     int handed_off;
@@ -53,7 +54,7 @@ _PyMutex_LockSlow(PyMutex *m)
 }
 
 PyLockStatus
-_PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
+_PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
 {
     uint8_t v = _Py_atomic_load_uint8_relaxed(&m->v);
     if ((v & _Py_LOCKED) == 0) {
@@ -65,8 +66,8 @@ _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
         return PY_LOCK_FAILURE;
     }
 
-    _PyTime_t now = _PyTime_GetMonotonicClock();
-    _PyTime_t endtime = 0;
+    PyTime_t now = _PyTime_MonotonicUnchecked();
+    PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyTime_Add(now, timeout);
     }
@@ -142,7 +143,7 @@ mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
 {
     uint8_t v = 0;
     if (entry) {
-        _PyTime_t now = _PyTime_GetMonotonicClock();
+        PyTime_t now = _PyTime_MonotonicUnchecked();
         int should_be_fair = now > entry->time_to_be_fair;
 
         entry->handed_off = should_be_fair;
@@ -274,7 +275,7 @@ PyEvent_Wait(PyEvent *evt)
 }
 
 int
-PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns)
+PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
 {
     for (;;) {
         uint8_t v = _Py_atomic_load_uint8(&evt->v);
