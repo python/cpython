@@ -875,7 +875,7 @@ public: // IBootstrapperApplication
                 }
 
                 if (includeLauncherAllUsers < 0) {
-                    /* Python 3.11 installer defaulted to 1. Later versions use 0 */
+                    // Python 3.11 installer defaults to 1. Later versions use 0
                     includeLauncherAllUsers = 1;
                     _engine->SetVariableNumeric(L"InstallLauncherAllUsers", includeLauncherAllUsers);
                 }
