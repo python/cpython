@@ -2318,14 +2318,14 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // We must use a different key for the bound and default. The obvious choice would be to
         // use the .bound and .default_ pointers, but that fails when the expression immediately
         // inside the bound or default is a comprehension: we would reuse the same key for
-        // the comprehension scope. Therefore, use the name of the type parameter as the second key.
+        // the comprehension scope. Therefore, use the address + 1 as the second key.
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
                                                         (void *)tp))
             VISIT_QUIT(st, 0);
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_, tp->v.TypeVar.name,
-                                                        (void *)tp->v.TypeVar.name))
+                                                        ((void *)tp) + 1))
             VISIT_QUIT(st, 0);
         break;
     case TypeVarTuple_kind:

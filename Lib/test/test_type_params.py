@@ -1170,3 +1170,20 @@ class DefaultsTest(unittest.TestCase):
         self.assertEqual(T.__default__, "defined")
         self.assertEqual(U.__default__, "defined")
         self.assertEqual(V.__default__, "defined")
+
+    def test_symtable_key_regression_default(self):
+        # Test against the bugs that would happen if we used .default_
+        # as the key in the symtable.
+        type X[T = [T for T in [T]]] = T
+        T, = X.__type_params__
+        self.assertEqual(T.__default__, [T])
+
+    def test_symtable_key_regression_name(self):
+        # Test against the bugs that would happen if we used .name
+        # as the key in the symtable.
+        type X1[T = A] = T
+        type X2[T = B] = T
+        A = "A"
+        B = "B"
+        self.assertEqual(X1.__type_params__[0].__default__, "A")
+        self.assertEqual(X2.__type_params__[0].__default__, "B")
