@@ -5350,7 +5350,6 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
     PyTypeObject *base_tp = TestType;
-    long _return_value;
 
     if ((Py_IS_TYPE(self, base_tp) ||
          Py_TYPE(self)->tp_new == base_tp->tp_new) &&
@@ -5362,11 +5361,7 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Test", kwargs)) {
         goto exit;
     }
-    _return_value = Test___init___impl((TestObj *)self);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong(_return_value);
+    return_value = Test___init___impl((TestObj *)self);
 
 exit:
     return return_value;
@@ -5374,7 +5369,7 @@ exit:
 
 static long
 Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=daf6ee12c4e443fb input=311af0dc7f17e8e9]*/
+/*[clinic end generated code: output=9f3704989ab1f6eb input=311af0dc7f17e8e9]*/
 
 
 /*[clinic input]

@@ -1612,7 +1612,8 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        f.return_converter.render(f, data)
+        if f.kind not in {SETTER, METHOD_INIT}:
+            f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
 
         template_dict['declarations'] = libclinic.format_escape("\n".join(data.declarations))
@@ -4558,15 +4559,6 @@ class int_return_converter(long_return_converter):
     cast = '(long)'
 
 
-class type_slot_int_return_converter(long_return_converter):
-    """Special return converter for type slots functions that return int."""
-    type = 'int'
-    cast = '(long)'
-
-    def render(self, function: Function, data: CRenderData) -> None:
-        pass
-
-
 class unsigned_long_return_converter(long_return_converter):
     type = 'unsigned long'
     conversion_fn = 'PyLong_FromUnsignedLong'
@@ -5098,7 +5090,7 @@ class DSLParser:
                 fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
 
         if self.kind in {METHOD_INIT, SETTER}:
-            return type_slot_int_return_converter()
+            return int_return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:

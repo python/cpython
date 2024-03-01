@@ -2651,7 +2651,6 @@ class ClinicExternalTest(TestCase):
                 long()
                 Py_ssize_t()
                 size_t()
-                type_slot_int()
                 unsigned_int()
                 unsigned_long()
 
@@ -3937,7 +3936,7 @@ class ClinicReprTests(unittest.TestCase):
             cls=None,
             c_basename=None,
             full_name='foofoo',
-            return_converter=clinic.type_slot_int_return_converter(),
+            return_converter=clinic.int_return_converter(),
             kind=clinic.FunctionKind.METHOD_INIT,
             coexist=False
         )
