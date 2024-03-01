@@ -93,6 +93,14 @@ class Queue:
     def __hash__(self):
         return hash(self._id)
 
+    # for pickling:
+    def __getnewargs__(self):
+        return (self._id,)
+
+    # for pickling:
+    def __getstate__(self):
+        return None
+
     @property
     def id(self):
         return self._id

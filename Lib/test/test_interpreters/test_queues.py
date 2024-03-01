@@ -1,4 +1,5 @@
 import importlib
+import pickle
 import threading
 from textwrap import dedent
 import unittest
@@ -126,6 +127,12 @@ class QueueTests(TestBase):
         queue2 = queues.create()
         self.assertEqual(queue1, queue1)
         self.assertNotEqual(queue1, queue2)
+
+    def test_pickle(self):
+        queue = queues.create()
+        data = pickle.dumps(queue)
+        unpickled = pickle.loads(data)
+        self.assertEqual(unpickled, queue)
 
 
 class TestQueueOps(TestBase):
