@@ -1,0 +1,6 @@
+A bug has been fixed that made the ``TimedRotatingFileHandler`` use the
+MTIME attribute of the configured log file to to detect whether it has to be
+rotated yet or not. In cases when the file was changed within the rotation
+period the value of the MTIME was also updated to the current time and as a
+result the rotation never happened. The file creation time (CTIME) is used
+instead that makes the rotation file modification independent.
