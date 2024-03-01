@@ -50,12 +50,12 @@ class _WorkItem:
         self.args = args
         self.kwargs = kwargs
 
-    def run(self):
+    def run(self, ctx=None):
         if not self.future.set_running_or_notify_cancel():
             return
 
         try:
-            result = self.fn(*self.args, **self.kwargs)
+            result = self.fn(ctx, *self.args, **self.kwargs)
         except BaseException as exc:
             self.future.set_exception(exc)
             # Break a reference cycle with the exception 'exc'
@@ -66,10 +66,10 @@ class _WorkItem:
     __class_getitem__ = classmethod(types.GenericAlias)
 
 
-def _worker(executor_reference, work_queue, initializer, initargs):
+def _worker(ctx, executor_reference, work_queue, initializer, initargs):
     if initializer is not None:
         try:
-            initializer(*initargs)
+            initializer(ctx, *initargs)
         except BaseException:
             _base.LOGGER.critical('Exception in initializer:', exc_info=True)
             executor = executor_reference()
@@ -89,7 +89,7 @@ def _worker(executor_reference, work_queue, initializer, initargs):
                 work_item = work_queue.get(block=True)
 
             if work_item is not None:
-                work_item.run()
+                work_item.run(ctx)
                 # Delete references to object. See GH-60488
                 del work_item
                 continue
@@ -122,6 +122,26 @@ class ThreadPoolExecutor(_base.Executor):
 
     # Used to assign unique thread names when thread_name_prefix is not supplied.
     _counter = itertools.count().__next__
+
+    @classmethod
+    def _normalize_initializer(cls, initializer, initargs):
+        if initializer is None:
+            return None, ()
+        actual = initializer
+        def initializer(ctx, *args):
+            actual(*args)
+        return initializer, initargs
+
+    @classmethod
+    def _normalize_task(cls, fn, args, kwargs):
+        def wrapped(ctx, *args, **kwargs):
+            return fn(*args, **kwargs)
+        return wrapped, args, kwargs
+
+    @classmethod
+    def _run_worker(cls, *args):
+        ctx = None
+        return _worker(ctx, *args)
 
     def __init__(self, max_workers=None, thread_name_prefix='',
                  initializer=None, initargs=()):
@@ -158,8 +178,9 @@ class ThreadPoolExecutor(_base.Executor):
         self._shutdown_lock = threading.Lock()
         self._thread_name_prefix = (thread_name_prefix or
                                     ("ThreadPoolExecutor-%d" % self._counter()))
-        self._initializer = initializer
-        self._initargs = initargs
+        (self._initializer,
+         self._initargs
+         ) = type(self)._normalize_initializer(initializer, initargs)
 
     def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock, _global_shutdown_lock:
@@ -173,6 +194,7 @@ class ThreadPoolExecutor(_base.Executor):
                                    'interpreter shutdown')
 
             f = _base.Future()
+            fn, args, kwargs = type(self)._normalize_task(fn, args, kwargs)
             w = _WorkItem(f, fn, args, kwargs)
 
             self._work_queue.put(w)
@@ -194,7 +216,8 @@ class ThreadPoolExecutor(_base.Executor):
         if num_threads < self._max_workers:
             thread_name = '%s_%d' % (self._thread_name_prefix or self,
                                      num_threads)
-            t = threading.Thread(name=thread_name, target=_worker,
+            t = threading.Thread(name=thread_name,
+                                 target=type(self)._run_worker,
                                  args=(weakref.ref(self, weakref_cb),
                                        self._work_queue,
                                        self._initializer,
