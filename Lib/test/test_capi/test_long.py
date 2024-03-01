@@ -571,14 +571,18 @@ class LongTests(unittest.TestCase):
         SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
 
         rng = Random()
+        # Allocate bigger buffer than actual values are going to be
         buffer = bytearray(260)
 
         for _ in range(1000):
             n = rng.randrange(1, 256)
-            bytes_be = bytes([rng.randrange(1, 256)] + [rng.randrange(256) for _ in range(n - 1)])
+            bytes_be = bytes([
+                # Ensure the most significant byte is nonzero
+                rng.randrange(1, 256),
+                *[rng.randrange(256) for _ in range(n - 1)]
+            ])
             bytes_le = bytes_be[::-1]
             v = int.from_bytes(bytes_le, 'little')
-            # Allocate bigger buffer than actual value
 
             expect_1 = expect_2 = (SZ, n)
             if bytes_be[0] & 0x80:
@@ -588,7 +592,8 @@ class LongTests(unittest.TestCase):
                 # When requesting exactly the right size, we expect the return
                 # to be exactly the right size.
                 #expect_2 = (n,)
-                # However, right now, the extra bit is still requested.
+                # However, right now, the extra bit is still requested. These
+                # are the TODO comments in PyLong_AsNativeBytes
                 expect_2 = (n + 1,)
 
             try:
