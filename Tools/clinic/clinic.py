@@ -859,9 +859,6 @@ class CLanguage(Language):
             limited_capi = False
 
         parsearg: str | None
-        if f.kind in {GETTER, SETTER} and parameters:
-            fail(f"@{f.kind.name.lower()} method cannot define parameters")
-
         if not parameters:
             parser_code: list[str] | None
             if f.kind is GETTER:
@@ -5291,6 +5288,10 @@ class DSLParser:
         # if this line is not indented, we have no parameters
         if not self.indent.infer(line):
             return self.next(self.state_function_docstring, line)
+
+        if self.function.kind in {GETTER, SETTER}:
+            getset = self.function.kind.name.lower()
+            fail(f"@{getset} methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)

@@ -2167,7 +2167,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = f"{annotation} method cannot define parameters"
+                expected_error = f"{annotation} methods cannot define parameters"
                 self.expect_failure(block, expected_error)
 
     def test_setter_docstring(self):
