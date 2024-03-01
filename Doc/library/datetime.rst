@@ -1193,6 +1193,9 @@ Supported operations:
    that are not also :class:`!datetime` instances, even if they represent
    the same date.
 
+   If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
+   the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
+   the base datetimes are compared.
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
@@ -1207,6 +1210,9 @@ Supported operations:
    as well as a :class:`!datetime` object and a :class:`!date` object
    that is not also a :class:`!datetime` instance, raises :exc:`TypeError`.
 
+   If both comparands are aware, and have the same :attr:`!tzinfo` attribute,
+   the :attr:`!tzinfo` and :attr:`~.datetime.fold` attributes are ignored and
+   the base datetimes are compared.
    If both comparands are aware and have different :attr:`~.datetime.tzinfo`
    attributes, the comparison acts as comparands were first converted to UTC
    datetimes except that the implementation never overflows.
@@ -1752,8 +1758,8 @@ Naive and aware :class:`!time` objects are never equal.
 Order comparison between naive and aware :class:`!time` objects raises
 :exc:`TypeError`.
 
-If both comparands are aware, and have
-the same :attr:`~.time.tzinfo` attribute, the common :attr:`!tzinfo` attribute is
+If both comparands are aware, and have the same :attr:`~.time.tzinfo`
+attribute, the :attr:`!tzinfo` and :attr:`!fold` attributes are
 ignored and the base times are compared. If both comparands are aware and
 have different :attr:`!tzinfo` attributes, the comparands are first adjusted by
 subtracting their UTC offsets (obtained from ``self.utcoffset()``).
