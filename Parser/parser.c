@@ -10954,7 +10954,7 @@ type_param_default_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ type_param_default[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'=' expression"));
-            _res = e;
+            _res = CHECK_VERSION ( expr_ty , 13 , "Type parameter defaults are" , e );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

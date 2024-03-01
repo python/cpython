@@ -659,7 +659,8 @@ type_param[type_param_ty] (memo):
     | '**' a=NAME b=[type_param_default] { _PyAST_ParamSpec(a->v.Name.id, b, EXTRA) }
 
 type_param_bound[expr_ty]: ':' e=expression { e }
-type_param_default[expr_ty]: '=' e=expression { e }
+type_param_default[expr_ty]: '=' e=expression {
+    CHECK_VERSION(expr_ty, 13, "Type parameter defaults are", e) }
 
 # EXPRESSIONS
 # -----------
