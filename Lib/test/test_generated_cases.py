@@ -1056,7 +1056,7 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
             }
             this_instr += 1;
             break;
-        }        
+        }
         """
         self.run_cases_test(input, output)
 
@@ -1102,7 +1102,7 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
             }
             this_instr += 1;
             break;
-        }        
+        }
         """
         self.run_cases_test(input, output)
 
@@ -1141,7 +1141,7 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
             }
             this_instr += 1;
             break;
-        }        
+        }
         """
         self.run_cases_test(input, output)
 
