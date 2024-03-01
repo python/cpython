@@ -1189,7 +1189,7 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
         .label = "queue ID",
     };
     int res = idarg_int64_converter(qidobj, &converted);
-    Py_DECREF(qidobj);
+    Py_CLEAR(qidobj);
     if (!res) {
         assert(PyErr_Occurred());
         return -1;
@@ -1197,12 +1197,10 @@ _queueobj_shared(PyThreadState *tstate, PyObject *queueobj,
 
     void *raw = _queueid_xid_new(converted.id);
     if (raw == NULL) {
-        Py_DECREF(qidobj);
         return -1;
     }
     _PyCrossInterpreterData_Init(data, tstate->interp, raw, NULL,
                                  _queueobj_from_xid);
-    Py_DECREF(qidobj);
     _PyCrossInterpreterData_SET_FREE(data, _queueid_xid_free);
     return 0;
 }
