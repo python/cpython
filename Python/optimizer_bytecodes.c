@@ -254,6 +254,22 @@ dummy_func(void) {
         }
     }
 
+    op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
+        if (sym_is_const(left) && sym_is_const(right) &&
+            sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+            PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+            if (temp == NULL) {
+                goto error;
+            }
+            res = sym_new_const(ctx, temp);
+            Py_DECREF(temp);
+            OUT_OF_SPACE_IF_NULL(res);
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyUnicode_Type));
+        }
+    }
+
     op(_TO_BOOL, (value -- res)) {
         (void)value;
         res = sym_new_type(ctx, &PyBool_Type);
