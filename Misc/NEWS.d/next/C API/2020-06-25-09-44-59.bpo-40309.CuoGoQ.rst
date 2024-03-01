@@ -1,1 +1,0 @@
-Properly handle trailing spaces before closing parenthesis in :c:func:`Py_BuildValue` format strings.

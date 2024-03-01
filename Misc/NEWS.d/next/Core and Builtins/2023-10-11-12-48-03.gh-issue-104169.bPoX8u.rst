@@ -1,4 +1,0 @@
-Split the tokenizer into two separate directories:
-- One part includes the actual lexeme producing logic and lives in ``Parser/lexer``.
-- The second part wraps the lexer according to the different tokenization modes
-  we have (string, utf-8, file, interactive, readline) and lives in ``Parser/tokenizer``.

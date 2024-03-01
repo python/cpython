@@ -1,4 +1,5 @@
 # Test the module type
+import importlib.machinery
 import unittest
 import weakref
 from test.support import gc_collect
@@ -29,7 +30,7 @@ class ModuleTests(unittest.TestCase):
             self.fail("__name__ = %s" % repr(s))
         except AttributeError:
             pass
-        self.assertEqual(foo.__doc__, ModuleType.__doc__)
+        self.assertEqual(foo.__doc__, ModuleType.__doc__ or '')
 
     def test_uninitialized_missing_getattr(self):
         # Issue 8297
@@ -264,9 +265,38 @@ a = A(destroyed)"""
         self.assertEqual(r[-len(ends_with):], ends_with,
                          '{!r} does not end with {!r}'.format(r, ends_with))
 
+    def test_module_repr_with_namespace_package(self):
+        m = ModuleType('foo')
+        loader = importlib.machinery.NamespaceLoader('foo', ['bar'], 'baz')
+        spec = importlib.machinery.ModuleSpec('foo', loader)
+        m.__loader__ = loader
+        m.__spec__ = spec
+        self.assertEqual(repr(m), "<module 'foo' (namespace) from ['bar']>")
+
+    def test_module_repr_with_namespace_package_and_custom_loader(self):
+        m = ModuleType('foo')
+        loader = BareLoader()
+        spec = importlib.machinery.ModuleSpec('foo', loader)
+        m.__loader__ = loader
+        m.__spec__ = spec
+        expected_repr_pattern = r"<module 'foo' \(<.*\.BareLoader object at .+>\)>"
+        self.assertRegex(repr(m), expected_repr_pattern)
+        self.assertNotIn('from', repr(m))
+
+    def test_module_repr_with_fake_namespace_package(self):
+        m = ModuleType('foo')
+        loader = BareLoader()
+        loader._path = ['spam']
+        spec = importlib.machinery.ModuleSpec('foo', loader)
+        m.__loader__ = loader
+        m.__spec__ = spec
+        expected_repr_pattern = r"<module 'foo' \(<.*\.BareLoader object at .+>\)>"
+        self.assertRegex(repr(m), expected_repr_pattern)
+        self.assertNotIn('from', repr(m))
+
     def test_module_finalization_at_shutdown(self):
         # Module globals and builtins should still be available during shutdown
-        rc, out, err = assert_python_ok("-c", "from test import final_a")
+        rc, out, err = assert_python_ok("-c", "from test.test_module import final_a")
         self.assertFalse(err)
         lines = out.splitlines()
         self.assertEqual(set(lines), {

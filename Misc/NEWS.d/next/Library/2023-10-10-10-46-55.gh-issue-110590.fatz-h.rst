@@ -1,3 +1,0 @@
-Fix a bug in :meth:`!_sre.compile` where :exc:`TypeError`
-would be overwritten by :exc:`OverflowError` when
-the *code* argument was a list of non-ints.

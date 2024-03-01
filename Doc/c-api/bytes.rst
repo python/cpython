@@ -155,6 +155,7 @@ called with a non-bytes parameter.
 
    Return the null-terminated contents of the object *obj*
    through the output variables *buffer* and *length*.
+   Returns ``0`` on success.
 
    If *length* is ``NULL``, the bytes object
    may not contain embedded null bytes;

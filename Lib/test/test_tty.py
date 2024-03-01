@@ -19,7 +19,6 @@ class TestTty(unittest.TestCase):
         self.addCleanup(termios.tcsetattr, self.fd, termios.TCSAFLUSH, self.mode)
 
     def check_cbreak(self, mode):
-        self.assertEqual(mode[0] & termios.ICRNL, 0)
         self.assertEqual(mode[3] & termios.ECHO, 0)
         self.assertEqual(mode[3] & termios.ICANON, 0)
         self.assertEqual(mode[6][termios.VMIN], 1)
@@ -56,9 +55,19 @@ class TestTty(unittest.TestCase):
         self.assertEqual(mode[2], self.mode[2])
         self.assertEqual(mode[4], self.mode[4])
         self.assertEqual(mode[5], self.mode[5])
+        mode[tty.IFLAG] |= termios.ICRNL
+        tty.cfmakecbreak(mode)
+        self.assertEqual(mode[tty.IFLAG] & termios.ICRNL, termios.ICRNL,
+                         msg="ICRNL should not be cleared by cbreak")
+        mode[tty.IFLAG] &= ~termios.ICRNL
+        tty.cfmakecbreak(mode)
+        self.assertEqual(mode[tty.IFLAG] & termios.ICRNL, 0,
+                         msg="ICRNL should not be set by cbreak")
 
     def test_setraw(self):
-        mode = tty.setraw(self.fd)
+        mode0 = termios.tcgetattr(self.fd)
+        mode1 = tty.setraw(self.fd)
+        self.assertEqual(mode1, mode0)
         mode2 = termios.tcgetattr(self.fd)
         self.check_raw(mode2)
         mode3 = tty.setraw(self.fd, termios.TCSANOW)
@@ -67,9 +76,14 @@ class TestTty(unittest.TestCase):
         tty.setraw(fd=self.fd, when=termios.TCSANOW)
 
     def test_setcbreak(self):
-        mode = tty.setcbreak(self.fd)
+        mode0 = termios.tcgetattr(self.fd)
+        mode1 = tty.setcbreak(self.fd)
+        self.assertEqual(mode1, mode0)
         mode2 = termios.tcgetattr(self.fd)
         self.check_cbreak(mode2)
+        ICRNL = termios.ICRNL
+        self.assertEqual(mode2[tty.IFLAG] & ICRNL, mode0[tty.IFLAG] & ICRNL,
+                         msg="ICRNL should not be altered by cbreak")
         mode3 = tty.setcbreak(self.fd, termios.TCSANOW)
         self.assertEqual(mode3, mode2)
         tty.setcbreak(self.stream)
