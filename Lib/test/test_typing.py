@@ -2,10 +2,11 @@ import contextlib
 import collections
 import collections.abc
 from collections import defaultdict
-from functools import lru_cache, wraps
+from functools import lru_cache, wraps, reduce
 import gc
 import inspect
 import itertools
+import operator
 import pickle
 import re
 import sys
@@ -1769,6 +1770,26 @@ class UnionTests(BaseTestCase):
         u = Union[int, float]
         v = Union[u, Employee]
         self.assertEqual(v, Union[int, float, Employee])
+
+    def test_union_of_unhashable(self):
+        class UnhashableMeta(type):
+            __hash__ = None
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        self.assertEqual(Union[A, B].__args__, (A, B))
+        union1 = Union[A, B]
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = Union[int, B]
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = Union[A, int]
+        with self.assertRaises(TypeError):
+            hash(union3)
 
     def test_repr(self):
         self.assertEqual(repr(Union), 'typing.Union')
@@ -5295,10 +5316,8 @@ class OverrideDecoratorTests(BaseTestCase):
         self.assertFalse(hasattr(WithOverride.some, "__override__"))
 
     def test_multiple_decorators(self):
-        import functools
-
         def with_wraps(f):  # similar to `lru_cache` definition
-            @functools.wraps(f)
+            @wraps(f)
             def wrapper(*args, **kwargs):
                 return f(*args, **kwargs)
             return wrapper
@@ -8183,6 +8202,76 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(A.__metadata__, (4, 5))
         self.assertEqual(A.__origin__, int)
 
+    def test_deduplicate_from_union(self):
+        # Regular:
+        self.assertEqual(get_args(Annotated[int, 1] | int),
+                         (Annotated[int, 1], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], int]),
+                         (Annotated[int, 1], int))
+        self.assertEqual(get_args(Annotated[int, 1] | Annotated[int, 2] | int),
+                         (Annotated[int, 1], Annotated[int, 2], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], Annotated[int, 2], int]),
+                         (Annotated[int, 1], Annotated[int, 2], int))
+        self.assertEqual(get_args(Annotated[int, 1] | Annotated[str, 1] | int),
+                         (Annotated[int, 1], Annotated[str, 1], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], Annotated[str, 1], int]),
+                         (Annotated[int, 1], Annotated[str, 1], int))
+
+        # Duplicates:
+        self.assertEqual(Annotated[int, 1] | Annotated[int, 1] | int,
+                         Annotated[int, 1] | int)
+        self.assertEqual(Union[Annotated[int, 1], Annotated[int, 1], int],
+                         Union[Annotated[int, 1], int])
+
+        # Unhashable metadata:
+        self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[int, set()] | int),
+                         (str, Annotated[int, {}], Annotated[int, set()], int))
+        self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[int, set()], int]),
+                         (str, Annotated[int, {}], Annotated[int, set()], int))
+        self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[str, {}] | int),
+                         (str, Annotated[int, {}], Annotated[str, {}], int))
+        self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[str, {}], int]),
+                         (str, Annotated[int, {}], Annotated[str, {}], int))
+
+        self.assertEqual(get_args(Annotated[int, 1] | str | Annotated[str, {}] | int),
+                         (Annotated[int, 1], str, Annotated[str, {}], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], str, Annotated[str, {}], int]),
+                         (Annotated[int, 1], str, Annotated[str, {}], int))
+
+        import dataclasses
+        @dataclasses.dataclass
+        class ValueRange:
+            lo: int
+            hi: int
+        v = ValueRange(1, 2)
+        self.assertEqual(get_args(Annotated[int, v] | None),
+                         (Annotated[int, v], types.NoneType))
+        self.assertEqual(get_args(Union[Annotated[int, v], None]),
+                         (Annotated[int, v], types.NoneType))
+        self.assertEqual(get_args(Optional[Annotated[int, v]]),
+                         (Annotated[int, v], types.NoneType))
+
+        # Unhashable metadata duplicated:
+        self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
+                         Annotated[int, {}] | int)
+        self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
+                         int | Annotated[int, {}])
+        self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
+                         Union[Annotated[int, {}], int])
+        self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
+                         Union[int, Annotated[int, {}]])
+
+    def test_order_in_union(self):
+        expr1 = Annotated[int, 1] | str | Annotated[str, {}] | int
+        for args in itertools.permutations(get_args(expr1)):
+            with self.subTest(args=args):
+                self.assertEqual(expr1, reduce(operator.or_, args))
+
+        expr2 = Union[Annotated[int, 1], str, Annotated[str, {}], int]
+        for args in itertools.permutations(get_args(expr2)):
+            with self.subTest(args=args):
+                self.assertEqual(expr2, Union[args])
+
     def test_specialize(self):
         L = Annotated[List[T], "my decoration"]
         LI = Annotated[List[int], "my decoration"]
@@ -8203,6 +8292,16 @@ class AnnotatedTests(BaseTestCase):
             {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
             {Annotated[int, 4, 5], Annotated[T, 4, 5]}
         )
+        # Unhashable `metadata` raises `TypeError`:
+        a1 = Annotated[int, []]
+        with self.assertRaises(TypeError):
+            hash(a1)
+
+        class A:
+            __hash__ = None
+        a2 = Annotated[int, A()]
+        with self.assertRaises(TypeError):
+            hash(a2)
 
     def test_instantiate(self):
         class C:
