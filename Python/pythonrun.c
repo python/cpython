@@ -1287,6 +1287,10 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
             return NULL;
         }
     }
+    if (globals == NULL) {
+        PyErr_SetString(PyExc_TypeError, "globals are NULL");
+        return NULL;
+    }
 
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
     if (!v && _PyErr_Occurred(tstate) == PyExc_KeyboardInterrupt) {
