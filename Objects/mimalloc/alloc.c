@@ -27,7 +27,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // ------------------------------------------------------
 
 #if (MI_DEBUG>0)
-static void mi_debug_fill(mi_page_t* page, mi_block_t* block, int c, size_t size) {
+static inline void mi_debug_fill(mi_page_t* page, mi_block_t* block, int c, size_t size) {
   size_t offset = (size_t)page->debug_offset;
   if (offset < size) {
     memset((char*)block + offset, c, size - offset);
