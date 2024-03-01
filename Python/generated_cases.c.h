@@ -3153,7 +3153,7 @@
             INSTRUCTION_STATS(INSTRUMENTED_RESUME);
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
-            if (code_version != global_version && tstate->tracing == 0) {
+            if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     GOTO_ERROR(error);
                 }
@@ -4825,23 +4825,22 @@
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
             assert(frame == tstate->current_frame);
-            if (tstate->tracing == 0) {
-                uintptr_t global_version =
-                _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
-                ~_PY_EVAL_EVENTS_MASK;
-                uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
-                assert((code_version & 255) == 0);
-                if (code_version != global_version) {
-                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                    if (err) goto error;
-                    next_instr = this_instr;
-                    DISPATCH();
+            uintptr_t global_version =
+            _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
+            ~_PY_EVAL_EVENTS_MASK;
+            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            assert((code_version & 255) == 0);
+            if (code_version != global_version) {
+                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                if (err) goto error;
+                next_instr = this_instr;
+            }
+            else {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                    CHECK_EVAL_BREAKER();
                 }
+                this_instr->op.code = RESUME_CHECK;
             }
-            if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                CHECK_EVAL_BREAKER();
-            }
-            this_instr->op.code = RESUME_CHECK;
             DISPATCH();
         }
 
@@ -4857,7 +4856,7 @@
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            DEOPT_IF(eval_breaker != version && tstate->tracing == 0, RESUME);
+            DEOPT_IF(eval_breaker != version, RESUME);
             DISPATCH();
         }
 
