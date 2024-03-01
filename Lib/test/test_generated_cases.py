@@ -1027,12 +1027,12 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
                 lines.pop(-1)
             actual = "".join(lines)
 
-            if actual.strip() != expected.strip():
-                print("Actual:")
-                print(actual)
-                print("Expected:")
-                print(expected)
-                print("End")
+            # if actual.strip() != expected.strip():
+            #     print("Actual:")
+            #     print(actual)
+            #     print("Expected:")
+            #     print(expected)
+            #     print("End")
             self.assertEqual(actual.strip(), expected.strip())
 
     def test_super_basic(self):
