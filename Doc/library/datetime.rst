@@ -2531,18 +2531,18 @@ will be pulled from the default value.
    When used to parse partial dates lacking a year, :meth:`~.datetime.strptime`
    will raise when encountering February 29 because its default year of 1900 is
    *not* a leap year.  Always add a default leap year to partial date strings
-   before parsing::
+   before parsing.
 
-   .. doctest::
+.. doctest::
 
-       >>> from datetime import datetime
-       >>> value = "2/29"
-       >>> datetime.strptime(value, "%m/%d")
-       Traceback (most recent call last):
-       ...
-       ValueError: day is out of range for month
-       >>> datetime.strptime(f"1904 {value}", "%Y %m/%d")
-       datetime.datetime(1904, 2, 29, 0, 0)
+    >>> from datetime import datetime
+    >>> value = "2/29"
+    >>> datetime.strptime(value, "%m/%d")
+    Traceback (most recent call last):
+    ...
+    ValueError: day is out of range for month
+    >>> datetime.strptime(f"1904 {value}", "%Y %m/%d")
+    datetime.datetime(1904, 2, 29, 0, 0)
 
 Using ``datetime.strptime(date_string, format)`` is equivalent to::
 
