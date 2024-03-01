@@ -5092,6 +5092,8 @@ class DSLParser:
         if forced_converter:
             if self.kind in {GETTER, SETTER}:
                 fail(f"@{self.kind.name.lower()} method cannot define a return type")
+            if self.kind is METHOD_INIT:
+                fail("__init__ methods cannot define a return type")
             ast_input = f"def x() -> {forced_converter}: pass"
             try:
                 module_node = ast.parse(ast_input)
