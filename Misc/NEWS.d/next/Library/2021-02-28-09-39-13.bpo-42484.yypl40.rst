@@ -1,0 +1,2 @@
+Fix an exception in :class:`email.message.EmailMessage` when setting an
+invalid Message-ID.
