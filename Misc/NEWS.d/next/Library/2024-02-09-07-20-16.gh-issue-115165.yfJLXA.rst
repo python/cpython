@@ -1,4 +1,0 @@
-Most exceptions are now ignored when attempting to set the ``__orig_class__``
-attribute on objects returned when calling :mod:`typing` generic aliases
-(including generic aliases created using :data:`typing.Annotated`).
-Previously only :exc:`AttributeError` was ignored. Patch by Dave Shawley.

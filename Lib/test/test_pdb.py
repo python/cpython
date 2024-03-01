@@ -2695,6 +2695,18 @@ def bœr():
             ('bœr', 2),
         )
 
+    def test_spec(self):
+        # Test that __main__.__spec__ is set to None when running a script
+        script = """
+            import __main__
+            print(__main__.__spec__)
+        """
+
+        commands = "continue"
+
+        stdout, _ = self.run_pdb_script(script, commands)
+        self.assertIn('None', stdout)
+
     def test_find_function_first_executable_line(self):
         code = textwrap.dedent("""\
             def foo(): pass
