@@ -66,7 +66,7 @@ class Queue:
         else:
             raise TypeError(f'id must be an int, got {id!r}')
         if _fmt is None:
-            _fmt = _queues.get_default_fmt(id)
+            _fmt, = _queues.get_queue_defaults(id)
         try:
             self = _known_queues[id]
         except KeyError:

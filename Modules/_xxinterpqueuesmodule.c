@@ -1595,12 +1595,12 @@ PyDoc_STRVAR(queuesmod_get_maxsize_doc,
 Return the maximum number of items in the queue.");
 
 static PyObject *
-queuesmod_get_default_fmt(PyObject *self, PyObject *args, PyObject *kwds)
+queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"qid", NULL};
     qidarg_converter_data qidarg;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_default_fmt", kwlist,
+                                     "O&:get_queue_defaults", kwlist,
                                      qidarg_converter, &qidarg)) {
         return NULL;
     }
@@ -1613,13 +1613,21 @@ queuesmod_get_default_fmt(PyObject *self, PyObject *args, PyObject *kwds)
     }
     int fmt = queue->fmt;
     _queue_unmark_waiter(queue, _globals.queues.mutex);
-    return PyLong_FromLong(fmt);
+
+    PyObject *fmt_obj = PyLong_FromLong(fmt);
+    if (fmt_obj == NULL) {
+        return NULL;
+    }
+    // For now queues only have one default.
+    PyObject *res = PyTuple_Pack(1, fmt_obj);
+    Py_DECREF(fmt_obj);
+    return res;
 }
 
-PyDoc_STRVAR(queuesmod_get_default_fmt_doc,
-"get_default_fmt(qid)\n\
+PyDoc_STRVAR(queuesmod_get_queue_defaults_doc,
+"get_queue_defaults(qid)\n\
 \n\
-Return the default format to use for the queue.");
+Return the queue's default values, set when it was created.");
 
 static PyObject *
 queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1722,18 +1730,18 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, queuesmod_destroy_doc},
     {"list_all",                   queuesmod_list_all,
      METH_NOARGS,                  queuesmod_list_all_doc},
-    {"put",                       _PyCFunction_CAST(queuesmod_put),
+    {"put",                        _PyCFunction_CAST(queuesmod_put),
      METH_VARARGS | METH_KEYWORDS, queuesmod_put_doc},
-    {"get",                       _PyCFunction_CAST(queuesmod_get),
+    {"get",                        _PyCFunction_CAST(queuesmod_get),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_doc},
-    {"bind",                      _PyCFunction_CAST(queuesmod_bind),
+    {"bind",                       _PyCFunction_CAST(queuesmod_bind),
      METH_VARARGS | METH_KEYWORDS, queuesmod_bind_doc},
     {"release",                    _PyCFunction_CAST(queuesmod_release),
      METH_VARARGS | METH_KEYWORDS, queuesmod_release_doc},
     {"get_maxsize",                _PyCFunction_CAST(queuesmod_get_maxsize),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_maxsize_doc},
-    {"get_default_fmt",            _PyCFunction_CAST(queuesmod_get_default_fmt),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_default_fmt_doc},
+    {"get_queue_defaults",         _PyCFunction_CAST(queuesmod_get_queue_defaults),
+     METH_VARARGS | METH_KEYWORDS, queuesmod_get_queue_defaults_doc},
     {"is_full",                    _PyCFunction_CAST(queuesmod_is_full),
      METH_VARARGS | METH_KEYWORDS, queuesmod_is_full_doc},
     {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
