@@ -352,7 +352,7 @@ ssize_t
 read_memory(pid_t pid, void* remote_address, size_t len, void* dst)
 {
     ssize_t total_bytes_read = 0;
-#ifdef __linux__
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
     ssize_t result = 0;
