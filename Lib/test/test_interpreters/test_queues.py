@@ -210,8 +210,13 @@ class TestQueueOps(TestBase):
         ]:
             with self.subTest(repr(obj)):
                 queue = queues.create()
+
                 queue.put(obj, syncobj=True)
                 obj2 = queue.get()
+                self.assertEqual(obj2, obj)
+
+                queue.put(obj, syncobj=True)
+                obj2 = queue.get_nowait()
                 self.assertEqual(obj2, obj)
 
         for obj in [
@@ -237,8 +242,13 @@ class TestQueueOps(TestBase):
         ]:
             with self.subTest(repr(obj)):
                 queue = queues.create()
+
                 queue.put(obj, syncobj=False)
                 obj2 = queue.get()
+                self.assertEqual(obj2, obj)
+
+                queue.put(obj, syncobj=False)
+                obj2 = queue.get_nowait()
                 self.assertEqual(obj2, obj)
 
     def test_get_timeout(self):
@@ -254,11 +264,13 @@ class TestQueueOps(TestBase):
     def test_put_get_default_syncobj(self):
         expected = list(range(20))
         queue = queues.create(syncobj=True)
-        for i in range(20):
-            queue.put(i)
-        actual = [queue.get() for _ in range(20)]
-
-        self.assertEqual(actual, expected)
+        for methname in ('get', 'get_nowait'):
+            with self.subTest(f'{methname}()'):
+                get = getattr(queue, methname)
+                for i in range(20):
+                    queue.put(i)
+                actual = [get() for _ in range(20)]
+                self.assertEqual(actual, expected)
 
         obj = [1, 2, 3]  # lists are not shareable
         with self.assertRaises(interpreters.NotShareableError):
@@ -267,29 +279,36 @@ class TestQueueOps(TestBase):
     def test_put_get_default_not_syncobj(self):
         expected = list(range(20))
         queue = queues.create(syncobj=False)
-        for i in range(20):
-            queue.put(i)
-        actual = [queue.get() for _ in range(20)]
+        for methname in ('get', 'get_nowait'):
+            with self.subTest(f'{methname}()'):
+                get = getattr(queue, methname)
 
-        self.assertEqual(actual, expected)
+                for i in range(20):
+                    queue.put(i)
+                actual = [get() for _ in range(20)]
+                self.assertEqual(actual, expected)
 
-        obj = [1, 2, 3]  # lists are not shareable
-        queue.put(obj)
-        obj2 = queue.get()
-        self.assertEqual(obj, obj2)
-        self.assertIsNot(obj, obj2)
+                obj = [1, 2, 3]  # lists are not shareable
+                queue.put(obj)
+                obj2 = get()
+                self.assertEqual(obj, obj2)
+                self.assertIsNot(obj, obj2)
 
     def test_put_get_same_interpreter(self):
         interp = interpreters.create()
         interp.exec(dedent("""
             from test.support.interpreters import queues
             queue = queues.create()
-            orig = b'spam'
-            queue.put(orig, syncobj=True)
-            obj = queue.get()
-            assert obj == orig, 'expected: obj == orig'
-            assert obj is not orig, 'expected: obj is not orig'
             """))
+        for methname in ('get', 'get_nowait'):
+            with self.subTest(f'{methname}()'):
+                interp.exec(dedent(f"""
+                    orig = b'spam'
+                    queue.put(orig, syncobj=True)
+                    obj = queue.{methname}()
+                    assert obj == orig, 'expected: obj == orig'
+                    assert obj is not orig, 'expected: obj is not orig'
+                    """))
 
     def test_put_get_different_interpreters(self):
         interp = interpreters.create()
@@ -297,34 +316,37 @@ class TestQueueOps(TestBase):
         queue2 = queues.create()
         self.assertEqual(len(queues.list_all()), 2)
 
-        obj1 = b'spam'
-        queue1.put(obj1, syncobj=True)
+        for methname in ('get', 'get_nowait'):
+            with self.subTest(f'{methname}()'):
+                obj1 = b'spam'
+                queue1.put(obj1, syncobj=True)
 
-        out = _run_output(
-            interp,
-            dedent(f"""
-                from test.support.interpreters import queues
-                queue1 = queues.Queue({queue1.id})
-                queue2 = queues.Queue({queue2.id})
-                assert queue1.qsize() == 1, 'expected: queue1.qsize() == 1'
-                obj = queue1.get()
-                assert queue1.qsize() == 0, 'expected: queue1.qsize() == 0'
-                assert obj == b'spam', 'expected: obj == obj1'
-                # When going to another interpreter we get a copy.
-                assert id(obj) != {id(obj1)}, 'expected: obj is not obj1'
-                obj2 = b'eggs'
-                print(id(obj2))
-                assert queue2.qsize() == 0, 'expected: queue2.qsize() == 0'
-                queue2.put(obj2, syncobj=True)
-                assert queue2.qsize() == 1, 'expected: queue2.qsize() == 1'
-                """))
-        self.assertEqual(len(queues.list_all()), 2)
-        self.assertEqual(queue1.qsize(), 0)
-        self.assertEqual(queue2.qsize(), 1)
+                out = _run_output(
+                    interp,
+                    dedent(f"""
+                        from test.support.interpreters import queues
+                        queue1 = queues.Queue({queue1.id})
+                        queue2 = queues.Queue({queue2.id})
+                        assert queue1.qsize() == 1, 'expected: queue1.qsize() == 1'
+                        obj = queue1.{methname}()
+                        assert queue1.qsize() == 0, 'expected: queue1.qsize() == 0'
+                        assert obj == b'spam', 'expected: obj == obj1'
+                        # When going to another interpreter we get a copy.
+                        assert id(obj) != {id(obj1)}, 'expected: obj is not obj1'
+                        obj2 = b'eggs'
+                        print(id(obj2))
+                        assert queue2.qsize() == 0, 'expected: queue2.qsize() == 0'
+                        queue2.put(obj2, syncobj=True)
+                        assert queue2.qsize() == 1, 'expected: queue2.qsize() == 1'
+                        """))
+                self.assertEqual(len(queues.list_all()), 2)
+                self.assertEqual(queue1.qsize(), 0)
+                self.assertEqual(queue2.qsize(), 1)
 
-        obj2 = queue2.get()
-        self.assertEqual(obj2, b'eggs')
-        self.assertNotEqual(id(obj2), int(out))
+                get = getattr(queue2, methname)
+                obj2 = get()
+                self.assertEqual(obj2, b'eggs')
+                self.assertNotEqual(id(obj2), int(out))
 
     def test_put_cleared_with_subinterpreter(self):
         interp = interpreters.create()

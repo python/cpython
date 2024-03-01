@@ -215,10 +215,15 @@ class Queue:
         is the same as get().
         """
         try:
-            return _queues.get(self._id)
+            obj, fmt = _queues.get(self._id)
         except _queues.QueueEmpty as exc:
             exc.__class__ = QueueEmpty
             raise  # re-raise
+        if fmt == _PICKLED:
+            obj = pickle.loads(obj)
+        else:
+            assert fmt == _SHARED_ONLY
+        return obj
 
 
 _queues._register_queue_type(Queue)
