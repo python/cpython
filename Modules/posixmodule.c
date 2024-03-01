@@ -9115,33 +9115,70 @@ os_setpgrp_impl(PyObject *module)
 #ifdef HAVE_GETPPID
 
 #ifdef MS_WINDOWS
-#include <processsnapshot.h>
+#include <winternl.h>
+
+// The structure definition in winternl.h may be incomplete.
+// This structure is the full version from the MSDN documentation.
+typedef struct _PROCESS_BASIC_INFORMATION_FULL {
+    NTSTATUS ExitStatus;
+    PVOID PebBaseAddress;
+    ULONG_PTR AffinityMask;
+    LONG BasePriority;
+    ULONG_PTR UniqueProcessId;
+    ULONG_PTR InheritedFromUniqueProcessId;
+} PROCESS_BASIC_INFORMATION_FULL;
 
 static PyObject*
 win32_getppid(void)
 {
-    DWORD error;
-    PyObject* result = NULL;
-    HANDLE process = GetCurrentProcess();
+    NTSTATUS Status;
+    PROCESS_BASIC_INFORMATION_FULL BasicInformation;
+    HMODULE Ntdll;
+    NTSTATUS (NTAPI *pNtQueryInformationProcess) (HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG);
 
-    HPSS snapshot = NULL;
-    error = PssCaptureSnapshot(process, PSS_CAPTURE_NONE, 0, &snapshot);
-    if (error != ERROR_SUCCESS) {
-        return PyErr_SetFromWindowsErr(error);
+    // A GetModuleHandle call with NTDLL as the parameter is guaranteed to succeed on
+    // all versions of Windows.
+    Ntdll = GetModuleHandleW(L"ntdll.dll");
+    pNtQueryInformationProcess = (NTSTATUS (NTAPI *)(HANDLE, PROCESSINFOCLASS, PVOID, ULONG, PULONG)) GetProcAddress(Ntdll, "NtQueryInformationProcess");
+
+    if (!pNtQueryInformationProcess) {
+        // This code is never going to be executed. It is just here as insurance.
+        return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    PSS_PROCESS_INFORMATION info;
-    error = PssQuerySnapshot(snapshot, PSS_QUERY_PROCESS_INFORMATION, &info,
-                             sizeof(info));
-    if (error == ERROR_SUCCESS) {
-        result = PyLong_FromUnsignedLong(info.ParentProcessId);
-    }
-    else {
-        result = PyErr_SetFromWindowsErr(error);
+    // The NtQueryInformationProcess system call, the ProcessBasicInformation info class
+    // and the PROCESS_BASIC_INFORMATION structure are all documented on MSDN.
+    Status = pNtQueryInformationProcess(
+        GetCurrentProcess(),
+        ProcessBasicInformation,
+        &BasicInformation,
+        sizeof(BasicInformation),
+        NULL);
+
+    // If the NtQueryInformationProcess fails for any reason (it should never fail given
+    // the parameters passed to it), we will convert the returned NTSTATUS error code into
+    // a normal Win32 error code.
+    if (!NT_SUCCESS(Status)) {
+        ULONG ErrorCode;
+        ULONG (NTAPI *pRtlNtStatusToDosError) (NTSTATUS);
+
+        pRtlNtStatusToDosError = (ULONG (NTAPI *) (NTSTATUS)) GetProcAddress(Ntdll, "RtlNtStatusToDosError");
+
+        if (!pRtlNtStatusToDosError) {
+            return PyErr_SetFromWindowsErr(GetLastError());
+        }
+
+        // Convert the NTSTATUS error code into a Win32 error code.
+        ErrorCode = pRtlNtStatusToDosError(Status);
+        return PyErr_SetFromWindowsErr(ErrorCode);
     }
 
-    PssFreeSnapshot(process, snapshot);
-    return result;
+    // Now that we have reached this point, the BasicInformation.InheritedFromUniqueProcessId
+    // structure member contains a ULONG_PTR which represents the process ID of our parent
+    // process. This process ID will be correctly returned even if the parent process has
+    // terminated.
+
+    return PyLong_FromUnsignedLong((ULONG) BasicInformation.InheritedFromUniqueProcessId);
 }
 #endif /*MS_WINDOWS*/
 
