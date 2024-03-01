@@ -9180,8 +9180,8 @@ win32_getppid_fast(void)
     //
 
     if (BasicInformation.InheritedFromUniqueProcessId == 0 ||
-        BasicInformation.InheritedFromUniqueProcessId >= ULONG_MAX) {
-
+        BasicInformation.InheritedFromUniqueProcessId >= ULONG_MAX)
+    {
         return 0;
     }
 
