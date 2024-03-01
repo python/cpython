@@ -5272,7 +5272,7 @@ class DSLParser:
         if not self.indent.infer(line):
             return self.next(self.state_function_docstring, line)
 
-        assert self.function
+        assert self.function is not None
         if self.function.kind in {GETTER, SETTER}:
             getset = self.function.kind.name.lower()
             fail(f"@{getset} methods cannot define parameters")
