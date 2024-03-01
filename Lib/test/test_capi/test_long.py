@@ -451,13 +451,13 @@ class LongTests(unittest.TestCase):
             (MAX_SSIZE, SZ),
             (MAX_USIZE, SZ + 1),
             (-MAX_SSIZE, SZ),
-            (-MAX_USIZE, SZ),
+            (-MAX_USIZE, SZ + 1),
             (2**255-1, 32),
             (-(2**255-1), 32),
             (2**255, 33),
-            (-(2**255), 32),    # edge case
+            (-(2**255), 33), # if you ask, we'll say 33, but 32 would do
             (2**256-1, 33),
-            (-(2**256-1), 32),  # edge case
+            (-(2**256-1), 33),
             (2**256, 33),
             (-(2**256), 33),
         ]:
@@ -498,16 +498,18 @@ class LongTests(unittest.TestCase):
             (-1,        b'\xff' * 10,           min(11, SZ)),
             (-42,       b'\xd6',                1),
             (-42,       b'\xff' * 10 + b'\xd6', min(11, SZ)),
-            # Extracts 255 into a single byte, but requests sizeof(Py_ssize_t)
-            (255,       b'\xff',                SZ),
+            # Extracts 255 into a single byte, but requests 2
+            # (this is currently a special case, and "should" request SZ)
+            (255,       b'\xff',                2),
             (255,       b'\x00\xff',            2),
             (256,       b'\x01\x00',            2),
+            (0x80,      b'\x00' * 7 + b'\x80',  8),
             # Extracts successfully (unsigned), but requests 9 bytes
             (2**63,     b'\x80' + b'\x00' * 7,  9),
             (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
-            # Extracts successfully and only requests 8 bytes
+            # Extracts into 8 bytes, but if you provide 9 we'll say 9
             (-2**63,    b'\x80' + b'\x00' * 7,  8),
-            (-2**63,    b'\xff\x80' + b'\x00' * 7, 8),
+            (-2**63,    b'\xff\x80' + b'\x00' * 7, 9),
 
             (2**255-1,      b'\x7f' + b'\xff' * 31,                 32),
             (-(2**255-1),   b'\x80' + b'\x00' * 30 + b'\x01',       32),
@@ -520,15 +522,18 @@ class LongTests(unittest.TestCase):
             # into a 32-byte buffer, though negative number may be unrecoverable
             (2**256-1,      b'\xff' * 32,                           33),
             (2**256-1,      b'\x00' + b'\xff' * 32,                 33),
-            # Negative 256 bits of integer will only request 32 bytes, since the
-            # top-most bit is the sign bit as well as the magnitude.
-            (-(2**256-1),   b'\x00' * 31 + b'\x01',                 32),
-            (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       32),
-            (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   32),
+            (-(2**256-1),   b'\x00' * 31 + b'\x01',                 33),
+            (-(2**256-1),   b'\xff' + b'\x00' * 31 + b'\x01',       33),
+            (-(2**256-1),   b'\xff\xff' + b'\x00' * 31 + b'\x01',   33),
+            # However, -2**255 precisely will extract into 32 bytes and return
+            # success. For bigger buffers, it will still succeed, but will
+            # return 33
+            (-(2**255),     b'\x80' + b'\x00' * 31,                 32),
+            (-(2**255),     b'\xff\x80' + b'\x00' * 31,             33),
 
             # The classic "Windows HRESULT as negative number" case
             #   HRESULT hr;
-            #   PyLong_CopyBits(<-2147467259>, &hr, sizeof(HRESULT))
+            #   PyLong_AsNativeBytes(<-2147467259>, &hr, sizeof(HRESULT), -1)
             #   assert(hr == E_FAIL)
             (-2147467259, b'\x80\x00\x40\x05', 4),
         ]:
@@ -553,6 +558,62 @@ class LongTests(unittest.TestCase):
             asnativebytes(1, buffer, 0, 2)
         with self.assertRaises(TypeError):
             asnativebytes('not a number', buffer, 0, -1)
+
+    def test_long_asnativebytes_fuzz(self):
+        import math
+        from random import Random
+        from _testcapi import (
+            pylong_asnativebytes as asnativebytes,
+            SIZE_MAX,
+        )
+
+        # Abbreviate sizeof(Py_ssize_t) to SZ because we use it a lot
+        SZ = int(math.ceil(math.log(SIZE_MAX + 1) / math.log(2)) / 8)
+
+        rng = Random()
+        buffer = bytearray(260)
+
+        for _ in range(1000):
+            n = rng.randrange(1, 256)
+            bytes_be = bytes([rng.randrange(1, 256)] + [rng.randrange(256) for _ in range(n - 1)])
+            bytes_le = bytes_be[::-1]
+            v = int.from_bytes(bytes_le, 'little')
+            # Allocate bigger buffer than actual value
+
+            expect_1 = expect_2 = (SZ, n)
+            if bytes_be[0] & 0x80:
+                # All values are positive, so if MSB is set, expect extra bit
+                # when we request the size or have a large enough buffer
+                expect_1 = (SZ, n + 1)
+                # When requesting exactly the right size, we expect the return
+                # to be exactly the right size.
+                #expect_2 = (n,)
+                # However, right now, the extra bit is still requested.
+                expect_2 = (n + 1,)
+
+            try:
+                actual = asnativebytes(v, buffer, 0, -1)
+                self.assertIn(actual, expect_1)
+
+                actual = asnativebytes(v, buffer, len(buffer), 0)
+                self.assertIn(actual, expect_1)
+                self.assertEqual(bytes_be, buffer[-n:])
+
+                actual = asnativebytes(v, buffer, len(buffer), 1)
+                self.assertIn(actual, expect_1)
+                self.assertEqual(bytes_le, buffer[:n])
+
+                actual = asnativebytes(v, buffer, n, 0)
+                self.assertIn(actual, expect_2)
+                actual = asnativebytes(v, buffer, n, 1)
+                self.assertIn(actual, expect_2)
+            except AssertionError:
+                if support.verbose:
+                    print()
+                    print(''.join(f'{b:02X}' for b in bytes_be))
+                    print(n, 'bytes')
+                    print('int =', v)
+                raise
 
     def test_long_fromnativebytes(self):
         import math

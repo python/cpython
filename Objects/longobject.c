@@ -1159,6 +1159,18 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
             /* If we fit, return the requested number of bytes */
             if (_fits_in_n_bits(cv.v, n * 8)) {
                 res = n;
+            } else if (cv.v > 0 && _fits_in_n_bits(cv.v, n * 8 + 1)) {
+                /* Positive values with the MSB set do not require an
+                 * additional bit when the caller's intent is to treat them
+                 * as unsigned. */
+                /* TODO: Disabled because we don't know the caller's intent
+                res = n;
+                 * Instead, we'll return n+1, which is more accurate than
+                 * res at this stage (which is just sizeof(size_t)),
+                 * and it's something we can test for to ensure this case
+                 * is being detected correctly.
+                 */
+                res = n + 1;
             }
         }
         else {
@@ -1206,11 +1218,47 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
          * multiples of 8 to the next byte, but we add an implied bit for
          * the sign and it cancels out. */
         res = (Py_ssize_t)(nb / 8) + 1;
-        /* The edge case of a negative value where the sign bit is at the
-         * MSB of one byte needs special handling to avoid requesting an
-         * extra byte, even though it could be properly represented. */
-        if (_PyLong_IsNegative(v) && !(nb % 8)) {
-            res -= 1;
+
+        /* Two edge cases exist that are best handled after extracting the
+         * bits. These may result in us reporting overflow when the value
+         * actually fits.
+         */
+        if (n > 0 && res > n && nb == n * 8) {
+            if (_PyLong_IsNegative(v)) {
+                /* Values of 0x80...00 from negative values that use every
+                 * available bit in the buffer do not require an additional
+                 * bit to store the sign. */
+                int is_edge_case = 1;
+                unsigned char *b = (unsigned char *)buffer;
+                for (Py_ssize_t i = 0; i < n && is_edge_case; ++i, ++b) {
+                    if (i == 0) {
+                        is_edge_case = (*b == (little_endian ? 0 : 0x80));
+                    } else if (i < n - 1) {
+                        is_edge_case = (*b == 0);
+                    } else {
+                        is_edge_case = (*b == (little_endian ? 0x80 : 0));
+                    }
+                }
+                if (is_edge_case) {
+                    res = n;
+                }
+            }
+            else {
+                /* Positive values with the MSB set do not require an
+                 * additional bit when the caller's intent is to treat them
+                 * as unsigned. */
+                unsigned char *b = (unsigned char *)buffer;
+                if (b[little_endian ? n - 1 : 0] & 0x80) {
+                    /* TODO: Disabled because we don't know the caller's intent
+                    res = n;
+                     * Instead, we'll return n+1, which is more accurate than
+                     * res at this stage (which might just be sizeof(size_t)),
+                     * and it's something we can test for to ensure this case
+                     * is being detected correctly.
+                     */
+                    res = n + 1;
+                }
+            }
         }
     }
 
