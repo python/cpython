@@ -31,48 +31,6 @@ get_list_freelist(void)
 }
 #endif
 
-static PyListObject *
-list_new_prealloc(Py_ssize_t size)
-{
-    PyListObject *op;
-    assert(size >= 0);
-#ifdef WITH_FREELISTS
-    struct _Py_list_freelist *list_freelist = get_list_freelist();
-    if (PyList_MAXFREELIST && list_freelist->numfree > 0) {
-        list_freelist->numfree--;
-        op = list_freelist->items[list_freelist->numfree];
-        OBJECT_STAT_INC(from_freelist);
-        _Py_NewReference((PyObject *)op);
-    }
-    else
-#endif
-    {
-        op = PyObject_GC_New(PyListObject, &PyList_Type);
-        if (op == NULL) {
-            return NULL;
-        }
-    }
-    if (size <= 0) {
-        op->ob_item = NULL;
-        op->allocated = 0;
-    }
-    else {
-        size_t capacity = size;
-        PyObject **items = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
-        if (items == NULL) {
-            op->ob_item = NULL;
-            Py_DECREF(op);
-            PyErr_NoMemory();
-            return NULL;
-        }
-        op->ob_item = items;
-        op->allocated = capacity;
-    }
-    Py_SET_SIZE(op, size);
-    _PyObject_GC_TRACK(op);
-    return op;
-}
-
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -193,18 +151,61 @@ _PyList_DebugMallocStats(FILE *out)
 PyObject *
 PyList_New(Py_ssize_t size)
 {
+    PyListObject *op;
+
     if (size < 0) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    PyListObject *op = list_new_prealloc(size);
-    if (op && op->ob_item) {
-        PyObject **items = op->ob_item;
-        for (Py_ssize_t i = 0, n = op->allocated; i < n; i++) {
-            FT_ATOMIC_STORE_PTR_RELEASE(items[i], NULL);
+
+#ifdef WITH_FREELISTS
+    struct _Py_list_freelist *list_freelist = get_list_freelist();
+    if (PyList_MAXFREELIST && list_freelist->numfree > 0) {
+        list_freelist->numfree--;
+        op = list_freelist->items[list_freelist->numfree];
+        OBJECT_STAT_INC(from_freelist);
+        _Py_NewReference((PyObject *)op);
+    }
+    else
+#endif
+    {
+        op = PyObject_GC_New(PyListObject, &PyList_Type);
+        if (op == NULL) {
+            return NULL;
         }
     }
-    return (PyObject *)op;
+    if (size <= 0) {
+        op->ob_item = NULL;
+    }
+    else {
+        op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+        if (op->ob_item == NULL) {
+            Py_DECREF(op);
+            return PyErr_NoMemory();
+        }
+    }
+    Py_SET_SIZE(op, size);
+    op->allocated = size;
+    _PyObject_GC_TRACK(op);
+    return (PyObject *) op;
+}
+
+static PyObject *
+list_new_prealloc(Py_ssize_t size)
+{
+    assert(size > 0);
+    PyListObject *op = (PyListObject *) PyList_New(0);
+    if (op == NULL) {
+        return NULL;
+    }
+    assert(op->ob_item == NULL);
+    op->ob_item = PyMem_New(PyObject *, size);
+    if (op->ob_item == NULL) {
+        Py_DECREF(op);
+        return PyErr_NoMemory();
+    }
+    op->allocated = size;
+    return (PyObject *) op;
 }
 
 Py_ssize_t
