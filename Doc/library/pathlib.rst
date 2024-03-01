@@ -572,6 +572,9 @@ Pure paths provide the following methods and properties:
       >>> PurePath('/a/b/c.py').full_match('**/*.py')
       True
 
+   .. seealso::
+      :ref:`pathlib-pattern-language` documentation.
+
    As with other methods, case-sensitivity follows platform defaults::
 
       >>> PurePosixPath('b.py').full_match('*.PY')
@@ -991,11 +994,6 @@ call fails (for example because the path doesn't exist).
       [PosixPath('pathlib.py'), PosixPath('setup.py'), PosixPath('test_pathlib.py')]
       >>> sorted(Path('.').glob('*/*.py'))
       [PosixPath('docs/conf.py')]
-
-   Patterns are the same as for :mod:`fnmatch`, with the addition of "``**``"
-   which means "this directory and all subdirectories, recursively".  In other
-   words, it enables recursive globbing::
-
       >>> sorted(Path('.').glob('**/*.py'))
       [PosixPath('build/lib/pathlib.py'),
        PosixPath('docs/conf.py'),
@@ -1003,13 +1001,8 @@ call fails (for example because the path doesn't exist).
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
 
-   .. note::
-      Using the "``**``" pattern in large directory trees may consume
-      an inordinate amount of time.
-
-   .. tip::
-      Set *follow_symlinks* to ``True`` or ``False`` to improve performance
-      of recursive globbing.
+   .. seealso::
+      :ref:`pathlib-pattern-language` documentation.
 
    This method calls :meth:`Path.is_dir` on the top-level directory and
    propagates any :exc:`OSError` exception that is raised. Subsequent
@@ -1025,11 +1018,11 @@ call fails (for example because the path doesn't exist).
    wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
    ``False`` to treat all symlinks as files.
 
-   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
+   .. tip::
+      Set *follow_symlinks* to ``True`` or ``False`` to improve performance
+      of recursive globbing.
 
-   .. versionchanged:: 3.11
-      Return only directories if *pattern* ends with a pathname components
-      separator (:data:`~os.sep` or :data:`~os.altsep`).
+   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
 
    .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
@@ -1038,11 +1031,28 @@ call fails (for example because the path doesn't exist).
       The *follow_symlinks* parameter was added.
 
    .. versionchanged:: 3.13
-      Return files and directories if *pattern* ends with "``**``". In
-      previous versions, only directories were returned.
+      The *pattern* parameter accepts a :term:`path-like object`.
+
+
+.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
+
+   Glob the given relative *pattern* recursively.  This is like calling
+   :func:`Path.glob` with "``**/``" added in front of the *pattern*.
+
+   .. seealso::
+      :ref:`pathlib-pattern-language` and :meth:`Path.glob` documentation.
+
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
+
+   .. versionchanged:: 3.12
+      The *case_sensitive* parameter was added.
+
+   .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
 
    .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
+
 
 .. method:: Path.group(*, follow_symlinks=True)
 
@@ -1471,44 +1481,6 @@ call fails (for example because the path doesn't exist).
       strict mode, and no exception is raised in non-strict mode. In previous
       versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
 
-.. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
-
-   Glob the given relative *pattern* recursively.  This is like calling
-   :func:`Path.glob` with "``**/``" added in front of the *pattern*, where
-   *patterns* are the same as for :mod:`fnmatch`::
-
-      >>> sorted(Path().rglob("*.py"))
-      [PosixPath('build/lib/pathlib.py'),
-       PosixPath('docs/conf.py'),
-       PosixPath('pathlib.py'),
-       PosixPath('setup.py'),
-       PosixPath('test_pathlib.py')]
-
-   By default, or when the *case_sensitive* keyword-only argument is set to
-   ``None``, this method matches paths using platform-specific casing rules:
-   typically, case-sensitive on POSIX, and case-insensitive on Windows.
-   Set *case_sensitive* to ``True`` or ``False`` to override this behaviour.
-
-   By default, or when the *follow_symlinks* keyword-only argument is set to
-   ``None``, this method follows symlinks except when expanding "``**``"
-   wildcards. Set *follow_symlinks* to ``True`` to always follow symlinks, or
-   ``False`` to treat all symlinks as files.
-
-   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
-
-   .. versionchanged:: 3.11
-      Return only directories if *pattern* ends with a pathname components
-      separator (:data:`~os.sep` or :data:`~os.altsep`).
-
-   .. versionchanged:: 3.12
-      The *case_sensitive* parameter was added.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
-
-   .. versionchanged:: 3.13
-      The *pattern* parameter accepts a :term:`path-like object`.
-
 .. method:: Path.rmdir()
 
    Remove this directory.  The directory must be empty.
@@ -1638,6 +1610,81 @@ call fails (for example because the path doesn't exist).
 
    .. versionchanged:: 3.10
       The *newline* parameter was added.
+
+
+.. _pathlib-pattern-language:
+
+Pattern language
+----------------
+
+The following wildcards are supported in patterns for
+:meth:`~PurePath.full_match`, :meth:`~Path.glob` and :meth:`~Path.rglob`:
+
+``**`` (entire segment)
+  Matches any number of file or directory segments, including zero.
+``*`` (entire segment)
+  Matches one file or directory segment.
+``*`` (part of a segment)
+  Matches any number of non-separator characters, including zero.
+``?``
+  Matches one non-separator character.
+``[seq]``
+  Matches one character in *seq*.
+``[!seq]``
+  Matches one character not in *seq*.
+
+For a literal match, wrap the meta-characters in brackets.
+For example, ``"[?]"`` matches the character ``"?"``.
+
+The "``**``" wildcard enables recursive globbing. A few examples:
+
+=========================  ===========================================
+Pattern                    Meaning
+=========================  ===========================================
+"``**/*``"                 Any path with at least one segment.
+"``**/*.py``"              Any path with a final segment ending "``.py``".
+"``assets/**``"            Any path starting with "``assets/``".
+"``assets/**/*``"          Any path starting with "``assets/``", excluding "``assets/``" itself.
+=========================  ===========================================
+
+.. note::
+   Globbing with the "``**``" wildcard visits every directory in the tree.
+   Large directory trees may take a long time to search.
+
+.. versionchanged:: 3.13
+   Globbing with a pattern that ends with "``**``" returns both files and
+   directories. In previous versions, only directories were returned.
+
+In :meth:`Path.glob` and :meth:`~Path.rglob`, a trailing slash may be added to
+the pattern to match only directories.
+
+.. versionchanged:: 3.11
+   Globbing with a pattern that ends with a pathname components separator
+   (:data:`~os.sep` or :data:`~os.altsep`) returns only directories.
+
+
+Comparison to the :mod:`glob` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The patterns accepted and results generated by :meth:`Path.glob` and
+:meth:`Path.rglob` differ slightly from those by the :mod:`glob` module:
+
+1. Files beginning with a dot are not special in pathlib. This is
+   like passing ``include_hidden=True`` to :func:`glob.glob`.
+2. "``**``" pattern components are always recursive in pathlib. This is like
+   passing ``recursive=True`` to :func:`glob.glob`.
+3. "``**``" pattern components do not follow symlinks by default in pathlib.
+   This behaviour has no equivalent in :func:`glob.glob`, but you can pass
+   ``follow_symlinks=True`` to :meth:`Path.glob` for compatible behaviour.
+4. Like all :class:`PurePath` and :class:`Path` objects, the values returned
+   from :meth:`Path.glob` and :meth:`Path.rglob` don't include trailing
+   slashes.
+5. The values returned from pathlib's ``path.glob()`` and ``path.rglob()``
+   include the *path* as a prefix, unlike the results of
+   ``glob.glob(root_dir=path)``.
+6. ``bytes``-based paths and :ref:`paths relative to directory descriptors
+   <dir_fd>` are not supported by pathlib.
+
 
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------

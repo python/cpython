@@ -4,10 +4,11 @@ import sys
 import textwrap
 import unittest
 import gc
+import os
 
 import _testinternalcapi
 
-from test.support import script_helper
+from test.support import script_helper, requires_specialization
 
 
 @contextlib.contextmanager
@@ -30,6 +31,7 @@ def clear_executors(func):
         func.__code__ = func.__code__.replace()
 
 
+@requires_specialization
 class TestOptimizerAPI(unittest.TestCase):
 
     def test_new_counter_optimizer_dealloc(self):
@@ -132,6 +134,7 @@ def get_opnames(ex):
     return set(iter_opnames(ex))
 
 
+@requires_specialization
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -209,6 +212,9 @@ class TestExecutorInvalidation(unittest.TestCase):
         exe = get_first_executor(f)
         self.assertIsNone(exe)
 
+
+@requires_specialization
+@unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
@@ -568,6 +574,9 @@ class TestUops(unittest.TestCase):
         count = ops.count("_GUARD_IS_TRUE_POP") + ops.count("_GUARD_IS_FALSE_POP")
         self.assertLessEqual(count, 2)
 
+
+@requires_specialization
+@unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
 
     def _run_with_optimizer(self, testfunc, arg):
@@ -886,6 +895,37 @@ class TestUopsOptimization(unittest.TestCase):
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_UNICODE"]
         self.assertLessEqual(len(guard_both_float_count), 1)
         self.assertIn("_COMPARE_OP_STR", uops)
+
+    def test_type_inconsistency(self):
+        ns = {}
+        src = textwrap.dedent("""
+            def testfunc(n):
+                for i in range(n):
+                    x = _test_global + _test_global
+        """)
+        exec(src, ns, ns)
+        testfunc = ns['testfunc']
+        ns['_test_global'] = 0
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNone(ex)
+        ns['_test_global'] = 1
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_BOTH_INT", uops)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        # Try again, but between the runs, set the global to a float.
+        # This should result in no executor the second time.
+        ns = {}
+        exec(src, ns, ns)
+        testfunc = ns['testfunc']
+        ns['_test_global'] = 0
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNone(ex)
+        ns['_test_global'] = 3.14
+        _, ex = self._run_with_optimizer(testfunc, 16)
+        self.assertIsNone(ex)
+
 
 if __name__ == "__main__":
     unittest.main()

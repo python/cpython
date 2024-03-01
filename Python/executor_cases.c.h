@@ -1856,11 +1856,11 @@
         case _CHECK_ATTR_MODULE: {
             PyObject *owner;
             owner = stack_pointer[-1];
-            uint32_t type_version = (uint32_t)CURRENT_OPERAND();
+            uint32_t dict_version = (uint32_t)CURRENT_OPERAND();
             if (!PyModule_CheckExact(owner)) goto deoptimize;
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
-            if (dict->ma_keys->dk_version != type_version) goto deoptimize;
+            if (dict->ma_keys->dk_version != dict_version) goto deoptimize;
             break;
         }
 
@@ -2548,7 +2548,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2591,7 +2591,7 @@
                 GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -3570,9 +3570,9 @@
             PyObject *result;
             oparg = CURRENT_OPARG();
             value = stack_pointer[-1];
-            convertion_func_ptr  conv_fn;
+            conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
-            conv_fn = CONVERSION_FUNCTIONS[oparg];
+            conv_fn = _PyEval_ConversionFuncs[oparg];
             result = conv_fn(value);
             Py_DECREF(value);
             if (result == NULL) goto pop_1_error_tier_two;
@@ -3716,7 +3716,6 @@
 
         case _SET_IP: {
             PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }
@@ -3733,13 +3732,11 @@
         }
 
         case _EXIT_TRACE: {
-            TIER_TWO_ONLY
             if (1) goto side_exit;
             break;
         }
 
         case _CHECK_VALIDITY: {
-            TIER_TWO_ONLY
             if (!current_executor->vm_data.valid) goto deoptimize;
             break;
         }
@@ -3747,7 +3744,6 @@
         case _LOAD_CONST_INLINE: {
             PyObject *value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             value = Py_NewRef(ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -3757,10 +3753,20 @@
         case _LOAD_CONST_INLINE_BORROW: {
             PyObject *value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             value = ptr;
             stack_pointer[0] = value;
             stack_pointer += 1;
+            break;
+        }
+
+        case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
+            PyObject *pop;
+            PyObject *value;
+            pop = stack_pointer[-1];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND();
+            Py_DECREF(pop);
+            value = ptr;
+            stack_pointer[-1] = value;
             break;
         }
 
@@ -3768,7 +3774,6 @@
             PyObject *value;
             PyObject *null;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             value = Py_NewRef(ptr);
             null = NULL;
             stack_pointer[0] = value;
@@ -3781,7 +3786,6 @@
             PyObject *value;
             PyObject *null;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             value = ptr;
             null = NULL;
             stack_pointer[0] = value;
@@ -3792,14 +3796,12 @@
 
         case _CHECK_GLOBALS: {
             PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             if (GLOBALS() != dict) goto deoptimize;
             break;
         }
 
         case _CHECK_BUILTINS: {
             PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             if (BUILTINS() != dict) goto deoptimize;
             break;
         }
@@ -3815,7 +3817,6 @@
 
         case _COLD_EXIT: {
             oparg = CURRENT_OPARG();
-            TIER_TWO_ONLY
             _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
             _PyExitData *exit = &previous->exits[oparg];
             exit->temperature++;
@@ -3851,7 +3852,6 @@
 
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             Py_DECREF(tstate->previous_executor);
             tstate->previous_executor = NULL;
             #ifndef _Py_JIT
@@ -3861,7 +3861,6 @@
         }
 
         case _FATAL_ERROR: {
-            TIER_TWO_ONLY
             assert(0);
             Py_FatalError("Fatal error uop executed.");
             break;
@@ -3869,7 +3868,6 @@
 
         case _CHECK_VALIDITY_AND_SET_IP: {
             PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
-            TIER_TWO_ONLY
             if (!current_executor->vm_data.valid) goto deoptimize;
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
