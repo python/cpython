@@ -658,8 +658,27 @@ def add_super(
                 continue
             operand_uses.add(cache_name)
     if len(operand_uses) > 1:
-        analysis_error(f"Uop super {super.name}'s cache entry cannot fit in one operand.")
+        analysis_error(f"Uop super {super.name}'s cache entry cannot fit in one operand.", super.tokens[0])
+
     add_instruction(super.name, parts, super_uops)
+
+    replicates_count = [p.replicated for p in parts if p.replicated != 0]
+    if len(set(replicates_count)) > 1:
+        analysis_error(f"Uop super {super.name}'s replicates are not all the same count: {replicates_count}", super.tokens[0])
+
+    if replicates_count:
+        replicate_count = replicates_count[0]
+        for i in range(replicate_count):
+            res = []
+            for part in parts:
+                if part.replicated > 0:
+                    assert part.replicated == replicate_count
+                    res.append(uops[part.name + f"_{i}"])
+                else:
+                    res.append(part)
+            add_instruction(super.name + f"_{i}", res, super_uops)
+
+
 
 def add_family(
     pfamily: parser.Family,

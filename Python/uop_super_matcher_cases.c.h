@@ -80,6 +80,41 @@
                 this_instr += 5;
                 break;
             }
+            if ((this_instr[1].opcode == _INIT_CALL_BOUND_METHOD_EXACT_ARGS) && (this_instr[2].opcode == _CHECK_FUNCTION_EXACT_ARGS_0) && (this_instr[3].opcode == _CHECK_STACK_SPACE_0) && (this_instr[4].opcode == _INIT_CALL_PY_EXACT_ARGS_0)) {
+                DPRINTF(2, "Inserting super _CALL_BOUND_METHOD_EXACT_ARGS_0\n");
+                REPLACE_OP(this_instr, _CALL_BOUND_METHOD_EXACT_ARGS_0, this_instr[1].oparg, this_instr[2].operand);
+                for (int i = 1; i < 5; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 5;
+                break;
+            }
+            if ((this_instr[1].opcode == _INIT_CALL_BOUND_METHOD_EXACT_ARGS) && (this_instr[2].opcode == _CHECK_FUNCTION_EXACT_ARGS_1) && (this_instr[3].opcode == _CHECK_STACK_SPACE_1) && (this_instr[4].opcode == _INIT_CALL_PY_EXACT_ARGS_1)) {
+                DPRINTF(2, "Inserting super _CALL_BOUND_METHOD_EXACT_ARGS_1\n");
+                REPLACE_OP(this_instr, _CALL_BOUND_METHOD_EXACT_ARGS_1, this_instr[1].oparg, this_instr[2].operand);
+                for (int i = 1; i < 5; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 5;
+                break;
+            }
+            if ((this_instr[1].opcode == _INIT_CALL_BOUND_METHOD_EXACT_ARGS) && (this_instr[2].opcode == _CHECK_FUNCTION_EXACT_ARGS_2) && (this_instr[3].opcode == _CHECK_STACK_SPACE_2) && (this_instr[4].opcode == _INIT_CALL_PY_EXACT_ARGS_2)) {
+                DPRINTF(2, "Inserting super _CALL_BOUND_METHOD_EXACT_ARGS_2\n");
+                REPLACE_OP(this_instr, _CALL_BOUND_METHOD_EXACT_ARGS_2, this_instr[1].oparg, this_instr[2].operand);
+                for (int i = 1; i < 5; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 5;
+                break;
+            }
+            if ((this_instr[1].opcode == _INIT_CALL_BOUND_METHOD_EXACT_ARGS) && (this_instr[2].opcode == _CHECK_FUNCTION_EXACT_ARGS_3) && (this_instr[3].opcode == _CHECK_STACK_SPACE_3) && (this_instr[4].opcode == _INIT_CALL_PY_EXACT_ARGS_3)) {
+                DPRINTF(2, "Inserting super _CALL_BOUND_METHOD_EXACT_ARGS_3\n");
+                REPLACE_OP(this_instr, _CALL_BOUND_METHOD_EXACT_ARGS_3, this_instr[1].oparg, this_instr[2].operand);
+                for (int i = 1; i < 5; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 5;
+                break;
+            }
+            if ((this_instr[1].opcode == _INIT_CALL_BOUND_METHOD_EXACT_ARGS) && (this_instr[2].opcode == _CHECK_FUNCTION_EXACT_ARGS_4) && (this_instr[3].opcode == _CHECK_STACK_SPACE_4) && (this_instr[4].opcode == _INIT_CALL_PY_EXACT_ARGS_4)) {
+                DPRINTF(2, "Inserting super _CALL_BOUND_METHOD_EXACT_ARGS_4\n");
+                REPLACE_OP(this_instr, _CALL_BOUND_METHOD_EXACT_ARGS_4, this_instr[1].oparg, this_instr[2].operand);
+                for (int i = 1; i < 5; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 5;
+                break;
+            }
             this_instr += 1;
             break;
         }
@@ -88,6 +123,66 @@
             if ((this_instr[1].opcode == _CHECK_STACK_SPACE) && (this_instr[2].opcode == _INIT_CALL_PY_EXACT_ARGS)) {
                 DPRINTF(2, "Inserting super _CHECK_CALL_PY_EXACT_ARGS\n");
                 REPLACE_OP(this_instr, _CHECK_CALL_PY_EXACT_ARGS, this_instr[2].oparg, this_instr[0].operand);
+                for (int i = 1; i < 3; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 3;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_0: {
+            if ((this_instr[1].opcode == _CHECK_STACK_SPACE_0) && (this_instr[2].opcode == _INIT_CALL_PY_EXACT_ARGS_0)) {
+                DPRINTF(2, "Inserting super _CHECK_CALL_PY_EXACT_ARGS_0\n");
+                REPLACE_OP(this_instr, _CHECK_CALL_PY_EXACT_ARGS_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 3; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 3;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_1: {
+            if ((this_instr[1].opcode == _CHECK_STACK_SPACE_1) && (this_instr[2].opcode == _INIT_CALL_PY_EXACT_ARGS_1)) {
+                DPRINTF(2, "Inserting super _CHECK_CALL_PY_EXACT_ARGS_1\n");
+                REPLACE_OP(this_instr, _CHECK_CALL_PY_EXACT_ARGS_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 3; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 3;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_2: {
+            if ((this_instr[1].opcode == _CHECK_STACK_SPACE_2) && (this_instr[2].opcode == _INIT_CALL_PY_EXACT_ARGS_2)) {
+                DPRINTF(2, "Inserting super _CHECK_CALL_PY_EXACT_ARGS_2\n");
+                REPLACE_OP(this_instr, _CHECK_CALL_PY_EXACT_ARGS_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 3; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 3;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_3: {
+            if ((this_instr[1].opcode == _CHECK_STACK_SPACE_3) && (this_instr[2].opcode == _INIT_CALL_PY_EXACT_ARGS_3)) {
+                DPRINTF(2, "Inserting super _CHECK_CALL_PY_EXACT_ARGS_3\n");
+                REPLACE_OP(this_instr, _CHECK_CALL_PY_EXACT_ARGS_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 3; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 3;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_4: {
+            if ((this_instr[1].opcode == _CHECK_STACK_SPACE_4) && (this_instr[2].opcode == _INIT_CALL_PY_EXACT_ARGS_4)) {
+                DPRINTF(2, "Inserting super _CHECK_CALL_PY_EXACT_ARGS_4\n");
+                REPLACE_OP(this_instr, _CHECK_CALL_PY_EXACT_ARGS_4, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 3; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 3;
                 break;

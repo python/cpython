@@ -497,6 +497,26 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
 }
 
 static void
+replicate_and_split(_PyUOpInstruction *buffer, int buffer_size)
+{
+    /* Fix up */
+    for (int pc = 0; pc < buffer_size; pc++) {
+        int opcode = buffer[pc].opcode;
+        int oparg = buffer[pc].oparg;
+        if (_PyUop_Flags[opcode] & HAS_OPARG_AND_1_FLAG) {
+            buffer[pc].opcode = opcode + 1 + (oparg & 1);
+        }
+        else if (oparg < _PyUop_Replication[opcode]) {
+            buffer[pc].opcode = opcode + oparg + 1;
+        }
+        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+            break;
+        }
+        assert(_PyOpcode_uop_name[buffer[pc].opcode]);
+    }
+}
+
+static void
 match_supers(_PyUOpInstruction *buffer, int buffer_size)
 {
     _PyUOpInstruction *end = buffer + buffer_size;
@@ -544,6 +564,7 @@ _Py_uop_analyze_and_optimize(
     assert(err == 1);
 
     remove_unneeded_uops(buffer, buffer_size);
+    replicate_and_split(buffer, buffer_size);
     match_supers(buffer, buffer_size);
 
     OPT_STAT_INC(optimizer_successes);

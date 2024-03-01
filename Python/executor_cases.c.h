@@ -2816,6 +2816,86 @@
             break;
         }
 
+        case _CHECK_FUNCTION_EXACT_ARGS_0: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            oparg = 0;
+            assert(oparg == CURRENT_OPARG());
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            if (!PyFunction_Check(callable)) goto deoptimize;
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            if (func->func_version != func_version) goto deoptimize;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_1: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            oparg = 1;
+            assert(oparg == CURRENT_OPARG());
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            if (!PyFunction_Check(callable)) goto deoptimize;
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            if (func->func_version != func_version) goto deoptimize;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_2: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            oparg = 2;
+            assert(oparg == CURRENT_OPARG());
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            if (!PyFunction_Check(callable)) goto deoptimize;
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            if (func->func_version != func_version) goto deoptimize;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_3: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            oparg = 3;
+            assert(oparg == CURRENT_OPARG());
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            if (!PyFunction_Check(callable)) goto deoptimize;
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            if (func->func_version != func_version) goto deoptimize;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_FUNCTION_EXACT_ARGS_4: {
+            PyObject *self_or_null;
+            PyObject *callable;
+            oparg = 4;
+            assert(oparg == CURRENT_OPARG());
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            if (!PyFunction_Check(callable)) goto deoptimize;
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            if (func->func_version != func_version) goto deoptimize;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            break;
+        }
+
         case _CHECK_FUNCTION_EXACT_ARGS: {
             PyObject *self_or_null;
             PyObject *callable;
@@ -2831,6 +2911,66 @@
             break;
         }
 
+        case _CHECK_STACK_SPACE_0: {
+            PyObject *callable;
+            oparg = 0;
+            assert(oparg == CURRENT_OPARG());
+            callable = stack_pointer[-2 - oparg];
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+            if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_STACK_SPACE_1: {
+            PyObject *callable;
+            oparg = 1;
+            assert(oparg == CURRENT_OPARG());
+            callable = stack_pointer[-2 - oparg];
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+            if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_STACK_SPACE_2: {
+            PyObject *callable;
+            oparg = 2;
+            assert(oparg == CURRENT_OPARG());
+            callable = stack_pointer[-2 - oparg];
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+            if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_STACK_SPACE_3: {
+            PyObject *callable;
+            oparg = 3;
+            assert(oparg == CURRENT_OPARG());
+            callable = stack_pointer[-2 - oparg];
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+            if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            break;
+        }
+
+        case _CHECK_STACK_SPACE_4: {
+            PyObject *callable;
+            oparg = 4;
+            assert(oparg == CURRENT_OPARG());
+            callable = stack_pointer[-2 - oparg];
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+            if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            break;
+        }
+
         case _CHECK_STACK_SPACE: {
             PyObject *callable;
             oparg = CURRENT_OPARG();
@@ -2839,6 +2979,136 @@
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
             if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS_0: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            _PyInterpreterFrame *new_frame;
+            oparg = 0;
+            assert(oparg == CURRENT_OPARG());
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int argcount = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                argcount++;
+            }
+            STAT_INC(CALL, hit);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = args[i];
+            }
+            stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+            stack_pointer += -1 - oparg;
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS_1: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            _PyInterpreterFrame *new_frame;
+            oparg = 1;
+            assert(oparg == CURRENT_OPARG());
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int argcount = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                argcount++;
+            }
+            STAT_INC(CALL, hit);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = args[i];
+            }
+            stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+            stack_pointer += -1 - oparg;
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS_2: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            _PyInterpreterFrame *new_frame;
+            oparg = 2;
+            assert(oparg == CURRENT_OPARG());
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int argcount = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                argcount++;
+            }
+            STAT_INC(CALL, hit);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = args[i];
+            }
+            stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+            stack_pointer += -1 - oparg;
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS_3: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            _PyInterpreterFrame *new_frame;
+            oparg = 3;
+            assert(oparg == CURRENT_OPARG());
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int argcount = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                argcount++;
+            }
+            STAT_INC(CALL, hit);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = args[i];
+            }
+            stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+            stack_pointer += -1 - oparg;
+            break;
+        }
+
+        case _INIT_CALL_PY_EXACT_ARGS_4: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            _PyInterpreterFrame *new_frame;
+            oparg = 4;
+            assert(oparg == CURRENT_OPARG());
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int argcount = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                argcount++;
+            }
+            STAT_INC(CALL, hit);
+            PyFunctionObject *func = (PyFunctionObject *)callable;
+            new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+            for (int i = 0; i < argcount; i++) {
+                new_frame->localsplus[i] = args[i];
+            }
+            stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -4017,6 +4287,411 @@
             break;
         }
 
+        case _CALL_BOUND_METHOD_EXACT_ARGS_0: {
+            // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *null;
+                PyObject *callable;
+                oparg = CURRENT_OPARG();
+                null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                if (null != NULL) goto deoptimize;
+                if (Py_TYPE(callable) != &PyMethod_Type) goto deoptimize;
+            }
+            // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *callable;
+                PyObject *func;
+                PyObject *self;
+                oparg = CURRENT_OPARG();
+                callable = stack_pointer[-2 - oparg];
+                STAT_INC(CALL, hit);
+                self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+                func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+                stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+                Py_DECREF(callable);
+                stack_pointer[-2 - oparg] = func;
+                stack_pointer[-1 - oparg] = self;
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS_0
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_0
+            {
+                PyObject *callable;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_0
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CALL_BOUND_METHOD_EXACT_ARGS_1: {
+            // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *null;
+                PyObject *callable;
+                oparg = CURRENT_OPARG();
+                null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                if (null != NULL) goto deoptimize;
+                if (Py_TYPE(callable) != &PyMethod_Type) goto deoptimize;
+            }
+            // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *callable;
+                PyObject *func;
+                PyObject *self;
+                oparg = CURRENT_OPARG();
+                callable = stack_pointer[-2 - oparg];
+                STAT_INC(CALL, hit);
+                self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+                func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+                stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+                Py_DECREF(callable);
+                stack_pointer[-2 - oparg] = func;
+                stack_pointer[-1 - oparg] = self;
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS_1
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_1
+            {
+                PyObject *callable;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_1
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CALL_BOUND_METHOD_EXACT_ARGS_2: {
+            // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *null;
+                PyObject *callable;
+                oparg = CURRENT_OPARG();
+                null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                if (null != NULL) goto deoptimize;
+                if (Py_TYPE(callable) != &PyMethod_Type) goto deoptimize;
+            }
+            // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *callable;
+                PyObject *func;
+                PyObject *self;
+                oparg = CURRENT_OPARG();
+                callable = stack_pointer[-2 - oparg];
+                STAT_INC(CALL, hit);
+                self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+                func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+                stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+                Py_DECREF(callable);
+                stack_pointer[-2 - oparg] = func;
+                stack_pointer[-1 - oparg] = self;
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS_2
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_2
+            {
+                PyObject *callable;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_2
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CALL_BOUND_METHOD_EXACT_ARGS_3: {
+            // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *null;
+                PyObject *callable;
+                oparg = CURRENT_OPARG();
+                null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                if (null != NULL) goto deoptimize;
+                if (Py_TYPE(callable) != &PyMethod_Type) goto deoptimize;
+            }
+            // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *callable;
+                PyObject *func;
+                PyObject *self;
+                oparg = CURRENT_OPARG();
+                callable = stack_pointer[-2 - oparg];
+                STAT_INC(CALL, hit);
+                self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+                func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+                stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+                Py_DECREF(callable);
+                stack_pointer[-2 - oparg] = func;
+                stack_pointer[-1 - oparg] = self;
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS_3
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_3
+            {
+                PyObject *callable;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_3
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CALL_BOUND_METHOD_EXACT_ARGS_4: {
+            // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *null;
+                PyObject *callable;
+                oparg = CURRENT_OPARG();
+                null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                if (null != NULL) goto deoptimize;
+                if (Py_TYPE(callable) != &PyMethod_Type) goto deoptimize;
+            }
+            // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
+            {
+                PyObject *callable;
+                PyObject *func;
+                PyObject *self;
+                oparg = CURRENT_OPARG();
+                callable = stack_pointer[-2 - oparg];
+                STAT_INC(CALL, hit);
+                self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+                stack_pointer[-1 - oparg] = self;  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+                func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+                stack_pointer[-2 - oparg] = func;  // This is used by CALL, upon deoptimization
+                Py_DECREF(callable);
+                stack_pointer[-2 - oparg] = func;
+                stack_pointer[-1 - oparg] = self;
+            }
+            // _CHECK_FUNCTION_EXACT_ARGS_4
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_4
+            {
+                PyObject *callable;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_4
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
         case _CHECK_CALL_PY_EXACT_ARGS: {
             // _CHECK_FUNCTION_EXACT_ARGS
             {
@@ -4049,6 +4724,281 @@
                 PyObject *callable;
                 _PyInterpreterFrame *new_frame;
                 oparg = CURRENT_OPARG();
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CHECK_CALL_PY_EXACT_ARGS_0: {
+            // _CHECK_FUNCTION_EXACT_ARGS_0
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_0
+            {
+                PyObject *callable;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_0
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CHECK_CALL_PY_EXACT_ARGS_1: {
+            // _CHECK_FUNCTION_EXACT_ARGS_1
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_1
+            {
+                PyObject *callable;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_1
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CHECK_CALL_PY_EXACT_ARGS_2: {
+            // _CHECK_FUNCTION_EXACT_ARGS_2
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_2
+            {
+                PyObject *callable;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_2
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CHECK_CALL_PY_EXACT_ARGS_3: {
+            // _CHECK_FUNCTION_EXACT_ARGS_3
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_3
+            {
+                PyObject *callable;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_3
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                args = &stack_pointer[-oparg];
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                int argcount = oparg;
+                if (self_or_null != NULL) {
+                    args--;
+                    argcount++;
+                }
+                STAT_INC(CALL, hit);
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
+                for (int i = 0; i < argcount; i++) {
+                    new_frame->localsplus[i] = args[i];
+                }
+                stack_pointer[-2 - oparg] = (PyObject *)new_frame;
+                stack_pointer += -1 - oparg;
+            }
+            break;
+        }
+
+        case _CHECK_CALL_PY_EXACT_ARGS_4: {
+            // _CHECK_FUNCTION_EXACT_ARGS_4
+            {
+                PyObject *self_or_null;
+                PyObject *callable;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
+                self_or_null = stack_pointer[-1 - oparg];
+                callable = stack_pointer[-2 - oparg];
+                uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+                if (!PyFunction_Check(callable)) goto deoptimize;
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                if (func->func_version != func_version) goto deoptimize;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            }
+            // _CHECK_STACK_SPACE_4
+            {
+                PyObject *callable;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
+                callable = stack_pointer[-2 - oparg];
+                PyFunctionObject *func = (PyFunctionObject *)callable;
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
+                if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            }
+            // _INIT_CALL_PY_EXACT_ARGS_4
+            {
+                PyObject **args;
+                PyObject *self_or_null;
+                PyObject *callable;
+                _PyInterpreterFrame *new_frame;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
                 args = &stack_pointer[-oparg];
                 self_or_null = stack_pointer[-1 - oparg];
                 callable = stack_pointer[-2 - oparg];
