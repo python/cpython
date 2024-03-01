@@ -54,13 +54,11 @@ def generate_tier2(
             continue
         first_uops[first_uop.name] = [super_uop]
     for first_uop_name, sub_op in first_uops.items():
-        depth = 0
         out.emit(f"case {first_uop_name}: ")
         out.emit("{\n")
-        depth += 1
         for super_uop in sub_op:
-            middle_uops = super_uop.parts[1:-1]
-            last_uop = super_uop.parts[-1]
+            depth = 0
+            rest_uops = super_uop.parts[1:]
 
             oparg = 0
             operand = 0
@@ -70,25 +68,18 @@ def generate_tier2(
                 if len(part.caches) > 0 and part.caches[0] != "unused":
                     operand = idx
 
-            for part in middle_uops:
-                out.emit(f"switch (this_instr[{depth}].opcode) {{\n")
-                out.emit(f"case {part.name}: ")
-                out.emit("{\n")
+            predicates: list[tuple[int, Uop]] = []
+            for part in rest_uops:
                 depth += 1
-            out.emit(f"if (this_instr[{depth}].opcode == {last_uop.name}) {{\n")
-            out.emit(f'DPRINTF(2, "Inserting super {super_uop.name}\\n");')
+                predicates.append((depth, part))
+            predicate = " && ".join([f"(this_instr[{d}].opcode == {p.name})" for d, p in predicates])
+            out.emit(f"if ({predicate}) {{\n")
+            out.emit(f'DPRINTF(2, "Inserting super {super_uop.name}\\n");\n')
             out.emit(f"REPLACE_OP(this_instr, {super_uop.name}, this_instr[{oparg}].oparg, this_instr[{operand}].operand);\n")
-            out.emit(f"for (int i = 1; i < {depth + 1}; i++) {{ REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }}")
+            out.emit(f"for (int i = 1; i < {depth + 1}; i++) {{ REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }}\n")
             out.emit(f"this_instr += {depth + 1};\n")
-            out.emit("break;\n")
+            out.emit(f"break;\n")
             out.emit("}\n")
-            for part in middle_uops:
-                out.start_line()
-                out.emit("break;\n")
-                out.start_line()
-                out.emit("}\n")
-                out.emit("}\n")
-                out.start_line()
 
         out.emit(f"this_instr += 1;\n")
         out.emit("break;\n")

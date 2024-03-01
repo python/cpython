@@ -1890,6 +1890,8 @@ regen-cases:
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
 	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_super_matcher_generator.py \
+	    -o $(srcdir)/Python/uop_super_matcher_cases.c.h.new $(srcdir)/Python/bytecodes.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/optimizer_generator.py \
 	    -o $(srcdir)/Python/optimizer_cases.c.h.new \
 	    $(srcdir)/Python/optimizer_bytecodes.c \
@@ -1905,6 +1907,7 @@ regen-cases:
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_metadata.h $(srcdir)/Include/internal/pycore_uop_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/uop_super_matcher_cases.c.h $(srcdir)/Python/uop_super_matcher_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/optimizer_cases.c.h $(srcdir)/Python/optimizer_cases.c.h.new
 	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
@@ -1928,7 +1931,8 @@ Python/optimizer.o: \
 Python/optimizer_analysis.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/optimizer_cases.c.h
+		$(srcdir)/Python/optimizer_cases.c.h \
+		$(srcdir)/Python/uop_super_matcher_cases.c.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
