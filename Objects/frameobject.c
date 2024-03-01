@@ -934,20 +934,6 @@ first_line_not_before(int *lines, int len, int line)
     return result;
 }
 
-static bool
-frame_is_cleared(PyFrameObject *frame)
-{
-    assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    if (frame->f_frame->stacktop == 0) {
-        return true;
-    }
-    if (frame->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyGenObject *gen = _PyFrame_GetGenerator(frame->f_frame);
-        return gen->gi_frame_state == FRAME_CLEARED;
-    }
-    return false;
-}
-
 static bool frame_is_suspended(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
@@ -1548,7 +1534,7 @@ frame_get_var(_PyInterpreterFrame *frame, PyCodeObject *co, int i,
 
 
 PyObject *
-_PyFrame_GetLocals(_PyInterpreterFrame *frame, int include_hidden)
+_PyFrame_GetLocals(_PyInterpreterFrame *frame)
 {
     PyCodeObject* co = _PyFrame_GetCode(frame);
     PyFrameObject* f = _PyFrame_GetFrameObject(frame);
@@ -1600,11 +1586,6 @@ _PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame)
 int
 _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame)
 {
-    PyObject *locals = _PyFrame_GetLocals(frame, 0);
-    if (locals == NULL) {
-        return -1;
-    }
-    Py_DECREF(locals);
     return 0;
 }
 
@@ -1659,112 +1640,25 @@ PyFrame_GetVarString(PyFrameObject *frame, const char *name)
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
-    if (f == NULL) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
-    int err = _PyFrame_FastToLocalsWithError(f->f_frame);
-    if (err == 0) {
-        f->f_fast_as_locals = 1;
-    }
-    return err;
+    return 0;
 }
 
 void
 PyFrame_FastToLocals(PyFrameObject *f)
 {
-    int res;
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
-    assert(!PyErr_Occurred());
-
-    res = PyFrame_FastToLocalsWithError(f);
-    if (res < 0)
-        PyErr_Clear();
+    return;
 }
 
 void
 _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 {
-    /* Merge locals into fast locals */
-    PyObject *locals;
-    PyObject **fast;
-    PyCodeObject *co;
-    locals = frame->f_locals;
-    if (locals == NULL) {
-        return;
-    }
-    fast = _PyFrame_GetLocalsArray(frame);
-    co = _PyFrame_GetCode(frame);
-
-    PyObject *exc = PyErr_GetRaisedException();
-    for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-
-        /* Same test as in PyFrame_FastToLocals() above. */
-        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
-            continue;
-        }
-        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = PyObject_GetItem(locals, name);
-        /* We only care about NULLs if clear is true. */
-        if (value == NULL) {
-            PyErr_Clear();
-            if (!clear) {
-                continue;
-            }
-        }
-        PyObject *oldvalue = fast[i];
-        PyObject *cell = NULL;
-        if (kind == CO_FAST_FREE) {
-            // The cell was set when the frame was created from
-            // the function's closure.
-            assert(oldvalue != NULL && PyCell_Check(oldvalue));
-            cell = oldvalue;
-        }
-        else if (kind & CO_FAST_CELL && oldvalue != NULL) {
-            /* Same test as in PyFrame_FastToLocals() above. */
-            if (PyCell_Check(oldvalue) &&
-                    _PyFrame_OpAlreadyRan(frame, MAKE_CELL, i)) {
-                // (likely) MAKE_CELL must have executed already.
-                cell = oldvalue;
-            }
-            // (unlikely) Otherwise, it must have been set to some
-            // initial value by an earlier call to PyFrame_LocalsToFast().
-        }
-        if (cell != NULL) {
-            oldvalue = PyCell_GET(cell);
-            if (value != oldvalue) {
-                PyCell_SET(cell, Py_XNewRef(value));
-                Py_XDECREF(oldvalue);
-            }
-        }
-        else if (value != oldvalue) {
-            if (value == NULL) {
-                // Probably can't delete this, since the compiler's flow
-                // analysis may have already "proven" that it exists here:
-                const char *e = "assigning None to unbound local %R";
-                if (PyErr_WarnFormat(PyExc_RuntimeWarning, 0, e, name)) {
-                    // It's okay if frame_obj is NULL, just try anyways:
-                    PyErr_WriteUnraisable((PyObject *)frame->frame_obj);
-                }
-                value = Py_NewRef(Py_None);
-            }
-            Py_XSETREF(fast[i], Py_NewRef(value));
-        }
-        Py_XDECREF(value);
-    }
-    PyErr_SetRaisedException(exc);
+    return;
 }
 
 void
 PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 {
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
-    if (f && f->f_fast_as_locals && !frame_is_cleared(f)) {
-        _PyFrame_LocalsToFast(f->f_frame, clear);
-        f->f_fast_as_locals = 0;
-    }
+    return;
 }
 
 int

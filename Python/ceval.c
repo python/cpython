@@ -2465,7 +2465,7 @@ _PyEval_GetFrameLocals(void)
         return NULL;
     }
 
-    locals = _PyFrame_GetLocals(current_frame, 1);
+    locals = _PyFrame_GetLocals(current_frame);
     if (locals == NULL) {
         return NULL;
     }
