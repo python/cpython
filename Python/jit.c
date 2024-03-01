@@ -392,9 +392,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    code_size += page_size - (code_size & (page_size - 1));
-    data_size += page_size - (data_size & (page_size - 1));
-    unsigned char *memory = jit_alloc(code_size + data_size);
+    size_t padding = page_size - ((code_size + data_size) & (page_size - 1));
+    unsigned char *memory = jit_alloc(code_size + data_size + padding);
     if (memory == NULL) {
         return -1;
     }
@@ -424,12 +423,12 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         code += group->code.body_size;
         data += group->data.body_size;
     }
-    if (mark_executable(memory, code_size + data_size)) {
-        jit_free(memory, code_size + data_size);
+    if (mark_executable(memory, code_size + data_size + padding)) {
+        jit_free(memory, code_size + data_size + padding);
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_size = code_size + data_size;
+    executor->jit_size = code_size + data_size + padding;
     return 0;
 }
 
