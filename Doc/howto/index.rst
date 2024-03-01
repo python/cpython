@@ -16,6 +16,7 @@ Currently, the HOWTOs are:
    cporting.rst
    curses.rst
    descriptor.rst
+   gdb_helpers.rst
    enum.rst
    functional.rst
    logging.rst
