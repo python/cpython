@@ -14705,6 +14705,58 @@ _PyUnicode_ExactDealloc(PyObject *op)
     unicode_dealloc(op);
 }
 
+static int unicode_get_buffer(PyObject *unicode, Py_buffer *view, int flags)
+{
+    view->obj = NULL;
+
+    int itemsize;
+    switch (PyUnicode_KIND(unicode)) {
+        case PyUnicode_1BYTE_KIND:
+            itemsize = 1;
+            break;
+        case PyUnicode_2BYTE_KIND:
+            itemsize = 2;
+            break;
+        case PyUnicode_4BYTE_KIND:
+            itemsize = 4;
+            break;
+        default:
+            PyErr_BadInternalCall();
+            return -1;
+    }
+
+    Py_ssize_t length = PyUnicode_GET_LENGTH(unicode) * itemsize;
+
+    int res = PyBuffer_FillInfo(
+        view,
+        unicode,
+        PyUnicode_DATA(unicode),
+        length,
+        1,
+        flags
+    );
+
+    if (res < 0) {
+        return res;
+    }
+
+    view->itemsize = itemsize;
+
+    return 0;
+}
+
+
+// static void unicode_release_buffer(PyObject *unicode, Py_buffer *buffer)
+// {
+//
+// }
+
+
+static PyBufferProcs unicode_as_buffer = {
+    .bf_getbuffer = unicode_get_buffer,
+//    .bf_releasebuffer = unicode_release_buffer,
+};
+
 PyDoc_STRVAR(unicode_doc,
 "str(object='') -> str\n\
 str(bytes_or_buffer[, encoding[, errors]]) -> str\n\
@@ -14739,7 +14791,7 @@ PyTypeObject PyUnicode_Type = {
     (reprfunc) unicode_str,       /* tp_str */
     PyObject_GenericGetAttr,      /* tp_getattro */
     0,                            /* tp_setattro */
-    0,                            /* tp_as_buffer */
+    &unicode_as_buffer,           /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_UNICODE_SUBCLASS |
         _Py_TPFLAGS_MATCH_SELF, /* tp_flags */
