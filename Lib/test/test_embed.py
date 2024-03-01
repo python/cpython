@@ -452,6 +452,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'hash_seed': 0,
         'int_max_str_digits': sys.int_info.default_max_str_digits,
         'cpu_count': -1,
+        'enable_gil': 0,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,

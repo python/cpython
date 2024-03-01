@@ -93,6 +93,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(safe_path, UINT),
     SPEC(int_max_str_digits, INT),
     SPEC(cpu_count, INT),
+#ifdef Py_GIL_DISABLED
+    SPEC(enable_gil, INT),
+#endif
     SPEC(pathconfig_warnings, UINT),
     SPEC(program_name, WSTR),
     SPEC(pythonpath_env, WSTR_OPT),
@@ -276,6 +279,9 @@ static const char usage_envvars[] =
 "PYTHON_CPU_COUNT: Overrides the return value of os.process_cpu_count(),\n"
 "                  os.cpu_count(), and multiprocessing.cpu_count() if set to\n"
 "                  a positive integer.\n"
+#ifdef Py_GIL_DISABLED
+"PYTHON_GIL      : When set to 0, disables the GIL.\n"
+#endif
 "PYTHONDEVMODE   : enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
@@ -860,6 +866,9 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+#ifdef Py_GIL_DISABLED
+    config->enable_gil = _PyConfig_GIL_DEFAULT;
+#endif
 }
 
 
@@ -1640,6 +1649,19 @@ config_read_env_vars(PyConfig *config)
 
     if (config_get_env(config, "PYTHONSAFEPATH")) {
         config->safe_path = 1;
+    }
+
+    const char *gil = config_get_env(config, "PYTHON_GIL");
+    if (gil != NULL) {
+#ifdef Py_GIL_DISABLED
+        if (strcmp(gil, "0") == 0) {
+            config->enable_gil = _PyConfig_GIL_DISABLE;
+        } else if (strcmp(gil, "1") != 0) {
+            return _PyStatus_ERR("PYTHON_GIL must be \"0\" or \"1\"");
+        }
+#else
+        return _PyStatus_ERR("PYTHON_GIL is not supported by this build");
+#endif
     }
 
     return _PyStatus_OK();
