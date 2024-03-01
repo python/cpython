@@ -2754,7 +2754,7 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2789,7 +2789,7 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -3821,9 +3821,9 @@ dummy_func(
         }
 
         inst(CONVERT_VALUE, (value -- result)) {
-            convertion_func_ptr  conv_fn;
+            conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
-            conv_fn = CONVERSION_FUNCTIONS[oparg];
+            conv_fn = _PyEval_ConversionFuncs[oparg];
             result = conv_fn(value);
             Py_DECREF(value);
             ERROR_IF(result == NULL, error);
@@ -4039,6 +4039,11 @@ dummy_func(
         }
 
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+            value = ptr;
+        }
+
+        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+            Py_DECREF(pop);
             value = ptr;
         }
 

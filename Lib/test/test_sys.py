@@ -729,7 +729,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIs(t, s)
 
         interp = interpreters.create()
-        interp.exec_sync(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) != {id(s)}, (id(t), {id(s)})
@@ -744,7 +744,7 @@ class SysModuleTest(unittest.TestCase):
         t = sys.intern(s)
 
         interp = interpreters.create()
-        interp.exec_sync(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) == {id(t)}, (id(t), {id(t)})
