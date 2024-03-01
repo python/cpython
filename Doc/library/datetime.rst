@@ -2525,7 +2525,24 @@ Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
 
 For the :meth:`.datetime.strptime` class method, the default value is
 ``1900-01-01T00:00:00.000``: any components not specified in the format string
-will be pulled from the default value. [#]_
+will be pulled from the default value.
+
+.. note::
+   When used to parse partial dates lacking a year, :meth:`~.datetime.strptime`
+   will raise when encountering February 29 because its default year of 1900 is
+   *not* a leap year.  Always add a default leap year to partial date strings
+   before parsing::
+
+   .. doctest::
+
+       >>> from datetime import datetime
+       >>> value = "2/29"
+       >>> datetime.strptime(value, "%m/%d")
+       Traceback (most recent call last):
+       ...
+       ValueError: day is out of range for month
+       >>> datetime.strptime(f"1904 {value}", "%Y %m/%d")
+       datetime.datetime(1904, 2, 29, 0, 0)
 
 Using ``datetime.strptime(date_string, format)`` is equivalent to::
 
@@ -2651,6 +2668,11 @@ Notes:
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
+(10)
+   Parsing dates without a year using :meth:`~.datetime.strptime` will fail on
+   representations of February 29 as that date does not exist in the default
+   year of 1900.
+
 .. rubric:: Footnotes
 
 .. [#] If, that is, we ignore the effects of Relativity
@@ -2664,5 +2686,3 @@ Notes:
 .. [#] See R. H. van Gent's `guide to the mathematics of the ISO 8601 calendar
        <https://web.archive.org/web/20220531051136/https://webspace.science.uu.nl/~gent0113/calendar/isocalendar.htm>`_
        for a good explanation.
-
-.. [#] Passing ``datetime.strptime('Feb 29', '%b %d')`` will fail since ``1900`` is not a leap year.
