@@ -3118,7 +3118,7 @@ list_subscript(PyObject* _self, PyObject* item)
             return list_slice(self, start, stop);
         }
         else {
-            result = (PyObject *)list_new_prealloc(slicelength);
+            result = list_new_prealloc(slicelength);
             if (!result) return NULL;
 
             src = self->ob_item;
