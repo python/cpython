@@ -128,6 +128,22 @@ idarg_int64_converter(PyObject *arg, void *ptr)
 }
 
 
+static int
+ensure_highlevel_module_loaded(void)
+{
+    PyObject *highlevel = PyImport_ImportModule("interpreters.queues");
+    if (highlevel == NULL) {
+        PyErr_Clear();
+        highlevel = PyImport_ImportModule("test.support.interpreters.queues");
+        if (highlevel == NULL) {
+            return -1;
+        }
+    }
+    Py_DECREF(highlevel);
+    return 0;
+}
+
+
 /* module state *************************************************************/
 
 typedef struct {
@@ -196,6 +212,8 @@ clear_module_state(module_state *state)
 #define ERR_QUEUE_EMPTY (-21)
 #define ERR_QUEUE_FULL (-22)
 
+static int ensure_external_exc_types(module_state *);
+
 static int
 resolve_module_errcode(module_state *state, int errcode, int64_t qid,
                        PyObject **p_exctype, PyObject **p_msgobj)
@@ -212,10 +230,16 @@ resolve_module_errcode(module_state *state, int errcode, int64_t qid,
         msg = PyUnicode_FromFormat("queue %" PRId64 " not found", qid);
         break;
     case ERR_QUEUE_EMPTY:
+        if (ensure_external_exc_types(state) < 0) {
+            return -1;
+        }
         exctype = state->QueueEmpty;
         msg = PyUnicode_FromFormat("queue %" PRId64 " is empty", qid);
         break;
     case ERR_QUEUE_FULL:
+        if (ensure_external_exc_types(state) < 0) {
+            return -1;
+        }
         exctype = state->QueueFull;
         msg = PyUnicode_FromFormat("queue %" PRId64 " is full", qid);
         break;
@@ -267,17 +291,56 @@ add_QueueError(PyObject *mod)
 
 #define PREFIX "test.support.interpreters."
 #define ADD_EXCTYPE(NAME, BASE, DOC)                                    \
+    assert(state->NAME == NULL);                                        \
     if (add_exctype(mod, &state->NAME, PREFIX #NAME, DOC, BASE) < 0) {  \
         return -1;                                                      \
     }
     ADD_EXCTYPE(QueueError, PyExc_RuntimeError,
                 "Indicates that a queue-related error happened.")
     ADD_EXCTYPE(QueueNotFoundError, state->QueueError, NULL)
-    ADD_EXCTYPE(QueueEmpty, state->QueueError, NULL)
-    ADD_EXCTYPE(QueueFull, state->QueueError, NULL)
+    // QueueEmpty and QueueFull are set by set_external_exc_types().
+    state->QueueEmpty = NULL;
+    state->QueueFull = NULL;
 #undef ADD_EXCTYPE
 #undef PREFIX
 
+    return 0;
+}
+
+static int
+set_external_exc_types(module_state *state,
+                       PyObject *emptyerror, PyObject *fullerror)
+{
+    if (state->QueueEmpty != NULL) {
+        assert(state->QueueFull != NULL);
+        Py_CLEAR(state->QueueEmpty);
+        Py_CLEAR(state->QueueFull);
+    }
+    else {
+        assert(state->QueueFull == NULL);
+    }
+    assert(PyObject_IsSubclass(emptyerror, state->QueueError));
+    assert(PyObject_IsSubclass(fullerror, state->QueueError));
+    state->QueueEmpty = Py_NewRef(emptyerror);
+    state->QueueFull = Py_NewRef(fullerror);
+    return 0;
+}
+
+static int
+ensure_external_exc_types(module_state *state)
+{
+    if (state->QueueEmpty != NULL) {
+        assert(state->QueueFull != NULL);
+        return 0;
+    }
+    assert(state->QueueFull == NULL);
+
+    // Force the module to be loaded, to register the type.
+    if (ensure_highlevel_module_loaded() < 0) {
+        return -1;
+    }
+    assert(state->QueueEmpty != NULL);
+    assert(state->QueueFull != NULL);
     return 0;
 }
 
@@ -849,10 +912,10 @@ _queues_decref(_queues *queues, int64_t qid)
 
         _queue_kill_and_wait(queue);
         _queue_free(queue);
-        return;
+        return 0;
     }
 
-    res = 0
+    res = 0;
 finally:
     PyThread_release_lock(queues->mutex);
     return res;
@@ -1079,10 +1142,8 @@ static int _queueobj_shared(PyThreadState *,
                             PyObject *, _PyCrossInterpreterData *);
 
 static int
-set_external_queue_type(PyObject *module, PyTypeObject *queue_type)
+set_external_queue_type(module_state *state, PyTypeObject *queue_type)
 {
-    module_state *state = get_module_state(module);
-
     // Clear the old value if the .py module was reloaded.
     if (state->queue_type != NULL) {
         (void)_PyCrossInterpreterData_UnregisterClass(
@@ -1107,15 +1168,9 @@ get_external_queue_type(PyObject *module)
     PyTypeObject *cls = state->queue_type;
     if (cls == NULL) {
         // Force the module to be loaded, to register the type.
-        PyObject *highlevel = PyImport_ImportModule("interpreters.queue");
-        if (highlevel == NULL) {
-            PyErr_Clear();
-            highlevel = PyImport_ImportModule("test.support.interpreters.queue");
-            if (highlevel == NULL) {
-                return NULL;
-            }
+        if (ensure_highlevel_module_loaded() < 0) {
+            return NULL;
         }
-        Py_DECREF(highlevel);
         cls = state->queue_type;
         assert(cls != NULL);
     }
@@ -1407,6 +1462,7 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* Queue up the object. */
     int err = queue_put(&_globals.queues, qid, obj, fmt);
+    // This is the only place that raises QueueFull.
     if (handle_queue_error(err, self, qid)) {
         return NULL;
     }
@@ -1434,11 +1490,8 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *obj = NULL;
     int fmt = 0;
     int err = queue_get(&_globals.queues, qid, &obj, &fmt);
-    if (err == ERR_QUEUE_EMPTY && dflt != NULL) {
-        assert(obj == NULL);
-        obj = Py_NewRef(dflt);
-    }
-    else if (handle_queue_error(err, self, qid)) {
+    // This is the only place that raises QueueEmpty.
+    if (handle_queue_error(err, self, qid)) {
         return NULL;
     }
 
@@ -1621,22 +1674,39 @@ PyDoc_STRVAR(queuesmod_get_count_doc,
 Return the number of items in the queue.");
 
 static PyObject *
-queuesmod__register_queue_type(PyObject *self, PyObject *args, PyObject *kwds)
+queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"queuetype", NULL};
+    static char *kwlist[] = {"queuetype", "emptyerror", "fullerror", NULL};
     PyObject *queuetype;
+    PyObject *emptyerror;
+    PyObject *fullerror;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:_register_queue_type", kwlist,
-                                     &queuetype)) {
+                                     "OOO:_register_heap_types", kwlist,
+                                     &queuetype, &emptyerror, &fullerror)) {
         return NULL;
     }
     if (!PyType_Check(queuetype)) {
-        PyErr_SetString(PyExc_TypeError, "expected a type for 'queuetype'");
+        PyErr_SetString(PyExc_TypeError,
+                        "expected a type for 'queuetype'");
         return NULL;
     }
-    PyTypeObject *cls_queue = (PyTypeObject *)queuetype;
+    if (!PyExceptionClass_Check(emptyerror)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected an exception type for 'emptyerror'");
+        return NULL;
+    }
+    if (!PyExceptionClass_Check(fullerror)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "expected an exception type for 'fullerror'");
+        return NULL;
+    }
 
-    if (set_external_queue_type(self, cls_queue) < 0) {
+    module_state *state = get_module_state(self);
+
+    if (set_external_queue_type(state, (PyTypeObject *)queuetype) < 0) {
+        return NULL;
+    }
+    if (set_external_exc_types(state, emptyerror, fullerror) < 0) {
         return NULL;
     }
 
@@ -1666,7 +1736,7 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, queuesmod_is_full_doc},
     {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_count_doc},
-    {"_register_queue_type",       _PyCFunction_CAST(queuesmod__register_queue_type),
+    {"_register_heap_types",       _PyCFunction_CAST(queuesmod__register_heap_types),
      METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */
