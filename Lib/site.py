@@ -638,7 +638,7 @@ def main():
     setcopyright()
     sethelper()
     if not sys.flags.isolated:
-        sys.__interactivehook__ = register_readline
+        enablerlcompleter()
     execsitecustomize()
     if ENABLE_USER_SITE:
         execusercustomize()
