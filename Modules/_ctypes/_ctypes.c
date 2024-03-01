@@ -614,15 +614,18 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
     /* keep this for bw compatibility */
     int r = PyDict_Contains(attrdict, &_Py_ID(_abstract_));
     if (r > 0) {
+        Py_DECREF(attrdict);
         return 0;
     }
     if (r < 0) {
+        Py_DECREF(attrdict);
         return -1;
     }
 
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info = PyStgInfo_Init(st, (PyTypeObject *)self);
     if (!info) {
+        Py_DECREF(attrdict);
         return -1;
     }
     if (!isStruct) {
@@ -631,6 +634,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
 
     info->format = _ctypes_alloc_format_string(NULL, "B");
     if (info->format == NULL) {
+        Py_DECREF(attrdict);
         return -1;
     }
 
@@ -639,6 +643,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
     if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_fields_), &fields) < 0) {
         return -1;
     }
+    Py_CLEAR(attrdict);
     if (fields) {
         if (PyObject_SetAttr(self, &_Py_ID(_fields_), fields) < 0) {
             Py_DECREF(fields);
@@ -1199,20 +1204,27 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
+        Py_DECREF(attrdict);
         return NULL;
     }
     if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "abstract class");
+        Py_DECREF(attrdict);
         return NULL;
     }
 
-    if (-1 == PyCPointerType_SetProto(info, type))
+    if (-1 == PyCPointerType_SetProto(info, type)) {
+        Py_DECREF(attrdict);
         return NULL;
+    }
 
-    if (-1 == PyDict_SetItem(attrdict, &_Py_ID(_type_), type))
+    if (-1 == PyDict_SetItem(attrdict, &_Py_ID(_type_), type)) {
+        Py_DECREF(attrdict);
         return NULL;
+    }
 
+    Py_DECREF(attrdict);
     Py_RETURN_NONE;
 }
 
@@ -2526,6 +2538,7 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *stginfo = PyStgInfo_Init(st, (PyTypeObject *)self);
     if (!stginfo) {
+        Py_DECREF(attrdict);
         return -1;
     }
 
@@ -2539,14 +2552,17 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
     */
     stginfo->format = _ctypes_alloc_format_string(NULL, "X{}");
     if (stginfo->format == NULL) {
+        Py_DECREF(attrdict);
         return -1;
     }
     stginfo->flags |= TYPEFLAG_ISPOINTER;
 
     if (-1 == make_funcptrtype_dict(attrdict, stginfo)) {
+        Py_DECREF(attrdict);
         return -1;
     }
 
+    Py_CLEAR(attrdict);
     return 0;
 }
 
@@ -4330,7 +4346,6 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
                PyObject *args, PyObject *kwds,
                Py_ssize_t index)
 {
-    PyObject *attrdict;
     PyObject *fields;
     Py_ssize_t i;
 
@@ -4347,16 +4362,17 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
             return -1;
     }
 
-    attrdict = PyType_GetDict(type);
-    assert(attrdict);
-
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
         return -1;
     }
     assert(info);
 
+    PyObject *attrdict = PyType_GetDict(type);
+    assert(attrdict);
+
     fields = PyDict_GetItemWithError((PyObject *)attrdict, &_Py_ID(_fields_));
+    Py_CLEAR(attrdict);
     if (fields == NULL) {
         if (PyErr_Occurred()) {
             return -1;
