@@ -119,7 +119,7 @@ event_wait(PyEventObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyTime_t timeout_ns = -1;
+    PyTime_t timeout_ns = -1;
     if (timeout_obj && timeout_obj != Py_None) {
         int err = _PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
                                             _PyTime_ROUND_TIMEOUT);
