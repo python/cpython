@@ -660,7 +660,8 @@ def add_super(
     if len(operand_uses) > 1:
         analysis_error(f"Uop super {super.name}'s cache entry cannot fit in one operand.", super.tokens[0])
 
-    add_instruction(super.name, parts, super_uops)
+    if not "replicate_only" in super.annotations:
+        add_instruction(super.name, parts, super_uops)
 
     replicates_count = [p.replicated for p in parts if p.replicated != 0]
     if len(set(replicates_count)) > 1:

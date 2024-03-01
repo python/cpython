@@ -4013,6 +4013,214 @@
             break;
         }
 
+        case _LOAD_FAST__LOAD_FAST_0: {
+            // _LOAD_FAST_0
+            {
+                PyObject *value;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_0
+            {
+                PyObject *value;
+                oparg = 0;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
+        case _LOAD_FAST__LOAD_FAST_1: {
+            // _LOAD_FAST_1
+            {
+                PyObject *value;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_1
+            {
+                PyObject *value;
+                oparg = 1;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
+        case _LOAD_FAST__LOAD_FAST_2: {
+            // _LOAD_FAST_2
+            {
+                PyObject *value;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_2
+            {
+                PyObject *value;
+                oparg = 2;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
+        case _LOAD_FAST__LOAD_FAST_3: {
+            // _LOAD_FAST_3
+            {
+                PyObject *value;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_3
+            {
+                PyObject *value;
+                oparg = 3;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
+        case _LOAD_FAST__LOAD_FAST_4: {
+            // _LOAD_FAST_4
+            {
+                PyObject *value;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_4
+            {
+                PyObject *value;
+                oparg = 4;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
+        case _LOAD_FAST__LOAD_FAST_5: {
+            // _LOAD_FAST_5
+            {
+                PyObject *value;
+                oparg = 5;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_5
+            {
+                PyObject *value;
+                oparg = 5;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
+        case _LOAD_FAST__LOAD_FAST_6: {
+            // _LOAD_FAST_6
+            {
+                PyObject *value;
+                oparg = 6;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_6
+            {
+                PyObject *value;
+                oparg = 6;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
+        case _LOAD_FAST__LOAD_FAST_7: {
+            // _LOAD_FAST_7
+            {
+                PyObject *value;
+                oparg = 7;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            // _LOAD_FAST_7
+            {
+                PyObject *value;
+                oparg = 7;
+                assert(oparg == CURRENT_OPARG());
+                value = GETLOCAL(oparg);
+                assert(value != NULL);
+                Py_INCREF(value);
+                stack_pointer[0] = value;
+                stack_pointer += 1;
+            }
+            break;
+        }
+
         case _GUARD_BOTH_INT__BINARY_OP_MULTIPLY_INT: {
             // _GUARD_BOTH_INT
             {

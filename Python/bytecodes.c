@@ -229,6 +229,8 @@ dummy_func(
             Py_INCREF(value2);
         }
 
+        replicate_only super(_LOAD_FAST__LOAD_FAST) = LOAD_FAST + LOAD_FAST;
+
         pure inst(LOAD_CONST, (-- value)) {
             value = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(value);

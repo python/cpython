@@ -138,6 +138,7 @@ class Family(Node):
 @dataclass
 class Super(Node):
     name: str
+    annotations: list[str]
     uops: list[UOp]
 
 
@@ -342,6 +343,9 @@ class Parser(PLexer):
 
     @contextual
     def super_def(self) -> Super | None:
+        annotations = []
+        while anno := self.expect(lx.ANNOTATION):
+            annotations.append(anno.text)
         if tkn := self.expect(lx.SUPER):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
@@ -349,7 +353,7 @@ class Parser(PLexer):
                         if self.expect(lx.EQUALS):
                             if uops := self.uops():
                                 self.require(lx.SEMI)
-                                res = Super(tkn.text, uops)
+                                res = Super(tkn.text, annotations, uops)
                                 return res
         return None
 

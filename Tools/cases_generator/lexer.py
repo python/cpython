@@ -227,6 +227,7 @@ annotations = {
     "pure",
     "split",
     "replicate",
+    "replicate_only",
     "tier1",
     "tier2",
 }
