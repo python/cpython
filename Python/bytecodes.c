@@ -252,6 +252,8 @@ dummy_func(
             Py_INCREF(value2);
         }
 
+        replicate_only super(_STORE_FAST__LOAD_FAST) = STORE_FAST + LOAD_FAST;
+
         inst(STORE_FAST_STORE_FAST, (value2, value1 --)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;

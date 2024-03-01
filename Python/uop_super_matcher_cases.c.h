@@ -10,8 +10,57 @@
 
         case _LOAD_FAST_0: {
             if ((this_instr[1].opcode == _LOAD_FAST_0)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_0\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_0__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_0__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -21,9 +70,58 @@
         }
 
         case _LOAD_FAST_1: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
             if ((this_instr[1].opcode == _LOAD_FAST_1)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_1\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_1__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_1__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -33,9 +131,58 @@
         }
 
         case _LOAD_FAST_2: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
             if ((this_instr[1].opcode == _LOAD_FAST_2)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_2\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_2__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_2__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -45,9 +192,58 @@
         }
 
         case _LOAD_FAST_3: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
             if ((this_instr[1].opcode == _LOAD_FAST_3)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_3\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_3__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_3__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -57,9 +253,58 @@
         }
 
         case _LOAD_FAST_4: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
             if ((this_instr[1].opcode == _LOAD_FAST_4)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_4\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_4__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_4__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -69,9 +314,58 @@
         }
 
         case _LOAD_FAST_5: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
             if ((this_instr[1].opcode == _LOAD_FAST_5)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_5\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_5__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_5__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -81,9 +375,58 @@
         }
 
         case _LOAD_FAST_6: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
             if ((this_instr[1].opcode == _LOAD_FAST_6)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_6\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_6__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_6__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -93,9 +436,546 @@
         }
 
         case _LOAD_FAST_7: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
             if ((this_instr[1].opcode == _LOAD_FAST_7)) {
-                DPRINTF(2, "Inserting super _LOAD_FAST__LOAD_FAST_7\n");
-                REPLACE_OP(this_instr, _LOAD_FAST__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super __LOAD_FAST_7__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __LOAD_FAST_7__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_0: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_0__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_0__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_1: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_1__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_1__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_2: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_2__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_2__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_3: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_3__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_3__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_4: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_4__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_4__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_5: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_5__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_5__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_6: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_6__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_6__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case _STORE_FAST_7: {
+            if ((this_instr[1].opcode == _LOAD_FAST_0)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_0\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_1)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_1\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_2)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_2\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_3)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_3\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_3, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_4)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_4\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_4, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_5)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_5\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_5, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_6)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_6\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_6, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == _LOAD_FAST_7)) {
+                DPRINTF(2, "Inserting super __STORE_FAST_7__LOAD_FAST_7\n");
+                REPLACE_OP(this_instr, __STORE_FAST_7__LOAD_FAST_7, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;

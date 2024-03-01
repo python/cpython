@@ -51,7 +51,7 @@ def _dump_footer(opnames: typing.Iterable[str]) -> typing.Iterator[str]:
     yield "    .data = INIT_STENCIL(OP##_data), \\"
     yield "}"
     yield ""
-    yield "static const StencilGroup stencil_groups[512] = {"
+    yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
     for opname in opnames:
         yield f"    [{opname}] = INIT_STENCIL_GROUP({opname}),"
     yield "};"

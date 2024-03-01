@@ -1027,12 +1027,12 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
                 lines.pop(-1)
             actual = "".join(lines)
 
-            # if actual.strip() != expected.strip():
-            #     print("Actual:")
-            #     print(actual)
-            #     print("Expected:")
-            #     print(expected)
-            #     print("End")
+            if actual.strip() != expected.strip():
+                print("Actual:")
+                print(actual)
+                print("Expected:")
+                print(expected)
+                print("End")
             self.assertEqual(actual.strip(), expected.strip())
 
     def test_super_basic(self):
@@ -1108,7 +1108,7 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
 
     def test_super_replicate_only(self):
         input = """
-        op(OP1, (arg1 -- out)) {
+        replicate(3) op(OP1, (arg1 -- out)) {
             FOO();
         }
         replicate(3) op(OP2, (arg1 -- out)) {
@@ -1117,24 +1117,24 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
         replicate_only super(_OP1__OP2) = OP1 + OP2;
         """
         output = """
-        case OP1: {
+        case OP1_0: {
             if ((this_instr[1].opcode == OP2_0)) {
-                DPRINTF(2, "Inserting super _OP1__OP2_0\\n");
-                REPLACE_OP(this_instr, _OP1__OP2_0, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super _OP1_0_OP2_0\\n");
+                REPLACE_OP(this_instr, _OP1_0_OP2_0, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
             }
             if ((this_instr[1].opcode == OP2_1)) {
-                DPRINTF(2, "Inserting super _OP1__OP2_1\\n");
-                REPLACE_OP(this_instr, _OP1__OP2_1, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super _OP1_0_OP2_1\\n");
+                REPLACE_OP(this_instr, _OP1_0_OP2_1, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
             }
             if ((this_instr[1].opcode == OP2_2)) {
-                DPRINTF(2, "Inserting super _OP1__OP2_2\\n");
-                REPLACE_OP(this_instr, _OP1__OP2_2, this_instr[0].oparg, this_instr[0].operand);
+                DPRINTF(2, "Inserting super _OP1_0_OP2_2\\n");
+                REPLACE_OP(this_instr, _OP1_0_OP2_2, this_instr[0].oparg, this_instr[0].operand);
                 for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
                 this_instr += 2;
                 break;
@@ -1142,6 +1142,59 @@ class TestGeneratedSuperMatcher(unittest.TestCase):
             this_instr += 1;
             break;
         }
+
+        case OP1_1: {
+            if ((this_instr[1].opcode == OP2_0)) {
+                DPRINTF(2, "Inserting super _OP1_1_OP2_0\\n");
+                REPLACE_OP(this_instr, _OP1_1_OP2_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_1)) {
+                DPRINTF(2, "Inserting super _OP1_1_OP2_1\\n");
+                REPLACE_OP(this_instr, _OP1_1_OP2_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_2)) {
+                DPRINTF(2, "Inserting super _OP1_1_OP2_2\\n");
+                REPLACE_OP(this_instr, _OP1_1_OP2_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
+        case OP1_2: {
+            if ((this_instr[1].opcode == OP2_0)) {
+                DPRINTF(2, "Inserting super _OP1_2_OP2_0\\n");
+                REPLACE_OP(this_instr, _OP1_2_OP2_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_1)) {
+                DPRINTF(2, "Inserting super _OP1_2_OP2_1\\n");
+                REPLACE_OP(this_instr, _OP1_2_OP2_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_2)) {
+                DPRINTF(2, "Inserting super _OP1_2_OP2_2\\n");
+                REPLACE_OP(this_instr, _OP1_2_OP2_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }
+
         """
         self.run_cases_test(input, output)
 

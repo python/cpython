@@ -146,7 +146,7 @@ TIER2_REPLACEMENT_FUNCTIONS["oparg"] = tier2_replace_oparg
 TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 
 
-def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
+def write_uop(uop: Uop, out: CWriter, stack: Stack, is_replicates_only: bool = False) -> None:
     try:
         out.start_line()
         if uop.properties.oparg:
@@ -154,7 +154,8 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
             assert uop.properties.const_oparg < 0
         elif uop.properties.const_oparg >= 0:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
-            out.emit(f"assert(oparg == CURRENT_OPARG());\n")
+            if not is_replicates_only:
+                out.emit(f"assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
             out.emit(stack.pop(var))
         if not uop.properties.stores_sp:
@@ -225,7 +226,7 @@ def generate_tier2(
             out.emit(f"// {part.name}\n")
             out.emit("{\n")
             declare_variables(part, out)
-            write_uop(part, out, stack)
+            write_uop(part, out, stack, super_uop.is_replicates_only)
             stack.flush(out)
             out.emit("}\n")
         out.start_line()
