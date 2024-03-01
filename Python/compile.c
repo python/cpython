@@ -2180,10 +2180,11 @@ wrap_in_stopiteration_handler(struct compiler *c)
 }
 
 static int
-compiler_type_param_bound_or_default(struct compiler *c, expr_ty e, identifier name)
+compiler_type_param_bound_or_default(struct compiler *c, expr_ty e,
+                                     identifier name, void *key)
 {
     if (compiler_enter_scope(c, name, COMPILER_SCOPE_TYPEPARAMS,
-                            (void *)e, e->lineno) == -1) {
+                             key, e->lineno) == -1) {
         return ERROR;
     }
     VISIT(c, expr, e);
@@ -2218,7 +2219,8 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             ADDOP_LOAD_CONST(c, loc, typeparam->v.TypeVar.name);
             if (typeparam->v.TypeVar.bound) {
                 expr_ty bound = typeparam->v.TypeVar.bound;
-                if (compiler_type_param_bound_or_default(c, bound, typeparam->v.TypeVar.name) < 0) {
+                if (compiler_type_param_bound_or_default(c, bound, typeparam->v.TypeVar.name,
+                                                         (void *)typeparam) < 0) {
                     return ERROR;
                 }
 
@@ -2233,7 +2235,8 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             if (typeparam->v.TypeVar.default_) {
                 seen_default = true;
                 expr_ty default_ = typeparam->v.TypeVar.default_;
-                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVar.name) < 0) {
+                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVar.name,
+                                                         (void *)typeparam->v.TypeVar.name) < 0) {
                     return ERROR;
                 }
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
@@ -2251,7 +2254,8 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_TYPEVARTUPLE);
             if (typeparam->v.TypeVarTuple.default_) {
                 expr_ty default_ = typeparam->v.TypeVarTuple.default_;
-                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVarTuple.name) < 0) {
+                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVarTuple.name,
+                                                         (void *)typeparam) < 0) {
                     return ERROR;
                 }
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
@@ -2270,7 +2274,8 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
             ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_PARAMSPEC);
             if (typeparam->v.ParamSpec.default_) {
                 expr_ty default_ = typeparam->v.ParamSpec.default_;
-                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.ParamSpec.name) < 0) {
+                if (compiler_type_param_bound_or_default(c, default_, typeparam->v.ParamSpec.name,
+                                                         (void *)typeparam) < 0) {
                     return ERROR;
                 }
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);

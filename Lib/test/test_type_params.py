@@ -412,6 +412,14 @@ class TypeParamsAccessTest(unittest.TestCase):
         func, = T.__bound__
         self.assertEqual(func(), 1)
 
+    def test_comprehension_03(self):
+        def F[T: [lambda: T for T in (T, [1])[1]]](): return [lambda: T for T in T.__name__]
+        func, = F()
+        self.assertEqual(func(), "T")
+        T, = F.__type_params__
+        func, = T.__bound__
+        self.assertEqual(func(), 1)
+
     def test_gen_exp_in_nested_class(self):
         code = """
             from test.test_type_params import make_base
