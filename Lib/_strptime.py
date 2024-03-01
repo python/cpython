@@ -487,11 +487,9 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                              "the year directive '%Y'. Use the ISO year '%G' "
                              "instead.")
 
-    leap_year_fix = False
     if year is None:
         if month == 2 and day == 29:
             year = 1904  # 1904 is first leap year of 20th century
-            leap_year_fix = True
         else:
             year = 1900
 
@@ -531,12 +529,6 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         weekday = datetime_date(year, month, day).weekday()
     # Add timezone info
     tzname = found_dict.get("Z")
-
-    if leap_year_fix:
-        # the caller didn't supply a year but asked for Feb 29th. We couldn't
-        # use the default of 1900 for computations. We set it back to ensure
-        # that February 29th is smaller than March 1st.
-        year = 1904
 
     return (year, month, day,
             hour, minute, second,
