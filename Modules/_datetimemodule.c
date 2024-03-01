@@ -481,8 +481,9 @@ check_date_args(int year, int month, int day)
         return -1;
     }
     if (day < 1 || day > days_in_month(year, month)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "day is out of range for month");
+        PyErr_Format(PyExc_ValueError,
+                     "day %i is out of range for month %i in year %i",
+		     day, month, year);
         return -1;
     }
     return 0;
