@@ -837,8 +837,7 @@ teedataobject_clear(teedataobject *tdo)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
-    itertools_state *state = get_module_state_by_cls(Py_TYPE(tdo));
-    teedataobject_safe_decref(tmp, state->teedataobject_type);
+    teedataobject_safe_decref(tmp, Py_TYPE(tdo));
     return 0;
 }
 
