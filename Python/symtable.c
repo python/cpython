@@ -2322,25 +2322,31 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         // The only requirement for the key is that it is unique and it matches the logic in
         // compile.c where the scope is retrieved.
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.bound, tp->v.TypeVar.name,
-                                                        (void *)tp))
+                                                        (void *)tp)) {
             VISIT_QUIT(st, 0);
+        }
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVar.default_, tp->v.TypeVar.name,
-                                                        ((void *)tp) + 1))
+                                                        (void *)(tp + 1))) {
             VISIT_QUIT(st, 0);
+        }
         break;
     case TypeVarTuple_kind:
-        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
+        }
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.TypeVarTuple.default_, tp->v.TypeVarTuple.name,
-                                                        (void *)tp))
+                                                        (void *)tp)) {
             VISIT_QUIT(st, 0);
+        }
         break;
     case ParamSpec_kind:
-        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
+        if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp))) {
             VISIT_QUIT(st, 0);
+        }
         if (!symtable_visit_type_param_bound_or_default(st, tp->v.ParamSpec.default_, tp->v.ParamSpec.name,
-                                                        (void *)tp))
+                                                        (void *)tp)) {
             VISIT_QUIT(st, 0);
+        }
         break;
     }
     VISIT_QUIT(st, 1);

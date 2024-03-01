@@ -2236,7 +2236,7 @@ compiler_type_params(struct compiler *c, asdl_type_param_seq *type_params)
                 seen_default = true;
                 expr_ty default_ = typeparam->v.TypeVar.default_;
                 if (compiler_type_param_bound_or_default(c, default_, typeparam->v.TypeVar.name,
-                                                         ((void *)typeparam) + 1) < 0) {
+                                                         (void *)(typeparam + 1)) < 0) {
                     return ERROR;
                 }
                 ADDOP_I(c, loc, CALL_INTRINSIC_2, INTRINSIC_SET_TYPEPARAM_DEFAULT);
