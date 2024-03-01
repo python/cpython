@@ -299,7 +299,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
 
             r = rotate_ts - ((currentHour * 60 + currentMinute) * 60 +
                 currentSecond)
-            if r < 0:
+            if r <= 0:
                 # Rotate time is before the current time (for example when
                 # self.rotateAt is 13:45 and it now 14:15), rotation is
                 # tomorrow.
@@ -328,17 +328,18 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                         daysToWait = self.dayOfWeek - day
                     else:
                         daysToWait = 6 - day + self.dayOfWeek + 1
-                    newRolloverAt = result + (daysToWait * (60 * 60 * 24))
-                    if not self.utc:
-                        dstNow = t[-1]
-                        dstAtRollover = time.localtime(newRolloverAt)[-1]
-                        if dstNow != dstAtRollover:
-                            if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
-                                addend = -3600
-                            else:           # DST bows out before next rollover, so we need to add an hour
-                                addend = 3600
-                            newRolloverAt += addend
-                    result = newRolloverAt
+                    result += daysToWait * (60 * 60 * 24)
+            if not self.utc:
+                dstNow = t[-1]
+                dstAtRollover = time.localtime(result)[-1]
+                if dstNow != dstAtRollover:
+                    if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
+                        addend = -3600
+                        if not time.localtime(result-3600)[-1]:
+                            addend = 0
+                    else:           # DST bows out before next rollover, so we need to add an hour
+                        addend = 3600
+                    result += addend
         return result
 
     def shouldRollover(self, record):
@@ -415,17 +416,14 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         then we have to get a list of matching filenames, sort them and remove
         the one with the oldest suffix.
         """
-        if self.stream:
-            self.stream.close()
-            self.stream = None
         # get the time that this sequence started at and make it a TimeTuple
         currentTime = int(time.time())
-        dstNow = time.localtime(currentTime)[-1]
         t = self.rolloverAt - self.interval
         if self.utc:
             timeTuple = time.gmtime(t)
         else:
             timeTuple = time.localtime(t)
+            dstNow = time.localtime(currentTime)[-1]
             dstThen = timeTuple[-1]
             if dstNow != dstThen:
                 if dstNow:
@@ -436,26 +434,19 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
         if os.path.exists(dfn):
-            os.remove(dfn)
+            # Already rolled over.
+            return
+
+        if self.stream:
+            self.stream.close()
+            self.stream = None
         self.rotate(self.baseFilename, dfn)
         if self.backupCount > 0:
             for s in self.getFilesToDelete():
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        newRolloverAt = self.computeRollover(currentTime)
-        while newRolloverAt <= currentTime:
-            newRolloverAt = newRolloverAt + self.interval
-        #If DST changes and midnight or weekly rollover, adjust for this.
-        if (self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc:
-            dstAtRollover = time.localtime(newRolloverAt)[-1]
-            if dstNow != dstAtRollover:
-                if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
-                    addend = -3600
-                else:           # DST bows out before next rollover, so we need to add an hour
-                    addend = 3600
-                newRolloverAt += addend
-        self.rolloverAt = newRolloverAt
+        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """
