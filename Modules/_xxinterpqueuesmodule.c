@@ -1479,11 +1479,10 @@ Add the object's data to the queue.");
 static PyObject *
 queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"qid", "default", NULL};
+    static char *kwlist[] = {"qid", NULL};
     qidarg_converter_data qidarg;
-    PyObject *dflt = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|O:get", kwlist,
-                                     qidarg_converter, &qidarg, &dflt)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get", kwlist,
+                                     qidarg_converter, &qidarg)) {
         return NULL;
     }
     int64_t qid = qidarg.id;
@@ -1502,13 +1501,12 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(queuesmod_get_doc,
-"get(qid, [default]) -> (obj, fmt)\n\
+"get(qid) -> (obj, fmt)\n\
 \n\
 Return a new object from the data at the front of the queue.\n\
 The object's format is also returned.\n\
 \n\
-If there is nothing to receive then raise QueueEmpty, unless\n\
-a default value is provided.  In that case return it.");
+If there is nothing to receive then raise QueueEmpty.");
 
 static PyObject *
 queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
