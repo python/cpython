@@ -29,11 +29,12 @@ skip_if_different_mount_drives()
 
 test_tools.skip_if_missing("cases_generator")
 with test_tools.imports_under_tool("cases_generator"):
-    from analyzer import StackItem
+    from analyzer import StackItem, analyze_files
     import parser
     from stack import Stack
     import tier1_generator
     import optimizer_generator
+    import tier2_super_matcher_generator
 
 
 def handle_stderr():
@@ -813,6 +814,20 @@ class TestGeneratedCases(unittest.TestCase):
         with self.assertRaises(Exception):
             self.run_cases_test(input, output)
 
+    def test_super(self):
+        input = """
+        op(OP1, (arg1 -- out)) {
+            FOO();
+        }
+        op(OP2, (arg1 -- out)) {
+            BAR();
+        }
+        super(_OP1__OP2) = OP1 + OP2;
+        """
+        output = ""
+        self.run_cases_test(input, output)
+
+
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
@@ -964,6 +979,171 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "All abstract uops"):
             self.run_cases_test(input, input2, output)
 
+
+class TestGeneratedSuperMatcher(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.maxDiff = None
+
+        self.temp_dir = tempfile.gettempdir()
+        self.temp_input_filename = os.path.join(self.temp_dir, "input.txt")
+        self.temp_output_filename = os.path.join(self.temp_dir, "output.txt")
+        self.temp_metadata_filename = os.path.join(self.temp_dir, "metadata.txt")
+        self.temp_pymetadata_filename = os.path.join(self.temp_dir, "pymetadata.txt")
+        self.temp_executor_filename = os.path.join(self.temp_dir, "executor.txt")
+
+    def tearDown(self) -> None:
+        for filename in [
+            self.temp_input_filename,
+            self.temp_output_filename,
+            self.temp_metadata_filename,
+            self.temp_pymetadata_filename,
+            self.temp_executor_filename,
+        ]:
+            try:
+                os.remove(filename)
+            except:
+                pass
+        super().tearDown()
+
+    def run_cases_test(self, input: str, expected: str):
+        with open(self.temp_input_filename, "w+") as temp_input:
+            temp_input.write(parser.BEGIN_MARKER)
+            temp_input.write(input)
+            temp_input.write(parser.END_MARKER)
+            temp_input.flush()
+
+        with handle_stderr(), open(self.temp_output_filename, "w+") as temp_output:
+            data = analyze_files([self.temp_input_filename])
+            tier2_super_matcher_generator.generate_tier2(
+                [self.temp_input_filename], data, temp_output, False
+            )
+
+        with open(self.temp_output_filename) as temp_output:
+            lines = temp_output.readlines()
+            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
+                lines.pop(0)
+            while lines and lines[-1].startswith(("#", "\n")):
+                lines.pop(-1)
+            actual = "".join(lines)
+
+            # if actual.strip() != expected.strip():
+            #     print("Actual:")
+            #     print(actual)
+            #     print("Expected:")
+            #     print(expected)
+            #     print("End")
+            self.assertEqual(actual.strip(), expected.strip())
+
+    def test_super_basic(self):
+        input = """
+        op(OP1, (arg1 -- out)) {
+            FOO();
+        }
+        op(OP2, (arg1 -- out)) {
+            BAR();
+        }
+        super(_OP1__OP2) = OP1 + OP2;
+        """
+        output = """
+        case OP1: {
+            if ((this_instr[1].opcode == OP2)) {
+                DPRINTF(2, "Inserting super _OP1__OP2\\n");
+                REPLACE_OP(this_instr, _OP1__OP2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }        
+        """
+        self.run_cases_test(input, output)
+
+    def test_super_replicate(self):
+        input = """
+        op(OP1, (arg1 -- out)) {
+            FOO();
+        }
+        replicate(3) op(OP2, (arg1 -- out)) {
+            BAR();
+        }
+        super(_OP1__OP2) = OP1 + OP2;
+        """
+        output = """
+        case OP1: {
+            if ((this_instr[1].opcode == OP2)) {
+                DPRINTF(2, "Inserting super _OP1__OP2\\n");
+                REPLACE_OP(this_instr, _OP1__OP2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_0)) {
+                DPRINTF(2, "Inserting super _OP1__OP2_0\\n");
+                REPLACE_OP(this_instr, _OP1__OP2_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_1)) {
+                DPRINTF(2, "Inserting super _OP1__OP2_1\\n");
+                REPLACE_OP(this_instr, _OP1__OP2_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_2)) {
+                DPRINTF(2, "Inserting super _OP1__OP2_2\\n");
+                REPLACE_OP(this_instr, _OP1__OP2_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }        
+        """
+        self.run_cases_test(input, output)
+
+    def test_super_replicate_only(self):
+        input = """
+        op(OP1, (arg1 -- out)) {
+            FOO();
+        }
+        replicate(3) op(OP2, (arg1 -- out)) {
+            BAR();
+        }
+        replicate_only super(_OP1__OP2) = OP1 + OP2;
+        """
+        output = """
+        case OP1: {
+            if ((this_instr[1].opcode == OP2_0)) {
+                DPRINTF(2, "Inserting super _OP1__OP2_0\\n");
+                REPLACE_OP(this_instr, _OP1__OP2_0, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_1)) {
+                DPRINTF(2, "Inserting super _OP1__OP2_1\\n");
+                REPLACE_OP(this_instr, _OP1__OP2_1, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            if ((this_instr[1].opcode == OP2_2)) {
+                DPRINTF(2, "Inserting super _OP1__OP2_2\\n");
+                REPLACE_OP(this_instr, _OP1__OP2_2, this_instr[0].oparg, this_instr[0].operand);
+                for (int i = 1; i < 2; i++) { REPLACE_OP((&this_instr[i]), _NOP, 0, 0); }
+                this_instr += 2;
+                break;
+            }
+            this_instr += 1;
+            break;
+        }        
+        """
+        self.run_cases_test(input, output)
 
 if __name__ == "__main__":
     unittest.main()
