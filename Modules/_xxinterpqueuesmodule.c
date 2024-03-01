@@ -1383,7 +1383,7 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(queuesmod_create_doc,
-"create() -> qid\n\
+"create(maxsize, fmt) -> qid\n\
 \n\
 Create a new cross-interpreter queue and return its unique generated ID.\n\
 It is a new reference as though bind() had been called on the queue.");
@@ -1443,9 +1443,10 @@ finally:
 }
 
 PyDoc_STRVAR(queuesmod_list_all_doc,
-"list_all() -> [qid]\n\
+"list_all() -> [(qid, fmt)]\n\
 \n\
-Return the list of IDs for all queues.");
+Return the list of IDs for all queues.\n\
+Each corresponding default format is also included.");
 
 static PyObject *
 queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1471,7 +1472,7 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(queuesmod_put_doc,
-"put(qid, obj, sharedonly=False)\n\
+"put(qid, obj, fmt)\n\
 \n\
 Add the object's data to the queue.");
 
@@ -1501,9 +1502,10 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(queuesmod_get_doc,
-"get(qid, [default]) -> obj\n\
+"get(qid, [default]) -> (obj, fmt)\n\
 \n\
 Return a new object from the data at the front of the queue.\n\
+The object's format is also returned.\n\
 \n\
 If there is nothing to receive then raise QueueEmpty, unless\n\
 a default value is provided.  In that case return it.");
