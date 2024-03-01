@@ -337,6 +337,12 @@ const binaryfunc _PyEval_BinaryOps[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
+const conversion_func _PyEval_ConversionFuncs[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
+
 
 // PEP 634: Structural Pattern Matching
 
@@ -800,23 +806,17 @@ resume_frame:
     {
         _Py_CODEUNIT *prev = frame->instr_ptr;
         _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
-        int original_opcode = 0;
-        if (tstate->tracing) {
-            PyCodeObject *code = _PyFrame_GetCode(frame);
-            original_opcode = code->_co_monitoring->lines[(int)(here - _PyCode_CODE(code))].original_opcode;
-        } else {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            original_opcode = _Py_call_instrumentation_line(
-                    tstate, frame, here, prev);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (original_opcode < 0) {
-                next_instr = here+1;
-                goto error;
-            }
-            next_instr = frame->instr_ptr;
-            if (next_instr != here) {
-                DISPATCH();
-            }
+        _PyFrame_SetStackPointer(frame, stack_pointer);
+        int original_opcode = _Py_call_instrumentation_line(
+                tstate, frame, here, prev);
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+        if (original_opcode < 0) {
+            next_instr = here+1;
+            goto error;
+        }
+        next_instr = frame->instr_ptr;
+        if (next_instr != here) {
+            DISPATCH();
         }
         if (_PyOpcode_Caches[original_opcode]) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);

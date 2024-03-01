@@ -10,7 +10,7 @@ import types
 import unittest
 import asyncio
 from test import support
-from test.support import script_helper
+from test.support import requires_specialization, script_helper
 
 PAIR = (0,1)
 
@@ -817,6 +817,9 @@ class ExceptionMonitoringTest(CheckEvents):
 
         self.check_events(func1, [("raise", KeyError)])
 
+    # gh-116090: This test doesn't really require specialization, but running
+    # it without specialization exposes a monitoring bug.
+    @requires_specialization
     def test_implicit_stop_iteration(self):
 
         def gen():
@@ -965,6 +968,7 @@ class ExceptionMonitoringTest(CheckEvents):
         )
         self.assertEqual(events[0], ("throw", IndexError))
 
+    @requires_specialization
     def test_no_unwind_for_shim_frame(self):
 
         class B:
