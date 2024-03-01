@@ -32,16 +32,25 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
 
     @classmethod
     def _normalize_task(cls, fn, args, kwargs):
-        pickled = pickle.dumps((fn, args, kwargs))
-        def wrapped(ctx):
-            interp, results = ctx
-            interp.exec(f'''if True:
-                import pickle
-                fn, args, kwargs = pickle.loads({pickled!r})
-                res = fn(*args, **kwargs)
-                _results.put(res)
-                ''')
-            return results.get_nowait()
+        if isinstance(fn, str):
+            if args or kwargs:
+                raise ValueError(f'a script does not take args or kwargs, got {args!r} and {kwargs!r}')
+            script = fn
+            def wrapped(ctx):
+                interp, _ = ctx
+                interp.exec(script)
+                return None
+        else:
+            pickled = pickle.dumps((fn, args, kwargs))
+            def wrapped(ctx):
+                interp, results = ctx
+                interp.exec(f'''if True:
+                    import pickle
+                    fn, args, kwargs = pickle.loads({pickled!r})
+                    res = fn(*args, **kwargs)
+                    _interp_pool_executor_results.put(res)
+                    ''')
+                return results.get_nowait()
         return wrapped, (), {}
 
     @classmethod
@@ -49,7 +58,7 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
         interp = interpreters.create()
         interp.exec('import test.support.interpreters.queues')
         results = interpreters.create_queue()
-        interp.prepare_main(_results=results)
+        interp.prepare_main(_interp_pool_executor_results=results)
         ctx = (interp, results)
         try:
             _thread._worker(ctx, *args)
