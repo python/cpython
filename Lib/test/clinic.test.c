@@ -5332,47 +5332,6 @@ Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
 
 
 /*[clinic input]
-Test.__init__ -> long
-Test overriding the __init__ return converter
-[clinic start generated code]*/
-
-PyDoc_STRVAR(Test___init____doc__,
-"Test()\n"
-"--\n"
-"\n"
-"Test overriding the __init__ return converter");
-
-static long
-Test___init___impl(TestObj *self);
-
-static int
-Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    int return_value = -1;
-    PyTypeObject *base_tp = TestType;
-
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoPositional("Test", args)) {
-        goto exit;
-    }
-    if ((Py_IS_TYPE(self, base_tp) ||
-         Py_TYPE(self)->tp_new == base_tp->tp_new) &&
-        !_PyArg_NoKeywords("Test", kwargs)) {
-        goto exit;
-    }
-    return_value = Test___init___impl((TestObj *)self);
-
-exit:
-    return return_value;
-}
-
-static long
-Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=9f3704989ab1f6eb input=311af0dc7f17e8e9]*/
-
-
-/*[clinic input]
 fn_with_default_binop_expr
     arg: object(c_default='CONST_A + CONST_B') = a+b
 [clinic start generated code]*/

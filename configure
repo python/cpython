@@ -16719,8 +16719,6 @@ ipv6lib=none
 ipv6trylibc=no
 
 if test "$ipv6" = yes -a "$cross_compiling" = no; then
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
-printf %s "checking ipv6 stack type... " >&6; }
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
 	do
 		case $i in
@@ -17002,6 +17000,8 @@ fi
 			break
 		fi
 	done
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
+printf %s "checking ipv6 stack type... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ipv6type" >&5
 printf "%s\n" "$ipv6type" >&6; }
 fi

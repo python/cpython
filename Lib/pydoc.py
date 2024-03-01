@@ -1685,8 +1685,17 @@ def plain(text):
 def pipepager(text, cmd):
     """Page through text by feeding it to another program."""
     import subprocess
+    env = os.environ.copy()
+    prompt_string = (
+        ' '
+        '?ltline %lt?L/%L.'
+        ':byte %bB?s/%s.'
+        '.'
+        '?e (END):?pB %pB\\%..'
+        ' (press h for help or q to quit)')
+    env['LESS'] = '-RmPm{0}$PM{0}$'.format(prompt_string)
     proc = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                            errors='backslashreplace')
+                            errors='backslashreplace', env=env)
     try:
         with proc.stdin as pipe:
             try:
