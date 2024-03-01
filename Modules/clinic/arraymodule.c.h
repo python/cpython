@@ -5,6 +5,24 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(array_array_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the array.");
+
+#define ARRAY_ARRAY_CLEAR_METHODDEF    \
+    {"clear", (PyCFunction)array_array_clear, METH_NOARGS, array_array_clear__doc__},
+
+static PyObject *
+array_array_clear_impl(arrayobject *self);
+
+static PyObject *
+array_array_clear(arrayobject *self, PyObject *Py_UNUSED(ignored))
+{
+    return array_array_clear_impl(self);
+}
+
 PyDoc_STRVAR(array_array___copy____doc__,
 "__copy__($self, /)\n"
 "--\n"
@@ -667,4 +685,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=3be987238a4bb431 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52c55d9b1d026c1c input=a9049054013a1b77]*/

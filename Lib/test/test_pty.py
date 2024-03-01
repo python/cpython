@@ -1,7 +1,6 @@
-import sys
 import unittest
 from test.support import (
-    is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
+    is_android, is_apple_mobile, is_emscripten, is_wasi, reap_children, verbose
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -9,9 +8,8 @@ from test.support.os_helper import TESTFN, unlink
 # Skip these tests if termios is not available
 import_module('termios')
 
-# Skip tests on WASM platforms, plus iOS/tvOS/watchOS
-if is_apple_mobile or is_emscripten or is_wasi:
-    raise unittest.SkipTest(f"pty tests not required on {sys.platform}")
+if is_android or is_apple_mobile or is_emscripten or is_wasi:
+    raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
 import os
