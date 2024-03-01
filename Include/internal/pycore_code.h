@@ -245,7 +245,12 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
+#ifdef Py_GIL_DISABLED
+// gh-115999 tracks progress on addressing this.
+#define ENABLE_SPECIALIZATION 0
+#else
 #define ENABLE_SPECIALIZATION 1
+#endif
 
 /* Specialization functions */
 

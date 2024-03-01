@@ -350,12 +350,15 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         TARGET(OP) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
             PyObject *value;
             value = stack_pointer[-1];
             uint16_t counter = read_u16(&this_instr[1].cache);
+            (void)counter;
             uint32_t extra = read_u32(&this_instr[2].cache);
+            (void)extra;
             stack_pointer += -1;
             DISPATCH();
         }
@@ -399,6 +402,7 @@ class TestGeneratedCases(unittest.TestCase):
             INSTRUCTION_STATS(OP);
             PREDICTED(OP);
             _Py_CODEUNIT *this_instr = next_instr - 6;
+            (void)this_instr;
             PyObject *right;
             PyObject *left;
             PyObject *arg2;
@@ -408,6 +412,7 @@ class TestGeneratedCases(unittest.TestCase):
             left = stack_pointer[-2];
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
                 op1(left, right);
             }
             /* Skip 2 cache entries */
@@ -415,6 +420,7 @@ class TestGeneratedCases(unittest.TestCase):
             arg2 = stack_pointer[-3];
             {
                 uint32_t extra = read_u32(&this_instr[4].cache);
+                (void)extra;
                 res = op2(arg2, left, right);
             }
             stack_pointer[-3] = res;
@@ -424,6 +430,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         TARGET(OP1) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
             PyObject *right;
@@ -431,6 +438,7 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             uint16_t counter = read_u16(&this_instr[1].cache);
+            (void)counter;
             op1(left, right);
             DISPATCH();
         }
