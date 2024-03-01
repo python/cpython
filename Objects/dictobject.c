@@ -21,6 +21,7 @@ layout:
 | dk_log2_size        |
 | dk_log2_index_bytes |
 | dk_kind             |
+| dk_version          |
 | dk_usable           |
 | dk_nentries         |
 +---------------------+
@@ -55,7 +56,7 @@ The DictObject can be in one of two forms.
 Either:
   A combined table:
     ma_values == NULL, dk_refcnt == 1.
-    Values are stored in the me_value field of the PyDictKeysObject.
+    Values are stored in the me_value field of the PyDictKeyEntry.
 Or:
   A split table:
     ma_values != NULL, dk_refcnt >= 1
