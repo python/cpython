@@ -457,8 +457,15 @@ def gethistoryfile():
         '.python_history')
 
 
+def enablerlcompleter():
+    """Enable default readline configuration on interactive prompts, by
+    registering a sys.__interactivehook__.
+    """
+    sys.__interactivehook__ = register_readline
+
+
 def register_readline():
-    """Enable default readline configuration on interactive prompts.
+    """Configure readline completion on interactive prompts.
 
     If the readline module can be imported, the hook will set the Tab key
     as completion key and register ~/.python_history as history file.
@@ -489,26 +496,28 @@ def register_readline():
         pass
 
     if readline.get_current_history_length() == 0:
-        # If no history was loaded, default to .python_history, or
-        # PYTHON_HISTORY.
+        # If no history was loaded, default to .python_history,
+        # or PYTHON_HISTORY.
         # The guard is necessary to avoid doubling history size at
         # each interpreter exit when readline was already configured
         # through a PYTHONSTARTUP hook, see:
         # http://bugs.python.org/issue5845#msg198636
+        history = gethistoryfile()
         try:
-            readline.read_history_file(gethistoryfile())
+            readline.read_history_file(history)
         except OSError:
             pass
 
         def write_history():
             try:
-                readline.write_history_file(gethistoryfile())
+                readline.write_history_file(history)
             except (FileNotFoundError, PermissionError):
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
                 pass
 
         atexit.register(write_history)
+
 
 def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE

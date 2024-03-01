@@ -110,23 +110,20 @@ if __name__ == '__main__':
     except ImportError:
         pass
 
-    try:
-        interactive_hook = sys.__interactivehook__
-    except AttributeError:
-        pass
-    else:
-        if interactive_hook is not None:
-            interactive_hook()
+    interactive_hook = getattr(sys, "__interactivehook__", None)
 
-        if interactive_hook is site.register_readline:
-            # Fix the completer function to use the interactive console locals
-            try:
-                import rlcompleter
-            except:
-                pass
-            else:
-                completer = rlcompleter.Completer(console.locals)
-                readline.set_completer(completer.complete)
+    if interactive_hook is not None:
+        interactive_hook()
+
+    if interactive_hook is site.register_readline:
+        # Fix the completer function to use the interactive console locals
+        try:
+            import rlcompleter
+        except:
+            pass
+        else:
+            completer = rlcompleter.Completer(console.locals)
+            readline.set_completer(completer.complete)
 
     repl_thread = REPLThread()
     repl_thread.daemon = True
