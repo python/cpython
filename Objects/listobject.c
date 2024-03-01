@@ -502,7 +502,16 @@ list_item(PyObject *aa, Py_ssize_t i)
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
-    return Py_NewRef(a->ob_item[i]);
+    PyObject *item;
+    Py_BEGIN_CRITICAL_SECTION(a);
+#ifdef Py_GIL_DISABLED
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)a) && !_PyObject_GC_IS_SHARED(a)) {
+        _PyObject_GC_SET_SHARED(a);
+    }
+#endif
+    item = Py_NewRef(a->ob_item[i]);
+    Py_END_CRITICAL_SECTION();
+    return item;
 }
 
 static PyObject *
@@ -658,7 +667,7 @@ list_repeat(PyObject *aa, Py_ssize_t n)
 }
 
 static void
-list_clear(PyListObject *a)
+list_clear_impl(PyListObject *a, bool is_resize)
 {
     PyObject **items = a->ob_item;
     if (items == NULL) {
@@ -674,17 +683,31 @@ list_clear(PyListObject *a)
     while (--i >= 0) {
         Py_XDECREF(items[i]);
     }
-    // TODO: Use QSBR technique, if the list is shared between threads,
-    PyMem_Free(items);
-
+#ifdef Py_GIL_DISABLED
+    bool use_qsbr = is_resize && _PyObject_GC_IS_SHARED(a);
+#else
+    bool use_qsbr = false;
+#endif
+    if (use_qsbr) {
+        _PyMem_FreeDelayed(items);
+    }
+    else {
+        PyMem_Free(items);
+    }
     // Note that there is no guarantee that the list is actually empty
     // at this point, because XDECREF may have populated it indirectly again!
+}
+
+static void
+list_clear(PyListObject *a)
+{
+    list_clear_impl(a, true);
 }
 
 static int
 list_clear_slot(PyObject *self)
 {
-    list_clear((PyListObject *)self);
+    list_clear_impl((PyListObject *)self, false);
     return 0;
 }
 
