@@ -25,6 +25,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import futures
+from . import queues
 from . import timeouts
 
 # Helper to generate new task names
@@ -572,8 +573,7 @@ class _AsCompletedIterator:
     result of the next underlying future to complete.
     """
     def __init__(self, aws, timeout):
-        from .queues import Queue  # Import here to avoid circular import problem.
-        self._done = Queue()
+        self._done = queues.Queue()
         self._timeout_handle = None
 
         loop = events.get_event_loop()
