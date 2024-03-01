@@ -104,45 +104,90 @@
         }
 
         case _TO_BOOL: {
+            _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            value = stack_pointer[-1];
+            (void)value;
+            res = sym_new_type(ctx, &PyBool_Type);
+            OUT_OF_SPACE_IF_NULL(res);
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_BOOL: {
+            _Py_UopsSymbol *value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyBool_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            else {
+                if(!sym_set_type(value, &PyBool_Type)) {
+                    goto hit_bottom;
+                }
+            }
             break;
         }
 
         case _TO_BOOL_INT: {
+            _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            value = stack_pointer[-1];
+            if (sym_is_const(value) && sym_matches_type(value, &PyLong_Type)) {
+                PyObject *load = _PyLong_IsZero((PyLongObject *)sym_get_const(value))
+                ? Py_False : Py_True;
+                REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
+            }
+            else {
+                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+            }
+            if(!sym_set_type(value, &PyLong_Type)) {
+                goto hit_bottom;
+            }
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_LIST: {
+            _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            value = stack_pointer[-1];
+            if(!sym_set_type(value, &PyList_Type)) {
+                goto hit_bottom;
+            }
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_NONE: {
+            _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            value = stack_pointer[-1];
+            if (sym_get_const(value) == Py_None) {
+                REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_False);
+            }
+            sym_set_const(value, Py_None);
+            OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));
             stack_pointer[-1] = res;
             break;
         }
 
         case _TO_BOOL_STR: {
+            _Py_UopsSymbol *value;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            value = stack_pointer[-1];
+            if (sym_is_const(value) && sym_matches_type(value, &PyUnicode_Type)) {
+                PyObject *load = sym_get_const(value) == &_Py_STR(empty) ? Py_False : Py_True;
+                REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+                OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, load));
+            }
+            else {
+                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+            }
+            if(!sym_set_type(value, &PyUnicode_Type)) {
+                goto hit_bottom;
+            }
             stack_pointer[-1] = res;
             break;
         }
@@ -172,8 +217,12 @@
                 sym_matches_type(right, &PyLong_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             }
-            sym_set_type(left, &PyLong_Type);
-            sym_set_type(right, &PyLong_Type);
+            if (!sym_set_type(left, &PyLong_Type)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(right, &PyLong_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -276,8 +325,12 @@
                 sym_matches_type(right, &PyFloat_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
-            sym_set_type(left, &PyFloat_Type);
-            sym_set_type(right, &PyFloat_Type);
+            if (!sym_set_type(left, &PyFloat_Type)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(right, &PyFloat_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -383,8 +436,12 @@
                 sym_matches_type(right, &PyUnicode_Type)) {
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
-            sym_set_type(left, &PyUnicode_Type);
-            sym_set_type(right, &PyUnicode_Type);
+            if (!sym_set_type(left, &PyUnicode_Type)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(right, &PyUnicode_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -1397,8 +1454,12 @@
             _Py_UopsSymbol *callable;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            sym_set_null(null);
-            sym_set_type(callable, &PyMethod_Type);
+            if (!sym_set_null(null)) {
+                goto hit_bottom;
+            }
+            if (!sym_set_type(callable, &PyMethod_Type)) {
+                goto hit_bottom;
+            }
             break;
         }
 
@@ -1425,7 +1486,9 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand;
-            sym_set_type(callable, &PyFunction_Type);
+            if (!sym_set_type(callable, &PyFunction_Type)) {
+                goto hit_bottom;
+            }
             (void)self_or_null;
             (void)func_version;
             break;
@@ -1768,6 +1831,14 @@
             OUT_OF_SPACE_IF_NULL(value = sym_new_const(ctx, ptr));
             stack_pointer[0] = value;
             stack_pointer += 1;
+            break;
+        }
+
+        case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
+            _Py_UopsSymbol *value;
+            value = sym_new_unknown(ctx);
+            if (value == NULL) goto out_of_space;
+            stack_pointer[-1] = value;
             break;
         }
 

@@ -13,6 +13,8 @@ from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import os_helper
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 if support.MS_WINDOWS:
     import msvcrt
@@ -47,7 +49,6 @@ class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
         self._proc.pid = -1
 
 
-@support.requires_subprocess()
 class SubprocessTransportTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
@@ -111,7 +112,6 @@ class SubprocessTransportTests(test_utils.TestCase):
         transport.close()
 
 
-@support.requires_subprocess()
 class SubprocessMixin:
 
     def test_stdin_stdout(self):
