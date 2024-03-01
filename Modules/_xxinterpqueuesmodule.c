@@ -824,17 +824,17 @@ done:
 
 static void _queue_free(_queue *);
 
-static void
+static int
 _queues_decref(_queues *queues, int64_t qid)
 {
+    int res = -1;
     PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
 
     _queueref *prev = NULL;
     _queueref *ref = _queuerefs_find(queues->head, qid, &prev);
     if (ref == NULL) {
         assert(!PyErr_Occurred());
-        // Already destroyed.
-        // XXX Warn?
+        res = ERR_QUEUE_NOT_FOUND;
         goto finally;
     }
     assert(ref->refcount > 0);
@@ -852,8 +852,10 @@ _queues_decref(_queues *queues, int64_t qid)
         return;
     }
 
+    res = 0
 finally:
     PyThread_release_lock(queues->mutex);
+    return res;
 }
 
 struct queue_id_and_fmt {
@@ -1152,7 +1154,14 @@ _queueid_xid_free(void *data)
     int64_t qid = ((struct _queueid_xid *)data)->qid;
     PyMem_RawFree(data);
     _queues *queues = _get_global_queues();
-    _queues_decref(queues, qid);
+    int res = _queues_decref(queues, qid);
+    if (res == ERR_QUEUE_NOT_FOUND) {
+        // Already destroyed.
+        // XXX Warn?
+    }
+    else {
+        assert(res == 0);
+    }
 }
 
 static PyObject *
@@ -1491,7 +1500,10 @@ queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
     // XXX Check module state if bound already.
     // XXX Update module state.
 
-    _queues_decref(&_globals.queues, qid);
+    int err = _queues_decref(&_globals.queues, qid);
+    if (handle_queue_error(err, self, qid)) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
