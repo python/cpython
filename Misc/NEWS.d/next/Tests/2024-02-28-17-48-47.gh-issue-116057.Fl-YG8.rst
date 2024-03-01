@@ -1,1 +1,0 @@
-Use relative recursion limits when testing ``os.walk`` and ``Path.walk``.
