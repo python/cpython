@@ -14705,9 +14705,15 @@ _PyUnicode_ExactDealloc(PyObject *op)
     unicode_dealloc(op);
 }
 
-static int unicode_get_buffer(PyObject *unicode, Py_buffer *view, int flags)
+int PyUnicode_GetBuffer(PyObject *unicode, Py_buffer *view, int kind)
 {
     view->obj = NULL;
+
+    if (kind != PyUnicode_KIND(unicode)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "Unicode kind does not match buffer kind");
+        return -1;
+    }
 
     int itemsize;
     switch (PyUnicode_KIND(unicode)) {
@@ -14733,7 +14739,7 @@ static int unicode_get_buffer(PyObject *unicode, Py_buffer *view, int flags)
         PyUnicode_DATA(unicode),
         length,
         1,
-        flags
+        0
     );
 
     if (res < 0) {
@@ -14745,7 +14751,6 @@ static int unicode_get_buffer(PyObject *unicode, Py_buffer *view, int flags)
     return 0;
 }
 
-
 // static void unicode_release_buffer(PyObject *unicode, Py_buffer *buffer)
 // {
 //
@@ -14753,7 +14758,8 @@ static int unicode_get_buffer(PyObject *unicode, Py_buffer *view, int flags)
 
 
 static PyBufferProcs unicode_as_buffer = {
-    .bf_getbuffer = unicode_get_buffer,
+    0,
+//    .bf_getbuffer = unicode_get_buffer,
 //    .bf_releasebuffer = unicode_release_buffer,
 };
 

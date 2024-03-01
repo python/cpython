@@ -1999,6 +1999,25 @@ test_string_from_format(PyObject *self, PyObject *Py_UNUSED(ignored))
 #undef CHECK_FORMAT_0
 }
 
+static PyObject *
+unicode_get_buffer(PyObject *module, PyObject *args)
+{
+    PyObject *unicode;
+    int kind;
+
+    if (!PyArg_ParseTuple(args, "Oi:unicode_get_buffer", &unicode, &kind)) {
+        return NULL;
+    }
+
+    Py_buffer view;
+
+    if (PyUnicode_GetBuffer(unicode, &view, kind) < 0) {
+        return NULL;
+    }
+
+    return PyMemoryView_FromBuffer(&view);
+}
+
 static PyMethodDef TestMethods[] = {
     {"codec_incrementalencoder", codec_incrementalencoder,       METH_VARARGS},
     {"codec_incrementaldecoder", codec_incrementaldecoder,       METH_VARARGS},
@@ -2093,6 +2112,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_contains",         unicode_contains,               METH_VARARGS},
     {"unicode_isidentifier",     unicode_isidentifier,           METH_O},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
+    {"unicode_get_buffer",       unicode_get_buffer,             METH_VARARGS},
     {NULL},
 };
 

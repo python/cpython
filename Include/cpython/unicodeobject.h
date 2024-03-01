@@ -695,6 +695,7 @@ static inline int Py_UNICODE_ISALNUM(Py_UCS4 ch) {
            || Py_UNICODE_ISNUMERIC(ch));
 }
 
+PyAPI_FUNC(int) PyUnicode_GetBuffer(PyObject *unicode, Py_buffer *view, int kind);
 
 /* === Misc functions ===================================================== */
 
