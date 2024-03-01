@@ -5004,12 +5004,16 @@ Test_property_set_impl(TestObj *self, PyObject *value);
 static int
 Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
 {
-    return Test_property_set_impl(self, value);
+    int return_value;
+
+    return_value = Test_property_set_impl(self, value);
+
+    return return_value;
 }
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=9797cd03c5204ddb input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=d51023f17c4ac3a1 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push

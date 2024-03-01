@@ -1613,11 +1613,7 @@ class CLanguage(Language):
             converter.set_template_dict(template_dict)
 
         f.return_converter.render(f, data)
-        if f.kind is SETTER:
-            # All setters return an int.
-            template_dict['impl_return_type'] = 'int'
-        else:
-            template_dict['impl_return_type'] = f.return_converter.type
+        template_dict['impl_return_type'] = f.return_converter.type
 
         template_dict['declarations'] = libclinic.format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
@@ -4562,18 +4558,13 @@ class int_return_converter(long_return_converter):
     cast = '(long)'
 
 
-class init_return_converter(long_return_converter):
-    """
-    Special return converter for __init__ functions.
-    """
+class type_slot_int_return_converter(long_return_converter):
+    """Special return converter for type slots functions that return int."""
     type = 'int'
     cast = '(long)'
 
-    def render(
-            self,
-            function: Function,
-            data: CRenderData
-    ) -> None: ...
+    def render(self, function: Function, data: CRenderData) -> None:
+        pass
 
 
 class unsigned_long_return_converter(long_return_converter):
@@ -5106,8 +5097,8 @@ class DSLParser:
             except ValueError:
                 fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
 
-        if self.kind is METHOD_INIT:
-            return init_return_converter()
+        if self.kind in {METHOD_INIT, SETTER}:
+            return type_slot_int_return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
