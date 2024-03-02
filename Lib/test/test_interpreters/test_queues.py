@@ -10,10 +10,14 @@ from test.support import import_helper
 _queues = import_helper.import_module('_xxinterpqueues')
 from test.support import interpreters
 from test.support.interpreters import queues
-from .utils import _run_output, TestBase
+from .utils import _run_output, TestBase as _TestBase
 
 
-class TestBase(TestBase):
+def get_num_queues():
+    return len(_queues.list_all())
+
+
+class TestBase(_TestBase):
     def tearDown(self):
         for qid in _queues.list_all():
             try:
@@ -34,6 +38,63 @@ class LowLevelTests(TestBase):
     def test_highlevel_reloaded(self):
         # See gh-115490 (https://github.com/python/cpython/issues/115490).
         importlib.reload(queues)
+
+    def test_create_destroy(self):
+        qid = _queues.create(2, 0)
+        _queues.destroy(qid)
+        self.assertEqual(get_num_queues(), 0)
+        with self.assertRaises(queues.QueueNotFoundError):
+            _queues.get(qid)
+        with self.assertRaises(queues.QueueNotFoundError):
+            _queues.destroy(qid)
+
+    def test_not_destroyed(self):
+        stdout, stderr = self.assert_python_failure(
+            '-c',
+            dedent(f"""
+                import {_queues.__name__} as _queues
+                _queues.create(2, 0)
+                """),
+        )
+        # It should have aborted due to an assert.
+        self.assertEqual(stdout, '')
+        self.assertNotEqual(stderr, '')
+
+    def test_bind_release(self):
+        with self.subTest('typical'):
+            qid = _queues.create(2, 0)
+            _queues.bind(qid)
+            _queues.release(qid)
+            self.assertEqual(get_num_queues(), 0)
+
+        with self.subTest('bind too much'):
+            qid = _queues.create(2, 0)
+            _queues.bind(qid)
+            _queues.bind(qid)
+            _queues.release(qid)
+            _queues.destroy(qid)
+            self.assertEqual(get_num_queues(), 0)
+
+        with self.subTest('nested'):
+            qid = _queues.create(2, 0)
+            _queues.bind(qid)
+            _queues.bind(qid)
+            _queues.release(qid)
+            _queues.release(qid)
+            self.assertEqual(get_num_queues(), 0)
+
+        with self.subTest('release without binding'):
+            stdout, stderr = self.assert_python_failure(
+                '-c',
+                dedent(f"""
+                    import {_queues.__name__} as _queues
+                    _queues.create(2, 0)
+                    _queues.release(qid)
+                    """),
+            )
+            # It should have aborted due to an assert.
+            self.assertEqual(stdout, '')
+            self.assertNotEqual(stderr, '')
 
 
 class QueueTests(TestBase):

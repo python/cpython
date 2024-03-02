@@ -1386,7 +1386,10 @@ PyDoc_STRVAR(queuesmod_create_doc,
 "create(maxsize, fmt) -> qid\n\
 \n\
 Create a new cross-interpreter queue and return its unique generated ID.\n\
-It is a new reference as though bind() had been called on the queue.");
+It is a new reference as though bind() had been called on the queue.\n\
+\n\
+The caller is responsible for calling destroy() for the new queue\n\
+before the runtime is finalized.");
 
 static PyObject *
 queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
