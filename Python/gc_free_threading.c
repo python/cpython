@@ -1154,6 +1154,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
         }
     }
 
+    _PyGC_Clear_DelayedObjects(interp);
     /* Update stats */
     struct gc_generation_stats *stats = &gcstate->generation_stats[generation];
     stats->collections++;
@@ -1754,6 +1755,18 @@ _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
     while (tstate != NULL) {
         _PyObject_ClearFreeLists(&tstate->freelists, 0);
         tstate = (_PyThreadStateImpl *)tstate->base.next;
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+void
+_PyGC_Clear_DelayedObjects(PyInterpreterState *interp)
+{
+    HEAD_LOCK(&_PyRuntime);
+    PyThreadState *tstate = interp->threads.head;
+    while (tstate != NULL) {
+        _PyMem_ProcessDelayed(tstate);
+        tstate = (PyThreadState *)tstate->next;
     }
     HEAD_UNLOCK(&_PyRuntime);
 }

@@ -288,6 +288,9 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
+#ifdef Py_GIL_DISABLED
+extern void _PyGC_Clear_DelayedObjects(PyInterpreterState *interp);
+#endif
 
 #ifdef __cplusplus
 }
