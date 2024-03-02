@@ -133,9 +133,10 @@ Python versions are numbered "A.B.C" or "A.B":
   changes.
 * *C* is the micro version number -- it is incremented for each bugfix release.
 
-See `Status of Python versions section of the Python's Developer Guide 
-<https://devguide.python.org/versions/>`__ for more information about bugfix
-releases.
+See `Status of Python versions section of the Python's Developer Guide
+<https://devguide.python.org/versions/>`__ for more information about
+bugfix releases. Also, consult :pep:`387` to learn more about Python's
+Backward Compatibilty policy.
 
 Not all releases are bugfix releases.  In the run-up to a new feature release, a
 series of development releases are made, denoted as alpha, beta, or release
