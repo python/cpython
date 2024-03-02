@@ -1,7 +1,2 @@
-webbrowser: Use ``$XDG_CURRENT_DESKTOP`` to check desktop
-
-Usage of ``$GNOME_DESKTOP_SESSION_ID`` env variable is deprecated since
-`GNOME 3.30.0`_, so while python will still support it, prefer use
-``$XDG_CURRENT_DESKTOP`` instead.
-
-.. _GNOME 3.30.0: https://gitlab.gnome.org/GNOME/gnome-session/-/commit/00e0e6226371d53f65
+Use the ``XDG_CURRENT_DESKTOP`` environment variable in :mod:`webbrowser` to check desktop.
+Prefer it to the deprecated ``GNOME_DESKTOP_SESSION_ID`` for GNOME detection.
