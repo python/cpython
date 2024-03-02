@@ -383,7 +383,6 @@ static int
 inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
 {
     int last_push = -1;
-    int last_pop = -1;
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
 #ifdef Py_DEBUG
@@ -395,68 +394,98 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
 #endif
         if (inst->opcode == _PUSH_FRAME) {
             last_push = pc;
-            last_pop = -1;
+            continue;
         }
-        else if (inst->opcode == _POP_FRAME) {
-            last_pop = pc;
+        if (inst->opcode != _POP_FRAME) {
+            if (inst->opcode == _JUMP_TO_TOP || inst->opcode == _EXIT_TRACE) {
+                break;
+            }
+            continue;
         }
-        if (last_pop >= 0 && last_push >= 0) {
-            DPRINTF(3, "Maybe inline call at [%d-%d]\n", last_push, last_pop);
-            for (int i = last_push + 1; i < last_pop; i++) {
-                switch (buffer[i].opcode) {
-                    case _NOP:
-                    case _CHECK_VALIDITY:
-                    case _RESUME_CHECK:
-                    case _LOAD_FAST:
-                    case _SET_IP:
-                    case _CHECK_VALIDITY_AND_SET_IP:
-                    // TODO: More systematic approach to which uops are safe
+        assert(inst->opcode == _POP_FRAME);
+        if (last_push < 0) {
+            continue;
+        }
+        DPRINTF(3, "Maybe inline call at [%d-%d]\n", last_push, pc);
+        for (int i = last_push + 1; i < pc; i++) {
+            switch (buffer[i].opcode) {
+                case _NOP:
+                case _CHECK_VALIDITY:
+                case _RESUME_CHECK:
+                case _LOAD_FAST:
+                case _SET_IP:
+                case _CHECK_VALIDITY_AND_SET_IP:
+                // TODO: More systematic approach to which uops are safe
+                break;
+            default:
+                DPRINTF(3, "Not inlining call at [%d-%d]: %s\n",
+                        last_push, pc, _PyUOpName(buffer[i].opcode));
+                goto out;
+            }
+        }
+        int nargs = buffer[last_push].oparg;
+        if (buffer[last_push - 1].opcode != _SAVE_RETURN_OFFSET) {
+            DPRINTF(3, "Not inlining call at [%d-%d]: No _SAVE_RETURN_OFFSET\n",
+                    last_push, pc);
+            goto out;
+        }
+        if (buffer[last_push - 2].opcode != _INIT_CALL_PY_EXACT_ARGS) {
+            DPRINTF(3, "Not inlining call at [%d-%d]: No _INIT_CALL_PY_EXACT_ARGS\n",
+                    last_push, pc);
+            goto out;
+        }
+        if (buffer[last_push - 3].opcode != _CHECK_STACK_SPACE) {
+            DPRINTF(3, "Not inlining call at [%d-%d]: No _CHECK_STACK_SPACE\n",
+                    last_push, pc);
+            goto out;
+        }
+        if (buffer[last_push - 4].opcode !=  _CHECK_FUNCTION_EXACT_ARGS) {
+            DPRINTF(3, "Not inlining call at [%d-%d]: No _CHECK_FUNCTION_EXACT_ARGS\n",
+                    last_push, pc);
+            goto out;
+        }
+        if (buffer[last_push - 5].opcode == _INIT_CALL_BOUND_METHOD_EXACT_ARGS) {
+            DPRINTF(2, "Inlining method call at [%d-%d]\n", last_push, pc);
+            nargs += 1;
+        }
+        else {
+            DPRINTF(2, "Inlining function call at [%d-%d]\n", last_push, pc);
+        }
+        /* A little before the _PUSH_FRAME, the stack layout is:
+
+            | callable | self_or_null | arg1 | arg2 | ... | argN |
+
+            The arg count is the _PUSH_FRAME oparg.
+            If self_or_null is NULL, the locals of the frame start at arg1,
+            so we translate _LOAD_FAST i into _COPY nargs-i;
+            if it's not NULL, add one to nargs;
+            */
+        for (int i = last_push + 1; i < pc; i++) {
+            switch (buffer[i].opcode) {
+                case _LOAD_FAST:
+                    buffer[i].opcode = _COPY;
+                    buffer[i].oparg = nargs - buffer[i].oparg;
                     break;
-                default:
-                    DPRINTF(3, "Not inlining call at [%d-%d]: %s\n",
-                            last_push, last_pop, _PyUOpName(buffer[i].opcode));
-                    goto out;
-                }
+                case _RESUME_CHECK:
+                    buffer[i].opcode = _NOP;
+                    break;
             }
-            DPRINTF(2, "Inlining call at [%d-%d]\n", last_push, last_pop);
-            /* A little before the _PUSH_FRAME, the stack layout is:
-
-               | callable | NULL | arg1 | arg2 | ... | argN |
-
-               The arg count is the _PUSH_FRAME oparg.
-               The locals of the frame would start at arg1,
-               so we translate _LOAD_FAST i into _COPY nargs-i.
-             */
-            for (int i = last_push + 1; i < last_pop; i++) {
-                switch (buffer[i].opcode) {
-                    case _LOAD_FAST:
-                        buffer[i].opcode = _COPY;
-                        buffer[i].oparg = buffer[last_push].oparg - buffer[i].oparg;
-                        break;
-                    case _RESUME_CHECK:
-                        buffer[i].opcode = _NOP;
-                        break;
-                }
-            }
-
-            assert(buffer[last_pop].opcode == _POP_FRAME);
-            buffer[last_pop].opcode = _ADJUST_STUFF;
-            buffer[last_pop].oparg = buffer[last_push].oparg;
-
-            buffer[last_push].opcode = NOP;
-
-            assert(buffer[last_push - 1].opcode == _SAVE_RETURN_OFFSET);
-            buffer[last_push - 1].opcode = NOP;
-
-            assert(buffer[last_push - 2].opcode == _INIT_CALL_PY_EXACT_ARGS);
-            buffer[last_push - 2].opcode = NOP;
-
-        out:
-            last_pop = last_push = -1;
         }
-        if (inst->opcode == _JUMP_TO_TOP || inst->opcode == _EXIT_TRACE) {
-            break;
-        }
+
+        assert(buffer[pc].opcode == _POP_FRAME);
+        buffer[pc].opcode = _ADJUST_STUFF;
+        buffer[pc].oparg = buffer[last_push].oparg;
+
+        buffer[last_push].opcode = NOP;
+
+        assert(buffer[last_push - 1].opcode == _SAVE_RETURN_OFFSET);
+        buffer[last_push - 1].opcode = NOP;
+
+        assert(buffer[last_push - 2].opcode == _INIT_CALL_PY_EXACT_ARGS);
+        buffer[last_push - 2].opcode = NOP;
+
+    out:
+        last_push = -1;
     }
     return 1;
 }
