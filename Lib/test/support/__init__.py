@@ -786,7 +786,6 @@ def gc_collect():
     gc.collect()
     gc.collect()
 
-
 @contextlib.contextmanager
 def disable_gc():
     import gc
