@@ -901,30 +901,6 @@ class ThreadTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err, b"")
 
-    @cpython_only
-    def test_done_event(self):
-        # Test an implementation detail of Thread objects.
-        started = _thread.allocate_lock()
-        finish = _thread.allocate_lock()
-        started.acquire()
-        finish.acquire()
-        def f():
-            started.release()
-            finish.acquire()
-            time.sleep(0.01)
-        # The done event is not set if the thread hasn't started
-        t = threading.Thread(target=f)
-        self.assertFalse(t._done_event.is_set())
-        t.start()
-        started.acquire()
-        self.assertTrue(t.is_alive())
-        # The done event is not set while the thread is alive
-        self.assertFalse(t._done_event.wait(0), False)
-        finish.release()
-        # When the thread ends, the done event is set.
-        self.assertTrue(t._done_event.wait(support.SHORT_TIMEOUT), False)
-        t.join()
-
     def test_repr_stopped(self):
         # Verify that "stopped" shows up in repr(Thread) appropriately.
         started = _thread.allocate_lock()

@@ -289,6 +289,21 @@ class ThreadRunningTests(BasicThreadTest):
             with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
                 raise error
 
+    def test_join_with_timeout(self):
+        lock = thread.allocate_lock()
+        lock.acquire()
+
+        def thr():
+            lock.acquire()
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(thr)
+            handle.join(0.1)
+            self.assertFalse(handle.is_done())
+            lock.release()
+            handle.join()
+            self.assertTrue(handle.is_done())
+
 
 class Barrier:
     def __init__(self, num_threads):

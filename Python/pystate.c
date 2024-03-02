@@ -1032,14 +1032,10 @@ _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
     PyThreadState *tstate = interp->threads.main;
     assert(tstate == current_fast_get());
 
-    if (tstate->done_event != NULL) {
-        // The threading module was imported for the first time in this
-        // thread, so it was set as threading._main_thread.  (See gh-75698.)
-        // The thread has finished running the Python program so we mark
-        // the thread object as finished.
-        assert(tstate->_whence != _PyThreadState_WHENCE_THREADING);
-        _PyEvent_Notify(&tstate->done_event->event);
-    }
+    // The thread has finished running the Python program so we mark
+    // the thread object as finished.
+    assert(tstate->_whence != _PyThreadState_WHENCE_THREADING);
+    _PyEvent_Notify(&tstate->done_event->event);
 
     interp->threads.main = NULL;
 }
@@ -1150,12 +1146,13 @@ _PyInterpreterState_WaitForThreads(PyInterpreterState *interp)
 
         // Find a thread that's not yet finished.
         HEAD_LOCK(runtime);
-        for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
-            if (p == tstate) {
+        for (PyThreadState *ts = interp->threads.head; ts != NULL;
+             ts = ts->next) {
+            if (ts == tstate) {
                 continue;
             }
-            if (p->done_event && !p->is_daemon) {
-                done_event = p->done_event;
+            if (!ts->is_daemon && !_PyEvent_IsSet(&ts->done_event->event)) {
+                done_event = ts->done_event;
                 _PyEventRc_Incref(done_event);
                 break;
             }
@@ -1169,11 +1166,7 @@ _PyInterpreterState_WaitForThreads(PyInterpreterState *interp)
 
         // Wait for the other thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
-        for (;;) {
-            if (PyEvent_WaitTimed(&done_event->event, -1)) {
-                break;
-            }
-
+        while (!PyEvent_WaitTimed(&done_event->event, -1)) {
             // interrupted
             if (Py_MakePendingCalls() < 0) {
                 PyErr_WriteUnraisable(NULL);
@@ -1406,7 +1399,6 @@ init_threadstate(_PyThreadStateImpl *_tstate, PyInterpreterState *interp,
         tstate->state = _Py_THREAD_SUSPENDED;
     }
 
-    _PyEventRc_Incref(done_event);
     tstate->is_daemon = (id > 1);
     tstate->done_event = done_event;
 
@@ -1428,10 +1420,14 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
 }
 
 static PyThreadState *
-new_threadstate(PyInterpreterState *interp, int whence, _PyEventRc *done_event)
+new_threadstate(PyInterpreterState *interp, int whence)
 {
     _PyThreadStateImpl *tstate;
     _PyRuntimeState *runtime = interp->runtime;
+    _PyEventRc *done_event = _PyEventRc_New();
+    if (done_event == NULL) {
+        return NULL;
+    }
     // We don't need to allocate a thread state for the main interpreter
     // (the common case), but doing it later for the other case revealed a
     // reentrancy problem (deadlock).  So for now we always allocate before
@@ -1439,11 +1435,13 @@ new_threadstate(PyInterpreterState *interp, int whence, _PyEventRc *done_event)
     _PyThreadStateImpl *new_tstate = alloc_threadstate();
     int used_newtstate;
     if (new_tstate == NULL) {
+        _PyEventRc_Decref(done_event);
         return NULL;
     }
 #ifdef Py_GIL_DISABLED
     Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
     if (qsbr_idx < 0) {
+        _PyEventRc_Decref(done_event);
         PyMem_RawFree(new_tstate);
         return NULL;
     }
@@ -1495,8 +1493,8 @@ new_threadstate(PyInterpreterState *interp, int whence, _PyEventRc *done_event)
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
-    PyThreadState *tstate =
-        _PyThreadState_New(interp, _PyThreadState_WHENCE_UNKNOWN);
+    PyThreadState *tstate = new_threadstate(interp,
+                                            _PyThreadState_WHENCE_UNKNOWN);
     if (tstate) {
         bind_tstate(tstate);
         // This makes sure there's a gilstate tstate bound
@@ -1512,24 +1510,7 @@ PyThreadState_New(PyInterpreterState *interp)
 PyThreadState *
 _PyThreadState_New(PyInterpreterState *interp, int whence)
 {
-    _PyEventRc *done_event = _PyEventRc_New();
-    if (done_event == NULL) {
-        return NULL;
-    }
-    PyThreadState *tstate = new_threadstate(interp, whence, done_event);
-
-    // tstate has a reference
-    _PyEventRc_Decref(done_event);
-
-    return tstate;
-}
-
-// This must be followed by a call to _PyThreadState_Bind();
-PyThreadState *
-_PyThreadState_NewWithEvent(PyInterpreterState *interp, int whence,
-                            _PyEventRc *done_event)
-{
-    return new_threadstate(interp, whence, done_event);
+    return new_threadstate(interp, whence);
 }
 
 // We keep this for stable ABI compabibility.
@@ -1633,24 +1614,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
-    _PyEventRc *done_event = tstate->done_event;
-    tstate->done_event = NULL;
-
-    // Notify threads waiting on Thread.join(). This should happen after the
-    // thread state is unlinked, but must happen before parking lot is
-    // deinitialized.
-    //
-    // For the "main" thread of each interpreter, this is meant
-    // to be done in _PyInterpreterState_SetNotRunningMain().
-    // That leaves threads created by the threading module,
-    // and any threads killed by forking.
-    // However, we also accommodate "main" threads that still
-    // don't call _PyInterpreterState_SetNotRunningMain() yet.
-    if (done_event) {
-        _PyEvent_Notify(&done_event->event);
-        _PyEventRc_Decref(done_event);
-    }
-
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
@@ -1708,6 +1671,20 @@ tstate_delete_common(PyThreadState *tstate)
         }
     }
     HEAD_UNLOCK(runtime);
+
+    _PyEventRc *done_event = tstate->done_event;
+    tstate->done_event = NULL;
+
+    // Notify threads waiting on Thread.join(). This should happen after the
+    // thread state is unlinked, but must happen before the parking lot is
+    // deinitialized.
+    //
+    // For the "main" thread of each interpreter, this is meant to be done in
+    // _PyInterpreterState_SetNotRunningMain().  However, we also accommodate
+    // "main" threads that still don't call
+    // _PyInterpreterState_SetNotRunningMain() yet.
+    _PyEvent_Notify(&done_event->event);
+    _PyEventRc_Decref(done_event);
 
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_unregister((_PyThreadStateImpl *)tstate);
@@ -2627,8 +2604,8 @@ PyGILState_Ensure(void)
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
         // XXX Use PyInterpreterState_EnsureThreadState()?
-        tcur = _PyThreadState_New(runtime->gilstate.autoInterpreterState,
-                                  _PyThreadState_WHENCE_GILSTATE);
+        tcur = new_threadstate(runtime->gilstate.autoInterpreterState,
+                               _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
         }
