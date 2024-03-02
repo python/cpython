@@ -200,10 +200,10 @@ class FrameAttrsTest(unittest.TestCase):
 
     def test_locals(self):
         f, outer, inner = self.make_frames()
-        outer_locals = outer.f_locals
         # TODO: Support pop for f_locals
-        # self.assertIsInstance(outer_locals.pop('inner'), types.FunctionType)
-        self.assertEqual(outer_locals, {'x': 5, 'y': 6})
+        outer_locals = dict(outer.f_locals)
+        self.assertIsInstance(outer_locals.pop('inner'), types.FunctionType)
+        self.assertEqual(dict(outer_locals), {'x': 5, 'y': 6})
         inner_locals = inner.f_locals
         self.assertEqual(inner_locals, {'x': 5, 'z': 7})
 
