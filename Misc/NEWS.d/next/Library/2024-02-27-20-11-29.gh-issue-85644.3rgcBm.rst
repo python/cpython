@@ -1,0 +1,2 @@
+Use the ``XDG_CURRENT_DESKTOP`` environment variable in :mod:`webbrowser` to check desktop.
+Prefer it to the deprecated ``GNOME_DESKTOP_SESSION_ID`` for GNOME detection.

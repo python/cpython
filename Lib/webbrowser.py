@@ -418,12 +418,18 @@ def register_X_browsers():
     if shutil.which("gio"):
         register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
 
-    # Equivalent of gio open before 2015
-    if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
+    xdg_desktop = os.getenv("XDG_CURRENT_DESKTOP", "").split(":")
+
+    # The default GNOME3 browser
+    if (("GNOME" in xdg_desktop or
+         "GNOME_DESKTOP_SESSION_ID" in os.environ) and
+            shutil.which("gvfs-open")):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
 
     # The default KDE browser
-    if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
+    if (("KDE" in xdg_desktop or
+         "KDE_FULL_SESSION" in os.environ) and
+            shutil.which("kfmclient")):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
     # Common symbolic link for the default X11 browser
