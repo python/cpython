@@ -332,11 +332,13 @@ def is_infallible(op: parser.InstDef) -> bool:
 
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
+    "Py_XINCREF",
     "_PyDictOrValues_IsValues",
     "_PyObject_DictOrValuesPointer",
     "_PyDictOrValues_GetValues",
     "_PyObject_MakeInstanceAttributesFromDict",
     "Py_DECREF",
+    "Py_XDECREF",
     "_Py_DECREF_SPECIALIZED",
     "DECREF_INPUTS_AND_REUSE_FLOAT",
     "PyUnicode_Append",
