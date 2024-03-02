@@ -953,6 +953,42 @@ class TestUopsOptimization(unittest.TestCase):
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNone(ex)
 
+    def test_function_call_inline(self):
+        def cast(typ, val):
+            return val
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                x = cast(int, i) + 1
+            return x
+        x, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(x, 20)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        print()
+        print(list(iter_opnames(ex)))
+        self.assertNotIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_POP_FRALE", uops)
+
+    def test_method_call_inline(self):
+        class Caster:
+            def cast(self, typ, val):
+                return val
+        def testfunc(n):
+            cast = Caster().cast
+            x = 0
+            for i in range(n):
+                x = cast(int, i) + 1
+            return x
+        x, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(x, 20)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        print()
+        print(list(iter_opnames(ex)))
+        self.assertNotIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_POP_FRALE", uops)
+
 
 if __name__ == "__main__":
     unittest.main()
