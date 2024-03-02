@@ -3873,4 +3873,23 @@
             break;
         }
 
+        case _ADJUST_STUFF: {
+            PyObject *retval;
+            PyObject **args;
+            PyObject *callable;
+            oparg = CURRENT_OPARG();
+            retval = stack_pointer[-1];
+            args = &stack_pointer[-1 - oparg];
+            callable = stack_pointer[-3 - oparg];
+            Py_INCREF(retval);
+            Py_DECREF(callable);
+            for (int _i = oparg; --_i >= 0;) {
+                Py_DECREF(args[_i]);
+            }
+            Py_DECREF(retval);
+            stack_pointer[-3 - oparg] = retval;
+            stack_pointer += -2 - oparg;
+            break;
+        }
+
 #undef TIER_TWO

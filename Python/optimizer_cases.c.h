@@ -1910,3 +1910,12 @@
             break;
         }
 
+        case _ADJUST_STUFF: {
+            _Py_UopsSymbol *retval;
+            retval = sym_new_unknown(ctx);
+            if (retval == NULL) goto out_of_space;
+            stack_pointer[-3 - oparg] = retval;
+            stack_pointer += -2 - oparg;
+            break;
+        }
+

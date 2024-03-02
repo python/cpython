@@ -242,6 +242,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_START_EXECUTOR] = 0,
     [_FATAL_ERROR] = HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
+    [_ADJUST_STUFF] = HAS_ARG_FLAG,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -251,6 +252,7 @@ const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
+    [_ADJUST_STUFF] = "_ADJUST_STUFF",
     [_BEFORE_ASYNC_WITH] = "_BEFORE_ASYNC_WITH",
     [_BEFORE_WITH] = "_BEFORE_WITH",
     [_BINARY_OP] = "_BINARY_OP",

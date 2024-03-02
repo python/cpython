@@ -4125,6 +4125,11 @@ dummy_func(
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
+        tier2 op(_ADJUST_STUFF, (callable, unused, args[oparg], retval -- retval)) {
+            Py_INCREF(retval);
+            DECREF_INPUTS();
+        }
+
 // END BYTECODES //
 
     }

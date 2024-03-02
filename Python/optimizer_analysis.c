@@ -375,6 +375,96 @@ hit_bottom:
 }
 
 
+#ifdef Py_DEBUG
+extern void _PyUOpPrint(const _PyUOpInstruction *uop);
+#endif
+
+static int
+inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
+{
+    int last_push = -1;
+    int last_pop = -1;
+    for (int pc = 0; pc < buffer_size; pc++) {
+        _PyUOpInstruction *inst = &buffer[pc];
+#ifdef Py_DEBUG
+        if (get_lltrace() >= 2) {  // TODO: >= 3 or even >= 4
+            printf("%4d INL: ", pc);
+            _PyUOpPrint(inst);
+            printf("\n");
+        }
+#endif
+        if (inst->opcode == _PUSH_FRAME) {
+            last_push = pc;
+            last_pop = -1;
+        }
+        else if (inst->opcode == _POP_FRAME) {
+            last_pop = pc;
+        }
+        if (last_pop >= 0 && last_push >= 0) {
+            DPRINTF(
+                2,
+                "An opportunity for call inlining presents itself at [%d, %d]\n",
+                last_push,
+                last_pop);
+            for (int i = last_push + 1; i < last_pop; i++) {
+                switch (buffer[i].opcode) {
+                    case _NOP:
+                    case _CHECK_VALIDITY:
+                    case _RESUME_CHECK:
+                    case _LOAD_FAST:
+                    case _SET_IP:
+                    case _CHECK_VALIDITY_AND_SET_IP:
+                    // TODO: More systematic approach to which uops are safe here
+                    break;
+                default:
+                    DPRINTF(2, "Not inlining call: %s\n", _PyUOpName(buffer[i].opcode));
+                    goto out;
+                }
+            }
+            DPRINTF(2, "Inlining call!!!\n");
+            /* A little before the _PUSH_FRAME, the stack layout is:
+
+               | callable | NULL | arg1 | arg2 | ... | argN |
+
+               The arg count is the _PUSH_FRAME oparg.
+               The locals of the frame would start at arg1,
+               so we translate _LOAD_FAST i into _COPY nargs-i.
+             */
+            for (int i = last_push + 1; i < last_pop; i++) {
+                switch (buffer[i].opcode) {
+                    case _LOAD_FAST:
+                        buffer[i].opcode = _COPY;
+                        buffer[i].oparg = buffer[last_push].oparg - buffer[i].oparg;
+                        break;
+                    case _RESUME_CHECK:
+                        buffer[i].opcode = _NOP;
+                        break;
+                }
+            }
+
+            assert(buffer[last_pop].opcode == _POP_FRAME);
+            buffer[last_pop].opcode = _ADJUST_STUFF;
+            buffer[last_pop].oparg = buffer[last_push].oparg;
+
+            buffer[last_push].opcode = NOP;
+
+            assert(buffer[last_push - 1].opcode == _SAVE_RETURN_OFFSET);
+            buffer[last_push - 1].opcode = NOP;
+
+            assert(buffer[last_push - 2].opcode == _INIT_CALL_PY_EXACT_ARGS);
+            buffer[last_push - 2].opcode = NOP;
+
+        out:
+            last_pop = last_push = -1;
+        }
+        if (inst->opcode == _JUMP_TO_TOP || inst->opcode == _EXIT_TRACE) {
+            break;
+        }
+    }
+    return 1;
+}
+
+
 static void
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
@@ -524,6 +614,12 @@ _Py_uop_analyze_and_optimize(
         (PyCodeObject *)frame->f_executable, buffer,
         buffer_size, curr_stacklen, dependencies);
 
+    if (err == 0) {
+        goto not_ready;
+    }
+    assert(err == 1);
+
+    err = inline_calls(buffer, buffer_size, curr_stacklen);
     if (err == 0) {
         goto not_ready;
     }
