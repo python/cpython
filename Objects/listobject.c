@@ -263,6 +263,65 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
     return Py_NewRef(PyList_GET_ITEM(op, i));
 }
 
+#ifdef Py_GIL_DISABLED
+
+static PyObject *
+list_item_impl(PyListObject *self, Py_ssize_t idx, PyObject *dead)
+{
+    PyObject *item = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (!_PyObject_GC_IS_SHARED(self)) {
+        _PyObject_GC_SET_SHARED(self);
+    }
+    Py_ssize_t size = Py_SIZE(self);
+    if (!valid_index(idx, size)) {
+        goto exit;
+    }
+    item = Py_NewRef(self->ob_item[idx]);
+exit:
+    Py_END_CRITICAL_SECTION();
+    return item;
+}
+
+static inline PyObject*
+list_get_item_ref(PyListObject *op, Py_ssize_t i)
+{
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)op) && !_PyObject_GC_IS_SHARED(op)) {
+        return list_item_impl(op, i, NULL);
+    }
+    // Need atomic operation for the getting size.
+    Py_ssize_t size = _Py_atomic_load_ssize_relaxed(&_PyVarObject_CAST(op)->ob_size);
+    if (!valid_index(i, size)) {
+        return NULL;
+    }
+    PyObject **ob_item = _Py_atomic_load_ptr(&op->ob_item);
+    if (ob_item == NULL) {
+        return NULL;
+    }
+    Py_ssize_t cap = _Py_atomic_load_ssize_relaxed(&op->allocated);
+    if (!valid_index(i, cap)) {
+        return NULL;
+    }
+    PyObject *item = _Py_atomic_load_ptr(&ob_item[i]);
+    if (mi_unlikely(!item)) {
+        return list_item_impl(op, i, NULL);
+    }
+    if (mi_likely(_Py_TryIncrefFast(item))) {
+        goto compare_ob_item;
+    }
+    if (!_Py_TryIncRefShared(item)) {
+        return list_item_impl(op, i, item);
+    }
+    if (mi_unlikely(item != _Py_atomic_load_ptr(&ob_item[i]))) {
+        return list_item_impl(op, i, item);
+    }
+compare_ob_item:
+    if (mi_unlikely(ob_item != _Py_atomic_load_ptr(&op->ob_item))) {
+        return list_item_impl(op, i, item);
+    }
+    return item;
+}
+#else
 static inline PyObject*
 list_get_item_ref(PyListObject *op, Py_ssize_t i)
 {
@@ -271,6 +330,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
     }
     return Py_NewRef(PyList_GET_ITEM(op, i));
 }
+#endif
 
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
