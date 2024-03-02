@@ -22,7 +22,6 @@ struct _types_runtime_state {
     // bpo-42745: next_version_tag remains shared by all interpreters
     // because of static types.
     unsigned int next_version_tag;
-    PyMutex type_mutex;
 };
 
 
@@ -71,6 +70,7 @@ struct types_state {
     struct type_cache type_cache;
     size_t num_builtins_initialized;
     static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+    PyMutex mutex;
 };
 
 
@@ -147,7 +147,7 @@ extern PyObject* _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
 
 extern PyTypeObject _PyBufferWrapper_Type;
 
-extern PyObject* _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
+PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
 
 
