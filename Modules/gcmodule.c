@@ -93,6 +93,7 @@ gc_collect_impl(PyObject *module, int generation)
     return _PyGC_Collect(tstate, generation, _Py_GC_REASON_MANUAL);
 }
 
+#ifdef Py_GIL_DISABLED
 /*[clinic input]
 gc._collect_delayed_objects
 
@@ -104,12 +105,11 @@ static PyObject *
 gc__collect_delayed_objects_impl(PyObject *module)
 /*[clinic end generated code: output=a016a10f967d4229 input=1064c31903cd9fac]*/
 {
-#ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyGC_Clear_DelayedObjects(interp);
-#endif
     Py_RETURN_NONE;
 }
+#endif
 
 /*[clinic input]
 gc.set_debug

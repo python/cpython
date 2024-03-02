@@ -147,6 +147,8 @@ exit:
     return return_value;
 }
 
+#if defined(Py_GIL_DISABLED)
+
 PyDoc_STRVAR(gc__collect_delayed_objects__doc__,
 "_collect_delayed_objects($module, /)\n"
 "--\n"
@@ -164,6 +166,8 @@ gc__collect_delayed_objects(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return gc__collect_delayed_objects_impl(module);
 }
+
+#endif /* defined(Py_GIL_DISABLED) */
 
 PyDoc_STRVAR(gc_set_debug__doc__,
 "set_debug($module, flags, /)\n"
@@ -603,4 +607,8 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6cda64b0da33bcab input=a9049054013a1b77]*/
+
+#ifndef GC__COLLECT_DELAYED_OBJECTS_METHODDEF
+    #define GC__COLLECT_DELAYED_OBJECTS_METHODDEF
+#endif /* !defined(GC__COLLECT_DELAYED_OBJECTS_METHODDEF) */
+/*[clinic end generated code: output=1f2c42da0ff00087 input=a9049054013a1b77]*/
