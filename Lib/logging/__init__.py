@@ -346,7 +346,7 @@ class LogRecord(object):
         # Eg: 55_123_456_789 --> 123_456_789 --> 123_000_000
         # Lastly divide by 1e6 to change ns to ms
         # 123_000_000 --> 123
-        # Convert to float by adding 0.0 for historical reasons.
+        # Convert to float by adding 0.0 for historical reasons. See gh-89047
         self.msecs = (ct - (ct // 1_000_000_000) * 1_000_000_000) // 1_000_000 + 0.0
 
         self.relativeCreated = (ct - _startTime) / 1e6
