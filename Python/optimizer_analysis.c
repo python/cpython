@@ -387,7 +387,7 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
 #ifdef Py_DEBUG
-        if (get_lltrace() >= 2) {  // TODO: >= 3 or even >= 4
+        if (get_lltrace() >= 3) {
             printf("%4d INL: ", pc);
             _PyUOpPrint(inst);
             printf("\n");
@@ -401,11 +401,7 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
             last_pop = pc;
         }
         if (last_pop >= 0 && last_push >= 0) {
-            DPRINTF(
-                2,
-                "An opportunity for call inlining presents itself at [%d, %d]\n",
-                last_push,
-                last_pop);
+            DPRINTF(3, "Maybe inline call at [%d-%d]\n", last_push, last_pop);
             for (int i = last_push + 1; i < last_pop; i++) {
                 switch (buffer[i].opcode) {
                     case _NOP:
@@ -414,14 +410,15 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
                     case _LOAD_FAST:
                     case _SET_IP:
                     case _CHECK_VALIDITY_AND_SET_IP:
-                    // TODO: More systematic approach to which uops are safe here
+                    // TODO: More systematic approach to which uops are safe
                     break;
                 default:
-                    DPRINTF(2, "Not inlining call: %s\n", _PyUOpName(buffer[i].opcode));
+                    DPRINTF(3, "Not inlining call at [%d-%d]: %s\n",
+                            last_push, last_pop, _PyUOpName(buffer[i].opcode));
                     goto out;
                 }
             }
-            DPRINTF(2, "Inlining call!!!\n");
+            DPRINTF(2, "Inlining call at [%d-%d]\n", last_push, last_pop);
             /* A little before the _PUSH_FRAME, the stack layout is:
 
                | callable | NULL | arg1 | arg2 | ... | argN |
