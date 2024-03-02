@@ -4125,9 +4125,12 @@ dummy_func(
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
-        tier2 op(_ADJUST_STUFF, (callable, unused, args[oparg], retval -- retval)) {
-            Py_INCREF(retval);
-            DECREF_INPUTS();
+        tier2 op(_ADJUST_STUFF, (callable, self_or_null, args[oparg], retval -- retval)) {
+            Py_DECREF(callable);
+            Py_XDECREF(self_or_null);
+            for (int i = oparg; --i >= 0;) {
+                Py_DECREF(args[i]);
+            }
         }
 
 // END BYTECODES //

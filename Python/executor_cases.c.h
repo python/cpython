@@ -3876,17 +3876,18 @@
         case _ADJUST_STUFF: {
             PyObject *retval;
             PyObject **args;
+            PyObject *self_or_null;
             PyObject *callable;
             oparg = CURRENT_OPARG();
             retval = stack_pointer[-1];
             args = &stack_pointer[-1 - oparg];
+            self_or_null = stack_pointer[-2 - oparg];
             callable = stack_pointer[-3 - oparg];
-            Py_INCREF(retval);
             Py_DECREF(callable);
-            for (int _i = oparg; --_i >= 0;) {
-                Py_DECREF(args[_i]);
+            Py_XDECREF(self_or_null);
+            for (int i = oparg; --i >= 0;) {
+                Py_DECREF(args[i]);
             }
-            Py_DECREF(retval);
             stack_pointer[-3 - oparg] = retval;
             stack_pointer += -2 - oparg;
             break;
