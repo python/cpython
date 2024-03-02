@@ -1417,7 +1417,7 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
     int64_t qid = qidarg.id;
 
     PyObject *obj = NULL;
-    int fmt;
+    int fmt = 0;
     int err = queue_get(&_globals.queues, qid, &obj, &fmt);
     if (err == ERR_QUEUE_EMPTY && dflt != NULL) {
         assert(obj == NULL);
