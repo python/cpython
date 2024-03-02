@@ -3533,8 +3533,8 @@ class ProgramPriorityTests(unittest.TestCase):
 class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
-    SUPPORT_HEADERS_TRAILERS = \
-        not sys.platform.startswith(("linux", "android", "solaris", "sunos"))
+    SUPPORT_HEADERS_TRAILERS = (
+        not sys.platform.startswith(("linux", "android", "solaris", "sunos")))
     requires_headers_trailers = unittest.skipUnless(SUPPORT_HEADERS_TRAILERS,
             'requires headers and trailers support')
     requires_32b = unittest.skipUnless(sys.maxsize < 2**32,

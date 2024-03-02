@@ -1,1 +1,1 @@
-Change Android's ``sys.platform`` from "linux" to "android".
+Change Android's :data:`sys.platform` from ``"linux"`` to ``"android"``.
