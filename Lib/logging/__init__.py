@@ -341,13 +341,10 @@ class LogRecord(object):
         self.funcName = func
         self.created = ct / 1e9  # ns to float seconds
 
-        # x // 10**n: Drop the rightmost n digits
-        # (x // 10**n) * 10**n: "Change" the rightmost n digits to 0s.
-        # Eg: 55_123_456_789 --> 123_456_789 --> 123_000_000
-        # Lastly divide by 1e6 to change ns to ms
-        # 123_000_000 --> 123
+        # Get the number of _truncated_ msecs from the nanoseconds.
+        # Eg: 1_677_903_920_999_998_503 ns --> 1_677_903_920_999 ms
         # Convert to float by adding 0.0 for historical reasons. See gh-89047
-        self.msecs = (ct - (ct // 1_000_000_000) * 1_000_000_000) // 1_000_000 + 0.0
+        self.msecs = (ct % 1_000_000_000) // 1_000_000 + 0.0
 
         self.relativeCreated = (ct - _startTime) / 1e6
         if logThreads:
