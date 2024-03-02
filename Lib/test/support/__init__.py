@@ -787,6 +787,7 @@ def gc_collect():
     gc.collect()
     gc._collect_delayed_objects()
 
+
 @contextlib.contextmanager
 def disable_gc():
     import gc
