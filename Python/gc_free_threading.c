@@ -1758,4 +1758,16 @@ _PyGC_ClearAllFreeLists(PyInterpreterState *interp)
     HEAD_UNLOCK(&_PyRuntime);
 }
 
+void
+_PyGC_Clear_DelayedObjects(PyInterpreterState *interp)
+{
+    HEAD_LOCK(&_PyRuntime);
+    PyThreadState *tstate = interp->threads.head;
+    while (tstate != NULL) {
+        _PyMem_ProcessDelayed(tstate);
+        tstate = (PyThreadState *)tstate->next;
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
 #endif  // Py_GIL_DISABLED

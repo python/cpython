@@ -94,6 +94,24 @@ gc_collect_impl(PyObject *module, int generation)
 }
 
 /*[clinic input]
+gc._collect_delayed_objects
+
+Process delayed free requests by force
+
+[clinic start generated code]*/
+
+static PyObject *
+gc__collect_delayed_objects_impl(PyObject *module)
+/*[clinic end generated code: output=a016a10f967d4229 input=1064c31903cd9fac]*/
+{
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyGC_Clear_DelayedObjects(interp);
+#endif
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 gc.set_debug
 
     flags: int
@@ -508,6 +526,7 @@ static PyMethodDef GcMethods[] = {
     GC_FREEZE_METHODDEF
     GC_UNFREEZE_METHODDEF
     GC_GET_FREEZE_COUNT_METHODDEF
+    GC__COLLECT_DELAYED_OBJECTS_METHODDEF
     {NULL,      NULL}           /* Sentinel */
 };
 
