@@ -947,7 +947,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     }
     if (lltrace >= 2) {
         printf("Optimized executor (length %d):\n", length);
-        for (int i = 0; i < length; i++) {
+        for (int i = 0; i < length+1; i++) {
             printf("%4d OPTIMIZED: ", i);
             _PyUOpPrint(&executor->trace[i]);
             printf("\n");
