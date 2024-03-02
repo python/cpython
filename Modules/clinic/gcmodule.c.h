@@ -147,28 +147,6 @@ exit:
     return return_value;
 }
 
-#if defined(Py_GIL_DISABLED)
-
-PyDoc_STRVAR(gc__collect_delayed_objects__doc__,
-"_collect_delayed_objects($module, /)\n"
-"--\n"
-"\n"
-"Process delayed free requests by force");
-
-#define GC__COLLECT_DELAYED_OBJECTS_METHODDEF    \
-    {"_collect_delayed_objects", (PyCFunction)gc__collect_delayed_objects, METH_NOARGS, gc__collect_delayed_objects__doc__},
-
-static PyObject *
-gc__collect_delayed_objects_impl(PyObject *module);
-
-static PyObject *
-gc__collect_delayed_objects(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return gc__collect_delayed_objects_impl(module);
-}
-
-#endif /* defined(Py_GIL_DISABLED) */
-
 PyDoc_STRVAR(gc_set_debug__doc__,
 "set_debug($module, flags, /)\n"
 "--\n"
@@ -607,8 +585,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-
-#ifndef GC__COLLECT_DELAYED_OBJECTS_METHODDEF
-    #define GC__COLLECT_DELAYED_OBJECTS_METHODDEF
-#endif /* !defined(GC__COLLECT_DELAYED_OBJECTS_METHODDEF) */
-/*[clinic end generated code: output=1f2c42da0ff00087 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0a7e91917adcb937 input=a9049054013a1b77]*/

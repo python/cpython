@@ -785,8 +785,6 @@ def gc_collect():
     gc.collect()
     gc.collect()
     gc.collect()
-    if Py_GIL_DISABLED:
-        gc._collect_delayed_objects()
 
 
 @contextlib.contextmanager
