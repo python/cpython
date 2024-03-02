@@ -4313,6 +4313,7 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
 
     def test_issue_102402_100msecs(self):
         tests = (
+            # time_ns is approx. 2023-03-04 04:25:20 UTC
             # (time_ns, expected_msecs_value)
             (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
             (1_677_903_920_999_998_503, 999.0),  # check truncating doesn't round
