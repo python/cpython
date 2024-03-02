@@ -1,7 +1,10 @@
 ---
 name: Documentation
 about: Report a problem with the documentation
-labels: "docs"
+title: ''
+labels: ''
+assignees: ''
+
 ---
 
 # Documentation
