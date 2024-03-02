@@ -1550,7 +1550,7 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        check(x, size('3Pi3c7P2ic??2P'))
+        check(x, size('3Pi3cP7P2ic??2P'))
         # function
         def func(): pass
         check(func, size('15Pi'))
