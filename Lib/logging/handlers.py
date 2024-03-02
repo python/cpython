@@ -299,7 +299,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
 
             r = rotate_ts - ((currentHour * 60 + currentMinute) * 60 +
                 currentSecond)
-            if r < 0:
+            if r <= 0:
                 # Rotate time is before the current time (for example when
                 # self.rotateAt is 13:45 and it now 14:15), rotation is
                 # tomorrow.
@@ -328,17 +328,18 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                         daysToWait = self.dayOfWeek - day
                     else:
                         daysToWait = 6 - day + self.dayOfWeek + 1
-                    newRolloverAt = result + (daysToWait * (60 * 60 * 24))
-                    if not self.utc:
-                        dstNow = t[-1]
-                        dstAtRollover = time.localtime(newRolloverAt)[-1]
-                        if dstNow != dstAtRollover:
-                            if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
-                                addend = -3600
-                            else:           # DST bows out before next rollover, so we need to add an hour
-                                addend = 3600
-                            newRolloverAt += addend
-                    result = newRolloverAt
+                    result += daysToWait * (60 * 60 * 24)
+            if not self.utc:
+                dstNow = t[-1]
+                dstAtRollover = time.localtime(result)[-1]
+                if dstNow != dstAtRollover:
+                    if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
+                        addend = -3600
+                        if not time.localtime(result-3600)[-1]:
+                            addend = 0
+                    else:           # DST bows out before next rollover, so we need to add an hour
+                        addend = 3600
+                    result += addend
         return result
 
     def shouldRollover(self, record):
@@ -348,11 +349,15 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         record is not used, as we are just comparing times, but it is needed so
         the method signatures are the same
         """
-        # See bpo-45401: Never rollover anything other than regular files
-        if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
-            return False
         t = int(time.time())
         if t >= self.rolloverAt:
+            # See #89564: Never rollover anything other than regular files
+            if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
+                # The file is not a regular file, so do not rollover, but do
+                # set the next rollover time to avoid repeated checks.
+                self.rolloverAt = self.computeRollover(t)
+                return False
+
             return True
         return False
 
@@ -365,16 +370,20 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dirName, baseName = os.path.split(self.baseFilename)
         fileNames = os.listdir(dirName)
         result = []
-        # See bpo-44753: Don't use the extension when computing the prefix.
-        n, e = os.path.splitext(baseName)
-        prefix = n + '.'
-        plen = len(prefix)
-        for fileName in fileNames:
-            if self.namer is None:
-                # Our files will always start with baseName
-                if not fileName.startswith(baseName):
-                    continue
-            else:
+        if self.namer is None:
+            prefix = baseName + '.'
+            plen = len(prefix)
+            for fileName in fileNames:
+                if fileName[:plen] == prefix:
+                    suffix = fileName[plen:]
+                    if self.extMatch.match(suffix):
+                        result.append(os.path.join(dirName, fileName))
+        else:
+            # See bpo-44753: Don't use the extension when computing the prefix.
+            n, e = os.path.splitext(baseName)
+            prefix = n + '.'
+            plen = len(prefix)
+            for fileName in fileNames:
                 # Our files could be just about anything after custom naming, but
                 # likely candidates are of the form
                 # foo.log.DATETIME_SUFFIX or foo.DATETIME_SUFFIX.log
@@ -382,15 +391,16 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                     len(fileName) > (plen + 1) and not fileName[plen+1].isdigit()):
                     continue
 
-            if fileName[:plen] == prefix:
-                suffix = fileName[plen:]
-                # See bpo-45628: The date/time suffix could be anywhere in the
-                # filename
-                parts = suffix.split('.')
-                for part in parts:
-                    if self.extMatch.match(part):
-                        result.append(os.path.join(dirName, fileName))
-                        break
+                if fileName[:plen] == prefix:
+                    suffix = fileName[plen:]
+                    # See bpo-45628: The date/time suffix could be anywhere in the
+                    # filename
+
+                    parts = suffix.split('.')
+                    for part in parts:
+                        if self.extMatch.match(part):
+                            result.append(os.path.join(dirName, fileName))
+                            break
         if len(result) < self.backupCount:
             result = []
         else:
@@ -406,17 +416,14 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         then we have to get a list of matching filenames, sort them and remove
         the one with the oldest suffix.
         """
-        if self.stream:
-            self.stream.close()
-            self.stream = None
         # get the time that this sequence started at and make it a TimeTuple
         currentTime = int(time.time())
-        dstNow = time.localtime(currentTime)[-1]
         t = self.rolloverAt - self.interval
         if self.utc:
             timeTuple = time.gmtime(t)
         else:
             timeTuple = time.localtime(t)
+            dstNow = time.localtime(currentTime)[-1]
             dstThen = timeTuple[-1]
             if dstNow != dstThen:
                 if dstNow:
@@ -427,26 +434,19 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dfn = self.rotation_filename(self.baseFilename + "." +
                                      time.strftime(self.suffix, timeTuple))
         if os.path.exists(dfn):
-            os.remove(dfn)
+            # Already rolled over.
+            return
+
+        if self.stream:
+            self.stream.close()
+            self.stream = None
         self.rotate(self.baseFilename, dfn)
         if self.backupCount > 0:
             for s in self.getFilesToDelete():
                 os.remove(s)
         if not self.delay:
             self.stream = self._open()
-        newRolloverAt = self.computeRollover(currentTime)
-        while newRolloverAt <= currentTime:
-            newRolloverAt = newRolloverAt + self.interval
-        #If DST changes and midnight or weekly rollover, adjust for this.
-        if (self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc:
-            dstAtRollover = time.localtime(newRolloverAt)[-1]
-            if dstNow != dstAtRollover:
-                if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
-                    addend = -3600
-                else:           # DST bows out before next rollover, so we need to add an hour
-                    addend = 3600
-                newRolloverAt += addend
-        self.rolloverAt = newRolloverAt
+        self.rolloverAt = self.computeRollover(currentTime)
 
 class WatchedFileHandler(logging.FileHandler):
     """
@@ -679,15 +679,12 @@ class SocketHandler(logging.Handler):
         """
         Closes the socket.
         """
-        self.acquire()
-        try:
+        with self.lock:
             sock = self.sock
             if sock:
                 self.sock = None
                 sock.close()
             logging.Handler.close(self)
-        finally:
-            self.release()
 
 class DatagramHandler(SocketHandler):
     """
@@ -829,10 +826,8 @@ class SysLogHandler(logging.Handler):
         "local7":       LOG_LOCAL7,
         }
 
-    #The map below appears to be trivially lowercasing the key. However,
-    #there's more to it than meets the eye - in some locales, lowercasing
-    #gives unexpected results. See SF #1524081: in the Turkish locale,
-    #"INFO".lower() != "info"
+    # Originally added to work around GH-43683. Unnecessary since GH-50043 but kept
+    # for backwards compatibility.
     priority_map = {
         "DEBUG" : "debug",
         "INFO" : "info",
@@ -887,6 +882,13 @@ class SysLogHandler(logging.Handler):
                 raise
 
     def createSocket(self):
+        """
+        Try to create a socket and, if it's not a datagram socket, connect it
+        to the other end. This method is called during handler initialization,
+        but it's not regarded as an error if the other end isn't listening yet
+        --- the method will be called again when emitting an event,
+        if there is no socket at that point.
+        """
         address = self.address
         socktype = self.socktype
 
@@ -894,7 +896,7 @@ class SysLogHandler(logging.Handler):
             self.unixsocket = True
             # Syslog server may be unavailable during handler initialisation.
             # C's openlog() function also ignores connection errors.
-            # Moreover, we ignore these errors while logging, so it not worse
+            # Moreover, we ignore these errors while logging, so it's not worse
             # to ignore it also here.
             try:
                 self._connect_unixsocket(address)
@@ -942,15 +944,12 @@ class SysLogHandler(logging.Handler):
         """
         Closes the socket.
         """
-        self.acquire()
-        try:
+        with self.lock:
             sock = self.socket
             if sock:
                 self.socket = None
                 sock.close()
             logging.Handler.close(self)
-        finally:
-            self.release()
 
     def mapPriority(self, levelName):
         """
@@ -1107,7 +1106,16 @@ class NTEventLogHandler(logging.Handler):
                 dllname = os.path.join(dllname[0], r'win32service.pyd')
             self.dllname = dllname
             self.logtype = logtype
-            self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            # Administrative privileges are required to add a source to the registry.
+            # This may not be available for a user that just wants to add to an
+            # existing source - handle this specific case.
+            try:
+                self._welu.AddSourceToRegistry(appname, dllname, logtype)
+            except Exception as e:
+                # This will probably be a pywintypes.error. Only raise if it's not
+                # an "access denied" error, else let it pass
+                if getattr(e, 'winerror', None) != 5:  # not access denied
+                    raise
             self.deftype = win32evtlog.EVENTLOG_ERROR_TYPE
             self.typemap = {
                 logging.DEBUG   : win32evtlog.EVENTLOG_INFORMATION_TYPE,
@@ -1313,11 +1321,8 @@ class BufferingHandler(logging.Handler):
 
         This version just zaps the buffer to empty.
         """
-        self.acquire()
-        try:
+        with self.lock:
             self.buffer.clear()
-        finally:
-            self.release()
 
     def close(self):
         """
@@ -1367,11 +1372,8 @@ class MemoryHandler(BufferingHandler):
         """
         Set the target handler for this handler.
         """
-        self.acquire()
-        try:
+        with self.lock:
             self.target = target
-        finally:
-            self.release()
 
     def flush(self):
         """
@@ -1379,16 +1381,13 @@ class MemoryHandler(BufferingHandler):
         records to the target, if there is one. Override if you want
         different behaviour.
 
-        The record buffer is also cleared by this operation.
+        The record buffer is only cleared if a target has been set.
         """
-        self.acquire()
-        try:
+        with self.lock:
             if self.target:
                 for record in self.buffer:
                     self.target.handle(record)
                 self.buffer.clear()
-        finally:
-            self.release()
 
     def close(self):
         """
@@ -1399,12 +1398,9 @@ class MemoryHandler(BufferingHandler):
             if self.flushOnClose:
                 self.flush()
         finally:
-            self.acquire()
-            try:
+            with self.lock:
                 self.target = None
                 BufferingHandler.close(self)
-            finally:
-                self.release()
 
 
 class QueueHandler(logging.Handler):
@@ -1424,6 +1420,7 @@ class QueueHandler(logging.Handler):
         """
         logging.Handler.__init__(self)
         self.queue = queue
+        self.listener = None  # will be set to listener if configured via dictConfig()
 
     def enqueue(self, record):
         """
@@ -1455,7 +1452,7 @@ class QueueHandler(logging.Handler):
         # (if there's exception data), and also returns the formatted
         # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
-        # exc_info and exc_text attributes, as they are no longer
+        # exc_info, exc_text and stack_info attributes, as they are no longer
         # needed and, if not None, will typically not be pickleable.
         msg = self.format(record)
         # bpo-35726: make copy of record to avoid affecting other handlers in the chain.
@@ -1465,6 +1462,7 @@ class QueueHandler(logging.Handler):
         record.args = None
         record.exc_info = None
         record.exc_text = None
+        record.stack_info = None
         return record
 
     def emit(self, record):
@@ -1584,6 +1582,7 @@ class QueueListener(object):
         Note that if you don't call this before your application exits, there
         may be some records still left on the queue, which won't be processed.
         """
-        self.enqueue_sentinel()
-        self._thread.join()
-        self._thread = None
+        if self._thread:  # see gh-114706 - allow calling this more than once
+            self.enqueue_sentinel()
+            self._thread.join()
+            self._thread = None

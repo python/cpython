@@ -162,7 +162,7 @@ class TestCornerCases(unittest.TestCase):
         ns = {}
         exec(code, ns)
         unpack_400 = ns["unpack_400"]
-        # Warm up the the function for quickening (PEP 659)
+        # Warm up the function for quickening (PEP 659)
         for _ in range(30):
             y = unpack_400(range(400))
             self.assertEqual(y, 399)

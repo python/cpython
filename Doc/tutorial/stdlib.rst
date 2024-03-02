@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python311'
+   'C:\\Python313'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -24,7 +24,7 @@ Be sure to use the ``import os`` style instead of ``from os import *``.  This
 will keep :func:`os.open` from shadowing the built-in :func:`open` function which
 operates much differently.
 
-.. index:: builtin: help
+.. index:: pair: built-in function; help
 
 The built-in :func:`dir` and :func:`help` functions are useful as interactive
 aids for working with large modules like :mod:`os`::
@@ -65,11 +65,15 @@ Command Line Arguments
 
 Common utility scripts often need to process command line arguments. These
 arguments are stored in the :mod:`sys` module's *argv* attribute as a list.  For
-instance the following output results from running ``python demo.py one two
-three`` at the command line::
+instance, let's take the following :file:`demo.py` file::
 
-   >>> import sys
-   >>> print(sys.argv)
+   # File demo.py
+   import sys
+   print(sys.argv)
+
+Here is the output from running ``python demo.py one two three`` at the command
+line::
+
    ['demo.py', 'one', 'two', 'three']
 
 The :mod:`argparse` module provides a more sophisticated mechanism to process
@@ -149,7 +153,7 @@ The :mod:`random` module provides tools for making random selections::
    'apple'
    >>> random.sample(range(100), 10)   # sampling without replacement
    [30, 83, 16, 4, 8, 81, 41, 50, 18, 33]
-   >>> random.random()    # random float
+   >>> random.random()    # random float from the interval [0.0, 1.0)
    0.17970987693706186
    >>> random.randrange(6)    # random integer chosen from range(6)
    4
@@ -327,7 +331,7 @@ Python has a "batteries included" philosophy.  This is best seen through the
 sophisticated and robust capabilities of its larger packages. For example:
 
 * The :mod:`xmlrpc.client` and :mod:`xmlrpc.server` modules make implementing
-  remote procedure calls into an almost trivial task.  Despite the modules
+  remote procedure calls into an almost trivial task.  Despite the modules'
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including

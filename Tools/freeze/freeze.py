@@ -136,6 +136,11 @@ def main():
     makefile = 'Makefile'
     subsystem = 'console'
 
+    if sys.platform == "darwin" and sysconfig.get_config_var("PYTHONFRAMEWORK"):
+        print(f"{sys.argv[0]} cannot be used with framework builds of Python", file=sys.stderr)
+        sys.exit(1)
+
+
     # parse command line by first replacing any "-i" options with the
     # file contents.
     pos = 1

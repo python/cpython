@@ -1,1 +1,0 @@
-Add ``required`` attribute to :class:`argparse.Action` repr output.
