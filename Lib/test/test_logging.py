@@ -4317,7 +4317,6 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             (1_677_902_297_100_000_000, 100.0),  # exactly 100ms
             (1_677_903_920_999_998_503, 999.0),  # check truncating doesn't round
             (1_677_903_920_000_998_503, 0.0),  # check truncating doesn't round
-
         )
         for ns, want in tests:
             with patch('time.time_ns') as patched_ns:
