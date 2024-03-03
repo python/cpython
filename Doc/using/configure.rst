@@ -2,6 +2,8 @@
 Configure Python
 ****************
 
+.. highlight:: sh
+
 .. _configure-options:
 
 Configure Options
@@ -587,7 +589,9 @@ the version of the cross compiled host Python.
 
    An environment variable that points to a file with configure overrides.
 
-   Example *config.site* file::
+   Example *config.site* file:
+
+   .. code-block:: ini
 
       # config.site-aarch64
       ac_cv_buggy_getaddrinfo=no
@@ -652,7 +656,9 @@ C extensions
 
 Some C extensions are built as built-in modules, like the ``sys`` module.
 They are built with the ``Py_BUILD_CORE_BUILTIN`` macro defined.
-Built-in modules have no ``__file__`` attribute::
+Built-in modules have no ``__file__`` attribute:
+
+.. code-block:: pycon
 
     >>> import sys
     >>> sys
@@ -664,7 +670,9 @@ Built-in modules have no ``__file__`` attribute::
 
 Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
-Example on Linux x86-64::
+Example on Linux x86-64:
+
+.. code-block:: pycon
 
     >>> import _asyncio
     >>> _asyncio
