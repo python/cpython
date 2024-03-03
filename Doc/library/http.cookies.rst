@@ -309,15 +309,12 @@ As per `RFC 6265`_, the ``http.cookies`` module has been updated to handle dupli
 
 Example Usage:
 
-.. code-block:: python
+.. doctest::
+   :options: +NORMALIZE_WHITESPACE
 
-   from http.cookies import SimpleCookie
-
-   # Creating a SimpleCookie instance with duplicate cookies
-   c = SimpleCookie('name=value1; name=value2')
-
-   # The value of the first cookie is retained
-   assert c['name'].value == 'value1'
+   >>> from http.cookies import SimpleCookie
+   >>> c = SimpleCookie('name=value1; name=value2') # Creating a SimpleCookie instance with duplicate cookies
+   >>> assert c['name'].value == 'value1' # The value of the first cookie is retained
 
 .. _RFC 6265: https://datatracker.ietf.org/doc/html/rfc6265
 
