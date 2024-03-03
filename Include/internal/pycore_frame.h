@@ -260,27 +260,11 @@ _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
 void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
-/* Adds stack space at the end of the current frame for Tier 2 execution.
+
+/* Converts frame for tier 2.
+ * Adds stack space at the end of the current frame for Tier 2 execution.
  * The frame that is being expanded MUST be the current executing frame, and
  * it must be at the top of the datastack.
- * */
-static inline int
-_PyFrame_GrowLocalsPlus(PyThreadState *tstate, _PyInterpreterFrame *frame, int size)
-{
-    assert(_PyThreadState_HasStackSpace(tstate, size));
-    assert(tstate->current_frame == frame);
-    // Make sure we are the top frame.
-    if ((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize !=
-           tstate->datastack_top) {
-        return 0;
-    }
-    tstate->datastack_top += size;
-    assert(tstate->datastack_top < tstate->datastack_limit);
-    return 1;
-}
-
-
-/* Converts a frame from tier 1 to tier 2.
  * */
 static inline int
 _PyFrame_ConvertToTier2(PyThreadState *tstate, _PyInterpreterFrame *frame,
@@ -297,9 +281,10 @@ _PyFrame_ConvertToTier2(PyThreadState *tstate, _PyInterpreterFrame *frame,
     if (!_PyThreadState_HasStackSpace(tstate, localsplus_grow)) {
         return 1;
     }
-    if (!_PyFrame_GrowLocalsPlus(tstate, frame, localsplus_grow)) {
-        return 1;
-    }
+    assert(_PyThreadState_HasStackSpace(tstate, localsplus_grow));
+    assert(tstate->current_frame == frame);
+    tstate->datastack_top += localsplus_grow;
+    assert(tstate->datastack_top < tstate->datastack_limit);
     frame->tier2_extra_size += localsplus_grow;
     return 0;
 }
