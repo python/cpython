@@ -531,14 +531,7 @@ class BaseTestUUID:
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_safe(self):
-        try:
-            import _uuid
-        except ImportError:
-            has_uuid_generate_time_safe = False
-        else:
-            has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
-
-        if not has_uuid_generate_time_safe or not self.uuid._generate_time_safe:
+        if not self.uuid._generate_time_safe:
             self.skipTest('requires uuid_generate_time_safe(3)')
 
         u = self.uuid.uuid1()
