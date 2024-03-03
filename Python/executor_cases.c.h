@@ -2997,6 +2997,14 @@
             break;
         }
 
+        case _GUARD_NOT_METHOD: {
+            PyObject *self_or_null;
+            oparg = CURRENT_OPARG();
+            self_or_null = stack_pointer[-1 - oparg];
+            if (self_or_null != NULL) goto deoptimize;
+            break;
+        }
+
         case _PUSH_FRAME: {
             _PyInterpreterFrame *new_frame;
             new_frame = (_PyInterpreterFrame *)stack_pointer[-1];

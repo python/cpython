@@ -1551,6 +1551,10 @@
             break;
         }
 
+        case _GUARD_NOT_METHOD: {
+            break;
+        }
+
         case _PUSH_FRAME: {
             _Py_UOpsAbstractFrame *new_frame;
             new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];

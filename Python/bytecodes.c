@@ -3120,6 +3120,11 @@ dummy_func(
             }
         }
 
+        // Hack for function call inlining
+        tier2 op(_GUARD_NOT_METHOD, (self_or_null, unused[oparg] -- self_or_null, unused[oparg])) {
+            DEOPT_IF(self_or_null != NULL);
+        }
+
         // The 'unused' output effect represents the return value
         // (which will be pushed when the frame returns).
         // It is needed so CALL_PY_EXACT_ARGS matches its family.
