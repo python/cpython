@@ -970,8 +970,8 @@ The :mod:`socket` module also offers various network-related services:
    hostname returned by :func:`gethostbyaddr` is checked, followed by aliases for the
    host, if available.  The first name which includes a period is selected.  In
    case no fully qualified domain name is available and *name* was provided,
-   it is returned unchanged. If *name* is empty, or equal to ``'0.0.0.0'``, ``'::'``,
-   or ``''``, the hostname from :func:`gethostname` is returned.
+   it is returned unchanged. If *name* is omitted, or equal to ``'0.0.0.0'``,
+   ``'::'``, or ``''``, the hostname from :func:`gethostname` is returned.
 
 
 .. function:: gethostbyname(hostname)
