@@ -59,6 +59,7 @@ struct _Py_UOpsAbstractFrame {
     // For an inlined frame, the inlinee shares the same localsplus
     // as the inliner.
     _Py_UopsSymbol **real_localsplus;
+    bool is_inlineable;
 };
 
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;

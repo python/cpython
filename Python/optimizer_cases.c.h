@@ -964,12 +964,13 @@
         }
 
         case _LOAD_ATTR: {
+            _Py_UopsSymbol *owner;
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self_or_null = NULL;
-            attr = sym_new_not_null(ctx);
-            if (attr == NULL) goto out_of_space;
-            self_or_null = sym_new_not_null(ctx);
-            if (self_or_null == NULL) goto out_of_space;
+            owner = stack_pointer[-1];
+            (void)owner;
+            OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
+            OUT_OF_SPACE_IF_NULL(self_or_null = sym_new_unknown(ctx));
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += (oparg & 1);
@@ -1528,6 +1529,7 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             int argcount = oparg;
+            bool is_inlineable = false;
             (void)callable;
             PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
             if (func == NULL) {
@@ -1549,9 +1551,11 @@
             if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
                 localsplus_start = args;
                 n_locals_already_filled = argcount;
+                is_inlineable = true;
             }
             OUT_OF_SPACE_IF_NULL(new_frame =
                              frame_new(ctx, co, localsplus_start, n_locals_already_filled, 0));
+            new_frame->is_inlineable = is_inlineable;
             stack_pointer[-2 - oparg] = (_Py_UopsSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             break;
@@ -1581,6 +1585,9 @@
             // First 32 bits set to locals_len, last 32 bits set to stack_len.
             uint64_t operand = (((uint64_t)(new_frame->locals_len)) << 32) | (new_frame->stack_len);
             REPLACE_OP(this_instr, _PUSH_FRAME_INLINEABLE, oparg, operand);
+            if (!new_frame->is_inlineable) {
+                REPLACE_OP(this_instr, _PUSH_FRAME, oparg, 0);
+            }
             break;
         }
 

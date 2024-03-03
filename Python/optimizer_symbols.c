@@ -259,6 +259,7 @@ _Py_uop_frame_new(
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
     frame->real_localsplus = NULL;
+    frame->is_inlineable = false;
     ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         return NULL;
