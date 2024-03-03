@@ -8,7 +8,6 @@ import enum
 import io
 import os
 import pickle
-import re
 import sys
 import weakref
 from unittest import mock
