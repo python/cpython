@@ -405,13 +405,6 @@ indexed and sliced::
    >>> squares[-3:]  # slicing returns a new list
    [9, 16, 25]
 
-All slice operations return a new list containing the requested elements.  This
-means that the following slice returns a
-:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
-
-   >>> squares[:]
-   [1, 4, 9, 16, 25]
-
 Lists also support operations like concatenation::
 
    >>> squares + [36, 49, 64, 81, 100]
@@ -434,6 +427,30 @@ the :meth:`!list.append` *method* (we will see more about methods later)::
    >>> cubes.append(7 ** 3)  # and the cube of 7
    >>> cubes
    [1, 8, 27, 64, 125, 216, 343]
+
+When you assign a variable to a list or any other object,
+it doesn't make a new copy; instead, it just points to *the same* object.
+So, any changes you make to the list through one variable will be seen
+through all other variables that point to it.::
+
+   >>> rgb = ["Red", "Green", "Blue"]
+   >>> rgba = rgb
+   >>> id(rgb) == id(rgba) # they reference the same object
+   True
+   >>> rgba.append("Alph") # changes rgb as well
+   >>> rgb
+   ["Red", "Green", "Blue", "Alph"]
+
+All slice operations return a new list containing the requested elements.  This
+means that the following slice returns a
+:ref:`shallow copy <shallow_vs_deep_copy>` of the list::
+
+   >>> correct_rgba = rgba[:]
+   >>> correct_rgba[-1] = "Alpha"
+   >>> correct_rgba
+   ["Red", "Green", "Blue", "Alpha"]
+   >>> rgba
+   ["Red", "Green", "Blue", "Alph"]
 
 Assignment to slices is also possible, and this can even change the size of the
 list or clear it entirely::
