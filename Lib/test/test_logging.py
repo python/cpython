@@ -4312,7 +4312,8 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             s = f.format(r)
             self.assertNotIn('.1000', s)
 
-    def test_issue_102402_msecs_has_no_floating_point_precision_loss(self):
+    def test_msecs_has_no_floating_point_precision_loss(self):
+        # See issue gh-102402
         tests = (
             # time_ns is approx. 2023-03-04 04:25:20 UTC
             # (time_ns, expected_msecs_value)
@@ -4326,7 +4327,8 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 record = logging.makeLogRecord({'msg': 'test'})
             self.assertEqual(record.msecs, want)
 
-    def test_issue_102402_relativeCreated_has_higher_precision(self):
+    def test_relativeCreated_has_higher_precision(self):
+        # See issue gh-102402
         ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
         offset_ns = 200
         with patch("time.time_ns") as patched_ns:
@@ -4335,7 +4337,7 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             patched_ns.return_value = ns + offset_ns
             record = logging.makeLogRecord({'msg': 'test'})
         self.assertAlmostEqual(record.created, ns / 1e9, places=6)
-        # After gh-102412, precision (places) increases from 3 to 7
+        # After PR gh-102412, precision (places) increases from 3 to 7
         self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
 
 class TestBufferingFormatter(logging.BufferingFormatter):
