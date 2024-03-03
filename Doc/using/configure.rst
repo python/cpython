@@ -30,31 +30,31 @@ Features and minimum versions required to build CPython:
 * Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
   :file:`configure` script.
 
-.. versionchanged:: 3.13:
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required.
+
+.. versionchanged:: 3.5
+   On Windows, Visual Studio 2015 or later is now required.
+   Tcl/Tk version 8.4 is now required.
+
+.. versionchanged:: 3.6
+   Selected C99 features are now required, like ``<stdint.h>`` and ``static
+   inline`` functions.
+
+.. versionchanged:: 3.7
+   Thread support and OpenSSL 1.0.2 are now required.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required.
+   Require SQLite 3.7.15.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
-.. versionchanged:: 3.10
-   OpenSSL 1.1.1 is now required.
-   Require SQLite 3.7.15.
-
-.. versionchanged:: 3.7
-   Thread support and OpenSSL 1.0.2 are now required.
-
-.. versionchanged:: 3.6
-   Selected C99 features are now required, like ``<stdint.h>`` and ``static
-   inline`` functions.
-
-.. versionchanged:: 3.5
-   On Windows, Visual Studio 2015 or later is now required.
-   Tcl/Tk version 8.4 is now required.
-
-.. versionchanged:: 3.1
-   Tcl/Tk version 8.3.1 is now required.
+.. versionchanged:: 3.13
+   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -694,11 +694,11 @@ Debug options
 
    :ref:`Statically allocated objects <static-types>` are not traced.
 
+   .. versionadded:: 3.8
+
    .. versionchanged:: 3.13
       This build is now ABI compatible with release build and :ref:`debug build
       <debug-build>`.
-
-   .. versionadded:: 3.8
 
 .. option:: --with-assertions
 
