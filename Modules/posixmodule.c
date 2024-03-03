@@ -9182,12 +9182,10 @@ win32_getppid_fast(void)
         return 0;
     }
 
-    //
     // Now that we have reached this point, the BasicInformation.InheritedFromUniqueProcessId
     // structure member contains a ULONG_PTR which represents the process ID of our parent
     // process. This process ID will be correctly returned even if the parent process has
     // exited or been terminated.
-    //
 
     cached_ppid = (ULONG) basic_information.InheritedFromUniqueProcessId;
     return cached_ppid;
