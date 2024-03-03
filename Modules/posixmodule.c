@@ -9141,35 +9141,35 @@ typedef NTSTATUS (NTAPI *PNT_QUERY_INFORMATION_PROCESS) (
 static ULONG
 win32_getppid_fast(void)
 {
-    NTSTATUS Status;
-    HMODULE Ntdll;
+    NTSTATUS status;
+    HMODULE ntdll;
     PNT_QUERY_INFORMATION_PROCESS pNtQueryInformationProcess;
-    PROCESS_BASIC_INFORMATION_FULL BasicInformation;
-    static ULONG CachedParentProcessId = 0;
+    PROCESS_BASIC_INFORMATION_FULL basic_information;
+    static ULONG cached_ppid = 0;
 
-    if (CachedParentProcessId) {
+    if (cached_ppid) {
         // No need to query the kernel again.
-        return CachedParentProcessId;
+        return cached_ppid;
     }
 
-    Ntdll = GetModuleHandleW(L"ntdll.dll");
-    if (!Ntdll) {
+    ntdll = GetModuleHandleW(L"ntdll.dll");
+    if (!ntdll) {
         return 0;
     }
 
-    pNtQueryInformationProcess = (PNT_QUERY_INFORMATION_PROCESS) GetProcAddress(Ntdll, "NtQueryInformationProcess");
+    pNtQueryInformationProcess = (PNT_QUERY_INFORMATION_PROCESS) GetProcAddress(ntdll, "NtQueryInformationProcess");
     if (!pNtQueryInformationProcess) {
         return 0;
     }
 
-    Status = pNtQueryInformationProcess(
+    status = pNtQueryInformationProcess(
         GetCurrentProcess(),
         ProcessBasicInformation,
-        &BasicInformation,
-        sizeof(BasicInformation),
+        &basic_information,
+        sizeof(basic_information),
         NULL);
 
-    if (!NT_SUCCESS(Status)) {
+    if (!NT_SUCCESS(status)) {
         return 0;
     }
 
@@ -9179,8 +9179,8 @@ win32_getppid_fast(void)
     // zero and (ULONG) -1.
     //
 
-    if (BasicInformation.InheritedFromUniqueProcessId == 0 ||
-        BasicInformation.InheritedFromUniqueProcessId >= ULONG_MAX)
+    if (basic_information.InheritedFromUniqueProcessId == 0 ||
+        basic_information.InheritedFromUniqueProcessId >= ULONG_MAX)
     {
         return 0;
     }
@@ -9192,8 +9192,8 @@ win32_getppid_fast(void)
     // exited or been terminated.
     //
 
-    CachedParentProcessId = (ULONG) BasicInformation.InheritedFromUniqueProcessId;
-    return CachedParentProcessId;
+    cached_ppid = (ULONG) basic_information.InheritedFromUniqueProcessId;
+    return cached_ppid;
 }
 
 static PyObject*
