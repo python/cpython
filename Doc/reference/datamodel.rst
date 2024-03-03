@@ -1805,11 +1805,14 @@ Basic customization
    rather, :meth:`__lt__` and :meth:`__gt__` are each other's reflection,
    :meth:`__le__` and :meth:`__ge__` are each other's reflection, and
    :meth:`__eq__` and :meth:`__ne__` are their own reflection.
-   If the operands are of different types, and right operand's type is
+   If the operands are of different types, and the right operand's type is
    a direct or indirect subclass of the left operand's type,
    the reflected method of the right operand has priority, otherwise
    the left operand's method has priority.  Virtual subclassing is
    not considered.
+
+   When no appropriate method returns any value other than :data:`NotImplemented`, the
+   ``==`` and ``!=`` operators will fall back to ``is`` and ``is not``, respectively.
 
 .. method:: object.__hash__(self)
 
