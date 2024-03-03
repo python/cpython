@@ -2,6 +2,8 @@
 Configure Python
 ****************
 
+.. highlight:: sh
+
 Build Requirements
 ==================
 
@@ -22,22 +24,22 @@ Features required to build CPython:
 
 * On Windows, Microsoft Visual Studio 2017 or later is required.
 
-.. versionchanged:: 3.11
-   C11 compiler, IEEE 754 and NaN support are now required.
-   On Windows, Visual Studio 2017 or later is required.
-
-.. versionchanged:: 3.10
-   OpenSSL 1.1.1 is now required.
-
-.. versionchanged:: 3.7
-   Thread support and OpenSSL 1.0.2 are now required.
+.. versionchanged:: 3.5
+   On Windows, Visual Studio 2015 or later is required.
 
 .. versionchanged:: 3.6
    Selected C99 features are now required, like ``<stdint.h>`` and ``static
    inline`` functions.
 
-.. versionchanged:: 3.5
-   On Windows, Visual Studio 2015 or later is required.
+.. versionchanged:: 3.7
+   Thread support and OpenSSL 1.0.2 are now required.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required.
+
+.. versionchanged:: 3.11
+   C11 compiler, IEEE 754 and NaN support are now required.
+   On Windows, Visual Studio 2017 or later is required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -689,7 +691,9 @@ the version of the cross compiled host Python.
 
    An environment variable that points to a file with configure overrides.
 
-   Example *config.site* file::
+   Example *config.site* file:
+
+   .. code-block:: ini
 
       # config.site-aarch64
       ac_cv_buggy_getaddrinfo=no
@@ -752,7 +756,9 @@ C extensions
 
 Some C extensions are built as built-in modules, like the ``sys`` module.
 They are built with the ``Py_BUILD_CORE_BUILTIN`` macro defined.
-Built-in modules have no ``__file__`` attribute::
+Built-in modules have no ``__file__`` attribute:
+
+.. code-block:: pycon
 
     >>> import sys
     >>> sys
@@ -764,7 +770,9 @@ Built-in modules have no ``__file__`` attribute::
 
 Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
-Example on Linux x86-64::
+Example on Linux x86-64:
+
+.. code-block:: pycon
 
     >>> import _asyncio
     >>> _asyncio
