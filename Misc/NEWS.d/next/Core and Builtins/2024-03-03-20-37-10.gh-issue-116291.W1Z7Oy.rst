@@ -1,0 +1,1 @@
+Add true function inlining to the tier 2 optimizer. Patch by Ken Jin and Guido van Rossum.
