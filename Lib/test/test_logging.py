@@ -6205,7 +6205,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         for i in range(10):
             times.append(dt.strftime('%Y-%m-%d_%H-%M-%S'))
             dt += datetime.timedelta(seconds=5)
-        prefixes = ('a.b', 'a.b.c', 'd.e', 'd.e.f')
+        prefixes = ('a.b', 'a.b.c', 'd.e', 'd.e.f', 'g')
         files = []
         rotators = []
         for prefix in prefixes:
@@ -6218,10 +6218,22 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             if prefix.startswith('a.b'):
                 for t in times:
                     files.append('%s.log.%s' % (prefix, t))
-            else:
-                rotator.namer = lambda name: name.replace('.log', '') + '.log'
+            elif prefix.startswith('d.e'):
+                def namer(filename):
+                    dirname, basename = os.path.split(filename)
+                    basename = basename.replace('.log', '') + '.log'
+                    return os.path.join(dirname, basename)
+                rotator.namer = namer
                 for t in times:
                     files.append('%s.%s.log' % (prefix, t))
+            elif prefix == 'g':
+                def namer(filename):
+                    dirname, basename = os.path.split(filename)
+                    basename = 'g' + basename[6:] + '.oldlog'
+                    return os.path.join(dirname, basename)
+                rotator.namer = namer
+                for t in times:
+                    files.append('g%s.oldlog' % t)
         # Create empty files
         for fn in files:
             p = os.path.join(wd, fn)
@@ -6231,18 +6243,23 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         for i, prefix in enumerate(prefixes):
             rotator = rotators[i]
             candidates = rotator.getFilesToDelete()
-            self.assertEqual(len(candidates), 3)
+            self.assertEqual(len(candidates), 3, candidates)
             if prefix.startswith('a.b'):
                 p = '%s.log.' % prefix
                 for c in candidates:
                     d, fn = os.path.split(c)
                     self.assertTrue(fn.startswith(p))
-            else:
+            elif prefix.startswith('d.e'):
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.endswith('.log'))
+                    self.assertTrue(fn.endswith('.log'), fn)
                     self.assertTrue(fn.startswith(prefix + '.') and
                                     fn[len(prefix) + 2].isdigit())
+            elif prefix == 'g':
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.endswith('.oldlog'))
+                    self.assertTrue(fn.startswith('g') and fn[1].isdigit())
 
     def test_compute_files_to_delete_same_filename_different_extensions(self):
         # See GH-93205 for background
@@ -6266,6 +6283,8 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             rotators.append(rotator)
             for t in times:
                 files.append('%s.%s' % (prefix, t))
+        for t in times:
+            files.append('a.log.%s.c' % t)
         # Create empty files
         for f in files:
             (wd / f).touch()
@@ -6274,11 +6293,11 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             backupCount = i+1
             rotator = rotators[i]
             candidates = rotator.getFilesToDelete()
-            self.assertEqual(len(candidates), n_files - backupCount)
-            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.\w+)?$")
+            self.assertEqual(len(candidates), n_files - backupCount, candidates)
+            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\Z")
             for c in candidates:
                 d, fn = os.path.split(c)
-                self.assertTrue(fn.startswith(prefix))
+                self.assertTrue(fn.startswith(prefix+'.'))
                 suffix = fn[(len(prefix)+1):]
                 self.assertRegex(suffix, matcher)
 
