@@ -46,7 +46,6 @@ Typical usage:
 
 import os
 import sys
-import warnings
 
 from enum import Enum, _simple_enum
 
@@ -565,18 +564,6 @@ def _netstat_getnode():
     # This works on AIX and might work on Tru64 UNIX.
     return _find_mac_under_heading('netstat', '-ian', b'Address')
 
-def _ipconfig_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    warnings._deprecated("_ipconfig_getnode", remove=(3, 15))
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
-def _netbios_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    warnings._deprecated("_netbios_getnode", remove=(3, 15))
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
 
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
@@ -587,21 +574,6 @@ except ImportError:
     _uuid = None
     _generate_time_safe = None
     _UuidCreate = None
-
-
-def __getattr__(attr):
-    if attr == "_has_uuid_generate_time_safe":
-        warnings._deprecated("_has_uuid_generate_time_safe", remove=(3, 15))
-        if _uuid is None:
-            return None
-        else:
-            return _uuid.has_uuid_generate_time_safe
-    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
-
-
-def _load_system_functions():
-    """[DEPRECATED] Platform-specific functions loaded at import time"""
-    warnings._deprecated("_load_system_functions", remove=(3, 15))
 
 
 def _unix_getnode():
