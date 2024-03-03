@@ -229,6 +229,11 @@ class CookieTests(unittest.TestCase):
             str(c['foo']),
             'Set-Cookie: foo="\\251"; Comment="comment \\251"'
         )
+    def test_first_cookie_preserved(self):
+        C = SimpleCookie()
+        C['foo'] = 'first'
+        C['foo'] = 'second'
+        self.assertEqual(C['foo'].value, 'first', "First cookie's value should be preserved")
 
 
 class MorselTests(unittest.TestCase):
