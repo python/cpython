@@ -341,8 +341,8 @@ class LogRecord(object):
         self.funcName = func
         self.created = ct / 1e9  # ns to float seconds
 
-        # Get the number of _truncated_ msecs from the nanoseconds.
-        # Eg: 1_677_903_920_999_998_503 ns --> 1_677_903_920_999 ms
+        # Get the number of whole milliseconds (0-999) in the fractional part of seconds.
+        # Eg: 1_677_903_920_999_998_503 ns --> 999_998_503 ns--> 999 ms
         # Convert to float by adding 0.0 for historical reasons. See gh-89047
         self.msecs = (ct % 1_000_000_000) // 1_000_000 + 0.0
 
