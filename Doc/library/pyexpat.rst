@@ -217,14 +217,14 @@ XMLParser Objects
    Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
    deferral.
 
-   .. versionadded:: 3.13 backported to 3.8.19, 3.9.19, 3.10.14, 3.11.9, 3.12.3
+   .. versionadded:: 3.12.3
 
 .. method:: xmlparser.GetReparseDeferralEnabled()
 
    Returns whether reparse deferral is currently enabled for the given
    Expat parser instance.
 
-   .. versionadded:: 3.13 backported to 3.8.19, 3.9.19, 3.10.14, 3.11.9, 3.12.3
+   .. versionadded:: 3.12.3
 
 
 :class:`xmlparser` objects have the following attributes:

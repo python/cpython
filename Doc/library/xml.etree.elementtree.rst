@@ -1397,7 +1397,7 @@ XMLParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      .. versionadded:: 3.13 backported to 3.8.19, 3.9.19, 3.10.14, 3.11.9, 3.12.3
+      .. versionadded:: 3.12.3
 
 
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
@@ -1470,7 +1470,7 @@ XMLPullParser Objects
       Disabling reparse deferral has security consequences; please see
       :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
 
-      .. versionadded:: 3.13 backported to 3.8.19, 3.9.19, 3.10.14, 3.11.9, 3.12.3
+      .. versionadded:: 3.12.3
 
    .. method:: close()
 
