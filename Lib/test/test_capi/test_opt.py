@@ -965,8 +965,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(x, 20)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        print()
-        print(list(iter_opnames(ex)))
+        # print()
+        # print(list(iter_opnames(ex)))
         self.assertNotIn("_PUSH_FRAME", uops)
         self.assertNotIn("_POP_FRALE", uops)
 
@@ -984,8 +984,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(x, 20)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        print()
-        print(list(iter_opnames(ex)))
+        # print()
+        # print(list(iter_opnames(ex)))
         self.assertNotIn("_PUSH_FRAME", uops)
         self.assertNotIn("_POP_FRALE", uops)
 
