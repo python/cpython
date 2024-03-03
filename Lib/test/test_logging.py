@@ -28,6 +28,7 @@ import copy
 import datetime
 import pathlib
 import pickle
+import importlib
 import io
 import itertools
 import gc
@@ -4325,6 +4326,17 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 record = logging.makeLogRecord({'msg': 'test'})
             self.assertEqual(record.msecs, want)
 
+    def test_issue_102402_relativeCreated_has_higher_precision(self):
+        ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
+        offset_ns = 200
+        with patch("time.time_ns") as patched_ns:
+            patched_ns.return_value = ns
+            importlib.reload(logging)  # force logging._startTime to use mocked value
+            patched_ns.return_value = ns + offset_ns
+            record = logging.makeLogRecord({'msg': 'test'})
+        self.assertAlmostEqual(record.created, ns / 1e9, places=6)
+        # After gh-102412, precision (places) increases from 3 to 7
+        self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
