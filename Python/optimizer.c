@@ -861,14 +861,6 @@ compute_used(_PyUOpInstruction *buffer, uint32_t *used, int *exit_count_ptr)
             /* Mark target as reachable */
             SET_BIT(used, buffer[i].oparg);
         }
-        if (opcode == _PRE_INLINE) {
-            /* Mark target as reachable */
-            SET_BIT(used, buffer[i].operand);
-        }
-        if (opcode == _POST_INLINE && (int64_t)buffer[i].operand > 0) {
-            /* Mark target as reachable */
-            SET_BIT(used, buffer[i].operand);
-        }
         if (opcode == NOP) {
             count--;
             UNSET_BIT(used, i);
@@ -929,22 +921,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
             /* The oparg of the target will already have been set to its new offset */
             int oparg = dest->oparg;
             dest->oparg = buffer[oparg].oparg;
-        }
-        if (opcode == _PRE_INLINE)
-        {
-            /* The oparg of the target will already have been set to its new offset */
-            uint64_t oparg = dest->operand;
-            dest->operand = buffer[oparg].oparg;
-            assert(oparg > 0);
-        }
-        if (opcode == _POST_INLINE)
-        {
-            /* The oparg of the target will already have been set to its new offset */
-            uint64_t oparg = dest->operand;
-            if (oparg > 0) {
-                dest->operand = buffer[oparg].oparg;
-                assert(oparg > 0);
-            }
         }
         if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
             executor->exits[next_exit].target = buffer[i].target;
@@ -1024,7 +1000,7 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
-    int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH / 2, &dependencies);
+    int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
@@ -1033,7 +1009,7 @@ uop_optimize(
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize == NULL || *uop_optimize > '0') {
         err = _Py_uop_analyze_and_optimize(frame, buffer,
-                                           UOP_MAX_TRACE_LENGTH / 2,
+                                           UOP_MAX_TRACE_LENGTH,
                                            curr_stackentries, &dependencies);
         if (err <= 0) {
             return err;

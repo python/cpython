@@ -62,13 +62,11 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    PyObject *f_names; /* Strong reference. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
     int stacktop;  /* Offset of TOS from localsplus  */
     uint16_t return_offset;  /* Only relevant during a function call */
     uint16_t tier2_extra_size; /* How many extra entries is at the end of localsplus for tier 2 inlining */
     char owner;
-    void *frame_reconstruction_inst; /* _PyUopInstruction - Instructions to execute for frame reconstruction. Only if frame is tier 2. */
     /* Locals and stack */
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
@@ -135,10 +133,6 @@ _PyFrame_Initialize(
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->tier2_extra_size = 0;
-    // Note: it should be fine to take the code object's because
-    // f_code on frames are not writeable to users in Python.
-    frame->f_names = Py_NewRef(code->co_names);
-    frame->frame_reconstruction_inst = NULL;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
@@ -340,7 +334,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_builtins = NULL;
     frame->f_globals = NULL;
 #endif
-    frame->f_names = Py_NewRef(code->co_names);
     frame->f_locals = NULL;
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;

@@ -91,11 +91,6 @@ typedef struct _Py_UOpsAbstractFrame {
     // For an inlined frame, the inlinee shares the same localsplus
     // as the inliner.
     _Py_UOpsSymType **real_localsplus;
-    // Same as in VM, from _SET_IP and _SAVE_RETURN_OFFSET
-    _Py_CODEUNIT *instr_ptr;
-    uint16_t return_offset;
-    PyFunctionObject *func;
-    int reconstruction_offset;
 } _Py_UOpsAbstractFrame;
 
 
@@ -143,9 +138,7 @@ ctx_frame_new(
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
     frame->is_inlined = false;
-    frame->reconstruction_offset = 0;
     frame->real_localsplus = NULL;
-    frame->instr_ptr = NULL;
     ctx->n_consumed = localsplus_start + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         return NULL;
@@ -190,7 +183,6 @@ abstractcontext_fini(_Py_UOpsAbstractInterpContext *ctx)
 static int
 abstractcontext_init(
     _Py_UOpsAbstractInterpContext *ctx,
-    PyFunctionObject *func,
     PyCodeObject *co,
     int curr_stacklen,
     int ir_entries
@@ -216,7 +208,6 @@ abstractcontext_init(
     }
     // Root frame should never be inlined.
     frame->real_localsplus = frame->locals;
-    frame->func = func;
     ctx->curr_frame_depth++;
     ctx->frame = frame;
     return 0;
@@ -622,12 +613,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx)); \
     } while (0);
 
-#define _LOAD_ATTR_NOT_NULL_SELF \
-    do {                    \
-    OUT_OF_SPACE_IF_NULL(attr = sym_new_known_notnull(ctx)); \
-    OUT_OF_SPACE_IF_NULL(self = sym_new_known_notnull(ctx)); \
-    } while (0);
-
 int
 real_localsplus_idx(_Py_UOpsAbstractInterpContext *ctx, int oparg)
 {
@@ -636,81 +621,9 @@ real_localsplus_idx(_Py_UOpsAbstractInterpContext *ctx, int oparg)
     return target;
 }
 
-static int
-compile_frame_reconstruction(_Py_UOpsAbstractInterpContext *ctx,
-                             _PyUOpInstruction **end_writebuffer_p,
-                             _PyUOpInstruction *true_end)
-{
-    // For each frame, emit the following:
-    // _RECONSTRUCT_FRAME_INFO <oparg = where to start copying localsplus from> <operand = code object>
-    // _RECONSTRUCT_FRAME_INFO <oparg = current stack level> <operand = function object>
-    // _SAVE_RETURN_OFFSET <oparg = return_offset> <operand = instr_ptr>
-    //
-    // Note: only the most recent frame's stack will have variable stack adjusts. If you think about it
-    // all other frames in the chain have stack adjusts we can statically determine.
-    // Thus we can calculate how much to set the most recent frame's stack using the runtime stack pointer.
-
-    // The final product is:
-    // <Frame reconstruction 1>
-    // <Frame reconstruction 2>
-    // ...
-    // Root frame's metadata:
-    //  _RECONSTRUCT_FRAME_INFO <oparg = stack level of root frame>
-    //  _SAVE_RETURN_OFFSET <oparg = return_offset> <operand = instr_ptr>
-    // _EXIT_TRACE
-
-    // For the situation:
-    // <Root frame> -> Inlined frame 1 -> Inlined frame 2.
-    // We want to emit inlined frame 1, inlined frame 2, then root frame.
-    _Py_UOpsAbstractFrame *root_frame = &ctx->frames[ctx->curr_frame_depth-1];
-    int frame_count = 1;
-    while (root_frame->is_inlined) {
-        frame_count++;
-        root_frame--;
-    }
-    // Do we have enough space to write this all out?
-    if ((*end_writebuffer_p + (frame_count * 3 + 3)) > true_end) {
-        return 1;
-    }
-    _Py_UOpsAbstractFrame *inlined_frame = root_frame + 1;
-    _Py_UOpsAbstractFrame *end_frame = &ctx->frames[ctx->curr_frame_depth];
-    assert(inlined_frame->is_inlined);
-    _PyUOpInstruction *end_writebuffer = *end_writebuffer_p;
-    while (inlined_frame < end_frame) {
-        REPLACE_OP(end_writebuffer, _RECONSTRUCT_FRAME_INFO,
-                   (int)(inlined_frame->locals - inlined_frame->real_localsplus),
-        // TODO refleak
-                   (uintptr_t)Py_NewRef(inlined_frame->func->func_code));
-        end_writebuffer++;
-        REPLACE_OP(end_writebuffer, _RECONSTRUCT_FRAME_INFO,
-                   (int)(inlined_frame->stack_pointer - inlined_frame->locals),
-        // TODO refleak
-                   (uintptr_t)Py_NewRef(inlined_frame->func));
-        end_writebuffer++;
-        REPLACE_OP(end_writebuffer, _SAVE_RETURN_OFFSET,
-                   inlined_frame->return_offset,
-                   (uintptr_t)inlined_frame->instr_ptr);
-        end_writebuffer++;
-        inlined_frame++;
-    }
-    REPLACE_OP(end_writebuffer, _RECONSTRUCT_FRAME_INFO,
-               (int)(root_frame->stack_pointer - root_frame->locals),
-               0);
-    end_writebuffer++;
-    REPLACE_OP(end_writebuffer, _SAVE_RETURN_OFFSET,
-               root_frame->return_offset,
-               (uintptr_t)root_frame->instr_ptr);
-    end_writebuffer++;
-    REPLACE_OP(end_writebuffer, _EXIT_TRACE, 0, 0);
-    end_writebuffer++;
-    *end_writebuffer_p = end_writebuffer;
-    return 0;
-}
-
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 uop_redundancy_eliminator(
-    PyFunctionObject *func,
     PyCodeObject *co,
     _PyUOpInstruction *trace,
     int trace_len,
@@ -720,12 +633,10 @@ uop_redundancy_eliminator(
 
     _Py_UOpsAbstractInterpContext context;
     _Py_UOpsAbstractInterpContext *ctx = &context;
-    _PyUOpInstruction *end_writebuffer = &trace[UOP_MAX_TRACE_LENGTH / 2];
-    _PyUOpInstruction *true_end = &trace[UOP_MAX_TRACE_LENGTH];
 
     if (abstractcontext_init(
         ctx,
-        func, co, curr_stacklen,
+        co, curr_stacklen,
         trace_len) < 0) {
         goto out_of_space;
     }
@@ -835,57 +746,11 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
-static int
-function_decide_inlineable(
-    PyFunctionObject *prev_func,
-    PyFunctionObject *func,
+static bool
+function_decide_simple_inlineable(
     _PyUOpInstruction *func_body_start,
     _PyUOpInstruction *func_body_end)
 {
-    if (func == NULL) {
-        return 0;
-    }
-    PyCodeObject *co = (PyCodeObject *)func->func_code;
-    if (co == NULL) {
-        return 0;
-    }
-    // Ban closures
-    if (co->co_ncellvars > 0 || co->co_nfreevars > 0) {
-        DPRINTF(2, "inline_fail: closure\n");
-        return 0;
-    }
-    // Ban generators, async, etc.
-    int flags = co->co_flags;
-    if ((flags & CO_COROUTINE) ||
-        (flags & CO_GENERATOR) ||
-        (flags & CO_ITERABLE_COROUTINE) ||
-        (flags & CO_ASYNC_GENERATOR) ||
-        // TODO we can support these in the future.
-        (flags & CO_VARKEYWORDS) ||
-        (flags & CO_VARARGS)) {
-        DPRINTF(2, "inline_fail: generator/coroutine/varargs/varkeywords\n");
-        return 0;
-    }
-    // Somewhat arbitrary, but if the stack is too big, we will copy a lot
-    // more on deopt, making it not really worth it.
-    if (co->co_stacksize > 64) {
-        DPRINTF(2, "inline_fail: stack too big");
-        return 0;
-    }
-    // If globals or builtins don't match, ban that too, unless
-    // there are no uses, or all globals have been promoted to constants.
-    if (prev_func->func_globals != func->func_globals ||
-        prev_func->func_builtins != func->func_builtins) {
-        while (func_body_start < func_body_end) {
-            int opcode = func_body_start->opcode;
-            if (opcode == _LOAD_GLOBAL_BUILTINS ||
-                opcode == _LOAD_GLOBAL_MODULE ||
-                opcode == _LOAD_GLOBAL) {
-                return 0;
-            }
-            func_body_start++;
-        }
-    }
     return 1;
 }
 
@@ -932,13 +797,11 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             case _POP_FRAME:
             {
                 frame_depth--;
-                if (function_decide_inlineable(
-                    (PyFunctionObject *)buffer[pc].operand, func,
+                if (function_decide_simple_inlineable(
                         push_frame[frame_depth], &buffer[pc])) {
                     push_frame[frame_depth]->opcode = _PUSH_FRAME_INLINEABLE;
                 } else {
                     // Mark all previous frames as non-inlineable.
-                    // This makes reconstruction easier to reason about.
                     for (int i = 1; i < frame_depth; i++) {
                         push_frame[i]->opcode = _PUSH_FRAME;
                     }
@@ -975,8 +838,6 @@ _Py_uop_analyze_and_optimize(
     _PyBloomFilter *dependencies
 )
 {
-    // Some of the trace should be for us to create metadata.
-    assert(buffer_size == (UOP_MAX_TRACE_LENGTH / 2));
     OPT_STAT_INC(optimizer_attempts);
 
     int err = remove_globals(frame, buffer, buffer_size, dependencies);
@@ -990,7 +851,6 @@ _Py_uop_analyze_and_optimize(
     peephole_opt(frame, buffer, buffer_size);
 
     err = uop_redundancy_eliminator(
-        (PyFunctionObject *)frame->f_funcobj,
         (PyCodeObject *)frame->f_executable, buffer,
         buffer_size, curr_stacklen);
 

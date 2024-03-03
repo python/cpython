@@ -251,8 +251,6 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     PyObject *locals, Py_ssize_t nargs, PyObject *callargs, PyObject *kwargs);
-static _PyInterpreterFrame *
-_PyEvalFrame_ReconstructTier2Frame(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***stackptr_ptr);
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -1073,10 +1071,6 @@ error_tier_two:
     }
 #endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    frame = _PyEvalFrame_ReconstructTier2Frame(tstate, frame, &stack_pointer);
-    if (frame == NULL) {
-        goto resume_with_error;
-    }
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
@@ -1085,11 +1079,6 @@ error_tier_two:
 
 // Jump here from DEOPT_IF()
 deoptimize:
-    frame = _PyEvalFrame_ReconstructTier2Frame(tstate, frame, &stack_pointer);
-    // Unrecoverable memory error.
-    if (frame == NULL) {
-        goto error_tier_two;
-    }
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
@@ -1107,11 +1096,6 @@ deoptimize:
 
 // Jump here from EXIT_IF()
 side_exit:
-    frame = _PyEvalFrame_ReconstructTier2Frame(tstate, frame, &stack_pointer);
-    // Unrecoverable memory error.
-    if (frame == NULL) {
-        goto error_tier_two;
-    }
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     uint32_t exit_index = next_uop[-1].exit_index;
@@ -1800,117 +1784,6 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
 error:
     Py_DECREF(callargs);
     Py_XDECREF(kwargs);
-    return NULL;
-}
-
-// Tells the current frame how to reconstruct truly inlined function frames.
-// See optimizer_analysis.c for what each field represents.
-static _PyInterpreterFrame *
-_PyEvalFrame_ReconstructTier2Frame(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***stackptr_ptr)
-{
-    // Does not need reconstruction.
-    if (frame->frame_reconstruction_inst == NULL) {
-        return frame;
-    }
-#ifdef LLTRACE
-    printf("pre-reconstruction stack: \n");
-    dump_stack(frame, *stackptr_ptr);
-#endif
-    _PyInterpreterFrame *prev_frame = frame;
-    _PyInterpreterFrame *recentmost_frame = frame;
-    _PyUOpInstruction *curr = frame->frame_reconstruction_inst;
-    int opcode = curr->opcode;
-    while (opcode == _RECONSTRUCT_FRAME_INFO) {
-        // Hit the root frame.
-        if ((curr+1)->opcode != _RECONSTRUCT_FRAME_INFO) {
-            break;
-        }
-#ifdef LLTRACE
-        printf("reconstructing frame... \n");
-#endif
-        PyCodeObject* code = (PyCodeObject *)(uintptr_t)curr->operand;
-        assert(PyCode_Check(code));
-        assert((curr+1)->opcode == _RECONSTRUCT_FRAME_INFO);
-        assert(PyFunction_Check((PyObject*)(uintptr_t)(curr+1)->operand));
-        assert((curr+2)->opcode == _SAVE_RETURN_OFFSET);
-
-        // We must retrieve a cached function and code object because the user might have
-        // modified them since execution. Thus, to remain consistent and give the appearance
-        // that the frame has existed since before modification, we use a manual code object
-        // rather than obtaining the function's.
-        PyFunctionObject *callable = (PyFunctionObject *)(uintptr_t)((curr+1)->operand);
-        int code_flags = ((PyCodeObject*)code)->co_flags;
-        PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
-
-        _PyInterpreterFrame *new_frame = _PyThreadState_PushFrame(tstate, code->co_framesize);
-        if (new_frame == NULL) {
-            goto fail;
-        }
-
-        // TODO CONSUME callable from the stack to deal with refleak.
-        _PyFrame_Initialize(new_frame, (PyFunctionObject*)Py_NewRef(callable),
-                            locals, (PyCodeObject *)code,
-                            ((PyCodeObject *)code)->co_nlocalsplus);
-        new_frame->previous = prev_frame;
-        new_frame->return_offset = (curr+2)->oparg;
-        new_frame->instr_ptr = _PyCode_CODE(code) + (int)(curr+2)->operand;
-        prev_frame = new_frame;
-        // Copy over locals, stack and friends.
-#ifdef LLTRACE
-        printf("copying over stack with offset %d: , locals count: %d, stacksize: %d\n", curr->oparg, code->co_nlocalsplus, code->co_stacksize);
-        dump_stack(frame, frame->localsplus + curr->oparg);
-#endif
-        int total_len = (code->co_nlocalsplus + code->co_stacksize);
-        memcpy(new_frame->localsplus, frame->localsplus + curr->oparg,
-               sizeof(PyObject *) * total_len);
-
-#ifdef LLTRACE
-        printf("setting stacktop: %d + co_nlocalsplus\n", (curr+1)->oparg);
-#endif
-        // Finally, set the stack pointer
-        new_frame->stacktop = _PyFrame_GetCode(new_frame)->co_nlocalsplus + (curr+1)->oparg;
-        assert(new_frame->stacktop >= 0 || (int)(curr+1)->oparg < 0);
-
-//#ifdef LLTRACE
-//        if (!(((int16_t)(curr+2)->oparg) < 0)) {
-//            printf("the new frame %p has stack entries %d: \n", new_frame, (curr+2)->oparg);
-//            dump_stack(new_frame, &(new_frame->localsplus[new_frame->stacktop]));
-//        }
-//#endif
-        recentmost_frame = new_frame;
-        curr+=3;
-    }
-    PyObject **curr_stacklevel = *stackptr_ptr;
-    // Recentmost frame stack pointer is set by the current level.
-    int recentmost_stackentries = (int)(curr_stacklevel - (frame->localsplus + curr->oparg + (_PyFrame_GetCode(recentmost_frame)->co_nlocalsplus)));
-    *stackptr_ptr = recentmost_frame->localsplus + (_PyFrame_GetCode(recentmost_frame)->co_nlocalsplus) + recentmost_stackentries;
-#ifdef LLTRACE
-    printf("restoring offset %d\n", (int)(frame->instr_ptr - (_PyCode_CODE(_PyFrame_GetCode(frame)))));
-#endif
-    recentmost_frame->instr_ptr =  (_PyCode_CODE(_PyFrame_GetCode(recentmost_frame))) + (frame->instr_ptr - (_PyCode_CODE(_PyFrame_GetCode(frame))));
-    recentmost_frame->return_offset = -1;
-    recentmost_frame->stacktop = (*stackptr_ptr - recentmost_frame->localsplus);
-    // Set root frame stack pointer.
-    assert(curr->opcode == _RECONSTRUCT_FRAME_INFO);
-    assert((curr+1)->opcode == _SAVE_RETURN_OFFSET);
-
-    assert(curr->oparg >= 0);
-    frame->stacktop = _PyFrame_GetCode(frame)->co_nlocalsplus + curr->oparg;
-    frame->return_offset = (curr+1)->oparg;
-    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (int)(curr+1)->operand;
-    frame->f_names = Py_NewRef(_PyFrame_GetCode(frame)->co_names);
-    tstate->current_frame = recentmost_frame;
-    frame->frame_reconstruction_inst = NULL;
-
-#ifdef LLTRACE
-    printf("after reconstruction root stack, with n_stackentries %d: \n", curr->oparg);
-    dump_stack(frame, &(frame->localsplus[frame->stacktop]));
-    printf("after reconstruction topmost stack, with n_stackentries %d: \n", recentmost_stackentries);
-    dump_stack(recentmost_frame, *stackptr_ptr);
-#endif
-    return recentmost_frame;
-fail:
-    PyErr_NoMemory();
     return NULL;
 }
 
