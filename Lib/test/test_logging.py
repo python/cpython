@@ -28,7 +28,6 @@ import copy
 import datetime
 import pathlib
 import pickle
-import importlib
 import io
 import itertools
 import gc
@@ -44,6 +43,7 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
@@ -4332,10 +4332,16 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
         offset_ns = 200
         with patch("time.time_ns") as patched_ns:
-            patched_ns.return_value = ns
-            importlib.reload(logging)  # force logging._startTime to use mocked value
-            patched_ns.return_value = ns + offset_ns
-            record = logging.makeLogRecord({'msg': 'test'})
+            orig_modules = import_helper._save_and_remove_modules(['logging'])
+            try:
+                patched_ns.return_value = ns
+                import logging
+                patched_ns.return_value = ns + offset_ns
+                record = logging.makeLogRecord({'msg': 'test'})
+            finally:
+                import_helper._save_and_remove_modules(['logging'])
+                sys.modules.update(orig_modules)
+
         self.assertAlmostEqual(record.created, ns / 1e9, places=6)
         # After PR gh-102412, precision (places) increases from 3 to 7
         self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
