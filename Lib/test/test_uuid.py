@@ -537,9 +537,8 @@ class BaseTestUUID:
             has_uuid_generate_time_safe = False
         else:
             has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
-            import_helper.unload('_uuid')
 
-        if not has_uuid_generate_time_safe:
+        if not has_uuid_generate_time_safe or not self.uuid._generate_time_safe:
             self.skipTest('requires uuid_generate_time_safe(3)')
 
         u = self.uuid.uuid1()
