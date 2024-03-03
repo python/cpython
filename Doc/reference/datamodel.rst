@@ -1818,7 +1818,7 @@ Basic customization
    the left operand's method has priority.  Virtual subclassing is
    not considered.
 
-   When no appropriate method returns any value other than :data:`!NotImplemented`, the
+   When no appropriate method returns any value other than :data:`NotImplemented`, the
    ``==`` and ``!=`` operators will fall back to ``is`` and ``is not``, respectively.
 
 .. method:: object.__hash__(self)
