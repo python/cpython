@@ -296,11 +296,19 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
     (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
 
+#ifdef Py_GIL_DISABLED
+#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)                             \
+    do {                                                                \
+        /* gh-115999 tracks progress on addressing this. */             \
+        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
+    } while (0);
+#else
 #define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
     do {                                              \
         assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
         (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
     } while (0);
+#endif
 
 #define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
     do {                                             \
@@ -348,13 +356,6 @@ do { \
     } \
 } while (0);
 
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
-
-static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
-    [FVC_STR] = PyObject_Str,
-    [FVC_REPR] = PyObject_Repr,
-    [FVC_ASCII] = PyObject_ASCII
-};
 
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4

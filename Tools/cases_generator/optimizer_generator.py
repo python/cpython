@@ -1,19 +1,15 @@
-"""Generate the cases for the tier 2 redundancy eliminator/abstract interpreter.
-Reads the instruction definitions from bytecodes.c. and tier2_redundancy_eliminator.bytecodes.c
-Writes the cases to tier2_redundancy_eliminator_cases.c.h, which is #included in Python/optimizer_analysis.c.
+"""Generate the cases for the tier 2 optimizer.
+Reads the instruction definitions from bytecodes.c and optimizer_bytecodes.c
+Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_analysis.c.
 """
 
 import argparse
-import os.path
-import sys
 
 from analyzer import (
     Analysis,
     Instruction,
     Uop,
-    Part,
     analyze_files,
-    Skip,
     StackItem,
     analysis_error,
 )
@@ -28,10 +24,10 @@ from generators_common import (
 from cwriter import CWriter
 from typing import TextIO, Iterator
 from lexer import Token
-from stack import StackOffset, Stack, SizeMismatch, UNUSED
+from stack import Stack, SizeMismatch, UNUSED
 
-DEFAULT_OUTPUT = ROOT / "Python/tier2_redundancy_eliminator_cases.c.h"
-DEFAULT_ABSTRACT_INPUT = ROOT / "Python/tier2_redundancy_eliminator_bytecodes.c"
+DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
+DEFAULT_ABSTRACT_INPUT = ROOT / "Python/optimizer_bytecodes.c"
 
 
 def validate_uop(override: Uop, uop: Uop) -> None:
@@ -41,10 +37,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"_Py_UOpsSymType **"
+        return f"_Py_UopsSymbol **"
     if var.type:
         return var.type
-    return f"_Py_UOpsSymType *"
+    return f"_Py_UopsSymbol *"
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -148,7 +144,7 @@ def write_uop(
                 if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UOpsSymType *")
+        stack.flush(out, cast_type="_Py_UopsSymbol *")
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 
