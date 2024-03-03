@@ -4326,6 +4326,7 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 patched_ns.return_value = ns
                 record = logging.makeLogRecord({'msg': 'test'})
             self.assertEqual(record.msecs, want)
+            self.assertEqual(record.created, ns / 1e9)
 
     def test_relativeCreated_has_higher_precision(self):
         # See issue gh-102402
