@@ -466,7 +466,6 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
             switch (buffer[i].opcode) {
                 case _LOAD_FAST:
                     buffer[i].opcode = _COPY;
-                    assert(nargs - buffer[i].oparg > 0);
                     buffer[i].oparg = nargs - buffer[i].oparg;
                     break;
                 case _RESUME_CHECK:
