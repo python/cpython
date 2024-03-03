@@ -275,7 +275,7 @@ General Options
      * to/from free lists;
      * dictionary materialized/dematerialized;
      * type cache;
-     * optimization attemps;
+     * optimization attempts;
      * optimization traces created/executed;
      * uops executed.
 
