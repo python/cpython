@@ -73,6 +73,8 @@ in a cookie name (as :attr:`~Morsel.key`).
 
 .. _cookie-objects:
 
+
+
 Cookie Objects
 --------------
 
@@ -294,3 +296,28 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
+
+
+Handling of Duplicate Cookies
+-----------------------------
+
+As per `RFC 6265`_, the ``http.cookies`` module has been updated to handle duplicate cookies more in line with the standard practices recommended by the RFC. Previously, when multiple cookies with the same name were encountered, the last cookie value in the sequence was retained. The module now preserves the first cookie value encountered, aligning with the common behavior expected by user agents and web servers.
+
+.. note::
+
+   This change ensures that when ``SimpleCookie`` parses a cookie string containing multiple cookies with the same name, it retains the first instance of such a cookie. This behavior is particularly relevant when cookies are set with different paths or domains, and the order of cookies in the HTTP header can imply precedence.
+
+Example Usage:
+
+.. code-block:: python
+
+   from http.cookies import SimpleCookie
+
+   # Creating a SimpleCookie instance with duplicate cookies
+   c = SimpleCookie('name=value1; name=value2')
+
+   # The value of the first cookie is retained
+   assert c['name'].value == 'value1'
+
+.. _RFC 6265: https://datatracker.ietf.org/doc/html/rfc6265
+
