@@ -278,8 +278,8 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST", 259, 0)
-                            for opcode, oparg, _, operand in list(ex)))
+        self.assertTrue(any((opcode, oparg) == ("_LOAD_FAST", 259)
+                            for opcode, oparg, _, _ in list(ex)))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -494,7 +494,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_PRE_INLINE", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
     def test_branch_taken(self):
@@ -680,7 +680,7 @@ class TestUopsOptimization(unittest.TestCase):
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_PUSH_FRAME", uops)
+        self.assertIn("_PRE_INLINE", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
         self.assertNotIn("_CHECK_PEP_523", uops)
 
@@ -986,6 +986,41 @@ class TestUopsOptimization(unittest.TestCase):
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNone(ex)
 
+    def test_function_call_inline(self):
+        def cast(typ, val):
+            return val
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                x = cast(int, i) + 1
+            return x
+        x, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(x, 20)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # print()
+        # print(list(iter_opnames(ex)))
+        self.assertNotIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_POP_FRALE", uops)
+
+    def test_method_call_inline(self):
+        class Caster:
+            def cast(self, typ, val):
+                return val
+        def testfunc(n):
+            cast = Caster().cast
+            x = 0
+            for i in range(n):
+                x = cast(int, i) + 1
+            return x
+        x, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertEqual(x, 20)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # print()
+        # print(list(iter_opnames(ex)))
+        self.assertNotIn("_PUSH_FRAME", uops)
+        self.assertNotIn("_POP_FRALE", uops)
 
 def foo(x, y):
     return x + y

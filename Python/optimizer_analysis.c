@@ -462,21 +462,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     }
 }
 
-static bool
-function_decide_simple_inlineable(
-    _PyUOpInstruction *func_body_start,
-    _PyUOpInstruction *func_body_end)
-{
-    _PyUOpInstruction *curr = func_body_start;
-    while (curr < func_body_end) {
-        if (_PyUop_Flags[curr->opcode] & (HAS_ESCAPES_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG)) {
-            return false;
-        }
-        curr++;
-    }
-    return true;
-}
-
 static void
 peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
@@ -484,6 +469,7 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
     int frame_depth = 1;
     PyCodeObject *co = (PyCodeObject *)frame->f_executable;
     PyFunctionObject *func = NULL;
+    bool is_leaf_frame = false;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch(opcode) {
@@ -503,7 +489,9 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
                 }
                 break;
             }
-            case _PUSH_FRAME: {
+            case _PUSH_FRAME:
+            {
+                is_leaf_frame = true;
                 push_frame[frame_depth] = &buffer[pc];
                 frame_depth++;
                 func = (PyFunctionObject *)buffer[pc].operand;
@@ -520,15 +508,10 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             case _POP_FRAME:
             {
                 frame_depth--;
-                if (function_decide_simple_inlineable(
-                        push_frame[frame_depth], &buffer[pc])) {
+                if (is_leaf_frame) {
                     push_frame[frame_depth]->opcode = _PUSH_FRAME_INLINEABLE;
-                } else {
-                    // Mark all previous frames as non-inlineable.
-                    for (int i = 1; i < frame_depth; i++) {
-                        push_frame[i]->opcode = _PUSH_FRAME;
-                    }
                 }
+                is_leaf_frame = false;
                 assert(frame_depth >= 1);
                 func = (PyFunctionObject *)buffer[pc].operand;
                 if (func == NULL) {
@@ -548,6 +531,97 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
 }
 
 
+static bool
+function_decide_simple_inlineable(
+    _PyUOpInstruction *func_body_start,
+    _PyUOpInstruction *func_body_end)
+{
+    // Usually means MAKE_CELL or something
+    if (func_body_start->opcode != _RESUME_CHECK) {
+        return false;
+    }
+    func_body_start++;
+    _PyUOpInstruction *curr = func_body_start;
+    while (curr < func_body_end) {
+        int opcode = curr->opcode;
+        // We should be the leaf frame.
+        assert(opcode != _PUSH_FRAME && opcode != _PUSH_FRAME_INLINEABLE);
+        if (opcode == _POP_FRAME) {
+            return true;
+        }
+        if (_PyUop_Flags[curr->opcode] & (HAS_ESCAPES_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG)) {
+            // Pure overrides error flag.
+            if (!(_PyUop_Flags[curr->opcode] & HAS_PURE_FLAG)) {
+                return false;
+            }
+        }
+        curr++;
+    }
+    Py_UNREACHABLE();
+}
+
+static void
+inline_simple_frames(_PyUOpInstruction *buffer, int buffer_size)
+{
+    bool did_inline = false;
+    for (int pc = 0; pc < buffer_size; pc++) {
+        int opcode = buffer[pc].opcode;
+        switch (opcode) {
+            case _PUSH_FRAME_INLINEABLE: {
+                assert(buffer[pc - 3].opcode == _CHECK_STACK_SPACE);
+                assert(buffer[pc - 2].opcode == _INIT_CALL_PY_EXACT_ARGS);
+                assert(buffer[pc - 1].opcode == _SAVE_RETURN_OFFSET);
+                assert(buffer[pc + 1].opcode == _CHECK_VALIDITY_AND_SET_IP ||
+                    buffer[pc + 1].opcode == _CHECK_VALIDITY);
+                // Skip over the CHECK_VALIDITY when deciding,
+                // as those can be optimized away later.
+                if (!function_decide_simple_inlineable(&buffer[pc + 2], buffer + buffer_size)) {
+                    buffer[pc].opcode = _PUSH_FRAME;
+                    break;
+                }
+                assert(buffer[pc + 2].opcode == _RESUME_CHECK);
+                did_inline = true;
+                uint64_t operand = buffer[pc].operand;
+                int locals_len = (int)(operand >> 32);
+                int stack_len = (int)(operand & 0xFFFFFFFF);
+                REPLACE_OP(&buffer[pc - 3], _GROW_TIER2_FRAME, locals_len + stack_len, 0);
+                REPLACE_OP(&buffer[pc - 2], _NOP, 0, 0);
+                REPLACE_OP(&buffer[pc - 1], _NOP, 0, 0);
+                REPLACE_OP(&buffer[pc], _PRE_INLINE, locals_len, 0);
+                REPLACE_OP(&buffer[pc + 1], _NOP, 0, 0);
+                REPLACE_OP(&buffer[pc + 2], _NOP, 0, 0);
+                break;
+            }
+            case _POP_FRAME: {
+                if (did_inline) {
+                    buffer[pc].oparg = (int)buffer[pc].operand;
+                    buffer[pc].opcode = _POST_INLINE;
+                }
+                did_inline = false;
+                break;
+            }
+            case _LOAD_FAST:
+            case _STORE_FAST:
+            case _LOAD_FAST_AND_CLEAR:
+                if (did_inline) {
+                    buffer[pc].oparg = (int)buffer[pc].operand;
+                    buffer[pc].operand = 0;
+                }
+                break;
+            case _SET_IP: {
+                if (did_inline) {
+                    REPLACE_OP(&buffer[pc], _NOP, 0, 0);
+                }
+                break;
+            }
+            case _JUMP_TO_TOP:
+            case _EXIT_TRACE:
+                return;
+            default:
+                break;
+        }
+    }
+}
 
 //  0 - failure, no error raised, just fall back to Tier 1
 // -1 - failure, and raise error
@@ -583,6 +657,8 @@ _Py_uop_analyze_and_optimize(
     assert(err == 1);
 
     remove_unneeded_uops(buffer, buffer_size);
+    inline_simple_frames(buffer, buffer_size);
+    // remove_unneeded_uops(buffer, buffer_size);
 
     OPT_STAT_INC(optimizer_successes);
     return 1;

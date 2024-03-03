@@ -54,8 +54,6 @@ struct _Py_UOpsAbstractFrame {
     _Py_UopsSymbol **stack;
     _Py_UopsSymbol **locals;
 
-    // For inlining
-    bool is_inlined;
     // Reflects the real localsplus that will be used in the VM.
     // This may differ from locals if the frame is inlined.
     // For an inlined frame, the inlinee shares the same localsplus

@@ -28,7 +28,7 @@
         case _LOAD_FAST: {
             _Py_UopsSymbol *value;
             value = GETLOCAL(oparg);
-            REPLACE_OP(this_instr, _LOAD_FAST, real_localsplus_idx(ctx, oparg), 0);
+            REPLACE_OP(this_instr, _LOAD_FAST, oparg, real_localsplus_idx(ctx, oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -40,7 +40,7 @@
             _Py_UopsSymbol *temp;
             OUT_OF_SPACE_IF_NULL(temp = sym_new_null(ctx));
             GETLOCAL(oparg) = temp;
-            REPLACE_OP(this_instr, _LOAD_FAST_AND_CLEAR, real_localsplus_idx(ctx, oparg), 0);
+            REPLACE_OP(this_instr, _LOAD_FAST_AND_CLEAR, oparg, real_localsplus_idx(ctx, oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             break;
@@ -60,7 +60,7 @@
             _Py_UopsSymbol *value;
             value = stack_pointer[-1];
             GETLOCAL(oparg) = value;
-            REPLACE_OP(this_instr, _STORE_FAST, real_localsplus_idx(ctx, oparg), 0);
+            REPLACE_OP(this_instr, _STORE_FAST, oparg, real_localsplus_idx(ctx, oparg));
             stack_pointer += -1;
             break;
         }
@@ -585,11 +585,9 @@
             _Py_UopsSymbol *res;
             retval = stack_pointer[-1];
             stack_pointer += -1;
-            if (ctx->frame->is_inlined) {
-                REPLACE_OP(this_instr, _POST_INLINE,
-                       (stack_pointer - _Py_uop_prev_frame(ctx)->stack_pointer),
-                       0);
-            }
+            REPLACE_OP(this_instr, _POP_FRAME,
+                   this_instr->oparg,
+                   (stack_pointer - _Py_uop_prev_frame(ctx)->stack_pointer));
             ctx->frame->stack_pointer = stack_pointer;
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
@@ -1575,19 +1573,14 @@
             _Py_UOpsAbstractFrame *new_frame;
             new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
             stack_pointer += -1;
-            new_frame->is_inlined = true;
             new_frame->real_localsplus = ctx->frame->real_localsplus;
             ctx->frame->stack_pointer = stack_pointer;
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
-            assert((this_instr - 1)->opcode == _SAVE_RETURN_OFFSET);
-            assert((this_instr - 2)->opcode == _INIT_CALL_PY_EXACT_ARGS);
-            assert((this_instr - 3)->opcode == _CHECK_STACK_SPACE);
-            REPLACE_OP(this_instr, _PRE_INLINE, new_frame->locals_len, 0);
-            REPLACE_OP((this_instr - 1), _NOP, 0, 0);
-            REPLACE_OP((this_instr - 2), _NOP, 0, 0);
-            REPLACE_OP((this_instr - 3), _GROW_TIER2_FRAME, new_frame->locals_len + new_frame->stack_len, 0);
+            // First 32 bits set to locals_len, last 32 bits set to stack_len.
+            uint64_t operand = (((uint64_t)(new_frame->locals_len)) << 32) | (new_frame->stack_len);
+            REPLACE_OP(this_instr, _PUSH_FRAME_INLINEABLE, oparg, operand);
             break;
         }
 
