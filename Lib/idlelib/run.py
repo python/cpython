@@ -10,6 +10,7 @@ import io
 import linecache
 import queue
 import sys
+import signal
 import textwrap
 import time
 import traceback
@@ -106,6 +107,7 @@ def handle_tk_events(tcl=tcl):
 exit_now = False
 quitting = False
 interruptable = False
+finish = False
 
 def main(del_exitfunc=False):
     """Start the Python execution server in a subprocess
@@ -128,6 +130,8 @@ def main(del_exitfunc=False):
     global exit_now
     global quitting
     global no_exitfunc
+    global main_thread
+    main_thread = threading.get_ident()
     no_exitfunc = del_exitfunc
     #time.sleep(15) # test subprocess not responding
     try:
@@ -572,9 +576,10 @@ class Executive:
             self.locals = {}
 
     def runcode(self, code):
-        global interruptable
+        global interruptable, finish
         try:
             self.user_exc_info = None
+            finish = False
             interruptable = True
             try:
                 exec(code, self.locals)
@@ -603,10 +608,21 @@ class Executive:
                 self.rpchandler.interp.open_remote_stack_viewer()
         else:
             flush_stdout()
+        finally:
+            finish = True
 
     def interrupt_the_server(self):
         if interruptable:
             thread.interrupt_main()
+
+            # See issue 29926, fallback when interrupt_main doesn't work
+            def _interrupt_by_signal_pthread():
+                if not finish:
+                    try:
+                        signal.pthread_kill(main_thread, signal.SIGINT)
+                    except AttributeError:
+                        pass
+            threading.Timer(0.2, _interrupt_by_signal_pthread).start()
 
     def start_the_debugger(self, gui_adap_oid):
         return debugger_r.start_debugger(self.rpchandler, gui_adap_oid)
