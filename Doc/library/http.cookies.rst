@@ -301,7 +301,7 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
 Handling of Duplicate Cookies
 -----------------------------
 
-As per `RFC 6265`_, the ``http.cookies`` module has been updated to better align with standard practices for handling duplicate cookies. Previously, if multiple cookies with the same name were encountered, the last value provided would be retained. With the update, the first value encountered for a given cookie name is preserved, reflecting the behavior commonly expected by web servers and user agents.
+As per ``RFC 6265``, the ``http.cookies`` module has been updated to better align with standard practices for handling duplicate cookies. Previously, if multiple cookies with the same name were encountered, the last value provided would be retained. With the update, the first value encountered for a given cookie name is preserved, reflecting the behavior commonly expected by web servers and user agents.
 
 .. note::
    This modification affects how ``SimpleCookie`` parses cookie strings containing multiple instances of the same cookie name. Now, the first instance is retained, which is particularly relevant when cookies are set with differing paths or domains, where the order in the HTTP header can imply precedence.
@@ -318,5 +318,4 @@ Example Usage:
    # The value of the first cookie is retained
    assert c['name'].value == 'value1'
 
-.. _RFC 6265: https://datatracker.ietf.org/doc/html/rfc6265
 
