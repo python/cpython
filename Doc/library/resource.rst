@@ -123,6 +123,8 @@ platform.
    This may result in the creation of a partial core file if a larger core would be
    required to contain the entire process image.
 
+   .. availability:: Linux >= 1.3.0
+
 
 .. data:: RLIMIT_CPU
 
@@ -131,15 +133,21 @@ platform.
    the :mod:`signal` module documentation for information about how to catch this
    signal and do something useful, e.g. flush open files to disk.)
 
+   .. availability:: Linux >= 1.3.0
+
 
 .. data:: RLIMIT_FSIZE
 
    The maximum size of a file which the process may create.
 
+   .. availability:: Linux >= 1.3.0
+
 
 .. data:: RLIMIT_DATA
 
    The maximum size (in bytes) of the process's heap.
+
+   .. availability:: Linux >= 1.3.0
 
 
 .. data:: RLIMIT_STACK
@@ -147,20 +155,28 @@ platform.
    The maximum size (in bytes) of the call stack for the current process.  This only
    affects the stack of the main thread in a multi-threaded process.
 
+   .. availability:: Linux >= 1.3.0
+
 
 .. data:: RLIMIT_RSS
 
    The maximum resident set size that should be made available to the process.
+
+   .. availability:: Linux >= 1.3.0
 
 
 .. data:: RLIMIT_NPROC
 
    The maximum number of processes the current process may create.
 
+   .. availability:: Linux >= 1.3.0
+
 
 .. data:: RLIMIT_NOFILE
 
    The maximum number of open file descriptors for the current process.
+
+   .. availability:: Linux >= 1.3.0
 
 
 .. data:: RLIMIT_OFILE
@@ -172,15 +188,21 @@ platform.
 
    The maximum address space which may be locked in memory.
 
+   .. availability:: Linux >= 1.3.43
+
 
 .. data:: RLIMIT_VMEM
 
    The largest area of mapped memory which the process may occupy.
 
+   .. availability:: FreeBSD >= 11.
+
 
 .. data:: RLIMIT_AS
 
    The maximum area (in bytes) of address space which may be taken by the process.
+
+   .. availability:: Linux >= 1.3.0
 
 
 .. data:: RLIMIT_MSGQUEUE
