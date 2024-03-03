@@ -85,6 +85,17 @@ py_UuidCreate(PyObject *Py_UNUSED(context),
 static int
 uuid_exec(PyObject *module) {
     assert(sizeof(uuid_t) == 16);
+#if defined(MS_WINDOWS)
+    int has_uuid_generate_time_safe = 0;
+#elif defined(HAVE_UUID_GENERATE_TIME_SAFE)
+    int has_uuid_generate_time_safe = 1;
+#else
+    int has_uuid_generate_time_safe = 0;
+#endif
+    if (PyModule_AddIntConstant(module, "has_uuid_generate_time_safe",
+                                has_uuid_generate_time_safe) < 0) {
+        return -1;
+    }
     return 0;
 }
 
