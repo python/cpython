@@ -58,17 +58,17 @@ of the new API.
    begins with angle brackets, they are stripped off.
 
 
-.. function:: parseaddr(address)
+.. function:: parseaddr(address, *, strict=True)
 
    Parse address -- which should be the value of some address-containing field such
    as :mailheader:`To` or :mailheader:`Cc` -- into its constituent *realname* and
    *email address* parts.  Returns a tuple of that information, unless the parse
    fails, in which case a 2-tuple of ``('', '')`` is returned.
 
-   .. versionchanged:: 3.12
-      For security reasons, addresses that were ambiguous and could parse into
-      multiple different addresses now cause ``('', '')`` to be returned
-      instead of only one of the *potential* addresses.
+   If *strict* is true, use a strict parser which rejects malformed inputs.
+
+   .. versionchanged:: 3.13
+      Add *strict* optional parameter and reject malformed inputs by default.
 
 
 .. function:: formataddr(pair, charset='utf-8')
@@ -87,12 +87,15 @@ of the new API.
       Added the *charset* option.
 
 
-.. function:: getaddresses(fieldvalues)
+.. function:: getaddresses(fieldvalues, *, strict=True)
 
    This method returns a list of 2-tuples of the form returned by ``parseaddr()``.
    *fieldvalues* is a sequence of header field values as might be returned by
-   :meth:`Message.get_all <email.message.Message.get_all>`.  Here's a simple
-   example that gets all the recipients of a message:
+   :meth:`Message.get_all <email.message.Message.get_all>`.
+
+   If *strict* is true, use a strict parser which rejects malformed inputs.
+
+   Here's a simple example that gets all the recipients of a message::
 
       from email.utils import getaddresses
 
@@ -102,24 +105,8 @@ of the new API.
       resent_ccs = msg.get_all('resent-cc', [])
       all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
 
-   When parsing fails for a single fieldvalue, a 2-tuple of ``('', '')``
-   is returned in its place.  Other errors in parsing the list of
-   addresses such as a fieldvalue seemingly parsing into multiple
-   addresses may result in a list containing a single empty 2-tuple
-   ``[('', '')]`` being returned rather than returning potentially
-   invalid output.
-
-   Example malformed input parsing:
-
-   .. doctest::
-
-      >>> from email.utils import getaddresses
-      >>> getaddresses(['alice@example.com <bob@example.com>', 'me@example.com'])
-      [('', '')]
-
-   .. versionchanged:: 3.12
-      The 2-tuple of ``('', '')`` in the returned values when parsing
-      fails were added as to address a security issue.
+   .. versionchanged:: 3.13
+      Add *strict* optional parameter and reject malformed inputs by default.
 
 
 .. function:: parsedate(date)

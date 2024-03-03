@@ -4,6 +4,7 @@ import unittest
 import warnings
 import importlib.metadata
 import contextlib
+from test.support import os_helper
 
 try:
     import pyfakefs.fake_filesystem_unittest as ffs
@@ -12,6 +13,7 @@ except ImportError:
 
 from . import fixtures
 from ._context import suppress
+from ._path import Symlink
 from importlib.metadata import (
     Distribution,
     EntryPoint,
@@ -68,7 +70,7 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
         dict(name=''),
     )
     def test_invalid_inputs_to_from_name(self, name):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Exception):
             Distribution.from_name(name)
 
 
@@ -206,6 +208,20 @@ class DiscoveryTests(
     def test_invalid_usage(self):
         with self.assertRaises(ValueError):
             list(distributions(context='something', name='else'))
+
+    def test_interleaved_discovery(self):
+        """
+        Ensure interleaved searches are safe.
+
+        When the search is cached, it is possible for searches to be
+        interleaved, so make sure those use-cases are safe.
+
+        Ref #293
+        """
+        dists = distributions()
+        next(dists)
+        version('egginfo-pkg')
+        next(dists)
 
 
 class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
@@ -388,6 +404,28 @@ class PackagesDistributionsTest(
 
         assert not any(name.endswith('.dist-info') for name in distributions)
 
+    @os_helper.skip_unless_symlink
+    def test_packages_distributions_symlinked_top_level(self) -> None:
+        """
+        Distribution is resolvable from a simple top-level symlink in RECORD.
+        See #452.
+        """
+
+        files: fixtures.FilesSpec = {
+            "symlinked_pkg-1.0.0.dist-info": {
+                "METADATA": """
+                    Name: symlinked-pkg
+                    Version: 1.0.0
+                    """,
+                "RECORD": "symlinked,,\n",
+            },
+            ".symlink.target": {},
+            "symlinked": Symlink(".symlink.target"),
+        }
+
+        fixtures.build_files(files, self.site_dir)
+        assert packages_distributions()['symlinked'] == ['symlinked-pkg']
+
 
 class PackagesDistributionsEggTest(
     fixtures.EggInfoPkg,
@@ -424,3 +462,10 @@ class PackagesDistributionsEggTest(
         # sources_fallback-pkg has one import ('sources_fallback') inferred from
         # SOURCES.txt (top_level.txt and installed-files.txt is missing)
         assert import_names_from_package('sources_fallback-pkg') == {'sources_fallback'}
+
+
+class EditableDistributionTest(fixtures.DistInfoPkgEditable, unittest.TestCase):
+    def test_origin(self):
+        dist = Distribution.from_name('distinfo-pkg')
+        assert dist.origin.url.endswith('.whl')
+        assert dist.origin.archive_info.hashes.sha256

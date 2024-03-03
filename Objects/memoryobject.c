@@ -12,6 +12,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include <stddef.h>               // offsetof()
@@ -118,8 +119,9 @@ mbuf_release(_PyManagedBufferObject *self)
 }
 
 static void
-mbuf_dealloc(_PyManagedBufferObject *self)
+mbuf_dealloc(PyObject *_self)
 {
+    _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
     assert(self->exports == 0);
     mbuf_release(self);
     if (self->flags&_Py_MANAGED_BUFFER_FREE_FORMAT)
@@ -128,15 +130,17 @@ mbuf_dealloc(_PyManagedBufferObject *self)
 }
 
 static int
-mbuf_traverse(_PyManagedBufferObject *self, visitproc visit, void *arg)
+mbuf_traverse(PyObject *_self, visitproc visit, void *arg)
 {
+    _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
     Py_VISIT(self->master.obj);
     return 0;
 }
 
 static int
-mbuf_clear(_PyManagedBufferObject *self)
+mbuf_clear(PyObject *_self)
 {
+    _PyManagedBufferObject *self = (_PyManagedBufferObject *)_self;
     assert(self->exports >= 0);
     mbuf_release(self);
     return 0;
@@ -147,7 +151,7 @@ PyTypeObject _PyManagedBuffer_Type = {
     "managedbuffer",
     sizeof(_PyManagedBufferObject),
     0,
-    (destructor)mbuf_dealloc,                /* tp_dealloc */
+    mbuf_dealloc,                            /* tp_dealloc */
     0,                                       /* tp_vectorcall_offset */
     0,                                       /* tp_getattr */
     0,                                       /* tp_setattr */
@@ -164,8 +168,8 @@ PyTypeObject _PyManagedBuffer_Type = {
     0,                                       /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                       /* tp_doc */
-    (traverseproc)mbuf_traverse,             /* tp_traverse */
-    (inquiry)mbuf_clear                      /* tp_clear */
+    mbuf_traverse,                           /* tp_traverse */
+    mbuf_clear                               /* tp_clear */
 };
 
 
@@ -1136,8 +1140,9 @@ memoryview_release_impl(PyMemoryViewObject *self)
 }
 
 static void
-memory_dealloc(PyMemoryViewObject *self)
+memory_dealloc(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     assert(self->exports == 0);
     _PyObject_GC_UNTRACK(self);
     (void)_memory_release(self);
@@ -1148,15 +1153,17 @@ memory_dealloc(PyMemoryViewObject *self)
 }
 
 static int
-memory_traverse(PyMemoryViewObject *self, visitproc visit, void *arg)
+memory_traverse(PyObject *_self, visitproc visit, void *arg)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_VISIT(self->mbuf);
     return 0;
 }
 
 static int
-memory_clear(PyMemoryViewObject *self)
+memory_clear(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     (void)_memory_release(self);
     Py_CLEAR(self->mbuf);
     return 0;
@@ -1509,8 +1516,9 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self)
 /**************************************************************************/
 
 static int
-memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
+memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *base = &self->view;
     int baseflags = self->flags;
 
@@ -1588,8 +1596,9 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
 }
 
 static void
-memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
+memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     self->exports--;
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
@@ -1597,8 +1606,8 @@ memory_releasebuf(PyMemoryViewObject *self, Py_buffer *view)
 
 /* Buffer methods */
 static PyBufferProcs memory_as_buffer = {
-    (getbufferproc)memory_getbuf,         /* bf_getbuffer */
-    (releasebufferproc)memory_releasebuf, /* bf_releasebuffer */
+    memory_getbuf,         /* bf_getbuffer */
+    memory_releasebuf,                    /* bf_releasebuffer */
 };
 
 
@@ -2343,8 +2352,9 @@ memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
 }
 
 static PyObject *
-memory_repr(PyMemoryViewObject *self)
+memory_repr(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
         return PyUnicode_FromFormat("<released memory at %p>", self);
     else
@@ -2420,8 +2430,9 @@ ptr_from_tuple(const Py_buffer *view, PyObject *tup)
    with the type specified by view->format. Otherwise, the item is a sub-view.
    The function is used in memory_subscript() and memory_as_sequence. */
 static PyObject *
-memory_item(PyMemoryViewObject *self, Py_ssize_t index)
+memory_item(PyObject *_self, Py_ssize_t index)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &(self->view);
     const char *fmt;
 
@@ -2545,8 +2556,9 @@ is_multiindex(PyObject *key)
    0-d memoryview objects can be referenced using mv[...] or mv[()]
    but not with anything else. */
 static PyObject *
-memory_subscript(PyMemoryViewObject *self, PyObject *key)
+memory_subscript(PyObject *_self, PyObject *key)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view;
     view = &(self->view);
 
@@ -2574,7 +2586,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
         index = PyNumber_AsSsize_t(key, PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
             return NULL;
-        return memory_item(self, index);
+        return memory_item((PyObject *)self, index);
     }
     else if (PySlice_Check(key)) {
         CHECK_RESTRICTED(self);
@@ -2607,8 +2619,9 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
 }
 
 static int
-memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
+memory_ass_sub(PyObject *_self, PyObject *key, PyObject *value)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &(self->view);
     Py_buffer src;
     const char *fmt;
@@ -2709,8 +2722,9 @@ memory_ass_sub(PyMemoryViewObject *self, PyObject *key, PyObject *value)
 }
 
 static Py_ssize_t
-memory_length(PyMemoryViewObject *self)
+memory_length(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED_INT(self);
     if (self->view.ndim == 0) {
         PyErr_SetString(PyExc_TypeError, "0-dim memory has no length");
@@ -2721,17 +2735,17 @@ memory_length(PyMemoryViewObject *self)
 
 /* As mapping */
 static PyMappingMethods memory_as_mapping = {
-    (lenfunc)memory_length,               /* mp_length */
-    (binaryfunc)memory_subscript,         /* mp_subscript */
-    (objobjargproc)memory_ass_sub,        /* mp_ass_subscript */
+    memory_length,                        /* mp_length */
+    memory_subscript,                     /* mp_subscript */
+    memory_ass_sub,                       /* mp_ass_subscript */
 };
 
 /* As sequence */
 static PySequenceMethods memory_as_sequence = {
-        (lenfunc)memory_length,           /* sq_length */
+        memory_length,                    /* sq_length */
         0,                                /* sq_concat */
         0,                                /* sq_repeat */
-        (ssizeargfunc)memory_item,        /* sq_item */
+        memory_item,                      /* sq_item */
 };
 
 
@@ -3033,8 +3047,9 @@ result:
 /**************************************************************************/
 
 static Py_hash_t
-memory_hash(PyMemoryViewObject *self)
+memory_hash(PyObject *_self)
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     if (self->hash == -1) {
         Py_buffer *view = &self->view;
         char *mem = view->buf;
@@ -3111,8 +3126,9 @@ _IntTupleFromSsizet(int len, Py_ssize_t *vals)
 }
 
 static PyObject *
-memory_obj_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_obj_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     Py_buffer *view = &self->view;
 
     CHECK_RELEASED(self);
@@ -3123,78 +3139,89 @@ memory_obj_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-memory_nbytes_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_nbytes_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyLong_FromSsize_t(self->view.len);
 }
 
 static PyObject *
-memory_format_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_format_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyUnicode_FromString(self->view.format);
 }
 
 static PyObject *
-memory_itemsize_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_itemsize_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyLong_FromSsize_t(self->view.itemsize);
 }
 
 static PyObject *
-memory_shape_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_shape_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.shape);
 }
 
 static PyObject *
-memory_strides_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_strides_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.strides);
 }
 
 static PyObject *
-memory_suboffsets_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_suboffsets_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.suboffsets);
 }
 
 static PyObject *
-memory_readonly_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_readonly_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(self->view.readonly);
 }
 
 static PyObject *
-memory_ndim_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
+memory_ndim_get(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyLong_FromLong(self->view.ndim);
 }
 
 static PyObject *
-memory_c_contiguous(PyMemoryViewObject *self, PyObject *dummy)
+memory_c_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(MV_C_CONTIGUOUS(self->flags));
 }
 
 static PyObject *
-memory_f_contiguous(PyMemoryViewObject *self, PyObject *dummy)
+memory_f_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(MV_F_CONTIGUOUS(self->flags));
 }
 
 static PyObject *
-memory_contiguous(PyMemoryViewObject *self, PyObject *dummy)
+memory_contiguous(PyObject *_self, void *Py_UNUSED(ignored))
 {
+    PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
     CHECK_RELEASED(self);
     return PyBool_FromLong(MV_ANY_CONTIGUOUS(self->flags));
 }
@@ -3231,18 +3258,18 @@ PyDoc_STRVAR(memory_contiguous_doc,
 
 
 static PyGetSetDef memory_getsetlist[] = {
-    {"obj",             (getter)memory_obj_get,        NULL, memory_obj_doc},
-    {"nbytes",          (getter)memory_nbytes_get,     NULL, memory_nbytes_doc},
-    {"readonly",        (getter)memory_readonly_get,   NULL, memory_readonly_doc},
-    {"itemsize",        (getter)memory_itemsize_get,   NULL, memory_itemsize_doc},
-    {"format",          (getter)memory_format_get,     NULL, memory_format_doc},
-    {"ndim",            (getter)memory_ndim_get,       NULL, memory_ndim_doc},
-    {"shape",           (getter)memory_shape_get,      NULL, memory_shape_doc},
-    {"strides",         (getter)memory_strides_get,    NULL, memory_strides_doc},
-    {"suboffsets",      (getter)memory_suboffsets_get, NULL, memory_suboffsets_doc},
-    {"c_contiguous",    (getter)memory_c_contiguous,   NULL, memory_c_contiguous_doc},
-    {"f_contiguous",    (getter)memory_f_contiguous,   NULL, memory_f_contiguous_doc},
-    {"contiguous",      (getter)memory_contiguous,     NULL, memory_contiguous_doc},
+    {"obj",             memory_obj_get,        NULL, memory_obj_doc},
+    {"nbytes",          memory_nbytes_get,     NULL, memory_nbytes_doc},
+    {"readonly",        memory_readonly_get,   NULL, memory_readonly_doc},
+    {"itemsize",        memory_itemsize_get,   NULL, memory_itemsize_doc},
+    {"format",          memory_format_get,     NULL, memory_format_doc},
+    {"ndim",            memory_ndim_get,       NULL, memory_ndim_doc},
+    {"shape",           memory_shape_get,      NULL, memory_shape_doc},
+    {"strides",         memory_strides_get,    NULL, memory_strides_doc},
+    {"suboffsets",      memory_suboffsets_get, NULL, memory_suboffsets_doc},
+    {"c_contiguous",    memory_c_contiguous,   NULL, memory_c_contiguous_doc},
+    {"f_contiguous",    memory_f_contiguous,   NULL, memory_f_contiguous_doc},
+    {"contiguous",      memory_contiguous,     NULL, memory_contiguous_doc},
     {NULL, NULL, NULL, NULL},
 };
 
@@ -3275,23 +3302,26 @@ typedef struct {
 } memoryiterobject;
 
 static void
-memoryiter_dealloc(memoryiterobject *it)
+memoryiter_dealloc(PyObject *self)
 {
+    memoryiterobject *it = (memoryiterobject *)self;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
 
 static int
-memoryiter_traverse(memoryiterobject *it, visitproc visit, void *arg)
+memoryiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    memoryiterobject *it = (memoryiterobject *)self;
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-memoryiter_next(memoryiterobject *it)
+memoryiter_next(PyObject *self)
 {
+    memoryiterobject *it = (memoryiterobject *)self;
     PyMemoryViewObject *seq;
     seq = it->it_seq;
     if (seq == NULL) {
@@ -3346,7 +3376,7 @@ memory_iter(PyObject *seq)
         return NULL;
     }
     it->it_fmt = fmt;
-    it->it_length = memory_length(obj);
+    it->it_length = memory_length((PyObject *)obj);
     it->it_index = 0;
     it->it_seq = (PyMemoryViewObject*)Py_NewRef(obj);
     _PyObject_GC_TRACK(it);
@@ -3358,12 +3388,12 @@ PyTypeObject _PyMemoryIter_Type = {
     .tp_name = "memory_iterator",
     .tp_basicsize = sizeof(memoryiterobject),
     // methods
-    .tp_dealloc = (destructor)memoryiter_dealloc,
+    .tp_dealloc = memoryiter_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)memoryiter_traverse,
+    .tp_traverse = memoryiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)memoryiter_next,
+    .tp_iternext = memoryiter_next,
 };
 
 PyTypeObject PyMemoryView_Type = {
@@ -3371,16 +3401,16 @@ PyTypeObject PyMemoryView_Type = {
     "memoryview",                             /* tp_name */
     offsetof(PyMemoryViewObject, ob_array),   /* tp_basicsize */
     sizeof(Py_ssize_t),                       /* tp_itemsize */
-    (destructor)memory_dealloc,               /* tp_dealloc */
+    memory_dealloc,                           /* tp_dealloc */
     0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
     0,                                        /* tp_as_async */
-    (reprfunc)memory_repr,                    /* tp_repr */
+    memory_repr,                              /* tp_repr */
     0,                                        /* tp_as_number */
     &memory_as_sequence,                      /* tp_as_sequence */
     &memory_as_mapping,                       /* tp_as_mapping */
-    (hashfunc)memory_hash,                    /* tp_hash */
+    memory_hash,                              /* tp_hash */
     0,                                        /* tp_call */
     0,                                        /* tp_str */
     PyObject_GenericGetAttr,                  /* tp_getattro */
@@ -3389,8 +3419,8 @@ PyTypeObject PyMemoryView_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
        Py_TPFLAGS_SEQUENCE,                   /* tp_flags */
     memoryview__doc__,                        /* tp_doc */
-    (traverseproc)memory_traverse,            /* tp_traverse */
-    (inquiry)memory_clear,                    /* tp_clear */
+    memory_traverse,                          /* tp_traverse */
+    memory_clear,                             /* tp_clear */
     memory_richcompare,                       /* tp_richcompare */
     offsetof(PyMemoryViewObject, weakreflist),/* tp_weaklistoffset */
     memory_iter,                              /* tp_iter */

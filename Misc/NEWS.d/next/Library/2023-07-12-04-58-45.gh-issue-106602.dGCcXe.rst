@@ -1,1 +1,0 @@
-Add __copy__ and __deepcopy__ in :mod:`enum`
