@@ -925,32 +925,36 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_function_inlining(self):
         def testfunc(n):
-            a = 1
-            for _ in range(n):
-                x = foo(a, 2)
+            for y in range(n):
+                x = foo(y, y)
             return x
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertLessEqual(len(guard_both_float_count), 1)
-        self.assertIn("_COMPARE_OP_STR", uops)
+        guard_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertEqual(len(guard_count), 0)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertIn("_POST_INLINE", uops)
+        self.assertNotIn("_PUSH_FRAME", uops)
 
     def test_method_inlining(self):
         thing = Bar()
         def testfunc(n):
-            a = 1
-            for _ in range(n):
-                x = thing.foo(a, a)
+            for y in range(n):
+                x = thing.foo(y, y)
             return x
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertTrue(res)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertLessEqual(len(guard_both_float_count), 1)
-        self.assertIn("_COMPARE_OP_STR", uops)
+        guard_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_INT"]
+        self.assertEqual(len(guard_count), 0)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertIn("_POST_INLINE", uops)
+        self.assertNotIn("_PUSH_FRAME", uops)
 
     def test_type_inconsistency(self):
         ns = {}
@@ -984,12 +988,10 @@ class TestUopsOptimization(unittest.TestCase):
 
 
 def foo(x, y):
-    print(x)
     return x + y
 
 class Bar:
     def foo(self, x, y):
-        self
         return x + y
 
 

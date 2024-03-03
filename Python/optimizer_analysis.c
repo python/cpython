@@ -280,9 +280,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     OUT_OF_SPACE_IF_NULL(null = _Py_uop_sym_new_null(ctx)); \
     } while (0);
 
-int
+static int
 real_localsplus_idx(_Py_UOpsContext *ctx, int oparg)
 {
+    assert(ctx->frame->real_localsplus != NULL);
     int target = (int)(&GETLOCAL(oparg) - ctx->frame->real_localsplus);
     assert(target >= 0);
     return target;
@@ -331,6 +332,8 @@ optimize_uops(
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
+    // Root frame should never be inlined.
+    frame->real_localsplus = frame->locals;
 
     for (_PyUOpInstruction *this_instr = trace;
          this_instr < trace + trace_len && !op_is_end(this_instr->opcode);
@@ -464,7 +467,14 @@ function_decide_simple_inlineable(
     _PyUOpInstruction *func_body_start,
     _PyUOpInstruction *func_body_end)
 {
-    return 1;
+    _PyUOpInstruction *curr = func_body_start;
+    while (curr < func_body_end) {
+        if (_PyUop_Flags[curr->opcode] & (HAS_ESCAPES_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG)) {
+            return false;
+        }
+        curr++;
+    }
+    return true;
 }
 
 static void
