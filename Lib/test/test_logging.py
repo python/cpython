@@ -4311,7 +4311,7 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
             s = f.format(r)
             self.assertNotIn('.1000', s)
 
-    def test_issue_102402_100msecs(self):
+    def test_issue_102402_msecs_has_no_floating_point_precision_loss(self):
         tests = (
             # time_ns is approx. 2023-03-04 04:25:20 UTC
             # (time_ns, expected_msecs_value)
