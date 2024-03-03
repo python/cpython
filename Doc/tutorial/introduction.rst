@@ -428,10 +428,10 @@ the :meth:`!list.append` *method* (we will see more about methods later)::
    >>> cubes
    [1, 8, 27, 64, 125, 216, 343]
 
-When you assign a variable to a list or any other object,
-it doesn't make a new copy; instead, it just points to *the same* object.
-So, any changes you make to the list through one variable will be seen
-through all other variables that point to it.::
+Simple assignment in Python never copies data, when you assign a list
+to a variable, the variable refers to the *existing list*.
+Any changes you make to the list through one variable will be seen
+through all other variables that refer to it.::
 
    >>> rgb = ["Red", "Green", "Blue"]
    >>> rgba = rgb
