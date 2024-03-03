@@ -424,6 +424,7 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
             }
         }
         int nargs = buffer[last_push].oparg;
+        bool self_present = false;
         if (buffer[last_push - 1].opcode != _SAVE_RETURN_OFFSET) {
             DPRINTF(3, "Not inlining call at [%d-%d]: No _SAVE_RETURN_OFFSET\n",
                     last_push, pc);
@@ -446,7 +447,8 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
         }
         if (buffer[last_push - 5].opcode == _INIT_CALL_BOUND_METHOD_EXACT_ARGS) {
             DPRINTF(2, "Inlining method call at [%d-%d]\n", last_push, pc);
-            nargs += 1;
+            nargs++;
+            self_present = true;
         }
         else {
             DPRINTF(2, "Inlining function call at [%d-%d]\n", last_push, pc);
@@ -464,6 +466,7 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
             switch (buffer[i].opcode) {
                 case _LOAD_FAST:
                     buffer[i].opcode = _COPY;
+                    assert(nargs - buffer[i].oparg > 0);
                     buffer[i].oparg = nargs - buffer[i].oparg;
                     break;
                 case _RESUME_CHECK:
@@ -482,7 +485,7 @@ inline_calls(_PyUOpInstruction *buffer, int buffer_size, int curr_stacklen)
         buffer[last_push - 1].opcode = NOP;
 
         assert(buffer[last_push - 2].opcode == _INIT_CALL_PY_EXACT_ARGS);
-        buffer[last_push - 2].opcode = NOP;
+        buffer[last_push - 2].opcode = self_present ? _NOP : _GUARD_NOT_METHOD;
 
     out:
         last_push = -1;
