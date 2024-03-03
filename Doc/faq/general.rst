@@ -156,7 +156,7 @@ practice, after a final minor release is made, the version is incremented to the
 next minor version, which becomes the "a0" version, e.g. "2.4a0".
 
 See the `Developer's Guide
-<https://devguide.python.org/developer-workflow/development-cycle/>__`
+<https://devguide.python.org/developer-workflow/development-cycle/>`__
 for more information about the development cycle, and
 :pep:`387` to learn more about Python's backward compatibility policy.  See also
 the documentation for :data:`sys.version`, :data:`sys.hexversion`, and
