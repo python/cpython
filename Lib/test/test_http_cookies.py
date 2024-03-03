@@ -229,6 +229,7 @@ class CookieTests(unittest.TestCase):
             str(c['foo']),
             'Set-Cookie: foo="\\251"; Comment="comment \\251"'
         )
+
     def test_first_cookie_preserved(self):
         c = cookies.SimpleCookie()
         c['foo'] = 'first'
