@@ -164,6 +164,7 @@ class StartupTests(TestBase):
 
 class FinalizationTests(TestBase):
 
+    @support.requires_subprocess()
     def test_gh_109793(self):
         # Make sure finalization finishes and the correct error code
         # is reported, even when subinterpreters get cleaned up at the end.

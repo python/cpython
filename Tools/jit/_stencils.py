@@ -96,7 +96,7 @@ class Stencil:
         instruction |= ((base - hole.offset) >> 2) & 0x03FFFFFF
         self.body[where] = instruction.to_bytes(4, sys.byteorder)
         self.disassembly += [
-            f"{base + 4 * 0: x}: d2800008      mov     x8, #0x0",
+            f"{base + 4 * 0:x}: d2800008      mov     x8, #0x0",
             f"{base + 4 * 0:016x}:  R_AARCH64_MOVW_UABS_G0_NC    {hole.symbol}",
             f"{base + 4 * 1:x}: f2a00008      movk    x8, #0x0, lsl #16",
             f"{base + 4 * 1:016x}:  R_AARCH64_MOVW_UABS_G1_NC    {hole.symbol}",
@@ -162,6 +162,13 @@ class StencilGroup:
                 ):
                     self.code.emit_aarch64_trampoline(hole)
                     continue
+                elif (
+                    hole.kind in {"IMAGE_REL_AMD64_REL32"}
+                    and hole.value is HoleValue.ZERO
+                ):
+                    raise ValueError(
+                        f"Add PyAPI_FUNC(...) or PyAPI_DATA(...) to declaration of {hole.symbol}!"
+                    )
                 holes.append(hole)
             stencil.holes[:] = holes
         self.code.pad(alignment)
