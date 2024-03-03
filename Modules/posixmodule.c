@@ -9162,12 +9162,11 @@ win32_getppid_fast(void)
         return 0;
     }
 
-    status = pNtQueryInformationProcess(
-        GetCurrentProcess(),
-        ProcessBasicInformation,
-        &basic_information,
-        sizeof(basic_information),
-        NULL);
+    status = pNtQueryInformationProcess(GetCurrentProcess(),
+                                        ProcessBasicInformation,
+                                        &basic_information,
+                                        sizeof(basic_information),
+                                        NULL);
 
     if (!NT_SUCCESS(status)) {
         return 0;
