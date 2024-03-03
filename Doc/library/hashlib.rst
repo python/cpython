@@ -121,7 +121,7 @@ More condensed:
 Constructors
 ------------
 
-.. function:: new(name[, data], \*, usedforsecurity=True)
+.. function:: new(name[, data], *, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
