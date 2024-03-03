@@ -9207,9 +9207,7 @@ win32_getppid(void)
         return PyLong_FromUnsignedLong(pid);
     }
 
-    //
     // If failure occurs in win32_getppid_fast(), fall back to using the PSS API.
-    //
 
     error = PssCaptureSnapshot(process, PSS_CAPTURE_NONE, 0, &snapshot);
     if (error != ERROR_SUCCESS) {
