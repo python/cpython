@@ -2146,6 +2146,14 @@ class ClinicParserTest(TestCase):
                 expected_error = err_template.format(invalid_kind)
                 self.expect_failure(block, expected_error, lineno=3)
 
+    def test_init_cannot_define_a_return_type(self):
+        block = """
+            class Foo "" ""
+            Foo.__init__ -> long
+        """
+        expected_error = "__init__ methods cannot define a return type"
+        self.expect_failure(block, expected_error, lineno=1)
+
     def test_invalid_getset(self):
         annotations = ["@getter", "@setter"]
         for annotation in annotations:
