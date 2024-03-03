@@ -9172,11 +9172,9 @@ win32_getppid_fast(void)
         return 0;
     }
 
-    //
     // Perform sanity check on the parent process ID we received from NtQueryInformationProcess.
     // The check covers values which exceed the 32-bit range (if running on x64) as well as
     // zero and (ULONG) -1.
-    //
 
     if (basic_information.InheritedFromUniqueProcessId == 0 ||
         basic_information.InheritedFromUniqueProcessId >= ULONG_MAX)
