@@ -301,20 +301,22 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
 Handling of Duplicate Cookies
 -----------------------------
 
-As per `RFC 6265`_, the ``http.cookies`` module has been updated to handle duplicate cookies more in line with the standard practices recommended by the RFC. Previously, when multiple cookies with the same name were encountered, the last cookie value in the sequence was retained. The module now preserves the first cookie value encountered, aligning with the common behavior expected by user agents and web servers.
+As per `RFC 6265`_, the ``http.cookies`` module has been updated to better align with standard practices for handling duplicate cookies. Previously, if multiple cookies with the same name were encountered, the last value provided would be retained. With the update, the first value encountered for a given cookie name is preserved, reflecting the behavior commonly expected by web servers and user agents.
 
 .. note::
-
-   This change ensures that when ``SimpleCookie`` parses a cookie string containing multiple cookies with the same name, it retains the first instance of such a cookie. This behavior is particularly relevant when cookies are set with different paths or domains, and the order of cookies in the HTTP header can imply precedence.
+   This modification affects how ``SimpleCookie`` parses cookie strings containing multiple instances of the same cookie name. Now, the first instance is retained, which is particularly relevant when cookies are set with differing paths or domains, where the order in the HTTP header can imply precedence.
 
 Example Usage:
 
-.. doctest::
-   :options: +NORMALIZE_WHITESPACE
+.. code-block:: python
 
-   >>> from http.cookies import SimpleCookie
-   >>> c = SimpleCookie('name=value1; name=value2') # Creating a SimpleCookie instance with duplicate cookies
-   >>> assert c['name'].value == 'value1' # The value of the first cookie is retained
+   from http.cookies import SimpleCookie
+
+   # Creating a SimpleCookie instance with duplicate cookies
+   c = SimpleCookie('name=value1; name=value2')
+
+   # The value of the first cookie is retained
+   assert c['name'].value == 'value1'
 
 .. _RFC 6265: https://datatracker.ietf.org/doc/html/rfc6265
 
