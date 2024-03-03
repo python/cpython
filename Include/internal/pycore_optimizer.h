@@ -53,6 +53,14 @@ struct _Py_UOpsAbstractFrame {
     _Py_UopsSymbol **stack_pointer;
     _Py_UopsSymbol **stack;
     _Py_UopsSymbol **locals;
+
+    // For inlining
+    bool is_inlined;
+    // Reflects the real localsplus that will be used in the VM.
+    // This may differ from locals if the frame is inlined.
+    // For an inlined frame, the inlinee shares the same localsplus
+    // as the inliner.
+    _Py_UopsSymbol **real_localsplus;
 };
 
 typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
@@ -107,6 +115,7 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
     _Py_UopsSymbol **localsplus_start,
     int n_locals_already_filled,
     int curr_stackentries);
+extern _Py_UOpsAbstractFrame *_Py_uop_prev_frame(_Py_UOpsContext *ctx);
 extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);

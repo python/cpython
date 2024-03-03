@@ -582,6 +582,11 @@
             _Py_UopsSymbol *res;
             retval = stack_pointer[-1];
             stack_pointer += -1;
+            if (ctx->frame->is_inlined) {
+                REPLACE_OP(this_instr, _POST_INLINE,
+                       (stack_pointer - _Py_uop_prev_frame(ctx)->stack_pointer),
+                       0);
+            }
             ctx->frame->stack_pointer = stack_pointer;
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
@@ -1555,6 +1560,7 @@
             _Py_UOpsAbstractFrame *new_frame;
             new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
             stack_pointer += -1;
+            new_frame->real_localsplus = new_frame->locals;
             ctx->frame->stack_pointer = stack_pointer;
             ctx->frame = new_frame;
             ctx->curr_frame_depth++;
@@ -1563,7 +1569,22 @@
         }
 
         case _PUSH_FRAME_INLINEABLE: {
+            _Py_UOpsAbstractFrame *new_frame;
+            new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
             stack_pointer += -1;
+            new_frame->is_inlined = true;
+            new_frame->real_localsplus = ctx->frame->real_localsplus;
+            ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame = new_frame;
+            ctx->curr_frame_depth++;
+            stack_pointer = new_frame->stack_pointer;
+            assert((this_instr - 1)->opcode == _SAVE_RETURN_OFFSET);
+            assert((this_instr - 2)->opcode == _INIT_CALL_PY_EXACT_ARGS);
+            assert((this_instr - 3)->opcode == _CHECK_STACK_SPACE);
+            REPLACE_OP(this_instr, _PRE_INLINE, new_frame->locals_len, 0);
+            REPLACE_OP((this_instr - 1), _NOP, 0, 0);
+            REPLACE_OP((this_instr - 2), _NOP, 0, 0);
+            REPLACE_OP((this_instr - 3), _GROW_TIER2_FRAME, new_frame->locals_len + new_frame->stack_len, 0);
             break;
         }
 
@@ -1912,6 +1933,10 @@
         }
 
         case _CHECK_VALIDITY_AND_SET_IP: {
+            break;
+        }
+
+        case _PRE_INLINE: {
             break;
         }
 

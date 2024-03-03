@@ -504,6 +504,11 @@ dummy_func(void) {
 
     op(_POP_FRAME, (retval -- res)) {
         SYNC_SP();
+        if (ctx->frame->is_inlined) {
+            REPLACE_OP(this_instr, _POST_INLINE,
+                       (stack_pointer - _Py_uop_prev_frame(ctx)->stack_pointer),
+                       0);
+        }
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
         stack_pointer = ctx->frame->stack_pointer;
@@ -512,10 +517,28 @@ dummy_func(void) {
 
     op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
         SYNC_SP();
+        new_frame->real_localsplus = new_frame->locals;
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = new_frame;
         ctx->curr_frame_depth++;
         stack_pointer = new_frame->stack_pointer;
+    }
+
+    op(_PUSH_FRAME_INLINEABLE, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
+        SYNC_SP();
+        new_frame->is_inlined = true;
+        new_frame->real_localsplus = ctx->frame->real_localsplus;
+        ctx->frame->stack_pointer = stack_pointer;
+        ctx->frame = new_frame;
+        ctx->curr_frame_depth++;
+        stack_pointer = new_frame->stack_pointer;
+        assert((this_instr - 1)->opcode == _SAVE_RETURN_OFFSET);
+        assert((this_instr - 2)->opcode == _INIT_CALL_PY_EXACT_ARGS);
+        assert((this_instr - 3)->opcode == _CHECK_STACK_SPACE);
+        REPLACE_OP(this_instr, _PRE_INLINE, new_frame->locals_len, 0);
+        REPLACE_OP((this_instr - 1), _NOP, 0, 0);
+        REPLACE_OP((this_instr - 2), _NOP, 0, 0);
+        REPLACE_OP((this_instr - 3), _GROW_TIER2_FRAME, new_frame->locals_len + new_frame->stack_len, 0);
     }
 
     op(_UNPACK_SEQUENCE, (seq -- values[oparg])) {

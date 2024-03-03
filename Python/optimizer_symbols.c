@@ -320,6 +320,12 @@ _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx)
     return 0;
 }
 
+_Py_UOpsAbstractFrame *
+_Py_uop_prev_frame(_Py_UOpsContext *ctx)
+{
+    return &ctx->frames[ctx->curr_frame_depth - 2];
+}
+
 int
 _Py_uop_frame_pop(_Py_UOpsContext *ctx)
 {

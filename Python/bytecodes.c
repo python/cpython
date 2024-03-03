@@ -4148,6 +4148,18 @@ dummy_func(
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
+        // Inlining prelude.
+        // Not too easy to express the stack effect.
+        op(_PRE_INLINE, (--)) {
+            // NULL out locals of the new inlined frame.
+            PyObject **end = frame->localsplus + oparg;
+            while (stack_pointer < end) {
+                *stack_pointer = NULL;
+                stack_pointer++;
+            }
+            CHECK_EVAL_BREAKER();
+        }
+
         // Inlining postlude
         op(_POST_INLINE, ( -- retval)) {
             // clear the locals
