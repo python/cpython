@@ -183,9 +183,6 @@ set_values(PyDictObject *mp, PyDictValues *values)
     _Py_atomic_store_ptr_release(&mp->ma_values, values);
 }
 
-// Defined until we get QSBR
-#define _PyMem_FreeQsbr PyMem_Free
-
 #define LOCK_KEYS(keys) PyMutex_LockFlags(&keys->dk_mutex, _Py_LOCK_DONT_DETACH)
 #define UNLOCK_KEYS(keys) PyMutex_Unlock(&keys->dk_mutex)
 
@@ -806,7 +803,7 @@ free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
 {
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeQsbr(keys);
+        _PyMem_FreeDelayed(keys);
         return;
     }
 #endif
@@ -846,7 +843,7 @@ free_values(PyDictValues *values, bool use_qsbr)
     int prefix_size = DICT_VALUES_SIZE(values);
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeQsbr(((char *)values)-prefix_size);
+        _PyMem_FreeDelayed(((char *)values)-prefix_size);
         return;
     }
 #endif
@@ -6694,7 +6691,7 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
 #ifdef Py_GIL_DISABLED
         // Try a thread-safe lookup to see if the index is already allocated
         ix = unicodekeys_lookup_unicode_threadsafe(keys, name, hash);
-        if (ix == DKIX_EMPTY) {
+        if (ix == DKIX_EMPTY || ix == DKIX_KEY_CHANGED) {
             // Lock keys and do insert
             LOCK_KEYS(keys);
             ix = insert_into_splitdictkeys(keys, name, hash);
