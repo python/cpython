@@ -1,2 +1,2 @@
-Backport PR #42 to libb2 to fix compiling CPython on windows-i686 with
-clang-cl
+Backport ``libb2``'s PR #42 to fix compiling CPython on 32-bit Windows
+with ``clang-cl``.
