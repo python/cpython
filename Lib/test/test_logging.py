@@ -4331,24 +4331,24 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
     def test_relativeCreated_has_higher_precision(self):
         # See issue gh-102402
         ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
-        for offset_ns in (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456):
-            new_ns = ns + offset_ns
+        orig_modules = import_helper._save_and_remove_modules(['logging'])
+        try:
             with patch("time.time_ns") as patched_ns:
-                orig_modules = import_helper._save_and_remove_modules(['logging'])
-                try:
-                    # mock for module import
-                    patched_ns.return_value = ns
-                    import logging
+                # mock for module import
+                patched_ns.return_value = ns
+                import logging
+                for offset_ns in (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456):
+                    new_ns = ns + offset_ns
                     # mock for log record creation
                     patched_ns.return_value = new_ns
                     record = logging.makeLogRecord({'msg': 'test'})
-                finally:
-                    import_helper._save_and_remove_modules(['logging'])
-                    sys.modules.update(orig_modules)
+                    self.assertAlmostEqual(record.created, new_ns / 1e9, places=6)
+                    # After PR gh-102412, precision (places) increases from 3 to 7
+                    self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
+        finally:
+            import_helper._save_and_remove_modules(['logging'])
+            sys.modules.update(orig_modules)
 
-            self.assertAlmostEqual(record.created, new_ns / 1e9, places=6)
-            # After PR gh-102412, precision (places) increases from 3 to 7
-            self.assertAlmostEqual(record.relativeCreated, offset_ns / 1e6, places=7)
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
