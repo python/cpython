@@ -1,1 +1,0 @@
-Fix bugs in :mod:`!_elementtree` where exceptions could be overwritten.

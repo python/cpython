@@ -8,7 +8,7 @@ import threading
 import time
 import unittest
 from test.support import (
-    cpython_only, requires_subprocess, requires_working_socket
+    cpython_only, requires_subprocess, requires_working_socket, requires_resource
 )
 from test.support import threading_helper
 from test.support.os_helper import TESTFN
@@ -124,6 +124,7 @@ class PollTests(unittest.TestCase):
     # select(), modified to use poll() instead.
 
     @requires_subprocess()
+    @requires_resource('walltime')
     def test_poll2(self):
         cmd = 'for i in 0 1 2 3 4 5 6 7 8 9; do echo testing...; sleep 1; done'
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,

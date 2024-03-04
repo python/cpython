@@ -121,13 +121,13 @@ def deepcopy(x, memo=None, _nil=[]):
     See the module's __doc__ string for more info.
     """
 
+    d = id(x)
     if memo is None:
         memo = {}
-
-    d = id(x)
-    y = memo.get(d, _nil)
-    if y is not _nil:
-        return y
+    else:
+        y = memo.get(d, _nil)
+        if y is not _nil:
+            return y
 
     cls = type(x)
 
@@ -290,3 +290,16 @@ def _reconstruct(x, memo, func, args,
     return y
 
 del types, weakref
+
+
+def replace(obj, /, **changes):
+    """Return a new object replacing specified fields with new values.
+
+    This is especially useful for immutable objects, like named tuples or
+    frozen dataclasses.
+    """
+    cls = obj.__class__
+    func = getattr(cls, '__replace__', None)
+    if func is None:
+        raise TypeError(f"replace() does not support {cls.__name__} objects")
+    return func(obj, **changes)

@@ -8,11 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_hashtable.h"       // _Py_hashtable_t
-#include "pycore_gc.h"              // PyGC_Head
+#include "pycore_context.h"         // _PyContextTokenMissing
+#include "pycore_gc.h"              // _PyGC_Head_UNUSED
 #include "pycore_global_strings.h"  // struct _Py_global_strings
 #include "pycore_hamt.h"            // PyHamtNode_Bitmap
-#include "pycore_context.h"         // _PyContextTokenMissing
+#include "pycore_hashtable.h"       // _Py_hashtable_t
 #include "pycore_typeobject.h"      // pytype_slotdef
 
 
