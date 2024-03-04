@@ -31,7 +31,7 @@ import urllib.parse
 
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
-    is_apple, is_emscripten, is_wasi, import_helper
+    is_apple, is_emscripten, is_wasi, requires_limited_api
 )
 from test.support import gc_collect
 from test.support import threading_helper
@@ -1199,7 +1199,6 @@ class BlobTests(unittest.TestCase):
         self.assertEqual(self.blob.tell(), 40)
 
     def test_blob_seek_error(self):
-        testcapi = import_helper.import_module("_testcapi")
         msg_oor = "offset out of blob range"
         msg_orig = "'origin' should be os.SEEK_SET, os.SEEK_CUR, or os.SEEK_END"
         msg_of = "seek offset results in overflow"
@@ -1214,12 +1213,15 @@ class BlobTests(unittest.TestCase):
             with self.subTest(exc=exc, msg=msg, fn=fn):
                 self.assertRaisesRegex(exc, msg, fn)
 
+    @requires_limited_api
+    def test_blob_seek_error_overflow(self):
         # Force overflow errors
+        from _testcapi import INT_MAX
         self.blob.seek(1, SEEK_SET)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek(testcapi.INT_MAX, SEEK_CUR)
+            self.blob.seek(INT_MAX, SEEK_CUR)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek(testcapi.INT_MAX, SEEK_END)
+            self.blob.seek(INT_MAX, SEEK_END)
 
     def test_blob_read(self):
         buf = self.blob.read()
@@ -1374,14 +1376,17 @@ class BlobTests(unittest.TestCase):
             self.blob["a"] = b"b"
 
     def test_blob_get_item_error(self):
-        testcapi = import_helper.import_module("_testcapi")
         dataset = [len(self.blob), 105, -105]
         for idx in dataset:
             with self.subTest(idx=idx):
                 with self.assertRaisesRegex(IndexError, "index out of range"):
                     self.blob[idx]
+
+    @requires_limited_api
+    def test_blog_get_item_ullong_max(self):
+        from _testcapi import ULLONG_MAX
         with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
-            self.blob[testcapi.ULLONG_MAX]
+            self.blob[ULLONG_MAX]
 
         # Provoke read error
         self.cx.execute("update test set b='aaaa' where rowid=1")
