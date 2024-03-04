@@ -2,8 +2,8 @@
 # introduced in Python 2.7 and 3.1.
 
 import random
-import re
 import unittest
+import re
 import sys
 import test.support
 
@@ -98,7 +98,7 @@ class StrtodTests(unittest.TestCase):
             got = 'memory error'
         else:
             got = fs.hex()
-        expected = re.sub(r'\.?0+p', 'p', strtod(s))
+        expected = strtod(s)
         self.assertEqual(expected, got,
                          "Incorrectly rounded str->float conversion for {}: "
                          "expected {}, got {}".format(s, expected, got))

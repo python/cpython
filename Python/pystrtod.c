@@ -425,7 +425,13 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
     double m = frexp(fabs(x), &e);
 
     if (precision < 0) {
-        precision = (DBL_MANT_DIG + 2 - (DBL_MANT_DIG+2)%4)/4;
+        /* for compatibility with float.hex(), we keep just one digit of zero */
+        if (!x) {
+            precision = 1;
+        }
+        else {
+            precision = (DBL_MANT_DIG + 2 - (DBL_MANT_DIG+2)%4)/4;
+        }
     }
 
     if (m) {
@@ -485,10 +491,7 @@ _Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
         m -= (int)m;
     }
 
-    /* clear trailing zeros from mantissa (and maybe the dot) */
-    while (s[si] == '0') {
-        si--;
-    }
+    /* clear trailing dot */
     if (s[si] != '.') {
         si++;
     }
