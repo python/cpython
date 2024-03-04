@@ -4618,15 +4618,15 @@ batched(p, n) --> [p0, p1, ..., p_n-1], [p_n, p_n+1, ..., p_2n-1], ...\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ...\n\
 chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ...\n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
-dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
+dropwhile(predicate, seq) --> seq[n], seq[n+1], starting when predicate fails\n\
 groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
-filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
+filterfalse(predicate, seq) --> elements of seq where predicate(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 pairwise(s) --> (s[0],s[1]), (s[1],s[2]), (s[2], s[3]), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
-takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
+takewhile(predicate, seq) --> seq[0], seq[1], until predicate fails\n\
 zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ...\n\
 \n\
 Combinatoric generators:\n\
