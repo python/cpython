@@ -37,8 +37,9 @@ _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
 _LockType = _thread.LockType
 _thread_shutdown = _thread._shutdown
-_get_thread_handle = _thread._get_thread_handle
+_make_thread_handle = _thread._make_thread_handle
 get_ident = _thread.get_ident
+_get_main_thread_ident = _thread._get_main_thread_ident
 _is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
@@ -1346,8 +1347,8 @@ class _MainThread(Thread):
     def __init__(self):
         Thread.__init__(self, name="MainThread", daemon=False)
         self._started.set()
-        self._set_ident()
-        self._handle = _get_thread_handle()
+        self._ident = _get_main_thread_ident()
+        self._handle = _make_thread_handle(self._ident)
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
@@ -1395,7 +1396,7 @@ class _DummyThread(Thread):
                         daemon=_daemon_threads_allowed())
         self._started.set()
         self._set_ident()
-        self._handle = _get_thread_handle()
+        self._handle = _make_thread_handle(self._ident)
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
@@ -1529,16 +1530,8 @@ def _shutdown():
     for atexit_call in reversed(_threading_atexits):
         atexit_call()
 
-    # Main thread
-    if _main_thread.ident == get_ident():
+    if _is_main_interpreter():
         _main_thread._handle._set_done()
-    else:
-        # bpo-1596321: _shutdown() must be called in the main thread.
-        # If the threading module was not imported by the main thread,
-        # _main_thread is the thread which imported the threading module.
-        # In this case, ignore _main_thread, similar behavior than for threads
-        # spawned by C libraries or using _thread.start_new_thread().
-        pass
 
     # Wait for all non-daemon threads to exit.
     _thread_shutdown()

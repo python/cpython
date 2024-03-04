@@ -161,18 +161,6 @@ struct _ts {
      */
     uintptr_t critical_section;
 
-    /* Boolean storing whether or not this is a daemon thread. */
-    int is_daemon;
-
-    /* Set when the tstate has been cleared and unlinked from the list of
-     * active tstates.
-     *
-     * This is used by _PyInterpreterState_WaitForThreads to wait for all
-     * non-daemon threads to finish. It cannot be a PyObject because its
-     * lifetime exceeds the tstate to which it is bound.
-     */
-    struct _PyEventRc *done_event;
-
     int coroutine_origin_tracking_depth;
 
     PyObject *async_gen_firstiter;
