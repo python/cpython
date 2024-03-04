@@ -329,7 +329,7 @@ dummy_func(void) {
             OUT_OF_SPACE_IF_NULL(res);
         }
         else {
-            if(!sym_set_const(value, Py_None)) {
+            if (!sym_set_const(value, Py_None)) {
                 goto hit_bottom;
             }
             OUT_OF_SPACE_IF_NULL(res = sym_new_const(ctx, Py_False));
