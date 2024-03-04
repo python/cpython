@@ -5936,6 +5936,8 @@ class RotatingFileHandlerTest(BaseFileTest):
 
     def test_should_rollover(self):
         rh = logging.handlers.RotatingFileHandler(self.fn, encoding="utf-8", maxBytes=1)
+        self.assertFalse(rh.shouldRollover(self.next_rec()))
+        rh.emit(self.next_rec())
         self.assertTrue(rh.shouldRollover(self.next_rec()))
         rh.close()
 
