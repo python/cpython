@@ -290,9 +290,9 @@ clear_xid_types(module_state *state)
     }
 
     /* heap types */
-    if (state->ChannelInfoType != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelInfoType);
-        Py_CLEAR(state->ChannelInfoType);
+    if (state->ChannelIDType != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
+        Py_CLEAR(state->ChannelIDType);
     }
 }
 
