@@ -151,7 +151,8 @@ import sys
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
-           "ParsingError", "MissingSectionHeaderError","MultilineContinuationError",
+           "ParsingError", "MissingSectionHeaderError",
+           "MultilineContinuationError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
@@ -323,12 +324,12 @@ class MissingSectionHeaderError(ParsingError):
 
 
 class MultilineContinuationError(ParsingError):
-    """Raised when a key is present without value if any extra space is present within section"""
+    """Raised when a key without value is followed by continuation line"""
     def __init__(self, filename, lineno, line):
         Error.__init__(
             self,
-            "The file contains a key without value in the"
-            " unintended scenario, please don't add any extra space within the section..\nfile: %r, line: %d\n%r"
+            "Key without value continued with an indented line.\n"
+            "file: %r, line: %d\n%r"
             %(filename, lineno, line))
         self.source = filename
         self.lineno = lineno
@@ -1001,7 +1002,7 @@ class RawConfigParser(MutableMapping):
             if (cursect is not None and optname and
                 cur_indent_level > indent_level):
                 if not cursect[optname]:
-                    raise MultilineContinuationError(fpname,lineno,line)
+                    raise MultilineContinuationError(fpname, lineno, line)
                 else:
                     cursect[optname].append(value)
             # a section header or option header?

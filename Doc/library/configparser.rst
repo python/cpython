@@ -958,11 +958,6 @@ ConfigParser Objects
    converter gets its own corresponding :meth:`!get*()` method on the parser
    object and section proxies.
 
-   Raise a :exc:`MultilineContinuationError` instead of an :exc:`AttributeError` for
-   :meth:`read` and :meth:`read_file` if the configuration contains
-   a key without a corresponding value in scenarios where configuration
-   contains extra space within a section.
-
    .. versionchanged:: 3.1
       The default *dict_type* is :class:`collections.OrderedDict`.
 
@@ -984,8 +979,8 @@ ConfigParser Objects
       insertion order.
 
    .. versionchanged:: 3.13
-      Raise a :exc:`ParsingError` if a key is present without a corresponding
-      value in a scenario where an extra space is present within a section.
+      Raise a :exc:`MultilineContinuationError` when *allow_no_value* is
+      ``True``, and a key without a value is continued with an indented line.
 
    .. method:: defaults()
 
@@ -1360,9 +1355,10 @@ Exceptions
 
 .. exception:: MultilineContinuationError
 
-   Exception raised if the configuration contains a key without
-   a corresponding value in scenarios where configuration
-   contains extra space within a section.
+   Exception raised when a key without a corresponding value is continued with
+   an indented line.
+
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 
