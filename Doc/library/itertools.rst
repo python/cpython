@@ -90,7 +90,7 @@ Examples                                         Results
 
 .. _itertools-functions:
 
-Itertool functions
+Itertool Functions
 ------------------
 
 The following module functions all construct and return iterators. Some provide
