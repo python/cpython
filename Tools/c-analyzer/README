@@ -41,4 +41,3 @@ You can also use the more generic tool:
 
 If it reports any globals then they should be resolved.  If the globals
 are runtime state then they should be folded into _PyRuntimeState.
-Otherwise they should be added to ignored-globals.txt.
