@@ -278,9 +278,9 @@ Data Types
 
          >>> Color.RED.value
          1
-         
+
       Value of the member, can be set in :meth:`~object.__new__`.
-      
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
