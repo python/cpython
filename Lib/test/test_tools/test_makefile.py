@@ -5,8 +5,9 @@ Tests for `Makefile`.
 import os
 import unittest
 from test import support
+import sysconfig
 
-MAKEFILE = os.path.join(support.REPO_ROOT, 'Makefile')
+MAKEFILE = sysconfig.get_makefile_filename()
 
 if not support.check_impl_detail(cpython=True):
     raise unittest.SkipTest('cpython only')
@@ -59,8 +60,5 @@ class TestMakefile(unittest.TestCase):
 
         # Check that there are no extra entries:
         unique_test_dirs = set(test_dirs)
-        self.assertEqual(
-            unique_test_dirs.symmetric_difference(set(used)),
-            set(),
-        )
+        self.assertSetEqual(unique_test_dirs, set(used))
         self.assertEqual(len(test_dirs), len(unique_test_dirs))
