@@ -1439,31 +1439,33 @@ get_hash_info(PyThreadState *tstate)
     int field = 0;
     PyHash_FuncDef *hashfunc;
     hash_info = PyStructSequence_New(&Hash_InfoType);
-    if (hash_info == NULL)
-        return NULL;
-    hashfunc = PyHash_GetFuncDef();
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(8*sizeof(Py_hash_t)));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromSsize_t(_PyHASH_MODULUS));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(_PyHASH_INF));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(0));  // This is no longer used
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(_PyHASH_IMAG));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyUnicode_FromString(hashfunc->name));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(hashfunc->hash_bits));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(hashfunc->seed_bits));
-    PyStructSequence_SET_ITEM(hash_info, field++,
-                              PyLong_FromLong(Py_HASH_CUTOFF));
-    if (_PyErr_Occurred(tstate)) {
-        Py_CLEAR(hash_info);
+    if (hash_info == NULL) {
         return NULL;
     }
+    hashfunc = PyHash_GetFuncDef();
+
+#define SET_HASH_INFO_ITEM(CALL)                             \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_CLEAR(hash_info);                             \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(hash_info, field++, item); \
+    } while(0)
+
+    SET_HASH_INFO_ITEM(PyLong_FromLong(8 * sizeof(Py_hash_t)));
+    SET_HASH_INFO_ITEM(PyLong_FromSsize_t(_PyHASH_MODULUS));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_INF));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(0));  // This is no longer used
+    SET_HASH_INFO_ITEM(PyLong_FromLong(_PyHASH_IMAG));
+    SET_HASH_INFO_ITEM(PyUnicode_FromString(hashfunc->name));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->hash_bits));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(hashfunc->seed_bits));
+    SET_HASH_INFO_ITEM(PyLong_FromLong(Py_HASH_CUTOFF));
+
+#undef SET_HASH_INFO_ITEM
+
     return hash_info;
 }
 /*[clinic input]
