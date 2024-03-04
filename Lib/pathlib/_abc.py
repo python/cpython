@@ -789,7 +789,7 @@ class PathBase(PurePathBase):
     def _make_child_relpath(self, name):
         return self.joinpath(name)
 
-    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -846,7 +846,7 @@ class PathBase(PurePathBase):
                 paths = _select_children(paths, bool(stack), follow_symlinks, match)
         return paths
 
-    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=True):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
