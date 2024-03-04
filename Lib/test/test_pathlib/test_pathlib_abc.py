@@ -1844,51 +1844,46 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*/dirD/**", ["dirC/dirD/", "dirC/dirD/fileD"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
-    def test_rglob_common(self):
-        def _check(glob, expected):
-            self.assertEqual(set(glob), {P(self.base, q) for q in expected})
+    def test_rglob_follow_symlinks_none(self):
+        def _check(path, glob, expected):
+            actual = set(path.rglob(glob, follow_symlinks=None))
+            self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
         it = p.rglob("fileA")
         self.assertIsInstance(it, collections.abc.Iterator)
-        _check(it, ["fileA"])
-        _check(p.rglob("fileB"), ["dirB/fileB"])
-        _check(p.rglob("**/fileB"), ["dirB/fileB"])
-        _check(p.rglob("*/fileA"), [])
-        if not self.can_symlink:
-            _check(p.rglob("*/fileB"), ["dirB/fileB"])
-        else:
-            _check(p.rglob("*/fileB"), ["dirB/fileB", "dirB/linkD/fileB",
-                                        "linkB/fileB", "dirA/linkC/fileB"])
-        _check(p.rglob("file*"), ["fileA", "dirB/fileB",
-                                  "dirC/fileC", "dirC/dirD/fileD"])
-        if not self.can_symlink:
-            _check(p.rglob("*/"), [
-                "dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/",
-            ])
-        else:
-            _check(p.rglob("*/"), [
-                "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
-                "dirC/dirD/", "dirE/", "linkB/",
-            ])
-        _check(p.rglob(""), ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        _check(p, "fileA", ["fileA"])
+        _check(p, "fileB", ["dirB/fileB"])
+        _check(p, "**/fileB", ["dirB/fileB"])
+        _check(p, "*/fileA", [])
 
+        if self.can_symlink:
+            _check(p, "*/fileB", ["dirB/fileB", "dirB/linkD/fileB",
+                                  "linkB/fileB", "dirA/linkC/fileB"])
+            _check(p, "*/", [
+                "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
+                "dirC/dirD/", "dirE/", "linkB/"])
+        else:
+            _check(p, "*/fileB", ["dirB/fileB"])
+            _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
+
+        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
         p = P(self.base, "dirC")
-        _check(p.rglob("*"), ["dirC/fileC", "dirC/novel.txt",
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
                               "dirC/dirD", "dirC/dirD/fileD"])
-        _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p.rglob("**/file*"), ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p.rglob("dir*/**"), ["dirC/dirD/", "dirC/dirD/fileD"])
-        _check(p.rglob("dir*/**/"), ["dirC/dirD/"])
-        _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
-        _check(p.rglob("*/"), ["dirC/dirD/"])
-        _check(p.rglob(""), ["dirC/", "dirC/dirD/"])
-        _check(p.rglob("**"), [
-            "dirC/", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt"])
-        _check(p.rglob("**/"), ["dirC/", "dirC/dirD/"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "**/file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "dir*/**", ["dirC/dirD/", "dirC/dirD/fileD"])
+        _check(p, "dir*/**/", ["dirC/dirD/"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD/"])
+        _check(p, "", ["dirC/", "dirC/dirD/"])
+        _check(p, "**", ["dirC/", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt"])
+        _check(p, "**/", ["dirC/", "dirC/dirD/"])
         # gh-91616, a re module regression
-        _check(p.rglob("*.txt"), ["dirC/novel.txt"])
-        _check(p.rglob("*.*"), ["dirC/novel.txt"])
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
 
     @needs_posix
     def test_rglob_posix(self):
@@ -1969,7 +1964,7 @@ class DummyPathTest(DummyPurePathTest):
         # Don't get fooled by symlink loops (Issue #26012).
         P = self.cls
         p = P(self.base)
-        given = set(p.rglob('*'))
+        given = set(p.rglob('*', follow_symlinks=None))
         expect = {'brokenLink',
                   'dirA', 'dirA/linkC',
                   'dirB', 'dirB/fileB', 'dirB/linkD',
