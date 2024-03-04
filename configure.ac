@@ -3896,11 +3896,6 @@ AS_VAR_IF([with_system_libmpdec], [yes], [
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
   LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
 
-  dnl Enable strict-overflow for libmpdec, if available, see GH-108562
-  AS_VAR_IF([ac_cv_cc_supports_fstrict_overflow], [yes], [
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fstrict-overflow"])
-  ])
-
   dnl Disable forced inlining in debug builds, see GH-94847
   AS_VAR_IF([with_pydebug], [yes], [
     AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -DTEST_COVERAGE"])
