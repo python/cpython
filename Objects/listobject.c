@@ -3106,14 +3106,13 @@ static PySequenceMethods list_as_sequence = {
     list_inplace_repeat,                        /* sq_inplace_repeat */
 };
 
-static PyObject *
-list_slice_step_lock_held(PyListObject *a, Py_ssize_t start, Py_ssize_t step, Py_ssize_t len)
+static inline PyObject *
+list_slice_step_impl(PyListObject *a, Py_ssize_t start, Py_ssize_t step, Py_ssize_t len)
 {
-    PyObject *obj = list_new_prealloc(len);
-    if (obj == NULL) {
+    PyListObject *np = (PyListObject *)list_new_prealloc(len);
+    if (np == NULL) {
         return NULL;
     }
-    PyListObject *np = (PyListObject *)obj;
     size_t cur;
     Py_ssize_t i;
     PyObject **src = a->ob_item;
@@ -3121,7 +3120,7 @@ list_slice_step_lock_held(PyListObject *a, Py_ssize_t start, Py_ssize_t step, Py
     for (cur = start, i = 0; i < len;
             cur += (size_t)step, i++) {
         PyObject *v = src[cur];
-        FT_ATOMIC_STORE_PTR_RELAXED(dest[i], Py_NewRef(v));
+        dest[i] = Py_NewRef(v);
     }
     Py_SET_SIZE(np, len);
     return (PyObject *)np;
@@ -3141,7 +3140,7 @@ list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t 
         res = list_slice_impl(a, start, len);
     }
     else {
-        res = list_slice_step_lock_held(a, start, step, len);
+        res = list_slice_step_impl(a, start, step, len);
     }
     Py_END_CRITICAL_SECTION();
     return res;
