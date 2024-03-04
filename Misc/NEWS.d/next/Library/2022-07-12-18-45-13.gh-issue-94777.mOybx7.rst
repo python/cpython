@@ -1,1 +1,0 @@
-Fix hanging :mod:`multiprocessing` ``ProcessPoolExecutor`` when a child process crashes while data is being written in the call queue.

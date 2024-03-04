@@ -1,0 +1,2 @@
+Fix a bug that was causing the :func:`tokenize.untokenize` function to
+handle unicode named literals incorrectly. Patch by Pablo Galindo

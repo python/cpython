@@ -1,2 +1,0 @@
-Revert a change to :func:`colorsys.rgb_to_hls` that caused division by zero
-for certain almost-white inputs.  Patch by Terry Jan Reedy.
