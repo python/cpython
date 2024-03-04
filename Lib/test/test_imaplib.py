@@ -558,9 +558,15 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
         self.assertEqual(ssl_context.check_hostname, True)
         ssl_context.load_verify_locations(CAFILE)
 
-        with self.assertRaisesRegex(ssl.CertificateError,
-                "IP address mismatch, certificate is not valid for "
-                "'127.0.0.1'"):
+        # Allow for flexible libssl error messages.
+        regex = "("
+        # OpenSSL
+        regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
+        regex += "|"
+        # AWS-LC/BoringSSL
+        regex += "CERTIFICATE_VERIFY_FAILED"
+        regex += ")"
+        with self.assertRaisesRegex(ssl.CertificateError, regex):
             _, server = self._setup(SimpleIMAPHandler)
             client = self.imap_class(*server.server_address,
                                      ssl_context=ssl_context)
@@ -954,10 +960,15 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(CAFILE)
 
-        with self.assertRaisesRegex(
-                ssl.CertificateError,
-                "IP address mismatch, certificate is not valid for "
-                "'127.0.0.1'"):
+        # Allow for flexible libssl error messages.
+        regex = "("
+        # OpenSSL
+        regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
+        regex += "|"
+        # AWS-LC/BoringSSL
+        regex += "CERTIFICATE_VERIFY_FAILED"
+        regex += ")"
+        with self.assertRaisesRegex(ssl.CertificateError, regex):
             with self.reaped_server(SimpleIMAPHandler) as server:
                 client = self.imap_class(*server.server_address,
                                          ssl_context=ssl_context)
