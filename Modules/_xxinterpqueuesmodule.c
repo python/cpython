@@ -8,7 +8,9 @@
 #include "Python.h"
 #include "pycore_crossinterp.h"   // struct _xid
 
+#define REGISTERS_HEAP_TYPES
 #include "_interpreters_common.h"
+#undef REGISTERS_HEAP_TYPES
 
 
 #define MODULE_NAME _xxinterpqueues
@@ -186,7 +188,7 @@ clear_module_state(module_state *state)
 {
     /* external types */
     if (state->queue_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->queue_type);
+        (void)clear_xid_class(state->queue_type);
     }
     Py_CLEAR(state->queue_type);
 
@@ -1146,8 +1148,7 @@ set_external_queue_type(module_state *state, PyTypeObject *queue_type)
 {
     // Clear the old value if the .py module was reloaded.
     if (state->queue_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(
-                                state->queue_type);
+        (void)clear_xid_class(state->queue_type);
         Py_CLEAR(state->queue_type);
     }
 
