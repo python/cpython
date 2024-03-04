@@ -1,2 +1,0 @@
-Remove the ``BINARY_OP_GENERIC`` and ``COMPARE_OP_GENERIC``
-"specializations".
