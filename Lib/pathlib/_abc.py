@@ -60,17 +60,33 @@ def _compile_pattern(pat, sep, case_sensitive, recursive=True):
     return re.compile(regex, flags=flags).match
 
 
-def _select_special(paths, part):
-    """Yield special literal children of the given paths."""
-    for path in paths:
-        yield path._make_child_relpath(part)
+_special_segments = ('', '.', '..')
 
 
-def _select_children(parent_paths, dir_only, follow_symlinks, match):
-    """Yield direct children of given paths, filtering by name and type."""
-    if follow_symlinks is None:
-        follow_symlinks = True
-    for parent_path in parent_paths:
+def _terminating_selector(path):
+    yield path
+
+
+def _special_selector(part, parts, sep, case_sensitive, follow_symlinks, recurse_symlinks):
+    """Returns a function that yields a special literal child of a given path.
+    """
+    select_next = _selector(parts, sep, case_sensitive, follow_symlinks, recurse_symlinks)
+
+    def select_special(path):
+        yield from select_next(path._make_child_relpath(part))
+    return select_special
+
+
+def _wildcard_selector(part, parts, sep, case_sensitive, follow_symlinks, recurse_symlinks):
+    """Returns a function that yields direct children of a given path,
+    filtering by name and type."""
+
+    # If the pattern component isn't '*', compile an re.Pattern
+    # object based on the component.
+    match = _compile_pattern(part, sep, case_sensitive) if part != '*' else None
+    select_next = _selector(parts, sep, case_sensitive, follow_symlinks, recurse_symlinks)
+
+    def select_wildcard(parent_path):
         try:
             # We must close the scandir() object before proceeding to
             # avoid exhausting file descriptors when globbing deep trees.
@@ -80,7 +96,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
             pass
         else:
             for entry in entries:
-                if dir_only:
+                if parts:
                     try:
                         if not entry.is_dir(follow_symlinks=follow_symlinks):
                             continue
@@ -89,16 +105,34 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
                 # Avoid cost of making a path object for non-matching paths by
                 # matching against the os.DirEntry.name string.
                 if match is None or match(entry.name):
-                    yield parent_path._make_child_direntry(entry)
+                    yield from select_next(parent_path._make_child_direntry(entry))
+    return select_wildcard
 
 
-def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
-    """Yield given paths and all their children, recursively, filtering by
-    string and type.
-    """
-    if follow_symlinks is None:
-        follow_symlinks = False
-    for parent_path in parent_paths:
+def _recursive_selector(part, parts, sep, case_sensitive, follow_symlinks, recurse_symlinks):
+    """Returns a function that yields a given path and all its children,
+    recursively, filtering by pattern and type."""
+
+    # Consume following '**' components, which have no effect.
+    part_idx = 0
+    while part_idx < len(parts) and parts[part_idx] == '**':
+        part_idx += 1
+
+    # Consume following non-special components, provided we're treating
+    # symlinks consistently. Each component is joined onto 'part', which is
+    # used to generate an re.Pattern object.
+    if follow_symlinks == recurse_symlinks:
+        while part_idx < len(parts) and parts[part_idx] not in _special_segments:
+            part += sep + parts[part_idx]
+            part_idx += 1
+    parts = parts[part_idx:]
+
+    # If the previous loop consumed pattern components, compile an re.Pattern
+    # object based on those components.
+    match = _compile_pattern(part, sep, case_sensitive) if part != '**' else None
+    select_next = _selector(parts, sep, case_sensitive, follow_symlinks, recurse_symlinks)
+
+    def select_recursive(parent_path):
         if match is not None:
             # If we're filtering paths through a regex, record the length of
             # the parent path. We'll pass it to match(path, pos=...) later.
@@ -108,7 +142,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
             path = paths.pop()
             if match is None or match(str(path), parent_len):
                 # Yield *directory* path that matches pattern (if any).
-                yield path
+                yield from select_next(path)
             try:
                 # We must close the scandir() object before proceeding to
                 # avoid exhausting file descriptors when globbing deep trees.
@@ -120,7 +154,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
                 for entry in entries:
                     # Handle directory entry.
                     try:
-                        if entry.is_dir(follow_symlinks=follow_symlinks):
+                        if entry.is_dir(follow_symlinks=recurse_symlinks):
                             # Recurse into this directory.
                             paths.append(path._make_child_direntry(entry))
                             continue
@@ -128,25 +162,29 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
                         pass
 
                     # Handle file entry.
-                    if not dir_only:
+                    if not parts:
                         # Avoid cost of making a path object for non-matching
                         # files by matching against the os.DirEntry object.
                         if match is None or match(path._direntry_str(entry), parent_len):
                             # Yield *file* path that matches pattern (if any).
-                            yield path._make_child_direntry(entry)
+                            yield from select_next(path._make_child_direntry(entry))
+    return select_recursive
 
 
-def _select_unique(paths):
-    """Yields the given paths, filtering out duplicates."""
-    yielded = set()
-    try:
-        for path in paths:
-            path_str = str(path)
-            if path_str not in yielded:
-                yield path
-                yielded.add(path_str)
-    finally:
-        yielded.clear()
+def _selector(parts, sep, case_sensitive, follow_symlinks, recurse_symlinks):
+    """Returns a function that selects from a given path, walking and
+    filtering according to the glob-style pattern parts in *parts*."""
+
+    if not parts:
+        return _terminating_selector
+    part = parts[0]
+    if part == '**':
+        selector = _recursive_selector
+    elif part in _special_segments:
+        selector = _special_selector
+    else:
+        selector = _wildcard_selector
+    return selector(part, parts[1:], sep, case_sensitive, follow_symlinks, recurse_symlinks)
 
 
 class UnsupportedOperation(NotImplementedError):
@@ -459,12 +497,12 @@ class PurePathBase:
         return self.pathmod.isabs(self._raw_path)
 
     @property
-    def _pattern_stack(self):
-        """Stack of path components, to be used with patterns in glob()."""
+    def _pattern_parts(self):
+        """List of path components, to be used with patterns in glob()."""
         anchor, parts = self._stack
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        return parts
+        return tuple(reversed(parts))
 
     @property
     def _pattern_str(self):
@@ -798,53 +836,19 @@ class PathBase(PurePathBase):
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
             case_sensitive = _is_case_sensitive(self.pathmod)
+        if follow_symlinks is None:
+            # TODO: remove this legacy behaviour.
+            follow_symlinks = True
+            recurse_symlinks = False
+        else:
+            recurse_symlinks = follow_symlinks
 
-        stack = pattern._pattern_stack
-        specials = ('', '.', '..')
-        deduplicate_paths = False
         sep = self.pathmod.sep
-        paths = iter([self] if self.is_dir() else [])
-        while stack:
-            part = stack.pop()
-            if part in specials:
-                # Join special component (e.g. '..') onto paths.
-                paths = _select_special(paths, part)
-
-            elif part == '**':
-                # Consume following '**' components, which have no effect.
-                while stack and stack[-1] == '**':
-                    stack.pop()
-
-                # Consume following non-special components, provided we're
-                # treating symlinks consistently. Each component is joined
-                # onto 'part', which is used to generate an re.Pattern object.
-                if follow_symlinks is not None:
-                    while stack and stack[-1] not in specials:
-                        part += sep + stack.pop()
-
-                # If the previous loop consumed pattern components, compile an
-                # re.Pattern object based on those components.
-                match = _compile_pattern(part, sep, case_sensitive) if part != '**' else None
-
-                # Recursively walk directories, filtering by type and regex.
-                paths = _select_recursive(paths, bool(stack), follow_symlinks, match)
-
-                # De-duplicate if we've already seen a '**' component.
-                if deduplicate_paths:
-                    paths = _select_unique(paths)
-                deduplicate_paths = True
-
-            elif '**' in part:
-                raise ValueError("Invalid pattern: '**' can only be an entire path component")
-
-            else:
-                # If the pattern component isn't '*', compile an re.Pattern
-                # object based on the component.
-                match = _compile_pattern(part, sep, case_sensitive) if part != '*' else None
-
-                # Iterate over directories' children filtering by type and regex.
-                paths = _select_children(paths, bool(stack), follow_symlinks, match)
-        return paths
+        parts = pattern._pattern_parts
+        select = _selector(parts, sep, case_sensitive, follow_symlinks, recurse_symlinks)
+        if not self.is_dir():
+            return iter([])
+        return select(self)
 
     def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=True):
         """Recursively yield all existing files (of any kind, including
