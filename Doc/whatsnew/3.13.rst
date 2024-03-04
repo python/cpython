@@ -791,6 +791,9 @@ Deprecated
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
 
+* The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
+  is deprecated and scheduled for removal in Python 3.16.
+
 
 Pending Removal in Python 3.14
 ------------------------------
