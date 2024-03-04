@@ -678,11 +678,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "6fa074693aa7305018dfa8db48010a8ef1050ad4"
+          "checksumValue": "f935d64cc633c38e09fc2d89281c95edfbc1fb05"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c8c6dd861ac193d4a0e836242ff44900f83423f86d2c2940c8c4c1e41fbd5812"
+          "checksumValue": "b932aa273b2504606a48895a50ff08c883f7a68a7e4aced5daa909c43348605a"
         }
       ],
       "fileName": "Modules/_blake2/impl/blake2b.c"
@@ -762,11 +762,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "d2691353fa54ac6ffcd7c0a294984dc9d7968ef7"
+          "checksumValue": "13ac5bb93578a7ee8f815b4e247e82c849992bbe"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "cfd7948c9fd50e9f9c62f8a93b20a254d1d510a862d1092af4f187b7c1a859a3"
+          "checksumValue": "25ec5dd5c79f916307358059fe9f633781f27df1c0e0962c4fcccdda1feb93a7"
         }
       ],
       "fileName": "Modules/_blake2/impl/blake2s.c"
