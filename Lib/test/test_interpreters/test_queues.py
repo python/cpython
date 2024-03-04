@@ -87,17 +87,10 @@ class LowLevelTests(TestBase):
             self.assertEqual(get_num_queues(), 0)
 
         with self.subTest('release without binding'):
-            stdout, stderr = self.assert_python_failure(
-                '-c',
-                dedent(f"""
-                    import {_queues.__name__} as _queues
-                    _queues.create(2, 0)
-                    _queues.release(qid)
-                    """),
-            )
-            # It should have aborted due to an assert.
-            self.assertEqual(stdout, '')
-            self.assertNotEqual(stderr, '')
+            qid = _queues.create(2, 0)
+            self.addCleanup(lambda: _queues.destroy(qid))
+            with self.assertRaises(queues.QueueError):
+                _queues.release(qid)
 
 
 class QueueTests(TestBase):

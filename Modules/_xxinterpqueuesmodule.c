@@ -213,6 +213,7 @@ clear_module_state(module_state *state)
 // single-queue errors
 #define ERR_QUEUE_EMPTY (-21)
 #define ERR_QUEUE_FULL (-22)
+#define ERR_QUEUE_NEVER_BOUND (-23)
 
 static int ensure_external_exc_types(module_state *);
 
@@ -244,6 +245,10 @@ resolve_module_errcode(module_state *state, int errcode, int64_t qid,
         }
         exctype = state->QueueFull;
         msg = PyUnicode_FromFormat("queue %" PRId64 " is full", qid);
+        break;
+    case ERR_QUEUE_NEVER_BOUND:
+        exctype = state->QueueError;
+        msg = PyUnicode_FromFormat("queue %" PRId64 " never bound", qid);
         break;
     default:
         PyErr_Format(PyExc_ValueError,
@@ -934,6 +939,10 @@ _queues_decref(_queues *queues, int64_t qid)
     if (ref == NULL) {
         assert(!PyErr_Occurred());
         res = ERR_QUEUE_NOT_FOUND;
+        goto finally;
+    }
+    if (ref->refcount == 0) {
+        res = ERR_QUEUE_NEVER_BOUND;
         goto finally;
     }
     assert(ref->refcount > 0);
