@@ -1,2 +1,0 @@
-Improve the error message from :func:`os.fspath` if called on an object
-where ``__fspath__`` is set to ``None``. Patch by Alex Waygood.

@@ -116,6 +116,10 @@ def main(*args):
         else:
             # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con)
+            try:
+                import readline
+            except ImportError:
+                pass
             console.interact(banner, exitmsg="")
     finally:
         con.close()

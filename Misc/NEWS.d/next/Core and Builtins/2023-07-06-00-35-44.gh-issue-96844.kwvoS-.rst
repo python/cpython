@@ -1,1 +1,0 @@
-Improve error message of :meth:`list.remove`. Patch by Donghee Na.

@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(termios_tcgetattr__doc__,
 "tcgetattr($module, fd, /)\n"
@@ -288,4 +289,4 @@ termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=daecc8ebc8fe29f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f31382658135c774 input=a9049054013a1b77]*/

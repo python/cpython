@@ -112,24 +112,25 @@ class WaitTests:
                               future2]), finished)
         self.assertEqual(set(), pending)
 
-    @support.requires_resource('walltime')
     def test_timeout(self):
-        future1 = self.executor.submit(mul, 6, 7)
-        future2 = self.executor.submit(time.sleep, 6)
+        short_timeout = 0.050
+        long_timeout = short_timeout * 10
+
+        future = self.executor.submit(time.sleep, long_timeout)
 
         finished, pending = futures.wait(
                 [CANCELLED_AND_NOTIFIED_FUTURE,
                  EXCEPTION_FUTURE,
                  SUCCESSFUL_FUTURE,
-                 future1, future2],
-                timeout=5,
+                 future],
+                timeout=short_timeout,
                 return_when=futures.ALL_COMPLETED)
 
         self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
                               EXCEPTION_FUTURE,
-                              SUCCESSFUL_FUTURE,
-                              future1]), finished)
-        self.assertEqual(set([future2]), pending)
+                              SUCCESSFUL_FUTURE]),
+                         finished)
+        self.assertEqual(set([future]), pending)
 
 
 class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):

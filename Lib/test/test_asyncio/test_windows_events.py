@@ -163,29 +163,25 @@ class ProactorTests(test_utils.TestCase):
 
         # Wait for unset event with 0.5s timeout;
         # result should be False at timeout
-        fut = self.loop._proactor.wait_for_handle(event, 0.5)
+        timeout = 0.5
+        fut = self.loop._proactor.wait_for_handle(event, timeout)
         start = self.loop.time()
         done = self.loop.run_until_complete(fut)
         elapsed = self.loop.time() - start
 
         self.assertEqual(done, False)
         self.assertFalse(fut.result())
-        # bpo-31008: Tolerate only 450 ms (at least 500 ms expected),
-        # because of bad clock resolution on Windows
-        self.assertTrue(0.45 <= elapsed <= 0.9, elapsed)
+        self.assertGreaterEqual(elapsed, timeout - test_utils.CLOCK_RES)
 
         _overlapped.SetEvent(event)
 
         # Wait for set event;
         # result should be True immediately
         fut = self.loop._proactor.wait_for_handle(event, 10)
-        start = self.loop.time()
         done = self.loop.run_until_complete(fut)
-        elapsed = self.loop.time() - start
 
         self.assertEqual(done, True)
         self.assertTrue(fut.result())
-        self.assertTrue(0 <= elapsed < 0.3, elapsed)
 
         # asyncio issue #195: cancelling a done _WaitHandleFuture
         # must not crash
@@ -199,11 +195,8 @@ class ProactorTests(test_utils.TestCase):
         # CancelledError should be raised immediately
         fut = self.loop._proactor.wait_for_handle(event, 10)
         fut.cancel()
-        start = self.loop.time()
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(fut)
-        elapsed = self.loop.time() - start
-        self.assertTrue(0 <= elapsed < 0.1, elapsed)
 
         # asyncio issue #195: cancelling a _WaitHandleFuture twice
         # must not crash

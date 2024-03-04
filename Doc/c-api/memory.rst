@@ -41,10 +41,10 @@ buffers is performed on demand by the Python memory manager through the Python/C
 API functions listed in this document.
 
 .. index::
-   single: malloc()
-   single: calloc()
-   single: realloc()
-   single: free()
+   single: malloc (C function)
+   single: calloc (C function)
+   single: realloc (C function)
+   single: free (C function)
 
 To avoid memory corruption, extension writers should never try to operate on
 Python objects with the functions exported by the C library: :c:func:`malloc`,
@@ -267,14 +267,14 @@ The following type-oriented macros are provided for convenience.  Note  that
 .. c:macro:: PyMem_New(TYPE, n)
 
    Same as :c:func:`PyMem_Malloc`, but allocates ``(n * sizeof(TYPE))`` bytes of
-   memory.  Returns a pointer cast to :c:expr:`TYPE*`.  The memory will not have
+   memory.  Returns a pointer cast to ``TYPE*``.  The memory will not have
    been initialized in any way.
 
 
 .. c:macro:: PyMem_Resize(p, TYPE, n)
 
    Same as :c:func:`PyMem_Realloc`, but the memory block is resized to ``(n *
-   sizeof(TYPE))`` bytes.  Returns a pointer cast to :c:expr:`TYPE*`. On return,
+   sizeof(TYPE))`` bytes.  Returns a pointer cast to ``TYPE*``. On return,
    *p* will be a pointer to the new memory area, or ``NULL`` in the event of
    failure.
 
@@ -391,6 +391,8 @@ Legend:
 * ``malloc``: system allocators from the standard C library, C functions:
   :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.  The pymalloc
+  allocator will be used if mimalloc support isn't available.
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
@@ -491,18 +493,18 @@ Customize Memory Allocators
 
        :c:func:`PyMem_SetAllocator` does have the following contract:
 
-        * It can be called after :c:func:`Py_PreInitialize` and before
-          :c:func:`Py_InitializeFromConfig` to install a custom memory
-          allocator. There are no restrictions over the installed allocator
-          other than the ones imposed by the domain (for instance, the Raw
-          Domain allows the allocator to be called without the GIL held). See
-          :ref:`the section on allocator domains <allocator-domains>` for more
-          information.
+       * It can be called after :c:func:`Py_PreInitialize` and before
+         :c:func:`Py_InitializeFromConfig` to install a custom memory
+         allocator. There are no restrictions over the installed allocator
+         other than the ones imposed by the domain (for instance, the Raw
+         Domain allows the allocator to be called without the GIL held). See
+         :ref:`the section on allocator domains <allocator-domains>` for more
+         information.
 
-        * If called after Python has finish initializing (after
-          :c:func:`Py_InitializeFromConfig` has been called) the allocator
-          **must** wrap the existing allocator. Substituting the current
-          allocator for some other arbitrary one is **not supported**.
+       * If called after Python has finish initializing (after
+         :c:func:`Py_InitializeFromConfig` has been called) the allocator
+         **must** wrap the existing allocator. Substituting the current
+         allocator for some other arbitrary one is **not supported**.
 
    .. versionchanged:: 3.12
       All allocators must be thread-safe.
@@ -626,7 +628,8 @@ The pymalloc allocator
 
 Python has a *pymalloc* allocator optimized for small objects (smaller or equal
 to 512 bytes) with a short lifetime. It uses memory mappings called "arenas"
-with a fixed size of 256 KiB. It falls back to :c:func:`PyMem_RawMalloc` and
+with a fixed size of either 256 KiB on 32-bit platforms or 1 MiB on 64-bit
+platforms. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
 *pymalloc* is the :ref:`default allocator <default-memory-allocators>` of the
@@ -671,6 +674,16 @@ Customize pymalloc Arena Allocator
 
    Set the arena allocator.
 
+.. _mimalloc:
+
+The mimalloc allocator
+======================
+
+.. versionadded:: 3.13
+
+Python supports the mimalloc allocator when the underlying platform support is available.
+mimalloc "is a general purpose allocator with excellent performance characteristics.
+Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages."
 
 tracemalloc C API
 =================
