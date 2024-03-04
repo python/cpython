@@ -514,8 +514,8 @@ list_item(PyObject *aa, Py_ssize_t i)
     return item;
 }
 
-static PyObject *
-list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
+static inline PyObject *
+list_slice_impl(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
 {
     PyListObject *np = (PyListObject *) list_new_prealloc(len);
     if (np == NULL) {
@@ -525,7 +525,7 @@ list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
     PyObject **dest = np->ob_item;
     for (Py_ssize_t i = 0; i < len; i++) {
         PyObject *v = src[i];
-        FT_ATOMIC_STORE_PTR_RELAXED(dest[i], Py_NewRef(v));
+        dest[i] = Py_NewRef(v);
     }
     Py_SET_SIZE(np, len);
     return (PyObject *)np;
@@ -538,7 +538,7 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     if (len <= 0) {
         return PyList_New(0);
     }
-    return list_slice_lock_held(a, ilow, len);
+    return list_slice_impl(a, ilow, len);
 }
 
 PyObject *
@@ -587,13 +587,13 @@ list_concat_lock_held(PyListObject *a, PyListObject *b)
     dest = np->ob_item;
     for (i = 0; i < Py_SIZE(a); i++) {
         PyObject *v = src[i];
-        FT_ATOMIC_STORE_PTR_RELAXED(dest[i], Py_NewRef(v));
+        dest[i] = Py_NewRef(v);
     }
     src = b->ob_item;
     dest = np->ob_item + Py_SIZE(a);
     for (i = 0; i < Py_SIZE(b); i++) {
         PyObject *v = src[i];
-        FT_ATOMIC_STORE_PTR_RELAXED(dest[i], Py_NewRef(v));
+        dest[i] = Py_NewRef(v);
     }
     Py_SET_SIZE(np, size);
     return (PyObject *)np;
@@ -639,7 +639,7 @@ list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
         _Py_RefcntAdd(elem, n);
         PyObject **dest_end = dest + output_size;
         while (dest < dest_end) {
-            FT_ATOMIC_STORE_PTR_RELAXED(*dest++, elem);
+            *dest++ = elem;
         }
     }
     else {
@@ -647,7 +647,7 @@ list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
         PyObject **src_end = src + input_size;
         while (src < src_end) {
             _Py_RefcntAdd(*src, n);
-            FT_ATOMIC_STORE_PTR_RELAXED(*dest++, *src++);
+            *dest++ = *src++;
         }
 
         _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
@@ -824,7 +824,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     if (a == (PyListObject *)v) {
         Py_BEGIN_CRITICAL_SECTION(a);
         Py_ssize_t n = PyList_GET_SIZE(a);
-        PyObject *copy = list_slice_lock_held(a, 0, n);
+        PyObject *copy = list_slice_impl(a, 0, n);
         if (copy == NULL) {
             return -1;
         }
@@ -3138,7 +3138,7 @@ list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t 
         res = PyList_New(0);
     }
     else if (step == 1) {
-        res = list_slice_lock_held(a, start, len);
+        res = list_slice_impl(a, start, len);
     }
     else {
         res = list_slice_step_lock_held(a, start, step, len);
