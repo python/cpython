@@ -864,10 +864,7 @@ which incur interpreter overhead.
        return sum(map(predicate, iterable))
 
    def first_true(iterable, default=False, predicate=None):
-       """Returns the first true value in the iterable.
-
-       If no true value is found, returns *default*
-       """
+       "Returns the first true value or the *default* if there is no true value."
        # first_true([a,b,c], x) --> a or b or c or x
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(predicate, iterable), default)
