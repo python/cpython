@@ -63,7 +63,7 @@ class Hole:
             f"HoleKind_{self.kind}",
             f"HoleValue_{self.value.name}",
             f"&{self.symbol}" if self.symbol else "NULL",
-            _format_addend(self.addend),
+            f"{_signed(self.addend):#x}",
         ]
         return f"{{{', '.join(parts)}}}"
 
@@ -124,6 +124,56 @@ class Stencil:
         ):
             self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
 
+    def remove_jump(self) -> None:
+        """Remove a zero-length continuation jump, if it exists."""
+        hole = max(self.holes, key=lambda hole: hole.offset)
+        match hole:
+            case Hole(
+                offset=offset,
+                kind="IMAGE_REL_AMD64_REL32",
+                value=HoleValue.GOT,
+                symbol="_JIT_CONTINUE",
+                addend=-4,
+            ) as hole:
+                # jmp qword ptr [rip]
+                jump = b"\x48\xFF\x25\x00\x00\x00\x00"
+                offset -= 3
+            case Hole(
+                offset=offset,
+                kind="IMAGE_REL_I386_REL32" | "X86_64_RELOC_BRANCH",
+                value=HoleValue.CONTINUE,
+                symbol=None,
+                addend=-4,
+            ) as hole:
+                # jmp 5
+                jump = b"\xE9\x00\x00\x00\x00"
+                offset -= 1
+            case Hole(
+                offset=offset,
+                kind="R_AARCH64_JUMP26",
+                value=HoleValue.CONTINUE,
+                symbol=None,
+                addend=0,
+            ) as hole:
+                # b #4
+                jump = b"\x00\x00\x00\x14"
+            case Hole(
+                offset=offset,
+                kind="R_X86_64_GOTPCRELX",
+                value=HoleValue.GOT,
+                symbol="_JIT_CONTINUE",
+                addend=addend,
+            ) as hole:
+                assert _signed(addend) == -4
+                # jmp qword ptr [rip]
+                jump = b"\xFF\x25\x00\x00\x00\x00"
+                offset -= 2
+            case _:
+                return
+        if self.body[offset:] == jump:
+            self.body = self.body[:offset]
+            self.holes.remove(hole)
+
 
 @dataclasses.dataclass
 class StencilGroup:
@@ -142,10 +192,19 @@ class StencilGroup:
 
     def process_relocations(self, *, alignment: int = 1) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
+        for hole in self.code.holes.copy():
+            if (
+                hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
+                and hole.value is HoleValue.ZERO
+            ):
+                self.code.pad(alignment)
+                self.code.emit_aarch64_trampoline(hole)
+                self.code.pad(alignment)
+                self.code.holes.remove(hole)
+        self.code.remove_jump()
         self.code.pad(alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:
-            holes = []
             for hole in stencil.holes:
                 if hole.value is HoleValue.GOT:
                     assert hole.symbol is not None
@@ -157,21 +216,12 @@ class StencilGroup:
                     hole.addend += addend
                     hole.symbol = None
                 elif (
-                    hole.kind in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26"}
-                    and hole.value is HoleValue.ZERO
-                ):
-                    self.code.emit_aarch64_trampoline(hole)
-                    continue
-                elif (
                     hole.kind in {"IMAGE_REL_AMD64_REL32"}
                     and hole.value is HoleValue.ZERO
                 ):
                     raise ValueError(
                         f"Add PyAPI_FUNC(...) or PyAPI_DATA(...) to declaration of {hole.symbol}!"
                     )
-                holes.append(hole)
-            stencil.holes[:] = holes
-        self.code.pad(alignment)
         self._emit_global_offset_table()
         self.code.holes.sort(key=lambda hole: hole.offset)
         self.data.holes.sort(key=lambda hole: hole.offset)
@@ -195,8 +245,9 @@ class StencilGroup:
             if value_part and not symbol and not addend:
                 addend_part = ""
             else:
+                signed = "+" if symbol is not None else ""
                 addend_part = f"&{symbol}" if symbol else ""
-                addend_part += _format_addend(addend, signed=symbol is not None)
+                addend_part += f"{_signed(addend):{signed}#x}"
                 if value_part:
                     value_part += "+"
             self.data.disassembly.append(
@@ -220,8 +271,8 @@ def symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
     return HoleValue.ZERO, symbol
 
 
-def _format_addend(addend: int, signed: bool = False) -> str:
-    addend %= 1 << 64
-    if addend & (1 << 63):
-        addend -= 1 << 64
-    return f"{addend:{'+#x' if signed else '#x'}}"
+def _signed(value: int) -> int:
+    value %= 1 << 64
+    if value & (1 << 63):
+        value -= 1 << 64
+    return value
