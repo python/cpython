@@ -4331,13 +4331,14 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
     def test_relativeCreated_has_higher_precision(self):
         # See issue gh-102402
         ns = 1_677_903_920_000_998_503  # approx. 2023-03-04 04:25:20 UTC
+        offsets_ns = (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456)
         orig_modules = import_helper._save_and_remove_modules(['logging'])
         try:
             with patch("time.time_ns") as patched_ns:
                 # mock for module import
                 patched_ns.return_value = ns
                 import logging
-                for offset_ns in (200, 500, 12_354, 99_999, 1_677_903_456_999_123_456):
+                for offset_ns in offsets_ns:
                     new_ns = ns + offset_ns
                     # mock for log record creation
                     patched_ns.return_value = new_ns
