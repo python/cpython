@@ -18,6 +18,11 @@ from test.test__xxsubinterpreters import (
 channels = import_helper.import_module('_xxinterpchannels')
 
 
+# Additional tests are found in Lib/test/test_interpreters/test_channels.py.
+# New tests should be added there.
+# XXX The tests here should be moved there.  See the note under LowLevelTests.
+
+
 ##################################
 # helpers
 

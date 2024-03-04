@@ -384,15 +384,10 @@ class Regrtest:
 
             result = self.run_test(test_name, runtests, tracer)
 
-            # Unload the newly imported test modules (best effort
-            # finalization). To work around gh-115490, don't unload
-            # test.support.interpreters and its submodules even if they
-            # weren't loaded before.
-            keep = "test.support.interpreters"
+            # Unload the newly imported test modules (best effort finalization)
             new_modules = [module for module in sys.modules
                            if module not in save_modules and
-                                module.startswith(("test.", "test_"))
-                                and not module.startswith(keep)]
+                                module.startswith(("test.", "test_"))]
             for module in new_modules:
                 sys.modules.pop(module, None)
                 # Remove the attribute of the parent module.

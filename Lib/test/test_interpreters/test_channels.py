@@ -1,3 +1,4 @@
+import importlib
 import threading
 from textwrap import dedent
 import unittest
@@ -9,6 +10,24 @@ _channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
 from test.support.interpreters import channels
 from .utils import _run_output, TestBase
+
+
+class LowLevelTests(TestBase):
+
+    # The behaviors in the low-level module is important in as much
+    # as it is exercised by the high-level module.  Therefore the
+    # most # important testing happens in the high-level tests.
+    # These low-level tests cover corner cases that are not
+    # encountered by the high-level module, thus they
+    # mostly shouldn't matter as much.
+
+    # Additional tests are found in Lib/test/test__xxinterpchannels.py.
+    # XXX Those should be either moved to LowLevelTests or eliminated
+    # in favor of high-level tests in this file.
+
+    def test_highlevel_reloaded(self):
+        # See gh-115490 (https://github.com/python/cpython/issues/115490).
+        importlib.reload(channels)
 
 
 class TestChannels(TestBase):
