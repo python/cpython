@@ -5,7 +5,7 @@ from textwrap import dedent
 import unittest
 import time
 
-from test.support import import_helper
+from test.support import import_helper, Py_DEBUG
 # Raise SkipTest if subinterpreters not supported.
 _queues = import_helper.import_module('_xxinterpqueues')
 from test.support import interpreters
@@ -49,16 +49,19 @@ class LowLevelTests(TestBase):
             _queues.destroy(qid)
 
     def test_not_destroyed(self):
-        stdout, stderr = self.assert_python_failure(
+        # It should have cleaned up any remaining queues.
+        stdout, stderr = self.assert_python_ok(
             '-c',
             dedent(f"""
                 import {_queues.__name__} as _queues
                 _queues.create(2, 0)
                 """),
         )
-        # It should have aborted due to an assert.
         self.assertEqual(stdout, '')
-        self.assertNotEqual(stderr, '')
+        if Py_DEBUG:
+            self.assertNotEqual(stderr, '')
+        else:
+            self.assertEqual(stderr, '')
 
     def test_bind_release(self):
         with self.subTest('typical'):

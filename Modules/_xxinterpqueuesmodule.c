@@ -458,6 +458,7 @@ _queueitem_popped(_queueitem *item,
 
 
 /* the queue */
+
 typedef struct _queue {
     Py_ssize_t num_waiters;  // protected by global lock
     PyThread_type_lock mutex;
@@ -499,6 +500,8 @@ _queue_clear(_queue *queue)
     PyThread_free_lock(queue->mutex);
     *queue = (_queue){0};
 }
+
+static void _queue_free(_queue *);
 
 static void
 _queue_kill_and_wait(_queue *queue)
@@ -732,6 +735,32 @@ _queuerefs_find(_queueref *first, int64_t qid, _queueref **pprev)
     return ref;
 }
 
+static void
+_queuerefs_clear(_queueref *head)
+{
+    _queueref *next = head;
+    while (next != NULL) {
+        _queueref *ref = next;
+        next = ref->next;
+        int64_t qid = ref->qid;
+
+#ifdef Py_DEBUG
+        fprintf(stderr, "queue %ld still exists\n", qid);
+#endif
+        _queue *queue = ref->queue;
+        GLOBAL_FREE(ref);
+
+        _queue_kill_and_wait(queue);
+#ifdef Py_DEBUG
+    if (queue->items.count > 0) {
+        fprintf(stderr, "queue %ld still holds %ld items\n",
+                qid, queue->items.count);
+    }
+#endif
+        _queue_free(queue);
+    }
+}
+
 
 /* a collection of queues ***************************************************/
 
@@ -754,8 +783,15 @@ _queues_init(_queues *queues, PyThread_type_lock mutex)
 static void
 _queues_fini(_queues *queues)
 {
-    assert(queues->count == 0);
-    assert(queues->head == NULL);
+    if (queues->count > 0) {
+        PyThread_acquire_lock(queues->mutex, WAIT_LOCK);
+        assert((queues->count == 0) != (queues->head != NULL));
+        _queueref *head = queues->head;
+        queues->head = NULL;
+        queues->count = 0;
+        PyThread_release_lock(queues->mutex);
+        _queuerefs_clear(head);
+    }
     if (queues->mutex != NULL) {
         PyThread_free_lock(queues->mutex);
         queues->mutex = NULL;
@@ -886,8 +922,6 @@ done:
     PyThread_release_lock(queues->mutex);
     return res;
 }
-
-static void _queue_free(_queue *);
 
 static int
 _queues_decref(_queues *queues, int64_t qid)
