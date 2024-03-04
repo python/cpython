@@ -271,14 +271,14 @@ class FormatTest(unittest.TestCase):
 
         # hexadecimal floats
         testcommon("%x", 3.14, '1.91eb851eb851fp+1')
-        testcommon("%#x", 3.14, '0x1.91eb851eb851fp+1')
         testcommon("%X", 3.14, '1.91EB851EB851FP+1')
+        testcommon("%#x", 3.14, '0x1.91eb851eb851fp+1')
         testcommon("%+.3x", 3.14, '+1.91fp+1')
-        testcommon("%.0x", -0.5,    '-1p-1')
-        testcommon("%#.0x", -0.5, '-0x1p-1')
+        testcommon("%x", -0.5, '-1p-1')
+        testcommon("%#x", -0.5, '-0x1p-1')
         x = float.fromhex('0x0.003p+0')
-        testcommon("%040.1x", x,  '0000000000000000000000000000000001.8p-11')
-        testcommon("%#040.1x", x, '0x00000000000000000000000000000001.8p-11')
+        testcommon("%040x", x,  '0000000000000000000000000000000001.8p-11')
+        testcommon("%#040x", x, '0x00000000000000000000000000000001.8p-11')
 
         if verbose:
             print('Testing exceptions')

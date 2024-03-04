@@ -702,25 +702,25 @@ class FormatTestCase(unittest.TestCase):
 
         # hexadecimal format
         x = float.fromhex('0x0.0030p+0')
-        self.assertEqual(format(x, '.1x'), '1.8p-11')
-        self.assertEqual(format(x, '.1X'), '1.8P-11')
+        self.assertEqual(format(x, 'x'), '1.8p-11')
+        self.assertEqual(format(x, 'X'), '1.8P-11')
         self.assertEqual(format(x, '.0x'), '1p-10')
         x = float.fromhex('0x1.7p+0')
         self.assertEqual(format(x, '.0x'), '1p+0')
         x = float.fromhex('0x0.1p-1022')  # subnormal
-        self.assertEqual(format(x, '.1x'), '0.1p-1022')
+        self.assertEqual(format(x, 'x'), '0.1p-1022')
         x = float.fromhex('0x0.0040p+0')
-        self.assertEqual(format(x, '.0x'), '1p-10')
-        self.assertEqual(format(x, '>10.0x'), '     1p-10')
-        self.assertEqual(format(x, '>#10.0x'), '   0x1p-10')
-        self.assertEqual(format(x, '>010.0x'), '000001p-10')
-        self.assertEqual(format(x, '>#010.0x'), '0000x1p-10')
-        self.assertEqual(format(x, '#010.0x'), '0x0001p-10')
-        self.assertEqual(format(x, '<10.0x'), '1p-10     ')
-        self.assertEqual(format(x, '<#10.0x'), '0x1p-10   ')
+        self.assertEqual(format(x, 'x'), '1p-10')
+        self.assertEqual(format(x, '>10x'),   '     1p-10')
+        self.assertEqual(format(x, '>#10x'),  '   0x1p-10')
+        self.assertEqual(format(x, '>010x'),  '000001p-10')
+        self.assertEqual(format(x, '>#010x'), '0000x1p-10')
+        self.assertEqual(format(x, '#010x'),  '0x0001p-10')
+        self.assertEqual(format(x, '<10x'),   '1p-10     ')
+        self.assertEqual(format(x, '<#10x'),  '0x1p-10   ')
         x = float.fromhex('0x1.fe12p0')
-        self.assertEqual(format(x, '.4x'), '1.fe12p+0')
-        self.assertEqual(format(x, '#.4X'), '0X1.FE12P+0')
+        self.assertEqual(format(x, 'x'), '1.fe12p+0')
+        self.assertEqual(format(x, '#X'), '0X1.FE12P+0')
         self.assertEqual(format(x, '.3x'), '1.fe1p+0')
         self.assertEqual(format(x, '.1x'), '1.0p+1')
         self.assertEqual(format(x, '#.1x'), '0x1.0p+1')
@@ -1497,7 +1497,7 @@ class HexFloatTestCase(unittest.TestCase):
             self.identical(x, roundtrip(x))
             self.identical(-x, roundtrip(-x))
 
-        # fromHex(toHex(x)) should exactly recover x, for any non-NaN float x.
+        # roundtrip(x) should exactly recover x, for any non-NaN float x.
         import random
         for i in range(10000):
             e = random.randrange(-1200, 1200)
@@ -1508,7 +1508,7 @@ class HexFloatTestCase(unittest.TestCase):
             except OverflowError:
                 pass
             else:
-                self.identical(x, fromHex(toHex(x)))
+                self.identical(x, roundtrip(x))
 
     def test_subclass(self):
         class F(float):

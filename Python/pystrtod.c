@@ -2,9 +2,9 @@
 
 #include <Python.h>
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
+#include "pycore_floatobject.h"   // _Py_dg_dtoa_hex()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 
-#include <float.h>                // DBL_MANT_DIG
 #include <locale.h>               // localeconv()
 
 /* Case-insensitive string match used for nan and inf detection; t should be
@@ -400,109 +400,6 @@ _Py_string_to_number_with_underscores(
                  "could not convert string to %s: "
                  "%R", what, obj);
     return NULL;
-}
-
-/* Convert a float to a hexadecimal string [±][0x]h[.hhhhhhhh]p±d,
-   where the fractional part either is exact (precision < 0) or the
-   number of digits after the dot is equal to the precision.
-
-   The exponent d is written in decimal, it always contains at least one digit,
-   and it gives the power of 2 by which to multiply the coefficient.
-
-   x - the double to be converted
-   precision - the desired precision
-   always_add_sign - nonzero if a '+' sign should be included for x > 0
-   use_alt_formatting - nonzero if the hexadecimal prefix should be added.
-   upper - nonzero, if uppercase letters should be used for hexadecimal
-           numbers, prefix and the exponent separator.
- */
-
-char *
-_Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
-                int use_alt_formatting, int upper)
-{
-    int e;
-    double m = frexp(fabs(x), &e);
-
-    if (precision < 0) {
-        /* for compatibility with float.hex(), we keep just one digit of zero */
-        if (!x) {
-            precision = 1;
-        }
-        else {
-            precision = (DBL_MANT_DIG + 2 - (DBL_MANT_DIG+2)%4)/4;
-        }
-    }
-
-    if (m) {
-        /* normalization */
-        int shift = 1 - Py_MAX(DBL_MIN_EXP - e, 0);
-        m = ldexp(m, shift);
-        e -= shift;
-
-        do {
-            /* round to precision digits */
-            double frac = ldexp(m, 4*precision);
-            frac -= floor(frac);
-            frac *= 16.0;
-            m += ldexp(frac >= 8.0, -4*precision);
-            if ((int)(m) & 0x2) {
-                m /= 2.0;
-                e += 1;
-            }
-            else {
-                break;
-            }
-        } while (1);
-    }
-
-    /* Allocate space for [±][0x]  h[.] [hhhhhhhh]   p±  d            '\0' */
-    char *s = PyMem_Malloc(1 + 2 + 2 +   precision + 2 + DBL_MAX_EXP + 1);
-
-    /* sign and prefix */
-    int si = 0;
-    if (copysign(1.0, x) == -1.0) {
-        s[si] = '-';
-        si++;
-    }
-    else if (always_add_sign) {
-        s[si] = '+';
-        si++;
-    }
-    if (use_alt_formatting) {
-        s[si] = '0';
-        si++;
-        s[si] = upper ? 'X' : 'x';
-        si++;
-    }
-
-    /* mantissa */
-    const char *hexmap = upper ? Py_hexdigits_upper : Py_hexdigits;
-    assert(0 <= (int)m && (int)m < 16);
-    s[si] = hexmap[(int)m];
-    si++;
-    m -= (int)m;
-    s[si] = '.';
-    for (int i = 0; i < precision; i++) {
-        si++;
-        m *= 16.0;
-        assert(0 <= (int)m && (int)m < 16);
-        s[si] = hexmap[(int)m];
-        m -= (int)m;
-    }
-
-    /* clear trailing dot */
-    if (s[si] != '.') {
-        si++;
-    }
-
-    /* exponent */
-    s[si] = upper ? 'P' : 'p';
-    si++;
-    int i = snprintf(s+si, DBL_MAX_EXP+1, "%+d", e);
-    si += i+1;
-
-    return PyMem_Realloc(s, si);
 }
 
 #if _PY_SHORT_FLOAT_REPR == 0
@@ -988,7 +885,7 @@ char * PyOS_double_to_string(double val,
         if (format_code == 'x') {
             PyMem_Free(buf);
             return _Py_dg_dtoa_hex(val, precision, flags & Py_DTSF_SIGN,
-                                   flags & Py_DTSF_ALT, upper);
+                                   flags & Py_DTSF_ALT, upper, 0);
         }
 
         PyOS_snprintf(format, sizeof(format), "%%%s.%i%c",
@@ -1099,7 +996,7 @@ format_float_short(double d, char format_code,
     if (format_code == 'x' && Py_IS_FINITE(d)) {
         return _Py_dg_dtoa_hex(d, precision, always_add_sign,
                                use_alt_formatting,
-                               float_strings == uc_float_strings);
+                               float_strings == uc_float_strings, 0);
     }
 
     _Py_SET_53BIT_PRECISION_HEADER;
