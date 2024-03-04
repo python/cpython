@@ -13,8 +13,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_time.h"          // _PyTime_t
-
 
 // A mutex that occupies one byte. The lock can be zero initialized.
 //
@@ -27,6 +25,9 @@ extern "C" {
 //
 // Typical initialization:
 //   PyMutex m = (PyMutex){0};
+//
+// Or initialize as global variables:
+//   static PyMutex m;
 //
 // Typical usage:
 //   PyMutex_Lock(&m);
@@ -113,7 +114,7 @@ typedef enum _PyLockFlags {
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
 extern PyLockStatus
-_PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout_ns, _PyLockFlags flags);
+_PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Lock a mutex with aditional options. See _PyLockFlags for details.
 static inline void
@@ -135,6 +136,10 @@ typedef struct {
     uint8_t v;
 } PyEvent;
 
+// Check if the event is set without blocking. Returns 1 if the event is set or
+// 0 otherwise.
+PyAPI_FUNC(int) _PyEvent_IsSet(PyEvent *evt);
+
 // Set the event and notify any waiting threads.
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(void) _PyEvent_Notify(PyEvent *evt);
@@ -146,8 +151,17 @@ PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);
 // Wait for the event to be set, or until the timeout expires. If the event is
 // already set, then this returns immediately. Returns 1 if the event was set,
 // and 0 if the timeout expired or thread was interrupted.
-PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns);
+PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns);
 
+// A one-time event notification with reference counting.
+typedef struct _PyEventRc {
+    PyEvent event;
+    Py_ssize_t refcount;
+} _PyEventRc;
+
+_PyEventRc *_PyEventRc_New(void);
+void _PyEventRc_Incref(_PyEventRc *erc);
+void _PyEventRc_Decref(_PyEventRc *erc);
 
 // _PyRawMutex implements a word-sized mutex that that does not depend on the
 // parking lot API, and therefore can be used in the parking lot

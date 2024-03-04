@@ -138,31 +138,6 @@ def fail(
     warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
-is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
-
-def is_legal_py_identifier(s: str) -> bool:
-    return all(is_legal_c_identifier(field) for field in s.split('.'))
-
-# identifiers that are okay in Python but aren't a good idea in C.
-# so if they're used Argument Clinic will add "_value" to the end
-# of the name in C.
-c_keywords = set("""
-asm auto break case char const continue default do double
-else enum extern float for goto if inline int long
-register return short signed sizeof static struct switch
-typedef typeof union unsigned void volatile while
-""".strip().split())
-
-def ensure_legal_c_identifier(s: str) -> str:
-    # for now, just complain if what we're given isn't legal
-    if not is_legal_c_identifier(s):
-        fail("Illegal C identifier:", s)
-    # but if we picked a C keyword, pick something else
-    if s in c_keywords:
-        return s + "_value"
-    return s
-
-
 class CRenderData:
     def __init__(self) -> None:
 
@@ -884,9 +859,6 @@ class CLanguage(Language):
             limited_capi = False
 
         parsearg: str | None
-        if f.kind in {GETTER, SETTER} and parameters:
-            fail(f"@{f.kind.name.lower()} method cannot define parameters")
-
         if not parameters:
             parser_code: list[str] | None
             if f.kind is GETTER:
@@ -1640,12 +1612,9 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        f.return_converter.render(f, data)
-        if f.kind is SETTER:
-            # All setters return an int.
-            template_dict['impl_return_type'] = 'int'
-        else:
-            template_dict['impl_return_type'] = f.return_converter.type
+        if f.kind not in {SETTER, METHOD_INIT}:
+            f.return_converter.render(f, data)
+        template_dict['impl_return_type'] = f.return_converter.type
 
         template_dict['declarations'] = libclinic.format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
@@ -2954,7 +2923,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              unused: bool = False,
              **kwargs: Any
     ) -> None:
-        self.name = ensure_legal_c_identifier(name)
+        self.name = libclinic.ensure_legal_c_identifier(name)
         self.py_name = py_name
         self.unused = unused
         self.includes: list[Include] = []
@@ -4094,8 +4063,6 @@ class str_converter(CConverter):
 # mapping from arguments to format unit *and* registers the
 # legacy C converter for that format unit.
 #
-ConverterKeywordDict = dict[str, TypeSet | bool]
-
 def r(format_unit: str,
       *,
       accept: TypeSet,
@@ -4111,7 +4078,7 @@ def r(format_unit: str,
         #
         # also don't add the converter for 's' because
         # the metaclass for CConverter adds it for us.
-        kwargs: ConverterKeywordDict = {}
+        kwargs: dict[str, Any] = {}
         if accept != {str}:
             kwargs['accept'] = accept
         if zeroes:
@@ -4592,20 +4559,6 @@ class int_return_converter(long_return_converter):
     cast = '(long)'
 
 
-class init_return_converter(long_return_converter):
-    """
-    Special return converter for __init__ functions.
-    """
-    type = 'int'
-    cast = '(long)'
-
-    def render(
-            self,
-            function: Function,
-            data: CRenderData
-    ) -> None: ...
-
-
 class unsigned_long_return_converter(long_return_converter):
     type = 'unsigned long'
     conversion_fn = 'PyLong_FromUnsignedLong'
@@ -5083,9 +5036,9 @@ class DSLParser:
             if fields[-1] == '__new__':
                 fields.pop()
             c_basename = "_".join(fields)
-        if not is_legal_py_identifier(full_name):
+        if not libclinic.is_legal_py_identifier(full_name):
             fail(f"Illegal function name: {full_name!r}")
-        if not is_legal_c_identifier(c_basename):
+        if not libclinic.is_legal_c_identifier(c_basename):
             fail(f"Illegal C basename: {c_basename!r}")
         names = FunctionNames(full_name=full_name, c_basename=c_basename)
         self.normalize_function_kind(names.full_name)
@@ -5119,6 +5072,8 @@ class DSLParser:
         if forced_converter:
             if self.kind in {GETTER, SETTER}:
                 fail(f"@{self.kind.name.lower()} method cannot define a return type")
+            if self.kind is METHOD_INIT:
+                fail("__init__ methods cannot define a return type")
             ast_input = f"def x() -> {forced_converter}: pass"
             try:
                 module_node = ast.parse(ast_input)
@@ -5136,8 +5091,8 @@ class DSLParser:
             except ValueError:
                 fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
 
-        if self.kind is METHOD_INIT:
-            return init_return_converter()
+        if self.kind in {METHOD_INIT, SETTER}:
+            return int_return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
@@ -5207,7 +5162,7 @@ class DSLParser:
         before, equals, existing = line.rpartition('=')
         if equals:
             existing = existing.strip()
-            if is_legal_py_identifier(existing):
+            if libclinic.is_legal_py_identifier(existing):
                 # we're cloning!
                 names = self.parse_function_names(before)
                 return self.parse_cloned_function(names, existing)
@@ -5318,6 +5273,11 @@ class DSLParser:
         # if this line is not indented, we have no parameters
         if not self.indent.infer(line):
             return self.next(self.state_function_docstring, line)
+
+        assert self.function is not None
+        if self.function.kind in {GETTER, SETTER}:
+            getset = self.function.kind.name.lower()
+            fail(f"@{getset} methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)
