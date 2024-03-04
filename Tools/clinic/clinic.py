@@ -859,9 +859,6 @@ class CLanguage(Language):
             limited_capi = False
 
         parsearg: str | None
-        if f.kind in {GETTER, SETTER} and parameters:
-            fail(f"@{f.kind.name.lower()} method cannot define parameters")
-
         if not parameters:
             parser_code: list[str] | None
             if f.kind is GETTER:
@@ -1615,12 +1612,9 @@ class CLanguage(Language):
         for converter in converters:
             converter.set_template_dict(template_dict)
 
-        f.return_converter.render(f, data)
-        if f.kind is SETTER:
-            # All setters return an int.
-            template_dict['impl_return_type'] = 'int'
-        else:
-            template_dict['impl_return_type'] = f.return_converter.type
+        if f.kind not in {SETTER, METHOD_INIT}:
+            f.return_converter.render(f, data)
+        template_dict['impl_return_type'] = f.return_converter.type
 
         template_dict['declarations'] = libclinic.format_escape("\n".join(data.declarations))
         template_dict['initializers'] = "\n\n".join(data.initializers)
@@ -4565,20 +4559,6 @@ class int_return_converter(long_return_converter):
     cast = '(long)'
 
 
-class init_return_converter(long_return_converter):
-    """
-    Special return converter for __init__ functions.
-    """
-    type = 'int'
-    cast = '(long)'
-
-    def render(
-            self,
-            function: Function,
-            data: CRenderData
-    ) -> None: ...
-
-
 class unsigned_long_return_converter(long_return_converter):
     type = 'unsigned long'
     conversion_fn = 'PyLong_FromUnsignedLong'
@@ -5111,8 +5091,8 @@ class DSLParser:
             except ValueError:
                 fail(f"Badly formed annotation for {full_name!r}: {forced_converter!r}")
 
-        if self.kind is METHOD_INIT:
-            return init_return_converter()
+        if self.kind in {METHOD_INIT, SETTER}:
+            return int_return_converter()
         return CReturnConverter()
 
     def parse_cloned_function(self, names: FunctionNames, existing: str) -> None:
@@ -5293,6 +5273,11 @@ class DSLParser:
         # if this line is not indented, we have no parameters
         if not self.indent.infer(line):
             return self.next(self.state_function_docstring, line)
+
+        assert self.function is not None
+        if self.function.kind in {GETTER, SETTER}:
+            getset = self.function.kind.name.lower()
+            fail(f"@{getset} methods cannot define parameters")
 
         self.parameter_continuation = ''
         return self.next(self.state_parameter, line)

@@ -5004,12 +5004,16 @@ Test_property_set_impl(TestObj *self, PyObject *value);
 static int
 Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
 {
-    return Test_property_set_impl(self, value);
+    int return_value;
+
+    return_value = Test_property_set_impl(self, value);
+
+    return return_value;
 }
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=9797cd03c5204ddb input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=d51023f17c4ac3a1 input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 output push
@@ -5325,11 +5329,6 @@ Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
                                        const char *key,
                                        Py_ssize_t key_length)
 /*[clinic end generated code: output=4fda8a7f2547137c input=fc72ef4b4cfafabc]*/
-
-
-static long
-Test___init___impl(TestObj *self)
-/*[clinic end generated code: output=daf6ee12c4e443fb input=311af0dc7f17e8e9]*/
 
 
 /*[clinic input]
