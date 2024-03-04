@@ -1,6 +1,6 @@
 import re
 import unittest
-from test.support import python_is_optimized
+from test.support import python_is_optimized, requires_limited_api
 
 from .util import run_gdb, setup_module, DebuggerTests, SAMPLE_SCRIPT
 
@@ -85,6 +85,7 @@ foo(1, 2, 3)
 
 
 class StackNavigationTests(DebuggerTests):
+    @requires_limited_api
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
@@ -114,6 +115,7 @@ $''')
         self.assertEndsWith(bt,
                             'Unable to find an older python frame\n')
 
+    @requires_limited_api
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
@@ -129,6 +131,7 @@ $''')
 $''')
 
 class PyPrintTests(DebuggerTests):
+    @requires_limited_api
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     def test_basic_command(self):
@@ -138,6 +141,7 @@ class PyPrintTests(DebuggerTests):
         self.assertMultilineMatches(bt,
                                     r".*\nlocal 'args' = \(1, 2, 3\)\n.*")
 
+    @requires_limited_api
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
     @unittest.skipUnless(HAS_PYUP_PYDOWN, "test requires py-up/py-down commands")

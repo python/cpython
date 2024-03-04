@@ -1698,6 +1698,7 @@ def patch_list(orig):
         orig[:] = saved
 
 
+@requires_limited_api
 def run_in_subinterp(code):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc

@@ -7,6 +7,7 @@ import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import requires_limited_api
 
 
 if not hasattr(sys, "addaudithook") or not hasattr(sys, "audit"):
@@ -88,6 +89,7 @@ class AuditTest(unittest.TestCase):
             [("sys.excepthook", " ", "RuntimeError('fatal-error')")], events
         )
 
+    @requires_limited_api
     def test_unraisablehook(self):
         returncode, events, stderr = self.run_python("test_unraisablehook")
         if returncode:

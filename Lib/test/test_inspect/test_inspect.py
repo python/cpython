@@ -32,7 +32,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only
+from test.support import cpython_only, requires_limited_api
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN
@@ -668,7 +668,10 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     @cpython_only
     def test_c_cleandoc(self):
-        import _testinternalcapi
+        try:
+            import _testinternalcapi
+        except ImportError:
+            return unittest.skip("requires _testinternalcapi")
         func = _testinternalcapi.compiler_cleandoc
         for i, (input, expected) in enumerate(self.cleandoc_testdata):
             with self.subTest(i=i):
@@ -1200,6 +1203,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
+    @requires_limited_api
     def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
@@ -1209,6 +1213,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
+    @requires_limited_api
     def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
@@ -2870,6 +2875,7 @@ class TestSignatureObject(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
+    @requires_limited_api
     def test_signature_on_builtins(self):
         import _testcapi
 
@@ -2951,6 +2957,7 @@ class TestSignatureObject(unittest.TestCase):
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
+    @requires_limited_api
     def test_signature_on_decorated_builtins(self):
         import _testcapi
         func = _testcapi.docstring_with_signature_with_defaults
@@ -2972,6 +2979,7 @@ class TestSignatureObject(unittest.TestCase):
                          inspect.signature(wrapper_like))
 
     @cpython_only
+    @requires_limited_api
     def test_signature_on_builtins_no_signature(self):
         import _testcapi
         with self.assertRaisesRegex(ValueError,
