@@ -863,10 +863,6 @@ which incur interpreter overhead.
        "Given a predicate that returns True or False, count the True results."
        return sum(map(predicate, iterable))
 
-   def all_equal(iterable, predicate=None):
-       "Returns True if all the elements are equal to each other."
-       return len(take(2, groupby(iterable, predicate))) <= 1
-
    def first_true(iterable, default=False, predicate=None):
        """Returns the first true value in the iterable.
 
@@ -875,6 +871,10 @@ which incur interpreter overhead.
        # first_true([a,b,c], x) --> a or b or c or x
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(predicate, iterable), default)
+
+   def all_equal(iterable, key=None):
+       "Returns True if all the elements are equal to each other."
+       return len(take(2, groupby(iterable, key))) <= 1
 
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
