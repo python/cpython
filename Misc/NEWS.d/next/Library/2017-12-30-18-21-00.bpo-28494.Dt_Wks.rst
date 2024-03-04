@@ -1,0 +1,13 @@
+Improve zipfile validation in :meth:`zipfile.is_zipfile`.
+
+Before this change :meth:`zipfile.is_zipfile` only checked the End Central Directory
+signature.  If the signature could be found in the last 64k of the file,
+success!  This produced false positives on any file with ``'PK\x05\x06'`` in the
+last 64k of the file - including PDFs and PNGs.
+
+This is now corrected by actually validating the Central Directory location
+and size based on the information provided by the End Central Directory
+along with verifying the Central Directory signature of the first entry.
+
+This should be sufficient for the vast number of zipfiles with fewer
+false positives.
