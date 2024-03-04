@@ -507,6 +507,12 @@ the ``--cgi`` option::
 
         python -m http.server --cgi
 
+.. warning::
+
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   are not intended for use by untrusted clients and may be vulnerable
+   to exploitation. Always use within a secure environment.
+
 .. _http.server-security:
 
 Security Considerations
