@@ -435,7 +435,7 @@ through all other variables that refer to it.::
 
    >>> rgb = ["Red", "Green", "Blue"]
    >>> rgba = rgb
-   >>> id(rgb) == id(rgba) # they reference the same object
+   >>> id(rgb) == id(rgba)  # they reference the same object
    True
    >>> rgba.append("Alph")
    >>> rgb
