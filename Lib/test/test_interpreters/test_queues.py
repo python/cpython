@@ -31,6 +31,7 @@ class LowLevelTests(TestBase):
     # mostly shouldn't matter as much.
 
     def test_highlevel_reloaded(self):
+        # See gh-115490 (https://github.com/python/cpython/issues/115490).
         importlib.reload(queues)
 
 
