@@ -503,7 +503,7 @@ class LongTests(unittest.TestCase):
             (255,       b'\xff',                2),
             (255,       b'\x00\xff',            2),
             (256,       b'\x01\x00',            2),
-            (0x80,      b'\x00' * 7 + b'\x80',  8),
+            (0x80,      b'\x00' * 7 + b'\x80',  min(8, SZ)),
             # Extracts successfully (unsigned), but requests 9 bytes
             (2**63,     b'\x80' + b'\x00' * 7,  9),
             (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
