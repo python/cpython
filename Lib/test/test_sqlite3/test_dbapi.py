@@ -1201,7 +1201,6 @@ class BlobTests(unittest.TestCase):
     def test_blob_seek_error(self):
         msg_oor = "offset out of blob range"
         msg_orig = "'origin' should be os.SEEK_SET, os.SEEK_CUR, or os.SEEK_END"
-        msg_of = "seek offset results in overflow"
 
         dataset = (
             (ValueError, msg_oor, lambda: self.blob.seek(1000)),
@@ -1217,6 +1216,7 @@ class BlobTests(unittest.TestCase):
     def test_blob_seek_error_overflow(self):
         # Force overflow errors
         from _testcapi import INT_MAX
+        msg_of = "seek offset results in overflow"
         self.blob.seek(1, SEEK_SET)
         with self.assertRaisesRegex(OverflowError, msg_of):
             self.blob.seek(INT_MAX, SEEK_CUR)
@@ -1383,11 +1383,12 @@ class BlobTests(unittest.TestCase):
                     self.blob[idx]
 
     @requires_limited_api
-    def test_blog_get_item_ullong_max(self):
+    def test_blob_get_item_ullong_max(self):
         from _testcapi import ULLONG_MAX
         with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
             self.blob[ULLONG_MAX]
 
+    def test_blob_get_item_read_error(self):
         # Provoke read error
         self.cx.execute("update test set b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
