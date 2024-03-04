@@ -81,6 +81,10 @@ The :class:`dircmp` class
    as described for :func:`filecmp.cmp` by default using the *shallow*
    parameter.
 
+   .. versionchanged:: 3.13
+
+      Added the *shallow* parameter.
+
    The :class:`dircmp` class provides the following methods:
 
    .. method:: report()
