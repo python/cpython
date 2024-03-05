@@ -269,6 +269,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
         return NULL;
     }
     Py_ssize_t cap = _Py_atomic_load_ssize_relaxed(&op->allocated);
+    assert(cap != -1 && cap >= size);
     if (!valid_index(i, cap)) {
         return NULL;
     }
