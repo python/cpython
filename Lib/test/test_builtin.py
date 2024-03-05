@@ -47,9 +47,6 @@ x, y = 1e16, 2.9999 # use temporary values to defeat peephole optimizer
 HAVE_DOUBLE_ROUNDING = (x + y == 1e16 + 4)
 
 
-raise unittest.SkipTest("FAIL")
-
-
 class Squares:
 
     def __init__(self, max):
