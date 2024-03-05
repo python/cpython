@@ -38,7 +38,8 @@ class _ChannelEnd:
 
     _end = None
 
-    def __init__(self, cid):
+    def __new__(cls, cid):
+        self = super().__new__(cls)
         if self._end == 'send':
             cid = _channels._channel_id(cid, send=True, force=True)
         elif self._end == 'recv':
@@ -46,6 +47,7 @@ class _ChannelEnd:
         else:
             raise NotImplementedError(self._end)
         self._id = cid
+        return self
 
     def __repr__(self):
         return f'{type(self).__name__}(id={int(self._id)})'
@@ -60,6 +62,14 @@ class _ChannelEnd:
         elif not isinstance(other, SendChannel):
             return NotImplemented
         return other._id == self._id
+
+    # for pickling:
+    def __getnewargs__(self):
+        return (int(self._id),)
+
+    # for pickling:
+    def __getstate__(self):
+        return None
 
     @property
     def id(self):
