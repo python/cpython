@@ -1238,10 +1238,10 @@ start:
     return ix;
 }
 
+#ifdef Py_GIL_DISABLED
 static inline void
 ensure_shared_on_read(PyDictObject *mp)
 {
-#ifdef Py_GIL_DISABLED
     if (!_Py_IsOwnedByCurrentThread((PyObject *)mp) && !IS_DICT_SHARED(mp)) {
         // The first time we access a dict from a non-owning thread we mark it
         // as shared. This ensures that a concurrent resize operation will
@@ -1253,8 +1253,8 @@ ensure_shared_on_read(PyDictObject *mp)
         }
         Py_END_CRITICAL_SECTION();
     }
-#endif
 }
+#endif
 
 static inline void
 ensure_shared_on_resize(PyDictObject *mp)
