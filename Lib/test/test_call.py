@@ -482,8 +482,10 @@ class FastCallTests(unittest.TestCase):
     ]
 
     # Add all the calling conventions and variants of C callables
-    def setUp(self):
-        _testcapi = import_helper.import_module("_testcapi")
+    @classmethod
+    def setUpClass(cls):
+        if _testcapi is None:
+            return
         _instance = _testcapi.MethInstance()
         for obj, expected_self in (
             (_testcapi, _testcapi),  # module-level function
@@ -492,7 +494,7 @@ class FastCallTests(unittest.TestCase):
             (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
             (_testcapi.MethStatic, None),  # static method
         ):
-            self.CALLS_POSARGS.extend([
+            cls.CALLS_POSARGS.extend([
                 (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
                 (obj.meth_varargs_keywords,
                     (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
@@ -506,7 +508,7 @@ class FastCallTests(unittest.TestCase):
                 (obj.meth_o, (123, ), (expected_self, 123)),
             ])
 
-            self.CALLS_KWARGS.extend([
+            cls.CALLS_KWARGS.extend([
                 (obj.meth_varargs_keywords,
                     (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
                 (obj.meth_varargs_keywords,
@@ -527,6 +529,7 @@ class FastCallTests(unittest.TestCase):
                 expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_vectorcall_dict(self):
         # Test PyObject_VectorcallDict()
 
@@ -546,6 +549,7 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, kwargs)
                 self.check_result(result, expected)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_vectorcall(self):
         # Test PyObject_Vectorcall()
 
