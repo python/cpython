@@ -552,11 +552,12 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     else if (ihigh > Py_SIZE(a)) {
         ihigh = Py_SIZE(a);
     }
-    if ((ihigh - ilow) <= 0) {
+    Py_ssize_t len = ihigh - ilow;
+    if (len <= 0) {
         ret = PyList_New(0);
     }
     else {
-        ret = list_slice_lock_held((PyListObject *)a, ilow, ihigh);
+        ret = list_slice_lock_held((PyListObject *)a, ilow, len);
     }
     Py_END_CRITICAL_SECTION();
     return ret;
