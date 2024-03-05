@@ -1803,21 +1803,57 @@
         /* _INSTRUMENTED_POP_JUMP_IF_NOT_NONE is not a viable micro-op for tier 2 */
 
         case _GUARD_IS_TRUE_POP: {
+            _Py_UopsSymbol *flag;
+            flag = stack_pointer[-1];
+            if (sym_is_const(flag)) {
+                PyObject *value = sym_get_const(flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, value != Py_True);
+            }
             stack_pointer += -1;
             break;
         }
 
         case _GUARD_IS_FALSE_POP: {
+            _Py_UopsSymbol *flag;
+            flag = stack_pointer[-1];
+            if (sym_is_const(flag)) {
+                PyObject *value = sym_get_const(flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, value != Py_False);
+            }
             stack_pointer += -1;
             break;
         }
 
         case _GUARD_IS_NONE_POP: {
+            _Py_UopsSymbol *flag;
+            flag = stack_pointer[-1];
+            if (sym_is_const(flag)) {
+                PyObject *value = sym_get_const(flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, !Py_IsNone(value));
+            }
+            else if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, true);
+            }
             stack_pointer += -1;
             break;
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
+            _Py_UopsSymbol *flag;
+            flag = stack_pointer[-1];
+            if (sym_is_const(flag)) {
+                PyObject *value = sym_get_const(flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, Py_IsNone(value));
+            }
+            else if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, false);
+            }
             stack_pointer += -1;
             break;
         }

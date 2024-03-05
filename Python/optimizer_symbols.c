@@ -232,6 +232,15 @@ _Py_uop_sym_new_null(_Py_UOpsContext *ctx)
 }
 
 bool
+_Py_uop_sym_has_type(_Py_UopsSymbol *sym)
+{
+    if (_Py_uop_sym_is_bottom(sym)) {
+        return false;
+    }
+    return sym->typ != NULL;
+}
+
+bool
 _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
