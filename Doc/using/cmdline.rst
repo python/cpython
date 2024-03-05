@@ -1147,6 +1147,15 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_GIL
+
+   If this variable is set to ``1``, the global interpreter lock (GIL) will be
+   forced on. Setting it to ``0`` forces the GIL off.
+
+   Needs Python configured with the :option:`--disable-gil` build option.
+
+   .. versionadded:: 3.13
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
