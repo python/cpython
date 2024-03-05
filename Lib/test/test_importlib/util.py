@@ -13,10 +13,7 @@ import sys
 import tempfile
 import types
 
-try:
-    import _testsinglephase
-except ImportError:
-    raise unittest.SkipTest("requires _testsinglephase")
+_testsinglephase = import_helper.import_module("_testsinglephase")
 
 
 BUILTINS = types.SimpleNamespace()
