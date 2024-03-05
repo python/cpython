@@ -19,7 +19,7 @@ def get_num_queues():
 
 class TestBase(_TestBase):
     def tearDown(self):
-        for qid in _queues.list_all():
+        for qid, _ in _queues.list_all():
             try:
                 _queues.destroy(qid)
             except Exception:
@@ -88,7 +88,6 @@ class LowLevelTests(TestBase):
 
         with self.subTest('release without binding'):
             qid = _queues.create(2, 0)
-            self.addCleanup(lambda: _queues.destroy(qid))
             with self.assertRaises(queues.QueueError):
                 _queues.release(qid)
 
