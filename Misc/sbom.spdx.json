@@ -1224,11 +1224,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "9dcb50e3f9c3245972731be5da0b28e7583198d9"
+          "checksumValue": "5d6fdd98730584f74f7b731da6e488fe234504b3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "7cac49fef5e9d952ec9390bf81c54d83f1b5da32fdf76091c2f0770ed943b7fe"
+          "checksumValue": "d74f365463166891f62e1326d22b2d39d865776b7ea5e0df2aea5eede4d85b0f"
         }
       ],
       "fileName": "Modules/_decimal/libmpdec/io.c"
