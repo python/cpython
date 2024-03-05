@@ -178,20 +178,19 @@ def _remove_prefix(paths, prefix):
 
 
 def _open_dir(path, rel_path, dir_fd):
-    """Scans the given directory, and returns a 4-tuple with these parts:
+    """Scans the given directory, and returns a 3-tuple with these parts:
 
     1. A path or fd to supply to `os.scandir()`.
-    2. A prefix to apply to `os.DirEntry.path`, or None.
-    3. The file descriptor for the directory, or None.
-    4. Whether the caller should close the fd (bool).
+    2. The file descriptor for the directory, or None.
+    3. Whether the caller should close the fd (bool).
     """
     if dir_fd is None:
-        return path, None, None, False
+        return path, None, False
     elif rel_path == './':
-        return dir_fd, _add_trailing_slash(path), dir_fd, False
+        return dir_fd, dir_fd, False
     else:
         fd = os.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
-        return fd, _add_trailing_slash(path), fd, True
+        return fd, fd, True
 
 
 @functools.lru_cache(maxsize=1024)
@@ -251,21 +250,28 @@ def _wildcard_selector(part, parts, recursive, include_hidden):
     def select_wildcard(path, rel_path, dir_fd, exists):
         close_fd = False
         try:
-            arg, entry_prefix, fd, close_fd = _open_dir(path, rel_path, dir_fd)
-            with os.scandir(arg) as scandir_it:
-                entries = list(scandir_it)
-            for entry in entries:
-                if match is None or match(entry.name):
-                    if dir_only:
+            arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
+            if dir_only:
+                if fd is not None:
+                    prefix = _add_trailing_slash(path)
+                with os.scandir(arg) as scandir_it:
+                    entries = list(scandir_it)
+                for entry in entries:
+                    if match is None or match(entry.name):
                         try:
-                            if not entry.is_dir():
-                                continue
+                            if entry.is_dir():
+                                entry_path = entry.path
+                                if fd is not None:
+                                    entry_path = prefix + entry_path
+                                yield from select_next(entry_path, entry.name, fd, True)
                         except OSError:
-                            continue
-                    entry_path = entry.path
-                    if entry_prefix is not None:
-                        entry_path = entry_prefix + entry_path
-                    yield from select_next(entry_path, entry.name, fd, True)
+                            pass
+            else:
+                prefix = _add_trailing_slash(path)
+                for name in os.listdir(arg):
+                    if match is None or match(name):
+                        yield from select_next(prefix + name, name, fd, True)
+
         except OSError:
             pass
         finally:
@@ -307,7 +313,9 @@ def _recursive_selector(part, parts, recursive, include_hidden):
 
         close_fd = False
         try:
-            arg, entry_prefix, fd, close_fd = _open_dir(path, rel_path, dir_fd)
+            arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
+            if fd is not None:
+                prefix = _add_trailing_slash(path)
             with os.scandir(arg) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
@@ -320,8 +328,8 @@ def _recursive_selector(part, parts, recursive, include_hidden):
 
                 if is_dir or not dir_only:
                     entry_path = entry.path
-                    if entry_prefix is not None:
-                        entry_path = entry_prefix + entry_path
+                    if fd is not None:
+                        entry_path = prefix + entry_path
                     if is_dir:
                         yield from select_recursive(entry_path, entry.name, fd, True, match_pos)
                     elif match is None or match(entry_path, match_pos):

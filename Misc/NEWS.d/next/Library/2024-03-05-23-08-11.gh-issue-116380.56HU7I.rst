@@ -1,0 +1,2 @@
+Speed up :func:`glob.glob` by making use of :func:`glob.translate` and
+tracking path existence in more detail.
