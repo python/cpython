@@ -276,11 +276,6 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
     if (item == NULL) {
         return list_item_impl(op, i);
     }
-compare_ob_item:
-    if (ob_item != _Py_atomic_load_ptr(&op->ob_item)) {
-        Py_DECREF(item);
-        return list_item_impl(op, i);
-    }
     return item;
 }
 #else
