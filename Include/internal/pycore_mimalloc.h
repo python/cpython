@@ -27,7 +27,7 @@ typedef enum {
 #  define MI_DEBUG_FREED      PYMEM_DEADBYTE
 #  define MI_DEBUG_PADDING    PYMEM_FORBIDDENBYTE
 #ifdef Py_DEBUG
-#  define MI_DEBUG 1
+#  define MI_DEBUG 2
 #else
 #  define MI_DEBUG 0
 #endif
