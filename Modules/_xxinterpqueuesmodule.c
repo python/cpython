@@ -759,7 +759,7 @@ _queuerefs_clear(_queueref *head)
 #ifdef Py_DEBUG
     if (queue->items.count > 0) {
         fprintf(stderr, "queue %" PRId64 " still holds %" PRId64 " items\n",
-                qid, queue->items.count);
+                qid, (int64_t)queue->items.count);
     }
 #endif
         _queue_free(queue);
