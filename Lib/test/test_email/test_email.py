@@ -336,6 +336,21 @@ class TestMessageAPI(TestEmailBase):
         msg = email.message_from_bytes(source)
         self.assertEqual(msg.as_string(), expected)
 
+    def test_nonascii_as_string_with_ascii_charset(self):
+        m = textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-type: text/plain; charset="us-ascii"
+            Content-Transfer-Encoding: 8bit
+
+            Test if non-ascii messages with no Content-Transfer-Encoding set
+            can be as_string'd:
+            Föö bär
+            """)
+        source = m.encode('iso-8859-1')
+        expected = source.decode('ascii', 'replace')
+        msg = email.message_from_bytes(source)
+        self.assertEqual(msg.as_string(), expected)
+
     def test_nonascii_as_string_without_content_type_and_cte(self):
         m = textwrap.dedent("""\
             MIME-Version: 1.0

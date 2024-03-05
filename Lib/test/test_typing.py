@@ -5655,6 +5655,12 @@ class ForwardRefTests(BaseTestCase):
         with self.assertRaises(SyntaxError):
             get_type_hints(foo)
 
+    def test_syntax_error_empty_string(self):
+        for form in [typing.List, typing.Set, typing.Type, typing.Deque]:
+            with self.subTest(form=form):
+                with self.assertRaises(SyntaxError):
+                    form['']
+
     def test_name_error(self):
 
         def foo(a: 'Noode[T]'):
