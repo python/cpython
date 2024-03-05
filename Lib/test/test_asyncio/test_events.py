@@ -1131,7 +1131,7 @@ class EventLoopTestsMixin:
         # OpenSSL
         regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
         regex += "|"
-        # AWS-LC/BoringSSL
+        # AWS-LC
         regex += "CERTIFICATE_VERIFY_FAILED"
         regex += ")"
         with mock.patch.object(self.loop, 'call_exception_handler'):

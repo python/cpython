@@ -563,7 +563,7 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
         # OpenSSL
         regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
         regex += "|"
-        # AWS-LC/BoringSSL
+        # AWS-LC
         regex += "CERTIFICATE_VERIFY_FAILED"
         regex += ")"
         with self.assertRaisesRegex(ssl.CertificateError, regex):
@@ -965,7 +965,7 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
         # OpenSSL
         regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
         regex += "|"
-        # AWS-LC/BoringSSL
+        # AWS-LC
         regex += "CERTIFICATE_VERIFY_FAILED"
         regex += ")"
         with self.assertRaisesRegex(ssl.CertificateError, regex):

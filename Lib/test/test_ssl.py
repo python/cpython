@@ -1183,7 +1183,7 @@ class ContextTests(unittest.TestCase):
         regex = "("
         regex += "key values mismatch"  # OpenSSL
         regex += "|"
-        regex += "KEY_VALUES_MISMATCH"  # AWS-LC/BoringSSL
+        regex += "KEY_VALUES_MISMATCH"  # AWS-LC
         regex += ")"
         with self.assertRaisesRegex(ssl.SSLError, regex):
             ctx.load_cert_chain(CAFILE_CACERT, ONLYKEY)
@@ -1844,7 +1844,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         regex = "("
         regex += "certificate verify failed"    # OpenSSL
         regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC/BoringSSL
+        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
         regex += ")"
         self.assertRaisesRegex(ssl.SSLError, regex,
                                s.connect, self.server_addr)
@@ -1918,7 +1918,7 @@ class SimpleBackgroundTests(unittest.TestCase):
         regex = "("
         regex += "certificate verify failed"    # OpenSSL
         regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC/BoringSSL
+        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
         regex += ")"
         self.assertRaisesRegex(ssl.SSLError, regex,
                                 s.connect, self.server_addr)
@@ -2875,7 +2875,7 @@ class ThreadedTests(unittest.TestCase):
         regex = "("
         regex += "certificate verify failed"    # OpenSSL
         regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC/BoringSSL
+        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
         regex += ")"
         with server:
             with client_context.wrap_socket(socket.socket(),
@@ -2915,7 +2915,7 @@ class ThreadedTests(unittest.TestCase):
         regex = "("
         regex += "Hostname mismatch, certificate is not valid"  # OpenSSL
         regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC/BoringSSL
+        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
         regex += ")"
         with server:
             with client_context.wrap_socket(socket.socket(),
@@ -3200,7 +3200,7 @@ class ThreadedTests(unittest.TestCase):
                     regex = "("
                     regex += "certificate verify failed"    # OpenSSL
                     regex += "|"
-                    regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC/BoringSSL
+                    regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
                     regex += ")"
                     self.assertRegex(repr(e), regex)
 
