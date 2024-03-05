@@ -271,7 +271,7 @@ PyAPI_FUNC(void) _PyRWMutex_Unlock(_PyRWMutex *rwmutex);
 // underlying data and then read the sequence number again after reading the data.  If the
 // sequence has not changed the data is valid.
 //
-// Differs a little bit in that we use CAS on sequence as the lock, instead of a seperate spin lock.
+// Differs a little bit in that we use CAS on sequence as the lock, instead of a separate spin lock.
 // The writer can also detect that the undelering data has not changed and abandon the write
 // and restore the previous sequence.
 typedef struct {
@@ -284,7 +284,7 @@ PyAPI_FUNC(void) _PySeqLock_LockWrite(_PySeqLock *seqlock);
 // Unlock the sequence lock and move to the next sequence number.
 PyAPI_FUNC(void) _PySeqLock_UnlockWrite(_PySeqLock *seqlock);
 
-// Abandon the current update indicating that no mutations have occured
+// Abandon the current update indicating that no mutations have occurred
 // and restore the previous sequence value.
 PyAPI_FUNC(void) _PySeqLock_AbandonWrite(_PySeqLock *seqlock);
 
