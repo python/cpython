@@ -80,12 +80,14 @@ XXX To do:
 # (Actually, the latter is only true if you know the server configuration
 # at the time the request was made!)
 
-__version__ = "0.6"
+__version__ = "0.7"
 
 __all__ = [
     "HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler",
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
+
+import re
 
 import copy
 import datetime
@@ -126,6 +128,10 @@ DEFAULT_ERROR_MESSAGE = """\
 """
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
+
+
+HTTP_BYTES_RANGE_HEADER = re.compile(r"bytes=(?P<first>\d+)-(?P<last>\d+)$")
+
 
 class HTTPServer(socketserver.TCPServer):
 
@@ -676,7 +682,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         f = self.send_head()
         if f:
             try:
-                self.copyfile(f, self.wfile)
+                if "Range" in self.headers:
+                    res = HTTP_BYTES_RANGE_HEADER.match(string=self.headers.get("Range"))
+                    if res is not None:
+                        self.copyfile(f, self.wfile, int(res.group("first")), int(res.group("last")))
+                else:
+                    self.copyfile(f, self.wfile)
             finally:
                 f.close()
 
@@ -762,10 +773,22 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             self.end_headers()
                             f.close()
                             return None
-
-            self.send_response(HTTPStatus.OK)
+            if "Range" in self.headers:
+                res = HTTP_BYTES_RANGE_HEADER.match(string=self.headers["Range"])
+                if res is None:
+                    self.send_error(code=HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+                                    message="Range header is not a valid single part ranges")
+                    self.end_headers()
+                    f.close()
+                    return None
+                self.send_response(HTTPStatus.PARTIAL_CONTENT)
+                self.send_header("Content-Range", f"{self.headers['Range']}/{fs[6]}")
+                self.send_header("Content-Length", int(res.group("last"))-int(res.group("first")))
+            else:
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Accept-Ranges", "bytes")
+                self.send_header("Content-Length", str(fs[6]))
             self.send_header("Content-type", ctype)
-            self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
                 self.date_time_string(fs.st_mtime))
             self.end_headers()
@@ -861,8 +884,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             path += '/'
         return path
 
-    def copyfile(self, source, outputfile):
-        """Copy all data between two file objects.
+    def copyfile(self, source, outputfile, start_byte=None, end_byte=None):
+        """Copy all data between two file objects if start_byte and end_byte are None.
+
+        Otherwise, copy (end_byte-start_byte) bytes data between two file objects.
 
         The SOURCE argument is a file object open for reading
         (or anything with a read() method) and the DESTINATION
@@ -875,7 +900,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         to copy binary data as well.
 
         """
-        shutil.copyfileobj(source, outputfile)
+        if start_byte is not None and end_byte is not None:
+            source.seek(start_byte)
+            outputfile.write(source.read(end_byte))
+        else:
+            shutil.copyfileobj(source, outputfile)
 
     def guess_type(self, path):
         """Guess the type of a file.

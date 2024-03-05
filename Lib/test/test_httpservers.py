@@ -641,6 +641,10 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         html_text = '>%s<' % html.escape(filename, quote=False)
         self.assertIn(html_text.encode(enc), body)
 
+    def test_range_requests(self):
+        response = self.request(self.base_url + '/test', headers={"Range": "bytes=0-10"})
+        self.check_status_and_reason(response=response, status=HTTPStatus.PARTIAL_CONTENT, data=b'We are the')
+
 
 cgi_file1 = """\
 #!%s
