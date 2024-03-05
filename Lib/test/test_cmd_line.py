@@ -871,6 +871,38 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_GIL only supported in Py_GIL_DISABLED builds")
+    def test_python_gil_env(self):
+        code = """if 1:
+            import _testinternalcapi
+            print(_testinternalcapi.get_configs()['config'].get('enable_gil'))
+            """
+        args = [sys.executable, '-c', code]
+        env = dict(os.environ)
+        env.pop('PYTHON_GIL', None)
+
+        def run():
+            return subprocess.run(args, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, text=True, env=env)
+
+        proc = run()
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.rstrip(), '0')
+        self.assertEqual(proc.stderr, '')
+
+        env['PYTHON_GIL'] = '0'
+        proc = run()
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.rstrip(), '1')
+        self.assertEqual(proc.stderr, '')
+
+        env['PYTHON_GIL'] = '1'
+        proc = run()
+        self.assertEqual(proc.returncode, 0, proc)
+        self.assertEqual(proc.stdout.rstrip(), '2')
+        self.assertEqual(proc.stderr, '')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'bpo-32457 only applies on Windows')
     def test_argv0_normalization(self):
