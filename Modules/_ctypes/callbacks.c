@@ -112,7 +112,11 @@ static void
 TryAddRef(PyObject *cnv, CDataObject *obj)
 {
     IUnknown *punk;
-    int r = PyObject_GetAttrString((PyObject *)cnv, "_needs_com_addref_");
+    PyObject *attrdict = _PyType_GetDict((PyTypeObject *)cnv);
+    if (!attrdict) {
+        return;
+    }
+    int r = PyDict_Contains(attrdict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
         if (r < 0) {
             PrintError("getting _needs_com_addref_");

@@ -785,6 +785,10 @@ int can_return_struct_as_sint64(size_t s)
 // returns NULL with exception set on error
 ffi_type *_ctypes_get_ffi_type(PyObject *obj)
 {
+    if (obj == NULL) {
+        return &ffi_type_sint;
+    }
+
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, obj, &info) < 0) {
