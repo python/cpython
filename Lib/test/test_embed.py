@@ -452,7 +452,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'hash_seed': 0,
         'int_max_str_digits': sys.int_info.default_max_str_digits,
         'cpu_count': -1,
-        'enable_gil': 0,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,
@@ -524,6 +523,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT['_pystats'] = 0
     if support.Py_DEBUG:
         CONFIG_COMPAT['run_presite'] = None
+    if support.Py_GIL_DISABLED:
+        CONFIG_COMPAT['enable_gil'] = 0
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
