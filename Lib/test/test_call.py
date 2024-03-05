@@ -1023,8 +1023,8 @@ class TestRecursion(unittest.TestCase):
 
     @skip_on_s390x
     @unittest.skipIf(is_wasi and Py_DEBUG, "requires deep stack")
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_super_deep(self):
-        _testcapi = import_helper.import_module("_testcapi")
 
         def recurse(n):
             if n:
