@@ -515,15 +515,22 @@ list_item(PyObject *aa, Py_ssize_t i)
 }
 
 static PyObject *
-list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
+list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
-    PyListObject *np = (PyListObject *) list_new_prealloc(len);
-    if (np == NULL) {
-        return NULL;
+    PyListObject *np;
+    PyObject **src, **dest;
+    Py_ssize_t i, len;
+    len = ihigh - ilow;
+    if (len <= 0) {
+        return PyList_New(0);
     }
-    PyObject **src = a->ob_item + ilow;
-    PyObject **dest = np->ob_item;
-    for (Py_ssize_t i = 0; i < len; i++) {
+    np = (PyListObject *) list_new_prealloc(len);
+    if (np == NULL)
+        return NULL;
+
+    src = a->ob_item + ilow;
+    dest = np->ob_item;
+    for (i = 0; i < len; i++) {
         PyObject *v = src[i];
         dest[i] = Py_NewRef(v);
     }
@@ -552,13 +559,7 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     else if (ihigh > Py_SIZE(a)) {
         ihigh = Py_SIZE(a);
     }
-    Py_ssize_t len = ihigh - ilow;
-    if (len <= 0) {
-        ret = PyList_New(0);
-    }
-    else {
-        ret = list_slice_lock_held((PyListObject *)a, ilow, len);
-    }
+    ret = list_slice_lock_held((PyListObject *)a, ilow, ihigh);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -3137,7 +3138,16 @@ list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t 
         res = PyList_New(0);
     }
     else if (step == 1) {
-        res = list_slice_lock_held(a, start, len);
+        res = list_new_prealloc(len);
+        if (!res) {
+            return NULL;
+        }
+        PyObject **src = aa->ob_item;
+        PyObject **dest = ((PyListObject *)res)->ob_item;
+        for (Py_ssize_t cur = start, i = 0; i < len; cur += (size_t)step, i++) {
+            dest[i] = Py_NewRef(src[cur]);
+        }
+        Py_SET_SIZE(res, len);
     }
     else {
         res = list_slice_step_lock_held(a, start, step, len);
