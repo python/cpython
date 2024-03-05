@@ -203,7 +203,7 @@
             break;
         }
 
-        case _TO_BOOL_ALWAYS_TRUE: {
+        case _REPLACE_WITH_TRUE: {
             _Py_UopsSymbol *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto out_of_space;
