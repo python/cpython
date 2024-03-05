@@ -19,10 +19,8 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-try:
-    import _testinternalcapi
-except ImportError:
-    raise unittest.SkipTest("requires _testinternalcapi")
+
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 
 MACOS = (sys.platform == 'darwin')
