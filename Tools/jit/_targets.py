@@ -238,6 +238,19 @@ class _COFF(
                 addend = (
                     int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
                 )
+            case {
+                "Offset": offset,
+                "Symbol": s,
+                "Type": {
+                    "Value": "IMAGE_REL_ARM64_BRANCH26"
+                    | "IMAGE_REL_ARM64_PAGEBASE_REL21"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12A"
+                    | "IMAGE_REL_ARM64_PAGEOFFSET_12L" as kind
+                },
+            }:
+                offset += base
+                value, symbol = self._unwrap_dllimport(s)
+                addend = 0
             case _:
                 raise NotImplementedError(relocation)
         return _stencils.Hole(offset, kind, value, symbol, addend)
@@ -435,6 +448,9 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         args = ["-mcmodel=large"]
         return _MachO(host, alignment=8, args=args, prefix="_")
+    if re.fullmatch(r"aarch64-pc-windows-msvc", host):
+        args = ["-fms-runtime-lib=dll"]
+        return _COFF(host, alignment=8, args=args)
     if re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = ["-mcmodel=large"]
         return _ELF(host, alignment=8, args=args)
