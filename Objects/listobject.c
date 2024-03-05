@@ -272,18 +272,8 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
     if (!valid_index(i, cap)) {
         return NULL;
     }
-    PyObject *item = _Py_atomic_load_ptr(&ob_item[i]);
-    if (!item) {
-        return list_item_impl(op, i);
-    }
-    if (_Py_TryIncrefFast(item)) {
-        goto compare_ob_item;
-    }
-    if (!_Py_TryIncRefShared(item)) {
-        return list_item_impl(op, i);
-    }
-    if (item != _Py_atomic_load_ptr(&ob_item[i])) {
-        Py_DECREF(item);
+    PyObject *item = _Py_TryXGetRef(&ob_item[i]);
+    if (item == NULL) {
         return list_item_impl(op, i);
     }
 compare_ob_item:
