@@ -528,11 +528,11 @@ are always available.  They are listed here in alphabetical order.
 
    :param expression:
       A Python expression.
-   :type expression: str | :ref:`code object <code-objects>`
+   :type expression: :class:`str` | :ref:`code object <code-objects>`
 
    :param globals:
       The global namespace (default: ``None``).
-   :type globals: dict
+   :type globals: :class:`dict` | ``None``
 
    :param locals:
       The local namespace (default: ``None``).
