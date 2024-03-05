@@ -750,7 +750,7 @@ _queuerefs_clear(_queueref *head)
 
 #ifdef Py_DEBUG
         int64_t qid = ref->qid;
-        fprintf(stderr, "queue %ld still exists\n", qid);
+        fprintf(stderr, "queue %" PRId64 " still exists\n", qid);
 #endif
         _queue *queue = ref->queue;
         GLOBAL_FREE(ref);
@@ -758,7 +758,7 @@ _queuerefs_clear(_queueref *head)
         _queue_kill_and_wait(queue);
 #ifdef Py_DEBUG
     if (queue->items.count > 0) {
-        fprintf(stderr, "queue %ld still holds %ld items\n",
+        fprintf(stderr, "queue %" PRId64 " still holds %" PRId64 " items\n",
                 qid, queue->items.count);
     }
 #endif
