@@ -96,6 +96,7 @@ extern bool _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
 extern bool _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val);
 extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
+extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
 
 
 extern int _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
