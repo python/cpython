@@ -488,9 +488,8 @@ CType_Type_dealloc(PyObject *self)
     }
 
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
     (void)CType_Type_clear(self);
-    tp->tp_free(self);
+    PyType_Type.tp_dealloc(self);
     Py_DECREF(tp);
 }
 
