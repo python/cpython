@@ -747,10 +747,9 @@ _queuerefs_clear(_queueref *head)
     while (next != NULL) {
         _queueref *ref = next;
         next = ref->next;
-        int64_t qid = ref->qid;
 
 #ifdef Py_DEBUG
-        fprintf(stderr, "queue %ld still exists\n", qid);
+        fprintf(stderr, "queue %ld still exists\n", ref->qid);
 #endif
         _queue *queue = ref->queue;
         GLOBAL_FREE(ref);
