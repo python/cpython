@@ -103,7 +103,7 @@ int _PyCompile_EnsureArrayLargeEnough(
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 
-// Export for '_opcode' extention module
+// Export for '_opcode' extension module
 PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);
