@@ -1277,7 +1277,21 @@ These can be used as types in annotations. They all support subscription using
 
 .. data:: ReadOnly
 
-   See :pep:`705`. Indicates that a :class:`TypedDict` item may not be modified.
+   A special typing construct to mark an item of a TypedDict as read-only.
+
+   For example::
+
+      class Movie(TypedDict):
+         title: ReadOnly[str]
+         year: int
+
+      def mutate_movie(m: Movie) -> None:
+         m["year"] = 1992  # allowed
+         m["title"] = "The Matrix"  # typechecker error
+
+   There is no runtime checking for this property.
+
+   See :class:`TypedDict` and :pep:`705` for more details.
 
    .. versionadded:: 3.13
 
@@ -2461,7 +2475,7 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
-   Support of :pep:`705` is reflected in the following attributes::
+   Support of :data:`ReadOnly` is reflected in the following attributes::
 
    .. attribute:: __readonly_keys__
 
