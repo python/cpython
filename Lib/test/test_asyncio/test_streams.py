@@ -1188,6 +1188,7 @@ os.close(fd)
 
     def test_unhandled_cancel(self):
         async def handle_echo(reader, writer):
+            writer.close()
             asyncio.current_task().cancel()
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])
