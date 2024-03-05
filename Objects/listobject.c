@@ -975,11 +975,7 @@ static PyObject *
 list_copy_impl(PyListObject *self)
 /*[clinic end generated code: output=ec6b72d6209d418e input=81c54b0c7bb4f73d]*/
 {
-    Py_ssize_t n = Py_SIZE(self);
-    if (n <= 0) {
-        return (PyObject *)PyList_New(0);
-    }
-    return list_slice_lock_held(self, 0, n);
+    return list_slice_lock_held(self, 0, Py_SIZE(self));
 }
 
 /*[clinic input]
@@ -3131,26 +3127,16 @@ static PyObject *
 list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t step)
 {
     PyObject *res = NULL;
-    PyListObject *a = (PyListObject *)aa;
-    Py_BEGIN_CRITICAL_SECTION(a);
-    Py_ssize_t len = PySlice_AdjustIndices(Py_SIZE(a), &start, &stop, step);
+    Py_BEGIN_CRITICAL_SECTION(aa);
+    Py_ssize_t len = PySlice_AdjustIndices(Py_SIZE(aa), &start, &stop, step);
     if (len <= 0) {
         res = PyList_New(0);
     }
     else if (step == 1) {
-        res = list_new_prealloc(len);
-        if (!res) {
-            return NULL;
-        }
-        PyObject **src = aa->ob_item;
-        PyObject **dest = ((PyListObject *)res)->ob_item;
-        for (Py_ssize_t cur = start, i = 0; i < len; cur += (size_t)step, i++) {
-            dest[i] = Py_NewRef(src[cur]);
-        }
-        Py_SET_SIZE(res, len);
+        res = list_slice_lock_held(aa, start, stop);
     }
     else {
-        res = list_slice_step_lock_held(a, start, step, len);
+        res = list_slice_step_lock_held(aa, start, step, len);
     }
     Py_END_CRITICAL_SECTION();
     return res;
@@ -3286,12 +3272,8 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {
                 Py_BEGIN_CRITICAL_SECTION(value);
-                Py_ssize_t size = Py_SIZE(value);
-                if (size <= 0) {
-                    seq = PyList_New(0);
-                } else {
-                    seq = list_slice_lock_held((PyListObject*)value, 0, size);
-                }
+                seq = list_slice_lock_held((PyListObject*)value, 0,
+                                            Py_SIZE(value));
                 Py_END_CRITICAL_SECTION();
             }
             else {
