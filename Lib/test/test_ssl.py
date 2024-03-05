@@ -22,6 +22,7 @@ import http.client
 import os
 import errno
 import pprint
+import re
 import urllib.request
 import threading
 import traceback
@@ -44,6 +45,7 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
+IS_BORINGSSL = "BoringSSL" in ssl.OPENSSL_VERSION
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
@@ -544,7 +546,7 @@ class BasicSocketTests(unittest.TestCase):
         else:
             openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
         self.assertTrue(
-            s.startswith((openssl_ver, libressl_ver)),
+            s.startswith((openssl_ver, libressl_ver, "BoringSSL")),
             (s, t, hex(n))
         )
 
@@ -899,6 +901,12 @@ class BasicSocketTests(unittest.TestCase):
         self.assertIn(rc, errors)
 
     def test_read_write_zero(self):
+        if IS_BORINGSSL:
+            # We had to revert the change which made this work for BoringSSL.
+            # This is because the change used APIs in OpenSSL which were
+            # mis-designed. When that mess is untangled, we can restore this
+            # test and the fix. See go/bio-read-ex-eof.
+            return
         # empty reads and writes now work, bpo-42854, bpo-31711
         client_context, server_context, hostname = testing_context()
         server = ThreadedEchoServer(context=server_context)
@@ -1071,6 +1079,26 @@ class ContextTests(unittest.TestCase):
             ctx.maximum_version, ssl.TLSVersion.TLSv1_2
         )
 
+        if IS_BORINGSSL:
+            # BoringSSL's version APIs differ from OpenSSL's slightly. Skip the
+            # remainder of the tests for now, until the conflicts can be
+            # resolved. It is unlikely these differences will affect calling
+            # code.
+            #
+            # - BoringSSL treats zero as the default version, not the minimum or
+            #   maximum supported one. This works better when we are deprecating
+            #   a version or implementing a new experimental version.
+            #
+            # - After SSL_CTX_set_min_proto_version(0), BoringSSL's
+            #   SSL_CTX_get_min_proto_version returns the version 0 was
+            #   interpreted as, while OpenSSL remembers it was set as 0.
+            #
+            # - BoringSSL's legacy version-locked SSL_METHODs don't reject calls
+            #   to set the version. This is a little simpler to implement. As
+            #   everyone, Python and OpenSSL included, have deprecated these
+            #   APIs, this doesn't seem worth putting much effort into.
+            return
+
         ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
         ctx.maximum_version = ssl.TLSVersion.TLSv1
         self.assertEqual(
@@ -1162,24 +1190,25 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             ctx.load_cert_chain(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib|routines"):
             ctx.load_cert_chain(BADCERT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib|routines"):
             ctx.load_cert_chain(EMPTYCERT)
         # Separate key and cert
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_cert_chain(ONLYCERT, ONLYKEY)
         ctx.load_cert_chain(certfile=ONLYCERT, keyfile=ONLYKEY)
         ctx.load_cert_chain(certfile=BYTES_ONLYCERT, keyfile=BYTES_ONLYKEY)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib|routines"):
             ctx.load_cert_chain(ONLYCERT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib|routines"):
             ctx.load_cert_chain(ONLYKEY)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib|routines"):
             ctx.load_cert_chain(certfile=ONLYKEY, keyfile=ONLYCERT)
         # Mismatching key and cert
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        with self.assertRaisesRegex(ssl.SSLError, "key values mismatch"):
+        with self.assertRaisesRegex(ssl.SSLError,
+                                    "key values mismatch|KEY_VALUES_MISMATCH"):
             ctx.load_cert_chain(CAFILE_CACERT, ONLYKEY)
         # Password protected key and cert
         ctx.load_cert_chain(CERTFILE_PROTECTED, password=KEY_PASSWORD)
@@ -1247,7 +1276,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             ctx.load_verify_locations(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM lib|routines"):
             ctx.load_verify_locations(BADCERT)
         ctx.load_verify_locations(CERTFILE, CAPATH)
         ctx.load_verify_locations(CERTFILE, capath=BYTES_CAPATH)
@@ -1309,12 +1338,14 @@ class ContextTests(unittest.TestCase):
 
         with self.assertRaisesRegex(
             ssl.SSLError,
-            "no start line: cadata does not contain a certificate"
+            "no start line: cadata does not contain a certificate" +
+            "|NO_START_LINE"
         ):
             ctx.load_verify_locations(cadata="broken")
         with self.assertRaisesRegex(
             ssl.SSLError,
-            "not enough data: cadata does not contain a certificate"
+            "not enough data: cadata does not contain a certificate" +
+            "|NOT_ENOUGH_DATA"
         ):
             ctx.load_verify_locations(cadata=b"broken")
         with self.assertRaises(ssl.SSLError):
@@ -1653,7 +1684,7 @@ class SSLErrorTests(unittest.TestCase):
         self.assertEqual(cm.exception.library, 'PEM')
         self.assertEqual(cm.exception.reason, 'NO_START_LINE')
         s = str(cm.exception)
-        self.assertTrue(s.startswith("[PEM: NO_START_LINE] no start line"), s)
+        self.assertTrue(s.startswith("[PEM: NO_START_LINE]"), s)
 
     def test_subclass(self):
         # Check that the appropriate SSLError subclass is raised
@@ -1833,8 +1864,9 @@ class SimpleBackgroundTests(unittest.TestCase):
         s = test_wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED)
         self.addCleanup(s.close)
-        self.assertRaisesRegex(ssl.SSLError, "certificate verify failed",
-                               s.connect, self.server_addr)
+        self.assertRaisesRegex(ssl.SSLError,
+            "certificate verify failed|CERTIFICATE_VERIFY_FAILED",
+            s.connect, self.server_addr)
 
     def test_connect_ex(self):
         # Issue #11326: check connect_ex() implementation
@@ -1901,8 +1933,9 @@ class SimpleBackgroundTests(unittest.TestCase):
             server_hostname=SIGNED_CERTFILE_HOSTNAME
         )
         self.addCleanup(s.close)
-        self.assertRaisesRegex(ssl.SSLError, "certificate verify failed",
-                                s.connect, self.server_addr)
+        self.assertRaisesRegex(ssl.SSLError,
+            "certificate verify failed|CERTIFICATE_VERIFY_FAILED",
+            s.connect, self.server_addr)
 
     def test_connect_capath(self):
         # Verify server certificates using the `capath` argument
@@ -2108,6 +2141,8 @@ class SimpleBackgroundTests(unittest.TestCase):
         incoming = ssl.MemoryBIO()
         outgoing = ssl.MemoryBIO()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        # This test requests tls-unique, which is not defined in TLS 1.3.
+        ctx.maximum_version = ssl.TLSVersion.TLSv1_2
         self.assertTrue(ctx.check_hostname)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         ctx.load_verify_locations(SIGNING_CA)
@@ -2854,7 +2889,8 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
                 with self.assertRaisesRegex(ssl.SSLError,
-                                            "certificate verify failed"):
+                                            "certificate verify failed" +
+                                            "|CERTIFICATE_VERIFY_FAILED"):
                     s.connect((HOST, server.port))
 
         # now load a CRL file. The CRL file is signed by the CA.
@@ -2946,6 +2982,10 @@ class ThreadedTests(unittest.TestCase):
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
 
+    # TODO(gps): Is this accurate?  If run, the test gets
+    # HANDSHAKE_FAILURE_ON_CLIENT_HELLO on connect().
+    @unittest.skipIf(ssl.OPENSSL_VERSION == "BoringSSL",
+                     "BoringSSL does not support dual RSA ECC?")
     def test_dual_rsa_ecc(self):
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         client_context.load_verify_locations(SIGNING_CA)
@@ -3094,7 +3134,7 @@ class ThreadedTests(unittest.TestCase):
             s.connect((HOST, server.port))
             with self.assertRaisesRegex(
                 ssl.SSLError,
-                'alert unknown ca|EOF occurred'
+                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -3164,7 +3204,8 @@ class ThreadedTests(unittest.TestCase):
                     self.assertEqual(e.verify_code, 20)
                     self.assertEqual(e.verify_message, msg)
                     self.assertIn(msg, repr(e))
-                    self.assertIn('certificate verify failed', repr(e))
+                    self.assertRegex(repr(e), 'certificate verify failed' +
+                                              '|CERTIFICATE_VERIFY_FAILED')
 
     def test_PROTOCOL_TLS(self):
         """Connecting to an SSLv23 server with various client options"""
@@ -3696,7 +3737,10 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 with self.assertRaises(OSError):
                     s.connect((HOST, server.port))
-        self.assertIn("no shared cipher", server.conn_errors[0])
+        self.assertTrue(re.search(r"no.shared.cipher",
+                                  server.conn_errors[0], re.IGNORECASE),
+                        msg=(f"{server.conn_errors[0]!r} did not match"
+                             " expected error message pattern."))
 
     def test_version_basic(self):
         """
@@ -3784,7 +3828,7 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 with self.assertRaises(ssl.SSLError) as e:
                     s.connect((HOST, server.port))
-                self.assertIn("alert", str(e.exception))
+                self.assertIn("alert", str(e.exception).lower())
 
     @requires_tls_version('SSLv3')
     def test_min_max_version_sslv3(self):
@@ -3825,6 +3869,8 @@ class ThreadedTests(unittest.TestCase):
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
+        # tls-unique is not defined in TLS 1.3.
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         server = ThreadedEchoServer(context=server_context,
                                     chatty=True,
@@ -3912,6 +3958,7 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
 
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
+    @unittest.skipIf(IS_BORINGSSL, "BoringSSL does not support DHE ciphers")
     def test_dh_params(self):
         # Check we can get a connection with ephemeral Diffie-Hellman
         client_context, server_context, hostname = testing_context()
@@ -4093,8 +4140,8 @@ class ThreadedTests(unittest.TestCase):
                                            chatty=False,
                                            sni_name='supermessage')
 
-            self.assertEqual(cm.exception.reason,
-                             'SSLV3_ALERT_HANDSHAKE_FAILURE')
+            self.assertIn(cm.exception.reason, ('SSLV3_ALERT_HANDSHAKE_FAILURE',
+                'HANDSHAKE_FAILURE_ON_CLIENT_HELLO'))
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
     def test_sni_callback_wrong_return_type(self):
@@ -4163,6 +4210,12 @@ class ThreadedTests(unittest.TestCase):
                     self.assertEqual(s.recv(1024), TEST_DATA)
 
     def test_session(self):
+        # Assertions on session_stats are skipped in BoringSSL. BoringSSL
+        # does not maintain those statistics for thread safety.
+        def maybeAssertEqual(a, b):
+            if not IS_BORINGSSL:
+                self.assertEqual(a, b)
+
         client_context, server_context, hostname = testing_context()
         # TODO: sessions aren't compatible with TLSv1.3 yet
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
@@ -4178,15 +4231,15 @@ class ThreadedTests(unittest.TestCase):
         self.assertGreater(session.ticket_lifetime_hint, 0)
         self.assertFalse(stats['session_reused'])
         sess_stat = server_context.session_stats()
-        self.assertEqual(sess_stat['accept'], 1)
-        self.assertEqual(sess_stat['hits'], 0)
+        maybeAssertEqual(sess_stat['accept'], 1)
+        maybeAssertEqual(sess_stat['hits'], 0)
 
         # reuse session
         stats = server_params_test(client_context, server_context,
                                    session=session, sni_name=hostname)
         sess_stat = server_context.session_stats()
-        self.assertEqual(sess_stat['accept'], 2)
-        self.assertEqual(sess_stat['hits'], 1)
+        maybeAssertEqual(sess_stat['accept'], 2)
+        maybeAssertEqual(sess_stat['hits'], 1)
         self.assertTrue(stats['session_reused'])
         session2 = stats['session']
         self.assertEqual(session2.id, session.id)
@@ -4203,8 +4256,8 @@ class ThreadedTests(unittest.TestCase):
         self.assertNotEqual(session3.id, session.id)
         self.assertNotEqual(session3, session)
         sess_stat = server_context.session_stats()
-        self.assertEqual(sess_stat['accept'], 3)
-        self.assertEqual(sess_stat['hits'], 1)
+        maybeAssertEqual(sess_stat['accept'], 3)
+        maybeAssertEqual(sess_stat['hits'], 1)
 
         # reuse session again
         stats = server_params_test(client_context, server_context,
@@ -4216,8 +4269,8 @@ class ThreadedTests(unittest.TestCase):
         self.assertGreaterEqual(session4.time, session.time)
         self.assertGreaterEqual(session4.timeout, session.timeout)
         sess_stat = server_context.session_stats()
-        self.assertEqual(sess_stat['accept'], 4)
-        self.assertEqual(sess_stat['hits'], 2)
+        maybeAssertEqual(sess_stat['accept'], 4)
+        maybeAssertEqual(sess_stat['hits'], 2)
 
     def test_session_handling(self):
         client_context, server_context, hostname = testing_context()
@@ -4372,6 +4425,7 @@ class ThreadedTests(unittest.TestCase):
 
 
 @unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
+@unittest.skipIf(IS_BORINGSSL, "PHA not supported b/117801554")
 class TestPostHandshakeAuth(unittest.TestCase):
     def test_pha_setter(self):
         protocols = [

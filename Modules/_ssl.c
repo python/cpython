@@ -298,8 +298,10 @@ typedef struct {
     int post_handshake_auth;
 #endif
     PyObject *msg_cb;
+#ifndef OPENSSL_IS_BORINGSSL
     PyObject *keylog_filename;
     BIO *keylog_bio;
+#endif
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
 #ifndef OPENSSL_NO_PSK
@@ -886,7 +888,8 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     SSL_set_mode(self->ssl,
                  SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER | SSL_MODE_AUTO_RETRY);
 
-#ifdef TLS1_3_VERSION
+/* https://crbug.com/boringssl/78: BoringSSL will never support PHA. */
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_IS_BORINGSSL)
     if (sslctx->post_handshake_auth == 1) {
         if (socket_type == PY_SSL_SERVER) {
             /* bpo-37428: OpenSSL does not ignore SSL_VERIFY_POST_HANDSHAKE.
@@ -1882,12 +1885,16 @@ static PyObject *
 _ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self)
 /*[clinic end generated code: output=802421163cdc3110 input=5fb0714f77e2bd51]*/
 {
+#ifdef OPENSSL_IS_BORINGSSL
+    Py_RETURN_NONE;
+#else
     /* borrowed reference */
     STACK_OF(X509) *chain = SSL_get0_verified_chain(self->ssl);
     if (chain == NULL) {
         Py_RETURN_NONE;
     }
     return _PySSL_CertificateFromX509Stack(self->ctx->state, chain, 1);
+#endif
 }
 
 /*[clinic input]
@@ -2788,7 +2795,8 @@ static PyObject *
 _ssl__SSLSocket_verify_client_post_handshake_impl(PySSLSocket *self)
 /*[clinic end generated code: output=532147f3b1341425 input=6bfa874810a3d889]*/
 {
-#ifdef TLS1_3_VERSION
+/* https://crbug.com/boringssl/78: BoringSSL will never support PHA. */
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_IS_BORINGSSL)
     int err = SSL_verify_client_post_handshake(self->ssl);
     if (err == 0)
         return _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
@@ -3118,8 +3126,10 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
     self->protocol = proto_version;
     self->msg_cb = NULL;
+#ifndef OPENSSL_IS_BORINGSSL
     self->keylog_filename = NULL;
     self->keylog_bio = NULL;
+#endif
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
@@ -3212,7 +3222,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     X509_VERIFY_PARAM_set_flags(params, X509_V_FLAG_TRUSTED_FIRST);
     X509_VERIFY_PARAM_set_hostflags(params, self->hostflags);
 
-#ifdef TLS1_3_VERSION
+/* https://crbug.com/boringssl/78: BoringSSL will never support PHA. */
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_IS_BORINGSSL)
     self->post_handshake_auth = 0;
     SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
 #endif
@@ -3238,6 +3249,7 @@ context_clear(PySSLContext *self)
 {
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
+#ifndef OPENSSL_IS_BORINGSSL
     Py_CLEAR(self->keylog_filename);
 #ifndef OPENSSL_NO_PSK
     Py_CLEAR(self->psk_client_callback);
@@ -3249,6 +3261,7 @@ context_clear(PySSLContext *self)
         PySSL_END_ALLOW_THREADS
         self->keylog_bio = NULL;
     }
+#endif
     return 0;
 }
 
@@ -3626,7 +3639,11 @@ PyDoc_STRVAR(PySSLContext_num_tickets_doc,
 static PyObject *
 get_security_level(PySSLContext *self, void *c)
 {
+#ifdef OPENSSL_IS_BORINGSSL
+    return PyLong_FromLong(0);
+#else
     return PyLong_FromLong(SSL_CTX_get_security_level(self->ctx));
+#endif
 }
 PyDoc_STRVAR(PySSLContext_security_level_doc, "The current security level");
 
@@ -3724,14 +3741,15 @@ set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
 
 static PyObject *
 get_post_handshake_auth(PySSLContext *self, void *c) {
-#if TLS1_3_VERSION
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_IS_BORINGSSL)
     return PyBool_FromLong(self->post_handshake_auth);
 #else
     Py_RETURN_NONE;
 #endif
 }
 
-#if TLS1_3_VERSION
+/* https://crbug.com/boringssl/78: BoringSSL will never support PHA. */
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_IS_BORINGSSL)
 static int
 set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
     if (arg == NULL) {
@@ -4967,8 +4985,10 @@ static PyGetSetDef context_getsetlist[] = {
                         (setter) set_minimum_version, NULL},
     {"maximum_version", (getter) get_maximum_version,
                         (setter) set_maximum_version, NULL},
+#ifndef OPENSSL_IS_BORINGSSL
     {"keylog_filename", (getter) _PySSLContext_get_keylog_filename,
                         (setter) _PySSLContext_set_keylog_filename, NULL},
+#endif
     {"_msg_callback", (getter) _PySSLContext_get_msg_callback,
                       (setter) _PySSLContext_set_msg_callback, NULL},
     {"sni_callback", (getter) get_sni_callback,
@@ -4980,7 +5000,7 @@ static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
     {"post_handshake_auth", (getter) get_post_handshake_auth,
-#ifdef TLS1_3_VERSION
+#if defined(TLS1_3_VERSION) && !defined(OPENSSL_IS_BORINGSSL)
                             (setter) set_post_handshake_auth,
 #else
                             NULL,

@@ -2068,6 +2068,9 @@ class HTTPSTest(TestCase):
         import ssl
         if not ssl.HAS_TLSv1_3:
             self.skipTest('TLS 1.3 support required')
+        if 'BoringSSL' in ssl.OPENSSL_VERSION:
+            self.skipTest(
+                'Post Handshake Authentication is not supported by BoringSSL.')
         # just check status of PHA flag
         h = client.HTTPSConnection('localhost', 443)
         self.assertTrue(h._context.post_handshake_auth)
