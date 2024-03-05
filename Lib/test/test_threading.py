@@ -983,6 +983,7 @@ class ThreadTests(BaseTestCase):
 
     @cpython_only
     def test_frame_tstate_tracing(self):
+        _testcapi = import_module("_testcapi")
         # Issue #14432: Crash when a generator is created in a C thread that is
         # destroyed while the generator is still used. The issue was that a
         # generator contains a frame, and the frame kept a reference to the
@@ -1010,7 +1011,6 @@ class ThreadTests(BaseTestCase):
             threading.settrace(noop_trace)
 
             # Create a generator in a C thread which exits after the call
-            _testcapi = import_module("_testcapi")
             _testcapi.call_in_temporary_c_thread(callback)
 
             # Call the generator in a different Python thread, check that the
