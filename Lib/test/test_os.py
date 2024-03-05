@@ -56,6 +56,7 @@ try:
 except (ImportError, AttributeError):
     all_users = []
 try:
+    import _testcapi
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 except ImportError:
     _testcapi = None
