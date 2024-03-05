@@ -22,7 +22,6 @@ BOOL_OPTIONS = [
     'install_signal_handlers',
     'use_hash_seed',
     'faulthandler',
-    'tracemalloc',
     'import_time',
     'code_debug_ranges',
     'show_ref_count',
@@ -94,6 +93,7 @@ class SetConfigTests(unittest.TestCase):
             '_config_init',
             'bytes_warning',
             'optimization_level',
+            'tracemalloc',
             'verbose',
         ]
         int_options.extend(BOOL_OPTIONS)
