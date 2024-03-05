@@ -531,20 +531,6 @@ list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
     return (PyObject *)np;
 }
 
-static PyObject *
-list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
-{
-    Py_ssize_t len = ihigh - ilow;
-    if (len <= 0) {
-        return PyList_New(0);
-    }
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(a);
-    ret = list_slice_lock_held(a, ilow, len);
-    Py_END_CRITICAL_SECTION();
-    return ret;
-}
-
 PyObject *
 PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
@@ -566,7 +552,12 @@ PyList_GetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     else if (ihigh > Py_SIZE(a)) {
         ihigh = Py_SIZE(a);
     }
-    ret = list_slice((PyListObject *)a, ilow, ihigh);
+    if ((ihigh - ilow) <= 0) {
+        ret = PyList_New(0);
+    }
+    else {
+        ret = list_slice_lock_held((PyListObject *)a, ilow, ihigh);
+    }
     Py_END_CRITICAL_SECTION();
     return ret;
 }
