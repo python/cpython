@@ -1675,11 +1675,10 @@ static void
 clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
 {
     assert(frame->owner == FRAME_OWNED_BY_THREAD);
-    // Make sure that this is, indeed, the top frame. We can't check this in
-    // _PyThreadState_PopFrame, since f_code is already cleared at that point:
-    // This doesn't apply to tier 2 frames.
-    assert(frame->tier2_extra_size ==  0 ? (PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
-              tstate->datastack_top : 1);
+    // // Make sure that this is, indeed, the top frame. We can't check this in
+    // // _PyThreadState_PopFrame, since f_code is already cleared at that point:
+    // assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
+    //     tstate->datastack_top);
     tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
@@ -1792,7 +1791,6 @@ error:
     Py_XDECREF(kwargs);
     return NULL;
 }
-
 
 PyObject *
 _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,

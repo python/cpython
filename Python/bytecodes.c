@@ -4175,7 +4175,10 @@ dummy_func(
         }
 
         op(_GROW_TIER2_FRAME, (--)) {
-            DEOPT_IF(_PyFrame_ConvertToTier2(tstate, frame, oparg));
+            DEOPT_IF(frame->owner != FRAME_OWNED_BY_THREAD);
+            DEOPT_IF(stack_pointer + oparg > tstate->datastack_limit);
+            assert(stack_pointer <= tstate->datastack_top);
+            tstate->datastack_top = stack_pointer + oparg;
         }
 
 

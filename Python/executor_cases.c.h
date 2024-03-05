@@ -3928,7 +3928,10 @@
 
         case _GROW_TIER2_FRAME: {
             oparg = CURRENT_OPARG();
-            if (_PyFrame_ConvertToTier2(tstate, frame, oparg)) goto deoptimize;
+            if (frame->owner != FRAME_OWNED_BY_THREAD) goto deoptimize;
+            if (stack_pointer + oparg > tstate->datastack_limit) goto deoptimize;
+            assert(stack_pointer <= tstate->datastack_top);
+            tstate->datastack_top = stack_pointer + oparg;
             break;
         }
 

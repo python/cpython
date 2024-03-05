@@ -65,7 +65,6 @@ typedef struct _PyInterpreterFrame {
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
     int stacktop;  /* Offset of TOS from localsplus  */
     uint16_t return_offset;  /* Only relevant during a function call */
-    uint16_t tier2_extra_size; /* How many extra entries is at the end of localsplus for tier 2 inlining */
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
@@ -132,7 +131,6 @@ _PyFrame_Initialize(
     frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
-    frame->tier2_extra_size = 0;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = NULL;
@@ -259,35 +257,6 @@ extern _PyInterpreterFrame *
 _PyThreadState_PushFrame(PyThreadState *tstate, size_t size);
 
 void _PyThreadState_PopFrame(PyThreadState *tstate, _PyInterpreterFrame *frame);
-
-
-/* Converts frame for tier 2.
- * Adds stack space at the end of the current frame for Tier 2 execution.
- * The frame that is being expanded MUST be the current executing frame, and
- * it must be at the top of the datastack.
- * */
-static inline int
-_PyFrame_ConvertToTier2(PyThreadState *tstate, _PyInterpreterFrame *frame,
-                        int localsplus_grow)
-{
-    assert(localsplus_grow > 0);
-    // Already grown previously
-    if (frame->tier2_extra_size >= localsplus_grow) {
-        return 0;
-    }
-    if (frame->owner != FRAME_OWNED_BY_THREAD) {
-        return 1;
-    }
-    if (!_PyThreadState_HasStackSpace(tstate, localsplus_grow)) {
-        return 1;
-    }
-    assert(_PyThreadState_HasStackSpace(tstate, localsplus_grow));
-    assert(tstate->current_frame == frame);
-    tstate->datastack_top += localsplus_grow;
-    assert(tstate->datastack_top < tstate->datastack_limit);
-    frame->tier2_extra_size += localsplus_grow;
-    return 0;
-}
 
 /* Pushes a frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace()
