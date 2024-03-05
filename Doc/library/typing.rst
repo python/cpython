@@ -1275,6 +1275,12 @@ These can be used as types in annotations. They all support subscription using
 
    .. versionadded:: 3.11
 
+.. data:: ReadOnly
+
+   See :pep:`705`. Indicates that a :class:`TypedDict` item may not be modified.
+
+   .. versionadded:: 3.13
+
 .. data:: Annotated
 
    Special typing form to add context-specific metadata to an annotation.
@@ -2455,6 +2461,22 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
+   Support of :pep:`705` is reflected in the following attributes::
+
+   .. attribute:: __readonly_keys__
+
+      A :class:`frozenset` containing the names of all read-only keys. Keys
+      are read-only if they carry the :data:`ReadOnly` qualifier.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: __mutable_keys__
+
+      A :class:`frozenset` containing the names of all mutable keys. Keys
+      are mutable if they do not carry the :data:`ReadOnly` qualifier.
+
+      .. versionadded:: 3.13
+
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
@@ -2468,6 +2490,9 @@ types.
 
    .. versionchanged:: 3.13
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
+
+   .. versionchanged:: 3.13
+      Support for the :data:`ReadOnly` qualifier was added.
 
    .. deprecated-removed:: 3.13 3.15
       When using the functional syntax to create a TypedDict class, failing to
