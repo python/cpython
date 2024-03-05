@@ -1,4 +1,5 @@
 import importlib
+import pickle
 import threading
 from textwrap import dedent
 import unittest
@@ -100,6 +101,12 @@ class TestRecvChannelAttrs(TestBase):
         self.assertEqual(ch1, ch1)
         self.assertNotEqual(ch1, ch2)
 
+    def test_pickle(self):
+        ch, _ = channels.create()
+        data = pickle.dumps(ch)
+        unpickled = pickle.loads(data)
+        self.assertEqual(unpickled, ch)
+
 
 class TestSendChannelAttrs(TestBase):
 
@@ -124,6 +131,12 @@ class TestSendChannelAttrs(TestBase):
         _, ch2 = channels.create()
         self.assertEqual(ch1, ch1)
         self.assertNotEqual(ch1, ch2)
+
+    def test_pickle(self):
+        _, ch = channels.create()
+        data = pickle.dumps(ch)
+        unpickled = pickle.loads(data)
+        self.assertEqual(unpickled, ch)
 
 
 class TestSendRecv(TestBase):

@@ -331,7 +331,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_NOT_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
@@ -347,7 +348,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_true(self):
         def testfunc(n):
