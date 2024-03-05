@@ -1820,6 +1820,7 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
     def tearDown(self):
         super(TestOptimizer, self).tearDown()
+        import _testinternalcapi
         _testinternalcapi.set_optimizer(self.old_opt)
 
     def test_for_loop(self):
