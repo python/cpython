@@ -236,7 +236,7 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
 #ifdef Py_GIL_DISABLED
 
 static PyObject *
-list_item_impl(PyListObject *self, Py_ssize_t idx, PyObject *dead)
+list_item_impl(PyListObject *self, Py_ssize_t idx)
 {
     PyObject *item = NULL;
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -257,10 +257,10 @@ static inline PyObject*
 list_get_item_ref(PyListObject *op, Py_ssize_t i)
 {
     if (!_Py_IsOwnedByCurrentThread((PyObject *)op) && !_PyObject_GC_IS_SHARED(op)) {
-        return list_item_impl(op, i, NULL);
+        return list_item_impl(op, i);
     }
     // Need atomic operation for the getting size.
-    Py_ssize_t size = _Py_atomic_load_ssize_relaxed(&_PyVarObject_CAST(op)->ob_size);
+    Py_ssize_t size = PyList_GET_SIZE(op);
     if (!valid_index(i, size)) {
         return NULL;
     }
@@ -273,21 +273,21 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
         return NULL;
     }
     PyObject *item = _Py_atomic_load_ptr(&ob_item[i]);
-    if (mi_unlikely(!item)) {
-        return list_item_impl(op, i, NULL);
+    if (!item) {
+        return list_item_impl(op, i);
     }
-    if (mi_likely(_Py_TryIncrefFast(item))) {
+    if (_Py_TryIncrefFast(item)) {
         goto compare_ob_item;
     }
     if (!_Py_TryIncRefShared(item)) {
-        return list_item_impl(op, i, item);
+        return list_item_impl(op, i);
     }
-    if (mi_unlikely(item != _Py_atomic_load_ptr(&ob_item[i]))) {
-        return list_item_impl(op, i, item);
+    if (item != _Py_atomic_load_ptr(&ob_item[i])) {
+        return list_item_impl(op, i);
     }
 compare_ob_item:
-    if (mi_unlikely(ob_item != _Py_atomic_load_ptr(&op->ob_item))) {
-        return list_item_impl(op, i, item);
+    if (ob_item != _Py_atomic_load_ptr(&op->ob_item)) {
+        return list_item_impl(op, i);
     }
     return item;
 }
