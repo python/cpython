@@ -514,7 +514,7 @@ list_item(PyObject *aa, Py_ssize_t i)
     return item;
 }
 
-static inline PyObject *
+static PyObject *
 list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
 {
     PyListObject *np = (PyListObject *) list_new_prealloc(len);
