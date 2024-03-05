@@ -1320,7 +1320,7 @@ _PyOpcode_macro_expansion[256] = {
     [STORE_SUBSCR_LIST_INT] = { .nuops = 1, .uops = { { _STORE_SUBSCR_LIST_INT, 0, 0 } } },
     [SWAP] = { .nuops = 1, .uops = { { _SWAP, 0, 0 } } },
     [TO_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL, 0, 0 } } },
-    [TO_BOOL_ALWAYS_TRUE] = { .nuops = 1, .uops = { { _TO_BOOL_ALWAYS_TRUE, 2, 1 } } },
+    [TO_BOOL_ALWAYS_TRUE] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _REPLACE_WITH_TRUE, 0, 0 } } },
     [TO_BOOL_BOOL] = { .nuops = 1, .uops = { { _TO_BOOL_BOOL, 0, 0 } } },
     [TO_BOOL_INT] = { .nuops = 1, .uops = { { _TO_BOOL_INT, 0, 0 } } },
     [TO_BOOL_LIST] = { .nuops = 1, .uops = { { _TO_BOOL_LIST, 0, 0 } } },

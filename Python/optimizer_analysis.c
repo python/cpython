@@ -292,15 +292,48 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_is_null _Py_uop_sym_is_null
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
+#define sym_has_type _Py_uop_sym_has_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_set_null _Py_uop_sym_set_null
 #define sym_set_non_null _Py_uop_sym_set_non_null
 #define sym_set_type _Py_uop_sym_set_type
 #define sym_set_const _Py_uop_sym_set_const
 #define sym_is_bottom _Py_uop_sym_is_bottom
+#define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
 
+static int
+optimize_to_bool(
+    _PyUOpInstruction *this_instr,
+    _Py_UOpsContext *ctx,
+    _Py_UopsSymbol *value,
+    _Py_UopsSymbol **result_ptr)
+{
+    if (sym_matches_type(value, &PyBool_Type)) {
+        REPLACE_OP(this_instr, _NOP, 0, 0);
+        *result_ptr = value;
+        return 1;
+    }
+    int truthiness = sym_truthiness(value);
+    if (truthiness >= 0) {
+        PyObject *load = truthiness ? Py_True : Py_False;
+        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
+        *result_ptr = sym_new_const(ctx, load);
+        return 1;
+    }
+    return 0;
+}
+
+static void
+eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
+{
+    REPLACE_OP(this_instr, _POP_TOP, 0, 0);
+    if (exit) {
+        REPLACE_OP((this_instr+1), _EXIT_TRACE, 0, 0);
+        this_instr[1].target = this_instr->target;
+    }
+}
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
@@ -422,6 +455,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 ) {
                     last->opcode = _NOP;
                     buffer[pc].opcode = NOP;
+                }
+                if (last->opcode == _REPLACE_WITH_TRUE) {
+                    last->opcode = _NOP;
                 }
                 break;
             }

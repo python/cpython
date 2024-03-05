@@ -1537,7 +1537,7 @@ then
     dnl TODO: support other WASI runtimes
     dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --'],
+    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
   )
 fi
@@ -3895,11 +3895,6 @@ AS_VAR_IF([with_system_libmpdec], [yes], [
   LIBMPDEC_CFLAGS="-I\$(srcdir)/Modules/_decimal/libmpdec"
   LIBMPDEC_LDFLAGS="-lm \$(LIBMPDEC_A)"
   LIBMPDEC_INTERNAL="\$(LIBMPDEC_HEADERS) \$(LIBMPDEC_A)"
-
-  dnl Enable strict-overflow for libmpdec, if available, see GH-108562
-  AS_VAR_IF([ac_cv_cc_supports_fstrict_overflow], [yes], [
-    AS_VAR_APPEND([LIBMPDEC_CFLAGS], [" -fstrict-overflow"])
-  ])
 
   dnl Disable forced inlining in debug builds, see GH-94847
   AS_VAR_IF([with_pydebug], [yes], [
