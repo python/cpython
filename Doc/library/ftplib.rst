@@ -104,11 +104,11 @@ FTP objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`connect`
       (default: the global default timeout setting).
-   :type timeout: float | None
+   :type timeout: float or None
 
    :param source_address:
       |param_doc_source_address|
-   :type source_address: tuple | None
+   :type source_address: tuple or None
 
    :param str encoding:
       |param_doc_encoding|
@@ -178,11 +178,11 @@ FTP objects
       :param timeout:
          A timeout in seconds for the connection attempt
          (default: the global default timeout setting).
-      :type timeout: float | None
+      :type timeout: float or None
 
       :param source_address:
          |param_doc_source_address|
-      :type source_address: tuple | None
+      :type source_address: tuple or None
 
       .. audit-event:: ftplib.connect self,host,port ftplib.FTP.connect
 
@@ -483,11 +483,11 @@ FTP_TLS objects
    :param timeout:
       A timeout in seconds for blocking operations like :meth:`~FTP.connect`
       (default: the global default timeout setting).
-   :type timeout: float | None
+   :type timeout: float or None
 
    :param source_address:
       |param_doc_source_address|
-   :type source_address: tuple | None
+   :type source_address: tuple or None
 
    :param str encoding:
       |param_doc_encoding|
