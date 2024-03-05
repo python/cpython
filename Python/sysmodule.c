@@ -1588,6 +1588,9 @@ sys_getwindowsversion_impl(PyObject *module)
     if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
         return version;
     }
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        return NULL;
+    }
     Py_XDECREF(version);
     PyErr_Clear();
 
@@ -1599,15 +1602,24 @@ sys_getwindowsversion_impl(PyObject *module)
     if (version == NULL)
         return NULL;
 
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwMajorVersion));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwMinorVersion));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwBuildNumber));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.dwPlatformId));
-    PyStructSequence_SET_ITEM(version, pos++, PyUnicode_FromWideChar(ver.szCSDVersion, -1));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMajor));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wServicePackMinor));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
-    PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
+#define SET_VERSION_INFO(CALL)                               \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            goto error;                                      \
+        }                                                    \
+        PyStructSequence_SET_ITEM(version, pos++, item);     \
+    } while(0)
+
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwMajorVersion));
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwMinorVersion));
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwBuildNumber));
+    SET_VERSION_INFO(PyLong_FromLong(ver.dwPlatformId));
+    SET_VERSION_INFO(PyUnicode_FromWideChar(ver.szCSDVersion, -1));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wServicePackMajor));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wServicePackMinor));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wSuiteMask));
+    SET_VERSION_INFO(PyLong_FromLong(ver.wProductType));
 
     // GetVersion will lie if we are running in a compatibility mode.
     // We need to read the version info from a system file resource
@@ -1615,6 +1627,10 @@ sys_getwindowsversion_impl(PyObject *module)
     // just return whatever GetVersion said.
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
+        if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
+            return NULL;
+        }
+
         PyErr_Clear();
         realVersion = Py_BuildValue("(kkk)",
             ver.dwMajorVersion,
@@ -1623,21 +1639,19 @@ sys_getwindowsversion_impl(PyObject *module)
         );
     }
 
-    if (realVersion) {
-        PyStructSequence_SET_ITEM(version, pos++, realVersion);
-    }
+    SET_VERSION_INFO(realVersion);
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(version);
-        return NULL;
-    }
+#undef SET_VERSION_INFO
 
     if (PyObject_SetAttrString(module, "_cached_windows_version", version) < 0) {
-        Py_DECREF(version);
-        return NULL;
+        goto error;
     }
 
     return version;
+
+error:
+    Py_DECREF(version);
+    return NULL;
 }
 
 #pragma warning(pop)
