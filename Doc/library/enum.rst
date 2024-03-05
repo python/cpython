@@ -293,6 +293,14 @@ Data Types
          quadratic performance impact during creation relative to the
          total number of mutable/unhashable values in the enum.
 
+.. attribute:: Enum._name_
+
+      Name of the member.
+
+   .. attribute:: Enum._value_
+
+      Value of the member, can be set in :meth:`~object.__new__`.
+
    .. attribute:: Enum._order_
 
       No longer used, kept for backward compatibility.
