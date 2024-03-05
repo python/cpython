@@ -129,5 +129,17 @@ class FindLibraryLinux(unittest.TestCase):
         self.assertIsNone(find_library("libc"))
 
 
+@unittest.skipUnless(sys.platform == 'android', 'Test only valid for Android')
+class FindLibraryAndroid(unittest.TestCase):
+    def test_find(self):
+        for name in ["c", "m", "z", "log"]:
+            with self.subTest(name=name):
+                self.assertIsNotNone(find_library(name))
+
+        for name in ["libc", "nonexistent"]:
+            with self.subTest(name=name):
+                self.assertIsNone(find_library(name))
+
+
 if __name__ == "__main__":
     unittest.main()
