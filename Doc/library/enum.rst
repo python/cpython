@@ -293,7 +293,7 @@ Data Types
          quadratic performance impact during creation relative to the
          total number of mutable/unhashable values in the enum.
 
-.. attribute:: Enum._name_
+   .. attribute:: Enum._name_
 
       Name of the member.
 
