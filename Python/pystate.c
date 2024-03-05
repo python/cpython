@@ -795,7 +795,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
+    // At this time, all the threads should be cleared so we don't need atomic
+    // operations for instrumentation_version or eval_breaker.
     interp->ceval.instrumentation_version = 0;
+    tstate->eval_breaker = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -2528,16 +2531,7 @@ PyGILState_Check(void)
         return 0;
     }
 
-#ifdef MS_WINDOWS
-    int err = GetLastError();
-#endif
-
     PyThreadState *tcur = gilstate_tss_get(runtime);
-
-#ifdef MS_WINDOWS
-    SetLastError(err);
-#endif
-
     return (tstate == tcur);
 }
 
@@ -2666,7 +2660,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
         return;
     }
     if (eval_frame != NULL) {
-        _Py_Executors_InvalidateAll(interp);
+        _Py_Executors_InvalidateAll(interp, 1);
     }
     RARE_EVENT_INC(set_eval_frame_func);
     interp->eval_frame = eval_frame;

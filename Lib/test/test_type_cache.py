@@ -2,7 +2,7 @@
 import unittest
 import dis
 from test import support
-from test.support import import_helper
+from test.support import import_helper, requires_specialization
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -94,6 +94,7 @@ class TypeCacheTests(unittest.TestCase):
 
 
 @support.cpython_only
+@requires_specialization
 class TypeCacheWithSpecializationTests(unittest.TestCase):
     def tearDown(self):
         _clear_type_cache()

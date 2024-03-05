@@ -249,6 +249,13 @@ _PyRawMutex_UnlockSlow(_PyRawMutex *m)
     }
 }
 
+int
+_PyEvent_IsSet(PyEvent *evt)
+{
+    uint8_t v = _Py_atomic_load_uint8(&evt->v);
+    return v == _Py_LOCKED;
+}
+
 void
 _PyEvent_Notify(PyEvent *evt)
 {
@@ -294,6 +301,30 @@ PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
                                   timeout_ns, NULL, 1);
 
         return _Py_atomic_load_uint8(&evt->v) == _Py_LOCKED;
+    }
+}
+
+_PyEventRc *
+_PyEventRc_New(void)
+{
+    _PyEventRc *erc = (_PyEventRc *)PyMem_RawCalloc(1, sizeof(_PyEventRc));
+    if (erc != NULL) {
+        erc->refcount = 1;
+    }
+    return erc;
+}
+
+void
+_PyEventRc_Incref(_PyEventRc *erc)
+{
+    _Py_atomic_add_ssize(&erc->refcount, 1);
+}
+
+void
+_PyEventRc_Decref(_PyEventRc *erc)
+{
+    if (_Py_atomic_add_ssize(&erc->refcount, -1) == 1) {
+        PyMem_RawFree(erc);
     }
 }
 

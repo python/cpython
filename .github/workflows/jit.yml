@@ -5,13 +5,13 @@ on:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
-      - 'Python/tier2_redundancy_eliminator_bytecodes.c'
+      - 'Python/optimizer_bytecodes.c'
   push:
     paths:
       - '**jit**'
       - 'Python/bytecodes.c'
       - 'Python/optimizer*.c'
-      - 'Python/tier2_redundancy_eliminator_bytecodes.c'
+      - 'Python/optimizer_bytecodes.c'
   workflow_dispatch:
 
 concurrency:
@@ -29,6 +29,7 @@ jobs:
         target:
           - i686-pc-windows-msvc/msvc
           - x86_64-pc-windows-msvc/msvc
+          - aarch64-pc-windows-msvc/msvc
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
@@ -47,6 +48,10 @@ jobs:
             compiler: msvc
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
+            runner: windows-latest
+            compiler: msvc
+          - target: aarch64-pc-windows-msvc/msvc
+            architecture: ARM64
             runner: windows-latest
             compiler: msvc
           - target: x86_64-apple-darwin/clang
@@ -70,13 +75,13 @@ jobs:
             runner: ubuntu-latest
             compiler: gcc
             # These fail because of emulation, not because of the JIT:
-            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv
+            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-latest
             compiler: clang
             # These fail because of emulation, not because of the JIT:
-            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv
+            exclude: test_unix_events test_init test_process_pool test_shutdown test_multiprocessing_fork test_cmd_line test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_threading test_venv test_external_inspection
     env:
       CC: ${{ matrix.compiler }}
     steps:
@@ -85,14 +90,21 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Windows
-        if: runner.os == 'Windows'
+      - name: Native Windows
+        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
 
-      - name: macOS
+      # No PGO or tests (yet):
+      - name: Emulated Windows
+        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
+        run: |
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+
+      - name: Native macOS
         if: runner.os == 'macOS'
         run: |
           brew install llvm@${{ matrix.llvm }}
