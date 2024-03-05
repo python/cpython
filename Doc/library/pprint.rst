@@ -59,7 +59,7 @@ Functions
    The configuration parameters *stream*, *indent*, *width*, *depth*,
    *compact*, *sort_dicts* and *underscore_numbers* are passed to the
    :class:`PrettyPrinter` constructor and their meanings are as
-   described in its documentation above.
+   described in its documentation below.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
@@ -78,7 +78,7 @@ Functions
    Return the formatted representation of *object* as a string.  *indent*,
    *width*, *depth*, *compact*, *sort_dicts* and *underscore_numbers* are
    passed to the :class:`PrettyPrinter` constructor as formatting parameters
-   and their meanings are as described in its documentation above.
+   and their meanings are as described in its documentation below.
 
 
 .. function:: isreadable(object)
