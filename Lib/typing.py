@@ -3091,11 +3091,13 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
 
     See PEP 655 for more details on Required and NotRequired.
 
-    The ReadOnly special form can be used to make immutable individual keys::
+    The ReadOnly special form can be used
+    to mark individual keys as immutable for type checkers::
 
         class DatabaseUser(TypedDict):
             id: ReadOnly[int]  # the "id" key must not be modified
             username: str      # the "username" key can be changed
+
     """
     if fields is _sentinel or fields is None:
         import warnings
