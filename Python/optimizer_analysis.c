@@ -456,6 +456,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     last->opcode = _NOP;
                     buffer[pc].opcode = NOP;
                 }
+                if (last->opcode == _REPLACE_WITH_TRUE) {
+                    last->opcode = _NOP;
+                }
                 break;
             }
             case _JUMP_TO_TOP:
