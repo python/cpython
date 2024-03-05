@@ -3,7 +3,6 @@ from test import support
 from test.support import (
     is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
-from test.support.import_helper import import_module
 import _thread as thread
 import array
 import contextlib
@@ -37,6 +36,10 @@ try:
     import fcntl
 except ImportError:
     fcntl = None
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 support.requires_working_socket(module=True)
 
@@ -1170,8 +1173,9 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertRaises(OverflowError, func, 1<<34)
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def testNtoHErrors(self):
-        _testcapi = import_module("_testcapi")
+        import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
         l_bad_values = [-1, -2, 1<<32, 1<<1000]
@@ -1636,6 +1640,7 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.gaierror:
                 pass
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_getaddrinfo_int_port_overflow(self):
         # gh-74895: Test that getaddrinfo does not raise OverflowError on port.
         #
@@ -1649,9 +1654,9 @@ class GeneralModuleTests(unittest.TestCase):
         # prior to 3.12 did for ints outside of a [LONG_MIN, LONG_MAX] range.
         # Leave the error up to the underlying string based platform C API.
 
-        _testcapi = import_module("_testcapi")
+        from _testcapi import ULONG_MAX, LONG_MAX, LONG_MIN
         try:
-            socket.getaddrinfo(None, _testcapi.ULONG_MAX + 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, ULONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             # Platforms differ as to what values consitute a getaddrinfo() error
             # return. Some fail for LONG_MAX+1, others ULONG_MAX+1, and Windows
@@ -1661,21 +1666,21 @@ class GeneralModuleTests(unittest.TestCase):
             pass
 
         try:
-            socket.getaddrinfo(None, _testcapi.LONG_MAX + 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, LONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
             pass
 
         try:
-            socket.getaddrinfo(None, _testcapi.LONG_MAX - 0xffff + 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, LONG_MAX - 0xffff + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
             pass
 
         try:
-            socket.getaddrinfo(None, _testcapi.LONG_MIN - 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, LONG_MIN - 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
@@ -1829,9 +1834,10 @@ class GeneralModuleTests(unittest.TestCase):
             srv.listen()
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_listen_backlog_overflow(self):
         # Issue 15989
-        _testcapi = import_module("_testcapi")
+        import _testcapi
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
             srv.bind((HOST, 0))
             self.assertRaises(OverflowError, srv.listen, _testcapi.INT_MAX + 1)
@@ -2710,24 +2716,31 @@ class BasicTCPTest(SocketConnectedTest):
     def _testDup(self):
         self.serv_conn.send(MSG)
 
-    def testShutdown(self):
-        # Testing shutdown()
+    def check_shutdown(self):
+        # Test shutdown() helper
         msg = self.cli_conn.recv(1024)
         self.assertEqual(msg, MSG)
-        # wait for _testShutdown to finish: on OS X, when the server
+        # wait for _testShutdown[_overflow] to finish: on OS X, when the server
         # closes the connection the client also becomes disconnected,
         # and the client's shutdown call will fail. (Issue #4397.)
         self.done.wait()
+
+    def testShutdown(self):
+        self.check_shutdown()
 
     def _testShutdown(self):
         self.serv_conn.send(MSG)
         self.serv_conn.shutdown(2)
 
-    testShutdown_overflow = support.cpython_only(testShutdown)
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def testShutdown_overflow(self):
+        self.check_shutdown()
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def _testShutdown_overflow(self):
-        _testcapi = import_module("_testcapi")
+        import _testcapi
         self.serv_conn.send(MSG)
         # Issue 15989
         self.assertRaises(OverflowError, self.serv_conn.shutdown,
@@ -4882,9 +4895,10 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         pass
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def testSetBlocking_overflow(self):
         # Issue 15989
-        _testcapi = import_module("_testcapi")
+        import _testcapi
         if _testcapi.UINT_MAX >= _testcapi.ULONG_MAX:
             self.skipTest('needs UINT_MAX < ULONG_MAX')
 
