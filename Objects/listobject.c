@@ -984,7 +984,7 @@ list_copy_impl(PyListObject *self)
 {
     Py_ssize_t n = Py_SIZE(self);
     if (n <= 0) {
-        return (PyObject *) PyList_New(0);
+        return (PyObject *)PyList_New(0);
     }
     return list_slice_lock_held(self, 0, n);
 }
