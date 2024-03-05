@@ -1584,11 +1584,15 @@ sys_getwindowsversion_impl(PyObject *module)
     int pos = 0;
     OSVERSIONINFOEXW ver;
 
-    if (PyObject_GetOptionalAttrString(module, "_cached_windows_version", &version) < 0) {
-        return NULL;
-    };
+    version = PyObject_GetAttrString(module, "_cached_windows_version");
     if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
         return version;
+    }
+    if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        PyErr_Clear();
+    }
+    else {
+        return NULL;
     }
     Py_XDECREF(version);
 
