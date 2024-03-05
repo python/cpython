@@ -13,6 +13,11 @@ import sys
 import tempfile
 import types
 
+try:
+    import _testsinglephase
+except ImportError:
+    raise unittest.SkipTest("requires _testsinglephase")
+
 
 BUILTINS = types.SimpleNamespace()
 BUILTINS.good_name = None
