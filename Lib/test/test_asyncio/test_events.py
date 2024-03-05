@@ -1127,13 +1127,11 @@ class EventLoopTestsMixin:
                                           ssl=sslcontext_client)
 
         # Allow for flexible libssl error messages.
-        regex = "("
-        # OpenSSL
-        regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
-        regex += "|"
-        # AWS-LC
-        regex += "CERTIFICATE_VERIFY_FAILED"
-        regex += ")"
+        regex = re.compile(r"""(
+            IP address mismatch, certificate is not valid for '127.0.0.1'   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED                                       # AWS-LC
+        )""", re.X)
         with mock.patch.object(self.loop, 'call_exception_handler'):
             with test_utils.disable_logger():
                 with self.assertRaisesRegex(ssl.CertificateError, regex):

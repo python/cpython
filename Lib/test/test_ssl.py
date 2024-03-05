@@ -1180,11 +1180,11 @@ class ContextTests(unittest.TestCase):
         # Mismatching key and cert
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         # Allow for flexible libssl error messages.
-        regex = "("
-        regex += "key values mismatch"  # OpenSSL
-        regex += "|"
-        regex += "KEY_VALUES_MISMATCH"  # AWS-LC
-        regex += ")"
+        regex = re.compile(r"""(
+            key values mismatch         # OpenSSL
+            |
+            KEY_VALUES_MISMATCH         # AWS-LC
+        )""", re.X)
         with self.assertRaisesRegex(ssl.SSLError, regex):
             ctx.load_cert_chain(CAFILE_CACERT, ONLYKEY)
         # Password protected key and cert
@@ -1841,11 +1841,11 @@ class SimpleBackgroundTests(unittest.TestCase):
                             cert_reqs=ssl.CERT_REQUIRED)
         self.addCleanup(s.close)
         # Allow for flexible libssl error messages.
-        regex = "("
-        regex += "certificate verify failed"    # OpenSSL
-        regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
-        regex += ")"
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
         self.assertRaisesRegex(ssl.SSLError, regex,
                                s.connect, self.server_addr)
 
@@ -1915,11 +1915,11 @@ class SimpleBackgroundTests(unittest.TestCase):
         )
         self.addCleanup(s.close)
         # Allow for flexible libssl error messages.
-        regex = "("
-        regex += "certificate verify failed"    # OpenSSL
-        regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
-        regex += ")"
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
         self.assertRaisesRegex(ssl.SSLError, regex,
                                 s.connect, self.server_addr)
 
@@ -2872,11 +2872,11 @@ class ThreadedTests(unittest.TestCase):
 
         server = ThreadedEchoServer(context=server_context, chatty=True)
         # Allow for flexible libssl error messages.
-        regex = "("
-        regex += "certificate verify failed"    # OpenSSL
-        regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
-        regex += ")"
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
@@ -2912,11 +2912,11 @@ class ThreadedTests(unittest.TestCase):
         # incorrect hostname should raise an exception
         server = ThreadedEchoServer(context=server_context, chatty=True)
         # Allow for flexible libssl error messages.
-        regex = "("
-        regex += "Hostname mismatch, certificate is not valid"  # OpenSSL
-        regex += "|"
-        regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
-        regex += ")"
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname="invalid") as s:
@@ -3195,13 +3195,13 @@ class ThreadedTests(unittest.TestCase):
                     self.assertEqual(e.verify_code, 20)
                     self.assertEqual(e.verify_message, msg)
                     # Allow for flexible libssl error messages.
-                    regex = "(" + msg +  "|CERTIFICATE_VERIFY_FAILED)"
+                    regex = f"({msg}|CERTIFICATE_VERIFY_FAILED)"
                     self.assertRegex(repr(e), regex)
-                    regex = "("
-                    regex += "certificate verify failed"    # OpenSSL
-                    regex += "|"
-                    regex += "CERTIFICATE_VERIFY_FAILED"    # AWS-LC
-                    regex += ")"
+                    regex = re.compile(r"""(
+                        certificate verify failed   # OpenSSL
+                        |
+                        CERTIFICATE_VERIFY_FAILED   # AWS-LC
+                    )""", re.X)
                     self.assertRegex(repr(e), regex)
 
     def test_PROTOCOL_TLS(self):

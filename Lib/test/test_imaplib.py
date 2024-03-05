@@ -8,6 +8,7 @@ import socketserver
 import time
 import calendar
 import threading
+import re
 import socket
 
 from test.support import verbose, run_with_tz, run_with_locale, cpython_only, requires_resource
@@ -559,13 +560,11 @@ class NewIMAPSSLTests(NewIMAPTestsMixin, unittest.TestCase):
         ssl_context.load_verify_locations(CAFILE)
 
         # Allow for flexible libssl error messages.
-        regex = "("
-        # OpenSSL
-        regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
-        regex += "|"
-        # AWS-LC
-        regex += "CERTIFICATE_VERIFY_FAILED"
-        regex += ")"
+        regex = re.compile(r"""(
+            IP address mismatch, certificate is not valid for '127.0.0.1'   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED                                       # AWS-LC
+        )""", re.X)
         with self.assertRaisesRegex(ssl.CertificateError, regex):
             _, server = self._setup(SimpleIMAPHandler)
             client = self.imap_class(*server.server_address,
@@ -961,13 +960,11 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
         ssl_context.load_verify_locations(CAFILE)
 
         # Allow for flexible libssl error messages.
-        regex = "("
-        # OpenSSL
-        regex += "IP address mismatch, certificate is not valid for '127.0.0.1'"
-        regex += "|"
-        # AWS-LC
-        regex += "CERTIFICATE_VERIFY_FAILED"
-        regex += ")"
+        regex = re.compile(r"""(
+            IP address mismatch, certificate is not valid for '127.0.0.1'   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED                                       # AWS-LC
+        )""", re.X)
         with self.assertRaisesRegex(ssl.CertificateError, regex):
             with self.reaped_server(SimpleIMAPHandler) as server:
                 client = self.imap_class(*server.server_address,
