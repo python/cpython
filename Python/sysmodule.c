@@ -1588,13 +1588,11 @@ sys_getwindowsversion_impl(PyObject *module)
     if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
         return version;
     }
-    if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
-        PyErr_Clear();
-    }
-    else {
+    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
         return NULL;
     }
     Py_XDECREF(version);
+    PyErr_Clear();
 
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
