@@ -1698,14 +1698,16 @@ def patch_list(orig):
         orig[:] = saved
 
 
-@requires_limited_api
 def run_in_subinterp(code):
     """
     Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
     module is enabled.
     """
     _check_tracemalloc()
-    import _testcapi
+    try:
+        import _testcapi
+    except ImportError:
+        raise SkipTest("requires _testcapi")
     return _testcapi.run_in_subinterp(code)
 
 
