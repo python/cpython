@@ -626,7 +626,7 @@ Opening network connections
       Added support for Windows.
 
    .. versionchanged:: 3.11
-      The *reuse_address* parameter, disabled since Python 3.9.0, 3.8.1,
+      The *reuse_address* parameter, disabled since Python 3.8.1,
       3.7.6 and 3.6.10, has been entirely removed.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
