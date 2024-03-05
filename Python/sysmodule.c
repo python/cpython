@@ -1643,12 +1643,13 @@ sys_getwindowsversion_impl(PyObject *module)
     int pos = 0;
     OSVERSIONINFOEXW ver;
 
-    version = PyObject_GetAttrString(module, "_cached_windows_version");
+    if (PyObject_GetOptionalAttrString(module, "_cached_windows_version", &version) < 0) {
+        return NULL;
+    };
     if (version && PyObject_TypeCheck(version, &WindowsVersionType)) {
         return version;
     }
     Py_XDECREF(version);
-    PyErr_Clear();
 
     ver.dwOSVersionInfoSize = sizeof(ver);
     if (!GetVersionExW((OSVERSIONINFOW*) &ver))
@@ -1683,6 +1684,10 @@ sys_getwindowsversion_impl(PyObject *module)
     // just return whatever GetVersion said.
     PyObject *realVersion = _sys_getwindowsversion_from_kernel32();
     if (!realVersion) {
+        if (!PyErr_ExceptionMatches(PyExc_WindowsError)) {
+            return NULL;
+        }
+
         PyErr_Clear();
         realVersion = Py_BuildValue("(kkk)",
             ver.dwMajorVersion,
@@ -1691,9 +1696,6 @@ sys_getwindowsversion_impl(PyObject *module)
         );
     }
 
-    if (!realVersion) {
-        goto error;
-    }
     SET_VERSION_INFO(realVersion);
 
 #undef SET_VERSION_INFO
