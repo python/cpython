@@ -1,3 +1,4 @@
+import importlib
 import threading
 from textwrap import dedent
 import unittest
@@ -18,6 +19,20 @@ class TestBase(TestBase):
                 _queues.destroy(qid)
             except Exception:
                 pass
+
+
+class LowLevelTests(TestBase):
+
+    # The behaviors in the low-level module is important in as much
+    # as it is exercised by the high-level module.  Therefore the
+    # most # important testing happens in the high-level tests.
+    # These low-level tests cover corner cases that are not
+    # encountered by the high-level module, thus they
+    # mostly shouldn't matter as much.
+
+    def test_highlevel_reloaded(self):
+        # See gh-115490 (https://github.com/python/cpython/issues/115490).
+        importlib.reload(queues)
 
 
 class QueueTests(TestBase):
