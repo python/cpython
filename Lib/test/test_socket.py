@@ -3,7 +3,7 @@ from test import support
 from test.support import (
     is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
-
+from test.support.import_helper import import_module
 import _thread as thread
 import array
 import contextlib
@@ -1171,7 +1171,7 @@ class GeneralModuleTests(unittest.TestCase):
 
     @support.cpython_only
     def testNtoHErrors(self):
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
         l_bad_values = [-1, -2, 1<<32, 1<<1000]
@@ -1649,9 +1649,9 @@ class GeneralModuleTests(unittest.TestCase):
         # prior to 3.12 did for ints outside of a [LONG_MIN, LONG_MAX] range.
         # Leave the error up to the underlying string based platform C API.
 
-        from _testcapi import ULONG_MAX, LONG_MAX, LONG_MIN
+        _testcapi = import_module("_testcapi")
         try:
-            socket.getaddrinfo(None, ULONG_MAX + 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, _testcapi.ULONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             # Platforms differ as to what values consitute a getaddrinfo() error
             # return. Some fail for LONG_MAX+1, others ULONG_MAX+1, and Windows
@@ -1661,21 +1661,21 @@ class GeneralModuleTests(unittest.TestCase):
             pass
 
         try:
-            socket.getaddrinfo(None, LONG_MAX + 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, _testcapi.LONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
             pass
 
         try:
-            socket.getaddrinfo(None, LONG_MAX - 0xffff + 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, _testcapi.LONG_MAX - 0xffff + 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
             pass
 
         try:
-            socket.getaddrinfo(None, LONG_MIN - 1, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(None, _testcapi.LONG_MIN - 1, type=socket.SOCK_STREAM)
         except OverflowError:
             self.fail("Either no error or socket.gaierror expected.")
         except socket.gaierror:
@@ -1831,7 +1831,7 @@ class GeneralModuleTests(unittest.TestCase):
     @support.cpython_only
     def test_listen_backlog_overflow(self):
         # Issue 15989
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv:
             srv.bind((HOST, 0))
             self.assertRaises(OverflowError, srv.listen, _testcapi.INT_MAX + 1)
@@ -2727,7 +2727,7 @@ class BasicTCPTest(SocketConnectedTest):
 
     @support.cpython_only
     def _testShutdown_overflow(self):
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         self.serv_conn.send(MSG)
         # Issue 15989
         self.assertRaises(OverflowError, self.serv_conn.shutdown,
@@ -4884,7 +4884,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
     @support.cpython_only
     def testSetBlocking_overflow(self):
         # Issue 15989
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         if _testcapi.UINT_MAX >= _testcapi.ULONG_MAX:
             self.skipTest('needs UINT_MAX < ULONG_MAX')
 

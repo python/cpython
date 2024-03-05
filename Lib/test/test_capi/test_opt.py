@@ -6,9 +6,9 @@ import unittest
 import gc
 import os
 
-import _testinternalcapi
-
 from test.support import script_helper, requires_specialization
+from test.support.import_helper import import_module
+_testinternalcapi = import_module("_testinternalcapi")
 
 
 @contextlib.contextmanager

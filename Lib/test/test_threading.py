@@ -1010,7 +1010,7 @@ class ThreadTests(BaseTestCase):
             threading.settrace(noop_trace)
 
             # Create a generator in a C thread which exits after the call
-            import _testcapi
+            _testcapi = import_module("_testcapi")
             _testcapi.call_in_temporary_c_thread(callback)
 
             # Call the generator in a different Python thread, check that the
@@ -1509,6 +1509,7 @@ class SubinterpThreadingTests(BaseTestCase):
 
     @cpython_only
     def test_daemon_threads_fatal_error(self):
+        import_module("_testcapi")
         subinterp_code = f"""if 1:
             import os
             import threading

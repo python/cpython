@@ -1715,7 +1715,10 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     module is enabled.
     """
     _check_tracemalloc()
-    import _testinternalcapi
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise SkipTest("requires _testinternalcapi")
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
         config['gil'] = 2 if own_gil else 1
@@ -1877,12 +1880,18 @@ class SaveSignals:
 
 
 def with_pymalloc():
-    import _testcapi
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("requires _testcapi")
     return _testcapi.WITH_PYMALLOC and not Py_GIL_DISABLED
 
 
 def with_mimalloc():
-    import _testcapi
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("requires _testcapi")
     return _testcapi.WITH_MIMALLOC
 
 
