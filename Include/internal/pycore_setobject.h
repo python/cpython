@@ -21,7 +21,7 @@ PyAPI_FUNC(int) _PySet_Update(PyObject *set, PyObject *iterable);
 // Export for the gdb plugin's (python-gdb.py) benefit
 PyAPI_DATA(PyObject *) _PySet_Dummy;
 
-int _PySet_Contains(PySetObject *so, PyObject *key);
+PyAPI_FUNC(int) _PySet_Contains(PySetObject *so, PyObject *key);
 
 #ifdef __cplusplus
 }

@@ -29,7 +29,7 @@ typedef struct {
     PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyTupleIterObject;
 
-int _PyTuple_Contains(PyTupleObject *a, PyObject *el);
+PyAPI_FUNC(int) _PyTuple_Contains(PyTupleObject *a, PyObject *el);
 
 #ifdef __cplusplus
 }
