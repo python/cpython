@@ -1656,7 +1656,9 @@ config_read_env_vars(PyConfig *config)
 #ifdef Py_GIL_DISABLED
         if (strcmp(gil, "0") == 0) {
             config->enable_gil = _PyConfig_GIL_DISABLE;
-        } else if (strcmp(gil, "1") != 0) {
+        } else if (strcmp(gil, "1") == 0) {
+            config->enable_gil = _PyConfig_GIL_ENABLE;
+        } else {
             return _PyStatus_ERR("PYTHON_GIL must be \"0\" or \"1\"");
         }
 #else
