@@ -460,6 +460,9 @@ void _mi_page_retire(mi_page_t* page) mi_attr_noexcept {
 
   mi_page_set_has_aligned(page, false);
 
+  // any previous QSBR goals are no longer valid because we reused the page
+  _PyMem_mi_page_clear_qsbr(page);
+
   // don't retire too often..
   // (or we end up retiring and re-allocating most of the time)
   // NOTE: refine this more: we should not retire if this
@@ -496,6 +499,9 @@ void _mi_heap_collect_retired(mi_heap_t* heap, bool force) {
       if (mi_page_all_free(page)) {
         page->retire_expire--;
         if (force || page->retire_expire == 0) {
+#ifdef Py_GIL_DISABLED
+          mi_assert_internal(page->qsbr_goal == 0);
+#endif
           _PyMem_mi_page_maybe_free(page, pq, force);
         }
         else {

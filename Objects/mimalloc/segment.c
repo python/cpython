@@ -1278,6 +1278,9 @@ static bool mi_segment_check_free(mi_segment_t* segment, size_t slices_needed, s
         // if this page is all free now, free it without adding to any queues (yet)
         mi_assert_internal(page->next == NULL && page->prev==NULL);
         _mi_stat_decrease(&tld->stats->pages_abandoned, 1);
+#ifdef Py_GIL_DISABLED
+        page->qsbr_goal = 0;
+#endif
         segment->abandoned--;
         slice = mi_segment_page_clear(page, tld); // re-assign slice due to coalesce!
         mi_assert_internal(!mi_slice_is_used(slice));
@@ -1350,13 +1353,16 @@ static mi_segment_t* mi_segment_reclaim(mi_segment_t* segment, mi_heap_t* heap, 
       _mi_page_free_collect(page, false); // ensure used count is up to date
       if (mi_page_all_free(page) && _PyMem_mi_page_is_safe_to_free(page)) {
         // if everything free by now, free the page
+#ifdef Py_GIL_DISABLED
+        page->qsbr_goal = 0;
+#endif
         slice = mi_segment_page_clear(page, tld);   // set slice again due to coalesceing
       }
       else {
         // otherwise reclaim it into the heap
         _mi_page_reclaim(target_heap, page);
         if (requested_block_size == page->xblock_size && mi_page_has_any_available(page) &&
-            heap == target_heap) {
+            requested_block_size <= MI_MEDIUM_OBJ_SIZE_MAX && heap == target_heap) {
           if (right_page_reclaimed != NULL) { *right_page_reclaimed = true; }
         }
       }

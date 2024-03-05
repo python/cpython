@@ -104,65 +104,42 @@ _PyMem_mi_page_clear_qsbr(mi_page_t *page)
 #endif
 }
 
-// Is the empty page safe to free? It's safe if there was a QSBR goal set and
-// the goal has been reached.
+// Check if an empty, newly reclaimed page is safe to free now.
 static bool
 _PyMem_mi_page_is_safe_to_free(mi_page_t *page)
 {
     assert(mi_page_all_free(page));
 #ifdef Py_GIL_DISABLED
-    if (page->use_qsbr) {
-        if (page->qsbr_goal == 0) {
-            // No QSBR goal set, so we can't safely free the page yet.
-            return false;
-        }
+    assert(page->qsbr_node.next == NULL);
+    if (page->use_qsbr && page->qsbr_goal != 0) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
         if (tstate == NULL) {
             return false;
         }
-        if (!_Py_qbsr_goal_reached(tstate->qsbr, page->qsbr_goal)) {
-            return false;
-        }
-        _PyMem_mi_page_clear_qsbr(page);
-        return true;
+        return _Py_qbsr_goal_reached(tstate->qsbr, page->qsbr_goal);
     }
 #endif
     return true;
+
 }
-
-#ifdef Py_GIL_DISABLED
-// Enqueue a page to be freed later when it's safe to do so (using QSBR).
-// Note that we may still allocate from the page.
-static void
-enqueue_page_qsbr(mi_page_t *page, bool reclaimed)
-{
-    assert(mi_page_all_free(page));
-    assert(reclaimed || page->qsbr_goal == 0);
-
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
-    page->retire_expire = 0;
-
-    // The goal may be set if we are reclaiming an empty abandoned page
-    if (page->qsbr_goal == 0) {
-       page->qsbr_goal = _Py_qsbr_deferred_advance(tstate->qsbr);
-    }
-
-    llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
-}
-#endif
 
 static bool
 _PyMem_mi_page_maybe_free(mi_page_t *page, mi_page_queue_t *pq, bool force)
 {
 #ifdef Py_GIL_DISABLED
-    if (!_PyMem_mi_page_is_safe_to_free(page)) {
-        // The page may already be in the QSBR linked list if we allocated from
-        // it after all blocks were freed.
-        if (page->qsbr_node.next != NULL) {
-            llist_remove(&page->qsbr_node);
-            page->qsbr_goal = 0;
+    assert(mi_page_all_free(page));
+    if (page->use_qsbr) {
+        _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+        if (page->qsbr_goal != 0 && _Py_qbsr_goal_reached(tstate->qsbr, page->qsbr_goal)) {
+            _PyMem_mi_page_clear_qsbr(page);
+            _mi_page_free(page, pq, force);
+            return true;
         }
-        enqueue_page_qsbr(page, false);
+
+        _PyMem_mi_page_clear_qsbr(page);
+        page->retire_expire = 0;
+        page->qsbr_goal = _Py_qsbr_deferred_advance(tstate->qsbr);
+        llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         return false;
     }
 #endif
@@ -177,7 +154,10 @@ _PyMem_mi_page_reclaimed(mi_page_t *page)
     assert(page->qsbr_node.next == NULL);
     if (page->qsbr_goal != 0) {
         if (mi_page_all_free(page)) {
-            enqueue_page_qsbr(page, true);
+            assert(page->qsbr_node.next == NULL);
+            _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)PyThreadState_GET();
+            page->retire_expire = 0;
+            llist_insert_tail(&tstate->mimalloc.page_list, &page->qsbr_node);
         }
         else {
             page->qsbr_goal = 0;
@@ -205,8 +185,7 @@ _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)
         mi_page_t *page = llist_data(node, mi_page_t, qsbr_node);
         if (!mi_page_all_free(page)) {
             // We allocated from this page some point after the delayed free
-            page->qsbr_goal = 0;
-            llist_remove(node);
+            _PyMem_mi_page_clear_qsbr(page);
             continue;
         }
 
@@ -214,8 +193,7 @@ _PyMem_mi_heap_collect_qsbr(mi_heap_t *heap)
             return;
         }
 
-        page->qsbr_goal = 0;
-        llist_remove(node);
+        _PyMem_mi_page_clear_qsbr(page);
         _mi_page_free(page, mi_page_queue_of(page), false);
     }
 #endif
