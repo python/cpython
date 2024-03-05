@@ -75,7 +75,7 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-/* Ancilliary data structure used for instrumentation.
+/* Ancillary data structure used for instrumentation.
    Line instrumentation creates an array of
    these. One entry per code unit.*/
 typedef struct {

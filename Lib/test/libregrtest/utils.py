@@ -419,7 +419,7 @@ def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
-    # milisecond clock resolution. Use randint() instead.
+    # millisecond clock resolution. Use randint() instead.
     if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
