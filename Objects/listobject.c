@@ -515,7 +515,7 @@ list_item(PyObject *aa, Py_ssize_t i)
 }
 
 static inline PyObject *
-list_slice_impl(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
+list_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t len)
 {
     PyListObject *np = (PyListObject *) list_new_prealloc(len);
     if (np == NULL) {
@@ -538,7 +538,11 @@ list_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     if (len <= 0) {
         return PyList_New(0);
     }
-    return list_slice_impl(a, ilow, len);
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(a);
+    ret = list_slice_lock_held(a, ilow, len);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 PyObject *
@@ -824,7 +828,7 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     if (a == (PyListObject *)v) {
         Py_BEGIN_CRITICAL_SECTION(a);
         Py_ssize_t n = PyList_GET_SIZE(a);
-        PyObject *copy = list_slice_impl(a, 0, n);
+        PyObject *copy = list_slice_lock_held(a, 0, n);
         if (copy == NULL) {
             return -1;
         }
@@ -978,7 +982,11 @@ static PyObject *
 list_copy_impl(PyListObject *self)
 /*[clinic end generated code: output=ec6b72d6209d418e input=81c54b0c7bb4f73d]*/
 {
-    return list_slice(self, 0, Py_SIZE(self));
+    Py_ssize_t n = Py_SIZE(self);
+    if (n <= 0) {
+        return (PyObject *) PyList_New(0);
+    }
+    return list_slice_lock_held(self, 0, n);
 }
 
 /*[clinic input]
@@ -3107,7 +3115,7 @@ static PySequenceMethods list_as_sequence = {
 };
 
 static inline PyObject *
-list_slice_step_impl(PyListObject *a, Py_ssize_t start, Py_ssize_t step, Py_ssize_t len)
+list_slice_step_lock_held(PyListObject *a, Py_ssize_t start, Py_ssize_t step, Py_ssize_t len)
 {
     PyListObject *np = (PyListObject *)list_new_prealloc(len);
     if (np == NULL) {
@@ -3137,10 +3145,10 @@ list_slice_wrap(PyListObject *aa, Py_ssize_t start, Py_ssize_t stop, Py_ssize_t 
         res = PyList_New(0);
     }
     else if (step == 1) {
-        res = list_slice_impl(a, start, len);
+        res = list_slice_lock_held(a, start, len);
     }
     else {
-        res = list_slice_step_impl(a, start, step, len);
+        res = list_slice_step_lock_held(a, start, step, len);
     }
     Py_END_CRITICAL_SECTION();
     return res;
@@ -3275,8 +3283,14 @@ list_ass_subscript(PyObject* _self, PyObject* item, PyObject* value)
 
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {
-                seq = list_slice((PyListObject*)value, 0,
-                                   PyList_GET_SIZE(value));
+                Py_BEGIN_CRITICAL_SECTION(value);
+                Py_ssize_t size = Py_SIZE(value);
+                if (size <= 0) {
+                    seq = PyList_New(0);
+                } else {
+                    seq = list_slice_lock_held((PyListObject*)value, 0, size);
+                }
+                Py_END_CRITICAL_SECTION();
             }
             else {
                 seq = PySequence_Fast(value,
