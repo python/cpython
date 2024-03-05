@@ -1707,7 +1707,7 @@ def run_in_subinterp(code):
     try:
         import _testcapi
     except ImportError:
-        raise SkipTest("requires _testcapi")
+        raise unittest.SkipTest("requires _testcapi")
     return _testcapi.run_in_subinterp(code)
 
 
@@ -1720,7 +1720,7 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
     try:
         import _testinternalcapi
     except ImportError:
-        raise SkipTest("requires _testinternalcapi")
+        raise unittest.SkipTest("requires _testinternalcapi")
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
         config['gil'] = 2 if own_gil else 1
