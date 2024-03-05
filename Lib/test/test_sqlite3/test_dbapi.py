@@ -31,10 +31,10 @@ import urllib.parse
 
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
-    is_apple, is_emscripten, is_wasi, requires_limited_api
+    is_apple, is_emscripten, is_wasi
 )
 from test.support import gc_collect
-from test.support import threading_helper
+from test.support import threading_helper, import_helper
 from os import SEEK_SET, SEEK_CUR, SEEK_END
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
@@ -1212,16 +1212,15 @@ class BlobTests(unittest.TestCase):
             with self.subTest(exc=exc, msg=msg, fn=fn):
                 self.assertRaisesRegex(exc, msg, fn)
 
-    @requires_limited_api
-    def test_blob_seek_error_overflow(self):
+    def test_blob_seek_overflow_error(self):
         # Force overflow errors
-        from _testcapi import INT_MAX
         msg_of = "seek offset results in overflow"
+        _testcapi = import_helper.import_module("_testcapi")
         self.blob.seek(1, SEEK_SET)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek(INT_MAX, SEEK_CUR)
+            self.blob.seek(_testcapi.INT_MAX, SEEK_CUR)
         with self.assertRaisesRegex(OverflowError, msg_of):
-            self.blob.seek(INT_MAX, SEEK_END)
+            self.blob.seek(_testcapi.INT_MAX, SEEK_END)
 
     def test_blob_read(self):
         buf = self.blob.read()
@@ -1382,17 +1381,15 @@ class BlobTests(unittest.TestCase):
                 with self.assertRaisesRegex(IndexError, "index out of range"):
                     self.blob[idx]
 
-    @requires_limited_api
-    def test_blob_get_item_ullong_max(self):
-        from _testcapi import ULLONG_MAX
-        with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
-            self.blob[ULLONG_MAX]
-
-    def test_blob_get_item_read_error(self):
         # Provoke read error
         self.cx.execute("update test set b='aaaa' where rowid=1")
         with self.assertRaises(sqlite.OperationalError):
             self.blob[0]
+
+    def test_blob_get_item_error_bigint(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
+            self.blob[_testcapi.ULLONG_MAX]
 
     def test_blob_set_item_error(self):
         with self.assertRaisesRegex(TypeError, "cannot be interpreted"):

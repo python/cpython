@@ -18,12 +18,13 @@
 #
 # In this case, there would have to be an additional reference to the argument...
 
-import _ctypes_test
 import unittest
 from ctypes import (CDLL, CFUNCTYPE, POINTER, ArgumentError,
                     pointer, byref, sizeof, addressof, create_string_buffer,
                     c_void_p, c_char_p, c_wchar_p, c_char, c_wchar,
                     c_short, c_int, c_long, c_longlong, c_double)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 testdll = CDLL(_ctypes_test.__file__)

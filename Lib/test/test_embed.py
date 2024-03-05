@@ -19,6 +19,12 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
+try:
+    import _testinternalcapi
+except ImportError:
+    raise unittest.SkipTest("requires _testinternalcapi")
+
+
 MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2

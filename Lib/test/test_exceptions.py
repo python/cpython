@@ -24,7 +24,6 @@ except ImportError:
     INT_MAX = 2**31 - 1
 
 
-
 class NaiveException(Exception):
     def __init__(self, x):
         self.x = x
@@ -346,7 +345,7 @@ class ExceptionTests(unittest.TestCase):
             pass
 
         def test_capi1():
-            import _testcapi
+            _testcapi = import_module("_testcapi")
             try:
                 _testcapi.raise_exception(BadException, 1)
             except TypeError as err:
@@ -357,7 +356,7 @@ class ExceptionTests(unittest.TestCase):
                 self.fail("Expected exception")
 
         def test_capi2():
-            import _testcapi
+            _testcapi = import_module("_testcapi")
             try:
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
@@ -371,7 +370,7 @@ class ExceptionTests(unittest.TestCase):
                 self.fail("Expected exception")
 
         def test_capi3():
-            import _testcapi
+            _testcapi = import_module("_testcapi")
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
@@ -1381,6 +1380,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     def test_recursion_normalizing_exception(self):
+        import_module("_testinternalcapi")
         # Issue #22898.
         # Test that a RecursionError is raised when tstate->recursion_depth is
         # equal to recursion_limit in PyErr_NormalizeException() and check
@@ -1436,6 +1436,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     def test_recursion_normalizing_infinite_exception(self):
+        import_module("_testcapi")
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
         # an exception
@@ -1504,6 +1505,7 @@ class ExceptionTests(unittest.TestCase):
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_recursion_normalizing_with_no_memory(self):
+        import_module("_testcapi")
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
         # the size of the list of preallocated MemoryError instances, the
@@ -1528,11 +1530,11 @@ class ExceptionTests(unittest.TestCase):
     def test_MemoryError(self):
         # PyErr_NoMemory always raises the same exception instance.
         # Check that the traceback is not doubled.
+        _testcapi = import_module("_testcapi")
         import traceback
-        from _testcapi import raise_memoryerror
         def raiseMemError():
             try:
-                raise_memoryerror()
+                _testcapi.raise_memoryerror()
             except MemoryError as e:
                 tb = e.__traceback__
             else:
@@ -1545,7 +1547,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     def test_exception_with_doc(self):
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         doc2 = "This is a test docstring."
         doc4 = "This is another test docstring."
 
@@ -1587,7 +1589,7 @@ class ExceptionTests(unittest.TestCase):
     def test_memory_error_cleanup(self):
         # Issue #5437: preallocated MemoryError instances should not keep
         # traceback objects alive.
-        from _testcapi import raise_memoryerror
+        _testcapi = import_module("_testcapi")
         class C:
             pass
         wr = None
@@ -1595,7 +1597,7 @@ class ExceptionTests(unittest.TestCase):
             nonlocal wr
             c = C()
             wr = weakref.ref(c)
-            raise_memoryerror()
+            _testcapi.raise_memoryerror()
         # We cannot use assertRaises since it manually deletes the traceback
         try:
             inner()
@@ -1675,6 +1677,7 @@ class ExceptionTests(unittest.TestCase):
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_memory_error_in_PyErr_PrintEx(self):
+        import_module("_testcapi")
         code = """if 1:
             import _testcapi
             class C(): pass
@@ -1793,6 +1796,7 @@ class ExceptionTests(unittest.TestCase):
             gc_collect()
 
     def test_memory_error_in_subinterp(self):
+        import_module("_testcapi")
         # gh-109894: subinterpreters shouldn't count on last resort memory error
         # when MemoryError is raised through PyErr_NoMemory() call,
         # and should preallocate memory errors as does the main interpreter.
