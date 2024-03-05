@@ -7,6 +7,7 @@ import contextvars
 import contextlib
 from asyncio import taskgroups
 import unittest
+import warnings
 
 from test.test_asyncio.utils import await_without_task
 
@@ -794,12 +795,19 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 pass
 
     async def test_taskgroup_finished(self):
-        tg = taskgroups.TaskGroup()
-        async with tg:
-            pass
-        coro = asyncio.sleep(0)
-        with self.assertRaisesRegex(RuntimeError, "is finished"):
-            tg.create_task(coro)
+        async def create_task_after_tg_finish():
+            tg = taskgroups.TaskGroup()
+            async with tg:
+                pass
+            coro = asyncio.sleep(0)
+            with self.assertRaisesRegex(RuntimeError, "is finished"):
+                tg.create_task(coro)
+
+        # Make sure the coroutine was closed when submitted to the inactive tg
+        # (if not closed, a RuntimeWarning should have been raised)
+        with warnings.catch_warnings(record=True) as w:
+            await create_task_after_tg_finish()
+        self.assertEqual(len(w), 0)
 
     async def test_taskgroup_not_entered(self):
         tg = taskgroups.TaskGroup()
