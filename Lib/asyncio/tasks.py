@@ -480,7 +480,7 @@ async def wait_for(fut, timeout):
 
     If the wait is cancelled, the task is also cancelled.
 
-    If the task supresses the cancellation and returns a value instead,
+    If the task suppresses the cancellation and returns a value instead,
     that value is returned.
 
     This function is a coroutine.
