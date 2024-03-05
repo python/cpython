@@ -233,6 +233,63 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     return (size_t) i < (size_t) limit;
 }
 
+#ifdef Py_GIL_DISABLED
+
+static PyObject *
+list_item_impl(PyListObject *self, Py_ssize_t idx)
+{
+    PyObject *item = NULL;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    if (!_PyObject_GC_IS_SHARED(self)) {
+        _PyObject_GC_SET_SHARED(self);
+    }
+    Py_ssize_t size = Py_SIZE(self);
+    if (!valid_index(idx, size)) {
+        goto exit;
+    }
+    item = Py_NewRef(self->ob_item[idx]);
+exit:
+    Py_END_CRITICAL_SECTION();
+    return item;
+}
+
+static inline PyObject*
+list_get_item_ref(PyListObject *op, Py_ssize_t i)
+{
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)op) && !_PyObject_GC_IS_SHARED(op)) {
+        return list_item_impl(op, i);
+    }
+    // Need atomic operation for the getting size.
+    Py_ssize_t size = PyList_GET_SIZE(op);
+    if (!valid_index(i, size)) {
+        return NULL;
+    }
+    PyObject **ob_item = _Py_atomic_load_ptr(&op->ob_item);
+    if (ob_item == NULL) {
+        return NULL;
+    }
+    Py_ssize_t cap = _Py_atomic_load_ssize_relaxed(&op->allocated);
+    assert(cap != -1 && cap >= size);
+    if (!valid_index(i, cap)) {
+        return NULL;
+    }
+    PyObject *item = _Py_TryXGetRef(&ob_item[i]);
+    if (item == NULL) {
+        return list_item_impl(op, i);
+    }
+    return item;
+}
+#else
+static inline PyObject*
+list_get_item_ref(PyListObject *op, Py_ssize_t i)
+{
+    if (!valid_index(i, Py_SIZE(op))) {
+        return NULL;
+    }
+    return Py_NewRef(PyList_GET_ITEM(op, i));
+}
+#endif
+
 PyObject *
 PyList_GetItem(PyObject *op, Py_ssize_t i)
 {
@@ -255,21 +312,13 @@ PyList_GetItemRef(PyObject *op, Py_ssize_t i)
         PyErr_SetString(PyExc_TypeError, "expected a list");
         return NULL;
     }
-    if (!valid_index(i, Py_SIZE(op))) {
+    PyObject *item = list_get_item_ref((PyListObject *)op, i);
+    if (item == NULL) {
         _Py_DECLARE_STR(list_err, "list index out of range");
         PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
         return NULL;
     }
-    return Py_NewRef(PyList_GET_ITEM(op, i));
-}
-
-static inline PyObject*
-list_get_item_ref(PyListObject *op, Py_ssize_t i)
-{
-    if (!valid_index(i, Py_SIZE(op))) {
-        return NULL;
-    }
-    return Py_NewRef(PyList_GET_ITEM(op, i));
+    return item;
 }
 
 int
