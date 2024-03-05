@@ -16,7 +16,9 @@ import time
 import weakref
 
 try:
+    import _testcapi
     from _testcapi import with_tp_del
+    from _testcapi import ContainerNoGC
 except ImportError:
     _testcapi = None
     def with_tp_del(cls):
@@ -24,10 +26,6 @@ except ImportError:
             def __new__(cls, *args, **kwargs):
                 raise unittest.SkipTest('requires _testcapi.with_tp_del')
         return C
-
-try:
-    from _testcapi import ContainerNoGC
-except ImportError:
     ContainerNoGC = None
 
 ### Support code
