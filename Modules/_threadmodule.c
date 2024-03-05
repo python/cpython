@@ -2125,9 +2125,9 @@ of the main interpreter.");
 
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS | METH_KEYWORDS, start_new_doc},
+     METH_VARARGS, start_new_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
-     METH_VARARGS | METH_KEYWORDS, start_new_doc},
+     METH_VARARGS, start_new_doc},
     {"start_joinable_thread",   _PyCFunction_CAST(thread_PyThread_start_joinable_thread),
      METH_VARARGS | METH_KEYWORDS, start_joinable_doc},
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
