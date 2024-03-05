@@ -640,7 +640,6 @@ bool _mi_heap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t *page, mi_
 typedef bool (mi_heap_area_visit_fun)(const mi_heap_t* heap, const mi_heap_area_ex_t* area, void* arg);
 
 void _mi_heap_area_init(mi_heap_area_t* area, mi_page_t* page) {
-  _PyMem_mi_page_clear_qsbr(page);
   _mi_page_free_collect(page,true);
   const size_t bsize = mi_page_block_size(page);
   const size_t ubsize = mi_page_usable_block_size(page);
