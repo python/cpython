@@ -725,7 +725,7 @@ list_clear_slot(PyObject *self)
  * guaranteed the call cannot fail.
  */
 static int
-list_ass_slice_impl(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
+list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
 {
     /* Because [X]DECREF can recursively invoke list operations on
        this list, we must postpone all [X]DECREF activity until
@@ -832,18 +832,18 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
         if (copy == NULL) {
             return -1;
         }
-        ret = list_ass_slice_impl(a, ilow, ihigh, copy);
+        ret = list_ass_slice_lock_held(a, ilow, ihigh, copy);
         Py_DECREF(copy);
         Py_END_CRITICAL_SECTION();
     }
     else if (v != NULL && PyList_CheckExact(v)) {
         Py_BEGIN_CRITICAL_SECTION2(a, v);
-        ret = list_ass_slice_impl(a, ilow, ihigh, v);
+        ret = list_ass_slice_lock_held(a, ilow, ihigh, v);
         Py_END_CRITICAL_SECTION2();
     }
     else {
         Py_BEGIN_CRITICAL_SECTION(a);
-        ret = list_ass_slice_impl(a, ilow, ihigh, v);
+        ret = list_ass_slice_lock_held(a, ilow, ihigh, v);
         Py_END_CRITICAL_SECTION();
     }
     return ret;
@@ -2914,7 +2914,7 @@ list_remove_impl(PyListObject *self, PyObject *value)
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
         if (cmp > 0) {
-            if (list_ass_slice_impl(self, i, i+1, NULL) == 0)
+            if (list_ass_slice_lock_held(self, i, i+1, NULL) == 0)
                 Py_RETURN_NONE;
             return NULL;
         }
