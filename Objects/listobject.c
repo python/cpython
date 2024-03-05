@@ -233,36 +233,6 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
     return (size_t) i < (size_t) limit;
 }
 
-PyObject *
-PyList_GetItem(PyObject *op, Py_ssize_t i)
-{
-    if (!PyList_Check(op)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    if (!valid_index(i, Py_SIZE(op))) {
-        _Py_DECLARE_STR(list_err, "list index out of range");
-        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
-        return NULL;
-    }
-    return ((PyListObject *)op) -> ob_item[i];
-}
-
-PyObject *
-PyList_GetItemRef(PyObject *op, Py_ssize_t i)
-{
-    if (!PyList_Check(op)) {
-        PyErr_SetString(PyExc_TypeError, "expected a list");
-        return NULL;
-    }
-    if (!valid_index(i, Py_SIZE(op))) {
-        _Py_DECLARE_STR(list_err, "list index out of range");
-        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
-        return NULL;
-    }
-    return Py_NewRef(PyList_GET_ITEM(op, i));
-}
-
 #ifdef Py_GIL_DISABLED
 
 static PyObject *
@@ -331,6 +301,37 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
     return Py_NewRef(PyList_GET_ITEM(op, i));
 }
 #endif
+
+PyObject *
+PyList_GetItem(PyObject *op, Py_ssize_t i)
+{
+    if (!PyList_Check(op)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (!valid_index(i, Py_SIZE(op))) {
+        _Py_DECLARE_STR(list_err, "list index out of range");
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
+    }
+    return ((PyListObject *)op) -> ob_item[i];
+}
+
+PyObject *
+PyList_GetItemRef(PyObject *op, Py_ssize_t i)
+{
+    if (!PyList_Check(op)) {
+        PyErr_SetString(PyExc_TypeError, "expected a list");
+        return NULL;
+    }
+    PyObject *item = list_get_item_ref((PyListObject *)op, i);
+    if (item == NULL) {
+        _Py_DECLARE_STR(list_err, "list index out of range");
+        PyErr_SetObject(PyExc_IndexError, &_Py_STR(list_err));
+        return NULL;
+    }
+    return item;
+}
 
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
