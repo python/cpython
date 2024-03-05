@@ -1812,11 +1812,14 @@ Basic customization
    rather, :meth:`__lt__` and :meth:`__gt__` are each other's reflection,
    :meth:`__le__` and :meth:`__ge__` are each other's reflection, and
    :meth:`__eq__` and :meth:`__ne__` are their own reflection.
-   If the operands are of different types, and right operand's type is
+   If the operands are of different types, and the right operand's type is
    a direct or indirect subclass of the left operand's type,
    the reflected method of the right operand has priority, otherwise
    the left operand's method has priority.  Virtual subclassing is
    not considered.
+
+   When no appropriate method returns any value other than :data:`NotImplemented`, the
+   ``==`` and ``!=`` operators will fall back to ``is`` and ``is not``, respectively.
 
 .. method:: object.__hash__(self)
 
@@ -3044,10 +3047,12 @@ left undefined.
    (``+=``, ``-=``, ``*=``, ``@=``, ``/=``, ``//=``, ``%=``, ``**=``, ``<<=``,
    ``>>=``, ``&=``, ``^=``, ``|=``).  These methods should attempt to do the
    operation in-place (modifying *self*) and return the result (which could be,
-   but does not have to be, *self*).  If a specific method is not defined, the
+   but does not have to be, *self*).  If a specific method is not defined, or if
+   that method returns :data:`NotImplemented`, the
    augmented assignment falls back to the normal methods.  For instance, if *x*
    is an instance of a class with an :meth:`__iadd__` method, ``x += y`` is
-   equivalent to ``x = x.__iadd__(y)`` . Otherwise, ``x.__add__(y)`` and
+   equivalent to ``x = x.__iadd__(y)`` . If :meth:`__iadd__` does not exist, or if ``x.__iadd__(y)``
+   returns :data:`!NotImplemented`, ``x.__add__(y)`` and
    ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``. In
    certain situations, augmented assignment can result in unexpected errors (see
    :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in fact
