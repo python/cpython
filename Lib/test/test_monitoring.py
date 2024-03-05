@@ -1819,7 +1819,6 @@ class TestOptimizer(MonitoringTestBase, unittest.TestCase):
         super(TestOptimizer, self).setUp()
 
     def tearDown(self):
-        _testinternalcapi = import_module("_testinternalcapi")
         super(TestOptimizer, self).tearDown()
         _testinternalcapi.set_optimizer(self.old_opt)
 
