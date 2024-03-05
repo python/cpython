@@ -440,7 +440,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 if (last->opcode == _LOAD_CONST_INLINE  ||
                     last->opcode == _LOAD_CONST_INLINE_BORROW ||
                     last->opcode == _LOAD_FAST ||
-                    last->opcode == _COPY) {
+                    last->opcode == _COPY
+                ) {
                     last->opcode = _NOP;
                     buffer[pc].opcode = NOP;
                 }
