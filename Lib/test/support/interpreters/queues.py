@@ -18,14 +18,14 @@ __all__ = [
 ]
 
 
-class QueueEmpty(_queues.QueueEmpty, queue.Empty):
+class QueueEmpty(QueueError, queue.Empty):
     """Raised from get_nowait() when the queue is empty.
 
     It is also raised from get() if it times out.
     """
 
 
-class QueueFull(_queues.QueueFull, queue.Full):
+class QueueFull(QueueError, queue.Full):
     """Raised from put_nowait() when the queue is full.
 
     It is also raised from put() if it times out.
@@ -66,7 +66,7 @@ class Queue:
         else:
             raise TypeError(f'id must be an int, got {id!r}')
         if _fmt is None:
-            _fmt = _queues.get_default_fmt(id)
+            _fmt, = _queues.get_queue_defaults(id)
         try:
             self = _known_queues[id]
         except KeyError:
@@ -92,6 +92,14 @@ class Queue:
 
     def __hash__(self):
         return hash(self._id)
+
+    # for pickling:
+    def __getnewargs__(self):
+        return (self._id,)
+
+    # for pickling:
+    def __getstate__(self):
+        return None
 
     @property
     def id(self):
@@ -159,9 +167,8 @@ class Queue:
         while True:
             try:
                 _queues.put(self._id, obj, fmt)
-            except _queues.QueueFull as exc:
+            except QueueFull as exc:
                 if timeout is not None and time.time() >= end:
-                    exc.__class__ = QueueFull
                     raise  # re-raise
                 time.sleep(_delay)
             else:
@@ -174,11 +181,7 @@ class Queue:
             fmt = _SHARED_ONLY if syncobj else _PICKLED
         if fmt is _PICKLED:
             obj = pickle.dumps(obj)
-        try:
-            _queues.put(self._id, obj, fmt)
-        except _queues.QueueFull as exc:
-            exc.__class__ = QueueFull
-            raise  # re-raise
+        _queues.put(self._id, obj, fmt)
 
     def get(self, timeout=None, *,
             _delay=10 / 1000,  # 10 milliseconds
@@ -195,9 +198,8 @@ class Queue:
         while True:
             try:
                 obj, fmt = _queues.get(self._id)
-            except _queues.QueueEmpty as exc:
+            except QueueEmpty as exc:
                 if timeout is not None and time.time() >= end:
-                    exc.__class__ = QueueEmpty
                     raise  # re-raise
                 time.sleep(_delay)
             else:
@@ -216,8 +218,7 @@ class Queue:
         """
         try:
             obj, fmt = _queues.get(self._id)
-        except _queues.QueueEmpty as exc:
-            exc.__class__ = QueueEmpty
+        except QueueEmpty as exc:
             raise  # re-raise
         if fmt == _PICKLED:
             obj = pickle.loads(obj)
@@ -226,4 +227,4 @@ class Queue:
         return obj
 
 
-_queues._register_queue_type(Queue)
+_queues._register_heap_types(Queue, QueueEmpty, QueueFull)
