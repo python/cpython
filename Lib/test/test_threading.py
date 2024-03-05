@@ -1536,6 +1536,7 @@ class SubinterpThreadingTests(BaseTestCase):
                        daemon_allowed=True,
                        daemon=False,
                        ):
+        import_module("_testinternalcapi")
         subinterp_code = textwrap.dedent(f"""
             import test.support
             import threading
