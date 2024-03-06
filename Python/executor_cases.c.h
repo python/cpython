@@ -3789,15 +3789,9 @@
             break;
         }
 
-        case _CHECK_GLOBALS: {
-            PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            if (GLOBALS() != dict) goto deoptimize;
-            break;
-        }
-
-        case _CHECK_BUILTINS: {
-            PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            if (BUILTINS() != dict) goto deoptimize;
+        case _CHECK_FUNCTION: {
+            PyObject *func = (PyObject *)CURRENT_OPERAND();
+            if (frame->f_funcobj != func) goto deoptimize;
             break;
         }
 
