@@ -1,12 +1,7 @@
 The Python 2.3 Method Resolution Order
 ======================================
 
-:Version: 1.4
-:Author: Michele Simionato
-:E-mail: michelesimionato@libero.it
-:Address: Department of Physics and Astronomy
-          210 Allen Hall Pittsburgh PA 15260 U.S.A.
-:Home-page: http://www.phyast.pitt.edu/~micheles/
+By `Michele Simionato <https://www.phyast.pitt.edu/~micheles/>`__.
 
 :Abstract:
 
@@ -18,23 +13,23 @@ The Python 2.3 Method Resolution Order
 
 Disclaimer:
 
-   I donate this document to the Python Software Foundation, under the
+   *I donate this document to the Python Software Foundation, under the
    Python 2.3 license.  As usual in these circumstances, I warn the
-   reader that what follows *should* be correct, but I don't give any
-   warranty.  Use it at your own risk and peril!
+   reader that what follows* should *be correct, but I don't give any
+   warranty.  Use it at your own risk and peril!*
 
 Acknowledgments:
 
-   All the people of the Python mailing list who sent me their support.
+   *All the people of the Python mailing list who sent me their support.
    Paul Foley who pointed out various imprecisions and made me to add the
    part on local precedence ordering. David Goodger for help with the
    formatting in reStructuredText. David Mertz for help with the editing.
    Joan G. Stark for the pythonic pictures. Finally, Guido van Rossum who
-   enthusiastically added this document to the official Python 2.3 home-page.
+   enthusiastically added this document to the official Python 2.3 home-page.*
 
 ----
 
- ::
+ .. code-block:: text
 
 
 
@@ -127,7 +122,7 @@ which can be represented with the following inheritance graph, where I
 have denoted with O the ``object`` class, which is the beginning of any
 hierarchy for new style classes:
 
- ::
+ .. code-block:: text
 
           -----------
          |           |
@@ -151,7 +146,7 @@ but chooses an *ad hoc* ordering (CABXYO in this case).
 
 ----
 
- ::
+ .. code-block:: text
 
                _                   .-=-.          .-==-.
               { }      __        .' O o '.       /  -<' )
@@ -165,21 +160,21 @@ The C3 Method Resolution Order
 ------------------------------
 
 Let me introduce a few simple notations which will be useful for the
-following discussion.  I will use the shortcut notation
+following discussion.  I will use the shortcut notation::
 
   C1 C2 ... CN
 
 to indicate the list of classes [C1, C2, ... , CN].
 
-The *head* of the list is its first element:
+The *head* of the list is its first element::
 
   head = C1
 
-whereas the *tail* is the rest of the list:
+whereas the *tail* is the rest of the list::
 
   tail = C2 ... CN.
 
-I shall also use the notation
+I shall also use the notation::
 
   C + (C1 C2 ... CN) = C C1 C2 ... CN
 
@@ -195,12 +190,12 @@ following:
   *the linearization of C is the sum of C plus the merge of the
   linearizations of the parents and the list of the parents.*
 
-In symbolic notation:
+In symbolic notation::
 
    L[C(B1 ... BN)] = C + merge(L[B1] ... L[BN], B1 ... BN)
 
 In particular, if C is the ``object`` class, which has no parents, the
-linearization is trivial:
+linearization is trivial::
 
        L[object] = object.
 
@@ -222,7 +217,7 @@ order cannot be preserved (as in the example of serious order
 disagreement discussed above) then the merge cannot be computed.
 
 The computation of the merge is trivial if C has only one parent
-(single inheritance); in this case
+(single inheritance); in this case::
 
        L[C(B)] = C + merge(L[B],B) = C + L[B]
 
@@ -232,7 +227,7 @@ examples ;-)
 
 ----
 
- ::
+ .. code-block:: text
 
                .-'-.
              /'     `\
@@ -269,9 +264,9 @@ First example. Consider the following hierarchy:
   >>> class B(D,E): pass
   >>> class A(B,C): pass
 
-In this case the inheritance graph can be drawn as
+In this case the inheritance graph can be drawn as:
 
- ::
+ .. code-block:: text
 
                             6
                            ---
@@ -296,18 +291,14 @@ In this case the inheritance graph can be drawn as
                              ---
 
 
-The linearizations of O,D,E and F are trivial:
-
- ::
+The linearizations of O,D,E and F are trivial::
 
   L[O] = O
   L[D] = D O
   L[E] = E O
   L[F] = F O
 
-The linearization of B can be computed as
-
- ::
+The linearization of B can be computed as::
 
   L[B] = B + merge(DO, EO, DE)
 
@@ -315,24 +306,18 @@ We see that D is a good head, therefore we take it and we are reduced to
 compute ``merge(O,EO,E)``.  Now O is not a good head, since it is in the
 tail of the sequence EO.  In this case the rule says that we have to
 skip to the next sequence.  Then we see that E is a good head; we take
-it and we are reduced to compute ``merge(O,O)`` which gives O. Therefore
-
- ::
+it and we are reduced to compute ``merge(O,O)`` which gives O. Therefore::
 
   L[B] =  B D E O
 
-Using the same procedure one finds:
-
- ::
+Using the same procedure one finds::
 
   L[C] = C + merge(DO,FO,DF)
        = C + D + merge(O,FO,F)
        = C + D + F + merge(O,O)
        = C D F O
 
-Now we can compute:
-
- ::
+Now we can compute::
 
   L[A] = A + merge(BDEO,CDFO,BC)
        = A + B + merge(DEO,CDFO,C)
@@ -360,9 +345,9 @@ my second example:
 
 The only difference with the previous example is the change B(D,E) -->
 B(E,D); however even such a little modification completely changes the
-ordering of the hierarchy
+ordering of the hierarchy:
 
- ::
+ .. code-block:: text
 
                              6
                             ---
@@ -404,7 +389,7 @@ Finally, let me consider the example discussed in the first section,
 involving a serious order disagreement.  In this case, it is
 straightforward to compute the linearizations of O, X, Y, A and B:
 
- ::
+ .. code-block:: text
 
   L[O] = 0
   L[X] = X O
@@ -413,9 +398,7 @@ straightforward to compute the linearizations of O, X, Y, A and B:
   L[B] = B Y X O
 
 However, it is impossible to compute the linearization for a class C
-that inherits from A and B:
-
- ::
+that inherits from A and B::
 
   L[C] = C + merge(AXYO, BYXO, AB)
        = C + A + merge(XYO, BYXO, B)
@@ -428,7 +411,7 @@ refuses to create the class C.
 
 ----
 
- ::
+ .. code-block:: text
 
                                  __
                (\   .-.   .-.   /_")
@@ -453,7 +436,7 @@ following example:
 
 with inheritance diagram
 
- ::
+ .. code-block:: text
 
                 O
                 |
@@ -476,9 +459,7 @@ gives
 
 This is a breaking of local precedence ordering since the order in the
 local precedence list, i.e. the list of the parents of G, is not
-preserved in the Python 2.2 linearization of G:
-
- ::
+preserved in the Python 2.2 linearization of G::
 
   L[G,P22]= G E F object   # F *follows* E
 
@@ -502,9 +483,7 @@ avoided, since it is unclear if F should override E or viceversa.
 Python 2.3 solves the ambiguity by raising an exception in the creation
 of class G, effectively stopping the programmer from generating
 ambiguous hierarchies.  The reason for that is that the C3 algorithm
-fails when the merge
-
- ::
+fails when the merge::
 
    merge(FO,EFO,FE)
 
@@ -515,7 +494,7 @@ The real solution is to design a non-ambiguous hierarchy, i.e. to derive
 G from E and F (the more specific first) and not from F and E; in this
 case the MRO is GEF without any doubt.
 
- ::
+ .. code-block:: text
 
                 O
                 |
@@ -554,7 +533,7 @@ example:
 
 ----
 
- ::
+ .. code-block:: text
 
                                  __
                (\   .-.   .-.   /_")
@@ -570,7 +549,7 @@ monotonic.
 To prove that the MRO for classic classes is non-monotonic is rather
 trivial, it is enough to look at the diamond diagram:
 
- ::
+ .. code-block:: text
 
 
                    C
@@ -581,17 +560,13 @@ trivial, it is enough to look at the diamond diagram:
                   \ /
                    D
 
-One easily discerns the inconsistency:
-
- ::
+One easily discerns the inconsistency::
 
   L[B,P21] = B C        # B precedes C : B's methods win
   L[D,P21] = D A C B C  # B follows C  : C's methods win!
 
 On the other hand, there are no problems with the Python 2.2 and 2.3
-MROs, they give both
-
- ::
+MROs, they give both::
 
   L[D] = D A B C
 
@@ -617,9 +592,7 @@ Pedroni, shows that the MRO of Python 2.2 is non-monotonic:
 
 Here are the linearizations according to the C3 MRO (the reader should
 verify these linearizations as an exercise and draw the inheritance
-diagram ;-)
-
- ::
+diagram ;-) ::
 
   L[A] = A O
   L[B] = B O
@@ -632,9 +605,7 @@ diagram ;-)
   L[Z] = Z K1 K2 K3 D A B C E O
 
 Python 2.2 gives exactly the same linearizations for A, B, C, D, E, K1,
-K2 and K3, but a different linearization for Z:
-
- ::
+K2 and K3, but a different linearization for Z::
 
   L[Z,P22] = Z K1 K3 A K2 D B C E O
 
@@ -651,7 +622,7 @@ rule.
 
 ----
 
- ::
+ .. code-block:: text
 
                                                                      __
                (\   .-.   .-.   .-.   .-.   .-.   .-.   .-.   .-.   /_")
@@ -672,9 +643,7 @@ inheritance hierarchies ;-) These three virtues taken all together (and
 *not* separately) deserve a prize:  the prize is a short Python 2.2
 script that allows you to compute the 2.3 MRO without risk to your
 brain.  Simply change the last line to play with the various examples I
-have discussed in this paper.
-
- ::
+have discussed in this paper.::
 
   #<mro.py>
 
@@ -765,7 +734,7 @@ That's all folks,
 
 ----
 
- ::
+.. code-block:: text
 
 
                 __
@@ -778,10 +747,10 @@ Resources
 ---------
 
 .. [#] The thread on python-dev started by Samuele Pedroni:
-       http://mail.python.org/pipermail/python-dev/2002-October/029035.html
+       https://mail.python.org/pipermail/python-dev/2002-October/029035.html
 
 .. [#] The paper *A Monotonic Superclass Linearization for Dylan*:
-       http://www.webcom.com/haahr/dylan/linearization-oopsla96.html
+       https://doi.org/10.1145/236337.236343
 
 .. [#] Guido van Rossum's essay, *Unifying types and classes in Python 2.2*:
-       http://www.python.org/2.2.2/descrintro.html
+       https://web.archive.org/web/20140210194412/http://www.python.org/download/releases/2.2.2/descrintro
