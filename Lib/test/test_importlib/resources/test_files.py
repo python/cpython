@@ -70,7 +70,7 @@ class SiteDir:
         self.addCleanup(self.fixtures.close)
         self.site_dir = self.fixtures.enter_context(os_helper.temp_dir())
         self.fixtures.enter_context(import_helper.DirsOnSysPath(self.site_dir))
-        self.fixtures.enter_context(import_helper.CleanImport())
+        self.fixtures.enter_context(import_helper.isolated_modules())
 
 
 class ModulesFilesTests(SiteDir, unittest.TestCase):
