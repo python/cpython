@@ -3516,9 +3516,10 @@ class _TestListener(BaseTestCase):
         key = b""
 
         with self.connection.Listener(authkey=key) as listener:
-            threading.Thread(target=run, args=(listener.address, key)).start()
-            with listener.accept() as d:
-                self.assertEqual(d.recv(), 1729)
+            t = threading.Thread(target=run, args=(listener.address, key))
+            with threading_helper.start_threads([t]):
+                with listener.accept() as d:
+                    self.assertEqual(d.recv(), 1729)
 
         if self.TYPE == 'processes':
             self.assertRaises(OSError, listener.accept)
