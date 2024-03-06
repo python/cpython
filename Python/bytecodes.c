@@ -4160,9 +4160,11 @@ dummy_func(
 
         op(_GROW_TIER2_FRAME, (--)) {
             DEOPT_IF(frame->owner != FRAME_OWNED_BY_THREAD);
-            DEOPT_IF(stack_pointer + oparg > tstate->datastack_limit);
             assert(stack_pointer <= tstate->datastack_top);
-            tstate->datastack_top = stack_pointer + oparg;
+            if (stack_pointer + oparg > tstate->datastack_top) {
+                DEOPT_IF(stack_pointer + oparg > tstate->datastack_limit);
+                tstate->datastack_top = stack_pointer + oparg;
+            }
         }
 
 

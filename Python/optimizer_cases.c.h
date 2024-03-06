@@ -1594,7 +1594,7 @@
             ctx->curr_frame_depth++;
             stack_pointer = new_frame->stack_pointer;
             // First 32 bits set to locals_len, last 32 bits set to stack_len.
-            uint64_t operand = (((uint64_t)(new_frame->locals_len)) << 32) | (new_frame->stack_len);
+            uint64_t operand = (((uint64_t)(new_frame->locals_len)) << 32) | (new_frame->stack_len + (frame->stack_len - STACK_LEVEL()));
             REPLACE_OP(this_instr, _PUSH_FRAME_INLINEABLE, oparg, operand);
             if (!new_frame->is_inlineable) {
                 REPLACE_OP(this_instr, _PUSH_FRAME, oparg, 0);
