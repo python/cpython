@@ -397,7 +397,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
-    maxDiff = 4096 * 100
+    maxDiff = 4096
     UTF8_MODE_ERRORS = ('surrogatepass' if MS_WINDOWS else 'surrogateescape')
 
     # Marker to read the default configuration: get_default_config()
