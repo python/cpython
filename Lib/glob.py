@@ -310,7 +310,8 @@ def _recursive_selector(part, parts, recursive, include_hidden):
         if next_part in _special_parts:
             break
         # Consume next non-special component (used to build regex).
-        part += os.path.sep + next_part
+        if next_part != part:
+            part += os.path.sep + next_part
         parts = parts[1:]
 
     if include_hidden and part == '**':
