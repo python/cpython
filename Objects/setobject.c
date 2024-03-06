@@ -1987,8 +1987,8 @@ set_add(PySetObject *so, PyObject *key)
     Py_RETURN_NONE;
 }
 
-static int
-set_contains(PySetObject *so, PyObject *key)
+int
+_PySet_Contains(PySetObject *so, PyObject *key)
 {
     PyObject *tmpkey;
     int rv;
@@ -2023,7 +2023,7 @@ set___contains__(PySetObject *so, PyObject *key)
 {
     long result;
 
-    result = set_contains(so, key);
+    result = _PySet_Contains(so, key);
     if (result < 0)
         return NULL;
     return PyBool_FromLong(result);
@@ -2198,7 +2198,7 @@ static PySequenceMethods set_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)set_contains,           /* sq_contains */
+    (objobjproc)_PySet_Contains,        /* sq_contains */
 };
 
 /* set object ********************************************************/
