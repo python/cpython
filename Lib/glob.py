@@ -5,6 +5,7 @@ import os
 import re
 import fnmatch
 import functools
+import itertools
 import sys
 
 __all__ = ["glob", "iglob", "escape"]
@@ -48,8 +49,6 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     sys.audit("glob.glob", pathname, recursive)
     sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
     pathname = os.fspath(pathname)
-    if not pathname:
-        return iter(())
     is_bytes = isinstance(pathname, bytes)
     if is_bytes:
         pathname = os.fsdecode(pathname)
@@ -68,14 +67,10 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
             root_dir = './'
         else:
             root_dir = _add_trailing_slash(root_dir)
-        paths = select(root_dir, root_dir, dir_fd, False)
-        if recursive and (parts == ('**',) or parts == ('**', '')):
-            # Consume root_dir.
-            for path in paths:
-                assert path == root_dir
-                break
         root_slicer = operator.itemgetter(slice(len(root_dir), None))
+        paths = select(root_dir, root_dir, dir_fd, False)
         paths = map(root_slicer, paths)
+        paths = itertools.dropwhile(lambda path: not path, paths)
     if is_bytes:
         paths = map(os.fsencode, paths)
     return paths
