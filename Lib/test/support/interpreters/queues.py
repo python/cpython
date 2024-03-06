@@ -12,10 +12,15 @@ from _xxinterpqueues import (
 )
 
 __all__ = [
+    'UNBOUND', 'UNBOUND_ERROR', 'UNBOUND_REMOVE',
     'create', 'list_all',
     'Queue',
     'QueueError', 'QueueNotFoundError', 'QueueEmpty', 'QueueFull',
+    'ItemInterpreterDestroyed',
 ]
+
+
+_NOT_SET = object()
 
 
 class QueueEmpty(QueueError, queue.Empty):
@@ -32,26 +37,80 @@ class QueueFull(QueueError, queue.Full):
     """
 
 
+class ItemInterpreterDestroyed(QueueError):
+    """Raised from get() and get_nowait()."""
+
+
 _SHARED_ONLY = 0
 _PICKLED = 1
 
-def create(maxsize=0, *, syncobj=False):
+
+class UnboundItem:
+    """Represents a Queue item no longer bound to an interpreter.
+
+    An item is unbound when the interpreter that added it to the queue
+    is destroyed.
+    """
+
+    __slots__ = ()
+
+    def __new__(cls):
+        return UNBOUND
+
+    def __repr__(self):
+        return f'interpreters.queues.UNBOUND'
+
+
+UNBOUND = object.__new__(UnboundItem)
+UNBOUND_ERROR = object()
+UNBOUND_REMOVE = object()
+
+
+def _serialize_unbound(unbound):
+    if unbound is UNBOUND_REMOVE:
+        unbound = 'remove'
+    elif unbound is UNBOUND_ERROR:
+        unbound = 'error'
+    elif unbound is UNBOUND:
+        unbound = 'replace'
+    else:
+        raise NotImplementedError(f'unsupported unbound replacement {unbound !r}')
+    return unbound
+
+
+def _resolve_unbound(unbound):
+    if unbound == 'remove':
+        raise RuntimeError('"remove" not possible here')
+    elif unbound == 'error':
+        raise ItemInterpreterDestroyed("item's original interpreter destroyed")
+    elif unbound == 'replace':
+        return UNBOUND
+    else:
+        raise NotImplementedError(f'{unbound!r} unsupported')
+
+
+def create(maxsize=0, *, syncobj=False, unbounditems=UNBOUND):
     """Return a new cross-interpreter queue.
 
     The queue may be used to pass data safely between interpreters.
 
     "syncobj" sets the default for Queue.put()
     and Queue.put_nowait().
+
+    "unbounditems" likewise sets the default.  See Queue.pop() for
+    supported values.  The default value is UNBOUND, which replaces
+    the unbound item.
     """
     fmt = _SHARED_ONLY if syncobj else _PICKLED
-    qid = _queues.create(maxsize, fmt)
-    return Queue(qid, _fmt=fmt)
+    unbound = _serialize_unbound(unbounditems)
+    qid = _queues.create(maxsize, fmt, unbound)
+    return Queue(qid, _fmt=fmt, _unbound=unbound)
 
 
 def list_all():
     """Return a list of all open queues."""
-    return [Queue(qid, _fmt=fmt)
-            for qid, fmt in _queues.list_all()]
+    return [Queue(qid, _fmt=fmt, _unbound=unbound)
+            for qid, fmt, unbound in _queues.list_all()]
 
 
 _known_queues = weakref.WeakValueDictionary()
@@ -59,20 +118,26 @@ _known_queues = weakref.WeakValueDictionary()
 class Queue:
     """A cross-interpreter queue."""
 
-    def __new__(cls, id, /, *, _fmt=None):
+    def __new__(cls, id, /, *, _fmt=None, _unbound=None):
         # There is only one instance for any given ID.
         if isinstance(id, int):
             id = int(id)
         else:
             raise TypeError(f'id must be an int, got {id!r}')
         if _fmt is None:
-            _fmt, = _queues.get_queue_defaults(id)
+            if _unbound is None:
+                _fmt, _unbound = _queues.get_queue_defaults(id)
+            else:
+                _fmt, _ = _queues.get_queue_defaults(id)
+        elif _unbound is None:
+            _, _unbound = _queues.get_queue_defaults(id)
         try:
             self = _known_queues[id]
         except KeyError:
             self = super().__new__(cls)
             self._id = id
             self._fmt = _fmt
+            self._unbound = _unbound
             _known_queues[id] = self
             _queues.bind(id)
         return self
@@ -124,6 +189,7 @@ class Queue:
 
     def put(self, obj, timeout=None, *,
             syncobj=None,
+            unbound=None,
             _delay=10 / 1000,  # 10 milliseconds
             ):
         """Add the object to the queue.
@@ -152,11 +218,32 @@ class Queue:
         actually is.  That's a slightly different and stronger promise
         than just (initial) equality, which is all "syncobj=False"
         can promise.
+
+        "unbound" controls the behavior of Queue.get() for the given
+        object if the current interpreter (calling put()) is later
+        destroyed.
+
+        If "unbound" is None (the default) then it uses the
+        queue's default, set with create_queue().
+
+        If "unbound" is UNBOUND_ERROR then get() will raise an
+        ItemInterpreterDestroyed exception if the original interpreter
+        has been destroyed.
+
+        If "unbound" is UNBOUND_REMOVE then the item will be removed
+        from the queue as soon as the original interpreter is destroyed.
+
+        If "unbound" is UNBOUND then it is returned by get() in place
+        of the unbound item.
         """
         if syncobj is None:
             fmt = self._fmt
         else:
             fmt = _SHARED_ONLY if syncobj else _PICKLED
+        if unbound is None:
+            unbound = self._unbound
+        else:
+            unbound = _serialize_unbound(unbound)
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
@@ -166,7 +253,7 @@ class Queue:
             obj = pickle.dumps(obj)
         while True:
             try:
-                _queues.put(self._id, obj, fmt)
+                _queues.put(self._id, obj, fmt, unbound)
             except QueueFull as exc:
                 if timeout is not None and time.time() >= end:
                     raise  # re-raise
@@ -174,14 +261,18 @@ class Queue:
             else:
                 break
 
-    def put_nowait(self, obj, *, syncobj=None):
+    def put_nowait(self, obj, *, syncobj=None, unbound=None):
         if syncobj is None:
             fmt = self._fmt
         else:
             fmt = _SHARED_ONLY if syncobj else _PICKLED
+        if unbound is None:
+            unbound = self._unbound
+        else:
+            unbound = _serialize_unbound(unbound)
         if fmt is _PICKLED:
             obj = pickle.dumps(obj)
-        _queues.put(self._id, obj, fmt)
+        _queues.put(self._id, obj, fmt, unbound)
 
     def get(self, timeout=None, *,
             _delay=10 / 1000,  # 10 milliseconds
@@ -189,6 +280,10 @@ class Queue:
         """Return the next object from the queue.
 
         This blocks while the queue is empty.
+
+        If the next item's original interpreter has been destroyed
+        then the "next object" is determined by the value of the
+        "unbound" argument to put().
         """
         if timeout is not None:
             timeout = int(timeout)
@@ -197,13 +292,16 @@ class Queue:
             end = time.time() + timeout
         while True:
             try:
-                obj, fmt = _queues.get(self._id)
+                obj, fmt, unbound = _queues.get(self._id)
             except QueueEmpty as exc:
                 if timeout is not None and time.time() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:
                 break
+        if unbound is not None:
+            assert obj is None, repr(obj)
+            return _resolve_unbound(unbound)
         if fmt == _PICKLED:
             obj = pickle.loads(obj)
         else:
@@ -217,9 +315,12 @@ class Queue:
         is the same as get().
         """
         try:
-            obj, fmt = _queues.get(self._id)
+            obj, fmt, unbound = _queues.get(self._id)
         except QueueEmpty as exc:
             raise  # re-raise
+        if unbound is not None:
+            assert obj is None, repr(obj)
+            return _resolve_unbound(unbound)
         if fmt == _PICKLED:
             obj = pickle.loads(obj)
         else:
