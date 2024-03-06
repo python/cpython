@@ -38,12 +38,6 @@
 #include "pycore_pystate.h"         // _PyThreadState_GET()
 
 
-// Wrap-around safe comparison. This is a holdover from the FreeBSD
-// implementation, which uses 32-bit sequence numbers. We currently use 64-bit
-// sequence numbers, so wrap-around is unlikely.
-#define QSBR_LT(a, b) ((int64_t)((a)-(b)) < 0)
-#define QSBR_LEQ(a, b) ((int64_t)((a)-(b)) <= 0)
-
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
 
@@ -167,13 +161,11 @@ bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
     assert(_PyThreadState_GET()->state == _Py_THREAD_ATTACHED);
-
-    uint64_t rd_seq = _Py_atomic_load_uint64(&qsbr->shared->rd_seq);
-    if (QSBR_LEQ(goal, rd_seq)) {
+    if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
     }
 
-    rd_seq = qsbr_poll_scan(qsbr->shared);
+    uint64_t rd_seq = qsbr_poll_scan(qsbr->shared);
     return QSBR_LEQ(goal, rd_seq);
 }
 
