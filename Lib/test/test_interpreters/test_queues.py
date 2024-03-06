@@ -13,6 +13,9 @@ from test.support.interpreters import queues
 from .utils import _run_output, TestBase as _TestBase
 
 
+REPLACE = queues._UNBOUND_CONSTANT_TO_FLAG[queues.UNBOUND]
+
+
 def get_num_queues():
     return len(_queues.list_all())
 
@@ -40,7 +43,7 @@ class LowLevelTests(TestBase):
         importlib.reload(queues)
 
     def test_create_destroy(self):
-        qid = _queues.create(2, 0, 'replace')
+        qid = _queues.create(2, 0, REPLACE)
         _queues.destroy(qid)
         self.assertEqual(get_num_queues(), 0)
         with self.assertRaises(queues.QueueNotFoundError):
@@ -54,7 +57,7 @@ class LowLevelTests(TestBase):
             '-c',
             dedent(f"""
                 import {_queues.__name__} as _queues
-                _queues.create(2, 0, 'replace')
+                _queues.create(2, 0, {REPLACE})
                 """),
         )
         self.assertEqual(stdout, '')
@@ -65,13 +68,13 @@ class LowLevelTests(TestBase):
 
     def test_bind_release(self):
         with self.subTest('typical'):
-            qid = _queues.create(2, 0, 'replace')
+            qid = _queues.create(2, 0, REPLACE)
             _queues.bind(qid)
             _queues.release(qid)
             self.assertEqual(get_num_queues(), 0)
 
         with self.subTest('bind too much'):
-            qid = _queues.create(2, 0, 'replace')
+            qid = _queues.create(2, 0, REPLACE)
             _queues.bind(qid)
             _queues.bind(qid)
             _queues.release(qid)
@@ -79,7 +82,7 @@ class LowLevelTests(TestBase):
             self.assertEqual(get_num_queues(), 0)
 
         with self.subTest('nested'):
-            qid = _queues.create(2, 0, 'replace')
+            qid = _queues.create(2, 0, REPLACE)
             _queues.bind(qid)
             _queues.bind(qid)
             _queues.release(qid)
@@ -87,7 +90,7 @@ class LowLevelTests(TestBase):
             self.assertEqual(get_num_queues(), 0)
 
         with self.subTest('release without binding'):
-            qid = _queues.create(2, 0, 'replace')
+            qid = _queues.create(2, 0, REPLACE)
             with self.assertRaises(queues.QueueError):
                 _queues.release(qid)
 

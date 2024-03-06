@@ -402,47 +402,16 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
 // allocator) and used when the item is popped off the queue.
 
 static int
-encode_unbound(const char *op, int *p_unbound)
+check_unbound(int unboundop)
 {
-    int unbound = 0;
-    if (strcmp(op, "remove") == 0) {
-        unbound = UNBOUND_REMOVE;
-    }
-    else if (strcmp(op, "error") == 0) {
-        unbound = UNBOUND_ERROR;
-    }
-    else if (strcmp(op, "replace") == 0) {
-        unbound = UNBOUND_REPLACE_DEFAULT;
-    }
-    else {
-        PyErr_Format(PyExc_ValueError,
-                     "unsupported unbound op %s", op);
-        return -1;
-    }
-    assert(unbound > 0);
-    *p_unbound = unbound;
-    return 0;
-}
-
-static const char *
-decode_unbound(int encoded)
-{
-    const char *op = NULL;
-    switch (encoded) {
+    switch (unboundop) {
     case UNBOUND_REMOVE:
-        op = "remove";
-        break;
     case UNBOUND_ERROR:
-        op = "error";
-        break;
     case UNBOUND_REPLACE_DEFAULT:
-        op = "replace";
-        break;
+        return 1;
     default:
-        Py_FatalError("unsupported unbound op");
+        return 0;
     }
-
-    return op;
 }
 
 
@@ -453,18 +422,18 @@ struct _queueitem;
 typedef struct _queueitem {
     _PyCrossInterpreterData *data;
     int fmt;
-    int unbound;
+    int unboundop;
     struct _queueitem *next;
 } _queueitem;
 
 static void
 _queueitem_init(_queueitem *item,
-                _PyCrossInterpreterData *data, int fmt, int unbound)
+                _PyCrossInterpreterData *data, int fmt, int unboundop)
 {
     *item = (_queueitem){
         .data = data,
         .fmt = fmt,
-        .unbound = unbound,
+        .unboundop = unboundop,
     };
 }
 
@@ -487,14 +456,14 @@ _queueitem_clear(_queueitem *item)
 }
 
 static _queueitem *
-_queueitem_new(_PyCrossInterpreterData *data, int fmt, int unbound)
+_queueitem_new(_PyCrossInterpreterData *data, int fmt, int unboundop)
 {
     _queueitem *item = GLOBAL_MALLOC(_queueitem);
     if (item == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _queueitem_init(item, data, fmt, unbound);
+    _queueitem_init(item, data, fmt, unboundop);
     return item;
 }
 
@@ -517,11 +486,11 @@ _queueitem_free_all(_queueitem *item)
 
 static void
 _queueitem_popped(_queueitem *item,
-                  _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unbound)
+                  _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unboundop)
 {
     *p_data = item->data;
     *p_fmt = item->fmt;
-    *p_unbound = item->unbound;
+    *p_unboundop = item->unboundop;
     // We clear them here, so they won't be released in _queueitem_clear().
     item->data = NULL;
     _queueitem_free(item);
@@ -542,12 +511,12 @@ typedef struct _queue {
     } items;
     struct {
         int fmt;
-        int unbound;
+        int unboundop;
     } defaults;
 } _queue;
 
 static int
-_queue_init(_queue *queue, Py_ssize_t maxsize, int fmt, int unbound)
+_queue_init(_queue *queue, Py_ssize_t maxsize, int fmt, int unboundop)
 {
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
@@ -561,7 +530,7 @@ _queue_init(_queue *queue, Py_ssize_t maxsize, int fmt, int unbound)
         },
         .defaults = {
             .fmt = fmt,
-            .unbound = unbound,
+            .unboundop = unboundop,
         },
     };
     return 0;
@@ -643,7 +612,7 @@ _queue_unlock(_queue *queue)
 }
 
 static int
-_queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt, int unbound)
+_queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt, int unboundop)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -659,7 +628,7 @@ _queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt, int unbound)
         return ERR_QUEUE_FULL;
     }
 
-    _queueitem *item = _queueitem_new(data, fmt, unbound);
+    _queueitem *item = _queueitem_new(data, fmt, unboundop);
     if (item == NULL) {
         _queue_unlock(queue);
         return -1;
@@ -680,7 +649,7 @@ _queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt, int unbound)
 
 static int
 _queue_next(_queue *queue,
-            _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unbound)
+            _PyCrossInterpreterData **p_data, int *p_fmt, int *p_unboundop)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -699,7 +668,7 @@ _queue_next(_queue *queue,
     }
     queue->items.count -= 1;
 
-    _queueitem_popped(item, p_data, p_fmt, p_unbound);
+    _queueitem_popped(item, p_data, p_fmt, p_unboundop);
 
     _queue_unlock(queue);
     return 0;
@@ -767,7 +736,7 @@ _queue_clear_interpreter(_queue *queue, int64_t interpid)
         if (item->data != NULL
             && _PyCrossInterpreterData_INTERPID(item->data) == interpid)
         {
-            if (item->unbound == UNBOUND_REMOVE) {
+            if (item->unboundop == UNBOUND_REMOVE) {
                 if (prev == NULL) {
                     queue->items.first = item->next;
                 }
@@ -1047,7 +1016,7 @@ finally:
 struct queue_id_and_info {
     int64_t id;
     int fmt;
-    const char *unboundop;
+    int unboundop;
 };
 
 static struct queue_id_and_info *
@@ -1065,7 +1034,7 @@ _queues_list_all(_queues *queues, int64_t *p_count)
         ids[i].id = ref->qid;
         assert(ref->queue != NULL);
         ids[i].fmt = ref->queue->defaults.fmt;
-        ids[i].unboundop = decode_unbound(ref->queue->defaults.unbound);
+        ids[i].unboundop = ref->queue->defaults.unboundop;
     }
     *p_count = queues->count;
 
@@ -1101,13 +1070,13 @@ _queue_free(_queue *queue)
 
 // Create a new queue.
 static int64_t
-queue_create(_queues *queues, Py_ssize_t maxsize, int fmt, int unbound)
+queue_create(_queues *queues, Py_ssize_t maxsize, int fmt, int unboundop)
 {
     _queue *queue = GLOBAL_MALLOC(_queue);
     if (queue == NULL) {
         return ERR_QUEUE_ALLOC;
     }
-    int err = _queue_init(queue, maxsize, fmt, unbound);
+    int err = _queue_init(queue, maxsize, fmt, unboundop);
     if (err < 0) {
         GLOBAL_FREE(queue);
         return (int64_t)err;
@@ -1136,7 +1105,7 @@ queue_destroy(_queues *queues, int64_t qid)
 
 // Push an object onto the queue.
 static int
-queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unbound)
+queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
 {
     // Look up the queue.
     _queue *queue = NULL;
@@ -1159,7 +1128,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unbound)
     }
 
     // Add the data to the queue.
-    int res = _queue_add(queue, data, fmt, unbound);
+    int res = _queue_add(queue, data, fmt, unboundop);
     _queue_unmark_waiter(queue, queues->mutex);
     if (res != 0) {
         // We may chain an exception here:
@@ -1175,7 +1144,7 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unbound)
 // XXX Support a "wait" mutex?
 static int
 queue_get(_queues *queues, int64_t qid,
-          PyObject **res, int *p_fmt, int *p_unbound)
+          PyObject **res, int *p_fmt, int *p_unboundop)
 {
     int err;
     *res = NULL;
@@ -1191,7 +1160,7 @@ queue_get(_queues *queues, int64_t qid,
 
     // Pop off the next item from the queue.
     _PyCrossInterpreterData *data = NULL;
-    err = _queue_next(queue, &data, p_fmt, p_unbound);
+    err = _queue_next(queue, &data, p_fmt, p_unboundop);
     _queue_unmark_waiter(queue, queues->mutex);
     if (err != 0) {
         return err;
@@ -1481,19 +1450,19 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"maxsize", "fmt", "unboundop", NULL};
     Py_ssize_t maxsize;
     int fmt;
-    const char *unboundop;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nis:create", kwlist,
+    int unboundop;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "nii:create", kwlist,
                                      &maxsize, &fmt, &unboundop))
     {
         return NULL;
     }
-
-    int unbound;
-    if (encode_unbound(unboundop, &unbound) < 0) {
+    if (!check_unbound(unboundop)) {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported unboundop %d", unboundop);
         return NULL;
     }
 
-    int64_t qid = queue_create(&_globals.queues, maxsize, fmt, unbound);
+    int64_t qid = queue_create(&_globals.queues, maxsize, fmt, unboundop);
     if (qid < 0) {
         (void)handle_queue_error((int)qid, self, qid);
         return NULL;
@@ -1564,7 +1533,7 @@ queuesmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     struct queue_id_and_info *cur = qids;
     for (int64_t i=0; i < count; cur++, i++) {
-        PyObject *item = Py_BuildValue("Lis", cur->id, cur->fmt,
+        PyObject *item = Py_BuildValue("Lii", cur->id, cur->fmt,
                                        cur->unboundop);
         if (item == NULL) {
             Py_SETREF(ids, NULL);
@@ -1591,22 +1560,22 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
     qidarg_converter_data qidarg;
     PyObject *obj;
     int fmt;
-    const char *unboundop;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&Ois:put", kwlist,
+    int unboundop;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&Oii:put", kwlist,
                                      qidarg_converter, &qidarg, &obj, &fmt,
                                      &unboundop))
     {
         return NULL;
     }
     int64_t qid = qidarg.id;
-
-    int unbound;
-    if (encode_unbound(unboundop, &unbound) < 0) {
+    if (!check_unbound(unboundop)) {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported unboundop %d", unboundop);
         return NULL;
     }
 
     /* Queue up the object. */
-    int err = queue_put(&_globals.queues, qid, obj, fmt, unbound);
+    int err = queue_put(&_globals.queues, qid, obj, fmt, unboundop);
     // This is the only place that raises QueueFull.
     if (handle_queue_error(err, self, qid)) {
         return NULL;
@@ -1633,16 +1602,15 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyObject *obj = NULL;
     int fmt = 0;
-    int unbound = 0;
-    int err = queue_get(&_globals.queues, qid, &obj, &fmt, &unbound);
+    int unboundop = 0;
+    int err = queue_get(&_globals.queues, qid, &obj, &fmt, &unboundop);
     // This is the only place that raises QueueEmpty.
     if (handle_queue_error(err, self, qid)) {
         return NULL;
     }
 
     if (obj == NULL) {
-        const char *unboundop = decode_unbound(unbound);
-        return Py_BuildValue("Ois", Py_None, fmt, unboundop);
+        return Py_BuildValue("Oii", Py_None, fmt, unboundop);
     }
     PyObject *res = Py_BuildValue("OiO", obj, fmt, Py_None);
     Py_DECREF(obj);
@@ -1759,10 +1727,10 @@ queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     int fmt = queue->defaults.fmt;
-    const char *unboundop = decode_unbound(queue->defaults.unbound);
+    int unboundop = queue->defaults.unboundop;
     _queue_unmark_waiter(queue, _globals.queues.mutex);
 
-    PyObject *defaults = Py_BuildValue("is", fmt, unboundop);
+    PyObject *defaults = Py_BuildValue("ii", fmt, unboundop);
     return defaults;
 }
 

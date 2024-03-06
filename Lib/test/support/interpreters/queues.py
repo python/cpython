@@ -65,28 +65,37 @@ UNBOUND = object.__new__(UnboundItem)
 UNBOUND_ERROR = object()
 UNBOUND_REMOVE = object()
 
+_UNBOUND_CONSTANT_TO_FLAG = {
+    UNBOUND_REMOVE: 1,
+    UNBOUND_ERROR: 2,
+    UNBOUND: 3,
+}
+_UNBOUND_FLAG_TO_CONSTANT = {v: k
+                             for k, v in _UNBOUND_CONSTANT_TO_FLAG.items()}
 
 def _serialize_unbound(unbound):
-    if unbound is UNBOUND_REMOVE:
-        unbound = 'remove'
-    elif unbound is UNBOUND_ERROR:
-        unbound = 'error'
-    elif unbound is UNBOUND:
-        unbound = 'replace'
-    else:
-        raise NotImplementedError(f'unsupported unbound replacement {unbound !r}')
-    return unbound
+    op = unbound
+    try:
+        flag = _UNBOUND_CONSTANT_TO_FLAG[op]
+    except KeyError:
+        raise NotImplementedError(f'unsupported unbound replacement op {op!r}')
+    return flag,
 
 
-def _resolve_unbound(unbound):
-    if unbound == 'remove':
-        raise RuntimeError('"remove" not possible here')
-    elif unbound == 'error':
+def _resolve_unbound(flag):
+    try:
+        op = _UNBOUND_FLAG_TO_CONSTANT[flag]
+    except KeyError:
+        raise NotImplementedError(f'unsupported unbound replacement op {flag!r}')
+    if op is UNBOUND_REMOVE:
+        # "remove" not possible here
+        raise NotImplementedError
+    elif op is UNBOUND_ERROR:
         raise ItemInterpreterDestroyed("item's original interpreter destroyed")
-    elif unbound == 'replace':
+    elif op is UNBOUND:
         return UNBOUND
     else:
-        raise NotImplementedError(f'{unbound!r} unsupported')
+        raise NotImplementedError(repr(op))
 
 
 def create(maxsize=0, *, syncobj=False, unbounditems=UNBOUND):
@@ -103,7 +112,8 @@ def create(maxsize=0, *, syncobj=False, unbounditems=UNBOUND):
     """
     fmt = _SHARED_ONLY if syncobj else _PICKLED
     unbound = _serialize_unbound(unbounditems)
-    qid = _queues.create(maxsize, fmt, unbound)
+    unboundop, = unbound
+    qid = _queues.create(maxsize, fmt, unboundop)
     return Queue(qid, _fmt=fmt, _unbound=unbound)
 
 
@@ -126,11 +136,13 @@ class Queue:
             raise TypeError(f'id must be an int, got {id!r}')
         if _fmt is None:
             if _unbound is None:
-                _fmt, _unbound = _queues.get_queue_defaults(id)
+                _fmt, op = _queues.get_queue_defaults(id)
+                _unbound = (op,)
             else:
                 _fmt, _ = _queues.get_queue_defaults(id)
         elif _unbound is None:
-            _, _unbound = _queues.get_queue_defaults(id)
+            _, op = _queues.get_queue_defaults(id)
+            _unbound = (op,)
         try:
             self = _known_queues[id]
         except KeyError:
@@ -241,9 +253,9 @@ class Queue:
         else:
             fmt = _SHARED_ONLY if syncobj else _PICKLED
         if unbound is None:
-            unbound = self._unbound
+            unboundop, = self._unbound
         else:
-            unbound = _serialize_unbound(unbound)
+            unboundop, = _serialize_unbound(unbound)
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
@@ -253,7 +265,7 @@ class Queue:
             obj = pickle.dumps(obj)
         while True:
             try:
-                _queues.put(self._id, obj, fmt, unbound)
+                _queues.put(self._id, obj, fmt, unboundop)
             except QueueFull as exc:
                 if timeout is not None and time.time() >= end:
                     raise  # re-raise
@@ -267,12 +279,12 @@ class Queue:
         else:
             fmt = _SHARED_ONLY if syncobj else _PICKLED
         if unbound is None:
-            unbound = self._unbound
+            unboundop, = self._unbound
         else:
-            unbound = _serialize_unbound(unbound)
+            unboundop, = _serialize_unbound(unbound)
         if fmt is _PICKLED:
             obj = pickle.dumps(obj)
-        _queues.put(self._id, obj, fmt, unbound)
+        _queues.put(self._id, obj, fmt, unboundop)
 
     def get(self, timeout=None, *,
             _delay=10 / 1000,  # 10 milliseconds
@@ -292,16 +304,16 @@ class Queue:
             end = time.time() + timeout
         while True:
             try:
-                obj, fmt, unbound = _queues.get(self._id)
+                obj, fmt, unboundop = _queues.get(self._id)
             except QueueEmpty as exc:
                 if timeout is not None and time.time() >= end:
                     raise  # re-raise
                 time.sleep(_delay)
             else:
                 break
-        if unbound is not None:
+        if unboundop is not None:
             assert obj is None, repr(obj)
-            return _resolve_unbound(unbound)
+            return _resolve_unbound(unboundop)
         if fmt == _PICKLED:
             obj = pickle.loads(obj)
         else:
@@ -315,12 +327,12 @@ class Queue:
         is the same as get().
         """
         try:
-            obj, fmt, unbound = _queues.get(self._id)
+            obj, fmt, unboundop = _queues.get(self._id)
         except QueueEmpty as exc:
             raise  # re-raise
-        if unbound is not None:
+        if unboundop is not None:
             assert obj is None, repr(obj)
-            return _resolve_unbound(unbound)
+            return _resolve_unbound(unboundop)
         if fmt == _PICKLED:
             obj = pickle.loads(obj)
         else:
