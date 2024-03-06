@@ -2276,3 +2276,276 @@ error:
     Py_DECREF(mod);
     return NULL;
 }
+
+
+static int
+capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                          PyObject **args, Py_ssize_t nargs, int event)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
+
+    uint8_t tools = state->active;
+    assert(args[1] == NULL);
+    args[1] = codelike;
+    PyObject *offset_obj = PyLong_FromLong(offset);
+    if (offset_obj == NULL) {
+        return -1;
+    }
+    assert(args[2] == NULL);
+    args[2] = offset_obj;
+    Py_ssize_t nargsf = nargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject **callargs = &args[1];
+    int err = 0;
+
+    while (tools) {
+        int tool = most_significant_bit(tools);
+        assert(tool >= 0 && tool < 8);
+        assert(tools & (1 << tool));
+        tools ^= (1 << tool);
+        int res = call_one_instrument(interp, tstate, callargs, nargsf, tool, event);
+        if (res == 0) {
+            /* Nothing to do */
+        }
+        else if (res < 0) {
+            /* error */
+            err = -1;
+            break;
+        }
+        else {
+            /* DISABLE */
+            if (!PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
+                PyErr_Format(PyExc_ValueError,
+                              "Cannot disable %s events. Callback removed.",
+                             event_names[event]);
+                /* Clear tool to prevent infinite loop */
+                Py_CLEAR(interp->monitoring_callables[tool][event]);
+                err = -1;
+                break;
+            }
+            else {
+                state->opaque &= ~(1 << tool);
+            }
+        }
+    }
+    return err;
+}
+
+void
+_PyMonitoringScopeBegin(PyMonitoringState *state_array, uint64_t *version,
+                        uint8_t *event_types, uint32_t length)
+{
+}
+
+int
+_PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[3] = { NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 2,
+                                     PY_MONITORING_EVENT_PY_START);
+}
+
+int
+_PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[3] = { NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 2,
+                                     PY_MONITORING_EVENT_PY_RESUME);
+}
+
+int
+_PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                                PyObject* retval)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { retval, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_PY_RETURN);
+}
+
+int
+_PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                               PyObject* retval)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { retval, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_PY_YIELD);
+}
+
+int
+_PyMonitoring_FirePyCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject* callable, PyObject *arg0)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 4,
+                                     PY_MONITORING_EVENT_CALL);
+}
+
+int
+_PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                            PyObject* callable, PyObject *arg0)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 4,
+                                     PY_MONITORING_EVENT_CALL);
+}
+
+int
+_PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                             PyObject *lineno)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { lineno, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_LINE);
+}
+
+int
+_PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[3] = { NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 2,
+                                     PY_MONITORING_EVENT_INSTRUCTION);
+}
+
+int
+_PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                            PyObject *target_offset)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { target_offset, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_JUMP);
+}
+
+int
+_PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject *target_offset)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { target_offset, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_BRANCH);
+}
+
+int
+_PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                               PyObject *callable, PyObject *arg0)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 4,
+                                     PY_MONITORING_EVENT_C_RETURN);
+}
+
+int
+_PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                               PyObject *exception)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_PY_THROW);
+}
+
+int
+_PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                             PyObject *exception)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_RAISE);
+}
+
+int
+_PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                               PyObject *exception)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_RERAISE);
+}
+
+int
+_PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                                        PyObject *exception)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_EXCEPTION_HANDLED);
+}
+
+int
+_PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject *callable, PyObject *arg0)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 4,
+                                     PY_MONITORING_EVENT_C_RAISE);
+}
+
+int
+_PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                                PyObject *exception)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_PY_UNWIND);
+}
+
+int
+_PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                                     PyObject *exception)
+{
+    if (!state->active) {
+        return 0;
+    }
+    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    return capi_call_instrumentation(state, codelike, offset, args, 3,
+                                     PY_MONITORING_EVENT_STOP_ITERATION);
+}
