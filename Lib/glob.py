@@ -14,6 +14,10 @@ __all__ = ["glob", "iglob", "escape"]
 _special_parts = ('', os.path.curdir, os.path.pardir)
 _pattern_flags = re.NOFLAG if os.path.normcase('Aa') == 'Aa' else re.IGNORECASE
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+if os.path.altsep:
+    _path_seps = (os.path.sep, os.path.altsep)
+else:
+    _path_seps = os.path.sep
 
 
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
@@ -114,10 +118,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     given, os.path.sep and os.path.altsep (where available) are used.
     """
     if not seps:
-        if os.path.altsep:
-            seps = (os.path.sep, os.path.altsep)
-        else:
-            seps = os.path.sep
+        seps = _path_seps
     escaped_seps = ''.join(map(re.escape, seps))
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
@@ -183,7 +184,10 @@ def _split_pathname(pathname):
 def _add_trailing_slash(pathname):
     """Returns the given path with a trailing slash added, where possible.
     """
-    return os.path.join(pathname, '')
+    tail = os.path.splitdrive(pathname)[1]
+    if not tail or tail[-1] in _path_seps:
+        return pathname
+    return pathname + os.path.sep
 
 
 def _open_dir(path, rel_path, dir_fd):
