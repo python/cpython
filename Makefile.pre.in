@@ -2883,8 +2883,6 @@ clean-retain-profile: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
-	-rm -rf ./*.framework
-	-rm -rf iOSTestbed.*
 	-rm -rf iOS/testbed/Python.xcframework/ios-*/bin
 	-rm -rf iOS/testbed/Python.xcframework/ios-*/lib
 	-rm -rf iOS/testbed/Python.xcframework/ios-*/include
@@ -2915,6 +2913,7 @@ clobber: clean
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -rf iOS/Frameworks
+	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build
 
