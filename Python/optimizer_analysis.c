@@ -157,6 +157,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     uint32_t function_checked = 0;
     uint32_t globals_checked = 0;
     uint32_t globals_watched = 0;
+    uint32_t prechecked_function_version = 0;
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
         interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
     }
@@ -225,6 +226,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 if (func == NULL) {
                     return 1;
                 }
+                if (prechecked_function_version == func->func_version) {
+                    function_checked |= 1;
+                }
+                prechecked_function_version = 0;
                 assert(PyFunction_Check(func));
                 globals = func->func_globals;
                 builtins = func->func_builtins;
@@ -244,6 +249,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins = func->func_builtins;
                 break;
             }
+            case _CHECK_FUNCTION_EXACT_ARGS:
+                prechecked_function_version = (uint32_t)buffer[pc].operand;
+                break;
+            case _SAVE_RETURN_OFFSET:
+                break;
             default:
                 if (op_is_end(opcode)) {
                     return 1;
@@ -289,6 +299,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_is_null _Py_uop_sym_is_null
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
+#define sym_has_type _Py_uop_sym_has_type
 #define sym_matches_type _Py_uop_sym_matches_type
 #define sym_set_null _Py_uop_sym_set_null
 #define sym_set_non_null _Py_uop_sym_set_non_null
@@ -319,6 +330,16 @@ optimize_to_bool(
         return 1;
     }
     return 0;
+}
+
+static void
+eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
+{
+    REPLACE_OP(this_instr, _POP_TOP, 0, 0);
+    if (exit) {
+        REPLACE_OP((this_instr+1), _EXIT_TRACE, 0, 0);
+        this_instr[1].target = this_instr->target;
+    }
 }
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
@@ -441,6 +462,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 ) {
                     last->opcode = _NOP;
                     buffer[pc].opcode = NOP;
+                }
+                if (last->opcode == _REPLACE_WITH_TRUE) {
+                    last->opcode = _NOP;
                 }
                 break;
             }
