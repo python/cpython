@@ -1680,7 +1680,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
 {
     static char *keywords[] = {"function", "daemon", NULL};
     PyObject *func = NULL;
-    int daemon = 0;
+    int daemon = 1;
     thread_module_state *state = get_thread_state(module);
     if (!PyArg_ParseTupleAndKeywords(fargs, fkwargs,
                                      "O|p:start_joinable_thread", keywords,
@@ -1709,7 +1709,7 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
 }
 
 PyDoc_STRVAR(start_joinable_doc,
-"start_joinable_thread(function[, daemon]])\n\
+"start_joinable_thread(function[, daemon=True]])\n\
 \n\
 *For internal use only*: start a new thread.\n\
 \n\

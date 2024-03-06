@@ -209,7 +209,7 @@ class AuditTest(unittest.TestCase):
         expected = [
             ("_thread.start_new_thread", "(<test_func>, (), None)"),
             ("test.test_func", "()"),
-            ("_thread.start_joinable_thread", "(<test_func>, 0)"),
+            ("_thread.start_joinable_thread", "(<test_func>, 1)"),
             ("test.test_func", "()"),
         ]
 
