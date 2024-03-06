@@ -46,6 +46,14 @@ iOS specific arguments to configure
 
   Specify the name for the Python framework; defaults to ``Python``.
 
+  .. admonition:: Use this option with care!
+
+    Unless you know what you're doing, changing the name of the Python
+    framework on iOS is not advised. If you use this option, you won't be able
+    to run the ``make testios`` target without making signficant manual
+    alterations, and you won't be able to use any binary packages unless you
+    compile them yourself using your own framework name.
+
 Building Python on iOS
 ======================
 
@@ -157,6 +165,17 @@ In this invocation:
   release has been stable, the more likely it is that this constraint can be
   relaxed - the same micro version will often be sufficient.
 
+* The ``install`` target for iOS builds is slightly different to other
+  platforms. On most platforms, ``make install`` will install the build into
+  the final runtime location. This won't be the case for iOS, as the final
+  runtime location will be on a physical device.
+
+  However, you still need to run the ``install`` target for iOS builds, as it
+  performs some final framework assembly steps. The location specified with
+  ``--enable-framework`` will be the location where ``make install`` will
+  assemble the complete iOS framework. This completed framework can then
+  be copied and relocated as required.
+
 For a full CPython build, you also need to specify the paths to iOS builds of
 the binary libraries that CPython depends on (XZ, BZip2, LibFFI and OpenSSL).
 This can be done by defining the ``LIBLZMA_CFLAGS``, ``LIBLZMA_LIBS``,
@@ -252,13 +271,21 @@ suite passes.
 
 To run the test suite, configure a Python build for an iOS simulator (i.e.,
 ``--host=arm64-apple-ios-simulator`` or ``--host=x86_64-apple-ios-simulator``
-), specifying a framework build (i.e. ``--enable-framework``). Then run ``make
-testios`` (ensuring that your ``PATH`` has been configured to include the
-``iOS/Resources/bin`` folder, and exclude any non-iOS tools). This will build
-an iOS framework for your chosen architecture, copy the testbed project into
-the ``build`` directory, install the Python iOS framework into the build copy
-of the testbed project, and run the test suite on an "iPhone SE (3rd
-generation)" simulator.
+), specifying a framework build (i.e. ``--enable-framework``). Ensure that your
+``PATH`` has been configured to include the ``iOS/Resources/bin`` folder and
+exclude any non-iOS tools, then run::
+
+    $ make all
+    $ make install
+    $ make testios
+
+This will:
+
+* Build an iOS framework for your chosen architecture;
+* Finalize the single-platform framework;
+* Make a clean copy of the testbed project;
+* Install the Python iOS framework into the copy of the testbed project; and
+* Run the test suite on an "iPhone SE (3rd generation)" simulator.
 
 While the test suite is running, Xcode does not display any console output.
 After showing some Xcode build commands, the console output will print ``Testing

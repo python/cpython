@@ -1995,10 +1995,28 @@ testuniversal: all
 
 # Run the test suite on the iOS simulator. Must be run on a macOS machine with
 # a full Xcode install that has an iPhone SE (3rd edition) simulator available.
-XCFOLDER=$(srcdir)/build/iOSTestbed.$(MULTIARCH).$(shell date +%s)
+# This must be run *after* a `make install` has completed the build. The
+# `--with-framework-name` argument *cannot* be used when configuring the build.
+XCFOLDER=iOSTestbed.$(MULTIARCH).$(shell date +%s)
 XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
 .PHONY: testios
-testios: install
+testios:
+	@if test "$(MACHDEP)" != "ios"; then \
+		echo "Cannot run the iOS testbed for a non-iOS build."; \
+		exit 1;\
+	fi
+	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
+		echo "Cannot run the iOS testbed for non-simulator builds."; \
+		exit 1;\
+	fi
+	@if test $(PYTHONFRAMEWORK) != "Python"; then \
+		echo "Cannot run the iOS testbed with a non-default framework name."; \
+		exit 1;\
+	fi
+	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
+		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
+		exit 1;\
+	fi
 	# Copy the testbed project into the build folder
 	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
 	# Copy the framework from the install location to the testbed project.
@@ -2865,6 +2883,8 @@ clean-retain-profile: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
+	-rm -rf ./*.framework
+	-rm -rf iOSTestbed.*
 	-rm -rf iOS/testbed/Python.xcframework/ios-*/bin
 	-rm -rf iOS/testbed/Python.xcframework/ios-*/lib
 	-rm -rf iOS/testbed/Python.xcframework/ios-*/include

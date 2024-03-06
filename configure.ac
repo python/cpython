@@ -535,7 +535,7 @@ AC_ARG_ENABLE([framework],
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=${srcdir}/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) AC_MSG_ERROR([Unknown platform for framework build])
 		esac
 	esac
@@ -3366,8 +3366,8 @@ then
 		fi
 		;;
 	iOS/*)
-		LDSHARED='$(CC) -dynamiclib -F . -framework Python'
-		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework Python'
+		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
 	Emscripten|WASI)

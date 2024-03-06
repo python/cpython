@@ -4248,7 +4248,7 @@ then :
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=${srcdir}/iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 		esac
 	esac
@@ -12819,8 +12819,8 @@ then
 		fi
 		;;
 	iOS/*)
-		LDSHARED='$(CC) -dynamiclib -F . -framework Python'
-		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework Python'
+		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
 	Emscripten|WASI)
