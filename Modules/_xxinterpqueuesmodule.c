@@ -58,6 +58,19 @@ _release_xid_data(_PyCrossInterpreterData *data, int flags)
     return res;
 }
 
+static inline int64_t
+_get_interpid(_PyCrossInterpreterData *data)
+{
+    int64_t interpid;
+    if (data != NULL) {
+        interpid = _PyCrossInterpreterData_INTERPID(data);
+        assert(!PyErr_Occurred());
+    }
+    else {
+        interpid = PyInterpreterState_GetID(PyInterpreterState_Get());
+    }
+    return interpid;
+}
 
 static PyInterpreterState *
 _get_current_interp(void)
@@ -420,6 +433,9 @@ check_unbound(int unboundop)
 struct _queueitem;
 
 typedef struct _queueitem {
+    /* The interpreter that added the item to the queue.
+       The actual bound interpid is found in item->data. */
+    int64_t interpid;
     _PyCrossInterpreterData *data;
     int fmt;
     int unboundop;
@@ -428,10 +444,20 @@ typedef struct _queueitem {
 
 static void
 _queueitem_init(_queueitem *item,
-                _PyCrossInterpreterData *data, int fmt, int unboundop)
+                int64_t interpid, _PyCrossInterpreterData *data,
+                int fmt, int unboundop)
 {
+    if (interpid < 0) {
+        interpid = _get_interpid(data);
+    }
+    else {
+        assert(data == NULL
+               || _PyCrossInterpreterData_INTERPID(data) < 0
+               || interpid == _PyCrossInterpreterData_INTERPID(data));
+    }
     assert(check_unbound(unboundop));
     *item = (_queueitem){
+        .interpid = interpid,
         .data = data,
         .fmt = fmt,
         .unboundop = unboundop,
@@ -456,15 +482,17 @@ _queueitem_clear(_queueitem *item)
     _queueitem_clear_data(item);
 }
 
+
 static _queueitem *
-_queueitem_new(_PyCrossInterpreterData *data, int fmt, int unboundop)
+_queueitem_new(int64_t interpid, _PyCrossInterpreterData *data,
+               int fmt, int unboundop)
 {
     _queueitem *item = GLOBAL_MALLOC(_queueitem);
     if (item == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    _queueitem_init(item, data, fmt, unboundop);
+    _queueitem_init(item, interpid, data, fmt, unboundop);
     return item;
 }
 
@@ -495,6 +523,34 @@ _queueitem_popped(_queueitem *item,
     // We clear them here, so they won't be released in _queueitem_clear().
     item->data = NULL;
     _queueitem_free(item);
+}
+
+static int
+_queueitem_clear_interpreter(_queueitem *item)
+{
+    assert(item->interpid >= 0);
+    if (item->data == NULL) {
+        // Its interpreter was already cleared (or it was never bound).
+        // For UNBOUND_REMOVE it should have been freed at that time.
+        assert(item->unboundop != UNBOUND_REMOVE);
+        return 0;
+    }
+    assert(_PyCrossInterpreterData_INTERPID(item->data) == item->interpid);
+
+    switch (item->unboundop) {
+    case UNBOUND_REMOVE:
+        // The caller must free/clear it.
+        return 1;
+    case UNBOUND_ERROR:
+    case UNBOUND_REPLACE:
+        // We won't need the cross-interpreter data later
+        // so we completely throw it away.
+        _queueitem_clear_data(item);
+        return 0;
+    default:
+        Py_FatalError("not reachable");
+        return -1;
+    }
 }
 
 
@@ -614,7 +670,8 @@ _queue_unlock(_queue *queue)
 }
 
 static int
-_queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt, int unboundop)
+_queue_add(_queue *queue, int64_t interpid, _PyCrossInterpreterData *data,
+           int fmt, int unboundop)
 {
     int err = _queue_lock(queue);
     if (err < 0) {
@@ -630,7 +687,7 @@ _queue_add(_queue *queue, _PyCrossInterpreterData *data, int fmt, int unboundop)
         return ERR_QUEUE_FULL;
     }
 
-    _queueitem *item = _queueitem_new(data, fmt, unboundop);
+    _queueitem *item = _queueitem_new(interpid, data, fmt, unboundop);
     if (item == NULL) {
         _queue_unlock(queue);
         return -1;
@@ -735,25 +792,22 @@ _queue_clear_interpreter(_queue *queue, int64_t interpid)
     while (next != NULL) {
         _queueitem *item = next;
         next = item->next;
-        if (item->data != NULL
-            && _PyCrossInterpreterData_INTERPID(item->data) == interpid)
-        {
-            if (item->unboundop == UNBOUND_REMOVE) {
-                if (prev == NULL) {
-                    queue->items.first = item->next;
-                }
-                else {
-                    prev->next = item->next;
-                }
-                _queueitem_free(item);
-                queue->items.count -= 1;
-                continue;
+        int remove = (item->interpid == interpid)
+            ? _queueitem_clear_interpreter(item)
+            : 0;
+        if (remove) {
+            _queueitem_free(item);
+            if (prev == NULL) {
+                queue->items.first = next;
             }
-
-            // We completely throw away the cross-interpreter data.
-            _queueitem_clear_data(item);
+            else {
+                prev->next = next;
+            }
+            queue->items.count -= 1;
         }
-        prev = item;
+        else {
+            prev = item;
+        }
     }
 
     _queue_unlock(queue);
@@ -1128,9 +1182,12 @@ queue_put(_queues *queues, int64_t qid, PyObject *obj, int fmt, int unboundop)
         GLOBAL_FREE(data);
         return -1;
     }
+    assert(_PyCrossInterpreterData_INTERPID(data) == \
+           PyInterpreterState_GetID(PyInterpreterState_Get()));
 
     // Add the data to the queue.
-    int res = _queue_add(queue, data, fmt, unboundop);
+    int64_t interpid = -1;  // _queueitem_init() will set it.
+    int res = _queue_add(queue, interpid, data, fmt, unboundop);
     _queue_unmark_waiter(queue, queues->mutex);
     if (res != 0) {
         // We may chain an exception here:
