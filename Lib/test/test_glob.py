@@ -344,6 +344,9 @@ class GlobTests(unittest.TestCase):
         eq(self.rglob('nonexistent', '*'), [])
         eq(self.rglob('nonexistent', '**'), [])
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
     def test_glob_named_pipe(self):
         path = os.path.join(self.tempdir, 'mypipe')
         os.mkfifo(path)
