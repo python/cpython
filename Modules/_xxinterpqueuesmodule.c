@@ -169,6 +169,9 @@ static int
 clear_module_state(module_state *state)
 {
     /* external types */
+    if (state->queue_type != NULL) {
+        (void)_PyCrossInterpreterData_UnregisterClass(state->queue_type);
+    }
     Py_CLEAR(state->queue_type);
 
     /* QueueError */
@@ -1078,15 +1081,18 @@ set_external_queue_type(PyObject *module, PyTypeObject *queue_type)
 {
     module_state *state = get_module_state(module);
 
+    // Clear the old value if the .py module was reloaded.
     if (state->queue_type != NULL) {
-        PyErr_SetString(PyExc_TypeError, "already registered");
-        return -1;
+        (void)_PyCrossInterpreterData_UnregisterClass(
+                                state->queue_type);
+        Py_CLEAR(state->queue_type);
     }
-    state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
 
+    // Add and register the new type.
     if (ensure_xid_class(queue_type, _queueobj_shared) < 0) {
         return -1;
     }
+    state->queue_type = (PyTypeObject *)Py_NewRef(queue_type);
 
     return 0;
 }
@@ -1702,10 +1708,6 @@ static int
 module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
-
-    if (state->queue_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->queue_type);
-    }
 
     // Now we clear the module state.
     clear_module_state(state);
