@@ -1892,11 +1892,7 @@
             break;
         }
 
-        case _CHECK_GLOBALS: {
-            break;
-        }
-
-        case _CHECK_BUILTINS: {
+        case _CHECK_FUNCTION: {
             break;
         }
 
