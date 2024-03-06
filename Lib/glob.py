@@ -69,7 +69,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         root_slicer = operator.itemgetter(slice(len(root_dir), None))
         paths = select(root_dir, root_dir, dir_fd, False)
         paths = map(root_slicer, paths)
-        paths = itertools.dropwhile(lambda path: not path, paths)
+        paths = itertools.dropwhile(operator.not_, paths)
     if is_bytes:
         paths = map(os.fsencode, paths)
     return paths
