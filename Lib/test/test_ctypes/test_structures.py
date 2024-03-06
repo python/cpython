@@ -85,6 +85,23 @@ class StructureTestCase(unittest.TestCase):
                 self.assertTrue(Structure.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(Structure.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
+    def test_metaclass_details(self):
+        # Abstract classes (whose metaclass __init__ was not called) can't be
+        # instantiated directly
+        NewStructure = PyCStructType.__new__(PyCStructType, 'NewStructure',
+                                             (Structure,), {})
+        for cls in Structure, NewStructure:
+            with self.subTest(cls=cls):
+                with self.assertRaisesRegex(TypeError, "abstract class"):
+                    obj = cls()
+
+        # Cannot call the metaclass __init__ more than once
+        class T(Structure):
+            _fields_ = [("x", c_char),
+                        ("y", c_char)]
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCStructType.__init__(T, 'ptr', (), {})
+
     def test_simple_structs(self):
         for code, tp in self.formats.items():
             class X(Structure):
