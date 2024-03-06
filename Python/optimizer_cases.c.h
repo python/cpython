@@ -1130,55 +1130,78 @@
         }
 
         case _COMPARE_OP: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (oparg & 16) {
+                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+            }
+            else {
+                OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_new_not_null(ctx));
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _COMPARE_OP_FLOAT: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _COMPARE_OP_INT: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _COMPARE_OP_STR: {
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
             stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _IS_OP: {
-            _Py_UopsSymbol *b;
-            b = sym_new_unknown(ctx);
-            if (b == NULL) goto out_of_space;
-            stack_pointer[-2] = b;
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
+            _Py_UopsSymbol *res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+            stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
 
         case _CONTAINS_OP: {
-            _Py_UopsSymbol *b;
-            b = sym_new_unknown(ctx);
-            if (b == NULL) goto out_of_space;
-            stack_pointer[-2] = b;
+            _Py_UopsSymbol *right;
+            _Py_UopsSymbol *left;
+            _Py_UopsSymbol *res;
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+            stack_pointer[-2] = res;
             stack_pointer += -1;
             break;
         }
