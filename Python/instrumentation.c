@@ -2286,6 +2286,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, uint32_t
     PyInterpreterState *interp = tstate->interp;
 
     uint8_t tools = state->active;
+if (args[1]) _PyObject_Dump(args[1]);
     assert(args[1] == NULL);
     args[1] = codelike;
     PyObject *offset_obj = PyLong_FromLong(offset);
@@ -2366,7 +2367,7 @@ _PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, ui
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { retval, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, retval };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_RETURN);
 }
@@ -2378,21 +2379,9 @@ _PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, uin
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { retval, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, retval };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_YIELD);
-}
-
-int
-_PyMonitoring_FirePyCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
-                              PyObject* callable, PyObject *arg0)
-{
-    if (!state->active) {
-        return 0;
-    }
-    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
-    return capi_call_instrumentation(state, codelike, offset, args, 4,
-                                     PY_MONITORING_EVENT_CALL);
 }
 
 int
@@ -2402,7 +2391,7 @@ _PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, uint32
     if (!state->active) {
         return 0;
     }
-    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
+    PyObject *args[5] = { NULL, NULL, NULL, callable, arg0 };
     return capi_call_instrumentation(state, codelike, offset, args, 4,
                                      PY_MONITORING_EVENT_CALL);
 }
@@ -2414,20 +2403,9 @@ _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, uint32
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { lineno, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, lineno };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_LINE);
-}
-
-int
-_PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
-{
-    if (!state->active) {
-        return 0;
-    }
-    PyObject *args[3] = { NULL, NULL, NULL };
-    return capi_call_instrumentation(state, codelike, offset, args, 2,
-                                     PY_MONITORING_EVENT_INSTRUCTION);
 }
 
 int
@@ -2437,7 +2415,7 @@ _PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, uint32
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { target_offset, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, target_offset };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_JUMP);
 }
@@ -2449,21 +2427,9 @@ _PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, uint
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { target_offset, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, target_offset };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_BRANCH);
-}
-
-int
-_PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
-                               PyObject *callable, PyObject *arg0)
-{
-    if (!state->active) {
-        return 0;
-    }
-    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
-    return capi_call_instrumentation(state, codelike, offset, args, 4,
-                                     PY_MONITORING_EVENT_C_RETURN);
 }
 
 int
@@ -2473,7 +2439,7 @@ _PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, uin
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_THROW);
 }
@@ -2485,7 +2451,7 @@ _PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint3
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_RAISE);
 }
@@ -2497,7 +2463,7 @@ _PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, uin
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_RERAISE);
 }
@@ -2509,21 +2475,9 @@ _PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *code
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_EXCEPTION_HANDLED);
-}
-
-int
-_PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
-                              PyObject *callable, PyObject *arg0)
-{
-    if (!state->active) {
-        return 0;
-    }
-    PyObject *args[5] = { callable, arg0, NULL, NULL, NULL };
-    return capi_call_instrumentation(state, codelike, offset, args, 4,
-                                     PY_MONITORING_EVENT_C_RAISE);
 }
 
 int
@@ -2533,7 +2487,7 @@ _PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, ui
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_UNWIND);
 }
@@ -2545,7 +2499,7 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
     if (!state->active) {
         return 0;
     }
-    PyObject *args[4] = { exception, NULL, NULL, NULL };
+    PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_STOP_ITERATION);
 }

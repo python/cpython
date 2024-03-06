@@ -9,6 +9,7 @@ import textwrap
 import types
 import unittest
 import asyncio
+import _testinternalcapi
 from test.support import requires_specialization
 
 PAIR = (0,1)
@@ -1858,3 +1859,62 @@ class TestTier2Optimizer(CheckEvents):
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.set_events(TEST_TOOL, 0)
         self.assertGreater(len(events), 250)
+
+
+class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
+
+    def setUp(self):
+        super(TestCApiEventGeneration, self).setUp()
+
+        def cb(*args):
+            self.results.append(('cb',) + args)
+
+        def cb2(*args):
+            self.results.append(('cb2',) + args)
+
+        self.cb = cb
+        self.cb2 = cb2
+
+        events = sys.monitoring.events
+        capi = _testinternalcapi
+        self.cases = [
+            # (Event, function, *args)
+            (events.PY_START, capi.fire_event_py_start),
+            (events.PY_RESUME, capi.fire_event_py_resume),
+            (events.PY_RETURN, capi.fire_event_py_return, 10),
+            (events.PY_YIELD, capi.fire_event_py_yield, 20),
+            (events.CALL, capi.fire_event_call, callable, 30),
+            (events.LINE, capi.fire_event_line, 40),
+            (events.JUMP, capi.fire_event_jump, 50),
+            (events.BRANCH, capi.fire_event_branch, 60),
+            (events.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
+            (events.RAISE, capi.fire_event_raise, ValueError(2)),
+            (events.RERAISE, capi.fire_event_reraise, ValueError(3)),
+            (events.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(4)),
+            (events.PY_UNWIND, capi.fire_event_py_unwind, ValueError(5)),
+            (events.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(6)),
+        ]
+
+    def do_test(self, event, expected):
+
+        self.results = []
+        # Register TEST_TOOL and TEST_TOOL2, but activate only TEST_TOOL
+        sys.monitoring.register_callback(TEST_TOOL, event, self.cb)
+        sys.monitoring.register_callback(TEST_TOOL2, event, self.cb2)
+        active = 1 << TEST_TOOL
+
+        try:
+            # fire one of each event type
+            for offset, (_, function, *args) in enumerate(self.cases):
+                function(function.__name__, offset, active, *args)
+
+            self.assertEqual(self.results, [('cb',) + expected])
+        finally:
+            sys.monitoring.register_callback(TEST_TOOL, event, None)
+            sys.monitoring.register_callback(TEST_TOOL2, event, None)
+
+    def test_fire_event_py_start(self):
+        for offset, (event, function, *args) in enumerate(self.cases):
+            with self.subTest(event):
+                output = (function.__name__, offset, *args)
+                self.do_test(event, output)
