@@ -324,18 +324,18 @@ typedef struct {
     PyObject_HEAD
 
     ThreadHandle *handle;
-} ThreadHandleObject;
+} PyThreadHandleObject;
 
-static ThreadHandleObject *
-ThreadHandleObject_new(thread_module_state *state)
+static PyThreadHandleObject *
+PyThreadHandleObject_new(thread_module_state *state)
 {
     ThreadHandle *handle = ThreadHandle_new();
     if (handle == NULL) {
         return NULL;
     }
 
-    ThreadHandleObject *self =
-        PyObject_New(ThreadHandleObject, state->thread_handle_type);
+    PyThreadHandleObject *self =
+        PyObject_New(PyThreadHandleObject, state->thread_handle_type);
     if (self == NULL) {
         ThreadHandle_decref(handle);
         return NULL;
@@ -347,7 +347,7 @@ ThreadHandleObject_new(thread_module_state *state)
 }
 
 static void
-ThreadHandleObject_dealloc(ThreadHandleObject *self)
+PyThreadHandleObject_dealloc(PyThreadHandleObject *self)
 {
     PyObject *tp = (PyObject *) Py_TYPE(self);
     ThreadHandle_decref(self->handle);
@@ -356,21 +356,21 @@ ThreadHandleObject_dealloc(ThreadHandleObject *self)
 }
 
 static PyObject *
-ThreadHandleObject_repr(ThreadHandleObject *self)
+PyThreadHandleObject_repr(PyThreadHandleObject *self)
 {
     return PyUnicode_FromFormat("<%s object: ident=%" PY_FORMAT_THREAD_IDENT_T ">",
                                 Py_TYPE(self)->tp_name, self->handle->ident);
 }
 
 static PyObject *
-ThreadHandleObject_get_ident(ThreadHandleObject *self,
-                             PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_get_ident(PyThreadHandleObject *self,
+                               PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromUnsignedLongLong(self->handle->ident);
 }
 
 static PyObject *
-ThreadHandleObject_join(ThreadHandleObject *self, PyObject *args)
+PyThreadHandleObject_join(PyThreadHandleObject *self, PyObject *args)
 {
     PyObject *timeout_obj = NULL;
     if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
@@ -392,8 +392,8 @@ ThreadHandleObject_join(ThreadHandleObject *self, PyObject *args)
 }
 
 static PyObject *
-ThreadHandleObject_is_done(ThreadHandleObject *self,
-                           PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_is_done(PyThreadHandleObject *self,
+                             PyObject *Py_UNUSED(ignored))
 {
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
         Py_RETURN_TRUE;
@@ -404,8 +404,8 @@ ThreadHandleObject_is_done(ThreadHandleObject *self,
 }
 
 static PyObject *
-ThreadHandleObject_set_done(ThreadHandleObject *self,
-                            PyObject *Py_UNUSED(ignored))
+PyThreadHandleObject_set_done(PyThreadHandleObject *self,
+                              PyObject *Py_UNUSED(ignored))
 {
     if (ThreadHandle_set_done(self->handle) < 0) {
         return NULL;
@@ -414,21 +414,20 @@ ThreadHandleObject_set_done(ThreadHandleObject *self,
 }
 
 static PyGetSetDef ThreadHandle_getsetlist[] = {
-    {"ident", (getter)ThreadHandleObject_get_ident, NULL, NULL},
+    {"ident", (getter)PyThreadHandleObject_get_ident, NULL, NULL},
     {0},
 };
 
-static PyMethodDef ThreadHandle_methods[] =
-{
-    {"join", (PyCFunction)ThreadHandleObject_join, METH_VARARGS, NULL},
-    {"_set_done", (PyCFunction)ThreadHandleObject_set_done, METH_NOARGS, NULL},
-    {"is_done", (PyCFunction)ThreadHandleObject_is_done, METH_NOARGS, NULL},
+static PyMethodDef ThreadHandle_methods[] = {
+    {"join", (PyCFunction)PyThreadHandleObject_join, METH_VARARGS, NULL},
+    {"_set_done", (PyCFunction)PyThreadHandleObject_set_done, METH_NOARGS, NULL},
+    {"is_done", (PyCFunction)PyThreadHandleObject_is_done, METH_NOARGS, NULL},
     {0, 0}
 };
 
 static PyType_Slot ThreadHandle_Type_slots[] = {
-    {Py_tp_dealloc, (destructor)ThreadHandleObject_dealloc},
-    {Py_tp_repr, (reprfunc)ThreadHandleObject_repr},
+    {Py_tp_dealloc, (destructor)PyThreadHandleObject_dealloc},
+    {Py_tp_repr, (reprfunc)PyThreadHandleObject_repr},
     {Py_tp_getset, ThreadHandle_getsetlist},
     {Py_tp_methods, ThreadHandle_methods},
     {0, 0}
@@ -436,7 +435,7 @@ static PyType_Slot ThreadHandle_Type_slots[] = {
 
 static PyType_Spec ThreadHandle_Type_spec = {
     "_thread._ThreadHandle",
-    sizeof(ThreadHandleObject),
+    sizeof(PyThreadHandleObject),
     0,
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     ThreadHandle_Type_slots,
@@ -1592,7 +1591,7 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         }
         return NULL;
     }
-    ThreadHandleObject *hobj = ThreadHandleObject_new(state);
+    PyThreadHandleObject *hobj = PyThreadHandleObject_new(state);
     if (hobj == NULL) {
         PyThreadState_Delete(boot->tstate);
         PyMem_RawFree(boot);
@@ -1657,7 +1656,7 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
     if (hobj == NULL) {
         return NULL;
     }
-    PyThread_ident_t ident = ((ThreadHandleObject *)hobj)->handle->ident;
+    PyThread_ident_t ident = ((PyThreadHandleObject *)hobj)->handle->ident;
     Py_DECREF(hobj);
     return PyLong_FromUnsignedLongLong(ident);
 }
@@ -2087,7 +2086,7 @@ static PyObject *
 thread__make_thread_handle(PyObject *module, PyObject *ident)
 {
     thread_module_state *state = get_thread_state(module);
-    ThreadHandleObject *hobj = ThreadHandleObject_new(state);
+    PyThreadHandleObject *hobj = PyThreadHandleObject_new(state);
     if (hobj == NULL) {
         return NULL;
     }
