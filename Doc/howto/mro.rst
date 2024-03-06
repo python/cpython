@@ -1,3 +1,5 @@
+.. _python_2.3_mro:
+
 The Python 2.3 Method Resolution Order
 ======================================
 
