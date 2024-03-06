@@ -223,11 +223,11 @@ def _literal_selector(part, parts, recursive, include_hidden):
     """Returns a function that selects a literal descendant of a given path.
     """
     is_special = part in _special_parts
-    while parts and magic_check.search(parts[0]) is None:
+    while parts and magic_check.search(next_part := parts[0]) is None:
         # Consume next non-wildcard component (speeds up joining).
-        if parts[0] not in _special_parts:
+        if next_part not in _special_parts:
             is_special = False
-        part += os.path.sep + parts[0]
+        part += os.path.sep + next_part
         parts = parts[1:]
 
     select_next = _selector(parts, recursive, include_hidden)
@@ -302,9 +302,9 @@ def _recursive_selector(part, parts, recursive, include_hidden):
     """
     while parts and parts[0] == '**':
         parts = parts[1:]
-    while parts and parts[0] not in _special_parts:
+    while parts and (next_part := parts[0]) not in _special_parts:
         # Consume next non-special component (used to build regex).
-        part += os.path.sep + parts[0]
+        part += os.path.sep + next_part
         parts = parts[1:]
 
     if include_hidden and part == '**':
