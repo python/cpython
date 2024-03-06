@@ -68,9 +68,9 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         else:
             root_dir = './'
         paths = select(root_dir, root_dir, dir_fd, False)
-        paths = _remove_prefix(paths, root_dir)
+        paths = _remove_prefix(paths, len(root_dir))
     if is_bytes:
-        paths = (os.fsencode(path) for path in paths)
+        paths = map(os.fsencode, paths)
     return paths
 
 
@@ -147,6 +147,12 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     return fr'(?s:{res})\Z'
 
 
+def _compile_pattern(pattern, recursive, include_hidden):
+    regex = translate(pattern, recursive=recursive,
+                      include_hidden=include_hidden, seps=os.path.sep)
+    return re.compile(regex, flags=_pattern_flags).match
+
+
 def _split_pathname(pathname):
     """Split the given path into a pair (anchor, parts), where *anchor* is the
     path drive and root (if any), and *parts* is a tuple of path components.
@@ -168,11 +174,11 @@ def _add_trailing_slash(pathname):
     return os.path.join(pathname, '')
 
 
-def _remove_prefix(paths, prefix):
+def _remove_prefix(paths, prefix_len):
     """Yields paths with a given prefix removed, filtering out empty results.
     """
     for path in paths:
-        path = path.removeprefix(prefix)
+        path = path[prefix_len:]
         if path:
             yield path
 
@@ -240,18 +246,14 @@ def _wildcard_selector(part, parts, recursive, include_hidden):
     if include_hidden and part == '*':
         match = None  # Skip generating a pattern that would match all inputs.
     else:
-        regex = translate(part, recursive=recursive,
-                          include_hidden=include_hidden, seps=os.path.sep)
-        match = re.compile(regex, flags=_pattern_flags).match
+        match = _compile_pattern(part, recursive, include_hidden)
 
-    dir_only = bool(parts)
-    select_next = _selector(parts, recursive, include_hidden)
-
-    def select_wildcard(path, rel_path, dir_fd, exists):
-        close_fd = False
-        try:
-            arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
-            if dir_only:
+    if parts:
+        select_next = _selector(parts, recursive, include_hidden)
+        def select_wildcard(path, rel_path, dir_fd, exists):
+            close_fd = False
+            try:
+                arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
                 if fd is not None:
                     prefix = _add_trailing_slash(path)
                 with os.scandir(arg) as scandir_it:
@@ -266,17 +268,27 @@ def _wildcard_selector(part, parts, recursive, include_hidden):
                                 yield from select_next(entry_path, entry.name, fd, True)
                         except OSError:
                             pass
-            else:
+            except OSError:
+                pass
+            finally:
+                if close_fd:
+                    os.close(fd)
+
+    else:
+        def select_wildcard(path, rel_path, dir_fd, exists):
+            close_fd = False
+            try:
+                arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
                 prefix = _add_trailing_slash(path)
                 for name in os.listdir(arg):
                     if match is None or match(name):
-                        yield from select_next(prefix + name, name, fd, True)
+                        yield prefix + name
+            except OSError:
+                pass
+            finally:
+                if close_fd:
+                    os.close(fd)
 
-        except OSError:
-            pass
-        finally:
-            if close_fd:
-                os.close(fd)
     return select_wildcard
 
 
@@ -295,9 +307,7 @@ def _recursive_selector(part, parts, recursive, include_hidden):
     if include_hidden and part == '**':
         match = None  # Skip generating a pattern that would match all inputs.
     else:
-        regex = translate(part, recursive=recursive,
-                          include_hidden=include_hidden, seps=os.path.sep)
-        match = re.compile(regex, flags=_pattern_flags).match
+        match = _compile_pattern(part, recursive, include_hidden)
 
     dir_only = bool(parts)
     select_next = _selector(parts, recursive, include_hidden)
