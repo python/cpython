@@ -1001,7 +1001,7 @@ class RawConfigParser(MutableMapping):
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if (cursect is not None and optname and
                 cur_indent_level > indent_level):
-                if not cursect[optname]:
+                if cursect[optname] is None:
                     raise MultilineContinuationError(fpname, lineno, line)
                 cursect[optname].append(value)
             # a section header or option header?
