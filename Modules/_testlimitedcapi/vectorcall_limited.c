@@ -1,7 +1,5 @@
 /* Test Vectorcall in the limited API */
 
-#include "pyconfig.h"   // Py_GIL_DISABLED
-
 #include "parts.h"
 #include "clinic/vectorcall_limited.c.h"
 
