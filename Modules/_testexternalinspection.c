@@ -17,7 +17,7 @@
 
 #if defined(__APPLE__)
 #  include <TargetConditionals.h>
-#  if !TARGET_OS_IOS
+#  if TARGET_OS_OSX
 #    include <libproc.h>
 #    include <mach-o/fat.h>
 #    include <mach-o/loader.h>
@@ -53,7 +53,7 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#if defined(__APPLE__) && !TARGET_OS_IOS
+#if defined(__APPLE__) && TARGET_OS_OSX
 static void*
 analyze_macho64(mach_port_t proc_ref, void* base, void* map)
 {
@@ -376,7 +376,7 @@ read_memory(pid_t pid, void* remote_address, size_t len, void* dst)
         result += read;
     } while ((size_t)read != local[0].iov_len);
     total_bytes_read = result;
-#elif defined(__APPLE__) && !defined(TARGET_OS_IOS)
+#elif defined(__APPLE__) && TARGET_OS_OSX
     ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
             pid_to_task(pid),
@@ -432,7 +432,7 @@ get_py_runtime(pid_t pid)
 {
 #if defined(__linux__)
     return get_py_runtime_linux(pid);
-#elif defined(__APPLE__) && !defined(TARGET_OS_IOS)
+#elif defined(__APPLE__) && TARGET_OS_OSX
     return get_py_runtime_macos(pid);
 #else
     return NULL;
