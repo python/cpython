@@ -1,2 +1,0 @@
-The internal eval_breaker and supporting flags, plus the monitoring version
-have been merged into a single atomic integer to speed up checks.

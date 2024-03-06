@@ -105,20 +105,11 @@ class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
 
 /* batched object ************************************************************/
 
-/* Note:  The built-in zip() function includes a "strict" argument
-   that was needed because that function would silently truncate data,
-   and there was no easy way for a user to detect the data loss.
-   The same reasoning does not apply to batched() which never drops data.
-   Instead, batched() produces a shorter tuple which can be handled
-   as the user sees fit.  If requested, it would be reasonable to add
-   "fillvalue" support which had demonstrated value in zip_longest().
-   For now, the API is kept simple and clean.
- */
-
 typedef struct {
     PyObject_HEAD
     PyObject *it;
     Py_ssize_t batch_size;
+    bool strict;
 } batchedobject;
 
 /*[clinic input]
@@ -126,6 +117,9 @@ typedef struct {
 itertools.batched.__new__ as batched_new
     iterable: object
     n: Py_ssize_t
+    *
+    strict: bool = False
+
 Batch data into tuples of length n. The last batch may be shorter than n.
 
 Loops over the input iterable and accumulates data into tuples
@@ -140,11 +134,15 @@ or when the input iterable is exhausted.
     ('D', 'E', 'F')
     ('G',)
 
+If "strict" is True, raises a ValueError if the final batch is shorter
+than n.
+
 [clinic start generated code]*/
 
 static PyObject *
-batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
-/*[clinic end generated code: output=7ebc954d655371b6 input=ffd70726927c5129]*/
+batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n,
+                 int strict)
+/*[clinic end generated code: output=c6de11b061529d3e input=7814b47e222f5467]*/
 {
     PyObject *it;
     batchedobject *bo;
@@ -170,6 +168,7 @@ batched_new_impl(PyTypeObject *type, PyObject *iterable, Py_ssize_t n)
     }
     bo->batch_size = n;
     bo->it = it;
+    bo->strict = (bool) strict;
     return (PyObject *)bo;
 }
 
@@ -231,6 +230,12 @@ batched_next(batchedobject *bo)
     if (i == 0) {
         Py_CLEAR(bo->it);
         Py_DECREF(result);
+        return NULL;
+    }
+    if (bo->strict) {
+        Py_CLEAR(bo->it);
+        Py_DECREF(result);
+        PyErr_SetString(PyExc_ValueError, "batched(): incomplete batch");
         return NULL;
     }
     _PyTuple_Resize(&result, i);
@@ -330,21 +335,30 @@ pairwise_next(pairwiseobject *po)
         return NULL;
     }
     if (old == NULL) {
-        po->old = old = (*Py_TYPE(it)->tp_iternext)(it);
+        old = (*Py_TYPE(it)->tp_iternext)(it);
+        Py_XSETREF(po->old, old);
         if (old == NULL) {
             Py_CLEAR(po->it);
             return NULL;
         }
+        it = po->it;
+        if (it == NULL) {
+            Py_CLEAR(po->old);
+            return NULL;
+        }
     }
+    Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
         Py_CLEAR(po->old);
+        Py_DECREF(old);
         return NULL;
     }
     /* Future optimization: Reuse the result tuple as we do in enumerate() */
     result = PyTuple_Pack(2, old, new);
-    Py_SETREF(po->old, new);
+    Py_XSETREF(po->old, new);
+    Py_DECREF(old);
     return result;
 }
 
@@ -4609,15 +4623,15 @@ batched(p, n) --> [p0, p1, ..., p_n-1], [p_n, p_n+1, ..., p_2n-1], ...\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ...\n\
 chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ...\n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
-dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
+dropwhile(predicate, seq) --> seq[n], seq[n+1], starting when predicate fails\n\
 groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
-filterfalse(pred, seq) --> elements of seq where pred(elem) is False\n\
+filterfalse(predicate, seq) --> elements of seq where predicate(elem) is False\n\
 islice(seq, [start,] stop [, step]) --> elements from\n\
        seq[start:stop:step]\n\
 pairwise(s) --> (s[0],s[1]), (s[1],s[2]), (s[2], s[3]), ...\n\
 starmap(fun, seq) --> fun(*seq[0]), fun(*seq[1]), ...\n\
 tee(it, n=2) --> (it1, it2 , ... itn) splits one iterator into n\n\
-takewhile(pred, seq) --> seq[0], seq[1], until pred fails\n\
+takewhile(predicate, seq) --> seq[0], seq[1], until predicate fails\n\
 zip_longest(p, q, ...) --> (p[0], q[0]), (p[1], q[1]), ...\n\
 \n\
 Combinatoric generators:\n\

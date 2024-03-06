@@ -75,9 +75,13 @@ File Operations
 .. function:: open_osfhandle(handle, flags)
 
    Create a C runtime file descriptor from the file handle *handle*. The *flags*
-   parameter should be a bitwise OR of :const:`os.O_APPEND`, :const:`os.O_RDONLY`,
-   and :const:`os.O_TEXT`. The returned file descriptor may be used as a parameter
+   parameter should be a bitwise OR of :const:`os.O_APPEND`,
+   :const:`os.O_RDONLY`, :const:`os.O_TEXT` and :const:`os.O_NOINHERIT`.
+   The returned file descriptor may be used as a parameter
    to :func:`os.fdopen` to create a file object.
+
+   The file descriptor is inheritable by default. Pass :const:`os.O_NOINHERIT`
+   flag to make it non inheritable.
 
    .. audit-event:: msvcrt.open_osfhandle handle,flags msvcrt.open_osfhandle
 
@@ -248,3 +252,18 @@ Other Functions
 .. data:: CRTDBG_REPORT_MODE
 
    Returns current *mode* for the specified *type*.
+
+
+.. data:: CRT_ASSEMBLY_VERSION
+
+   The CRT Assembly version, from the :file:`crtassem.h` header file.
+
+
+.. data:: VC_ASSEMBLY_PUBLICKEYTOKEN
+
+   The VC Assembly public key token, from the :file:`crtassem.h` header file.
+
+
+.. data:: LIBRARIES_ASSEMBLY_NAME_PREFIX
+
+   The Libraries Assembly name prefix, from the :file:`crtassem.h` header file.

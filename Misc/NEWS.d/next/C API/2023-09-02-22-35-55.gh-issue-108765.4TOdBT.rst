@@ -1,5 +1,0 @@
-``Python.h`` no longer includes the ``<ctype.h>`` standard header file. If
-needed, it should now be included explicitly. For example, it provides
-``isalpha()`` and ``tolower()`` functions which are locale dependent. Python
-provides locale independent functions, like :c:func:`!Py_ISALPHA` and
-:c:func:`!Py_TOLOWER`. Patch by Victor Stinner.

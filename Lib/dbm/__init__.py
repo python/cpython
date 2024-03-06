@@ -5,7 +5,7 @@ Use
         import dbm
         d = dbm.open(file, 'w', 0o666)
 
-The returned object is a dbm.gnu, dbm.ndbm or dbm.dumb object, dependent on the
+The returned object is a dbm.sqlite3, dbm.gnu, dbm.ndbm or dbm.dumb database object, dependent on the
 type of database being opened (determined by the whichdb function) in the case
 of an existing dbm. If the dbm does not exist and the create or new flag ('c'
 or 'n') was specified, the dbm type will be determined by the availability of
@@ -38,7 +38,7 @@ import sys
 class error(Exception):
     pass
 
-_names = ['dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
+_names = ['dbm.sqlite3', 'dbm.gnu', 'dbm.ndbm', 'dbm.dumb']
 _defaultmod = None
 _modules = {}
 
@@ -163,6 +163,10 @@ def whichdb(filename):
     # Return "" if not at least 4 bytes
     if len(s) != 4:
         return ""
+
+    # Check for SQLite3 header string.
+    if s16 == b"SQLite format 3\0":
+        return "dbm.sqlite3"
 
     # Convert to 4-byte int in native byte order -- return "" if impossible
     try:

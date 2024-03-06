@@ -1,2 +1,0 @@
-Allows overriding the source of VC redistributables so that releases can be
-guaranteed to never downgrade between updates.

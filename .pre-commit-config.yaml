@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.292
+    rev: v0.2.0
     hooks:
       - id: ruff
         name: Run Ruff on Lib/test/
@@ -12,7 +12,7 @@ repos:
         files: ^Tools/clinic/|Lib/test/test_clinic.py
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: check-toml
         exclude: ^Lib/test/test_tomllib/
@@ -23,22 +23,12 @@ repos:
       - id: trailing-whitespace
         types_or: [c, inc, python, rst]
 
-  - repo: local
-    hooks:
-      - id: python-file-whitespace
-        name: "Check Python file whitespace"
-        entry: 'python Tools/patchcheck/reindent.py --nobackup --newline LF'
-        language: 'system'
-        types: [python]
-        exclude: '^(Lib/test/tokenizedata/|Tools/c-analyzer/cpython/_parser).*$'
-
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.6.8
+    rev: v0.9.1
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
-        files: ^Doc/|^Misc/NEWS.d/next/
-        types: [rst]
+        files: ^Doc/|^Misc/NEWS.d/
 
   - repo: meta
     hooks:

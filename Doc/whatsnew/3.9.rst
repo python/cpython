@@ -585,7 +585,7 @@ queue.
 nntplib
 -------
 
-:class:`~!nntplib.NNTP` and :class:`~!nntplib.NNTP_SSL` now raise a :class:`ValueError`
+:class:`!NNTP` and :class:`!NNTP_SSL` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Donghee Na in :issue:`39259`.)
 
@@ -931,7 +931,7 @@ Deprecated
 * Passing ``None`` as the first argument to the :func:`shlex.split` function
   has been deprecated.  (Contributed by Zackery Spytz in :issue:`33262`.)
 
-* :func:`smtpd.MailmanProxy` is now deprecated as it is unusable without
+* :func:`!smtpd.MailmanProxy` is now deprecated as it is unusable without
   an external module, ``mailman``.  (Contributed by Samuel Colvin in :issue:`35800`.)
 
 * The :mod:`!lib2to3` module now emits a :exc:`PendingDeprecationWarning`.
@@ -1126,7 +1126,7 @@ Changes in the Python API
   ``logging.getLogger(__name__)`` in some top-level module called ``'root.py'``.
   (Contributed by Vinay Sajip in :issue:`37742`.)
 
-* Division handling of :class:`~pathlib.PurePath` now returns ``NotImplemented``
+* Division handling of :class:`~pathlib.PurePath` now returns :data:`NotImplemented`
   instead of raising a :exc:`TypeError` when passed something other than an
   instance of ``str`` or :class:`~pathlib.PurePath`.  This allows creating
   compatible classes that don't inherit from those mentioned types.
@@ -1562,3 +1562,55 @@ separator key, with ``&`` as the default.  This change also affects
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+Notable changes in Python 3.9.3
+===============================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+Notable changes in Python 3.9.5
+===============================
+
+urllib.parse
+------------
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates :rfc:`3986`,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser in :mod:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :gh:`88048`)
+
+Notable security feature in 3.9.14
+==================================
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+This limit can be configured or disabled by environment variable, command
+line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+length limitation <int_max_str_digits>` documentation.  The default limit
+is 4300 digits in string form.
+
+Notable changes in 3.9.17
+=========================
+
+tarfile
+-------
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.12, use without the *filter* argument will show a
+  :exc:`DeprecationWarning`.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)

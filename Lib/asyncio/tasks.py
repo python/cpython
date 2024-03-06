@@ -404,11 +404,10 @@ def create_task(coro, *, name=None, context=None):
     loop = events.get_running_loop()
     if context is None:
         # Use legacy API if context is not needed
-        task = loop.create_task(coro)
+        task = loop.create_task(coro, name=name)
     else:
-        task = loop.create_task(coro, context=context)
+        task = loop.create_task(coro, name=name, context=context)
 
-    task.set_name(name)
     return task
 
 
@@ -423,8 +422,6 @@ async def wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     """Wait for the Futures or Tasks given by fs to complete.
 
     The fs iterable must not be empty.
-
-    Coroutines will be wrapped in Tasks.
 
     Returns two sets of Future: (done, pending).
 
@@ -467,7 +464,7 @@ async def wait_for(fut, timeout):
 
     If the wait is cancelled, the task is also cancelled.
 
-    If the task supresses the cancellation and returns a value instead,
+    If the task suppresses the cancellation and returns a value instead,
     that value is returned.
 
     This function is a coroutine.

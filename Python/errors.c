@@ -121,11 +121,11 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     _PyErr_StackItem *exc_info = tstate->exc_info;
     assert(exc_info);
 
-    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
-           exc_info->previous_item != NULL)
+    while (exc_info->exc_value == NULL && exc_info->previous_item != NULL)
     {
         exc_info = exc_info->previous_item;
     }
+    assert(!Py_IsNone(exc_info->exc_value));
     return exc_info;
 }
 
@@ -592,7 +592,7 @@ PyErr_GetHandledException(void)
 void
 _PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
 {
-    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc));
+    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc == Py_None ? NULL : exc));
 }
 
 void
@@ -1569,14 +1569,16 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
    for Python to handle it. For example, when a destructor raises an exception
    or during garbage collection (gc.collect()).
 
-   If err_msg_str is non-NULL, the error message is formatted as:
-   "Exception ignored %s" % err_msg_str. Otherwise, use "Exception ignored in"
-   error message.
+   If format is non-NULL, the error message is formatted using format and
+   variable arguments as in PyUnicode_FromFormat().
+   Otherwise, use "Exception ignored in" error message.
 
    An exception must be set when calling this function. */
-void
-_PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
+
+static void
+format_unraisable_v(const char *format, va_list va, PyObject *obj)
 {
+    const char *err_msg_str;
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -1610,8 +1612,8 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         }
     }
 
-    if (err_msg_str != NULL) {
-        err_msg = PyUnicode_FromFormat("Exception ignored %s", err_msg_str);
+    if (format != NULL) {
+        err_msg = PyUnicode_FromFormatV(format, va);
         if (err_msg == NULL) {
             PyErr_Clear();
         }
@@ -1676,11 +1678,30 @@ done:
     _PyErr_Clear(tstate); /* Just in case */
 }
 
+void
+PyErr_FormatUnraisable(const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    format_unraisable_v(format, va, NULL);
+    va_end(va);
+}
+
+static void
+format_unraisable(PyObject *obj, const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    format_unraisable_v(format, va, obj);
+    va_end(va);
+}
 
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
-    _PyErr_WriteUnraisableMsg(NULL, obj);
+    format_unraisable(obj, NULL);
 }
 
 

@@ -4,6 +4,8 @@ Test the API of the symtable module.
 import symtable
 import unittest
 
+from test import support
+from test.support import os_helper
 
 
 TEST_CODE = """
@@ -282,9 +284,60 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(str(self.top), "<SymbolTable for module ?>")
         self.assertEqual(str(self.spam), "<Function SymbolTable for spam in ?>")
 
+    def test_symbol_repr(self):
+        self.assertEqual(repr(self.spam.lookup("glob")),
+                         "<symbol 'glob': GLOBAL_IMPLICIT, USE>")
+        self.assertEqual(repr(self.spam.lookup("bar")),
+                         "<symbol 'bar': GLOBAL_EXPLICIT, DEF_GLOBAL|DEF_LOCAL>")
+        self.assertEqual(repr(self.spam.lookup("a")),
+                         "<symbol 'a': LOCAL, DEF_PARAM>")
+        self.assertEqual(repr(self.spam.lookup("internal")),
+                         "<symbol 'internal': LOCAL, USE|DEF_LOCAL>")
+        self.assertEqual(repr(self.spam.lookup("other_internal")),
+                         "<symbol 'other_internal': LOCAL, DEF_LOCAL>")
+        self.assertEqual(repr(self.internal.lookup("x")),
+                         "<symbol 'x': FREE, USE>")
+        self.assertEqual(repr(self.other_internal.lookup("some_var")),
+                         "<symbol 'some_var': FREE, USE|DEF_NONLOCAL|DEF_LOCAL>")
+
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
+
+
+class CommandLineTest(unittest.TestCase):
+    maxDiff = None
+
+    def test_file(self):
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w') as f:
+            f.write(TEST_CODE)
+        with support.captured_stdout() as stdout:
+            symtable.main([filename])
+        out = stdout.getvalue()
+        self.assertIn('\n\n', out)
+        self.assertNotIn('\n\n\n', out)
+        lines = out.splitlines()
+        self.assertIn(f"symbol table for module from file {filename!r}:", lines)
+        self.assertIn("    local symbol 'glob': def_local", lines)
+        self.assertIn("        global_implicit symbol 'glob': use", lines)
+        self.assertIn("    local symbol 'spam': def_local", lines)
+        self.assertIn("    symbol table for function 'spam':", lines)
+
+    def test_stdin(self):
+        with support.captured_stdin() as stdin:
+            stdin.write(TEST_CODE)
+            stdin.seek(0)
+            with support.captured_stdout() as stdout:
+                symtable.main([])
+            out = stdout.getvalue()
+            stdin.seek(0)
+            with support.captured_stdout() as stdout:
+                symtable.main(['-'])
+            self.assertEqual(stdout.getvalue(), out)
+        lines = out.splitlines()
+        self.assertIn("symbol table for module from file '<stdin>':", lines)
 
 
 if __name__ == '__main__':

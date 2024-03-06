@@ -1,2 +1,0 @@
-Fix :func:`super` calls on types with custom :c:member:`~PyTypeObject.tp_getattro`
-implementation (e.g. meta-types.)

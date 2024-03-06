@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"            // PyMutex
 #include "pycore_gil.h"             // struct _gil_runtime_state
 
 
@@ -36,7 +37,7 @@ struct _pending_call {
 
 struct _pending_calls {
     int busy;
-    PyThread_type_lock lock;
+    PyMutex mutex;
     /* The number of pending calls. */
     int32_t npending;
     int32_t max;
@@ -81,6 +82,7 @@ struct _ceval_runtime_state {
         struct code_arena_st *code_arena;
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
+        Py_ssize_t persist_after_fork;
 #else
         int _not_used;
 #endif
@@ -94,6 +96,7 @@ struct _ceval_runtime_state {
     { \
         .status = PERF_STATUS_NO_INIT, \
         .extra_code_index = -1, \
+        .persist_after_fork = 0, \
     }
 #else
 # define _PyEval_RUNTIME_PERF_INIT {0}
@@ -101,13 +104,10 @@ struct _ceval_runtime_state {
 
 
 struct _ceval_state {
-    /* This single variable consolidates all requests to break out of
-     * the fast path in the eval loop.
-     * It is by far the hottest field in this struct and
-     * should be placed at the beginning. */
-    uintptr_t eval_breaker;
-    /* Avoid false sharing */
-    int64_t padding[7];
+    /* This variable holds the global instrumentation version. When a thread is
+       running, this value is overlaid onto PyThreadState.eval_breaker so that
+       changes in the instrumentation version will trigger the eval breaker. */
+    uintptr_t instrumentation_version;
     int recursion_limit;
     struct _gil_runtime_state *gil;
     int own_gil;

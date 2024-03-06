@@ -2,6 +2,8 @@
 Configure Python
 ****************
 
+.. highlight:: sh
+
 Build Requirements
 ==================
 
@@ -30,31 +32,31 @@ Features and minimum versions required to build CPython:
 * Autoconf 2.71 and aclocal 1.16.4 are required to regenerate the
   :file:`configure` script.
 
-.. versionchanged:: 3.13:
-   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
+.. versionchanged:: 3.1
+   Tcl/Tk version 8.3.1 is now required.
+
+.. versionchanged:: 3.5
+   On Windows, Visual Studio 2015 or later is now required.
+   Tcl/Tk version 8.4 is now required.
+
+.. versionchanged:: 3.6
+   Selected C99 features are now required, like ``<stdint.h>`` and ``static
+   inline`` functions.
+
+.. versionchanged:: 3.7
+   Thread support and OpenSSL 1.0.2 are now required.
+
+.. versionchanged:: 3.10
+   OpenSSL 1.1.1 is now required.
+   Require SQLite 3.7.15.
 
 .. versionchanged:: 3.11
    C11 compiler, IEEE 754 and NaN support are now required.
    On Windows, Visual Studio 2017 or later is required.
    Tcl/Tk version 8.5.12 is now required for the :mod:`tkinter` module.
 
-.. versionchanged:: 3.10
-   OpenSSL 1.1.1 is now required.
-   Require SQLite 3.7.15.
-
-.. versionchanged:: 3.7
-   Thread support and OpenSSL 1.0.2 are now required.
-
-.. versionchanged:: 3.6
-   Selected C99 features are now required, like ``<stdint.h>`` and ``static
-   inline`` functions.
-
-.. versionchanged:: 3.5
-   On Windows, Visual Studio 2015 or later is now required.
-   Tcl/Tk version 8.4 is now required.
-
-.. versionchanged:: 3.1
-   Tcl/Tk version 8.3.1 is now required.
+.. versionchanged:: 3.13
+   Autoconf 2.71, aclocal 1.16.4 and SQLite 3.15.2 are now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -74,13 +76,20 @@ files. Commands to regenerate all generated files::
 The ``Makefile.pre.in`` file documents generated files, their inputs, and tools used
 to regenerate them. Search for ``regen-*`` make targets.
 
-The ``make regen-configure`` command runs `tiran/cpython_autoconf
-<https://github.com/tiran/cpython_autoconf>`_ container for reproducible build;
-see container ``entry.sh`` script. The container is optional, the following
-command can be run locally, the generated files depend on autoconf and aclocal
-versions::
+configure script
+----------------
+
+The ``make regen-configure`` command regenerates the ``aclocal.m4`` file and
+the ``configure`` script using the ``Tools/build/regen-configure.sh`` shell
+script which uses an Ubuntu container to get the same tools versions and have a
+reproducible output.
+
+The container is optional, the following command can be run locally::
 
     autoreconf -ivf -Werror
+
+The generated files can change depending on the exact ``autoconf-archive``,
+``aclocal`` and ``pkg-config`` versions.
 
 
 .. _configure-options:
@@ -268,7 +277,7 @@ General Options
      * to/from free lists;
      * dictionary materialized/dematerialized;
      * type cache;
-     * optimization attemps;
+     * optimization attempts;
      * optimization traces created/executed;
      * uops executed.
 
@@ -280,10 +289,15 @@ General Options
 
    .. versionadded:: 3.11
 
+.. _free-threading-build:
+
 .. option:: --disable-gil
 
    Enables **experimental** support for running Python without the
-   :term:`global interpreter lock` (GIL).
+   :term:`global interpreter lock` (GIL): free threading build.
+
+   Defines the ``Py_GIL_DISABLED`` macro and adds ``"t"`` to
+   :data:`sys.abiflags`.
 
    See :pep:`703` "Making the Global Interpreter Lock Optional in CPython".
 
@@ -579,6 +593,13 @@ also be used to improve performance.
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
 
+.. option:: --without-mimalloc
+
+   Disable the fast mimalloc allocator :ref:`mimalloc <mimalloc>`
+   (enabled by default).
+
+   See also :envvar:`PYTHONMALLOC` environment variable.
+
 .. option:: --without-pymalloc
 
    Disable the specialized Python memory allocator :ref:`pymalloc <pymalloc>`
@@ -675,11 +696,11 @@ Debug options
 
    :ref:`Statically allocated objects <static-types>` are not traced.
 
+   .. versionadded:: 3.8
+
    .. versionchanged:: 3.13
       This build is now ABI compatible with release build and :ref:`debug build
       <debug-build>`.
-
-   .. versionadded:: 3.8
 
 .. option:: --with-assertions
 
@@ -725,6 +746,13 @@ Debug options
    (default is no).
 
    .. versionadded:: 3.6
+
+.. option:: --with-thread-sanitizer
+
+   Enable ThreadSanitizer data race detector, ``tsan``
+   (default is no).
+
+   .. versionadded:: 3.13
 
 
 Linker options
@@ -915,7 +943,9 @@ the version of the cross compiled host Python.
 
    An environment variable that points to a file with configure overrides.
 
-   Example *config.site* file::
+   Example *config.site* file:
+
+   .. code-block:: ini
 
       # config.site-aarch64
       ac_cv_buggy_getaddrinfo=no
@@ -993,7 +1023,9 @@ C extensions
 
 Some C extensions are built as built-in modules, like the ``sys`` module.
 They are built with the ``Py_BUILD_CORE_BUILTIN`` macro defined.
-Built-in modules have no ``__file__`` attribute::
+Built-in modules have no ``__file__`` attribute:
+
+.. code-block:: pycon
 
     >>> import sys
     >>> sys
@@ -1005,7 +1037,9 @@ Built-in modules have no ``__file__`` attribute::
 
 Other C extensions are built as dynamic libraries, like the ``_asyncio`` module.
 They are built with the ``Py_BUILD_CORE_MODULE`` macro defined.
-Example on Linux x86-64::
+Example on Linux x86-64:
+
+.. code-block:: pycon
 
     >>> import _asyncio
     >>> _asyncio
