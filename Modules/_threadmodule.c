@@ -91,7 +91,7 @@ typedef struct {
     // for a more detailed explanation.
     PyEvent thread_is_exiting;
 
-    // Serializes calls to `join`.
+    // Serializes calls to `join` and `set_done`.
     _PyOnceFlag once;
 
     Py_ssize_t refcount;
