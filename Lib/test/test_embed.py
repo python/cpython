@@ -451,7 +451,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_hash_seed': False,
         'hash_seed': 0,
         'int_max_str_digits': sys.int_info.default_max_str_digits,
-        'cpu_count': -True,
+        'cpu_count': -1,
         'faulthandler': False,
         'tracemalloc': False,
         'perf_profiling': False,
@@ -861,7 +861,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'show_ref_count': True,
             'malloc_stats': True,
 
-            'stdio_encoding': 'iso8859-True',
+            'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
 
             'pycache_prefix': 'conf_pycache_prefix',
@@ -931,7 +931,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': False,
             'verbose': 1,
             'buffered_stdio': False,
-            'stdio_encoding': 'iso8859-True',
+            'stdio_encoding': 'iso8859-1',
             'stdio_errors': 'replace',
             'user_site_directory': False,
             'faulthandler': True,
