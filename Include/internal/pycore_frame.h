@@ -278,6 +278,7 @@ _PyFrame_ConvertToTier2(PyThreadState *tstate, _PyInterpreterFrame *frame,
     if (frame->owner != FRAME_OWNED_BY_THREAD) {
         return 1;
     }
+    localsplus_grow -= frame->tier2_extra_size;
     if (!_PyThreadState_HasStackSpace(tstate, localsplus_grow)) {
         return 1;
     }
