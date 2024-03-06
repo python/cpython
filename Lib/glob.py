@@ -187,7 +187,7 @@ def _add_trailing_slash(pathname):
 
 
 def _open_dir(path, rel_path, dir_fd):
-    """Scans the given directory, and returns a 3-tuple with these parts:
+    """Prepares the directory for scanning. Returns a 3-tuple with parts:
 
     1. A path or fd to supply to `os.scandir()`.
     2. The file descriptor for the directory, or None.
@@ -256,6 +256,8 @@ def _wildcard_selector(part, parts, recursive, include_hidden):
                 arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
                 if fd is not None:
                     prefix = _add_trailing_slash(path)
+                # Ensure we don't exhaust file descriptors when globbing deep
+                # trees by closing the directory *before* yielding anything.
                 with os.scandir(arg) as scandir_it:
                     entries = list(scandir_it)
                 for entry in entries:
@@ -280,6 +282,8 @@ def _wildcard_selector(part, parts, recursive, include_hidden):
             try:
                 arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
                 prefix = _add_trailing_slash(path)
+                # We use listdir() rather than scandir() because we don't need
+                # to check for subdirectories; we only need the child names.
                 for name in os.listdir(arg):
                     if match is None or match(name):
                         yield prefix + name
@@ -325,6 +329,8 @@ def _recursive_selector(part, parts, recursive, include_hidden):
             arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
             if fd is not None:
                 prefix = _add_trailing_slash(path)
+            # Ensure we don't exhaust file descriptors when globbing deep
+            # trees by closing the directory *before* yielding anything.
             with os.scandir(arg) as scandir_it:
                 entries = list(scandir_it)
             for entry in entries:
