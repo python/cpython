@@ -344,6 +344,15 @@ class GlobTests(unittest.TestCase):
         eq(self.rglob('nonexistent', '*'), [])
         eq(self.rglob('nonexistent', '**'), [])
 
+    def test_glob_named_pipe(self):
+        path = os.path.join(self.tempdir, 'mypipe')
+        os.mkfifo(path)
+        self.assertEqual(self.rglob('mypipe'), [path])
+        self.assertEqual(self.rglob('mypipe*'), [path])
+        self.assertEqual(self.rglob('mypipe', ''), [])
+        self.assertEqual(self.rglob('mypipe', 'sub'), [])
+        self.assertEqual(self.rglob('mypipe', '*'), [])
+
     def test_glob_many_open_files(self):
         depth = 30
         base = os.path.join(self.tempdir, 'deep')
