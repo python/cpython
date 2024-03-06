@@ -13,8 +13,6 @@ __all__ = ["glob", "iglob", "escape"]
 _special_parts = ('', '.', '..')
 _pattern_flags = re.NOFLAG if os.path.normcase('Aa') == 'Aa' else re.IGNORECASE
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
-magic_check = re.compile('([*?[])')
-magic_check_bytes = re.compile(b'([*?[])')
 
 
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
@@ -78,6 +76,17 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     if is_bytes:
         paths = map(os.fsencode, paths)
     return paths
+
+
+magic_check = re.compile('([*?[])')
+magic_check_bytes = re.compile(b'([*?[])')
+
+def has_magic(s):
+    if isinstance(s, bytes):
+        match = magic_check_bytes.search(s)
+    else:
+        match = magic_check.search(s)
+    return match is not None
 
 
 def escape(pathname):
@@ -366,3 +375,18 @@ def _select_exists(path, rel_path, dir_fd, exists):
             yield path
         except OSError:
             pass
+
+
+def _legacy_glob(selector, dirname, pattern):
+    """Implements the undocumented glob0() and glob1() functions.
+    """
+    root = _add_trailing_slash(dirname)
+    root_slicer = operator.itemgetter(slice(len(root), None))
+    select = selector(pattern, (), False, False)
+    paths = select(dirname, dirname, None, False)
+    paths = map(root_slicer, paths)
+    return list(paths)
+
+
+glob0 = functools.partial(_legacy_glob, _literal_selector)
+glob1 = functools.partial(_legacy_glob, _wildcard_selector)
