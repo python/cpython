@@ -1,17 +1,17 @@
 """Filename globbing utility."""
 
-import operator
 import os
 import re
 import fnmatch
 import functools
 import itertools
+import operator
 import sys
 
 __all__ = ["glob", "iglob", "escape"]
 
 
-_special_parts = ('', '.', '..')
+_special_parts = ('', os.path.curdir, os.path.pardir)
 _pattern_flags = re.NOFLAG if os.path.normcase('Aa') == 'Aa' else re.IGNORECASE
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 
@@ -64,9 +64,8 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     else:
         # Relative pattern.
         if root_dir is None:
-            root_dir = './'
-        else:
-            root_dir = _add_trailing_slash(root_dir)
+            root_dir = os.path.curdir
+        root_dir = _add_trailing_slash(root_dir)
         root_slicer = operator.itemgetter(slice(len(root_dir), None))
         paths = select(root_dir, root_dir, dir_fd, False)
         paths = map(root_slicer, paths)
