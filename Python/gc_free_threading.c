@@ -1058,6 +1058,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
     // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
     err = handle_resurrected_objects(state);
+    // Clear free lists in all threads
+    _PyGC_ClearAllFreeLists(interp);
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
@@ -1160,8 +1162,9 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
             n+m, n, d);
     }
 
-    // Clear free lists in all threads
-    _PyGC_ClearAllFreeLists(interp);
+    // Clear the current thread's free-list again.
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    _PyObject_ClearFreeLists(&tstate_impl->freelists, 0);
 
     if (_PyErr_Occurred(tstate)) {
         if (reason == _Py_GC_REASON_SHUTDOWN) {
