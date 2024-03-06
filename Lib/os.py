@@ -131,6 +131,7 @@ if _exists("_have_functions"):
     _set = set()
     _add("HAVE_FCHDIR",     "chdir")
     _add("HAVE_FCHMOD",     "chmod")
+    _add("MS_WINDOWS",      "chmod")
     _add("HAVE_FCHOWN",     "chown")
     _add("HAVE_FDOPENDIR",  "listdir")
     _add("HAVE_FDOPENDIR",  "scandir")
@@ -171,6 +172,7 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_LCHFLAGS",   "chflags")
     _add("HAVE_LCHMOD",     "chmod")
+    _add("MS_WINDOWS",      "chmod")
     if _exists("lchown"): # mac os x10.3
         _add("HAVE_LCHOWN", "chown")
     _add("HAVE_LINKAT",     "link")
@@ -1136,3 +1138,17 @@ if name == 'nt':
             cookie,
             nt._remove_dll_directory
         )
+
+
+if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
+    def process_cpu_count():
+        """
+        Get the number of CPUs of the current process.
+
+        Return the number of logical CPUs usable by the calling thread of the
+        current process. Return None if indeterminable.
+        """
+        return len(sched_getaffinity(0))
+else:
+    # Just an alias to cpu_count() (same docstring)
+    process_cpu_count = cpu_count

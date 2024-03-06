@@ -49,6 +49,11 @@ Revision history:
 
 /* syslog module */
 
+// clinic/syslogmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "osdefs.h"               // SEP
 
@@ -399,6 +404,30 @@ syslog_exec(PyObject *module)
 
 #ifdef LOG_AUTHPRIV
     ADD_INT_MACRO(module, LOG_AUTHPRIV);
+#endif
+
+#ifdef LOG_FTP
+    ADD_INT_MACRO(module, LOG_FTP);
+#endif
+
+#ifdef LOG_NETINFO
+    ADD_INT_MACRO(module, LOG_NETINFO);
+#endif
+
+#ifdef LOG_REMOTEAUTH
+    ADD_INT_MACRO(module, LOG_REMOTEAUTH);
+#endif
+
+#ifdef LOG_INSTALL
+    ADD_INT_MACRO(module, LOG_INSTALL);
+#endif
+
+#ifdef LOG_RAS
+    ADD_INT_MACRO(module, LOG_RAS);
+#endif
+
+#ifdef LOG_LAUNCHD
+    ADD_INT_MACRO(module, LOG_LAUNCHD);
 #endif
 
     return 0;

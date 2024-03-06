@@ -14,6 +14,7 @@
 .. testsetup:: *
 
    from statistics import *
+   import math
    __name__ = '<doctest>'
 
 --------------
@@ -75,6 +76,7 @@ or sample.
 :func:`fmean`            Fast, floating point arithmetic mean, with optional weighting.
 :func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
+:func:`kde`              Estimate the probability density distribution of the data.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
 :func:`median_high`      High median of data.
@@ -257,6 +259,54 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionchanged:: 3.10
       Added support for *weights*.
+
+
+.. function:: kde(data, h, kernel='normal')
+
+   `Kernel Density Estimation (KDE)
+   <https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf>`_:
+   Create a continuous probability density function from discrete samples.
+
+   The basic idea is to smooth the data using `a kernel function
+   <https://en.wikipedia.org/wiki/Kernel_(statistics)>`_.
+   to help draw inferences about a population from a sample.
+
+   The degree of smoothing is controlled by the scaling parameter *h*
+   which is called the bandwidth.  Smaller values emphasize local
+   features while larger values give smoother results.
+
+   The *kernel* determines the relative weights of the sample data
+   points.  Generally, the choice of kernel shape does not matter
+   as much as the more influential bandwidth smoothing parameter.
+
+   Kernels that give some weight to every sample point include
+   *normal* or *gauss*, *logistic*, and *sigmoid*.
+
+   Kernels that only give weight to sample points within the bandwidth
+   include *rectangular* or *uniform*, *triangular*, *parabolic* or
+   *epanechnikov*, *quartic* or *biweight*, *triweight*, and *cosine*.
+
+   A :exc:`StatisticsError` will be raised if the *data* sequence is empty.
+
+   `Wikipedia has an example
+   <https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
+   where we can use :func:`kde` to generate and plot a probability
+   density function estimated from a small sample:
+
+   .. doctest::
+
+      >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+      >>> f_hat = kde(sample, h=1.5)
+      >>> xarr = [i/100 for i in range(-750, 1100)]
+      >>> yarr = [f_hat(x) for x in xarr]
+
+   The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
+
+   .. image:: kde_example.png
+      :alt: Scatter plot of the estimated probability density function.
+
+   .. versionadded:: 3.13
+
 
 .. function:: median(data)
 
@@ -584,7 +634,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    The *data* can be any iterable containing sample data.  For meaningful
    results, the number of data points in *data* should be larger than *n*.
-   Raises :exc:`StatisticsError` if there are not at least two data points.
+   Raises :exc:`StatisticsError` if there is not at least one data point.
 
    The cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
@@ -623,6 +673,11 @@ However, for reading convenience, most of the examples show sorted sequences.
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      No longer raises an exception for an input with only a single data point.
+      This allows quantile estimates to be built up one sample point
+      at a time becoming gradually more refined with each new data point.
 
 .. function:: covariance(x, y, /)
 
@@ -741,6 +796,24 @@ However, for reading convenience, most of the examples show sorted sequences.
 
       *y = slope \* x + noise*
 
+   Continuing the example from :func:`correlation`, we look to see
+   how well a model based on major planets can predict the orbital
+   distances for dwarf planets:
+
+   .. doctest::
+
+      >>> model = linear_regression(period_squared, dist_cubed, proportional=True)
+      >>> slope = model.slope
+
+      >>> # Dwarf planets:   Pluto,  Eris,    Makemake, Haumea, Ceres
+      >>> orbital_periods = [90_560, 204_199, 111_845, 103_410, 1_680]  # days
+      >>> predicted_dist = [math.cbrt(slope * (p * p)) for p in orbital_periods]
+      >>> list(map(round, predicted_dist))
+      [5912, 10166, 6806, 6459, 414]
+
+      >>> [5_906, 10_152, 6_796, 6_450, 414]  # actual distance in million km
+      [5906, 10152, 6796, 6450, 414]
+
    .. versionadded:: 3.10
 
    .. versionchanged:: 3.11
@@ -827,6 +900,11 @@ of applications in statistics.
        If *seed* is given, creates a new instance of the underlying random
        number generator.  This is useful for creating reproducible results,
        even in a multi-threading context.
+
+       .. versionchanged:: 3.13
+
+       Switched to a faster algorithm.  To reproduce samples from previous
+       versions, use :func:`random.seed` and :func:`random.gauss`.
 
     .. method:: NormalDist.pdf(x)
 
@@ -922,6 +1000,10 @@ of applications in statistics.
 :class:`NormalDist` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Classic probability problems
+****************************
+
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
@@ -947,6 +1029,10 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
     >>> list(map(round, sat.quantiles(n=10)))
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
+
+Monte Carlo inputs for simulations
+**********************************
+
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
@@ -962,6 +1048,9 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     >>> Z = NormalDist(50, 1.25).samples(n, seed=6582483453)
     >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
+
+Approximating binomial distributions
+************************************
 
 Normal distributions can be used to approximate `Binomial
 distributions <https://mathworld.wolfram.com/BinomialDistribution.html>`_
@@ -986,19 +1075,20 @@ probability that the Python room will stay within its capacity limits?
     >>> round(NormalDist(mu=n*p, sigma=sqrt(n*p*q)).cdf(k + 0.5), 4)
     0.8402
 
-    >>> # Solution using the cumulative binomial distribution
+    >>> # Exact solution using the cumulative binomial distribution
     >>> from math import comb, fsum
     >>> round(fsum(comb(n, r) * p**r * q**(n-r) for r in range(k+1)), 4)
     0.8402
 
     >>> # Approximation using a simulation
-    >>> from random import seed, choices
+    >>> from random import seed, binomialvariate
     >>> seed(8675309)
-    >>> def trial():
-    ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
-    ...
-    >>> mean(trial() <= k for i in range(10_000))
-    0.8398
+    >>> mean(binomialvariate(n, p) <= k for i in range(10_000))
+    0.8406
+
+
+Naive bayesian classifier
+*************************
 
 Normal distributions commonly arise in machine learning problems.
 

@@ -55,9 +55,11 @@ as much as it can.
 
    Get a :term:`strong reference` to the referenced object from a weak
    reference, *ref*, into *\*pobj*.
-   Return 0 on success. Raise an exception and return -1 on error.
 
-   If the referent is no longer live, set *\*pobj* to ``NULL`` and return 0.
+   * On success, set *\*pobj* to a new :term:`strong reference` to the
+     referenced object and return 1.
+   * If the reference is dead, set *\*pobj* to ``NULL`` and return 0.
+   * On error, raise an exception and return -1.
 
    .. versionadded:: 3.13
 
