@@ -2151,13 +2151,13 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertIs(sslobj._sslobj.owner, sslobj)
         self.assertIsNone(sslobj.cipher())
         self.assertIsNone(sslobj.version())
-        self.assertIsNone(sslobj.shared_ciphers())
+        self.assertIsNotNone(sslobj.shared_ciphers())
         self.assertRaises(ValueError, sslobj.getpeercert)
         if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
             self.assertIsNone(sslobj.get_channel_binding('tls-unique'))
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
         self.assertTrue(sslobj.cipher())
-        self.assertIsNone(sslobj.shared_ciphers())
+        self.assertIsNotNone(sslobj.shared_ciphers())
         self.assertIsNotNone(sslobj.version())
         self.assertTrue(sslobj.getpeercert())
         if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
@@ -4166,7 +4166,7 @@ class ThreadedTests(unittest.TestCase):
     def test_shared_ciphers(self):
         client_context, server_context, hostname = testing_context()
         client_context.set_ciphers("AES128:AES256")
-        server_context.set_ciphers("AES256:eNULL")
+        server_context.set_ciphers("AES256")
         expected_algs = [
             "AES256", "AES-256",
             # TLS 1.3 ciphers are always enabled
