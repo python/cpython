@@ -430,6 +430,7 @@ static void
 _queueitem_init(_queueitem *item,
                 _PyCrossInterpreterData *data, int fmt, int unboundop)
 {
+    assert(check_unbound(unboundop));
     *item = (_queueitem){
         .data = data,
         .fmt = fmt,
@@ -518,6 +519,7 @@ typedef struct _queue {
 static int
 _queue_init(_queue *queue, Py_ssize_t maxsize, int fmt, int unboundop)
 {
+    assert(check_unbound(unboundop));
     PyThread_type_lock mutex = PyThread_allocate_lock();
     if (mutex == NULL) {
         return ERR_QUEUE_ALLOC;
