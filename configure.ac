@@ -4888,8 +4888,8 @@ fi
 if test "$ac_sys_system" = "Linux-android"; then
   # When these functions are used in an unprivileged process, they crash rather
   # than returning an error.
-  privileged_funcs="chroot initgroups setegid seteuid setgid setregid setresgid
-    setresuid setreuid setuid"
+  privileged_funcs="chroot initgroups setegid seteuid setgid sethostname
+    setregid setresgid setresuid setreuid setuid"
 
   # These functions are unimplemented and always return an error.
   unimplemented_funcs="sem_open sem_unlink"
