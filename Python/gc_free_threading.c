@@ -1163,10 +1163,8 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     // Clear the current thread's free-list again.
-    HEAD_LOCK(&_PyRuntime);
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     _PyObject_ClearFreeLists(&tstate_impl->freelists, 0);
-    HEAD_UNLOCK(&_PyRuntime);
 
     if (_PyErr_Occurred(tstate)) {
         if (reason == _Py_GC_REASON_SHUTDOWN) {
