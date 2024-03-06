@@ -798,7 +798,8 @@ class ImportTests(unittest.TestCase):
             expected_error = (
                 rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
                 rb"\(consider renaming '.*fractions.py' since it has the "
-                rb"same name as the standard library module named 'fractions'\)"
+                rb"same name as the standard library module named 'fractions'"
+                rb"and takes precedence over it on sys.path\)"
             )
 
             popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp)
@@ -935,7 +936,8 @@ except AttributeError as e:
             expected_error = (
                 rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
                 rb"\(consider renaming '.*fractions.py' since it has the "
-                rb"same name as the standard library module named 'fractions'\)"
+                rb"same name as the standard library module named 'fractions'"
+                rb"and takes precedence over it on sys.path\)"
             )
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:

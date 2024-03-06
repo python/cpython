@@ -924,7 +924,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         PyErr_Format(PyExc_AttributeError,
                     "module '%U' has no attribute '%U' "
                     "(consider renaming '%U' since it has the same "
-                    "name as the standard library module named '%U')",
+                    "name as the standard library module named '%U'"
+                    "and takes precedence over it on sys.path)",
                     mod_name, name, origin, mod_name);
     } else {
         int rc = _PyModuleSpec_IsInitializing(spec);
