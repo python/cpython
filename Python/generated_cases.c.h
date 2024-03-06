@@ -2368,11 +2368,10 @@
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_GLOBAL);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err != 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+            if (err <= 0) {
+                if (err == 0) {
                     _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                         NAME_ERROR_MSG, name);
                 }

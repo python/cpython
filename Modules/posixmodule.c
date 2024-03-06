@@ -17556,11 +17556,11 @@ posixmodule_exec(PyObject *m)
             return -1;
         }
 
-        if (PyDict_DelItemString(dct, "pwritev") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "pwritev", NULL) == -1) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "preadv") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "preadv", NULL) == -1) {
+            return -1;
         }
     }
 #endif
