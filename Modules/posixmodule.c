@@ -9577,10 +9577,6 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
     if (!result)
         return NULL;
 
-    PyObject *pidObject = PyLong_FromPid(pid);
-    if (pidObject == NULL) {
-        goto error;
-    }
     int pos = 0;
 
 #ifndef doubletime
@@ -9591,7 +9587,8 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
     do {                                                     \
         PyObject *item = (CALL);                             \
         if (item == NULL) {                                  \
-            goto error;                                      \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
         }                                                    \
         PyStructSequence_SET_ITEM(result, pos++, item);      \
     } while(0)
@@ -9614,12 +9611,7 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
     SET_RESULT(PyLong_FromLong(ru->ru_nivcsw));
 #undef SET_RESULT
 
-    return Py_BuildValue("NiN", pidObject, status, result);
-
-error:
-    Py_XDECREF(pidObject);
-    Py_DECREF(result);
-    return NULL;
+    return Py_BuildValue("NiN", PyLong_FromPid(pid), status, result);
 }
 #endif /* HAVE_WAIT3 || HAVE_WAIT4 */
 
