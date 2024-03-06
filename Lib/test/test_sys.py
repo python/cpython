@@ -1046,7 +1046,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertLessEqual(b, a)
         gc.collect()
         c = sys.getallocatedblocks()
-        self.assertIn(c, range(b - 50, b + 50))
+        self.assertLessEqual(c, b)
 
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
