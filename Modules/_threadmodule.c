@@ -1718,7 +1718,7 @@ Unlike start_new_thread(), this returns a handle object with methods to join\n\
 or detach the given thread.\n\
 This function is not for third-party code, please use the\n\
 `threading` module instead. During finalization the runtime will not wait for\n\
-the thread to exit if daemon is truthy.\n");
+the thread to exit if daemon is True.\n");
 
 static PyObject *
 thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
