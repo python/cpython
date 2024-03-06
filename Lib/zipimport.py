@@ -15,7 +15,7 @@ to Zip archives.
 #from importlib import _bootstrap_external
 #from importlib import _bootstrap  # for _verbose_message
 import _frozen_importlib_external as _bootstrap_external
-from _frozen_importlib_external import _unpack_uint16, _unpack_uint32
+from _frozen_importlib_external import _unpack_uint16, _unpack_uint32, _unpack_uint64
 import _frozen_importlib as _bootstrap  # for _verbose_message
 import _imp  # for check_hash_based_pycs
 import _io  # for open
@@ -392,9 +392,9 @@ def _read_directory(archive):
                         path=archive)
                 header_position = file_size - len(data) + pos64
 
-                central_directory_size = int.from_bytes(buffer[40:48], 'little')
-                central_directory_position = int.from_bytes(buffer[48:56], 'little')
-                num_entries = int.from_bytes(buffer[24:32], 'little')
+                central_directory_size = _unpack_uint64(buffer[40:48])
+                central_directory_position = _unpack_uint64(buffer[48:56])
+                num_entries = _unpack_uint64(buffer[24:32])
             elif pos >= 0:
                 buffer = data[pos:pos+END_CENTRAL_DIR_SIZE]
                 if len(buffer) != END_CENTRAL_DIR_SIZE:
