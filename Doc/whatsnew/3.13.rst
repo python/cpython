@@ -185,6 +185,12 @@ Other Language Changes
 
   (Contributed by Sebastian Pipping in :gh:`115623`.)
 
+* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
+  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
+  prevents a :exc:`RuntimeWarning` about the given coroutine being
+  never awaited).
+
+  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
 
 New Modules
 ===========

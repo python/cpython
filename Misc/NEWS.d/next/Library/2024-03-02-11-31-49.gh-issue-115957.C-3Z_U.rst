@@ -1,0 +1,1 @@
+When ``asyncio.TaskGroup.create_task`` is called on an inactive ``asyncio.TaskGroup``, the given coroutine will be closed (which prevents a  ``RuntimeWarning``).
