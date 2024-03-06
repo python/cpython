@@ -14,6 +14,43 @@ from test.support import MS_WINDOWS
 
 MAX_HASH_SEED = 4294967295
 
+
+BOOL_OPTIONS = [
+    'isolated',
+    'use_environment',
+    'dev_mode',
+    'install_signal_handlers',
+    'use_hash_seed',
+    'faulthandler',
+    'import_time',
+    'code_debug_ranges',
+    'show_ref_count',
+    'dump_refs',
+    'malloc_stats',
+    'parse_argv',
+    'site_import',
+    'warn_default_encoding',
+    'inspect',
+    'interactive',
+    'parser_debug',
+    'write_bytecode',
+    'quiet',
+    'user_site_directory',
+    'configure_c_stdio',
+    'buffered_stdio',
+    'use_frozen_modules',
+    'safe_path',
+    'pathconfig_warnings',
+    'module_search_paths_set',
+    'skip_source_first_line',
+    '_install_importlib',
+    '_init_main',
+    '_is_python_build',
+]
+if MS_WINDOWS:
+    BOOL_OPTIONS.append('legacy_windows_stdio')
+
+
 class SetConfigTests(unittest.TestCase):
     def setUp(self):
         self.old_config = _testinternalcapi.get_config()
@@ -52,42 +89,15 @@ class SetConfigTests(unittest.TestCase):
         ]
 
         # int (unsigned)
-        options = [
+        int_options = [
             '_config_init',
-            'isolated',
-            'use_environment',
-            'dev_mode',
-            'install_signal_handlers',
-            'use_hash_seed',
-            'faulthandler',
-            'tracemalloc',
-            'import_time',
-            'code_debug_ranges',
-            'show_ref_count',
-            'dump_refs',
-            'malloc_stats',
-            'parse_argv',
-            'site_import',
             'bytes_warning',
-            'inspect',
-            'interactive',
             'optimization_level',
-            'parser_debug',
-            'write_bytecode',
+            'tracemalloc',
             'verbose',
-            'quiet',
-            'user_site_directory',
-            'configure_c_stdio',
-            'buffered_stdio',
-            'pathconfig_warnings',
-            'module_search_paths_set',
-            'skip_source_first_line',
-            '_install_importlib',
-            '_init_main',
         ]
-        if MS_WINDOWS:
-            options.append('legacy_windows_stdio')
-        for key in options:
+        int_options.extend(BOOL_OPTIONS)
+        for key in int_options:
             value_tests.append((key, invalid_uint))
             type_tests.append((key, "abc"))
             type_tests.append((key, 2.0))
@@ -148,6 +158,7 @@ class SetConfigTests(unittest.TestCase):
                         _testinternalcapi.set_config(config)
 
     def test_flags(self):
+        bool_options = set(BOOL_OPTIONS)
         for sys_attr, key, value in (
             ("debug", "parser_debug", 1),
             ("inspect", "inspect", 2),
@@ -160,7 +171,10 @@ class SetConfigTests(unittest.TestCase):
         ):
             with self.subTest(sys=sys_attr, key=key, value=value):
                 self.set_config(**{key: value, 'parse_argv': 0})
-                self.assertEqual(getattr(sys.flags, sys_attr), value)
+                if key in bool_options:
+                    self.assertEqual(getattr(sys.flags, sys_attr), int(bool(value)))
+                else:
+                    self.assertEqual(getattr(sys.flags, sys_attr), value)
 
         self.set_config(write_bytecode=0)
         self.assertEqual(sys.flags.dont_write_bytecode, True)

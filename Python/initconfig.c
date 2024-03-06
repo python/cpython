@@ -30,6 +30,7 @@ typedef enum {
     PyConfig_MEMBER_INT = 0,
     PyConfig_MEMBER_UINT = 1,
     PyConfig_MEMBER_ULONG = 2,
+    PyConfig_MEMBER_BOOL = 3,
 
     PyConfig_MEMBER_WSTR = 10,
     PyConfig_MEMBER_WSTR_OPT = 11,
@@ -45,61 +46,62 @@ typedef struct {
 #define SPEC(MEMBER, TYPE) \
     {#MEMBER, offsetof(PyConfig, MEMBER), PyConfig_MEMBER_##TYPE}
 
+// Update _test_embed_set_config when adding new members
 static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(_config_init, UINT),
-    SPEC(isolated, UINT),
-    SPEC(use_environment, UINT),
-    SPEC(dev_mode, UINT),
-    SPEC(install_signal_handlers, UINT),
-    SPEC(use_hash_seed, UINT),
+    SPEC(isolated, BOOL),
+    SPEC(use_environment, BOOL),
+    SPEC(dev_mode, BOOL),
+    SPEC(install_signal_handlers, BOOL),
+    SPEC(use_hash_seed, BOOL),
     SPEC(hash_seed, ULONG),
-    SPEC(faulthandler, UINT),
+    SPEC(faulthandler, BOOL),
     SPEC(tracemalloc, UINT),
-    SPEC(perf_profiling, UINT),
-    SPEC(import_time, UINT),
-    SPEC(code_debug_ranges, UINT),
-    SPEC(show_ref_count, UINT),
-    SPEC(dump_refs, UINT),
+    SPEC(perf_profiling, BOOL),
+    SPEC(import_time, BOOL),
+    SPEC(code_debug_ranges, BOOL),
+    SPEC(show_ref_count, BOOL),
+    SPEC(dump_refs, BOOL),
     SPEC(dump_refs_file, WSTR_OPT),
-    SPEC(malloc_stats, UINT),
+    SPEC(malloc_stats, BOOL),
     SPEC(filesystem_encoding, WSTR),
     SPEC(filesystem_errors, WSTR),
     SPEC(pycache_prefix, WSTR_OPT),
-    SPEC(parse_argv, UINT),
+    SPEC(parse_argv, BOOL),
     SPEC(orig_argv, WSTR_LIST),
     SPEC(argv, WSTR_LIST),
     SPEC(xoptions, WSTR_LIST),
     SPEC(warnoptions, WSTR_LIST),
-    SPEC(site_import, UINT),
+    SPEC(site_import, BOOL),
     SPEC(bytes_warning, UINT),
-    SPEC(warn_default_encoding, UINT),
-    SPEC(inspect, UINT),
-    SPEC(interactive, UINT),
+    SPEC(warn_default_encoding, BOOL),
+    SPEC(inspect, BOOL),
+    SPEC(interactive, BOOL),
     SPEC(optimization_level, UINT),
-    SPEC(parser_debug, UINT),
-    SPEC(write_bytecode, UINT),
+    SPEC(parser_debug, BOOL),
+    SPEC(write_bytecode, BOOL),
     SPEC(verbose, UINT),
-    SPEC(quiet, UINT),
-    SPEC(user_site_directory, UINT),
-    SPEC(configure_c_stdio, UINT),
-    SPEC(buffered_stdio, UINT),
+    SPEC(quiet, BOOL),
+    SPEC(user_site_directory, BOOL),
+    SPEC(configure_c_stdio, BOOL),
+    SPEC(buffered_stdio, BOOL),
     SPEC(stdio_encoding, WSTR),
     SPEC(stdio_errors, WSTR),
 #ifdef MS_WINDOWS
-    SPEC(legacy_windows_stdio, UINT),
+    SPEC(legacy_windows_stdio, BOOL),
 #endif
     SPEC(check_hash_pycs_mode, WSTR),
-    SPEC(use_frozen_modules, UINT),
-    SPEC(safe_path, UINT),
+    SPEC(use_frozen_modules, BOOL),
+    SPEC(safe_path, BOOL),
     SPEC(int_max_str_digits, INT),
     SPEC(cpu_count, INT),
-    SPEC(pathconfig_warnings, UINT),
+    SPEC(pathconfig_warnings, BOOL),
     SPEC(program_name, WSTR),
     SPEC(pythonpath_env, WSTR_OPT),
     SPEC(home, WSTR_OPT),
     SPEC(platlibdir, WSTR),
     SPEC(sys_path_0, WSTR_OPT),
-    SPEC(module_search_paths_set, UINT),
+    SPEC(module_search_paths_set, BOOL),
     SPEC(module_search_paths, WSTR_LIST),
     SPEC(stdlib_dir, WSTR_OPT),
     SPEC(executable, WSTR_OPT),
@@ -108,15 +110,15 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_prefix, WSTR_OPT),
     SPEC(exec_prefix, WSTR_OPT),
     SPEC(base_exec_prefix, WSTR_OPT),
-    SPEC(skip_source_first_line, UINT),
+    SPEC(skip_source_first_line, BOOL),
     SPEC(run_command, WSTR_OPT),
     SPEC(run_module, WSTR_OPT),
     SPEC(run_filename, WSTR_OPT),
-    SPEC(_install_importlib, UINT),
-    SPEC(_init_main, UINT),
-    SPEC(_is_python_build, UINT),
+    SPEC(_install_importlib, BOOL),
+    SPEC(_init_main, BOOL),
+    SPEC(_is_python_build, BOOL),
 #ifdef Py_STATS
-    SPEC(_pystats, UINT),
+    SPEC(_pystats, BOOL),
 #endif
 #ifdef Py_DEBUG
     SPEC(run_presite, WSTR_OPT),
@@ -1007,6 +1009,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
         case PyConfig_MEMBER_UINT:
+        case PyConfig_MEMBER_BOOL:
         {
             *(int*)member = *(int*)member2;
             break;
@@ -1060,6 +1063,12 @@ _PyConfig_AsDict(const PyConfig *config)
         {
             int value = *(int*)member;
             obj = PyLong_FromLong(value);
+            break;
+        }
+        case PyConfig_MEMBER_BOOL:
+        {
+            int value = *(int*)member;
+            obj = PyBool_FromLong(value);
             break;
         }
         case PyConfig_MEMBER_ULONG:
@@ -1285,19 +1294,20 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         char *member = (char *)config + spec->offset;
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
-            if (config_dict_get_int(dict, spec->name, (int*)member) < 0) {
-                return -1;
-            }
-            break;
         case PyConfig_MEMBER_UINT:
+        case PyConfig_MEMBER_BOOL:
         {
             int value;
             if (config_dict_get_int(dict, spec->name, &value) < 0) {
                 return -1;
             }
-            if (value < 0) {
-                config_dict_invalid_value(spec->name);
-                return -1;
+            if (spec->type == PyConfig_MEMBER_BOOL
+                || spec->type == PyConfig_MEMBER_UINT)
+            {
+                if (value < 0) {
+                    config_dict_invalid_value(spec->name);
+                    return -1;
+                }
             }
             *(int*)member = value;
             break;
