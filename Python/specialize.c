@@ -103,6 +103,7 @@ _Py_GetSpecializationStats(void) {
         return NULL;
     }
     int err = 0;
+    err += add_stat_dict(stats, CONTAINS_OP, "contains_op");
     err += add_stat_dict(stats, LOAD_SUPER_ATTR, "load_super_attr");
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
@@ -2558,6 +2559,43 @@ failure:
     return;
 success:
     STAT_INC(TO_BOOL, success);
+    cache->counter = adaptive_counter_cooldown();
+}
+
+void
+_Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
+    _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
+    if (PyUnicode_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_STR;
+        goto success;
+    }
+    if (PyList_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_LIST;
+        goto success;
+    }
+    if (PyTuple_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_TUPLE;
+        goto success;
+    }
+    if (PyDict_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_DICT;
+        goto success;
+    }
+    if (PySet_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_SET;
+        goto success;
+    }
+
+
+    STAT_INC(CONTAINS_OP, failure);
+    instr->op.code = CONTAINS_OP;
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(CONTAINS_OP, success);
     cache->counter = adaptive_counter_cooldown();
 }
 

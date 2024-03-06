@@ -1206,6 +1206,51 @@
             break;
         }
 
+        case _CONTAINS_OP_LIST: {
+            _Py_UopsSymbol *b;
+            b = sym_new_unknown(ctx);
+            if (b == NULL) goto out_of_space;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_SET: {
+            _Py_UopsSymbol *b;
+            b = sym_new_unknown(ctx);
+            if (b == NULL) goto out_of_space;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_TUPLE: {
+            _Py_UopsSymbol *b;
+            b = sym_new_unknown(ctx);
+            if (b == NULL) goto out_of_space;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_DICT: {
+            _Py_UopsSymbol *b;
+            b = sym_new_unknown(ctx);
+            if (b == NULL) goto out_of_space;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_STR: {
+            _Py_UopsSymbol *b;
+            b = sym_new_unknown(ctx);
+            if (b == NULL) goto out_of_space;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
         case _CHECK_EG_MATCH: {
             _Py_UopsSymbol *rest;
             _Py_UopsSymbol *match;
