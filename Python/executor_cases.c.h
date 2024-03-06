@@ -2189,6 +2189,96 @@
             break;
         }
 
+        case _CONTAINS_OP_LIST: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!PyList_CheckExact(right)) goto deoptimize;
+            int res = _PyList_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error_tier_two;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_SET: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!PySet_CheckExact(right)) goto deoptimize;
+            int res = _PySet_Contains((PySetObject *)right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error_tier_two;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_TUPLE: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!PyTuple_CheckExact(right)) goto deoptimize;
+            int res = _PyTuple_Contains((PyTupleObject *)right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error_tier_two;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_DICT: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!PyDict_CheckExact(right)) goto deoptimize;
+            int res = PyDict_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error_tier_two;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_STR: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!PyUnicode_CheckExact(right)) goto deoptimize;
+            int res = PyUnicode_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error_tier_two;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
         case _CHECK_EG_MATCH: {
             PyObject *match_type;
             PyObject *exc_value;
@@ -3789,15 +3879,9 @@
             break;
         }
 
-        case _CHECK_GLOBALS: {
-            PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            if (GLOBALS() != dict) goto deoptimize;
-            break;
-        }
-
-        case _CHECK_BUILTINS: {
-            PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            if (BUILTINS() != dict) goto deoptimize;
+        case _CHECK_FUNCTION: {
+            PyObject *func = (PyObject *)CURRENT_OPERAND();
+            if (frame->f_funcobj != func) goto deoptimize;
             break;
         }
 
