@@ -3475,15 +3475,20 @@ class _TestListener(BaseTestCase):
             client = self.connection.Client(addr, authkey=authkey)
             client.send(1729)
 
-        key = b""
+        key = b''
 
         with self.connection.Listener(authkey=key) as listener:
-            threading.Thread(target=run, args=(listener.address, key)).start()
-            with listener.accept() as d:
-                self.assertEqual(d.recv(), 1729)
+            thread = threading.Thread(target=run, args=(listener.address, key))
+            thread.start()
+            try:
+                with listener.accept() as d:
+                    self.assertEqual(d.recv(), 1729)
+            finally:
+                thread.join()
 
         if self.TYPE == 'processes':
-            self.assertRaises(OSError, listener.accept)
+            with self.assertRaises(OSError):
+                listener.accept()
 
     @unittest.skipUnless(util.abstract_sockets_supported,
                          "test needs abstract socket support")
