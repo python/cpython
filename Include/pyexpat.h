@@ -3,7 +3,7 @@
 
 /* note: you must import expat.h before importing this module! */
 
-#define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.2"
+#define PyExpat_CAPI_MAGIC  "pyexpat.expat_CAPI 1.1"
 #define PyExpat_CAPSULE_NAME "pyexpat.expat_CAPI"
 
 struct PyExpat_CAPI
