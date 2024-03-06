@@ -475,7 +475,11 @@ update_refs(PyGC_Head *containers)
     while (gc != containers) {
         next = GC_NEXT(gc);
         PyObject *op = FROM_GC(gc);
-        assert(!_Py_IsImmortal(op));
+        if (_Py_IsImmortal(op)) {
+           gc_list_move(gc, &get_gc_state()->permanent_generation.head);
+           gc = next;
+           continue;
+        }
         gc_reset_refs(gc, Py_REFCNT(op));
         /* Python's cyclic gc should never see an incoming refcount
          * of 0:  if something decref'ed to 0, it should have been
