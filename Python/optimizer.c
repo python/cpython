@@ -899,7 +899,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     uint32_t used[(UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
     int exit_count;
     int length = compute_used(buffer, used, &exit_count);
-    _PyExecutorObject *executor = allocate_executor(exit_count, length+1);
+    length += 1;  // For _START_EXECUTOR
+    _PyExecutorObject *executor = allocate_executor(exit_count, length);
     if (executor == NULL) {
         return NULL;
     }
@@ -909,7 +910,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
         executor->exits[i].temperature = 0;
     }
     int next_exit = exit_count-1;
-    _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
+    _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length-1];
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
@@ -957,7 +958,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
-    if (_PyJIT_Compile(executor, executor->trace, length+1)) {
+    if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
     }

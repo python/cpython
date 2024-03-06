@@ -56,6 +56,8 @@ typedef struct {
 
 PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
 
+PyAPI_FUNC(int) _PyList_Contains(PyObject *aa, PyObject *el);
+
 #ifdef __cplusplus
 }
 #endif
