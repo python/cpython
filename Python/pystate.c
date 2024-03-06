@@ -1029,8 +1029,7 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = interp->threads.main;
-    assert(tstate == current_fast_get());
+    assert(interp->threads.main == current_fast_get());
     interp->threads.main = NULL;
 }
 
