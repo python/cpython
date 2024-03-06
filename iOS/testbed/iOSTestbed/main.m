@@ -11,10 +11,6 @@ int main(int argc, char * argv[]) {
     @autoreleasepool {
         appDelegateClassName = NSStringFromClass([AppDelegate class]);
 
-        // iOS doesn't like uncaught signals.
-        signal(SIGPIPE, SIG_IGN);
-        signal(SIGXFSZ, SIG_IGN);
-
         return UIApplicationMain(argc, argv, nil, appDelegateClassName);
     }
 }

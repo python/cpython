@@ -45,6 +45,8 @@
     // Don't write bytecode; we can't modify the app bundle
     // after it has been signed.
     config.write_bytecode = 0;
+    // Ensure that signal handlers are installed
+    config.install_signal_handlers = 1;
     // Run the test module.
     config.run_module = Py_DecodeLocale("test", NULL);
     // For debugging - enable verbose mode.
