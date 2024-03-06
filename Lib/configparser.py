@@ -152,6 +152,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
+           "MultilineContinuationError",
            "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
@@ -321,6 +322,19 @@ class MissingSectionHeaderError(ParsingError):
         self.line = line
         self.args = (filename, lineno, line)
 
+
+class MultilineContinuationError(ParsingError):
+    """Raised when a key without value is followed by continuation line"""
+    def __init__(self, filename, lineno, line):
+        Error.__init__(
+            self,
+            "Key without value continued with an indented line.\n"
+            "file: %r, line: %d\n%r"
+            %(filename, lineno, line))
+        self.source = filename
+        self.lineno = lineno
+        self.line = line
+        self.args = (filename, lineno, line)
 
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable `None` as
@@ -987,6 +1001,8 @@ class RawConfigParser(MutableMapping):
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if (cursect is not None and optname and
                 cur_indent_level > indent_level):
+                if cursect[optname] is None:
+                    raise MultilineContinuationError(fpname, lineno, line)
                 cursect[optname].append(value)
             # a section header or option header?
             else:
