@@ -4,6 +4,8 @@
 // Always enable assertions
 #undef NDEBUG
 
+#include "pyconfig.h"   // Py_GIL_DISABLED
+
 // Use the limited C API
 #ifndef Py_GIL_DISABLED
 #  define Py_LIMITED_API 0x030c0000  // 3.12
