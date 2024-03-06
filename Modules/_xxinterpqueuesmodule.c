@@ -393,7 +393,7 @@ handle_queue_error(int err, PyObject *mod, int64_t qid)
 
 #define UNBOUND_REMOVE 1
 #define UNBOUND_ERROR 2
-#define UNBOUND_REPLACE_DEFAULT 3
+#define UNBOUND_REPLACE 3
 
 // It would also be possible to add UNBOUND_REPLACE where the replacement
 // value is user-provided.  There would be some limitations there, though.
@@ -407,7 +407,7 @@ check_unbound(int unboundop)
     switch (unboundop) {
     case UNBOUND_REMOVE:
     case UNBOUND_ERROR:
-    case UNBOUND_REPLACE_DEFAULT:
+    case UNBOUND_REPLACE:
         return 1;
     default:
         return 0;
