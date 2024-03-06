@@ -16,9 +16,11 @@
 #endif
 #include "ctypes.h"
 
+/* This file relates to StgInfo -- type-specific information for ctypes.
+ * See ctypes.h for details.
+ */
 
-
-// Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
+// Get a PyCTypeDataObject. These return -1 on error, 0 if "not found", 1 on OK.
 static int
 _stginfo_from_type(ctypes_state *state, PyTypeObject *type, StgInfo **result)
 {
@@ -56,7 +58,7 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result) {
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
-// Initialize StgInfo on a newly created
+// Initialize StgInfo on a newly created type
 StgInfo *
 PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 {
@@ -76,15 +78,6 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     info->initialized = 1;
     return info;
 }
-
-
-
-/******************************************************************/
-/*
-  StdDict - a dictionary subclass, containing additional C accessible fields
-
-  XXX blabla more
-*/
 
 int
 PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)

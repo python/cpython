@@ -222,44 +222,19 @@ typedef struct {
     int anonymous;
 } CFieldObject;
 
-typedef struct {
-    int initialized;
-    Py_ssize_t size;            /* number of bytes */
-    Py_ssize_t align;           /* alignment requirements */
-    Py_ssize_t length;          /* number of fields */
-    ffi_type ffi_type_pointer;
-    PyObject *proto;            /* Only for Pointer/ArrayObject */
-    SETFUNC setfunc;            /* Only for simple objects */
-    GETFUNC getfunc;            /* Only for simple objects */
-    PARAMFUNC paramfunc;
-
-    /* Following fields only used by PyCFuncPtrType_Type instances */
-    PyObject *argtypes;         /* tuple of CDataObjects */
-    PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
-    PyObject *restype;          /* CDataObject or NULL */
-    PyObject *checker;
-    int flags;                  /* calling convention and such */
-
-    /* pep3118 fields, pointers need PyMem_Free */
-    char *format;
-    int ndim;
-    Py_ssize_t *shape;
-/*      Py_ssize_t *strides;    */ /* unused in ctypes */
-/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
-} StgInfo;
-
-// Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
-// from a type:
-extern int PyStgInfo_FromType(ctypes_state *state, PyObject *obj, StgInfo **result);
-// from an instance:
-extern int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result);
-// from either a type or an instance:
-extern int PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result);
-
-// Initialize StgInfo on a newly created type
-extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
-
 /****************************************************************
+ StgInfo
+
+ Since Python 3.13, ctypes-specific type information is stored in the
+ corresponding type object, in a `StgInfo` struct accessed by the helpers
+ below.
+ Before that, each type's `tp_dict` was set to a dict *subclass* that included
+ the fields that are now in StgInfo. The mechanism was called "StgDict"; a few
+ references to that name might remain.
+
+
+ ****************************************************************
+
  StgInfo fields
 
  setfunc and getfunc is only set for simple data types, it is copied from the
@@ -298,6 +273,43 @@ extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
   - toparamfunc: convert a python value into a function argument
 
 *****************************************************************/
+
+typedef struct {
+    int initialized;
+    Py_ssize_t size;            /* number of bytes */
+    Py_ssize_t align;           /* alignment requirements */
+    Py_ssize_t length;          /* number of fields */
+    ffi_type ffi_type_pointer;
+    PyObject *proto;            /* Only for Pointer/ArrayObject */
+    SETFUNC setfunc;            /* Only for simple objects */
+    GETFUNC getfunc;            /* Only for simple objects */
+    PARAMFUNC paramfunc;
+
+    /* Following fields only used by PyCFuncPtrType_Type instances */
+    PyObject *argtypes;         /* tuple of CDataObjects */
+    PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
+    PyObject *restype;          /* CDataObject or NULL */
+    PyObject *checker;
+    int flags;                  /* calling convention and such */
+
+    /* pep3118 fields, pointers need PyMem_Free */
+    char *format;
+    int ndim;
+    Py_ssize_t *shape;
+/*      Py_ssize_t *strides;    */ /* unused in ctypes */
+/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
+} StgInfo;
+
+// Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
+// from a type:
+extern int PyStgInfo_FromType(ctypes_state *state, PyObject *obj, StgInfo **result);
+// from an instance:
+extern int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result);
+// from either a type or an instance:
+extern int PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result);
+
+// Initialize StgInfo on a newly created type
+extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 
