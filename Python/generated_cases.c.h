@@ -5580,17 +5580,24 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_ALWAYS_TRUE);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
+            PyObject *owner;
             PyObject *value;
             PyObject *res;
             /* Skip 1 cache entry */
-            value = stack_pointer[-1];
-            uint32_t version = read_u32(&this_instr[2].cache);
-            // This one is a bit weird, because we expect *some* failures:
-            assert(version);
-            DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
-            STAT_INC(TO_BOOL, hit);
-            Py_DECREF(value);
-            res = Py_True;
+            // _GUARD_TYPE_VERSION
+            owner = stack_pointer[-1];
+            {
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyTypeObject *tp = Py_TYPE(owner);
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, TO_BOOL);
+            }
+            // _REPLACE_WITH_TRUE
+            value = owner;
+            {
+                Py_DECREF(value);
+                res = Py_True;
+            }
             stack_pointer[-1] = res;
             DISPATCH();
         }
