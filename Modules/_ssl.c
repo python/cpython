@@ -75,6 +75,12 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
+#ifdef OPENSSL_IS_BORINGSSL
+# ifndef OPENSSL_NO_PSK
+/* PSK APIs not supported by BoringSSL. */
+#  define OPENSSL_NO_PSK 1
+# endif
+#endif
 
 
 struct py_ssl_error_code {
