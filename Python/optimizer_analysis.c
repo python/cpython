@@ -155,7 +155,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     /* These values represent stacks of booleans (one bool per bit).
      * Pushing a frame shifts left, popping a frame shifts right. */
     uint32_t function_checked = 0;
-    uint32_t globals_checked = 0;
+    uint32_t builtins_watched = 0;
     uint32_t globals_watched = 0;
     uint32_t prechecked_function_version = 0;
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
@@ -172,9 +172,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
                     continue;
                 }
-                if ((function_checked & 1) == 0) {
+                if ((builtins_watched & 1) == 0) {
                     PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
-                    function_checked |= 1;
+                    builtins_watched |= 1;
                 }
                 if (function_checked & 1) {
                     buffer[pc].opcode = NOP;
@@ -198,39 +198,39 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     _Py_BloomFilter_Add(dependencies, globals);
                     globals_watched |= 1;
                 }
-                if (globals_checked & 1) {
+                if (function_checked & 1) {
                     buffer[pc].opcode = NOP;
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
                     buffer[pc].operand = (uintptr_t)globals;
-                    globals_checked |= 1;
+                    function_checked |= 1;
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
-                if (globals_checked & function_checked & globals_watched & 1) {
+                if (function_checked & globals_watched & builtins_watched & 1) {
                     convert_global_to_const(inst, builtins);
                 }
                 break;
             case _LOAD_GLOBAL_MODULE:
-                if (globals_checked & globals_watched & 1) {
+                if (function_checked & globals_watched & 1) {
                     convert_global_to_const(inst, globals);
                 }
                 break;
             case _PUSH_FRAME:
             {
-                globals_checked <<= 1;
+                builtins_watched <<= 1;
                 globals_watched <<= 1;
                 function_checked <<= 1;
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
                 if (func == NULL) {
                     return 1;
                 }
+                assert(PyFunction_Check(func));
                 if (prechecked_function_version == func->func_version) {
                     function_checked |= 1;
                 }
                 prechecked_function_version = 0;
-                assert(PyFunction_Check(func));
                 globals = func->func_globals;
                 builtins = func->func_builtins;
                 if (builtins != interp->builtins) {
@@ -240,7 +240,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
             }
             case _POP_FRAME:
             {
-                globals_checked >>= 1;
+                builtins_watched >>= 1;
                 globals_watched >>= 1;
                 function_checked >>= 1;
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
@@ -251,8 +251,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
             }
             case _CHECK_FUNCTION_EXACT_ARGS:
                 prechecked_function_version = (uint32_t)buffer[pc].operand;
-                break;
-            case _SAVE_RETURN_OFFSET:
                 break;
             default:
                 if (op_is_end(opcode)) {
