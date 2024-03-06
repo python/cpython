@@ -3,7 +3,6 @@ from test import support
 from test.support import (
     is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
-
 import _thread as thread
 import array
 import contextlib
@@ -37,6 +36,10 @@ try:
     import fcntl
 except ImportError:
     fcntl = None
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 support.requires_working_socket(module=True)
 
@@ -1170,6 +1173,7 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertRaises(OverflowError, func, 1<<34)
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def testNtoHErrors(self):
         import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
@@ -1636,6 +1640,7 @@ class GeneralModuleTests(unittest.TestCase):
             except socket.gaierror:
                 pass
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_getaddrinfo_int_port_overflow(self):
         # gh-74895: Test that getaddrinfo does not raise OverflowError on port.
         #
@@ -1829,6 +1834,7 @@ class GeneralModuleTests(unittest.TestCase):
             srv.listen()
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_listen_backlog_overflow(self):
         # Issue 15989
         import _testcapi
@@ -2710,22 +2716,29 @@ class BasicTCPTest(SocketConnectedTest):
     def _testDup(self):
         self.serv_conn.send(MSG)
 
-    def testShutdown(self):
-        # Testing shutdown()
+    def check_shutdown(self):
+        # Test shutdown() helper
         msg = self.cli_conn.recv(1024)
         self.assertEqual(msg, MSG)
-        # wait for _testShutdown to finish: on OS X, when the server
+        # wait for _testShutdown[_overflow] to finish: on OS X, when the server
         # closes the connection the client also becomes disconnected,
         # and the client's shutdown call will fail. (Issue #4397.)
         self.done.wait()
+
+    def testShutdown(self):
+        self.check_shutdown()
 
     def _testShutdown(self):
         self.serv_conn.send(MSG)
         self.serv_conn.shutdown(2)
 
-    testShutdown_overflow = support.cpython_only(testShutdown)
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def testShutdown_overflow(self):
+        self.check_shutdown()
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def _testShutdown_overflow(self):
         import _testcapi
         self.serv_conn.send(MSG)
@@ -4882,6 +4895,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         pass
 
     @support.cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def testSetBlocking_overflow(self):
         # Issue 15989
         import _testcapi

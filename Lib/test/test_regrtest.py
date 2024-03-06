@@ -1724,6 +1724,10 @@ class ArgsTestCase(BaseTestCase):
 
     @support.cpython_only
     def test_uncollectable(self):
+        try:
+            import _testcapi
+        except ImportError:
+            raise unittest.SkipTest("requires _testcapi")
         code = textwrap.dedent(r"""
             import _testcapi
             import gc
@@ -2106,6 +2110,10 @@ class ArgsTestCase(BaseTestCase):
 
     def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
+        try:
+            import _testinternalcapi
+        except ImportError:
+            raise unittest.SkipTest("requires _testinternalcapi")
         code = textwrap.dedent(r"""
             import sys
             import unittest

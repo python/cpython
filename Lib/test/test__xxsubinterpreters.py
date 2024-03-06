@@ -7,13 +7,13 @@ from textwrap import dedent
 import threading
 import unittest
 
-import _testinternalcapi
 from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
 
 
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 interpreters = import_helper.import_module('_xxsubinterpreters')
 from _xxsubinterpreters import InterpreterNotFoundError
 

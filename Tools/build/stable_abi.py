@@ -275,7 +275,10 @@ def gen_ctypes_test(manifest, args, outfile):
         import sys
         import unittest
         from test.support.import_helper import import_module
-        from _testcapi import get_feature_macros
+        try:
+            from _testcapi import get_feature_macros
+        except ImportError:
+            raise unittest.SkipTest("requires _testcapi")
 
         feature_macros = get_feature_macros()
 
@@ -601,7 +604,7 @@ def check_private_names(manifest):
         if name.startswith('_') and not item.abi_only:
             raise ValueError(
                 f'`{name}` is private (underscore-prefixed) and should be '
-                + 'removed from the stable ABI list or or marked `abi_only`')
+                + 'removed from the stable ABI list or marked `abi_only`')
 
 def check_dump(manifest, filename):
     """Check that manifest.dump() corresponds to the data.

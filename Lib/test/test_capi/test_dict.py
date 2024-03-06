@@ -2,7 +2,7 @@ import unittest
 from collections import OrderedDict, UserDict
 from types import MappingProxyType
 from test import support
-import _testcapi
+_testcapi = support.import_helper.import_module("_testcapi")
 
 
 NULL = None

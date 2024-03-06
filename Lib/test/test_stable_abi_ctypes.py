@@ -6,7 +6,10 @@
 import sys
 import unittest
 from test.support.import_helper import import_module
-from _testcapi import get_feature_macros
+try:
+    from _testcapi import get_feature_macros
+except ImportError:
+    raise unittest.SkipTest("requires _testcapi")
 
 feature_macros = get_feature_macros()
 

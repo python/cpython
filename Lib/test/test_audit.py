@@ -89,6 +89,7 @@ class AuditTest(unittest.TestCase):
         )
 
     def test_unraisablehook(self):
+        import_helper.import_module("_testcapi")
         returncode, events, stderr = self.run_python("test_unraisablehook")
         if returncode:
             self.fail(stderr)

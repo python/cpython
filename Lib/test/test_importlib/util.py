@@ -13,6 +13,8 @@ import sys
 import tempfile
 import types
 
+_testsinglephase = import_helper.import_module("_testsinglephase")
+
 
 BUILTINS = types.SimpleNamespace()
 BUILTINS.good_name = None
