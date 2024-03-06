@@ -1,5 +1,6 @@
 """Filename globbing utility."""
 
+import operator
 import os
 import re
 import fnmatch
@@ -49,6 +50,8 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     sys.audit("glob.glob", pathname, recursive)
     sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
     pathname = os.fspath(pathname)
+    if not pathname:
+        return iter(())
     is_bytes = isinstance(pathname, bytes)
     if is_bytes:
         pathname = os.fsdecode(pathname)
@@ -68,7 +71,10 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         else:
             root_dir = './'
         paths = select(root_dir, root_dir, dir_fd, False)
-        paths = _remove_prefix(paths, len(root_dir))
+        if recursive and (parts == ('**',) or parts == ('**', '')):
+            next(paths)   # Do not emit root_dir
+        root_slicer = operator.itemgetter(slice(len(root_dir), None))
+        paths = map(root_slicer, paths)
     if is_bytes:
         paths = map(os.fsencode, paths)
     return paths
@@ -172,15 +178,6 @@ def _add_trailing_slash(pathname):
     """Returns the given path with a trailing slash added, where possible.
     """
     return os.path.join(pathname, '')
-
-
-def _remove_prefix(paths, prefix_len):
-    """Yields paths with a given prefix removed, filtering out empty results.
-    """
-    for path in paths:
-        path = path[prefix_len:]
-        if path:
-            yield path
 
 
 def _open_dir(path, rel_path, dir_fd):
