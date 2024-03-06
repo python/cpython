@@ -108,7 +108,7 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
             )
         finder = self.machinery.FileFinder(None)
         self.spec = importlib.util.find_spec(self.name)
-        self.assertIsNotNone(self.spec)
+        assert self.spec
         self.loader = self.machinery.ExtensionFileLoader(
             self.name, self.spec.origin)
 
@@ -189,7 +189,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             )
         finder = self.machinery.FileFinder(None)
         self.spec = importlib.util.find_spec(self.name)
-        self.assertIsNotNone(self.spec)
+        assert self.spec
         self.loader = self.machinery.ExtensionFileLoader(
             self.name, self.spec.origin)
 
