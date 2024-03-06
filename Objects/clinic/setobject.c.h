@@ -346,21 +346,6 @@ PyDoc_STRVAR(set_symmetric_difference_update__doc__,
 #define SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF    \
     {"symmetric_difference_update", (PyCFunction)set_symmetric_difference_update, METH_O, set_symmetric_difference_update__doc__},
 
-static PyObject *
-set_symmetric_difference_update_impl(PySetObject *so, PyObject *other);
-
-static PyObject *
-set_symmetric_difference_update(PySetObject *so, PyObject *other)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_symmetric_difference_update_impl(so, other);
-    Py_END_CRITICAL_SECTION2();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(set_symmetric_difference__doc__,
 "symmetric_difference($self, other, /)\n"
 "--\n"
@@ -583,4 +568,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=e320fd760fa48265 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de4ee725bd29f758 input=a9049054013a1b77]*/
