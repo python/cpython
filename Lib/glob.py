@@ -64,13 +64,16 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         paths = select(pathname, pathname, dir_fd, not drive)
     else:
         # Relative pattern.
-        if root_dir is not None:
-            root_dir = _add_trailing_slash(root_dir)
-        else:
+        if root_dir is None:
             root_dir = './'
+        else:
+            root_dir = _add_trailing_slash(root_dir)
         paths = select(root_dir, root_dir, dir_fd, False)
         if recursive and (parts == ('**',) or parts == ('**', '')):
-            next(paths)   # Do not emit root_dir
+            # Consume root_dir.
+            for path in paths:
+                assert path == root_dir
+                break
         root_slicer = operator.itemgetter(slice(len(root_dir), None))
         paths = map(root_slicer, paths)
     if is_bytes:
