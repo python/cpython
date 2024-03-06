@@ -79,14 +79,14 @@ class ModulesFilesTests(SiteDir, unittest.TestCase):
         A module can have resources found adjacent to the module.
         """
         spec = {
-            'mod_res.py': '',
+            'mod.py': '',
             'res.txt': 'resources are the best',
         }
         _path.build(spec, self.site_dir)
-        import mod_res
+        import mod
 
-        actual = resources.files(mod_res).joinpath('res.txt').read_text(encoding='utf-8')
-        self.assertEqual(actual, spec['res.txt'])
+        actual = resources.files(mod).joinpath('res.txt').read_text(encoding='utf-8')
+        assert actual == spec['res.txt']
 
 
 class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
