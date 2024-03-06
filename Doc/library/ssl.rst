@@ -151,6 +151,12 @@ purposes.
    variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
    enables key logging.
 
+   The default settings for this context include
+   :data:`VERIFY_X509_PARTIAL_CHAIN` and :data:`VERIFY_X509_STRICT`.
+   These make the underlying OpenSSL implementation behave more like
+   a conforming implementation of :rfc:`5280`, in exchange for a small
+   amount of incompatibility with older X.509 certificates.
+
    .. note::
       The protocol, options, cipher and other settings may change to more
       restrictive values anytime without prior deprecation.  The values
@@ -171,6 +177,15 @@ purposes.
 
          ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
          ctx.options &= ~ssl.OP_NO_SSLv3
+
+   .. note::
+      This context enables :data:`VERIFY_X509_STRICT` by default, which
+      may reject pre-:rfc:`5280` or malformed certificates that the
+      underlying OpenSSL implementation otherwise would accept. While disabling
+      this is not recommended, you can do so using::
+
+         ctx = ssl.create_default_context()
+         ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
 
    .. versionadded:: 3.4
 
@@ -193,6 +208,11 @@ purposes.
       The context now uses :data:`PROTOCOL_TLS_CLIENT` or
       :data:`PROTOCOL_TLS_SERVER` protocol instead of generic
       :data:`PROTOCOL_TLS`.
+
+   .. versionchanged:: 3.13
+
+      The context now uses :data:`VERIFY_X509_PARTIAL_CHAIN` and
+      :data:`VERIFY_X509_STRICT` in its default verify flags.
 
 
 Exceptions

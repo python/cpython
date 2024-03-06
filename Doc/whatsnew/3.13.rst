@@ -62,7 +62,6 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-
 .. PEP-sized items next.
 
 Important deprecations, removals or restrictions:
@@ -191,6 +190,21 @@ Other Language Changes
   never awaited).
 
   (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
+
+* The :func:`ssl.create_default_context` API now includes
+  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
+  in its default flags.
+
+  .. note::
+
+   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
+   certificates that the underlying OpenSSL implementation otherwise would
+   accept. While disabling this is not recommended, you can do so using::
+
+      ctx = ssl.create_default_context()
+      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+  (Contributed by William Woodruff in :gh:`112389`.)
 
 New Modules
 ===========

@@ -38,7 +38,7 @@ except ImportError:
 ssl = import_helper.import_module("ssl")
 import _ssl
 
-from ssl import TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
+from ssl import Purpose, TLSVersion, _TLSContentType, _TLSMessageType, _TLSAlertType
 
 Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 
@@ -87,9 +87,9 @@ CERTFILE_INFO = {
                (('localityName', 'Castle Anthrax'),),
                (('organizationName', 'Python Software Foundation'),),
                (('commonName', 'localhost'),)),
-    'notAfter': 'Aug 26 14:23:15 2028 GMT',
-    'notBefore': 'Aug 29 14:23:15 2018 GMT',
-    'serialNumber': '98A7CF88C74A32ED',
+    'notAfter': 'Jan 24 04:21:36 2043 GMT',
+    'notBefore': 'Nov 25 04:21:36 2023 GMT',
+    'serialNumber': '53E14833F7546C29256DD0F034F776C5E983004C',
     'subject': ((('countryName', 'XY'),),
              (('localityName', 'Castle Anthrax'),),
              (('organizationName', 'Python Software Foundation'),),
@@ -127,6 +127,13 @@ SIGNED_CERTFILE2 = data_file("keycert4.pem")
 SIGNED_CERTFILE2_HOSTNAME = 'fakehostname'
 SIGNED_CERTFILE_ECC = data_file("keycertecc.pem")
 SIGNED_CERTFILE_ECC_HOSTNAME = 'localhost-ecc'
+
+# A custom testcase, extracted from `rfc5280::aki::leaf-missing-aki` in x509-limbo:
+# The leaf (server) certificate has no AKI, which is forbidden under RFC 5280.
+# See: https://x509-limbo.com/testcases/rfc5280/#rfc5280akileaf-missing-aki
+LEAF_MISSING_AKI_CERTFILE = data_file("leaf-missing-aki.keycert.pem")
+LEAF_MISSING_AKI_CERTFILE_HOSTNAME = "example.com"
+LEAF_MISSING_AKI_CA = data_file("leaf-missing-aki.ca.pem")
 
 # Same certificate as pycacert.pem, but without extra text in file
 SIGNING_CA = data_file("capath", "ceff1710.0")
@@ -1497,6 +1504,10 @@ class ContextTests(unittest.TestCase):
 
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ctx.verify_flags & ssl.VERIFY_X509_PARTIAL_CHAIN,
+                         ssl.VERIFY_X509_PARTIAL_CHAIN)
+        self.assertEqual(ctx.verify_flags & ssl.VERIFY_X509_STRICT,
+                    ssl.VERIFY_X509_STRICT)
         self.assertTrue(ctx.check_hostname)
         self._assert_context_options(ctx)
 
@@ -2945,6 +2956,38 @@ class ThreadedTests(unittest.TestCase):
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
+
+    @unittest.skipUnless(IS_OPENSSL_3_0_0,
+                         "test requires RFC 5280 check added in OpenSSL 3.0+")
+    def test_verify_strict(self):
+        # verification fails by default, since the server cert is non-conforming
+        client_context = ssl.create_default_context()
+        client_context.load_verify_locations(LEAF_MISSING_AKI_CA)
+        hostname = LEAF_MISSING_AKI_CERTFILE_HOSTNAME
+
+        server_context = ssl.create_default_context(purpose=Purpose.CLIENT_AUTH)
+        server_context.load_cert_chain(LEAF_MISSING_AKI_CERTFILE)
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                with self.assertRaises(ssl.SSLError):
+                    s.connect((HOST, server.port))
+
+        # explicitly disabling VERIFY_X509_STRICT allows it to succeed
+        client_context = ssl.create_default_context()
+        client_context.load_verify_locations(LEAF_MISSING_AKI_CA)
+        client_context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+        server_context = ssl.create_default_context(purpose=Purpose.CLIENT_AUTH)
+        server_context.load_cert_chain(LEAF_MISSING_AKI_CERTFILE)
+        server = ThreadedEchoServer(context=server_context, chatty=True)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                cert = s.getpeercert()
+                self.assertTrue(cert, "Can't get peer certificate.")
 
     def test_dual_rsa_ecc(self):
         client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
