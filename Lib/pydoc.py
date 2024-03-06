@@ -2504,6 +2504,7 @@ def _start_server(urlhandler, hostname, port):
             threading.Thread.__init__(self)
             self.serving = False
             self.error = None
+            self.docserver = None
 
         def run(self):
             """Start the server."""
@@ -2536,9 +2537,9 @@ def _start_server(urlhandler, hostname, port):
 
     thread = ServerThread(urlhandler, hostname, port)
     thread.start()
-    # Wait until thread.serving is True to make sure we are
-    # really up before returning.
-    while not thread.error and not thread.serving:
+    # Wait until thread.serving is True and thread.docserver is set
+    # to make sure we are really up before returning.
+    while not thread.error and not (thread.serving and thread.docserver):
         time.sleep(.01)
     return thread
 
