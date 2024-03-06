@@ -132,11 +132,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "baa44fe4581895d42e8d5e83d8ce6a69b1c34dbe"
+          "checksumValue": "f50c899172acd93fc539007bfb43315b83d407e4"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "33a7b9ac8bf4571e23272cdf644c6f9808bd44c66b149e3c41ab3870d1888609"
+          "checksumValue": "d571b8258cfaa067a20adef553e5fcedd6671ca4a8841483496de031bd904567"
         }
       ],
       "fileName": "Modules/expat/pyexpatns.h"

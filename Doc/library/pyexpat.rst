@@ -196,6 +196,42 @@ XMLParser Objects
    :exc:`ExpatError` to be raised with the :attr:`code` attribute set to
    ``errors.codes[errors.XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING]``.
 
+.. method:: xmlparser.SetReparseDeferralEnabled(enabled)
+
+   .. warning::
+
+      Calling ``SetReparseDeferralEnabled(False)`` has security implications,
+      as detailed below; please make sure to understand these consequences
+      prior to using the ``SetReparseDeferralEnabled`` method.
+
+   Expat 2.6.0 introduced a security mechanism called "reparse deferral"
+   where instead of causing denial of service through quadratic runtime
+   from reparsing large tokens, reparsing of unfinished tokens is now delayed
+   by default until a sufficient amount of input is reached.
+   Due to this delay, registered handlers may — depending of the sizing of
+   input chunks pushed to Expat — no longer be called right after pushing new
+   input to the parser.  Where immediate feedback and taking over responsiblity
+   of protecting against denial of service from large tokens are both wanted,
+   calling ``SetReparseDeferralEnabled(False)`` disables reparse deferral
+   for the current Expat parser instance, temporarily or altogether.
+   Calling ``SetReparseDeferralEnabled(True)`` allows re-enabling reparse
+   deferral.
+
+   Note that :meth:`SetReparseDeferralEnabled` has been backported to some
+   prior releases of CPython as a security fix.  Check for availability of
+   :meth:`SetReparseDeferralEnabled` using :func:`hasattr` if used in code
+   running across a variety of Python versions.
+
+   .. versionadded:: 3.12.3
+
+.. method:: xmlparser.GetReparseDeferralEnabled()
+
+   Returns whether reparse deferral is currently enabled for the given
+   Expat parser instance.
+
+   .. versionadded:: 3.12.3
+
+
 :class:`xmlparser` objects have the following attributes:
 
 
