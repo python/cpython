@@ -118,6 +118,17 @@ add_to_shutdown_handles(thread_module_state *state, ThreadHandle *handle)
 }
 
 static void
+clear_shutdown_handles(thread_module_state *state)
+{
+    HEAD_LOCK(&_PyRuntime);
+    struct llist_node *node;
+    llist_for_each_safe(node, &state->shutdown_handles) {
+        llist_remove(node);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
 remove_from_shutdown_handles(ThreadHandle *handle)
 {
     HEAD_LOCK(&_PyRuntime);
@@ -2277,6 +2288,10 @@ thread_module_clear(PyObject *module)
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);
     Py_CLEAR(state->thread_handle_type);
+    // Remove any remaining handles (e.g. if shutdown exited early due to
+    // interrupt) so that attempts to unlink the handle after our module state
+    // is destroyed do not crash.
+    clear_shutdown_handles(state);
     return 0;
 }
 
