@@ -61,7 +61,7 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
         int err = (!PyArg_ValidateKeywordArguments(dict) ||
                    PyDict_Update(ns->ns_dict, dict) < 0);
         Py_DECREF(dict);
-        if {err) {
+        if (err) {
             return -1;
         }
     }
