@@ -3409,6 +3409,15 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(Types(2), Types.NetList)
         self.assertIs(Types('nl'), Types.NetList)
 
+    def test_second_tuple_item_is_falsey(self):
+        class Cardinal(Enum):
+            RIGHT = (1, 0)
+            UP = (0, 1)
+            LEFT = (-1, 0)
+            DOWN = (0, -1)
+        self.assertIs(Cardinal(1, 0), Cardinal.RIGHT)
+        self.assertIs(Cardinal(-1, 0), Cardinal.LEFT)
+
     def test_no_members(self):
         with self.assertRaisesRegex(
                 TypeError,
@@ -3420,6 +3429,20 @@ class TestSpecial(unittest.TestCase):
                 'has no members',
             ):
             Flag(7)
+
+    def test_empty_names(self):
+        for nothing, e_type in (
+                ('', None),
+                ('', int),
+                ([], None),
+                ([], int),
+                ({}, None),
+                ({}, int),
+            ):
+            empty_enum = Enum('empty_enum', nothing, type=e_type)
+            self.assertEqual(len(empty_enum), 0)
+            self.assertRaises(TypeError, 'has no members', empty_enum, 0)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
