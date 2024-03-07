@@ -1993,6 +1993,42 @@ testuniversal: all
 	$(RUNSHARED) /usr/libexec/oah/translate \
 		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
+# Run the test suite on the iOS simulator. Must be run on a macOS machine with
+# a full Xcode install that has an iPhone SE (3rd edition) simulator available.
+# This must be run *after* a `make install` has completed the build. The
+# `--with-framework-name` argument *cannot* be used when configuring the build.
+XCFOLDER=iOSTestbed.$(MULTIARCH).$(shell date +%s)
+XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
+.PHONY: testios
+testios:
+	@if test "$(MACHDEP)" != "ios"; then \
+		echo "Cannot run the iOS testbed for a non-iOS build."; \
+		exit 1;\
+	fi
+	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
+		echo "Cannot run the iOS testbed for non-simulator builds."; \
+		exit 1;\
+	fi
+	@if test $(PYTHONFRAMEWORK) != "Python"; then \
+		echo "Cannot run the iOS testbed with a non-default framework name."; \
+		exit 1;\
+	fi
+	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
+		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
+		exit 1;\
+	fi
+	# Copy the testbed project into the build folder
+	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
+	# Copy the framework from the install location to the testbed project.
+	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
+	# Run the test suite for the Xcode project, targeting the iOS simulator.
+	# If the suite fails, extract and print the console output, then re-raise the failure
+	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
+		xcrun xcresulttool get --path $(XCRESULT) --id $$(xcrun xcresulttool get --path $(XCRESULT) --format json | $(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])"); \
+		echo ; \
+		exit 1; \
+	fi
+
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
 # information about the build environment.
@@ -2712,7 +2748,7 @@ frameworkinstallextras:
 # subdirectory. The install has put these folders in the same folder as
 # Python.framework; Move the headers to their final framework-compatible home.
 .PHONY: frameworkinstallmobileheaders
-frameworkinstallmobileheaders:
+frameworkinstallmobileheaders: frameworkinstallunversionedstructure inclinstall
 	if test -d $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; then \
 		echo "Removing old framework headers"; \
 		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
@@ -2847,6 +2883,10 @@ clean-retain-profile: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/bin
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/lib
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/include
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/Python.framework
 
 .PHONY: profile-removal
 profile-removal:
@@ -2872,6 +2912,8 @@ clobber: clean
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
+	-rm -rf iOS/Frameworks
+	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build
 
