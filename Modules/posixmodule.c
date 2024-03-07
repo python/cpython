@@ -23,6 +23,7 @@
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_time.h"          // _PyLong_FromTime_t()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // symlink()
@@ -645,6 +646,7 @@ PyOS_AfterFork_Child(void)
 
 #ifdef Py_GIL_DISABLED
     _Py_brc_after_fork(tstate->interp);
+    _Py_qsbr_after_fork((_PyThreadStateImpl *)tstate);
 #endif
 
     status = _PyEval_ReInitThreads(tstate);
@@ -7841,7 +7843,7 @@ os_fork1_impl(PyObject *module)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -7885,7 +7887,7 @@ os_fork_impl(PyObject *module)
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -8718,7 +8720,7 @@ os_forkpty_impl(PyObject *module)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't fork at interpreter shutdown");
         return NULL;
     }
@@ -9575,36 +9577,39 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
     if (!result)
         return NULL;
 
+    int pos = 0;
+
 #ifndef doubletime
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 #endif
 
-    PyStructSequence_SET_ITEM(result, 0,
-                              PyFloat_FromDouble(doubletime(ru->ru_utime)));
-    PyStructSequence_SET_ITEM(result, 1,
-                              PyFloat_FromDouble(doubletime(ru->ru_stime)));
-#define SET_INT(result, index, value)\
-        PyStructSequence_SET_ITEM(result, index, PyLong_FromLong(value))
-    SET_INT(result, 2, ru->ru_maxrss);
-    SET_INT(result, 3, ru->ru_ixrss);
-    SET_INT(result, 4, ru->ru_idrss);
-    SET_INT(result, 5, ru->ru_isrss);
-    SET_INT(result, 6, ru->ru_minflt);
-    SET_INT(result, 7, ru->ru_majflt);
-    SET_INT(result, 8, ru->ru_nswap);
-    SET_INT(result, 9, ru->ru_inblock);
-    SET_INT(result, 10, ru->ru_oublock);
-    SET_INT(result, 11, ru->ru_msgsnd);
-    SET_INT(result, 12, ru->ru_msgrcv);
-    SET_INT(result, 13, ru->ru_nsignals);
-    SET_INT(result, 14, ru->ru_nvcsw);
-    SET_INT(result, 15, ru->ru_nivcsw);
-#undef SET_INT
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(result, pos++, item);      \
+    } while(0)
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_utime)));
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_stime)));
+    SET_RESULT(PyLong_FromLong(ru->ru_maxrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_ixrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_idrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_isrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_minflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_majflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_nswap));
+    SET_RESULT(PyLong_FromLong(ru->ru_inblock));
+    SET_RESULT(PyLong_FromLong(ru->ru_oublock));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgsnd));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgrcv));
+    SET_RESULT(PyLong_FromLong(ru->ru_nsignals));
+    SET_RESULT(PyLong_FromLong(ru->ru_nvcsw));
+    SET_RESULT(PyLong_FromLong(ru->ru_nivcsw));
+#undef SET_RESULT
 
     return Py_BuildValue("NiN", PyLong_FromPid(pid), status, result);
 }
@@ -10409,7 +10414,7 @@ build_itimerspec(const struct itimerspec* curr_value)
 static PyObject *
 build_itimerspec_ns(const struct itimerspec* curr_value)
 {
-    _PyTime_t value, interval;
+    PyTime_t value, interval;
     if (_PyTime_FromTimespec(&value, &curr_value->it_value) < 0) {
         return NULL;
     }
@@ -12894,7 +12899,7 @@ os_WSTOPSIG_impl(PyObject *module, int status)
 
 #ifdef __APPLE__
 /* On macOS struct statvfs uses 32-bit integers for block counts,
- * resulting in overflow when filesystems are larger tan 4TB. Therefore
+ * resulting in overflow when filesystems are larger than 4TB. Therefore
  * os.statvfs is implemented in terms of statfs(2).
  */
 
@@ -12902,41 +12907,44 @@ static PyObject*
 _pystatvfs_fromstructstatfs(PyObject *module, struct statfs st) {
     PyObject *StatVFSResultType = get_posix_state(module)->StatVFSResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatVFSResultType);
-    if (v == NULL)
-        return NULL;
-
-   long flags = 0;
-   if (st.f_flags & MNT_RDONLY) {
-       flags |= ST_RDONLY;
-   }
-   if (st.f_flags & MNT_NOSUID) {
-       flags |= ST_NOSUID;
-   }
-
-   _Static_assert(sizeof(st.f_blocks) == sizeof(long long), "assuming large file");
-
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((long long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3,
-                              PyLong_FromLongLong((long long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4,
-                              PyLong_FromLongLong((long long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5,
-                              PyLong_FromLongLong((long long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) flags));
-
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) NAME_MAX));
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
+    if (v == NULL) {
         return NULL;
     }
+
+    long flags = 0;
+    if (st.f_flags & MNT_RDONLY) {
+        flags |= ST_RDONLY;
+    }
+    if (st.f_flags & MNT_NOSUID) {
+        flags |= ST_NOSUID;
+    }
+
+    _Static_assert(sizeof(st.f_blocks) == sizeof(long long), "assuming large file");
+
+#define SET_ITEM(SEQ, INDEX, EXPR)                       \
+    do {                                                 \
+        PyObject *obj = (EXPR);                          \
+        if (obj == NULL) {                               \
+            Py_DECREF((SEQ));                            \
+            return NULL;                                 \
+        }                                                \
+        PyStructSequence_SET_ITEM((SEQ), (INDEX), obj);  \
+    } while (0)
+
+    SET_ITEM(v, 0, PyLong_FromLong((long) st.f_iosize));
+    SET_ITEM(v, 1, PyLong_FromLong((long) st.f_bsize));
+    SET_ITEM(v, 2, PyLong_FromLongLong((long long) st.f_blocks));
+    SET_ITEM(v, 3, PyLong_FromLongLong((long long) st.f_bfree));
+    SET_ITEM(v, 4, PyLong_FromLongLong((long long) st.f_bavail));
+    SET_ITEM(v, 5, PyLong_FromLongLong((long long) st.f_files));
+    SET_ITEM(v, 6, PyLong_FromLongLong((long long) st.f_ffree));
+    SET_ITEM(v, 7, PyLong_FromLongLong((long long) st.f_ffree));
+    SET_ITEM(v, 8, PyLong_FromLong((long) flags));
+
+    SET_ITEM(v, 9, PyLong_FromLong((long) NAME_MAX));
+    SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+
+#undef SET_ITEM
 
     return v;
 }

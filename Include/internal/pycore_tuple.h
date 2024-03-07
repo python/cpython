@@ -21,13 +21,15 @@ extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
 #define _PyTuple_ITEMS(op) _Py_RVALUE(_PyTuple_CAST(op)->ob_item)
 
 extern PyObject *_PyTuple_FromArray(PyObject *const *, Py_ssize_t);
-extern PyObject *_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
+PyAPI_FUNC(PyObject *)_PyTuple_FromArraySteal(PyObject *const *, Py_ssize_t);
 
 typedef struct {
     PyObject_HEAD
     Py_ssize_t it_index;
     PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyTupleIterObject;
+
+PyAPI_FUNC(int) _PyTuple_Contains(PyTupleObject *a, PyObject *el);
 
 #ifdef __cplusplus
 }

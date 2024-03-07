@@ -1,1 +1,0 @@
-Add :py:class:`queue.Queue` termination with :py:meth:`~queue.Queue.shutdown`.

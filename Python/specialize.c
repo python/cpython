@@ -17,6 +17,7 @@
 
 #include <stdlib.h> // rand()
 
+extern const char *_PyUOpName(int index);
 
 /* For guidance on adding or extending families of instructions see
  * ./adaptive.md
@@ -102,6 +103,7 @@ _Py_GetSpecializationStats(void) {
         return NULL;
     }
     int err = 0;
+    err += add_stat_dict(stats, CONTAINS_OP, "contains_op");
     err += add_stat_dict(stats, LOAD_SUPER_ATTR, "load_super_attr");
     err += add_stat_dict(stats, LOAD_ATTR, "load_attr");
     err += add_stat_dict(stats, LOAD_GLOBAL, "load_global");
@@ -235,23 +237,24 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
     fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
     fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
+    fprintf(out, "Executors invalidated: %" PRIu64 "\n", stats->executors_invalidated);
 
     print_histogram(out, "Trace length", stats->trace_length_hist);
     print_histogram(out, "Trace run length", stats->trace_run_length_hist);
     print_histogram(out, "Optimized trace length", stats->optimized_trace_length_hist);
 
+    fprintf(out, "Optimization optimizer attempts: %" PRIu64 "\n", stats->optimizer_attempts);
+    fprintf(out, "Optimization optimizer successes: %" PRIu64 "\n", stats->optimizer_successes);
+    fprintf(out, "Optimization optimizer failure no memory: %" PRIu64 "\n",
+            stats->optimizer_failure_reason_no_memory);
+
     const char* const* names;
-    for (int i = 0; i < 512; i++) {
-        if (i < 256) {
-            names = _PyOpcode_OpName;
-        } else {
-            names = _PyOpcode_uop_name;
-        }
+    for (int i = 0; i <= MAX_UOP_ID; i++) {
         if (stats->opcode[i].execution_count) {
-            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
+            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
         }
         if (stats->opcode[i].miss) {
-            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].miss);
         }
     }
 
@@ -275,6 +278,8 @@ print_rare_event_stats(FILE *out, RareEventStats *stats)
     fprintf(out, "Rare event (set_eval_frame_func): %" PRIu64 "\n", stats->set_eval_frame_func);
     fprintf(out, "Rare event (builtin_dict): %" PRIu64 "\n", stats->builtin_dict);
     fprintf(out, "Rare event (func_modification): %" PRIu64 "\n", stats->func_modification);
+    fprintf(out, "Rare event (watched_dict_modification): %" PRIu64 "\n", stats->watched_dict_modification);
+    fprintf(out, "Rare event (watched_globals_modification): %" PRIu64 "\n", stats->watched_globals_modification);
 }
 
 static void
@@ -2554,6 +2559,43 @@ failure:
     return;
 success:
     STAT_INC(TO_BOOL, success);
+    cache->counter = adaptive_counter_cooldown();
+}
+
+void
+_Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
+{
+    assert(ENABLE_SPECIALIZATION);
+    assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
+    _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
+    if (PyUnicode_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_STR;
+        goto success;
+    }
+    if (PyList_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_LIST;
+        goto success;
+    }
+    if (PyTuple_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_TUPLE;
+        goto success;
+    }
+    if (PyDict_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_DICT;
+        goto success;
+    }
+    if (PySet_CheckExact(value)) {
+        instr->op.code = CONTAINS_OP_SET;
+        goto success;
+    }
+
+
+    STAT_INC(CONTAINS_OP, failure);
+    instr->op.code = CONTAINS_OP;
+    cache->counter = adaptive_counter_backoff(cache->counter);
+    return;
+success:
+    STAT_INC(CONTAINS_OP, success);
     cache->counter = adaptive_counter_cooldown();
 }
 

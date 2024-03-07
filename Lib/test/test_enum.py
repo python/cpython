@@ -447,7 +447,7 @@ class _EnumTests:
     def test_bad_new_super(self):
         with self.assertRaisesRegex(
                 TypeError,
-                'has no members defined',
+                'do not use .super...__new__;',
             ):
             class BadSuper(self.enum_type):
                 def __new__(cls, value):
@@ -1047,6 +1047,22 @@ class TestPlainEnumFunction(_EnumTests, _PlainOutputTests, unittest.TestCase):
 
 class TestPlainFlagClass(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
+
+    def test_none_member(self):
+        class FlagWithNoneMember(Flag):
+            A = 1
+            E = None
+
+        self.assertEqual(FlagWithNoneMember.A.value, 1)
+        self.assertIs(FlagWithNoneMember.E.value, None)
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with |"):
+            FlagWithNoneMember.A | FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with &"):
+            FlagWithNoneMember.E & FlagWithNoneMember.A
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with \^"):
+            FlagWithNoneMember.A ^ FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be inverted"):
+            ~FlagWithNoneMember.E
 
 
 class TestPlainFlagFunction(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
@@ -3393,6 +3409,17 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(Types(2), Types.NetList)
         self.assertIs(Types('nl'), Types.NetList)
 
+    def test_no_members(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Enum(7)
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Flag(7)
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -4851,22 +4878,22 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |
  |  ----------------------------------------------------------------------
- |  Methods inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
  |
- |  __contains__(value) from enum.EnumType
+ |  __contains__(value)
  |      Return True if `value` is in `cls`.
  |
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
  |
- |  __getitem__(name) from enum.EnumType
+ |  __getitem__(name)
  |      Return the member matching `name`.
  |
- |  __iter__() from enum.EnumType
+ |  __iter__()
  |      Return members in definition order.
  |
- |  __len__() from enum.EnumType
+ |  __len__()
  |      Return the number of members (no aliases)
  |
  |  ----------------------------------------------------------------------
@@ -4905,15 +4932,15 @@ class Color(enum.Enum)
  |  value
  |
  |  ----------------------------------------------------------------------
- |  Methods inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
  |
- |  __contains__(value) from enum.EnumType
+ |  __contains__(value)
  |
- |  __getitem__(name) from enum.EnumType
+ |  __getitem__(name)
  |
- |  __iter__() from enum.EnumType
+ |  __iter__()
  |
- |  __len__() from enum.EnumType
+ |  __len__()
  |
  |  ----------------------------------------------------------------------
  |  Readonly properties inherited from enum.EnumType:

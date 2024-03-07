@@ -322,7 +322,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_eval_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for isolated expressions; for use with
    :c:func:`Py_CompileString`.
@@ -330,7 +330,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_file_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for sequences of statements as read
    from a file or other source; for use with :c:func:`Py_CompileString`.  This is
@@ -339,7 +339,7 @@ the same library that the Python runtime is using.
 
 .. c:var:: int Py_single_input
 
-   .. index:: single: Py_CompileString()
+   .. index:: single: Py_CompileString (C function)
 
    The start symbol from the Python grammar for a single statement; for use with
    :c:func:`Py_CompileString`. This is the symbol used for the interactive

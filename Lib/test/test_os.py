@@ -1592,6 +1592,9 @@ class FwalkTests(WalkTests):
     @unittest.skipIf(
         support.is_emscripten, "Cannot dup stdout on Emscripten"
     )
+    @unittest.skipIf(
+        support.is_android, "dup return value is unpredictable on Android"
+    )
     def test_fd_leak(self):
         # Since we're opening a lot of FDs, we must be careful to avoid leaks:
         # we both check that calling fwalk() a large number of times doesn't
@@ -2492,8 +2495,10 @@ class Pep383Tests(unittest.TestCase):
         # test listdir without arguments
         current_directory = os.getcwd()
         try:
-            os.chdir(os.sep)
-            self.assertEqual(set(os.listdir()), set(os.listdir(os.sep)))
+            # The root directory is not readable on Android, so use a directory
+            # we created ourselves.
+            os.chdir(self.dir)
+            self.assertEqual(set(os.listdir()), expected)
         finally:
             os.chdir(current_directory)
 
@@ -3506,22 +3511,22 @@ class ProgramPriorityTests(unittest.TestCase):
     """Tests for os.getpriority() and os.setpriority()."""
 
     def test_set_get_priority(self):
-
         base = os.getpriority(os.PRIO_PROCESS, os.getpid())
-        os.setpriority(os.PRIO_PROCESS, os.getpid(), base + 1)
-        try:
-            new_prio = os.getpriority(os.PRIO_PROCESS, os.getpid())
-            if base >= 19 and new_prio <= 19:
-                raise unittest.SkipTest("unable to reliably test setpriority "
-                                        "at current nice level of %s" % base)
-            else:
-                self.assertEqual(new_prio, base + 1)
-        finally:
-            try:
-                os.setpriority(os.PRIO_PROCESS, os.getpid(), base)
-            except OSError as err:
-                if err.errno != errno.EACCES:
-                    raise
+        code = f"""if 1:
+        import os
+        os.setpriority(os.PRIO_PROCESS, os.getpid(), {base} + 1)
+        print(os.getpriority(os.PRIO_PROCESS, os.getpid()))
+        """
+
+        # Subprocess inherits the current process' priority.
+        _, out, _ = assert_python_ok("-c", code)
+        new_prio = int(out)
+        # nice value cap is 19 for linux and 20 for FreeBSD
+        if base >= 19 and new_prio <= base:
+            raise unittest.SkipTest("unable to reliably test setpriority "
+                                    "at current nice level of %s" % base)
+        else:
+            self.assertEqual(new_prio, base + 1)
 
 
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
@@ -4838,7 +4843,7 @@ class TestScandir(unittest.TestCase):
                                os.name == 'nt')
 
     def test_attributes(self):
-        link = hasattr(os, 'link')
+        link = os_helper.can_hardlink()
         symlink = os_helper.can_symlink()
 
         dirname = os.path.join(self.path, "dir")

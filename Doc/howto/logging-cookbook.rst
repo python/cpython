@@ -1744,13 +1744,11 @@ to the above, as in the following example::
             return self.fmt.format(*self.args)
 
     class StyleAdapter(logging.LoggerAdapter):
-        def __init__(self, logger, extra=None):
-            super().__init__(logger, extra or {})
-
-        def log(self, level, msg, /, *args, **kwargs):
+        def log(self, level, msg, /, *args, stacklevel=1, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
-                self.logger._log(level, Message(msg, args), (), **kwargs)
+                self.logger.log(level, Message(msg, args), **kwargs,
+                                stacklevel=stacklevel+1)
 
     logger = StyleAdapter(logging.getLogger(__name__))
 
@@ -1762,7 +1760,7 @@ to the above, as in the following example::
         main()
 
 The above script should log the message ``Hello, world!`` when run with
-Python 3.2 or later.
+Python 3.8 or later.
 
 
 .. currentmodule:: logging

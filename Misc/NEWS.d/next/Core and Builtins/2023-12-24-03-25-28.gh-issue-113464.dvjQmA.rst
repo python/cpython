@@ -1,4 +1,0 @@
-Add an option (``--enable-experimental-jit`` for ``configure``-based builds
-or ``--experimental-jit`` for ``PCbuild``-based ones) to build an
-*experimental* just-in-time compiler, based on `copy-and-patch
-<https://fredrikbk.com/publications/copy-and-patch.pdf>`_
