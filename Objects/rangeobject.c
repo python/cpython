@@ -240,6 +240,16 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     assert(PyLong_Check(stop));
     assert(PyLong_Check(step));
 
+    /* fast path for one argument case of range */
+    if (start == zero && step == one) {
+        if (_PyLong_IsPositive( (const PyLongObject *)stop) ) {
+                return Py_NewRef(stop);
+        }
+        else {
+                return zero;
+        }
+    }
+
     /* fast path when all arguments fit into a long integer */
     long len = compute_range_length_long(start, stop, step);
     if (len >= 0) {
@@ -1135,13 +1145,19 @@ range_iter(PyObject *seq)
 
     /* If all three fields and the length convert to long, use the int
      * version */
-    lstart = PyLong_AsLong(r->start);
-    if (lstart == -1 && PyErr_Occurred()) {
+    lstop = PyLong_AsLong(r->stop);
+    if (lstop == -1 && PyErr_Occurred()) {
         PyErr_Clear();
         goto long_range;
     }
-    lstop = PyLong_AsLong(r->stop);
-    if (lstop == -1 && PyErr_Occurred()) {
+
+    if (r->start == _PyLong_GetZero() && r->step == _PyLong_GetOne() ) {
+            /* fast path for one argument range */
+            return fast_range_iter(0, lstop, 1, Py_MAX(0, (long)lstop));
+    }
+
+    lstart = PyLong_AsLong(r->start);
+    if (lstart == -1 && PyErr_Occurred()) {
         PyErr_Clear();
         goto long_range;
     }
