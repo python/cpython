@@ -633,7 +633,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
 
     case 'B': {/* byte sized bitfield - both signed and unsigned
                   values allowed */
-        char *p = va_arg(*p_va, char *);
+        unsigned char *p = va_arg(*p_va, unsigned char *);
         unsigned long ival = PyLong_AsUnsignedLongMask(arg);
         if (ival == (unsigned long)-1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
