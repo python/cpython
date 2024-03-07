@@ -1741,6 +1741,12 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns4 = types.SimpleNamespace({'x': 1, 'y': 2}, x=4, z=3)
         ns5 = types.SimpleNamespace([['x', 1], ['y', 2]], x=4, z=3)
         ns6 = types.SimpleNamespace(UserDict({'x': 1, 'y': 2}), x=4, z=3)
+        ns7 = types.SimpleNamespace({'x': 1, 'y': 2})
+        ns8 = types.SimpleNamespace([['x', 1], ['y', 2]])
+        ns9 = types.SimpleNamespace([], x=4, z=3)
+        ns10 = types.SimpleNamespace({}, x=4, z=3)
+        ns11 = types.SimpleNamespace([])
+        ns12 = types.SimpleNamespace({})
 
         with self.assertRaises(TypeError):
             types.SimpleNamespace([], [])

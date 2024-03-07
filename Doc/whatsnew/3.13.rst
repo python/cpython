@@ -410,7 +410,7 @@ types
 
 * :class:`~types.SimpleNamespace` constructor now allows specifying initial
   values of attributes as a positional argument which must be a mapping or
-  an iterable or key-value pairs.
+  an iterable of key-value pairs.
   (Contributed by Serhiy Storchaka in :gh:`108191`.)
 
 typing
