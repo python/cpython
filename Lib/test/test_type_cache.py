@@ -2,7 +2,7 @@
 import unittest
 import dis
 from test import support
-from test.support import import_helper
+from test.support import import_helper, requires_specialization
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -67,7 +67,8 @@ class TypeCacheTests(unittest.TestCase):
 
         type_assign_version(C)
         orig_version = type_get_version(C)
-        self.assertNotEqual(orig_version, 0)
+        if orig_version == 0:
+            self.skipTest("Could not assign a valid type version")
 
         type_modified(C)
         type_assign_specific_version_unsafe(C, orig_version + 5)
@@ -78,16 +79,31 @@ class TypeCacheTests(unittest.TestCase):
 
         _clear_type_cache()
 
+    def test_per_class_limit(self):
+        class C:
+            x = 0
+
+        type_assign_version(C)
+        orig_version = type_get_version(C)
+        for i in range(1001):
+            C.x = i
+            type_assign_version(C)
+
+        new_version = type_get_version(C)
+        self.assertEqual(new_version, 0)
+
 
 @support.cpython_only
+@requires_specialization
 class TypeCacheWithSpecializationTests(unittest.TestCase):
     def tearDown(self):
         _clear_type_cache()
 
-    def _assign_and_check_valid_version(self, user_type):
-        type_modified(user_type)
-        type_assign_version(user_type)
-        self.assertNotEqual(type_get_version(user_type), 0)
+    def _assign_valid_version_or_skip(self, type_):
+        type_modified(type_)
+        type_assign_version(type_)
+        if type_get_version(type_) == 0:
+            self.skipTest("Could not assign valid type version")
 
     def _assign_and_check_version_0(self, user_type):
         type_modified(user_type)
@@ -98,8 +114,6 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         return set(instr.opname for instr in dis.Bytecode(func, adaptive=True))
 
     def _check_specialization(self, func, arg, opname, *, should_specialize):
-        self.assertIn(opname, self._all_opnames(func))
-
         for _ in range(100):
             func(arg)
 
@@ -113,7 +127,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
             def foo(self):
                 pass
 
-        self._assign_and_check_valid_version(A)
+        self._assign_valid_version_or_skip(A)
 
         def load_foo_1(type_):
             type_.foo
@@ -129,8 +143,8 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         self._check_specialization(load_foo_2, A, "LOAD_ATTR", should_specialize=False)
 
     def test_class_load_attr_specialization_static_type(self):
-        self._assign_and_check_valid_version(str)
-        self._assign_and_check_valid_version(bytes)
+        self._assign_valid_version_or_skip(str)
+        self._assign_valid_version_or_skip(bytes)
 
         def get_capitalize_1(type_):
             return type_.capitalize
@@ -164,7 +178,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
             def x(self):
                 return 9
 
-        self._assign_and_check_valid_version(G)
+        self._assign_valid_version_or_skip(G)
 
         def load_x_1(instance):
             instance.x
@@ -183,7 +197,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         class B:
             __slots__ = ("bar",)
 
-        self._assign_and_check_valid_version(B)
+        self._assign_valid_version_or_skip(B)
 
         def store_bar_1(type_):
             type_.bar = 10
@@ -203,7 +217,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
             def __init__(self):
                 pass
 
-        self._assign_and_check_valid_version(F)
+        self._assign_valid_version_or_skip(F)
 
         def call_class_1(type_):
             type_()
@@ -222,7 +236,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         class H:
             pass
 
-        self._assign_and_check_valid_version(H)
+        self._assign_valid_version_or_skip(H)
 
         def to_bool_1(instance):
             not instance

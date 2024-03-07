@@ -188,21 +188,13 @@ Standard names are defined for the following types:
 
    .. index:: pair: built-in function; compile
 
-   The type for code objects such as returned by :func:`compile`.
+   The type of :ref:`code objects <code-objects>` such as returned by :func:`compile`.
 
    .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
    required by the initializer.  The audit event only occurs for direct
    instantiation of code objects, and is not raised for normal compilation.
-
-   .. method:: CodeType.replace(**kwargs)
-
-     Return a copy of the code object with new values for the specified fields.
-
-     Code objects are also supported by generic function :func:`copy.replace`.
-
-     .. versionadded:: 3.8
 
 .. data:: CellType
 
@@ -397,6 +389,10 @@ Standard names are defined for the following types:
    as ``datetime.timedelta.days``.  This type is used as descriptor for simple C
    data members which use standard conversion functions; it has the same purpose
    as the :class:`property` type, but for classes defined in extension modules.
+
+   In addition, when a class is defined with a :attr:`~object.__slots__` attribute, then for
+   each slot, an instance of :class:`!MemberDescriptorType` will be added as an attribute
+   on the class. This allows the slot to appear in the class's :attr:`~object.__dict__`.
 
    .. impl-detail::
 

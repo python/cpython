@@ -1380,6 +1380,10 @@ Supported protocols are indicated by several new flags, such as
 :data:`~ssl.HAS_TLSv1_1`.
 (Contributed by Christian Heimes in :issue:`32609`.)
 
+Added :attr:`ssl.SSLContext.post_handshake_auth` to enable and
+:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+post-handshake authentication.
+(Contributed by Christian Heimes in :gh:`78851`.)
 
 string
 ------
@@ -1597,6 +1601,15 @@ The initialization of the default warnings filters has changed as follows:
 Deprecation warnings are once again shown by default in single-file scripts and
 at the interactive prompt.  See :ref:`whatsnew37-pep565` for details.
 (Contributed by Nick Coghlan in :issue:`31975`.)
+
+
+xml
+---
+
+As mitigation against DTD and external entity retrieval, the
+:mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
+external entities by default.
+(Contributed by Christian Heimes in :gh:`61441`.)
 
 
 xml.etree
@@ -2571,3 +2584,34 @@ separator key, with ``&`` as the default.  This change also affects
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+Notable changes in Python 3.7.11
+================================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates RFC 3986,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser :func:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :gh:`88048`)
+
+Notable security feature in 3.7.14
+==================================
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+This limit can be configured or disabled by environment variable, command
+line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+length limitation <int_max_str_digits>` documentation.  The default limit
+is 4300 digits in string form.
