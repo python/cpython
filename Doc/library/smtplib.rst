@@ -63,10 +63,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       where ``data`` is the bytes about to be sent to the remote host.
 
    .. versionchanged:: 3.3
-      Support for the :keyword:`with` statement was added.
+      The *source_address* parameter was added.
 
-   .. versionchanged:: 3.3
-      *source_address* argument was added.
+      Support for the :keyword:`with` statement was added.
 
    .. versionadded:: 3.5
       The SMTPUTF8 extension (:rfc:`6531`) is now supported.
@@ -90,10 +89,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    best practices.
 
    .. versionchanged:: 3.3
-      *context* was added.
-
-   .. versionchanged:: 3.3
-      The *source_address* argument was added.
+      The *context* and *source_address* parameters were added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with

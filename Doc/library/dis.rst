@@ -259,7 +259,6 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.7
       Implemented recursive disassembling and added *depth* parameter.
 
-   .. versionchanged:: 3.7
       This can now handle coroutine and asynchronous generator objects.
 
    .. versionchanged:: 3.11
@@ -1493,7 +1492,6 @@ iterations of the loop.
    .. versionchanged:: 3.13
       The callable now always appears at the same position on the stack.
 
-   .. versionchanged:: 3.13
       Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
 
 

@@ -721,7 +721,6 @@ Functions
    .. versionchanged:: 3.8
       Added the *xml_declaration* and *default_namespace* parameters.
 
-   .. versionchanged:: 3.8
       The :func:`tostring` function now preserves the attribute order
       specified by the user.
 
@@ -748,7 +747,6 @@ Functions
    .. versionchanged:: 3.8
       Added the *xml_declaration* and *default_namespace* parameters.
 
-   .. versionchanged:: 3.8
       The :func:`tostringlist` function now preserves the attribute order
       specified by the user.
 

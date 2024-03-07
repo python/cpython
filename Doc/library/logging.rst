@@ -1085,12 +1085,7 @@ information into logging calls. For a usage example, see the section on
 
    .. versionchanged:: 3.13
 
-      Remove the undocumented :meth:`!warn`` method which was an alias to the
-      :meth:`!warning` method.
-
-   .. versionchanged:: 3.13
-
-      The *merge_extra* argument was added.
+      The *merge_extra* parameter was added.
 
 
 Thread Safety

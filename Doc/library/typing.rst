@@ -2244,7 +2244,6 @@ types.
       of that protocol on Python 3.12+, and vice versa.
       Most users are unlikely to be affected by this change.
 
-   .. versionchanged:: 3.12
       The members of a runtime-checkable protocol are now considered "frozen"
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
@@ -2462,7 +2461,6 @@ types.
       Added support for marking individual keys as :data:`Required` or :data:`NotRequired`.
       See :pep:`655`.
 
-   .. versionchanged:: 3.11
       Added support for generic ``TypedDict``\ s.
 
    .. versionchanged:: 3.13

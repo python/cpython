@@ -950,7 +950,6 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The delegation to :meth:`~object.__trunc__` is deprecated.
 
-   .. versionchanged:: 3.11
       :class:`int` string inputs and string representations can be limited to
       help avoid denial of service attacks. A :exc:`ValueError` is raised when
       the limit is exceeded while converting a string *x* to an :class:`int` or
@@ -1443,7 +1442,6 @@ are always available.  They are listed here in alphabetical order.
       the second argument to be negative, permitting computation of modular
       inverses.
 
-   .. versionchanged:: 3.8
       Allow keyword arguments.  Formerly, only positional arguments were
       supported.
 

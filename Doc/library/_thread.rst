@@ -182,9 +182,8 @@ Lock objects have the following methods:
    ``False`` if not.
 
    .. versionchanged:: 3.2
-      The *timeout* parameter is new.
+      Added the *timeout* parameter.
 
-   .. versionchanged:: 3.2
       Lock acquires can now be interrupted by signals on POSIX.
 
 

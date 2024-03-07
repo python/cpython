@@ -2087,7 +2087,6 @@ The full list of supported magic methods is:
 .. versionchanged:: 3.8
    Added support for :func:`os.PathLike.__fspath__`.
 
-.. versionchanged:: 3.8
    Added support for ``__aenter__``, ``__aexit__``, ``__aiter__`` and ``__anext__``.
 
 

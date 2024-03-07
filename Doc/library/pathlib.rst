@@ -605,11 +605,9 @@ Pure paths provide the following methods and properties:
       False
 
    .. versionchanged:: 3.12
-      The *pattern* parameter accepts a :term:`path-like object`.
-
-   .. versionchanged:: 3.12
       The *case_sensitive* parameter was added.
 
+      The *pattern* parameter accepts a :term:`path-like object`.
 
 .. method:: PurePath.relative_to(other, walk_up=False)
 
@@ -1030,7 +1028,6 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
-   .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
 
 
@@ -1050,7 +1047,6 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
-   .. versionchanged:: 3.13
       The *pattern* parameter accepts a :term:`path-like object`.
 
 
@@ -1063,12 +1059,10 @@ call fails (for example because the path doesn't exist).
    the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
-      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
-      available. In previous versions, :exc:`NotImplementedError` was raised.
-
-   .. versionchanged:: 3.13
       The *follow_symlinks* parameter was added.
 
+      Raises :exc:`UnsupportedOperation` if the :mod:`grp` module is not
+      available. In previous versions, :exc:`NotImplementedError` was raised.
 
 .. method:: Path.is_dir(*, follow_symlinks=True)
 
@@ -1343,11 +1337,10 @@ call fails (for example because the path doesn't exist).
    the argument ``follow_symlinks=False``.
 
    .. versionchanged:: 3.13
+      The *follow_symlinks* parameter was added.
+
       Raises :exc:`UnsupportedOperation` if the :mod:`pwd` module is not
       available. In previous versions, :exc:`NotImplementedError` was raised.
-
-   .. versionchanged:: 3.13
-      The *follow_symlinks* parameter was added.
 
 
 .. method:: Path.read_bytes()

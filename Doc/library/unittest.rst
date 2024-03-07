@@ -1913,10 +1913,8 @@ Loading and running tests
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
          not errors.
 
-      .. versionchanged:: 3.4
          *start_dir* can be a :term:`namespace packages <namespace package>`.
 
-      .. versionchanged:: 3.4
          Paths are sorted before being imported so that execution order is the
          same even if the underlying file system's ordering is not dependent
          on file name.
@@ -2228,7 +2226,6 @@ Loading and running tests
    .. versionchanged:: 3.2
       Added the *warnings* parameter.
 
-   .. versionchanged:: 3.2
       The default stream is set to :data:`sys.stderr` at instantiation time rather
       than import time.
 

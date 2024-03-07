@@ -346,7 +346,6 @@ All of those tests treat missing elements as having zero counts so that
 .. versionchanged:: 3.10
    Rich comparison operations were added.
 
-.. versionchanged:: 3.10
    In equality tests, missing elements are treated as having zero counts.
    Formerly, ``Counter(a=3)`` and ``Counter(a=3, b=0)`` were considered
    distinct.
@@ -887,18 +886,14 @@ they add the ability to access fields by name instead of position index.
        Added support for *rename*.
 
     .. versionchanged:: 3.6
+       Added the *module* parameter.
        The *verbose* and *rename* parameters became
        :ref:`keyword-only arguments <keyword-only_parameter>`.
-
-    .. versionchanged:: 3.6
-       Added the *module* parameter.
-
-    .. versionchanged:: 3.7
-       Removed the *verbose* parameter and the :attr:`_source` attribute.
 
     .. versionchanged:: 3.7
        Added the *defaults* parameter and the :attr:`_field_defaults`
        attribute.
+       Removed the *verbose* parameter and the :attr:`_source` attribute.
 
 .. doctest::
     :options: +NORMALIZE_WHITESPACE
