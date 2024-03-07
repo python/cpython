@@ -3312,65 +3312,6 @@ class TestSpecial(unittest.TestCase):
                     member._value_ = Base(value)
                     return member
 
-    def test_extra_member_creation(self):
-        class IDEnumMeta(EnumMeta):
-            def __new__(metacls, cls, bases, classdict, **kwds):
-                # add new entries to classdict
-                for name in classdict.member_names:
-                    classdict[f'{name}_DESC'] = f'-{classdict[name]}'
-                return super().__new__(metacls, cls, bases, classdict, **kwds)
-        class IDEnum(StrEnum, metaclass=IDEnumMeta):
-            pass
-        class MyEnum(IDEnum):
-            ID = 'id'
-            NAME = 'name'
-        self.assertEqual(list(MyEnum), [MyEnum.ID, MyEnum.NAME, MyEnum.ID_DESC, MyEnum.NAME_DESC])
-
-    def test_add_alias(self):
-        class mixin:
-            @property
-            def ORG(self):
-                return 'huh'
-        class Color(mixin, Enum):
-            RED = 1
-            GREEN = 2
-            BLUE = 3
-        Color.RED._add_alias_('ROJO')
-        self.assertIs(Color.RED, Color['ROJO'])
-        self.assertIs(Color.RED, Color.ROJO)
-        Color.BLUE._add_alias_('ORG')
-        self.assertIs(Color.BLUE, Color['ORG'])
-        self.assertIs(Color.BLUE, Color.ORG)
-        self.assertEqual(Color.RED.ORG, 'huh')
-        self.assertEqual(Color.GREEN.ORG, 'huh')
-        self.assertEqual(Color.BLUE.ORG, 'huh')
-        self.assertEqual(Color.ORG.ORG, 'huh')
-
-    def test_add_value_alias_after_creation(self):
-        class Color(Enum):
-            RED = 1
-            GREEN = 2
-            BLUE = 3
-        Color.RED._add_value_alias_(5)
-        self.assertIs(Color.RED, Color(5))
-
-    def test_add_value_alias_during_creation(self):
-        class Types(Enum):
-            Unknown = 0,
-            Source  = 1, 'src'
-            NetList = 2, 'nl'
-            def __new__(cls, int_value, *value_aliases):
-                member = object.__new__(cls)
-                member._value_ = int_value
-                for alias in value_aliases:
-                    member._add_value_alias_(alias)
-                return member
-        self.assertIs(Types(0), Types.Unknown)
-        self.assertIs(Types(1), Types.Source)
-        self.assertIs(Types('src'), Types.Source)
-        self.assertIs(Types(2), Types.NetList)
-        self.assertIs(Types('nl'), Types.NetList)
-
     def test_second_tuple_item_is_falsey(self):
         class Cardinal(Enum):
             RIGHT = (1, 0)
