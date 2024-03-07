@@ -612,7 +612,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     switch (c) {
 
     case 'b': { /* unsigned byte -- very short int */
-        char *p = va_arg(*p_va, char *);
+        unsigned char *p = va_arg(*p_va, unsigned char *);
         long ival = PyLong_AsLong(arg);
         if (ival == -1 && PyErr_Occurred())
             RETURN_ERR_OCCURRED;
