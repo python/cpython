@@ -503,7 +503,7 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     return release, versioninfo, machine
 
 def _java_getprop(name, default):
-    """This protected helper is deprecated in 3.13 and will be removed in 3.15"""
+    """This private helper is deprecated in 3.13 and will be removed in 3.15"""
     from java.lang import System
     try:
         value = System.getProperty(name)
