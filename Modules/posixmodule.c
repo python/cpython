@@ -17556,10 +17556,10 @@ posixmodule_exec(PyObject *m)
             return -1;
         }
 
-        if (PyDict_PopString(dct, "pwritev", NULL) == -1) {
+        if (PyDict_PopString(dct, "pwritev", NULL) < 0) {
             return -1;
         }
-        if (PyDict_PopString(dct, "preadv", NULL) == -1) {
+        if (PyDict_PopString(dct, "preadv", NULL) < 0) {
             return -1;
         }
     }

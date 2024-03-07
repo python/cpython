@@ -1928,19 +1928,19 @@ time_exec(PyObject *module)
             return -1;
         }
 
-        if (PyDict_PopString(dct, "clock_gettime", NULL) == -1) {
+        if (PyDict_PopString(dct, "clock_gettime", NULL) < 0) {
             return -1;
         }
-        if (PyDict_PopString(dct, "clock_gettime_ns", NULL) == -1) {
+        if (PyDict_PopString(dct, "clock_gettime_ns", NULL) < 0) {
             return -1;
         }
-        if (PyDict_PopString(dct, "clock_settime", NULL) == -1) {
+        if (PyDict_PopString(dct, "clock_settime", NULL) < 0) {
             return -1;
         }
-        if (PyDict_PopString(dct, "clock_settime_ns", NULL) == -1) {
+        if (PyDict_PopString(dct, "clock_settime_ns", NULL) < 0) {
             return -1;
         }
-        if (PyDict_PopString(dct, "clock_getres", NULL) == -1) {
+        if (PyDict_PopString(dct, "clock_getres", NULL) < 0) {
             return -1;
         }
     }
@@ -1951,10 +1951,10 @@ time_exec(PyObject *module)
     } else {
         PyObject* dct = PyModule_GetDict(module);
 
-        if (PyDict_PopString(dct, "thread_time", NULL) == -1) {
+        if (PyDict_PopString(dct, "thread_time", NULL) < 0) {
             return -1;
         }
-        if (PyDict_PopString(dct, "thread_time_ns", NULL) == -1) {
+        if (PyDict_PopString(dct, "thread_time_ns", NULL) < 0) {
             return -1;
         }
     }

@@ -1309,11 +1309,12 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err <= 0) {
-                if (err == 0) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                              NAME_ERROR_MSG, name);
-                }
+            if (err < 0) {
+                GOTO_ERROR(error);
+            }
+            if (err == 0) {
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                          NAME_ERROR_MSG, name);
                 GOTO_ERROR(error);
             }
         }

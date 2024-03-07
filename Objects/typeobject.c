@@ -1245,6 +1245,7 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
     if (res < 0) {
         return -1;
     }
+
     PyType_Modified(type);
     if (abstract)
         type->tp_flags |= Py_TPFLAGS_IS_ABSTRACT;
@@ -1616,6 +1617,7 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
     if (result < 0) {
         return -1;
     }
+
     PyType_Modified(type);
     return 0;
 }

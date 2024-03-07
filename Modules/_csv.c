@@ -1607,10 +1607,11 @@ _csv_unregister_dialect_impl(PyObject *module, PyObject *name)
 {
     _csvstate *module_state = get_csv_state(module);
     int rc = PyDict_Pop(module_state->dialects, name, NULL);
-    if (rc <= 0) {
-        if (rc == 0) {
-            PyErr_Format(module_state->error_obj, "unknown dialect");
-        }
+    if (rc < 0) {
+        return NULL;
+    }
+    if (rc == 0) {
+        PyErr_Format(module_state->error_obj, "unknown dialect");
         return NULL;
     }
     Py_RETURN_NONE;
