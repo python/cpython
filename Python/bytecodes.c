@@ -4121,7 +4121,8 @@ dummy_func(
         }
 
         tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
-            DEOPT_IF(frame->f_funcobj->func_version != func_version);
+            assert(PyFunction_Check(frame->f_funcobj));
+            DEOPT_IF(((PyFunctionObject *)frame->f_funcobj)->func_version != func_version);
         }
 
         /* Internal -- for testing executors */

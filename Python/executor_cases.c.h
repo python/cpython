@@ -3881,7 +3881,8 @@
 
         case _CHECK_FUNCTION: {
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
-            if (frame->f_funcobj->func_version != func_version) goto deoptimize;
+            assert(PyFunction_Check(frame->f_funcobj));
+            if (((PyFunctionObject *)frame->f_funcobj)->func_version != func_version) goto deoptimize;
             break;
         }
 
