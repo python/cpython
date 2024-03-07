@@ -653,6 +653,30 @@ all:		@DEF_MAKE_ALL_RULE@
 # all.
 .PHONY: all
 
+# Provide quick help for common Makefile targets.
+.PHONY: help
+help:
+	@echo "Run 'make' to build the Python executable and extension modules"
+	@echo ""
+	@echo "or 'make <target>' where <target> is one of:"
+	@echo "  test         run the test suite"
+	@echo "  install      install built files"
+	@echo "  regen-all    regenerate a number of generated source files"
+	@echo "  clinic       run Argument Clinic over source files"
+	@echo ""
+	@echo "  clean        to remove build files"
+	@echo "  distclean    'clean' + remove other generated files (patch, exe, etc)"
+	@echo ""
+	@echo "  recheck      rerun configure with last cmdline options"
+	@echo "  reindent     reindent .py files in Lib directory"
+	@echo "  tags         build a tags file (useful for Emacs and other editors)"
+	@echo "  list-targets list all targets in the Makefile"
+
+# Display a full list of Makefile targets
+.PHONY: list-targets
+list-targets:
+	@grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
+
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
