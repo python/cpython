@@ -508,7 +508,7 @@ def has_no_debug_ranges():
     try:
         import _testinternalcapi
     except ImportError:
-        raise unittest.SkipTest("_testinternalcapi required")
+        return unittest.skip("_testinternalcapi required")
     config = _testinternalcapi.get_config()
     return not bool(config['code_debug_ranges'])
 
