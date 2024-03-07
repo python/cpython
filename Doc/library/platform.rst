@@ -197,7 +197,8 @@ Java Platform
    the defaults given as parameters (which all default to ``''``).
 
    .. deprecated-removed:: 3.13 3.15
-      It was only useful for Jython support.
+      It was largely untested, had a confusing API,
+      and was only useful for Jython support.
 
 
 Windows Platform
