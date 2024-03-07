@@ -217,7 +217,6 @@ all the metadata in a JSON-compatible form per :PEP:`566`::
    The ``Description`` is now included in the metadata when presented
    through the payload. Line continuation characters have been removed.
 
-.. versionadded:: 3.10
    The ``json`` attribute was added.
 
 

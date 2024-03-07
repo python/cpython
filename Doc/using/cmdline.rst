@@ -375,10 +375,10 @@ Miscellaneous options
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
 
+   .. versionadded:: 3.2.3
+
    .. versionchanged:: 3.7
       The option is no longer ignored.
-
-   .. versionadded:: 3.2.3
 
 
 .. option:: -s
@@ -550,23 +550,22 @@ Miscellaneous options
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
-   .. versionchanged:: 3.2
-      The :option:`-X` option was added.
+   .. versionadded:: 3.2
 
-   .. versionadded:: 3.3
-      The ``-X faulthandler`` option.
+   .. versionchanged:: 3.3
+      Added the ``-X faulthandler`` option.
 
-   .. versionadded:: 3.4
-      The ``-X showrefcount`` and ``-X tracemalloc`` options.
+   .. versionchanged:: 3.4
+      Added the ``-X showrefcount`` and ``-X tracemalloc`` options.
 
-   .. versionadded:: 3.6
-      The ``-X showalloccount`` option.
+   .. versionchanged:: 3.6
+      Added the ``-X showalloccount`` option.
 
-   .. versionadded:: 3.7
-      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
+   .. versionchanged:: 3.7
+      Added the ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
-   .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+   .. versionchanged:: 3.8
+      Added the ``-X pycache_prefix`` option. The ``-X dev`` option now logs
       ``close()`` exceptions in :class:`io.IOBase` destructor.
 
    .. versionchanged:: 3.9
@@ -575,21 +574,16 @@ Miscellaneous options
 
       The ``-X showalloccount`` option has been removed.
 
-   .. versionadded:: 3.10
-      The ``-X warn_default_encoding`` option.
+   .. versionchanged:: 3.10
+      Added the ``-X warn_default_encoding`` option.
       Removed the ``-X oldparser`` option.
 
-   .. versionadded:: 3.11
-      The ``-X no_debug_ranges`` option.
+   .. versionchanged:: 3.11
+      Added the ``-X no_debug_ranges``, ``-X frozen_modules`` and
+      ``-X int_max_str_digits`` options.
 
-   .. versionadded:: 3.11
-      The ``-X frozen_modules`` option.
-
-   .. versionadded:: 3.11
-      The ``-X int_max_str_digits`` option.
-
-   .. versionadded:: 3.12
-      The ``-X perf`` option.
+   .. versionchanged:: 3.12
+      Added the ``-X perf`` option.
 
 
 Options you shouldn't use
@@ -909,10 +903,10 @@ conflict.
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
 
+   .. versionadded:: 3.6
+
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
-
-   .. versionadded:: 3.6
 
 
 .. envvar:: PYTHONMALLOCSTATS

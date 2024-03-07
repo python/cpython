@@ -288,14 +288,14 @@ typed at the debugger prompt.  This is particularly useful for aliases.  If both
 files exist, the one in the home directory is read first and aliases defined there
 can be overridden by the local file.
 
-.. versionchanged:: 3.11
-   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
-   with the system locale encoding.
-
 .. versionchanged:: 3.2
    :file:`.pdbrc` can now contain commands that continue debugging, such as
    :pdbcmd:`continue` or :pdbcmd:`next`.  Previously, these commands had no
    effect.
+
+.. versionchanged:: 3.11
+   :file:`.pdbrc` is now read with ``'utf-8'`` encoding. Previously, it was read
+   with the system locale encoding.
 
 
 .. pdbcommand:: h(elp) [command]
