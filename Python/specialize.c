@@ -600,6 +600,12 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_TO_BOOL_SET         17
 #define SPEC_FAIL_TO_BOOL_TUPLE       18
 
+// CONTAINS_OP
+#define SPEC_FAIL_CONTAINS_OP_STR        9
+#define SPEC_FAIL_CONTAINS_OP_TUPLE      10
+#define SPEC_FAIL_CONTAINS_OP_LIST       11
+#define SPEC_FAIL_CONTAINS_OP_USER_CLASS 12
+
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
@@ -2568,28 +2574,40 @@ _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
-    if (PyUnicode_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_STR;
-        goto success;
-    }
-    if (PyList_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_LIST;
-        goto success;
-    }
-    if (PyTuple_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_TUPLE;
-        goto success;
-    }
     if (PyDict_CheckExact(value)) {
         instr->op.code = CONTAINS_OP_DICT;
         goto success;
     }
-    if (PySet_CheckExact(value)) {
+    if (PySet_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
         instr->op.code = CONTAINS_OP_SET;
         goto success;
     }
 
+    if (Py_TYPE(value) == &PyDictProxy_Type) {
+        instr->op.code = CONTAINS_OP_MAPPINGPROXY;
+        goto success;
+    }
 
+#ifdef Py_STATS
+    if (PyUnicode_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_STR);
+        goto failure;
+    }
+    if (PyList_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_LIST);
+        goto failure;
+    }
+    if (PyTuple_CheckExact(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_TUPLE);
+        goto failure;
+    }
+    if (PyType_Check(value)) {
+        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_USER_CLASS);
+        goto failure;
+    }
+    SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OTHER);
+#endif   // Py_STATS
+failure:
     STAT_INC(CONTAINS_OP, failure);
     instr->op.code = CONTAINS_OP;
     cache->counter = adaptive_counter_backoff(cache->counter);

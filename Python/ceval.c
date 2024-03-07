@@ -28,6 +28,7 @@
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
 #include "pycore_pyerrors.h"
+#include "pycore_descrobject.h"
 
 #include "pycore_dict.h"
 #include "dictobject.h"
