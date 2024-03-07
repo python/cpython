@@ -930,8 +930,9 @@ set_update_dict_lock_held(PySetObject *so, PyObject *other)
     */
     Py_ssize_t dictsize = PyDict_GET_SIZE(other);
     if ((so->fill + dictsize)*5 >= so->mask*3) {
-        if (set_table_resize(so, (so->used + dictsize)*2) != 0)
+        if (set_table_resize(so, (so->used + dictsize)*2) != 0) {
             return -1;
+        }
     }
 
     Py_ssize_t pos = 0;
@@ -980,9 +981,7 @@ set_update_lock_held(PySetObject *so, PyObject *other)
     else if (PyDict_CheckExact(other)) {
         return set_update_dict_lock_held(so, other);
     }
-    else {
-        return set_update_iterable_lock_held(so, other);
-    }
+    return set_update_iterable_lock_held(so, other);
 }
 
 // set_update for a `so` that is only visible to the current thread
@@ -1004,16 +1003,14 @@ set_update_local(PySetObject *so, PyObject *other)
         Py_END_CRITICAL_SECTION();
         return rv;
     }
-    else {
-        return set_update_iterable_lock_held(so, other);
-    }
+    return set_update_iterable_lock_held(so, other);
 }
 
 static int
 set_update_internal(PySetObject *so, PyObject *other)
 {
     if (PyAnySet_Check(other)) {
-        if ((PyObject *)so == other) {
+        if (Py_Is((PyObject *)so, other)) {
             return 0;
         }
         int rv;
@@ -1311,7 +1308,7 @@ set_or(PySetObject *so, PyObject *other)
     if (result == NULL) {
         return NULL;
     }
-    if ((PyObject *)so == other) {
+    if (Py_Is((PyObject *)so, other)) {
         return (PyObject *)result;
     }
     if (set_update_local(result, other)) {
@@ -1881,9 +1878,8 @@ set_symmetric_difference_update_set(PySetObject *so, PySetObject *other)
     Py_ssize_t pos = 0;
     setentry *entry;
     while (set_next(other, &pos, &entry)) {
-        PyObject *key = entry->key;
+        PyObject *key = Py_NewRef(entry->key);
         Py_hash_t hash = entry->hash;
-        Py_INCREF(key);
         int rv = set_discard_entry(so, key, hash);
         if (rv < 0) {
             Py_DECREF(key);
@@ -1913,7 +1909,7 @@ static PyObject *
 set_symmetric_difference_update(PySetObject *so, PyObject *other)
 /*[clinic end generated code: output=fbb049c0806028de input=a50acf0365e1f0a5]*/
 {
-    if ((PyObject *)so == other) {
+    if (Py_Is((PyObject *)so, other)) {
         return set_clear(so, NULL);
     }
 
@@ -2614,7 +2610,7 @@ PySet_Clear(PyObject *set)
         PyErr_BadInternalCall();
         return -1;
     }
-    set_clear((PySetObject *)set, NULL);
+    (void)set_clear((PySetObject *)set, NULL);
     return 0;
 }
 
