@@ -38,7 +38,10 @@ optimize_to_bool(
     _Py_UopsSymbol **result_ptr);
 
 extern void
-eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
+eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit);
+
+extern int
+real_localsplus_idx(_Py_UOpsContext *ctx, int oparg);
 
 static int
 dummy_func(void) {
