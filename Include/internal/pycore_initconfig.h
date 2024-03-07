@@ -158,11 +158,11 @@ typedef enum {
 
        gh-116329: This will eventually change to "the GIL is disabled but can
        be reenabled by loading an incompatible extension module." */
-    _PyConfig_GIL_DEFAULT,
+    _PyConfig_GIL_DEFAULT = -1,
 
     /* The GIL has been forced off or on, and will not be affected by module loading. */
-    _PyConfig_GIL_DISABLE,
-    _PyConfig_GIL_ENABLE,
+    _PyConfig_GIL_DISABLE = 0,
+    _PyConfig_GIL_ENABLE = 1,
 } _PyConfigGILEnum;
 
 // Export for '_testembed' program

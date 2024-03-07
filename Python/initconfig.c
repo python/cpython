@@ -1583,6 +1583,24 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
     return 0;
 }
 
+static PyStatus
+config_read_gil(PyConfig *config, size_t len, wchar_t first_char)
+{
+#ifdef Py_GIL_DISABLED
+    if (len == 1 && first_char == L'0') {
+        config->enable_gil = _PyConfig_GIL_DISABLE;
+    }
+    else if (len == 1 && first_char == L'1') {
+        config->enable_gil = _PyConfig_GIL_ENABLE;
+    }
+    else {
+        return _PyStatus_ERR("PYTHON_GIL / -X gil must be \"0\" or \"1\"");
+    }
+    return _PyStatus_OK();
+#else
+    return _PyStatus_ERR("PYTHON_GIL / -X gil are not supported by this build");
+#endif
+}
 
 static PyStatus
 config_read_env_vars(PyConfig *config)
@@ -1663,19 +1681,11 @@ config_read_env_vars(PyConfig *config)
 
     const char *gil = config_get_env(config, "PYTHON_GIL");
     if (gil != NULL) {
-#ifdef Py_GIL_DISABLED
-        if (strcmp(gil, "0") == 0) {
-            config->enable_gil = _PyConfig_GIL_DISABLE;
+        size_t len = strlen(gil);
+        status = config_read_gil(config, len, gil[0]);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
         }
-        else if (strcmp(gil, "1") == 0) {
-            config->enable_gil = _PyConfig_GIL_ENABLE;
-        }
-        else {
-            return _PyStatus_ERR("PYTHON_GIL must be \"0\" or \"1\"");
-        }
-#else
-        return _PyStatus_ERR("PYTHON_GIL is not supported by this build");
-#endif
     }
 
     return _PyStatus_OK();
@@ -2231,6 +2241,15 @@ config_read(PyConfig *config, int compute_path_config)
     /* -X options */
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
+    }
+
+    const wchar_t *x_gil = config_get_xoption_value(config, L"gil");
+    if (x_gil != NULL) {
+        size_t len = wcslen(x_gil);
+        status = config_read_gil(config, len, x_gil[0]);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
 #ifdef Py_STATS
