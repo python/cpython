@@ -1134,11 +1134,11 @@ maybe_freelist_pop(Py_ssize_t size)
     assert(size > 0);
     if (size < PyTuple_MAXSAVESIZE) {
         Py_ssize_t index = size - 1;
-        PyTupleObject *op = TUPLE_FREELIST.free_list[index];
+        PyTupleObject *op = TUPLE_FREELIST.items[index];
         if (op != NULL) {
             /* op is the head of a linked list, with the first item
                pointing to the next node.  Here we pop off the old head. */
-            TUPLE_FREELIST.free_list[index] = (PyTupleObject *) op->ob_item[0];
+            TUPLE_FREELIST.items[index] = (PyTupleObject *) op->ob_item[0];
             TUPLE_FREELIST.numfree[index]--;
             /* Inlined _PyObject_InitVar() without _PyType_HasFeature() test */
 #ifdef Py_TRACE_REFS
@@ -1173,8 +1173,8 @@ maybe_freelist_push(PyTupleObject *op)
     {
         /* op is the head of a linked list, with the first item
            pointing to the next node.  Here we set op as the new head. */
-        op->ob_item[0] = (PyObject *) TUPLE_FREELIST.free_list[index];
-        TUPLE_FREELIST.free_list[index] = op;
+        op->ob_item[0] = (PyObject *) TUPLE_FREELIST.items[index];
+        TUPLE_FREELIST.items[index] = op;
         TUPLE_FREELIST.numfree[index]++;
         OBJECT_STAT_INC(to_freelist);
         return 1;
@@ -1188,8 +1188,8 @@ maybe_freelist_clear(struct _Py_object_freelists *freelists, int fini)
 {
 #ifdef WITH_FREELISTS
     for (Py_ssize_t i = 0; i < PyTuple_NFREELISTS; i++) {
-        PyTupleObject *p = TUPLE_FREELIST.free_list[i];
-        TUPLE_FREELIST.free_list[i] = NULL;
+        PyTupleObject *p = TUPLE_FREELIST.items[i];
+        TUPLE_FREELIST.items[i] = NULL;
         TUPLE_FREELIST.numfree[i] = fini ? -1 : 0;
         while (p) {
             PyTupleObject *q = p;

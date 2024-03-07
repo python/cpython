@@ -31,10 +31,6 @@ c_functools = import_helper.import_fresh_module('functools',
 
 decimal = import_helper.import_fresh_module('decimal', fresh=['_decimal'])
 
-_partial_types = [py_functools.partial]
-if c_functools:
-    _partial_types.append(c_functools.partial)
-
 
 @contextlib.contextmanager
 def replaced_module(name, replacement):
@@ -207,10 +203,7 @@ class TestPartial:
         kwargs = {'a': object(), 'b': object()}
         kwargs_reprs = ['a={a!r}, b={b!r}'.format_map(kwargs),
                         'b={b!r}, a={a!r}'.format_map(kwargs)]
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         self.assertEqual(f'{name}({capture!r})', repr(f))
@@ -229,10 +222,7 @@ class TestPartial:
                        for kwargs_repr in kwargs_reprs])
 
     def test_recursive_repr(self):
-        if self.partial in _partial_types:
-            name = 'functools.partial'
-        else:
-            name = self.partial.__name__
+        name = f"{self.partial.__module__}.{self.partial.__qualname__}"
 
         f = self.partial(capture)
         f.__setstate__((f, (), {}, {}))
@@ -2867,11 +2857,26 @@ class TestSingleDispatch(unittest.TestCase):
 
     def test_invalid_positional_argument(self):
         @functools.singledispatch
-        def f(*args):
+        def f(*args, **kwargs):
             pass
         msg = 'f requires at least 1 positional argument'
         with self.assertRaisesRegex(TypeError, msg):
             f()
+        msg = 'f requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            f(a=1)
+
+    def test_invalid_positional_argument_singledispatchmethod(self):
+        class A:
+            @functools.singledispatchmethod
+            def t(self, *args, **kwargs):
+                pass
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t()
+        msg = 't requires at least 1 positional argument'
+        with self.assertRaisesRegex(TypeError, msg):
+            A().t(a=1)
 
     def test_union(self):
         @functools.singledispatch

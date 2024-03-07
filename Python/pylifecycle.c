@@ -612,7 +612,7 @@ builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, Py
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
-        _Py_Executors_InvalidateAll(interp);
+        _Py_Executors_InvalidateAll(interp, 1);
     }
     RARE_EVENT_INTERP_INC(interp, builtin_dict);
     return 0;
@@ -663,6 +663,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
+    runtime->main_tstate = tstate;
     _PyThreadState_Bind(tstate);
 
     init_interp_create_gil(tstate, config.gil);
@@ -1109,7 +1110,6 @@ run_presite(PyThreadState *tstate)
     );
     if (presite_modname == NULL) {
         fprintf(stderr, "Could not convert pre-site module name to unicode\n");
-        Py_DECREF(presite_modname);
     }
     else {
         PyObject *presite = PyImport_Import(presite_modname);
@@ -1262,7 +1262,9 @@ init_interp_main(PyThreadState *tstate)
             if (opt == NULL) {
                 return _PyStatus_ERR("can't initialize optimizer");
             }
-            PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
+            if (PyUnstable_SetOptimizer((_PyOptimizerObject *)opt)) {
+                return _PyStatus_ERR("can't initialize optimizer");
+            }
             Py_DECREF(opt);
         }
     }
@@ -1626,7 +1628,7 @@ finalize_modules(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
 
     // Invalidate all executors and turn off tier 2 optimizer
-    _Py_Executors_InvalidateAll(interp);
+    _Py_Executors_InvalidateAll(interp, 0);
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     Py_XDECREF(old);
 
@@ -1834,6 +1836,9 @@ finalize_interp_clear(PyThreadState *tstate)
     }
 
     finalize_interp_types(tstate->interp);
+
+    /* Free any delayed free requests immediately */
+    _PyMem_FiniDelayed(tstate->interp);
 
     /* finalize_interp_types may allocate Python objects so we may need to
        abandon mimalloc segments again */

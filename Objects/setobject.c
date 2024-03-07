@@ -2065,7 +2065,7 @@ set_add_impl(PySetObject *so, PyObject *key)
 }
 
 static int
-set_contains(PySetObject *so, PyObject *key)
+set_contains_holds_lock(PySetObject *so, PyObject *key)
 {
     PyObject *tmpkey;
     int rv;
@@ -2084,13 +2084,12 @@ set_contains(PySetObject *so, PyObject *key)
     return rv;
 }
 
-static int
-set_sq_contains(PySetObject *so, PyObject *key)
+int
+_PySet_Contains(PySetObject *so, PyObject *key)
 {
     int rv;
-
     Py_BEGIN_CRITICAL_SECTION(so);
-    rv = set_contains(so, key);
+    rv = set_contains_holds_lock(so, key);
     Py_END_CRITICAL_SECTION();
     return rv;
 }
@@ -2112,7 +2111,7 @@ set___contains___impl(PySetObject *so, PyObject *key)
 {
     long result;
 
-    result = set_contains(so, key);
+    result = _PySet_Contains(so, key);
     if (result < 0)
         return NULL;
     return PyBool_FromLong(result);
@@ -2300,7 +2299,7 @@ static PySequenceMethods set_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)set_sq_contains,        /* sq_contains */
+    (objobjproc)_PySet_Contains,        /* sq_contains */
 };
 
 /* set object ********************************************************/

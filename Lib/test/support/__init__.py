@@ -532,24 +532,33 @@ else:
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 
-# Apple mobile platforms (iOS/tvOS/watchOS) are POSIX-like but do not
-# have subprocess or fork support.
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
 
 has_fork_support = hasattr(os, "fork") and not (
+    # WASM and Apple mobile platforms do not support subprocesses.
     is_emscripten
     or is_wasi
     or is_apple_mobile
+
+    # Although Android supports fork, it's unsafe to call it from Python because
+    # all Android apps are multi-threaded.
+    or is_android
 )
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
 
 has_subprocess_support = not (
+    # WASM and Apple mobile platforms do not support subprocesses.
     is_emscripten
     or is_wasi
     or is_apple_mobile
+
+    # Although Android supports subproceses, they're almost never useful in
+    # practice (see PEP 738). And most of the tests that use them are calling
+    # sys.executable, which won't work when Python is embedded in an Android app.
+    or is_android
 )
 
 def requires_subprocess():
@@ -2379,6 +2388,46 @@ def sleeping_retry(timeout, err_msg=None, /,
 
         time.sleep(delay)
         delay = min(delay * 2, max_delay)
+
+
+class CPUStopwatch:
+    """Context manager to roughly time a CPU-bound operation.
+
+    Disables GC. Uses CPU time if it can (i.e. excludes sleeps & time of
+    other processes).
+
+    N.B.:
+    - This *includes* time spent in other threads.
+    - Some systems only have a coarse resolution; check
+      stopwatch.clock_info.rseolution if.
+
+    Usage:
+
+    with ProcessStopwatch() as stopwatch:
+        ...
+    elapsed = stopwatch.seconds
+    resolution = stopwatch.clock_info.resolution
+    """
+    def __enter__(self):
+        get_time = time.process_time
+        clock_info = time.get_clock_info('process_time')
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
+            get_time = time.monotonic
+            clock_info = time.get_clock_info('monotonic')
+        self.context = disable_gc()
+        self.context.__enter__()
+        self.get_time = get_time
+        self.clock_info = clock_info
+        self.start_time = get_time()
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            end_time = self.get_time()
+        finally:
+            result = self.context.__exit__(*exc)
+        self.seconds = end_time - self.start_time
+        return result
 
 
 @contextlib.contextmanager

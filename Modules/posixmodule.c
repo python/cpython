@@ -23,6 +23,7 @@
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_time.h"          // _PyLong_FromTime_t()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // symlink()
@@ -645,6 +646,7 @@ PyOS_AfterFork_Child(void)
 
 #ifdef Py_GIL_DISABLED
     _Py_brc_after_fork(tstate->interp);
+    _Py_qsbr_after_fork((_PyThreadStateImpl *)tstate);
 #endif
 
     status = _PyEval_ReInitThreads(tstate);
@@ -9575,36 +9577,39 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
     if (!result)
         return NULL;
 
+    int pos = 0;
+
 #ifndef doubletime
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 #endif
 
-    PyStructSequence_SET_ITEM(result, 0,
-                              PyFloat_FromDouble(doubletime(ru->ru_utime)));
-    PyStructSequence_SET_ITEM(result, 1,
-                              PyFloat_FromDouble(doubletime(ru->ru_stime)));
-#define SET_INT(result, index, value)\
-        PyStructSequence_SET_ITEM(result, index, PyLong_FromLong(value))
-    SET_INT(result, 2, ru->ru_maxrss);
-    SET_INT(result, 3, ru->ru_ixrss);
-    SET_INT(result, 4, ru->ru_idrss);
-    SET_INT(result, 5, ru->ru_isrss);
-    SET_INT(result, 6, ru->ru_minflt);
-    SET_INT(result, 7, ru->ru_majflt);
-    SET_INT(result, 8, ru->ru_nswap);
-    SET_INT(result, 9, ru->ru_inblock);
-    SET_INT(result, 10, ru->ru_oublock);
-    SET_INT(result, 11, ru->ru_msgsnd);
-    SET_INT(result, 12, ru->ru_msgrcv);
-    SET_INT(result, 13, ru->ru_nsignals);
-    SET_INT(result, 14, ru->ru_nvcsw);
-    SET_INT(result, 15, ru->ru_nivcsw);
-#undef SET_INT
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(result, pos++, item);      \
+    } while(0)
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_utime)));
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_stime)));
+    SET_RESULT(PyLong_FromLong(ru->ru_maxrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_ixrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_idrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_isrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_minflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_majflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_nswap));
+    SET_RESULT(PyLong_FromLong(ru->ru_inblock));
+    SET_RESULT(PyLong_FromLong(ru->ru_oublock));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgsnd));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgrcv));
+    SET_RESULT(PyLong_FromLong(ru->ru_nsignals));
+    SET_RESULT(PyLong_FromLong(ru->ru_nvcsw));
+    SET_RESULT(PyLong_FromLong(ru->ru_nivcsw));
+#undef SET_RESULT
 
     return Py_BuildValue("NiN", PyLong_FromPid(pid), status, result);
 }
@@ -9727,15 +9732,25 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
     if (!result)
         return NULL;
 
-    PyStructSequence_SET_ITEM(result, 0, PyLong_FromPid(si.si_pid));
-    PyStructSequence_SET_ITEM(result, 1, _PyLong_FromUid(si.si_uid));
-    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si.si_signo)));
-    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong((long)(si.si_status)));
-    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong((long)(si.si_code)));
-    if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    int pos = 0;
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(result, pos++, item);      \
+    } while(0)
+
+    SET_RESULT(PyLong_FromPid(si.si_pid));
+    SET_RESULT(_PyLong_FromUid(si.si_uid));
+    SET_RESULT(PyLong_FromLong((long)(si.si_signo)));
+    SET_RESULT(PyLong_FromLong((long)(si.si_status)));
+    SET_RESULT(PyLong_FromLong((long)(si.si_code)));
+
+#undef SET_RESULT
 
     return result;
 }
@@ -10409,7 +10424,7 @@ build_itimerspec(const struct itimerspec* curr_value)
 static PyObject *
 build_itimerspec_ns(const struct itimerspec* curr_value)
 {
-    _PyTime_t value, interval;
+    PyTime_t value, interval;
     if (_PyTime_FromTimespec(&value, &curr_value->it_value) < 0) {
         return NULL;
     }
@@ -17551,11 +17566,11 @@ posixmodule_exec(PyObject *m)
             return -1;
         }
 
-        if (PyDict_DelItemString(dct, "pwritev") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "pwritev", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "preadv") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "preadv", NULL) < 0) {
+            return -1;
         }
     }
 #endif
