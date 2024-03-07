@@ -8,8 +8,7 @@ static PyObject *
 fire_event_py_start(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &active)) {
         return NULL;
     }
@@ -23,8 +22,7 @@ static PyObject *
 fire_event_py_resume(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &active)) {
         return NULL;
     }
@@ -38,8 +36,7 @@ static PyObject *
 fire_event_py_return(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *retval;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &retval)) {
         return NULL;
@@ -54,8 +51,7 @@ static PyObject *
 fire_event_py_yield(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *retval;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &retval)) {
         return NULL;
@@ -70,8 +66,7 @@ static PyObject *
 fire_event_call(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *callable, *arg0;
     if (!PyArg_ParseTuple(args, "OiiOO", &codelike, &offset, &active, &callable, &arg0)) {
         return NULL;
@@ -87,8 +82,7 @@ static PyObject *
 fire_event_line(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *lineno;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &lineno)) {
         return NULL;
@@ -103,8 +97,7 @@ static PyObject *
 fire_event_jump(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *target_offset;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &target_offset)) {
         return NULL;
@@ -118,8 +111,7 @@ static PyObject *
 fire_event_branch(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *target_offset;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &target_offset)) {
         return NULL;
@@ -133,8 +125,7 @@ static PyObject *
 fire_event_py_throw(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
         return NULL;
@@ -149,8 +140,7 @@ static PyObject *
 fire_event_raise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
         return NULL;
@@ -165,8 +155,7 @@ static PyObject *
 fire_event_reraise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
         return NULL;
@@ -181,8 +170,7 @@ static PyObject *
 fire_event_exception_handled(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
         return NULL;
@@ -197,8 +185,7 @@ static PyObject *
 fire_event_py_unwind(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
         return NULL;
@@ -213,8 +200,7 @@ static PyObject *
 fire_event_stop_iteration(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    uint32_t offset;
-    uint8_t active;
+    int offset, active;
     PyObject *exception;
     if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
         return NULL;
