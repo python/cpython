@@ -239,7 +239,7 @@ def _literal_selector(part, parts, recursive, include_hidden):
     def select_literal(path, rel_path, dir_fd, exists):
         path = _add_trailing_slash(path) + part
         rel_path = _add_trailing_slash(rel_path) + part
-        yield from select_next(path, rel_path, dir_fd, exists and is_special)
+        return select_next(path, rel_path, dir_fd, exists and is_special)
     return select_literal
 
 
