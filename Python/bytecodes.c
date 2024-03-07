@@ -1307,14 +1307,14 @@ dummy_func(
 
         inst(DELETE_GLOBAL, (--)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err != 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                              NAME_ERROR_MSG, name);
-                }
+            if (err < 0) {
+                GOTO_ERROR(error);
+            }
+            if (err == 0) {
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                          NAME_ERROR_MSG, name);
                 GOTO_ERROR(error);
             }
         }
@@ -2238,11 +2238,8 @@ dummy_func(
         }
 
         family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
-            CONTAINS_OP_LIST,
             CONTAINS_OP_SET,
-            CONTAINS_OP_TUPLE,
             CONTAINS_OP_DICT,
-            CONTAINS_OP_STR,
         };
 
         op(_CONTAINS_OP, (left, right -- b)) {
@@ -2266,25 +2263,11 @@ dummy_func(
 
         macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;
 
-        inst(CONTAINS_OP_LIST, (unused/1, left, right -- b)) {
-            DEOPT_IF(!PyList_CheckExact(right));
-            int res = _PyList_Contains(right, left);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0, error);
-            b = (res ^ oparg) ? Py_True : Py_False;
-        }
-
         inst(CONTAINS_OP_SET, (unused/1, left, right -- b)) {
-            DEOPT_IF(!PySet_CheckExact(right));
+            DEOPT_IF(!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right)));
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
             int res = _PySet_Contains((PySetObject *)right, left);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0, error);
-            b = (res ^ oparg) ? Py_True : Py_False;
-        }
-
-        inst(CONTAINS_OP_TUPLE, (unused/1, left, right -- b)) {
-            DEOPT_IF(!PyTuple_CheckExact(right));
-            int res = _PyTuple_Contains((PyTupleObject *)right, left);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
             b = (res ^ oparg) ? Py_True : Py_False;
@@ -2292,15 +2275,8 @@ dummy_func(
 
         inst(CONTAINS_OP_DICT, (unused/1, left, right -- b)) {
             DEOPT_IF(!PyDict_CheckExact(right));
+            STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right, left);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0, error);
-            b = (res ^ oparg) ? Py_True : Py_False;
-        }
-
-        inst(CONTAINS_OP_STR, (unused/1, left, right -- b)) {
-            DEOPT_IF(!PyUnicode_CheckExact(right));
-            int res = PyUnicode_Contains(right, left);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
             b = (res ^ oparg) ? Py_True : Py_False;

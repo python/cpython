@@ -1262,13 +1262,9 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
     if (self->dummies != NULL) {
-        PyObject *ldict;
-        ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
-        if (ldict != NULL) {
-            PyDict_DelItem(self->dummies, dummyweakref);
-        }
-        if (PyErr_Occurred())
+        if (PyDict_Pop(self->dummies, dummyweakref, NULL) < 0) {
             PyErr_WriteUnraisable((PyObject*)self);
+        }
     }
     Py_DECREF(self);
     Py_RETURN_NONE;

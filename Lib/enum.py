@@ -162,6 +162,13 @@ def _dedent(text):
         lines[j] = l[i:]
     return '\n'.join(lines)
 
+class _not_given:
+    def __repr__(self):
+        return('<not given>')
+    def __bool__(self):
+        return False
+_not_given = _not_given()
+
 class _auto_null:
     def __repr__(self):
         return '_auto_null'
@@ -680,7 +687,7 @@ class EnumType(type):
         """
         return True
 
-    def __call__(cls, value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None):
+    def __call__(cls, value, names=_not_given, *values, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Either returns an existing member, or creates a new enum class.
 
@@ -709,18 +716,18 @@ class EnumType(type):
         """
         if cls._member_map_:
             # simple value lookup if members exist
-            if names:
+            if names is not _not_given:
                 value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
-        if names is None and type is None:
+        if names is _not_given and type is None:
             # no body? no data-type? possibly wrong usage
             raise TypeError(
                     f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
                     )
         return cls._create_(
                 class_name=value,
-                names=names,
+                names=names or None,
                 module=module,
                 qualname=qualname,
                 type=type,
