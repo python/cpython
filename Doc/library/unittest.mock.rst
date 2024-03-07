@@ -2143,10 +2143,10 @@ to change the default.
 
 Methods and their defaults:
 
-* ``__lt__``: ``NotImplemented``
-* ``__gt__``: ``NotImplemented``
-* ``__le__``: ``NotImplemented``
-* ``__ge__``: ``NotImplemented``
+* ``__lt__``: :data:`NotImplemented`
+* ``__gt__``: :data:`!NotImplemented`
+* ``__le__``: :data:`!NotImplemented`
+* ``__ge__``: :data:`!NotImplemented`
 * ``__int__``: ``1``
 * ``__contains__``: ``False``
 * ``__len__``: ``0``
@@ -2426,6 +2426,14 @@ passed in.
     >>> m.mock_calls == [call(1), call(1, 2), ANY]
     True
 
+:data:`ANY` is not limited to comparisons with call objects and so
+can also be used in test assertions::
+
+    class TestStringMethods(unittest.TestCase):
+
+        def test_split(self):
+            s = 'hello world'
+            self.assertEqual(s.split(), ['hello', ANY])
 
 
 FILTER_DIR

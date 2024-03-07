@@ -46,7 +46,8 @@ extern "C" {
 
 
 #if defined(HAVE_PTHREAD_STUBS)
-#include <stdbool.h>              // bool
+#include "cpython/pthread_stubs.h"  // PTHREAD_KEYS_MAX
+#include <stdbool.h>                // bool
 
 // pthread_key
 struct py_stub_tls_entry {
@@ -96,7 +97,7 @@ extern void _PyThread_AfterFork(struct _pythread_runtime_state *state);
 
 
 // unset: -1 seconds, in nanoseconds
-#define PyThread_UNSET_TIMEOUT ((_PyTime_t)(-1 * 1000 * 1000 * 1000))
+#define PyThread_UNSET_TIMEOUT ((PyTime_t)(-1 * 1000 * 1000 * 1000))
 
 // Exported for the _xxinterpchannels module.
 PyAPI_FUNC(int) PyThread_ParseTimeoutArg(

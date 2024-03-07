@@ -56,13 +56,13 @@ Iterator                        Arguments                       Results         
 :func:`chain`                   p, q, ...                       p0, p1, ... plast, q0, q1, ...                      ``chain('ABC', 'DEF') --> A B C D E F``
 :func:`chain.from_iterable`     iterable                        p0, p1, ... plast, q0, q1, ...                      ``chain.from_iterable(['ABC', 'DEF']) --> A B C D E F``
 :func:`compress`                data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
-:func:`dropwhile`               pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
-:func:`filterfalse`             pred, seq                       elements of seq where pred(elem) is false           ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
+:func:`dropwhile`               predicate, seq                  seq[n], seq[n+1], starting when predicate fails     ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
+:func:`filterfalse`             predicate, seq                  elements of seq where predicate(elem) fails         ``filterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
 :func:`groupby`                 iterable[, key]                 sub-iterators grouped by value of key(v)
 :func:`islice`                  seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
 :func:`pairwise`                iterable                        (p[0], p[1]), (p[1], p[2])                          ``pairwise('ABCDEFG') --> AB BC CD DE EF FG``
 :func:`starmap`                 func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
-:func:`takewhile`               pred, seq                       seq[0], seq[1], until pred fails                    ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
+:func:`takewhile`               predicate, seq                  seq[0], seq[1], until predicate fails               ``takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4``
 :func:`tee`                     it, n                           it1, it2, ... itn  splits one iterator into n
 :func:`zip_longest`             p, q, ...                       (p[0], q[0]), (p[1], q[1]), ...                     ``zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-``
 ============================    ============================    =================================================   =============================================================
@@ -90,7 +90,7 @@ Examples                                         Results
 
 .. _itertools-functions:
 
-Itertool functions
+Itertool Functions
 ------------------
 
 The following module functions all construct and return iterators. Some provide
@@ -688,6 +688,14 @@ loops that truncate the stream.
               else:
                   break
 
+   Note, the element that first fails the predicate condition is
+   consumed from the input iterator and there is no way to access it.
+   This could be an issue if an application wants to further consume the
+   input iterator after takewhile has been run to exhaustion.  To work
+   around this problem, consider using `more-iterools before_and_after()
+   <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
+   instead.
+
 
 .. function:: tee(iterable, n=2)
 
@@ -770,7 +778,7 @@ The primary purpose of the itertools recipes is educational.  The recipes show
 various ways of thinking about individual tools — for example, that
 ``chain.from_iterable`` is related to the concept of flattening.  The recipes
 also give ideas about ways that the tools can be combined — for example, how
-``compress()`` and ``range()`` can work together.  The recipes also show patterns
+``starmap()`` and ``repeat()`` can work together.  The recipes also show patterns
 for using itertools with the :mod:`operator` and :mod:`collections` modules as
 well as with the built-in itertools such as ``map()``, ``filter()``,
 ``reversed()``, and ``enumerate()``.
@@ -851,27 +859,19 @@ which incur interpreter overhead.
        "Returns the nth item or a default value."
        return next(islice(iterable, n, None), default)
 
-   def quantify(iterable, pred=bool):
+   def quantify(iterable, predicate=bool):
        "Given a predicate that returns True or False, count the True results."
-       return sum(map(pred, iterable))
+       return sum(map(predicate, iterable))
 
-   def all_equal(iterable):
-       "Returns True if all the elements are equal to each other."
-       g = groupby(iterable)
-       return next(g, True) and not next(g, False)
-
-   def first_true(iterable, default=False, pred=None):
-       """Returns the first true value in the iterable.
-
-       If no true value is found, returns *default*
-
-       If *pred* is not None, returns the first item
-       for which pred(item) is true.
-
-       """
+   def first_true(iterable, default=False, predicate=None):
+       "Returns the first true value or the *default* if there is no true value."
        # first_true([a,b,c], x) --> a or b or c or x
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
-       return next(filter(pred, iterable), default)
+       return next(filter(predicate, iterable), default)
+
+   def all_equal(iterable, key=None):
+       "Returns True if all the elements are equal to each other."
+       return len(take(2, groupby(iterable, key))) <= 1
 
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
@@ -957,14 +957,14 @@ which incur interpreter overhead.
                num_active -= 1
                nexts = cycle(islice(nexts, num_active))
 
-   def partition(pred, iterable):
+   def partition(predicate, iterable):
        """Partition entries into false entries and true entries.
 
-       If *pred* is slow, consider wrapping it with functools.lru_cache().
+       If *predicate* is slow, consider wrapping it with functools.lru_cache().
        """
        # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
        t1, t2 = tee(iterable)
-       return filterfalse(pred, t1), filter(pred, t2)
+       return filterfalse(predicate, t1), filter(predicate, t2)
 
    def subslices(seq):
        "Return all contiguous non-empty subslices of a sequence."
@@ -976,60 +976,15 @@ which incur interpreter overhead.
        """ Call a function repeatedly until an exception is raised.
 
        Converts a call-until-exception interface to an iterator interface.
-       Like builtins.iter(func, sentinel) but uses an exception instead
-       of a sentinel to end the loop.
-
-       Priority queue iterator:
-           iter_except(functools.partial(heappop, h), IndexError)
-
-       Non-blocking dictionary iterator:
-           iter_except(d.popitem, KeyError)
-
-       Non-blocking deque iterator:
-           iter_except(d.popleft, IndexError)
-
-       Non-blocking iterator over a producer Queue:
-           iter_except(q.get_nowait, Queue.Empty)
-
-       Non-blocking set iterator:
-           iter_except(s.pop, KeyError)
-
        """
+       # iter_except(d.popitem, KeyError) --> non-blocking dictionary iterator
        try:
            if first is not None:
-               # For database APIs needing an initial call to db.first()
                yield first()
            while True:
                yield func()
        except exception:
            pass
-
-   def before_and_after(predicate, it):
-       """ Variant of takewhile() that allows complete
-           access to the remainder of the iterator.
-
-           >>> it = iter('ABCdEfGhI')
-           >>> all_upper, remainder = before_and_after(str.isupper, it)
-           >>> ''.join(all_upper)
-           'ABC'
-           >>> ''.join(remainder)     # takewhile() would lose the 'd'
-           'dEfGhI'
-
-           Note that the true iterator must be fully consumed
-           before the remainder iterator can generate valid results.
-       """
-       it = iter(it)
-       transition = []
-
-       def true_iterator():
-           for elem in it:
-               if predicate(elem):
-                   yield elem
-               else:
-                   transition.append(elem)
-                   return
-
-       return true_iterator(), chain(transition, it)
 
 
 The following recipes have a more mathematical flavor:
@@ -1243,6 +1198,8 @@ The following recipes have a more mathematical flavor:
 
     >>> [all_equal(s) for s in ('', 'A', 'AAAA', 'AAAB', 'AAABA')]
     [True, True, True, False, False]
+    >>> [all_equal(s, key=str.casefold) for s in ('', 'A', 'AaAa', 'AAAB', 'AAABA')]
+    [True, True, True, False, False]
 
     >>> quantify(range(99), lambda x: x%2==0)
     50
@@ -1250,7 +1207,7 @@ The following recipes have a more mathematical flavor:
     >>> quantify([True, False, False, True, True])
     3
 
-    >>> quantify(range(12), pred=lambda x: x%2==1)
+    >>> quantify(range(12), predicate=lambda x: x%2==1)
     6
 
     >>> a = [[1, 2, 3], [4, 5, 6]]
@@ -1543,13 +1500,6 @@ The following recipes have a more mathematical flavor:
     >>> list(odds)
     [1, 3, 5, 7, 9]
 
-    >>> it = iter('ABCdEfGhI')
-    >>> all_upper, remainder = before_and_after(str.isupper, it)
-    >>> ''.join(all_upper)
-    'ABC'
-    >>> ''.join(remainder)
-    'dEfGhI'
-
     >>> list(subslices('ABCD'))
     ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
 
@@ -1640,6 +1590,32 @@ The following recipes have a more mathematical flavor:
             result.append(pool[-1-n])
         return tuple(result)
 
+    def before_and_after(predicate, it):
+       """ Variant of takewhile() that allows complete
+           access to the remainder of the iterator.
+
+           >>> it = iter('ABCdEfGhI')
+           >>> all_upper, remainder = before_and_after(str.isupper, it)
+           >>> ''.join(all_upper)
+           'ABC'
+           >>> ''.join(remainder)     # takewhile() would lose the 'd'
+           'dEfGhI'
+
+           Note that the true iterator must be fully consumed
+           before the remainder iterator can generate valid results.
+       """
+       it = iter(it)
+       transition = []
+
+       def true_iterator():
+           for elem in it:
+               if predicate(elem):
+                   yield elem
+               else:
+                   transition.append(elem)
+                   return
+
+       return true_iterator(), chain(transition, it)
 
 .. doctest::
     :hide:
@@ -1669,3 +1645,10 @@ The following recipes have a more mathematical flavor:
     >>> combos = list(combinations(iterable, r))
     >>> all(nth_combination(iterable, r, i) == comb for i, comb in enumerate(combos))
     True
+
+    >>> it = iter('ABCdEfGhI')
+    >>> all_upper, remainder = before_and_after(str.isupper, it)
+    >>> ''.join(all_upper)
+    'ABC'
+    >>> ''.join(remainder)
+    'dEfGhI'
