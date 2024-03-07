@@ -601,7 +601,7 @@ def check_private_names(manifest):
         if name.startswith('_') and not item.abi_only:
             raise ValueError(
                 f'`{name}` is private (underscore-prefixed) and should be '
-                + 'removed from the stable ABI list or or marked `abi_only`')
+                + 'removed from the stable ABI list or marked `abi_only`')
 
 def check_dump(manifest, filename):
     """Check that manifest.dump() corresponds to the data.

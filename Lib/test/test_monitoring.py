@@ -10,7 +10,9 @@ import types
 import unittest
 import asyncio
 import _testinternalcapi
-from test.support import requires_specialization
+
+from test import support
+from test.support import requires_specialization, script_helper
 
 PAIR = (0,1)
 
@@ -1859,6 +1861,15 @@ class TestTier2Optimizer(CheckEvents):
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.set_events(TEST_TOOL, 0)
         self.assertGreater(len(events), 250)
+
+class TestMonitoringAtShutdown(unittest.TestCase):
+
+    def test_monitoring_live_at_shutdown(self):
+        # gh-115832: An object destructor running during the final GC of
+        # interpreter shutdown triggered an infinite loop in the
+        # instrumentation code.
+        script = support.findfile("_test_monitoring_shutdown.py")
+        script_helper.run_test_script(script)
 
 
 class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
