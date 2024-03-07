@@ -709,7 +709,7 @@ class NonCallableMock(Base):
                     parent=self, name=name, wraps=wraps, _new_name=name,
                     _new_parent=self
                 )
-                self._mock_children[name]  = result
+                self._mock_children[name] = result
 
             elif isinstance(result, _SpecState):
                 try:
@@ -723,7 +723,7 @@ class NonCallableMock(Base):
                         f'Cannot autospec attr {name!r} from target '
                         f'{target_name!r} as it has already been mocked out. '
                         f'[target={self!r}, attr={result.spec!r}]')
-                self._mock_children[name]  = result
+                self._mock_children[name] = result
 
         return result
 
