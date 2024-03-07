@@ -2366,7 +2366,6 @@ features:
    .. versionchanged:: 3.8
       Accepts a :term:`path-like object` and a bytes object on Windows.
 
-   .. versionchanged:: 3.8
       Added support for directory junctions, and changed to return the
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
@@ -2848,14 +2847,14 @@ features:
 
       Time of most recent access expressed in nanoseconds as an integer.
 
-      .. versionadded: 3.3
+      .. versionadded:: 3.3
 
    .. attribute:: st_mtime_ns
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
 
-      .. versionadded: 3.3
+      .. versionadded:: 3.3
 
    .. attribute:: st_ctime_ns
 
@@ -2865,7 +2864,7 @@ features:
       * the time of creation on Windows, expressed in nanoseconds as an
         integer.
 
-      .. versionadded: 3.3
+      .. versionadded:: 3.3
 
    .. note::
 
@@ -2975,10 +2974,10 @@ features:
       Windows now returns the file index as :attr:`st_ino` when
       available.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       Added the :attr:`st_reparse_tag` member on Windows.
 
    .. versionchanged:: 3.8
@@ -5121,19 +5120,19 @@ Random numbers
       easy-to-use interface to the random number generator provided by your
       platform, please see :class:`random.SystemRandom`.
 
-   .. versionchanged:: 3.6.0
-      On Linux, ``getrandom()`` is now used in blocking mode to increase the
-      security.
-
-   .. versionchanged:: 3.5.2
-      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
-      is not initialized yet), fall back on reading ``/dev/urandom``.
-
    .. versionchanged:: 3.5
       On Linux 3.17 and newer, the ``getrandom()`` syscall is now used
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+   .. versionchanged:: 3.5.2
+      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
+      is not initialized yet), fall back on reading ``/dev/urandom``.
+
+   .. versionchanged:: 3.6
+      On Linux, ``getrandom()`` is now used in blocking mode to increase the
+      security.
 
    .. versionchanged:: 3.11
       On Windows, ``BCryptGenRandom()`` is used instead of ``CryptGenRandom()``
