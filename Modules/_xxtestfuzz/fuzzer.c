@@ -563,6 +563,44 @@ static int fuzz_pycompile(const char* data, size_t size) {
     }
 
     return 0;
+
+static int fuzz_plistlib(const char* data, size_t size) {
+
+
+    PyObject *plistlib_module = PyImport_ImportModule("plistlib");
+
+    PyObject *input_bytes = PyBytes_FromStringAndSize(data, size);
+
+    // Check if one can use data as raw for Plistlib object
+    PyObject * parsed_from_input_bytes = PyObject_CallMethod(plistlib_module, "loads","O", input_bytes);
+    /* Ignore some common error
+     * Some common errors are - ExpatError (PyExc_Exception), InvalidFileException (ValueError) and PyExc_RecursionError
+     * so one can just check for PyExc_Exception */
+    if (parsed_from_input_bytes == NULL && PyErr_ExceptionMatches(PyExc_Exception)) {
+        PyErr_Clear();
+    }
+
+
+    // Create Plistlib object from data
+    PyObject * plistlib_object = PyObject_CallMethod(plistlib_module, "dumps","O", input_bytes);
+
+    // Load data from Plistlib object
+    PyObject * parsed_from_plistlib_object = PyObject_CallMethod(plistlib_module, "loads","O", plistlib_object);
+
+    if (PyObject_RichCompareBool(input_bytes, parsed_from_plistlib_object, Py_EQ) != 1) {
+        fprintf(stderr, "Error: Content mismatch or file size mismatch\n");
+        Py_DECREF(plistlib_object);
+        Py_DECREF(input_bytes);
+        Py_DECREF(plistlib_module);
+        exit(EXIT_FAILURE);
+    }
+
+    if(parsed_from_input_bytes) Py_DECREF(parsed_from_input_bytes);
+    Py_DECREF(plistlib_object);
+    Py_DECREF(input_bytes);
+    Py_DECREF(plistlib_module);
+    return 0;  // Values other than 0 and -1 are reserved for future use.
+
 }
 
 /* Run fuzzer and abort on failure. */
@@ -709,6 +747,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_pycompile)
     rv |= _run_fuzz(data, size, fuzz_pycompile);
+#endif
+#if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_plistlib)
+    rv |= _run_fuzz(data, size, fuzz_plistlib);
 #endif
   return rv;
 }
