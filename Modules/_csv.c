@@ -1606,10 +1606,12 @@ _csv_unregister_dialect_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=0813ebca6c058df4 input=6b5c1557bf60c7e7]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    if (PyDict_DelItem(module_state->dialects, name) < 0) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_Format(module_state->error_obj, "unknown dialect");
-        }
+    int rc = PyDict_Pop(module_state->dialects, name, NULL);
+    if (rc < 0) {
+        return NULL;
+    }
+    if (rc == 0) {
+        PyErr_Format(module_state->error_obj, "unknown dialect");
         return NULL;
     }
     Py_RETURN_NONE;
