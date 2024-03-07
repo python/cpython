@@ -3,6 +3,8 @@ from analyzer import StackItem, Instruction, Uop
 from dataclasses import dataclass
 from cwriter import CWriter
 
+UNUSED = {"unused"}
+
 
 def maybe_parenthesize(sym: str) -> str:
     """Add parentheses around a string if it contains an operator
@@ -21,13 +23,18 @@ def maybe_parenthesize(sym: str) -> str:
 
 def var_size(var: StackItem) -> str:
     if var.condition:
-        # Special case simplification
-        if var.condition == "oparg & 1" and var.size == "1":
+        # Special case simplifications
+        if var.condition == "0":
+            return "0"
+        elif var.condition == "1":
+            return var.size
+        elif var.condition == "oparg & 1" and var.size == "1":
             return f"({var.condition})"
         else:
             return f"(({var.condition}) ? {var.size} : 0)"
     else:
         return var.size
+
 
 @dataclass
 class StackOffset:
@@ -47,10 +54,7 @@ class StackOffset:
         self.pushed.append(var_size(item))
 
     def __sub__(self, other: "StackOffset") -> "StackOffset":
-        return StackOffset(
-            self.popped + other.pushed,
-            self.pushed + other.popped
-        )
+        return StackOffset(self.popped + other.pushed, self.pushed + other.popped)
 
     def __neg__(self) -> "StackOffset":
         return StackOffset(self.pushed, self.popped)
@@ -134,18 +138,18 @@ class Stack:
                 )
             if popped.name == var.name:
                 return ""
-            elif popped.name == "unused":
+            elif popped.name in UNUSED:
                 self.defined.add(var.name)
                 return (
                     f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
                 )
-            elif var.name == "unused":
+            elif var.name in UNUSED:
                 return ""
             else:
                 self.defined.add(var.name)
                 return f"{var.name} = {popped.name};\n"
         self.base_offset.pop(var)
-        if var.name == "unused":
+        if var.name in UNUSED:
             return ""
         else:
             self.defined.add(var.name)
@@ -154,12 +158,17 @@ class Stack:
             f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
         )
         if var.condition:
-            return f"if ({var.condition}) {{ {assign} }}\n"
+            if var.condition == "1":
+                return f"{assign}\n"
+            elif var.condition == "0":
+                return ""
+            else:
+                return f"if ({var.condition}) {{ {assign} }}\n"
         return f"{assign}\n"
 
     def push(self, var: StackItem) -> str:
         self.variables.append(var)
-        if var.is_array() and var.name not in self.defined and var.name != "unused":
+        if var.is_array() and var.name not in self.defined and var.name not in UNUSED:
             c_offset = self.top_offset.to_c()
             self.top_offset.push(var)
             self.defined.add(var.name)
@@ -168,13 +177,17 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter) -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
+        out.start_line()
         for var in self.variables:
             if not var.peek:
-                cast = "(PyObject *)" if var.type else ""
-                if var.name != "unused" and not var.is_array():
+                cast = f"({cast_type})" if var.type else ""
+                if var.name not in UNUSED and not var.is_array():
                     if var.condition:
-                        out.emit(f"if ({var.condition}) ")
+                        if var.condition == "0":
+                            continue
+                        elif var.condition != "1":
+                            out.emit(f"if ({var.condition}) ")
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {cast}{var.name};\n"
                     )
@@ -189,6 +202,7 @@ class Stack:
         self.base_offset.clear()
         self.top_offset.clear()
         self.peek_offset.clear()
+        out.start_line()
 
     def as_comment(self) -> str:
         return f"/* Variables: {[v.name for v in self.variables]}. Base offset: {self.base_offset.to_c()}. Top offset: {self.top_offset.to_c()} */"

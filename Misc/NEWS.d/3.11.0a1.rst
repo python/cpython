@@ -660,7 +660,7 @@ Karabas.
 .. section: Core and Builtins
 
 Parameter substitution of the union type with wrong types now raises
-``TypeError`` instead of returning ``NotImplemented``.
+``TypeError`` instead of returning :data:`NotImplemented`.
 
 ..
 
@@ -819,7 +819,7 @@ always available when needed. Patch by Mark Shannon.
 .. nonce: qKnSqV
 .. section: Core and Builtins
 
-The threading debug (:envvar:`PYTHONTHREADDEBUG` environment variable) is
+The threading debug (:envvar:`!PYTHONTHREADDEBUG` environment variable) is
 deprecated in Python 3.10 and will be removed in Python 3.12. This feature
 requires a debug build of Python. Patch by Victor Stinner.
 
@@ -1642,9 +1642,9 @@ interval specified with nanosecond precision.
 .. nonce: UptGAn
 .. section: Library
 
-Remove from the :mod:`configparser` module: the :class:`SafeConfigParser`
-class, the :attr:`filename` property of the :class:`ParsingError` class, the
-:meth:`readfp` method of the :class:`ConfigParser` class, deprecated since
+Remove from the :mod:`configparser` module: the :class:`!SafeConfigParser`
+class, the :attr:`!filename` property of the :class:`~configparser.ParsingError` class, the
+:meth:`!readfp` method of the :class:`~configparser.ConfigParser` class, deprecated since
 Python 3.2.
 
 Patch by Hugo van Kemenade.
@@ -2808,7 +2808,7 @@ behaves differently than the similar implementation in :mod:`sysconfig`.
 .. nonce: 3hmkWw
 .. section: Library
 
-:class:`smtpd.MailmanProxy` is now removed as it is unusable without an
+:class:`!smtpd.MailmanProxy` is now removed as it is unusable without an
 external module, ``mailman``. Patch by Donghee Na.
 
 ..
@@ -3204,7 +3204,7 @@ deprecated, for removal in 3.14.
 .. section: Library
 
 When :class:`http.server.SimpleHTTPRequestHandler` sends a ``301 (Moved
-Permanently)`` for a directory path not ending with `/`, add a
+Permanently)`` for a directory path not ending with ``/``, add a
 ``Content-Length: 0`` header. This improves the behavior for certain
 clients.
 
@@ -3240,7 +3240,7 @@ Patch by Erlend E. Aasland.
 .. nonce: m72tlH
 .. section: Library
 
-AIX: `Lib/_aix_support.get_platform()` may fail in an AIX WPAR. The fileset
+AIX: ``Lib/_aix_support.get_platform()`` may fail in an AIX WPAR. The fileset
 bos.rte appears to have a builddate in both LPAR and WPAR so this fileset is
 queried rather than bos.mp64. To prevent a similar situation (no builddate
 in ODM) a value (9988) sufficient for completing a build is provided. Patch
@@ -3483,9 +3483,9 @@ Improved reprs of :mod:`threading` synchronization objects:
 Deprecated the following :mod:`unittest` functions, scheduled for removal in
 Python 3.13:
 
-* :func:`~!unittest.findTestCases`
-* :func:`~!unittest.makeSuite`
-* :func:`~!unittest.getTestCaseNames`
+* :func:`!findTestCases`
+* :func:`!makeSuite`
+* :func:`!getTestCaseNames`
 
 Use :class:`~unittest.TestLoader` methods instead:
 
@@ -3685,9 +3685,9 @@ equivalents are valid.
 .. nonce: aJuvQF
 .. section: Documentation
 
-Removed the othergui.rst file, any references to it, and the list of GUI
+Removed the ``othergui.rst`` file, any references to it, and the list of GUI
 frameworks in the FAQ. In their place I've added links to the Python Wiki
-`page on GUI frameworks <https://wiki.python.org/moin/GuiProgramming>`.
+`page on GUI frameworks <https://wiki.python.org/moin/GuiProgramming>`_.
 
 ..
 
