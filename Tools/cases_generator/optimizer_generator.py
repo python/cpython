@@ -27,7 +27,7 @@ from lexer import Token
 from stack import Stack, SizeMismatch, UNUSED
 
 DEFAULT_OUTPUT = ROOT / "Python/optimizer_cases.c.h"
-DEFAULT_ABSTRACT_INPUT = ROOT / "Python/optimizer_bytecodes.c"
+DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_posix()
 
 
 def validate_uop(override: Uop, uop: Uop) -> None:
@@ -214,19 +214,22 @@ arg_parser.add_argument(
 )
 
 
-arg_parser.add_argument("input", nargs=1, help="Abstract interpreter definition file")
+arg_parser.add_argument("input", nargs='*', help="Abstract interpreter definition file")
 
 arg_parser.add_argument(
-    "base", nargs=argparse.REMAINDER, help="The base instruction definition file(s)"
+    "base", nargs="*", help="The base instruction definition file(s)"
 )
 
 arg_parser.add_argument("-d", "--debug", help="Insert debug calls", action="store_true")
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()
-    if len(args.base) == 0:
-        args.input.append(DEFAULT_INPUT)
+    if not args.input:
+        args.base.append(DEFAULT_INPUT)
         args.input.append(DEFAULT_ABSTRACT_INPUT)
+    else:
+        args.base.append(args.input[-1])
+        args.input.pop()
     abstract = analyze_files(args.input)
     base = analyze_files(args.base)
     with open(args.output, "w") as outfile:
