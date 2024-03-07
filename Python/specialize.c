@@ -2568,6 +2568,24 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+#ifdef Py_STATS
+static int containsop_fail_kind(PyObject *value) {
+    if (PyUnicode_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_STR;
+    }
+    if (PyList_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_LIST;
+    }
+    if (PyTuple_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_TUPLE;
+    }
+    if (PyType_Check(value)) {
+        return SPEC_FAIL_CONTAINS_OP_USER_CLASS;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif   // Py_STATS
+
 void
 _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
 {
@@ -2583,31 +2601,7 @@ _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
         goto success;
     }
 
-    if (Py_TYPE(value) == &PyDictProxy_Type) {
-        instr->op.code = CONTAINS_OP_MAPPINGPROXY;
-        goto success;
-    }
-
-#ifdef Py_STATS
-    if (PyUnicode_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_STR);
-        goto failure;
-    }
-    if (PyList_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_LIST);
-        goto failure;
-    }
-    if (PyTuple_CheckExact(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_TUPLE);
-        goto failure;
-    }
-    if (PyType_Check(value)) {
-        SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_CONTAINS_OP_USER_CLASS);
-        goto failure;
-    }
-    SPECIALIZATION_FAIL(TO_BOOL, SPEC_FAIL_OTHER);
-#endif   // Py_STATS
-failure:
+    SPECIALIZATION_FAIL(CONTAINS_OP, containsop_fail_kind(value));
     STAT_INC(CONTAINS_OP, failure);
     instr->op.code = CONTAINS_OP;
     cache->counter = adaptive_counter_backoff(cache->counter);

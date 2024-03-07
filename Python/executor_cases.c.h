@@ -2228,25 +2228,6 @@
             break;
         }
 
-        case _CONTAINS_OP_MAPPINGPROXY: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *b;
-            oparg = CURRENT_OPARG();
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (Py_TYPE(right) != &PyDictProxy_Type) goto deoptimize;
-            STAT_INC(CONTAINS_OP, hit);
-            int res = _PyMappingProxy_Contains(right, left);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res < 0) goto pop_2_error_tier_two;
-            b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = b;
-            stack_pointer += -1;
-            break;
-        }
-
         case _CHECK_EG_MATCH: {
             PyObject *match_type;
             PyObject *exc_value;

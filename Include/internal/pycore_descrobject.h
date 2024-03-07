@@ -22,8 +22,6 @@ typedef propertyobject _PyPropertyObject;
 
 extern PyTypeObject _PyMethodWrapper_Type;
 
-PyAPI_FUNC(int) _PyMappingProxy_Contains(PyObject *self, PyObject *key);
-
 #ifdef __cplusplus
 }
 #endif

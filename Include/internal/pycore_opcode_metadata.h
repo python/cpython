@@ -153,8 +153,6 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case CONTAINS_OP_DICT:
             return 2;
-        case CONTAINS_OP_MAPPINGPROXY:
-            return 2;
         case CONTAINS_OP_SET:
             return 2;
         case CONVERT_VALUE:
@@ -583,8 +581,6 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case CONTAINS_OP:
             return 1;
         case CONTAINS_OP_DICT:
-            return 1;
-        case CONTAINS_OP_MAPPINGPROXY:
             return 1;
         case CONTAINS_OP_SET:
             return 1;
@@ -1016,7 +1012,6 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [COMPARE_OP_STR] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [CONTAINS_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CONTAINS_OP_DICT] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [CONTAINS_OP_MAPPINGPROXY] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CONTAINS_OP_SET] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [CONVERT_VALUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
     [COPY] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_PURE_FLAG },
@@ -1241,7 +1236,6 @@ _PyOpcode_macro_expansion[256] = {
     [COMPARE_OP_STR] = { .nuops = 2, .uops = { { _GUARD_BOTH_UNICODE, 0, 0 }, { _COMPARE_OP_STR, 0, 0 } } },
     [CONTAINS_OP] = { .nuops = 1, .uops = { { _CONTAINS_OP, 0, 0 } } },
     [CONTAINS_OP_DICT] = { .nuops = 1, .uops = { { _CONTAINS_OP_DICT, 0, 0 } } },
-    [CONTAINS_OP_MAPPINGPROXY] = { .nuops = 1, .uops = { { _CONTAINS_OP_MAPPINGPROXY, 0, 0 } } },
     [CONTAINS_OP_SET] = { .nuops = 1, .uops = { { _CONTAINS_OP_SET, 0, 0 } } },
     [CONVERT_VALUE] = { .nuops = 1, .uops = { { _CONVERT_VALUE, 0, 0 } } },
     [COPY] = { .nuops = 1, .uops = { { _COPY, 0, 0 } } },
@@ -1417,7 +1411,6 @@ const char *_PyOpcode_OpName[268] = {
     [COMPARE_OP_STR] = "COMPARE_OP_STR",
     [CONTAINS_OP] = "CONTAINS_OP",
     [CONTAINS_OP_DICT] = "CONTAINS_OP_DICT",
-    [CONTAINS_OP_MAPPINGPROXY] = "CONTAINS_OP_MAPPINGPROXY",
     [CONTAINS_OP_SET] = "CONTAINS_OP_SET",
     [CONVERT_VALUE] = "CONVERT_VALUE",
     [COPY] = "COPY",
@@ -1671,7 +1664,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [COMPARE_OP_STR] = COMPARE_OP,
     [CONTAINS_OP] = CONTAINS_OP,
     [CONTAINS_OP_DICT] = CONTAINS_OP,
-    [CONTAINS_OP_MAPPINGPROXY] = CONTAINS_OP,
     [CONTAINS_OP_SET] = CONTAINS_OP,
     [CONVERT_VALUE] = CONVERT_VALUE,
     [COPY] = COPY,
@@ -1859,6 +1851,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 146: \
     case 147: \
     case 148: \
+    case 221: \
     case 222: \
     case 223: \
     case 224: \

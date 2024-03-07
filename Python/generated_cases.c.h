@@ -2187,29 +2187,6 @@
             DISPATCH();
         }
 
-        TARGET(CONTAINS_OP_MAPPINGPROXY) {
-            frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(CONTAINS_OP_MAPPINGPROXY);
-            static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            PyObject *right;
-            PyObject *left;
-            PyObject *b;
-            /* Skip 1 cache entry */
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            DEOPT_IF(Py_TYPE(right) != &PyDictProxy_Type, CONTAINS_OP);
-            STAT_INC(CONTAINS_OP, hit);
-            int res = _PyMappingProxy_Contains(right, left);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res < 0) goto pop_2_error;
-            b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = b;
-            stack_pointer += -1;
-            DISPATCH();
-        }
-
         TARGET(CONTAINS_OP_SET) {
             frame->instr_ptr = next_instr;
             next_instr += 2;

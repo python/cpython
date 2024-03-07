@@ -2240,7 +2240,6 @@ dummy_func(
         family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
             CONTAINS_OP_SET,
             CONTAINS_OP_DICT,
-            CONTAINS_OP_MAPPINGPROXY,
         };
 
         op(_CONTAINS_OP, (left, right -- b)) {
@@ -2278,15 +2277,6 @@ dummy_func(
             DEOPT_IF(!PyDict_CheckExact(right));
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right, left);
-            DECREF_INPUTS();
-            ERROR_IF(res < 0, error);
-            b = (res ^ oparg) ? Py_True : Py_False;
-        }
-
-        inst(CONTAINS_OP_MAPPINGPROXY, (unused/1, left, right -- b)) {
-            DEOPT_IF(Py_TYPE(right) != &PyDictProxy_Type);
-            STAT_INC(CONTAINS_OP, hit);
-            int res = _PyMappingProxy_Contains(right, left);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
             b = (res ^ oparg) ? Py_True : Py_False;
