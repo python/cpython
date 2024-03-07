@@ -2244,7 +2244,7 @@ types.
       of that protocol on Python 3.12+, and vice versa.
       Most users are unlikely to be affected by this change.
 
-      The members of a runtime-checkable protocol are now considered "frozen"
+      Separately, the members of a runtime-checkable protocol are now considered "frozen"
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
       have no impact on :func:`isinstance` checks comparing objects to the
