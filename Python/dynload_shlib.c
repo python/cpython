@@ -42,13 +42,9 @@ const char *_PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
     ".dll",
 #else  /* !__CYGWIN__ */
-#  ifdef __APPLE__
-//   TARGET_OS_IPHONE covers any non-macOS Apple platform.
-#    if TARGET_OS_IPHONE
-#      define SHLIB_SUFFIX ".dylib"
-#    else
-#      define SHLIB_SUFFIX ".so"
-#    endif
+// TARGET_OS_IPHONE covers any non-macOS Apple platform.
+#  if defined(__APPLE__) && TARGET_OS_IPHONE
+#    define SHLIB_SUFFIX ".dylib"
 #  else
 #    define SHLIB_SUFFIX ".so"
 #  endif
