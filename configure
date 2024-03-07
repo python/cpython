@@ -671,6 +671,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTLIMITEDCAPI_FALSE
+MODULE__TESTLIMITEDCAPI_TRUE
 MODULE__TESTCLINIC_LIMITED_FALSE
 MODULE__TESTCLINIC_LIMITED_TRUE
 MODULE__TESTCLINIC_FALSE
@@ -27301,6 +27303,7 @@ SRCDIRS="\
   Modules/_sre \
   Modules/_testcapi \
   Modules/_testinternalcapi \
+  Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -30771,6 +30774,44 @@ fi
 printf "%s\n" "$py_cv_module__testclinic_limited" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testlimitedcapi" >&5
+printf %s "checking for stdlib extension module _testlimitedcapi... " >&6; }
+        if test "$py_cv_module__testlimitedcapi" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if true
+then :
+  py_cv_module__testlimitedcapi=yes
+else $as_nop
+  py_cv_module__testlimitedcapi=missing
+fi
+else $as_nop
+  py_cv_module__testlimitedcapi=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTLIMITEDCAPI_STATE=$py_cv_module__testlimitedcapi$as_nl"
+  if test "x$py_cv_module__testlimitedcapi" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testlimitedcapi" = yes; then
+  MODULE__TESTLIMITEDCAPI_TRUE=
+  MODULE__TESTLIMITEDCAPI_FALSE='#'
+else
+  MODULE__TESTLIMITEDCAPI_TRUE='#'
+  MODULE__TESTLIMITEDCAPI_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testlimitedcapi" >&5
+printf "%s\n" "$py_cv_module__testlimitedcapi" >&6; }
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 printf %s "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"
@@ -31555,6 +31596,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCLINIC_LIMITED_TRUE}" && test -z "${MODULE__TESTCLINIC_LIMITED_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCLINIC_LIMITED\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTLIMITEDCAPI_TRUE}" && test -z "${MODULE__TESTLIMITEDCAPI_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTLIMITEDCAPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then
