@@ -663,6 +663,8 @@ MODULE_XXSUBTYPE_FALSE
 MODULE_XXSUBTYPE_TRUE
 MODULE__TESTEXTERNALINSPECTION_FALSE
 MODULE__TESTEXTERNALINSPECTION_TRUE
+MODULE__TESTSINGLEPHASE_FALSE
+MODULE__TESTSINGLEPHASE_TRUE
 MODULE__TESTMULTIPHASE_FALSE
 MODULE__TESTMULTIPHASE_TRUE
 MODULE__TESTIMPORTMULTIPLE_FALSE
@@ -30964,6 +30966,44 @@ fi
 printf "%s\n" "$py_cv_module__testmultiphase" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testsinglephase" >&5
+printf %s "checking for stdlib extension module _testsinglephase... " >&6; }
+        if test "$py_cv_module__testsinglephase" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if test "$ac_cv_func_dlopen" = yes
+then :
+  py_cv_module__testsinglephase=yes
+else $as_nop
+  py_cv_module__testsinglephase=missing
+fi
+else $as_nop
+  py_cv_module__testsinglephase=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTSINGLEPHASE_STATE=$py_cv_module__testsinglephase$as_nl"
+  if test "x$py_cv_module__testsinglephase" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testsinglephase" = yes; then
+  MODULE__TESTSINGLEPHASE_TRUE=
+  MODULE__TESTSINGLEPHASE_FALSE='#'
+else
+  MODULE__TESTSINGLEPHASE_TRUE='#'
+  MODULE__TESTSINGLEPHASE_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testsinglephase" >&5
+printf "%s\n" "$py_cv_module__testsinglephase" >&6; }
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testexternalinspection" >&5
 printf %s "checking for stdlib extension module _testexternalinspection... " >&6; }
         if test "$py_cv_module__testexternalinspection" != "n/a"
@@ -31616,6 +31656,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTSINGLEPHASE_TRUE}" && test -z "${MODULE__TESTSINGLEPHASE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTSINGLEPHASE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTEXTERNALINSPECTION_TRUE}" && test -z "${MODULE__TESTEXTERNALINSPECTION_FALSE}"; then
