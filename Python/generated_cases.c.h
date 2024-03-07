@@ -2176,29 +2176,8 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             DEOPT_IF(!PyDict_CheckExact(right), CONTAINS_OP);
+            STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right, left);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res < 0) goto pop_2_error;
-            b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = b;
-            stack_pointer += -1;
-            DISPATCH();
-        }
-
-        TARGET(CONTAINS_OP_LIST) {
-            frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(CONTAINS_OP_LIST);
-            static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            PyObject *right;
-            PyObject *left;
-            PyObject *b;
-            /* Skip 1 cache entry */
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            DEOPT_IF(!PyList_CheckExact(right), CONTAINS_OP);
-            int res = _PyList_Contains(right, left);
             Py_DECREF(left);
             Py_DECREF(right);
             if (res < 0) goto pop_2_error;
@@ -2219,52 +2198,10 @@
             /* Skip 1 cache entry */
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            DEOPT_IF(!PySet_CheckExact(right), CONTAINS_OP);
+            DEOPT_IF(!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right)), CONTAINS_OP);
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
             int res = _PySet_Contains((PySetObject *)right, left);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res < 0) goto pop_2_error;
-            b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = b;
-            stack_pointer += -1;
-            DISPATCH();
-        }
-
-        TARGET(CONTAINS_OP_STR) {
-            frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(CONTAINS_OP_STR);
-            static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            PyObject *right;
-            PyObject *left;
-            PyObject *b;
-            /* Skip 1 cache entry */
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            DEOPT_IF(!PyUnicode_CheckExact(right), CONTAINS_OP);
-            int res = PyUnicode_Contains(right, left);
-            Py_DECREF(left);
-            Py_DECREF(right);
-            if (res < 0) goto pop_2_error;
-            b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = b;
-            stack_pointer += -1;
-            DISPATCH();
-        }
-
-        TARGET(CONTAINS_OP_TUPLE) {
-            frame->instr_ptr = next_instr;
-            next_instr += 2;
-            INSTRUCTION_STATS(CONTAINS_OP_TUPLE);
-            static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            PyObject *right;
-            PyObject *left;
-            PyObject *b;
-            /* Skip 1 cache entry */
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            DEOPT_IF(!PyTuple_CheckExact(right), CONTAINS_OP);
-            int res = _PyTuple_Contains((PyTupleObject *)right, left);
             Py_DECREF(left);
             Py_DECREF(right);
             if (res < 0) goto pop_2_error;

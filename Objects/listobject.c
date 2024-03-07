@@ -524,8 +524,8 @@ list_length(PyObject *a)
     return PyList_GET_SIZE(a);
 }
 
-int
-_PyList_Contains(PyObject *aa, PyObject *el)
+static int
+list_contains(PyObject *aa, PyObject *el)
 {
 
     for (Py_ssize_t i = 0; ; i++) {
@@ -3147,7 +3147,7 @@ static PySequenceMethods list_as_sequence = {
     0,                                          /* sq_slice */
     list_ass_item,                              /* sq_ass_item */
     0,                                          /* sq_ass_slice */
-    _PyList_Contains,                           /* sq_contains */
+    list_contains,                              /* sq_contains */
     list_inplace_concat,                        /* sq_inplace_concat */
     list_inplace_repeat,                        /* sq_inplace_repeat */
 };
