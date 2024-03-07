@@ -319,15 +319,15 @@ def _recursive_selector(part, parts, recursive, include_hidden):
     dir_only = bool(parts)
     select_next = _selector(parts, recursive, include_hidden)
 
-    def select_recursive(path, rel_path, dir_fd, exists, match_pos=None):
-        if match_pos is None:
-            path = _add_trailing_slash(path)
-            rel_path = _add_trailing_slash(rel_path)
-            match_pos = len(path)
-
+    def select_recursive(path, rel_path, dir_fd, exists):
+        path = _add_trailing_slash(path)
+        rel_path = _add_trailing_slash(rel_path)
+        match_pos = len(path)
         if match is None or match(path, match_pos):
             yield from select_next(path, rel_path, dir_fd, exists)
+        yield from select_recursive_step(path, rel_path, dir_fd, match_pos)
 
+    def select_recursive_step(path, rel_path, dir_fd, match_pos):
         close_fd = False
         try:
             arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
@@ -349,10 +349,13 @@ def _recursive_selector(part, parts, recursive, include_hidden):
                     entry_path = entry.path
                     if fd is not None:
                         entry_path = prefix + entry_path
+                    if match is None or match(entry_path, match_pos):
+                        if dir_only:
+                            yield from select_next(entry_path, entry.name, fd, True)
+                        else:
+                            yield entry_path
                     if is_dir:
-                        yield from select_recursive(entry_path, entry.name, fd, True, match_pos)
-                    elif match is None or match(entry_path, match_pos):
-                        yield from select_next(entry_path, entry.name, fd, True)
+                        yield from select_recursive_step(entry_path, entry.name, fd, match_pos)
         except OSError:
             pass
         finally:
