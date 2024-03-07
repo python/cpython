@@ -1755,18 +1755,29 @@ class ClassCreationTests(unittest.TestCase):
 class SimpleNamespaceTests(unittest.TestCase):
 
     def test_constructor(self):
-        ns1 = types.SimpleNamespace()
-        ns2 = types.SimpleNamespace(x=1, y=2)
-        ns3 = types.SimpleNamespace(**dict(x=1, y=2))
-        ns4 = types.SimpleNamespace({'x': 1, 'y': 2}, x=4, z=3)
-        ns5 = types.SimpleNamespace([['x', 1], ['y', 2]], x=4, z=3)
-        ns6 = types.SimpleNamespace(UserDict({'x': 1, 'y': 2}), x=4, z=3)
-        ns7 = types.SimpleNamespace({'x': 1, 'y': 2})
-        ns8 = types.SimpleNamespace([['x', 1], ['y', 2]])
-        ns9 = types.SimpleNamespace([], x=4, z=3)
-        ns10 = types.SimpleNamespace({}, x=4, z=3)
-        ns11 = types.SimpleNamespace([])
-        ns12 = types.SimpleNamespace({})
+        def check(ns, expected):
+            self.assertEqual(len(ns.__dict__), len(expected))
+            self.assertEqual(vars(ns), expected)
+            # check order
+            self.assertEqual(list(vars(ns).items()), list(expected.items()))
+            for name in expected:
+                self.assertEqual(getattr(ns, name), expected[name])
+
+        check(types.SimpleNamespace(), {})
+        check(types.SimpleNamespace(x=1, y=2), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace(**dict(x=1, y=2)), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}, x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]], x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace(UserDict({'x': 1, 'y': 2}), x=4, z=3),
+              {'x': 4, 'y': 2, 'z': 3})
+        check(types.SimpleNamespace({'x': 1, 'y': 2}), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([['x', 1], ['y', 2]]), {'x': 1, 'y': 2})
+        check(types.SimpleNamespace([], x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace({}, x=4, z=3), {'x': 4, 'z': 3})
+        check(types.SimpleNamespace([]), {})
+        check(types.SimpleNamespace({}), {})
 
         with self.assertRaises(TypeError):
             types.SimpleNamespace([], [])
@@ -1782,19 +1793,6 @@ class SimpleNamespaceTests(unittest.TestCase):
             types.SimpleNamespace(UserDict({1: 2}))
         with self.assertRaises(TypeError):
             types.SimpleNamespace([[[], 2]])  # non-hashable key
-
-        self.assertEqual(len(ns1.__dict__), 0)
-        self.assertEqual(vars(ns1), {})
-        self.assertEqual(len(ns2.__dict__), 2)
-        self.assertEqual(vars(ns2), {'y': 2, 'x': 1})
-        self.assertEqual(len(ns3.__dict__), 2)
-        self.assertEqual(vars(ns3), {'y': 2, 'x': 1})
-        self.assertEqual(len(ns4.__dict__), 3)
-        self.assertEqual(vars(ns4), {'x': 4, 'y': 2, 'z': 3})
-        self.assertEqual(len(ns5.__dict__), 3)
-        self.assertEqual(vars(ns5), {'x': 4, 'y': 2, 'z': 3})
-        self.assertEqual(len(ns6.__dict__), 3)
-        self.assertEqual(vars(ns6), {'x': 4, 'y': 2, 'z': 3})
 
     def test_unbound(self):
         ns1 = vars(types.SimpleNamespace())
