@@ -43,7 +43,7 @@ def _extension_details():
             )
         ]
     else:
-        paths = sys.paths
+        paths = sys.path
 
     for path in paths:
         for ext in machinery.EXTENSION_SUFFIXES:
