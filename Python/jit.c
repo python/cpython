@@ -15,6 +15,7 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_jit.h"
+#include "pycore_descrobject.h"
 
 #include "jit_stencils.h"
 
