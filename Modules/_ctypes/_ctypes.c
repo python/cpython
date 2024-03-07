@@ -3386,6 +3386,7 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
         return NULL;
     }
 
+    ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
         return -1;

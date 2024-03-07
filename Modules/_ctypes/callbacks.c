@@ -355,10 +355,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     if (p == NULL)
         return NULL;
 
-#ifdef Py_DEBUG
     ctypes_state *st = GLOBAL_STATE();
     assert(CThunk_CheckExact(st, (PyObject *)p));
-#endif
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
