@@ -1489,11 +1489,10 @@ set_intersection_update_multi_impl(PySetObject *so, PyObject *args)
 static PyObject *
 set_and(PySetObject *so, PyObject *other)
 {
-    PyObject *rv;
-
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
 
+    PyObject *rv;
     Py_BEGIN_CRITICAL_SECTION2(so, other);
     rv = set_intersection(so, other);
     Py_END_CRITICAL_SECTION2();
@@ -1812,31 +1811,27 @@ set_difference_multi_impl(PySetObject *so, PyObject *args)
 static PyObject *
 set_sub(PySetObject *so, PyObject *other)
 {
-    PyObject *rv;
-
     if (!PyAnySet_Check(so) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
 
+    PyObject *rv;
     Py_BEGIN_CRITICAL_SECTION2(so, other);
     rv = set_difference(so, other);
     Py_END_CRITICAL_SECTION2();
-
     return rv;
 }
 
 static PyObject *
 set_isub(PySetObject *so, PyObject *other)
 {
-    int rv;
-
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
 
+    int rv;
     Py_BEGIN_CRITICAL_SECTION2(so, other);
     rv = set_difference_update_internal(so, other);
     Py_END_CRITICAL_SECTION2();
-
-    if(rv) {
+    if (rv < 0) {
         return NULL;
     }
     return Py_NewRef(so);
