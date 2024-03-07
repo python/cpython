@@ -351,6 +351,47 @@ dummy_func(void) {
         }
     }
 
+    op(_COMPARE_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        if (oparg & 16) {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_new_not_null(ctx));
+        }
+    }
+
+    op(_COMPARE_OP_INT, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_COMPARE_OP_FLOAT, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_COMPARE_OP_STR, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_IS_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_CONTAINS_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
     op(_LOAD_CONST, (-- value)) {
         // There should be no LOAD_CONST. It should be all
         // replaced by peephole_opt.

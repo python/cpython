@@ -1307,14 +1307,14 @@ dummy_func(
 
         inst(DELETE_GLOBAL, (--)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err != 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                              NAME_ERROR_MSG, name);
-                }
+            if (err < 0) {
+                GOTO_ERROR(error);
+            }
+            if (err == 0) {
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                          NAME_ERROR_MSG, name);
                 GOTO_ERROR(error);
             }
         }
@@ -2237,8 +2237,46 @@ dummy_func(
             b = res ? Py_True : Py_False;
         }
 
-        inst(CONTAINS_OP, (left, right -- b)) {
+        family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
+            CONTAINS_OP_SET,
+            CONTAINS_OP_DICT,
+        };
+
+        op(_CONTAINS_OP, (left, right -- b)) {
             int res = PySequence_Contains(right, left);
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
+            b = (res ^ oparg) ? Py_True : Py_False;
+        }
+
+        specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_ContainsOp(right, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(CONTAINS_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;
+
+        inst(CONTAINS_OP_SET, (unused/1, left, right -- b)) {
+            DEOPT_IF(!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right)));
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
+            int res = _PySet_Contains((PySetObject *)right, left);
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
+            b = (res ^ oparg) ? Py_True : Py_False;
+        }
+
+        inst(CONTAINS_OP_DICT, (unused/1, left, right -- b)) {
+            DEOPT_IF(!PyDict_CheckExact(right));
+            STAT_INC(CONTAINS_OP, hit);
+            int res = PyDict_Contains(right, left);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
             b = (res ^ oparg) ? Py_True : Py_False;
@@ -4058,12 +4096,8 @@ dummy_func(
             null = NULL;
         }
 
-        tier2 op(_CHECK_GLOBALS, (dict/4 -- )) {
-            DEOPT_IF(GLOBALS() != dict);
-        }
-
-        tier2 op(_CHECK_BUILTINS, (dict/4 -- )) {
-            DEOPT_IF(BUILTINS() != dict);
+        tier2 op(_CHECK_FUNCTION, (func/4 -- )) {
+            DEOPT_IF(frame->f_funcobj != func);
         }
 
         /* Internal -- for testing executors */
