@@ -2331,9 +2331,8 @@ static int
 set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL;
-    int rv;
 
-     if (!_PyArg_NoKeywords("set", kwds))
+    if (!_PyArg_NoKeywords("set", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
@@ -2346,9 +2345,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 
     if (iterable == NULL)
         return 0;
-
-    rv = set_update_internal(self, iterable);
-    return rv;
+    return set_update_internal(self, iterable);
 }
 
 static PyObject*
@@ -2624,13 +2621,12 @@ PySet_Clear(PyObject *set)
 int
 PySet_Contains(PyObject *anyset, PyObject *key)
 {
-    int rv;
-
     if (!PyAnySet_Check(anyset)) {
         PyErr_BadInternalCall();
         return -1;
     }
 
+    int rv;
     Py_BEGIN_CRITICAL_SECTION(anyset);
     rv = set_contains_key((PySetObject *)anyset, key);
     Py_END_CRITICAL_SECTION();
@@ -2640,13 +2636,12 @@ PySet_Contains(PyObject *anyset, PyObject *key)
 int
 PySet_Discard(PyObject *set, PyObject *key)
 {
-    int rv;
-
     if (!PySet_Check(set)) {
         PyErr_BadInternalCall();
         return -1;
     }
 
+    int rv;
     Py_BEGIN_CRITICAL_SECTION(set);
     rv = set_discard_key((PySetObject *)set, key);
     Py_END_CRITICAL_SECTION();
@@ -2656,14 +2651,13 @@ PySet_Discard(PyObject *set, PyObject *key)
 int
 PySet_Add(PyObject *anyset, PyObject *key)
 {
-    int rv;
-
     if (!PySet_Check(anyset) &&
         (!PyFrozenSet_Check(anyset) || Py_REFCNT(anyset) != 1)) {
         PyErr_BadInternalCall();
         return -1;
     }
 
+    int rv;
     Py_BEGIN_CRITICAL_SECTION(anyset);
     rv = set_add_key((PySetObject *)anyset, key);
     Py_END_CRITICAL_SECTION();
@@ -2704,7 +2698,6 @@ _PySet_Update(PyObject *set, PyObject *iterable)
         PyErr_BadInternalCall();
         return -1;
     }
-
     return set_update_internal((PySetObject *)set, iterable);
 }
 
