@@ -1780,9 +1780,15 @@ class SimpleNamespaceTests(unittest.TestCase):
         check(types.SimpleNamespace({}), {})
 
         with self.assertRaises(TypeError):
-            types.SimpleNamespace([], [])
+            types.SimpleNamespace([], [])  # too many positional arguments
         with self.assertRaises(TypeError):
-            types.SimpleNamespace(1, 2, 3)
+            types.SimpleNamespace(1)  # not a mapping or iterable
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace([1])  # non-iterable
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x']])  # not a pair
+        with self.assertRaises(ValueError):
+            types.SimpleNamespace([['x', 'y', 'z']])
         with self.assertRaises(TypeError):
             types.SimpleNamespace(**{1: 2})  # non-string key
         with self.assertRaises(TypeError):
