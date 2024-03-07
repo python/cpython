@@ -5,7 +5,7 @@ import json
 import importlib.util
 from importlib._bootstrap_external import _get_sourcefile
 from importlib.machinery import (
-    BuiltinImporter, ExtensionFileLoader, FrozenImporter, SourceFileLoader,
+    AppleFrameworkLoader, BuiltinImporter, ExtensionFileLoader, FrozenImporter, SourceFileLoader,
 )
 import marshal
 import os
@@ -25,7 +25,7 @@ import _imp
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
+    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -66,6 +66,7 @@ def _require_loader(module, loader, skip):
     MODULE_KINDS = {
         BuiltinImporter: 'built-in',
         ExtensionFileLoader: 'extension',
+        AppleFrameworkLoader: 'framework extension',
         FrozenImporter: 'frozen',
         SourceFileLoader: 'pure Python',
     }
@@ -91,7 +92,10 @@ def require_builtin(module, *, skip=False):
     assert module.__spec__.origin == 'built-in', module.__spec__
 
 def require_extension(module, *, skip=False):
-    _require_loader(module, ExtensionFileLoader, skip)
+    if is_apple_mobile:
+        _require_loader(module, AppleFrameworkLoader, skip)
+    else:
+        _require_loader(module, ExtensionFileLoader, skip)
 
 def require_frozen(module, *, skip=True):
     module = _require_loader(module, FrozenImporter, skip)
@@ -360,7 +364,7 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(cm.exception.path, _testcapi.__file__)
             self.assertRegex(
                 str(cm.exception),
-                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)"
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|dylib|pyd)\)"
             )
         else:
             self.assertEqual(
@@ -1689,6 +1693,12 @@ class SubinterpImportTests(unittest.TestCase):
             os.set_blocking(r, False)
         return (r, w)
 
+    def create_extension_loader(self, modname, filename):
+        if is_apple_mobile:
+            return AppleFrameworkLoader(modname, filename, None)
+        else:
+            return ExtensionFileLoader(modname, filename)
+
     def import_script(self, name, fd, filename=None, check_override=None):
         override_text = ''
         if check_override is not None:
@@ -1883,7 +1893,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_non_isolated_compat(self):
         modname = '_test_non_isolated'
         filename = _testmultiphase.__file__
-        loader = ExtensionFileLoader(modname, filename)
+        loader = self.create_extension_loader(modname, filename)
         spec = importlib.util.spec_from_loader(modname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
@@ -1901,7 +1911,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_per_interpreter_gil_compat(self):
         modname = '_test_shared_gil_only'
         filename = _testmultiphase.__file__
-        loader = ExtensionFileLoader(modname, filename)
+        loader = self.create_extension_loader(modname, filename)
         spec = importlib.util.spec_from_loader(modname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
@@ -2034,10 +2044,13 @@ class SinglephaseInitTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         spec = importlib.util.find_spec(cls.NAME)
-        from importlib.machinery import ExtensionFileLoader
+        from importlib.machinery import AppleFrameworkLoader, ExtensionFileLoader
         cls.FILE = spec.origin
         cls.LOADER = type(spec.loader)
-        assert cls.LOADER is ExtensionFileLoader
+        if is_apple_mobile:
+            assert cls.LOADER is AppleFrameworkLoader
+        else:
+            assert cls.LOADER is ExtensionFileLoader
 
         # Start fresh.
         cls.clean_up()
@@ -2077,7 +2090,10 @@ class SinglephaseInitTests(unittest.TestCase):
         """
         # This is essentially copied from the old imp module.
         from importlib._bootstrap import _load
-        loader = self.LOADER(name, path)
+        if is_apple_mobile:
+            loader = self.LOADER(name, path, None)
+        else:
+            loader = self.LOADER(name, path)
 
         # Issue bpo-24748: Skip the sys.modules check in _load_module_shim;
         # always load new extension.

@@ -7,6 +7,7 @@ import marshal
 import os
 import os.path
 from test.support import import_helper
+from test.support import is_apple_mobile
 from test.support import os_helper
 import unittest
 import sys
@@ -31,7 +32,20 @@ EXTENSIONS.name = '_testsinglephase'
 
 def _extension_details():
     global EXTENSIONS
-    for path in sys.path:
+    # On Apple mobile, extension modules can only exist in the Frameworks
+    # folder, so don't bother checking the rest of the system path.
+    if is_apple_mobile:
+        paths = [
+            os.path.join(
+                os.path.split(sys.executable)[0],
+                "Frameworks",
+                EXTENSIONS.name + ".framework"
+            )
+        ]
+    else:
+        paths = sys.paths
+
+    for path in paths:
         for ext in machinery.EXTENSION_SUFFIXES:
             filename = EXTENSIONS.name + ext
             file_path = os.path.join(path, filename)
