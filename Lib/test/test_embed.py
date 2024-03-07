@@ -1595,7 +1595,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # The global path configuration (_Py_path_config) must be a copy
         # of the path configuration of PyInterpreter.config (PyConfig).
         ctypes = import_helper.import_module('ctypes')
-        import _testinternalcapi
 
         def get_func(name):
             func = getattr(ctypes.pythonapi, name)
