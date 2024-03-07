@@ -2246,13 +2246,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20 \
 		test/ziptestdata \
-		test/support/interpreters \
-		test/test_interpreters \
 		test/test_concurrent_futures \
 		test/test_multiprocessing_fork \
 		test/test_multiprocessing_forkserver \
-		test/test_multiprocessing_spawn \
-		test/test_pathlib
+		test/test_multiprocessing_spawn
 
 COMPILEALL_OPTS=-j0
 
