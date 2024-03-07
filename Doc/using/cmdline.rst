@@ -1149,8 +1149,8 @@ conflict.
    If this variable is set to ``1``, the global interpreter lock (GIL) will be
    forced on. Setting it to ``0`` forces the GIL off.
 
-   See also the :option:`-X gil` command-line option, which takes precedence
-   over this variable.
+   See also the :option:`-X gil <-X>` command-line option, which takes
+   precedence over this variable.
 
    Needs Python configured with the :option:`--disable-gil` build option.
 
