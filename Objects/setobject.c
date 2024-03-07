@@ -525,25 +525,21 @@ set_dealloc(PySetObject *so)
 }
 
 static PyObject *
-set_repr(PySetObject *so)
+set_repr_lock_held(PySetObject *so)
 {
     PyObject *result=NULL, *keys, *listrepr, *tmp;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
     int status = Py_ReprEnter((PyObject*)so);
 
     if (status != 0) {
-        if (status < 0) {
-            goto done;
-        }
-        result = PyUnicode_FromFormat("%s(...)", Py_TYPE(so)->tp_name);
-        goto done;
+        if (status < 0)
+            return NULL;
+        return PyUnicode_FromFormat("%s(...)", Py_TYPE(so)->tp_name);
     }
 
     /* shortcut for the empty set */
     if (!so->used) {
-        result = PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
-        goto done;
+        Py_ReprLeave((PyObject*)so);
+        return PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
     }
 
     keys = PySequence_List((PyObject *)so);
@@ -570,6 +566,15 @@ set_repr(PySetObject *so)
     Py_DECREF(listrepr);
 done:
     Py_ReprLeave((PyObject*)so);
+    return result;
+}
+
+static PyObject *
+set_repr(PySetObject *so)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(so);
+    result = set_repr_lock_held(so);
     Py_END_CRITICAL_SECTION();
     return result;
 }
