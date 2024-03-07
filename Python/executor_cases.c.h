@@ -3880,8 +3880,8 @@
         }
 
         case _CHECK_FUNCTION: {
-            PyObject *func = (PyObject *)CURRENT_OPERAND();
-            if (frame->f_funcobj != func) goto deoptimize;
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            if (frame->f_funcobj->func_version != func_version) goto deoptimize;
             break;
         }
 

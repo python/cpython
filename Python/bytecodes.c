@@ -4120,8 +4120,8 @@ dummy_func(
             null = NULL;
         }
 
-        tier2 op(_CHECK_FUNCTION, (func/4 -- )) {
-            DEOPT_IF(frame->f_funcobj != func);
+        tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
+            DEOPT_IF(frame->f_funcobj->func_version != func_version);
         }
 
         /* Internal -- for testing executors */
