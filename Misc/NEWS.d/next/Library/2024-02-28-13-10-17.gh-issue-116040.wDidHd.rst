@@ -1,0 +1,1 @@
+[Enum] fix by-value calls when second value is falsey; e.g. Cardinal(1, 0)
