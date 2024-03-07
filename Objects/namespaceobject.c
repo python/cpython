@@ -58,13 +58,12 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
                 return -1;
             }
         }
-        if (!PyArg_ValidateKeywordArguments(dict) ||
-            PyDict_Update(ns->ns_dict, dict) < 0)
-        {
-            Py_DECREF(dict);
+        int err = (!PyArg_ValidateKeywordArguments(dict) ||
+                   PyDict_Update(ns->ns_dict, dict) < 0);
+        Py_DECREF(dict);
+        if {err) {
             return -1;
         }
-        Py_DECREF(dict);
     }
     if (kwds == NULL) {
         return 0;
