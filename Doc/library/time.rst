@@ -381,15 +381,14 @@ Functions
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
 
-   .. versionchanged:: 3.11
-      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
-      used if available. On Windows, a waitable timer is now used.
-
    .. versionchanged:: 3.5
       The function now sleeps at least *secs* even if the sleep is interrupted
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.11
+      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
+      used if available. On Windows, a waitable timer is now used.
 
 .. index::
    single: % (percent); datetime format
