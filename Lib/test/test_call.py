@@ -5,6 +5,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testlimitedcapi
+except ImportError:
+    _testlimitedcapi = None
 import struct
 import collections
 import itertools
@@ -837,12 +841,12 @@ class TestPEP590(unittest.TestCase):
     @requires_limited_api
     def test_vectorcall_limited_incoming(self):
         from _testcapi import pyobject_vectorcall
-        obj = _testcapi.LimitedVectorCallClass()
+        obj = _testlimitedcapi.LimitedVectorCallClass()
         self.assertEqual(pyobject_vectorcall(obj, (), ()), "vectorcall called")
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing(self):
-        from _testcapi import call_vectorcall
+        from _testlimitedcapi import call_vectorcall
 
         args_captured = []
         kwargs_captured = []
@@ -858,7 +862,7 @@ class TestPEP590(unittest.TestCase):
 
     @requires_limited_api
     def test_vectorcall_limited_outgoing_method(self):
-        from _testcapi import call_vectorcall_method
+        from _testlimitedcapi import call_vectorcall_method
 
         args_captured = []
         kwargs_captured = []

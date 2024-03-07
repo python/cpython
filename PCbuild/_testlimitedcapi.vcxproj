@@ -67,8 +67,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{6901D91C-6E48-4BB7-9FEC-700C8131DF1D}</ProjectGuid>
-    <RootNamespace>_testcapi</RootNamespace>
+    <ProjectGuid>{7467D86C-1CEB-4CB9-B65E-E9A54ABDC933}</ProjectGuid>
+    <RootNamespace>_testlimitedcapi</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
@@ -93,39 +93,9 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_testcapimodule.c" />
-    <ClCompile Include="..\Modules\_testcapi\getargs.c" />
-    <ClCompile Include="..\Modules\_testcapi\vectorcall.c" />
-    <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
-    <ClCompile Include="..\Modules\_testcapi\abstract.c" />
-    <ClCompile Include="..\Modules\_testcapi\bytearray.c" />
-    <ClCompile Include="..\Modules\_testcapi\bytes.c" />
-    <ClCompile Include="..\Modules\_testcapi\unicode.c" />
-    <ClCompile Include="..\Modules\_testcapi\dict.c" />
-    <ClCompile Include="..\Modules\_testcapi\set.c" />
-    <ClCompile Include="..\Modules\_testcapi\list.c" />
-    <ClCompile Include="..\Modules\_testcapi\tuple.c" />
-    <ClCompile Include="..\Modules\_testcapi\datetime.c" />
-    <ClCompile Include="..\Modules\_testcapi\docstring.c" />
-    <ClCompile Include="..\Modules\_testcapi\mem.c" />
-    <ClCompile Include="..\Modules\_testcapi\watchers.c" />
-    <ClCompile Include="..\Modules\_testcapi\float.c" />
-    <ClCompile Include="..\Modules\_testcapi\complex.c" />
-    <ClCompile Include="..\Modules\_testcapi\long.c" />
-    <ClCompile Include="..\Modules\_testcapi\numbers.c" />
-    <ClCompile Include="..\Modules\_testcapi\structmember.c" />
-    <ClCompile Include="..\Modules\_testcapi\exceptions.c" />
-    <ClCompile Include="..\Modules\_testcapi\code.c" />
-    <ClCompile Include="..\Modules\_testcapi\buffer.c" />
-    <ClCompile Include="..\Modules\_testcapi\pyatomic.c" />
-    <ClCompile Include="..\Modules\_testcapi\pyos.c" />
-    <ClCompile Include="..\Modules\_testcapi\file.c" />
-    <ClCompile Include="..\Modules\_testcapi\codec.c" />
-    <ClCompile Include="..\Modules\_testcapi\sys.c" />
-    <ClCompile Include="..\Modules\_testcapi\hash.c" />
-    <ClCompile Include="..\Modules\_testcapi\time.c" />
-    <ClCompile Include="..\Modules\_testcapi\immortal.c" />
-    <ClCompile Include="..\Modules\_testcapi\gc.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

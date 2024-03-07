@@ -1153,8 +1153,9 @@ def refcount_test(test):
 def requires_limited_api(test):
     try:
         import _testcapi
+        import _testlimitedcapi
     except ImportError:
-        return unittest.skip('needs _testcapi module')(test)
+        return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
 
 def requires_specialization(test):

@@ -131,29 +131,31 @@ xxlimited_35
 The following sub-projects are for individual modules of the standard
 library which are implemented in C; each one builds a DLL (renamed to
 .pyd) of the same name as the project:
-_asyncio
-_ctypes
-_ctypes_test
-_zoneinfo
-_decimal
-_elementtree
-_hashlib
-_multiprocessing
-_overlapped
-_socket
-_testbuffer
-_testcapi
-_testclinic
-_testclinic_limited
-_testconsole
-_testimportmultiple
-_testmultiphase
-_testsinglephase
-_tkinter
-pyexpat
-select
-unicodedata
-winsound
+ * _asyncio
+ * _ctypes
+ * _ctypes_test
+ * _zoneinfo
+ * _decimal
+ * _elementtree
+ * _hashlib
+ * _multiprocessing
+ * _overlapped
+ * _socket
+ * _testbuffer
+ * _testcapi
+ * _testlimitedcapi
+ * _testinternalcapi
+ * _testclinic
+ * _testclinic_limited
+ * _testconsole
+ * _testimportmultiple
+ * _testmultiphase
+ * _testsinglephase
+ * _tkinter
+ * pyexpat
+ * select
+ * unicodedata
+ * winsound
 
 The following Python-controlled sub-projects wrap external projects.
 Note that these external libraries are not necessary for a working
@@ -309,6 +311,8 @@ _testclinic_limited extension, the file Modules/_testclinic_limited.c:
 * In PCbuild/, copy _testclinic.vcxproj to _testclinic_limited.vcxproj,
   replace RootNamespace value with `_testclinic_limited`, replace
   `_asyncio.c` with `_testclinic_limited.c`.
+* In PCbuild/, copy _testclinic.vcxproj.filters to
+  _testclinic_limited.vcxproj.filters, edit the list of files in the new file.
 * Open Visual Studio, open PCbuild\pcbuild.sln solution, add the
   PCbuild\_testclinic_limited.vcxproj project to the solution ("add existing
   project).

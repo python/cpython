@@ -47,6 +47,7 @@ except ModuleNotFoundError:
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 
+import _testlimitedcapi
 import _testinternalcapi
 
 
@@ -1124,7 +1125,7 @@ class TestHeapTypeRelative(unittest.TestCase):
         # Test subclassing using "relative" basicsize, see PEP 697
         def check(extra_base_size, extra_size):
             Base, Sub, instance, data_ptr, data_offset, data_size = (
-                _testcapi.make_sized_heaptypes(
+                _testlimitedcapi.make_sized_heaptypes(
                     extra_base_size, -extra_size))
 
             # no alignment shenanigans when inheriting directly
@@ -1152,11 +1153,11 @@ class TestHeapTypeRelative(unittest.TestCase):
 
                 # we don't reserve (requested + alignment) or more data
                 self.assertLess(data_size - extra_size,
-                                _testcapi.ALIGNOF_MAX_ALIGN_T)
+                                _testlimitedcapi.ALIGNOF_MAX_ALIGN_T)
 
             # The offsets/sizes we calculated should be aligned.
-            self.assertEqual(data_offset % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
-            self.assertEqual(data_size % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_offset % _testlimitedcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_size % _testlimitedcapi.ALIGNOF_MAX_ALIGN_T, 0)
 
         sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
                         object.__basicsize__,
@@ -1182,7 +1183,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                         object.__basicsize__+1})
         for extra_size in sizes:
             with self.subTest(extra_size=extra_size):
-                Sub = _testcapi.subclass_var_heaptype(
+                Sub = _testlimitedcapi.subclass_var_heaptype(
                     _testcapi.HeapCCollection, -extra_size, 0, 0)
                 collection = Sub(1, 2, 3)
                 collection.set_data_to_3s()
@@ -1196,7 +1197,7 @@ class TestHeapTypeRelative(unittest.TestCase):
         with self.assertRaises(SystemError,
                                msg="Cannot extend variable-size class without "
                                + "Py_TPFLAGS_ITEMS_AT_END"):
-            _testcapi.subclass_heaptype(int, -8, 0)
+            _testlimitedcapi.subclass_heaptype(int, -8, 0)
 
     def test_heaptype_relative_members(self):
         """Test HeapCCollection subclasses work properly"""
@@ -1209,7 +1210,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                 for offset in sizes:
                     with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size, offset=offset):
                         if offset < extra_size:
-                            Sub = _testcapi.make_heaptype_with_member(
+                            Sub = _testlimitedcapi.make_heaptype_with_member(
                                 extra_base_size, -extra_size, offset, True)
                             Base = Sub.mro()[1]
                             instance = Sub()
@@ -1228,29 +1229,29 @@ class TestHeapTypeRelative(unittest.TestCase):
                                 instance.set_memb_relative(0)
                         else:
                             with self.assertRaises(SystemError):
-                                Sub = _testcapi.make_heaptype_with_member(
+                                Sub = _testlimitedcapi.make_heaptype_with_member(
                                     extra_base_size, -extra_size, offset, True)
                         with self.assertRaises(SystemError):
-                            Sub = _testcapi.make_heaptype_with_member(
+                            Sub = _testlimitedcapi.make_heaptype_with_member(
                                 extra_base_size, extra_size, offset, True)
                 with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size):
                     with self.assertRaises(SystemError):
-                        Sub = _testcapi.make_heaptype_with_member(
+                        Sub = _testlimitedcapi.make_heaptype_with_member(
                             extra_base_size, -extra_size, -1, True)
 
     def test_heaptype_relative_members_errors(self):
         with self.assertRaisesRegex(
                 SystemError,
                 r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
-            _testcapi.make_heaptype_with_member(0, 1234, 0, True)
+            _testlimitedcapi.make_heaptype_with_member(0, 1234, 0, True)
         with self.assertRaisesRegex(
                 SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
-            _testcapi.make_heaptype_with_member(0, -8, 1234, True)
+            _testlimitedcapi.make_heaptype_with_member(0, -8, 1234, True)
         with self.assertRaisesRegex(
                 SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
-            _testcapi.make_heaptype_with_member(0, -8, -1, True)
+            _testlimitedcapi.make_heaptype_with_member(0, -8, -1, True)
 
-        Sub = _testcapi.make_heaptype_with_member(0, -8, 0, True)
+        Sub = _testlimitedcapi.make_heaptype_with_member(0, -8, 0, True)
         instance = Sub()
         with self.assertRaisesRegex(
                 SystemError, r"PyMember_GetOne used with Py_RELATIVE_OFFSET"):
@@ -2264,10 +2265,19 @@ class TestThreadState(unittest.TestCase):
         _testcapi.test_current_tstate_matches()
 
 
+def get_test_funcs(mod, exclude_prefix=None):
+    funcs = {}
+    for name in dir(mod):
+        if not name.startswith('test_'):
+            continue
+        if exclude_prefix is not None and name.startswith(exclude_prefix):
+            continue
+        funcs[name] = getattr(mod, name)
+    return funcs
+
+
 class Test_testcapi(unittest.TestCase):
-    locals().update((name, getattr(_testcapi, name))
-                    for name in dir(_testcapi)
-                    if name.startswith('test_'))
+    locals().update(get_test_funcs(_testcapi))
 
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
@@ -2278,11 +2288,13 @@ class Test_testcapi(unittest.TestCase):
         self.assertEqual(_testcapi.Py_Version, sys.hexversion)
 
 
+class Test_testlimitedcapi(unittest.TestCase):
+    locals().update(get_test_funcs(_testlimitedcapi))
+
+
 class Test_testinternalcapi(unittest.TestCase):
-    locals().update((name, getattr(_testinternalcapi, name))
-                    for name in dir(_testinternalcapi)
-                    if name.startswith('test_')
-                    and not name.startswith('test_lock_'))
+    locals().update(get_test_funcs(_testinternalcapi,
+                                   exclude_prefix='test_lock_'))
 
 
 @threading_helper.requires_working_threading()
