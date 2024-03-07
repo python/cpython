@@ -2286,7 +2286,6 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, uint32_t
     PyInterpreterState *interp = tstate->interp;
 
     uint8_t tools = state->active;
-if (args[1]) _PyObject_Dump(args[1]);
     assert(args[1] == NULL);
     args[1] = codelike;
     PyObject *offset_obj = PyLong_FromLong(offset);
@@ -2317,7 +2316,7 @@ if (args[1]) _PyObject_Dump(args[1]);
             /* DISABLE */
             if (!PY_MONITORING_IS_INSTRUMENTED_EVENT(event)) {
                 PyErr_Format(PyExc_ValueError,
-                              "Cannot disable %s events. Callback removed.",
+                             "Cannot disable %s events. Callback removed.",
                              event_names[event]);
                 /* Clear tool to prevent infinite loop */
                 Py_CLEAR(interp->monitoring_callables[tool][event]);
@@ -2325,7 +2324,7 @@ if (args[1]) _PyObject_Dump(args[1]);
                 break;
             }
             else {
-                state->opaque &= ~(1 << tool);
+                state->active &= ~(1 << tool);
             }
         }
     }

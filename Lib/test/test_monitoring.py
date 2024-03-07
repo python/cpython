@@ -1899,47 +1899,51 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         for offset, (event, function, *args) in enumerate(self.cases):
             with self.subTest(event):
                 output = (function.__name__, offset, *args)
-                self.results = []
                 # Register TEST_TOOL and TEST_TOOL2, but activate only TEST_TOOL
                 sys.monitoring.register_callback(TEST_TOOL, event, self.cb)
                 sys.monitoring.register_callback(TEST_TOOL2, event, self.cb2)
                 active = 1 << TEST_TOOL
 
                 try:
+                    self.results = []
                     # fire one of each event type
                     for offset, (_, function, *args) in enumerate(self.cases):
-                        function(function.__name__, offset, active, *args)
+                        res = function(function.__name__, offset, active, *args)
+                        self.assertEqual(res, active)
 
                     self.assertEqual(self.results, [('cb',) + output])
                 finally:
                     sys.monitoring.register_callback(TEST_TOOL, event, None)
                     sys.monitoring.register_callback(TEST_TOOL2, event, None)
 
-    @unittest.skip("disable not implemented yet")
     def test_disable_event(self):
-        for offset, (event, function, *args) in enumerate(self.cases):
-            with self.subTest(event):
-                output = (function.__name__, offset, *args)
-                self.results = []
-                # Register TEST_TOOL and TEST_TOOL2, but activate only TEST_TOOL
-                def cb(*args):
-                    self.cb(*args)
-                    return sys.monitoring.DISABLE
+        events = sys.monitoring.events
+        cannot_disable = { events.PY_THROW, events.RAISE, events.RERAISE,
+                           events.EXCEPTION_HANDLED, events.PY_UNWIND }
 
-                sys.monitoring.register_callback(TEST_TOOL, event, cb)
+        def cb_disable(*args):
+            self.cb(*args)
+            return sys.monitoring.DISABLE
+
+        for offset, (event, function, *args) in enumerate(self.cases):
+            with self.subTest(function.__name__):
+                output = (function.__name__, offset, *args)
+
+                sys.monitoring.register_callback(TEST_TOOL, event, cb_disable)
                 active = 1 << TEST_TOOL
 
                 try:
                     # fire one of each event type
-                    for offset, (_, function, *args) in enumerate(self.cases):
-                        function(function.__name__, offset, active, *args)
-                    self.assertEqual(self.results, [('cb',) + output])
-
-                    # fire again - callbacks should be disabled now
                     self.results = []
-                    for offset, (_, function, *args) in enumerate(self.cases):
-                        function(function.__name__, offset, active, *args)
-                    self.assertEqual(self.results, [])
+                    for offset, (f_event, function, *args) in enumerate(self.cases):
+                        if f_event == event and f_event in cannot_disable:
+                            with self.assertRaises(ValueError):
+                                res = function(function.__name__, offset, active, *args)
+                            self.assertEqual(res, active)
+                        else:
+                            res = function(function.__name__, offset, active, *args)
+                            self.assertEqual(res, 0 if f_event == event else active)
+                    self.assertEqual(self.results, [('cb',) + output])
 
                 finally:
                     sys.monitoring.register_callback(TEST_TOOL, event, None)
