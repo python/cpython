@@ -604,8 +604,8 @@ Miscellaneous options
    .. versionchanged:: 3.13
       Added the ``-X cpu_count`` and ``-X presite`` options.
 
-   .. versionadded:: 3.13
-      The ``-X gil`` option.
+   .. versionchanged:: 3.13
+      Added the ``-X gil`` option.
 
 .. _using-on-controlling-color:
 
