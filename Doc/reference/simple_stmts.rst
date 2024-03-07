@@ -664,8 +664,7 @@ and information about handling exceptions is in section :ref:`try`.
 .. versionchanged:: 3.3
     :const:`None` is now permitted as ``Y`` in ``raise X from Y``.
 
-.. versionadded:: 3.3
-    The :attr:`~BaseException.__suppress_context__` attribute to suppress
+    Added the :attr:`~BaseException.__suppress_context__` attribute to suppress
     automatic display of the exception context.
 
 .. versionchanged:: 3.11

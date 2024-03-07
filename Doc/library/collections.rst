@@ -343,7 +343,7 @@ superset relationships: ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=``.
 All of those tests treat missing elements as having zero counts so that
 ``Counter(a=1) == Counter(a=1, b=0)`` returns true.
 
-.. versionadded:: 3.10
+.. versionchanged:: 3.10
    Rich comparison operations were added.
 
 .. versionchanged:: 3.10

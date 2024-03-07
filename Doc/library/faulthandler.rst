@@ -118,11 +118,11 @@ Dumping the tracebacks after a timeout
 
    This function is implemented using a watchdog thread.
 
-   .. versionchanged:: 3.7
-      This function is now always available.
-
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
+
+   .. versionchanged:: 3.7
+      This function is now always available.
 
 .. function:: cancel_dump_traceback_later()
 

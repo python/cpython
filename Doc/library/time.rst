@@ -383,15 +383,14 @@ Functions
 
    .. audit-event:: time.sleep secs
 
-   .. versionchanged:: 3.11
-      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
-      used if available. On Windows, a waitable timer is now used.
-
    .. versionchanged:: 3.5
       The function now sleeps at least *secs* even if the sleep is interrupted
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.11
+      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
+      used if available. On Windows, a waitable timer is now used.
 
    .. versionchanged:: 3.13
       Raises an auditing event.
