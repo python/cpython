@@ -503,7 +503,7 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     return release, versioninfo, machine
 
 def _java_getprop(name, default):
-
+    """This private helper is deprecated in 3.13 and will be removed in 3.15"""
     from java.lang import System
     try:
         value = System.getProperty(name)
@@ -525,6 +525,8 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
         given as parameters (which all default to '').
 
     """
+    import warnings
+    warnings._deprecated('java_ver', remove=(3, 15))
     # Import the needed APIs
     try:
         import java.lang
