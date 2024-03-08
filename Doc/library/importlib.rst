@@ -1241,6 +1241,74 @@ find and load modules.
     and how the module's :attr:`__file__` is populated.
 
 
+.. class:: AppleFrameworkLoader(fullname, dylib_path, parent_paths=None)
+
+   A specialization of :class:`importlib.machinery.ExtensionFileLoader` that
+   is able to load extension modules in Framework format.
+
+   For compatibility with the iOS App Store, *all* binary modules in an iOS app
+   must be ``.dylib objects``, contained in a framework with appropriate
+   metadata, stored in the ``Frameworks`` folder of the packaged app. There can
+   be only a single binary per framework, and there can be no executable binary
+   material outside the Frameworks folder.
+
+   If you're trying to run ``from foo.bar import _whiz``, and ``_whiz`` is
+   implemented with the binary module ``foo/bar/_whiz.abi3.dylib`` (or any
+   other ABI .dylib extension), this loader will look for
+   ``{sys.executable}/Frameworks/foo.bar._whiz.framework/_whiz.abi3.dylib``
+   (forming the package name by taking the full import path of the library,
+   and replacing ``/`` with ``.``).
+
+   However, this loader will re-write the ``__file__`` attribute of the
+   ``_whiz`` module will report as the original location inside the ``foo/bar``
+   subdirectory. This so that code that depends on walking directory trees will
+   continue to work as expected based on the *original* file location.
+
+   The *fullname* argument specifies the name of the module the loader is to
+   support. The *dylib_path* argument is the path to the framework's ``.dylib``
+   file. The ``parent_paths`` is the path or paths that was searched to find
+   the extension module.
+
+   .. versionadded:: 3.13
+
+   .. availability:: iOS.
+
+   .. attribute:: fullname
+
+      Name of the module the loader supports.
+
+   .. attribute:: dylib_path
+
+      Path to the ``.dylib`` file in the framework.
+
+   .. attribute:: parent_paths
+
+      The parent paths that were originally searched to find the module.
+
+.. class:: AppleFrameworkFinder(framework_path)
+
+   An extension module finder which is able to load extension modules packaged
+   as frameworks in an iOS app.
+
+   See the documentation for :class:`AppleFrameworkLoader` for details on the
+   requirements of binary extension modules on iOS.
+
+   The *framework_path* argument is the Frameworks directory for the app.
+
+   .. versionadded:: 3.13
+
+   .. availability:: iOS.
+
+   .. attribute:: framework_path
+
+      The path the finder will search for frameworks.
+
+   .. method:: find_spec(fullname, paths, target=None)
+
+      Attempt to find the spec to handle ``fullname``, imported from one
+      of the filesystem locations described by ``paths``.
+
+
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
 
