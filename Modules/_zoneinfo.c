@@ -166,8 +166,10 @@ free_tzrule(_tzrule *tzrule);
 static PyObject *
 load_timedelta(zoneinfo_state *state, long seconds);
 
+static PyDateTime_DateTime *
+as_local_datetime(PyObject *dt);
 static int
-get_local_timestamp(PyObject *dt, int64_t *local_ts);
+get_local_timestamp(PyDateTime_DateTime *dt_dt, int64_t *local_ts);
 static _ttinfo *
 find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt);
 
@@ -623,7 +625,13 @@ zoneinfo_fromutc(PyObject *obj_self, PyObject *dt)
     PyZoneInfo_ZoneInfo *self = (PyZoneInfo_ZoneInfo *)obj_self;
 
     int64_t timestamp;
-    if (get_local_timestamp(dt, &timestamp)) {
+    PyDateTime_DateTime *local_dt = as_local_datetime(dt);
+    if (local_dt == NULL) {
+        return NULL;
+    }
+    int failed = get_local_timestamp(local_dt, &timestamp);
+    Py_DECREF(local_dt);
+    if (failed) {
         return NULL;
     }
     size_t num_trans = self->num_transitions;
@@ -2189,8 +2197,14 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         }
     }
 
+    PyDateTime_DateTime *local_dt = as_local_datetime(dt);
+    if (local_dt == NULL) {
+        return NULL;
+    }
     int64_t ts;
-    if (get_local_timestamp(dt, &ts)) {
+    int failed = get_local_timestamp(local_dt, &ts);
+    Py_DECREF(local_dt);
+    if (failed) {
         return NULL;
     }
 
@@ -2234,6 +2248,123 @@ ymd_to_ord(int y, int m, int d)
     return days_before_year + yearday + d;
 }
 
+/* Create a PyDateTime_DateTime object from a PyObject. */
+static PyDateTime_DateTime *
+as_local_datetime(PyObject *dt)
+{
+    if (PyDateTime_CheckExact(dt)) {
+        Py_INCREF(dt);
+        return (PyDateTime_DateTime *) dt;
+    }
+
+    int year, month, day;
+    int hour, minute, second;
+    unsigned char fold;
+
+    PyObject *num = PyObject_GetAttrString(dt, "year");
+    if (num == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.year missing");
+        return NULL;
+    }
+    year = PyLong_AsLong(num);
+    Py_DECREF(num);
+    if (year == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.year missing");
+        return NULL;
+    }
+
+    num = PyObject_GetAttrString(dt, "month");
+    if (num == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.month missing");
+        return NULL;
+    }
+    month = PyLong_AsLong(num);
+    Py_DECREF(num);
+    if (month == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.month missing");
+        return NULL;
+    }
+
+    num = PyObject_GetAttrString(dt, "day");
+    if (num == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.day missing");
+        return NULL;
+    }
+    day = PyLong_AsLong(num);
+    Py_DECREF(num);
+    if (day == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.day missing");
+        return NULL;
+    }
+
+    num = PyObject_GetAttrString(dt, "hour");
+    if (num == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.hour missing");
+        return NULL;
+    }
+    hour = PyLong_AsLong(num);
+    Py_DECREF(num);
+    if (hour == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.hour missing");
+        return NULL;
+    }
+
+    num = PyObject_GetAttrString(dt, "minute");
+    if (num == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.minute missing");
+        return NULL;
+    }
+    minute = PyLong_AsLong(num);
+    Py_DECREF(num);
+    if (minute == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.minute missing");
+        return NULL;
+    }
+
+    num = PyObject_GetAttrString(dt, "second");
+    if (num == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.second missing");
+        return NULL;
+    }
+    second = PyLong_AsLong(num);
+    Py_DECREF(num);
+    if (second == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.second missing");
+        return NULL;
+    }
+
+    num = PyObject_GetAttrString(dt, "fold");
+    if (num == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.fold missing");
+        return NULL;
+    }
+    int tmp = PyLong_AsLong(num);
+    Py_DECREF(num);
+    if (tmp != 0 && tmp != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_local_datetime: dt.fold can only be 0 or 1");
+        return NULL;
+    }
+    fold = tmp;
+
+    return (PyDateTime_DateTime *) PyDateTime_FromDateAndTimeAndFold(
+        year, month, day, hour, minute, second, 0, fold
+    );
+}
+
 /* Calculate the number of seconds since 1970-01-01 in local time.
  *
  * This gets a datetime in the same "units" as self->trans_list_wall so that we
@@ -2241,64 +2372,17 @@ ymd_to_ord(int y, int m, int d)
  * comment above ts_to_local for more information.
  * */
 static int
-get_local_timestamp(PyObject *dt, int64_t *local_ts)
+get_local_timestamp(PyDateTime_DateTime *dt_dt, int64_t *local_ts)
 {
     assert(local_ts != NULL);
 
-    int hour, minute, second;
-    int ord;
-    if (PyDateTime_CheckExact(dt)) {
-        int y = PyDateTime_GET_YEAR(dt);
-        int m = PyDateTime_GET_MONTH(dt);
-        int d = PyDateTime_GET_DAY(dt);
-        hour = PyDateTime_DATE_GET_HOUR(dt);
-        minute = PyDateTime_DATE_GET_MINUTE(dt);
-        second = PyDateTime_DATE_GET_SECOND(dt);
-
-        ord = ymd_to_ord(y, m, d);
-    }
-    else {
-        PyObject *num = PyObject_CallMethod(dt, "toordinal", NULL);
-        if (num == NULL) {
-            return -1;
-        }
-
-        ord = PyLong_AsLong(num);
-        Py_DECREF(num);
-        if (ord == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-
-        num = PyObject_GetAttrString(dt, "hour");
-        if (num == NULL) {
-            return -1;
-        }
-        hour = PyLong_AsLong(num);
-        Py_DECREF(num);
-        if (hour == -1) {
-            return -1;
-        }
-
-        num = PyObject_GetAttrString(dt, "minute");
-        if (num == NULL) {
-            return -1;
-        }
-        minute = PyLong_AsLong(num);
-        Py_DECREF(num);
-        if (minute == -1) {
-            return -1;
-        }
-
-        num = PyObject_GetAttrString(dt, "second");
-        if (num == NULL) {
-            return -1;
-        }
-        second = PyLong_AsLong(num);
-        Py_DECREF(num);
-        if (second == -1) {
-            return -1;
-        }
-    }
+    int year = PyDateTime_GET_YEAR(dt_dt);
+    int month = PyDateTime_GET_MONTH(dt_dt);
+    int day = PyDateTime_GET_DAY(dt_dt);
+    int hour = PyDateTime_DATE_GET_HOUR(dt_dt);
+    int minute = PyDateTime_DATE_GET_MINUTE(dt_dt);
+    int second = PyDateTime_DATE_GET_SECOND(dt_dt);
+    int ord = ymd_to_ord(year, month, day);
 
     *local_ts = (int64_t)(ord - EPOCHORDINAL) * 86400L +
                 (int64_t)(hour * 3600L + minute * 60 + second);
