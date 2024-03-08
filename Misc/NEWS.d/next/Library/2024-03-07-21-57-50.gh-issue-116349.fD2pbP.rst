@@ -1,0 +1,3 @@
+:func:`platform.java_ver` is deprecated and will be removed in 3.15.
+It was largely untested, had a confusing API,
+and was only useful for Jython support.

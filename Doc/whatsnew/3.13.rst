@@ -814,6 +814,10 @@ Deprecated
 * The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
   is deprecated and scheduled for removal in Python 3.16.
 
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -972,6 +976,11 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.16
 ------------------------------

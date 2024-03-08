@@ -318,9 +318,13 @@ class PlatformTest(unittest.TestCase):
                     platform._uname_cache = None
 
     def test_java_ver(self):
-        res = platform.java_ver()
-        if sys.platform == 'java':  # Is never actually checked in CI
-            self.assertTrue(all(res))
+        import re
+        msg = re.escape(
+            "'java_ver' is deprecated and slated for removal in Python 3.15"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            res = platform.java_ver()
+        self.assertEqual(len(res), 4)
 
     def test_win32_ver(self):
         res = platform.win32_ver()
