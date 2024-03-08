@@ -4847,17 +4847,6 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         blocking = (timeout != 0.0)
         self.assertEqual(sock.getblocking(), blocking)
 
-        if fcntl is not None:
-            # When a Python socket has a non-zero timeout, it's switched
-            # internally to a non-blocking mode. Later, sock.sendall(),
-            # sock.recv(), and other socket operations use a select() call and
-            # handle EWOULDBLOCK/EGAIN on all socket operations. That's how
-            # timeouts are enforced.
-            fd_blocking = (timeout is None)
-
-            flag = fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK)
-            self.assertEqual(not bool(flag & os.O_NONBLOCK), fd_blocking)
-
     def testSetBlocking(self):
         # Test setblocking() and settimeout() methods
         self.serv.setblocking(True)
@@ -6071,7 +6060,7 @@ class NonblockConstantTest(unittest.TestCase):
                 self.assertTrue(s.getblocking())
         else:
             self.assertEqual(s.type, socket.SOCK_STREAM)
-            self.assertEqual(s.gettimeout(), None)
+            self.assertEqual(s.gettimeout(), timeout)
             self.assertFalse(
                 fcntl.fcntl(s, fcntl.F_GETFL, os.O_NONBLOCK) & os.O_NONBLOCK)
             self.assertTrue(s.getblocking())
@@ -6084,15 +6073,15 @@ class NonblockConstantTest(unittest.TestCase):
                            socket.SOCK_STREAM | socket.SOCK_NONBLOCK) as s:
             self.checkNonblock(s)
             s.setblocking(True)
-            self.checkNonblock(s, nonblock=False)
+            self.checkNonblock(s, nonblock=False, timeout=None)
             s.setblocking(False)
             self.checkNonblock(s)
             s.settimeout(None)
-            self.checkNonblock(s, nonblock=False)
+            self.checkNonblock(s, nonblock=False, timeout=None)
             s.settimeout(2.0)
-            self.checkNonblock(s, timeout=2.0)
+            self.checkNonblock(s, nonblock=False, timeout=2.0)
             s.setblocking(True)
-            self.checkNonblock(s, nonblock=False)
+            self.checkNonblock(s, nonblock=False, timeout=None)
         # defaulttimeout
         t = socket.getdefaulttimeout()
         socket.setdefaulttimeout(0.0)
@@ -6100,13 +6089,13 @@ class NonblockConstantTest(unittest.TestCase):
             self.checkNonblock(s)
         socket.setdefaulttimeout(None)
         with socket.socket() as s:
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False, timeout=None)
         socket.setdefaulttimeout(2.0)
         with socket.socket() as s:
-            self.checkNonblock(s, timeout=2.0)
+            self.checkNonblock(s, nonblock=False, timeout=2.0)
         socket.setdefaulttimeout(None)
         with socket.socket() as s:
-            self.checkNonblock(s, False)
+            self.checkNonblock(s, nonblock=False, timeout=None)
         socket.setdefaulttimeout(t)
 
 
