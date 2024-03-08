@@ -370,10 +370,7 @@ def win32_is_iot():
 
 def win32_edition():
     try:
-        try:
-            import winreg
-        except ImportError:
-            import _winreg as winreg
+        import winreg
     except ImportError:
         pass
     else:
@@ -432,10 +429,7 @@ def _win32_ver(version, csd, ptype):
                 csd = 'SP' + csd[13:]
 
     try:
-        try:
-            import winreg
-        except ImportError:
-            import _winreg as winreg
+        import winreg
     except ImportError:
         pass
     else:
