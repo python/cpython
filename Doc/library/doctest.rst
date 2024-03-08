@@ -136,6 +136,9 @@ examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
 :file:`Lib/test/test_doctest/test_doctest.py`.
 
+.. versionadded:: 3.13
+   Doctest will parse markdown files and accept codeblock delimiters in
+   docstrings.
 
 .. _doctest-simple-testmod:
 
