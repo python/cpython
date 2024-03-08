@@ -1,0 +1,2 @@
+Ensure that :func:`http.client.parse_headers` uses the HTTP policy which now
+returns RFC 7230 compliant header values. Patch by Ben Tasker.
