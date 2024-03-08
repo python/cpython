@@ -794,6 +794,9 @@ _get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
     if (rc <= 0) {
         return rc;
     }
+    // If origin is not a location, or doesn't exist, or is not a str), we could consider falling
+    // back to module.__file__. But the cases in which module.__file__ is not __spec__.origin
+    // are cases in which we probably shouldn't be guessing.
     rc = PyObject_IsTrue(has_location);
     Py_DECREF(has_location);
     if (rc <= 0) {
