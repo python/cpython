@@ -317,18 +317,24 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #                       if defined(Py_GIL_DISABLED)
 #                       if defined(_DEBUG)
 #                               pragma comment(lib,"python313t_d.lib")
+#                               define Py_DLL_NAME "python313t_d.dll"
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3t.lib")
+#                               define Py_DLL_NAME "python3t.dll"
 #                       else
 #                               pragma comment(lib,"python313t.lib")
+#                               define Py_DLL_NAME "python313t.dll"
 #                       endif /* _DEBUG */
 #                       else /* Py_GIL_DISABLED */
 #                       if defined(_DEBUG)
 #                               pragma comment(lib,"python313_d.lib")
+#                               define Py_DLL_NAME "python313_d.dll"
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
+#                               define Py_DLL_NAME "python3.dll"
 #                       else
 #                               pragma comment(lib,"python313.lib")
+#                               define Py_DLL_NAME "python313.dll"
 #                       endif /* _DEBUG */
 #                       endif /* Py_GIL_DISABLED */
 #               endif /* _MSC_VER */

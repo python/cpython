@@ -19,7 +19,7 @@
 #include <assert.h>
 
 #define MS_WINDOWS
-#include "patchlevel.h"
+#include <Python.h>
 
 #define MAXLEN PATHCCH_MAX_CCH
 #define MSGSIZE 1024
@@ -2172,80 +2172,166 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
 
 
 /******************************************************************************\
- ***                           INSTALL ON DEMAND                            ***
+ ***                       EMBEDDED PYTHON MANAGEMENT                       ***
 \******************************************************************************/
 
-struct StoreSearchInfo {
-    // The tag a user is looking for
-    const wchar_t *tag;
-    // The Store ID for a package if it can be installed from the Microsoft
-    // Store. These are obtained from the dashboard at
-    // https://partner.microsoft.com/dashboard
-    const wchar_t *storeId;
-};
+typedef PyObject *(*PPyObject_CallMethod)(PyObject *obj, const char *method, const char *fmt, ...);
+typedef void (*PPyErr_Clear)();
 
-
-struct StoreSearchInfo STORE_SEARCH[] = {
-    { L"3", /* 3.12 */ L"9NCVDN91XZQP" },
-    { L"3.13", L"9PNRBTZXMB4Z" },
-    { L"3.12", L"9NCVDN91XZQP" },
-    { L"3.11", L"9NRWMJP3717K" },
-    { L"3.10", L"9PJPW5LDXLZ5" },
-    { L"3.9", L"9P7QFQMJRFP7" },
-    { L"3.8", L"9MSSZTT1N39L" },
-    { NULL, NULL }
-};
-
+typedef struct {
+    HMODULE _pydll;
+    PyObject *module;
+    PPyObject_CallMethod PyObject_CallMethod;
+    PPyErr_Clear PyErr_Clear;
+} PythonApi;
 
 int
-_installEnvironment(const wchar_t *command, const wchar_t *arguments)
+initPython(PythonApi *api)
 {
-    SHELLEXECUTEINFOW siw = {
-        sizeof(SHELLEXECUTEINFOW),
-        SEE_MASK_NOASYNC | SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NO_CONSOLE,
-        NULL, NULL,
-        command, arguments, NULL,
-        SW_SHOWNORMAL
-    };
+    PyStatus status;
 
-    debug(L"# Installing with %s %s\n", command, arguments);
-    if (isEnvVarSet(L"PYLAUNCHER_DRYRUN")) {
-        debug(L"# Exiting due to PYLAUNCHER_DRYRUN\n");
-        fflush(stdout);
-        int mode = _setmode(_fileno(stdout), _O_U8TEXT);
-        if (arguments) {
-            fwprintf_s(stdout, L"\"%s\" %s\n", command, arguments);
-        } else {
-            fwprintf_s(stdout, L"\"%s\"\n", command);
-        }
-        fflush(stdout);
-        if (mode >= 0) {
-            _setmode(_fileno(stdout), mode);
-        }
-        return RC_INSTALLING;
+    api->_pydll = NULL;
+    api->module = NULL;
+
+    wchar_t pyExe[MAXLEN];
+    wchar_t pyDll[MAXLEN];
+    if (!GetModuleFileNameW(NULL, pyExe, MAXLEN)) {
+        winerror(0, L"Reading py.exe location");
+        return RC_INTERNAL_ERROR;
+    }
+    PWSTR appdata;
+    if (FAILED(SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, NULL, &appdata))) {
+        winerror(0, L"Reading Local AppData location");
+        return RC_INTERNAL_ERROR;
     }
 
-    if (!ShellExecuteExW(&siw)) {
-        return RC_NO_PYTHON;
+    if (wcscpy_s(pyDll, MAXLEN, pyExe)
+        || !split_parent(pyDll, MAXLEN)
+#ifndef _DEBUG
+        || !join(pyDll, MAXLEN, L"runtime")
+#endif
+        || !join(pyDll, MAXLEN, L"" Py_DLL_NAME)
+        || GetFileAttributesW(pyDll) == INVALID_FILE_ATTRIBUTES
+    ) {
+        warn(L"Unable to locate runtime files\n");
+        CoTaskMemFree(appdata);
+        return RC_INTERNAL_ERROR;
     }
 
-    if (!siw.hProcess) {
-        return RC_INSTALLING;
+    HMODULE py = LoadLibraryW(pyDll);
+    if (!py) {
+        warn(L"Unable to load runtime\n");
+        CoTaskMemFree(appdata);
+        return RC_INTERNAL_ERROR;
     }
 
-    WaitForSingleObjectEx(siw.hProcess, INFINITE, FALSE);
-    DWORD exitCode = 0;
-    if (GetExitCodeProcess(siw.hProcess, &exitCode) && exitCode == 0) {
-        return 0;
+    typedef void (*PPyConfig_InitIsolatedConfig)(PyConfig *config);
+    typedef PyStatus (*PPyConfig_SetString)(PyConfig *config, wchar_t *const *config_str, const wchar_t *str);
+    typedef void (*PPyConfig_Clear)(PyConfig *config);
+    typedef PyStatus (*PPy_InitializeFromConfig)(PyConfig *config);
+    typedef void (*PPy_ExitStatusException)(PyStatus status);
+    typedef PyObject *(*PPyImport_ImportModule)(const char *modName);
+    PPyConfig_InitIsolatedConfig PyConfig_InitIsolatedConfig = (PPyConfig_InitIsolatedConfig)GetProcAddress(py, "PyConfig_InitIsolatedConfig");
+    PPyConfig_SetString PyConfig_SetString = (PPyConfig_SetString)GetProcAddress(py, "PyConfig_SetString");
+    PPyConfig_Clear PyConfig_Clear = (PPyConfig_Clear)GetProcAddress(py, "PyConfig_Clear");
+    PPy_InitializeFromConfig Py_InitializeFromConfig = (PPy_InitializeFromConfig)GetProcAddress(py, "Py_InitializeFromConfig");
+    PPy_ExitStatusException Py_ExitStatusException = (PPy_ExitStatusException)GetProcAddress(py, "Py_ExitStatusException");
+    PPyImport_ImportModule PyImport_ImportModule = (PPyImport_ImportModule)GetProcAddress(py, "PyImport_ImportModule");
+    PPyObject_CallMethod PyObject_CallMethod = (PPyObject_CallMethod)GetProcAddress(py, "PyObject_CallMethod");
+    PPyErr_Clear PyErr_Clear = isEnvVarSet(L"PYLAUNCHER_DEBUG")
+        ? (PPyErr_Clear)GetProcAddress(py, "PyErr_Print")
+        : (PPyErr_Clear)GetProcAddress(py, "PyErr_Clear");
+
+    if (!PyConfig_InitIsolatedConfig
+        || !PyConfig_Clear
+        || !Py_ExitStatusException
+        || !Py_InitializeFromConfig
+        || !PyConfig_SetString
+        || !PyErr_Clear
+        || !PyImport_ImportModule
+        || !PyObject_CallMethod
+    ) {
+        warn(L"Unable to load runtime\n");
+        FreeLibrary(py);
+        CoTaskMemFree(appdata);
+        return RC_INTERNAL_ERROR;
     }
-    return RC_INSTALLING;
+
+    PyConfig config;
+    (*PyConfig_InitIsolatedConfig)(&config);
+
+    status = (*PyConfig_SetString)(&config, &config.program_name, pyExe);
+    if (PyStatus_Exception(status)) {
+        goto exception;
+    }
+
+    status = (*Py_InitializeFromConfig)(&config);
+    if (PyStatus_Exception(status)) {
+        goto exception;
+    }
+    (*PyConfig_Clear)(&config);
+
+    api->_pydll = py;
+    api->PyObject_CallMethod = PyObject_CallMethod;
+    api->PyErr_Clear = PyErr_Clear;
+    api->module = (*PyImport_ImportModule)("manager");
+    if (!api->module) {
+        (*PyErr_Clear)();
+        warn(L"Unable to load manager runtime\n");
+        return RC_INTERNAL_ERROR;
+    }
+
+    PyObject *r = (*PyObject_CallMethod)(api->module, "init", "uuiii",
+        pyExe,
+        appdata,
+        isEnvVarSet(L"PYLAUNCHER_DRYRUN"),
+        isEnvVarSet(L"PYLAUNCHER_DEBUG"),
+        isEnvVarSet(L"PYLAUNCHER_QUIET")
+    );
+    CoTaskMemFree(appdata);
+    if (!r) {
+        (*PyErr_Clear)();
+        warn(L"Unable to initialize runtime\n");
+        return RC_INTERNAL_ERROR;
+    }
+    Py_DECREF(r);
+
+    return 0;
+
+exception:
+    if (PyConfig_Clear) {
+        (*PyConfig_Clear)(&config);
+    }
+    (*Py_ExitStatusException)(status);
+    FreeLibrary(py);
+    CoTaskMemFree(appdata);
+    return RC_INTERNAL_ERROR;
 }
 
+void
+closePython(PythonApi *api)
+{
+    if (!api || !api->_pydll) {
+        return;
+    }
+    if (api->module) {
+        Py_CLEAR(api->module);
+    }
+    typedef void (*PPy_Finalize)();
+    PPy_Finalize Py_Finalize = (PPy_Finalize)GetProcAddress(api->_pydll, "Py_Finalize");
+    assert(Py_Finalize);
+    if (Py_Finalize) {
+        (*Py_Finalize)();
+    }
+    FreeLibrary(api->_pydll);
+    api->PyObject_CallMethod = NULL;
+    api->PyErr_Clear = NULL;
+    api->_pydll = NULL;
+}
 
-const wchar_t *WINGET_COMMAND = L"Microsoft\\WindowsApps\\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe\\winget.exe";
-const wchar_t *WINGET_ARGUMENTS = L"install -q %s --exact --accept-package-agreements --source msstore";
-
-const wchar_t *MSSTORE_COMMAND = L"ms-windows-store://pdp/?productid=%s";
+/******************************************************************************\
+ ***                           INSTALL ON DEMAND                            ***
+\******************************************************************************/
 
 int
 installEnvironment(const SearchInfo *search)
@@ -2264,60 +2350,20 @@ installEnvironment(const SearchInfo *search)
         return RC_NO_PYTHON;
     }
 
-    const wchar_t *storeId = NULL;
-    for (struct StoreSearchInfo *info = STORE_SEARCH; info->tag; ++info) {
-        if (0 == _compare(search->tag, search->tagLength, info->tag, -1)) {
-            storeId = info->storeId;
-            break;
-        }
-    }
-
-    if (!storeId) {
-        return RC_NO_PYTHON;
-    }
-
-    int exitCode;
-    wchar_t command[MAXLEN];
-    wchar_t arguments[MAXLEN];
-    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, command)) &&
-        join(command, MAXLEN, WINGET_COMMAND) &&
-        swprintf_s(arguments, MAXLEN, WINGET_ARGUMENTS, storeId)) {
-        if (INVALID_FILE_ATTRIBUTES == GetFileAttributesW(command)) {
-            formatWinerror(GetLastError(), arguments, MAXLEN);
-            debug(L"# Skipping %s: %s\n", command, arguments);
-        } else if (isEnvVarSet(L"PYLAUNCHER_QUIET") &&
-                !wcscat_s(arguments, MAXLEN, L" --silent")) {
-            return _installEnvironment(command, arguments);
+    PythonApi api;
+    int exitCode = initPython(&api);
+    if (!exitCode) {
+        PyObject *r = (*api.PyObject_CallMethod)(api.module, "install", "u#", search->tag, (Py_ssize_t)search->tagLength);
+        if (!r) {
+            (*api.PyErr_Clear)();
+            exitCode = RC_NO_PYTHON;
         } else {
-            fputws(L"Launching winget to install Python. The following output is from the install process\n\
-***********************************************************************\n", stdout);
-            exitCode = _installEnvironment(command, arguments);
-            if (exitCode == RC_INSTALLING) {
-                fputws(L"***********************************************************************\n\
-Please check the install status and run your command again.", stderr);
-                return exitCode;
-            } else if (exitCode) {
-                return exitCode;
-            }
-            fputws(L"***********************************************************************\n\
-Install appears to have succeeded. Searching for new matching installs.\n", stdout);
-            return 0;
+            Py_DECREF(r);
         }
     }
+    closePython(&api);
 
-    // Do not pop open the Store when QUIET is set
-    if (!isEnvVarSet(L"PYLAUNCHER_QUIET")
-        && swprintf_s(command, MAXLEN, MSSTORE_COMMAND, storeId)) {
-        fputws(L"Opening the Microsoft Store to install Python. After installation, "
-               L"please run your command again.\n", stderr);
-        exitCode = _installEnvironment(command, NULL);
-        if (exitCode) {
-            return exitCode;
-        }
-        return 0;
-    }
-
-    return RC_NO_PYTHON;
+    return exitCode;
 }
 
 /******************************************************************************\
