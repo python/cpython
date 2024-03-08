@@ -825,9 +825,12 @@ _is_module_possibly_shadowing(PyObject *origin)
         return 0;
     }
     const PyConfig *config = _Py_GetConfig();
-    if (config->safe_path) {
+    // sys.path[0] or os.getcwd()
+    wchar_t *sys_path_0 = config->sys_path_0;
+    if (sys_path_0 == NULL) {
         return 0;
     }
+    assert(!config->safe_path);
 
     // os.path.dirname(origin)
     wchar_t origin_dirname[MAXPATHLEN + 1];
@@ -843,12 +846,6 @@ _is_module_possibly_shadowing(PyObject *origin)
         return 0;
     }
     *sep = L'\0';
-
-    // sys.path[0] or os.getcwd()
-    wchar_t *sys_path_0 = config->sys_path_0;
-    if (!sys_path_0) {
-        return 0;
-    }
 
     wchar_t sys_path_0_buf[MAXPATHLEN];
     if (sys_path_0[0] == L'\0') {
