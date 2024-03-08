@@ -1070,7 +1070,7 @@ _PyMem_Strdup(const char *str)
 
 // A pointer to be freed once the QSBR read sequence reaches qsbr_goal.
 struct _mem_work_item {
-    void *ptr;
+    uintptr_t ptr; // lowest bit tagged 1 for objects freed with PyObject_Free
     uint64_t qsbr_goal;
 };
 
@@ -1084,16 +1084,27 @@ struct _mem_work_chunk {
     struct _mem_work_item array[WORK_ITEMS_PER_CHUNK];
 };
 
-void
-_PyMem_FreeDelayed(void *ptr)
+static void
+free_work_item(uintptr_t ptr)
+{
+    if (ptr & 0x01) {
+        PyObject_Free((char *)(ptr - 1));
+    }
+    else {
+        PyMem_Free((void *)ptr);
+    }
+}
+
+static void
+free_delayed(uintptr_t ptr)
 {
 #ifndef Py_GIL_DISABLED
-    PyMem_Free(ptr);
+    free_work_item(ptr);
 #else
     if (_PyRuntime.stoptheworld.world_stopped) {
         // Free immediately if the world is stopped, including during
         // interpreter shutdown.
-        PyMem_Free(ptr);
+        free_work_item(ptr);
         return;
     }
 
@@ -1120,7 +1131,7 @@ _PyMem_FreeDelayed(void *ptr)
     if (buf == NULL) {
         // failed to allocate a buffer, free immediately
         _PyEval_StopTheWorld(tstate->base.interp);
-        PyMem_Free(ptr);
+        free_work_item(ptr);
         _PyEval_StartTheWorld(tstate->base.interp);
         return;
     }
@@ -1135,6 +1146,20 @@ _PyMem_FreeDelayed(void *ptr)
         _PyMem_ProcessDelayed((PyThreadState *)tstate);
     }
 #endif
+}
+
+void
+_PyMem_FreeDelayed(void *ptr)
+{
+    assert(!((uintptr_t)ptr & 0x01));
+    free_delayed((uintptr_t)ptr);
+}
+
+void
+_PyObject_FreeDelayed(void *ptr)
+{
+    assert(!((uintptr_t)ptr & 0x01));
+    free_delayed(((uintptr_t)ptr)|0x01);
 }
 
 static struct _mem_work_chunk *
@@ -1156,7 +1181,7 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
                 return;
             }
 
-            PyMem_Free(item->ptr);
+            free_work_item(item->ptr);
             buf->rd_idx++;
         }
 
@@ -1243,7 +1268,7 @@ _PyMem_FiniDelayed(PyInterpreterState *interp)
             // Free the remaining items immediately. There should be no other
             // threads accessing the memory at this point during shutdown.
             struct _mem_work_item *item = &buf->array[buf->rd_idx];
-            PyMem_Free(item->ptr);
+            free_work_item(item->ptr);
             buf->rd_idx++;
         }
 
