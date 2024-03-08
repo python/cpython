@@ -663,6 +663,8 @@ MODULE_XXSUBTYPE_FALSE
 MODULE_XXSUBTYPE_TRUE
 MODULE__TESTEXTERNALINSPECTION_FALSE
 MODULE__TESTEXTERNALINSPECTION_TRUE
+MODULE__TESTSINGLEPHASE_FALSE
+MODULE__TESTSINGLEPHASE_TRUE
 MODULE__TESTMULTIPHASE_FALSE
 MODULE__TESTMULTIPHASE_TRUE
 MODULE__TESTIMPORTMULTIPLE_FALSE
@@ -671,6 +673,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTLIMITEDCAPI_FALSE
+MODULE__TESTLIMITEDCAPI_TRUE
 MODULE__TESTCLINIC_LIMITED_FALSE
 MODULE__TESTCLINIC_LIMITED_TRUE
 MODULE__TESTCLINIC_FALSE
@@ -4085,6 +4089,52 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
 
+# On cross-compile builds, configure will look for a host-specific compiler by
+# prepending the user-provided host triple to the required binary name.
+#
+# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# which isn't a binary that exists, and isn't very convenient, as it contains the
+# iOS version. As the default cross-compiler name won't exist, configure falls
+# back to gcc, which *definitely* won't work. We're providing wrapper scripts for
+# these tools; the binary names of these scripts are better defaults than "gcc".
+# This only requires that the user put the platform scripts folder (e.g.,
+# "iOS/Resources/bin") in their path, rather than defining platform-specific
+# names/paths for AR, CC, CPP, and CXX explicitly; and if the user forgets to
+# either put the platform scripts folder in the path, or specify CC etc,
+# configure will fail.
+if test -z "$AR"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) AR=arm64-apple-ios-simulator-ar ;;
+		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
+		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
+		*)
+	esac
+fi
+if test -z "$CC"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CC=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CC=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CC=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
+if test -z "$CPP"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CPP=arm64-apple-ios-simulator-cpp ;;
+		aarch64-apple-ios*)           CPP=arm64-apple-ios-cpp ;;
+		x86_64-apple-ios*-simulator)  CPP=x86_64-apple-ios-simulator-cpp ;;
+		*)
+	esac
+fi
+if test -z "$CXX"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-universalsdk" >&5
 printf %s "checking for --enable-universalsdk... " >&6; }
 # Check whether --enable-universalsdk was given.
@@ -4200,37 +4250,38 @@ then :
   enableval=$enable_framework;
 	case $enableval in
 	yes)
-		if test "$ac_sys_system" = "iOS"; then
-			as_fn_error $? "iOS builds must provide an explicit path for --enable-framework" "$LINENO" 5
-		fi
-
-		enableval=/Library/Frameworks
+		case $ac_sys_system in
+			Darwin) enableval=/Library/Frameworks ;;
+			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
+			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
+		esac
 	esac
+
 	case $enableval in
 	no)
-		if test "$ac_sys_system" = "iOS"; then
-			as_fn_error $? "iOS builds must use --enable-framework=<install path>" "$LINENO" 5
-		fi
+		case $ac_sys_system in
+			iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
+			*)
+				PYTHONFRAMEWORK=
+				PYTHONFRAMEWORKDIR=no-framework
+				PYTHONFRAMEWORKPREFIX=
+				PYTHONFRAMEWORKINSTALLDIR=
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+				RESSRCDIR=
+				FRAMEWORKINSTALLFIRST=
+				FRAMEWORKINSTALLLAST=
+				FRAMEWORKALTINSTALLFIRST=
+				FRAMEWORKALTINSTALLLAST=
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="commoninstall bininstall maninstall"
 
-		PYTHONFRAMEWORK=
-		PYTHONFRAMEWORKDIR=no-framework
-		PYTHONFRAMEWORKPREFIX=
-		PYTHONFRAMEWORKINSTALLDIR=
-		PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-		RESSRCDIR=
-		FRAMEWORKINSTALLFIRST=
-		FRAMEWORKINSTALLLAST=
-		FRAMEWORKALTINSTALLFIRST=
-		FRAMEWORKALTINSTALLLAST=
-		FRAMEWORKPYTHONW=
-		INSTALLTARGETS="commoninstall bininstall maninstall"
-
-		if test "x${prefix}" = "xNONE"; then
-			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-		else
-			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-		fi
-		enable_framework=
+				if test "x${prefix}" = "xNONE"; then
+					FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+				else
+					FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+				fi
+				enable_framework=
+		esac
 		;;
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
@@ -4325,29 +4376,28 @@ then :
 
 else $as_nop
 
-	if test "$ac_sys_system" = "iOS"; then
-		as_fn_error $? "iOS builds must use --enable-framework=<install path>" "$LINENO" 5
-	fi
-
-	PYTHONFRAMEWORK=
-	PYTHONFRAMEWORKDIR=no-framework
-	PYTHONFRAMEWORKPREFIX=
-	PYTHONFRAMEWORKINSTALLDIR=
-	PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-	RESSRCDIR=
-	FRAMEWORKINSTALLFIRST=
-	FRAMEWORKINSTALLLAST=
-	FRAMEWORKALTINSTALLFIRST=
-	FRAMEWORKALTINSTALLLAST=
-	FRAMEWORKPYTHONW=
-	INSTALLTARGETS="commoninstall bininstall maninstall"
-	if test "x${prefix}" = "xNONE" ; then
-		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-	else
-		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-	fi
-	enable_framework=
-
+	case $ac_sys_system in
+		iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
+		*)
+			PYTHONFRAMEWORK=
+			PYTHONFRAMEWORKDIR=no-framework
+			PYTHONFRAMEWORKPREFIX=
+			PYTHONFRAMEWORKINSTALLDIR=
+			PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+			RESSRCDIR=
+			FRAMEWORKINSTALLFIRST=
+			FRAMEWORKINSTALLLAST=
+			FRAMEWORKALTINSTALLFIRST=
+			FRAMEWORKALTINSTALLLAST=
+			FRAMEWORKPYTHONW=
+			INSTALLTARGETS="commoninstall bininstall maninstall"
+			if test "x${prefix}" = "xNONE" ; then
+				FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+			else
+				FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+			fi
+			enable_framework=
+	esac
 
 fi
 
@@ -7655,7 +7705,7 @@ then :
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -12773,8 +12823,8 @@ then
 		fi
 		;;
 	iOS/*)
-		LDSHARED='$(CC) -dynamiclib -F . -framework Python'
-		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework Python'
+		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
 	Emscripten|WASI)
@@ -27255,6 +27305,7 @@ SRCDIRS="\
   Modules/_sre \
   Modules/_testcapi \
   Modules/_testinternalcapi \
+  Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -30725,6 +30776,44 @@ fi
 printf "%s\n" "$py_cv_module__testclinic_limited" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testlimitedcapi" >&5
+printf %s "checking for stdlib extension module _testlimitedcapi... " >&6; }
+        if test "$py_cv_module__testlimitedcapi" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if true
+then :
+  py_cv_module__testlimitedcapi=yes
+else $as_nop
+  py_cv_module__testlimitedcapi=missing
+fi
+else $as_nop
+  py_cv_module__testlimitedcapi=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTLIMITEDCAPI_STATE=$py_cv_module__testlimitedcapi$as_nl"
+  if test "x$py_cv_module__testlimitedcapi" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testlimitedcapi" = yes; then
+  MODULE__TESTLIMITEDCAPI_TRUE=
+  MODULE__TESTLIMITEDCAPI_FALSE='#'
+else
+  MODULE__TESTLIMITEDCAPI_TRUE='#'
+  MODULE__TESTLIMITEDCAPI_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testlimitedcapi" >&5
+printf "%s\n" "$py_cv_module__testlimitedcapi" >&6; }
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 printf %s "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"
@@ -30875,6 +30964,44 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testmultiphase" >&5
 printf "%s\n" "$py_cv_module__testmultiphase" >&6; }
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testsinglephase" >&5
+printf %s "checking for stdlib extension module _testsinglephase... " >&6; }
+        if test "$py_cv_module__testsinglephase" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if test "$ac_cv_func_dlopen" = yes
+then :
+  py_cv_module__testsinglephase=yes
+else $as_nop
+  py_cv_module__testsinglephase=missing
+fi
+else $as_nop
+  py_cv_module__testsinglephase=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTSINGLEPHASE_STATE=$py_cv_module__testsinglephase$as_nl"
+  if test "x$py_cv_module__testsinglephase" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testsinglephase" = yes; then
+  MODULE__TESTSINGLEPHASE_TRUE=
+  MODULE__TESTSINGLEPHASE_FALSE='#'
+else
+  MODULE__TESTSINGLEPHASE_TRUE='#'
+  MODULE__TESTSINGLEPHASE_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testsinglephase" >&5
+printf "%s\n" "$py_cv_module__testsinglephase" >&6; }
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testexternalinspection" >&5
@@ -31511,6 +31638,10 @@ if test -z "${MODULE__TESTCLINIC_LIMITED_TRUE}" && test -z "${MODULE__TESTCLINIC
   as_fn_error $? "conditional \"MODULE__TESTCLINIC_LIMITED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__TESTLIMITEDCAPI_TRUE}" && test -z "${MODULE__TESTLIMITEDCAPI_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTLIMITEDCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTINTERNALCAPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -31525,6 +31656,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTSINGLEPHASE_TRUE}" && test -z "${MODULE__TESTSINGLEPHASE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTSINGLEPHASE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTEXTERNALINSPECTION_TRUE}" && test -z "${MODULE__TESTEXTERNALINSPECTION_FALSE}"; then

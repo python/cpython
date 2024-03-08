@@ -62,7 +62,6 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-
 .. PEP-sized items next.
 
 Important deprecations, removals or restrictions:
@@ -185,6 +184,27 @@ Other Language Changes
 
   (Contributed by Sebastian Pipping in :gh:`115623`.)
 
+* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
+  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
+  prevents a :exc:`RuntimeWarning` about the given coroutine being
+  never awaited).
+
+  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
+
+* The :func:`ssl.create_default_context` API now includes
+  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
+  in its default flags.
+
+  .. note::
+
+   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
+   certificates that the underlying OpenSSL implementation otherwise would
+   accept. While disabling this is not recommended, you can do so using::
+
+      ctx = ssl.create_default_context()
+      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+  (Contributed by William Woodruff in :gh:`112389`.)
 
 New Modules
 ===========
@@ -791,6 +811,13 @@ Deprecated
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
 
+* The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
+  is deprecated and scheduled for removal in Python 3.16.
+
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -949,6 +976,11 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.16
 ------------------------------
