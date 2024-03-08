@@ -535,6 +535,7 @@ jobs:
     - build_ubuntu_ssltests
     - build_windows
     - build_windows_free_threading
+    - build_wasi
     - test_hypothesis
     - build_asan
     - cifuzz
@@ -566,6 +567,7 @@ jobs:
             build_ubuntu,
             build_ubuntu_free_threading,
             build_ubuntu_ssltests,
+            build_wasi,
             build_windows,
             build_windows_free_threading,
             build_asan,
