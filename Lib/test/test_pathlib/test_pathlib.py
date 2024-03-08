@@ -563,6 +563,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         else:
             self.assertRaises(pathlib.UnsupportedOperation, self.cls)
 
+    def test_pickling_concrete(self):
+        P = self.cls
+        if P is not pathlib.PosixPath and P is not pathlib.WindowsPath:
+            self.skipTest("Only applies to direct Path subclasses")
+
+        p = P('foo')
+        with unittest.mock.patch('pathlib.Path.__new__') as mock_new:
+            mock_new.assert_called_with(pathlib.Path, 'foo')
+
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
         self.assertEqual(p, q)

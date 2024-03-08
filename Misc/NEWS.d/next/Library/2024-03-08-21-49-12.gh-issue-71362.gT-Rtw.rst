@@ -1,0 +1,5 @@
+:class:`pathlib.PosixPath` and :class:`~pathlib.WindowsPath` objects are now
+pickled as :class:`~pathlib.Path` objects, which allows them to be unpickled
+on any operating system. Care should be taken as paths may be interpreted
+differently; for example, ``"c:/"`` is an absolute path on Windows but not
+POSIX.
