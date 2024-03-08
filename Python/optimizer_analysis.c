@@ -141,9 +141,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         return 1;
     }
     PyObject *globals = frame->f_globals;
-    assert(PyFunction_Check(((PyFunctionObject *)frame->f_funcobj)));
-    assert(((PyFunctionObject *)frame->f_funcobj)->func_builtins == builtins);
-    assert(((PyFunctionObject *)frame->f_funcobj)->func_globals == globals);
+    PyFunctionObject *function = (PyFunctionObject *)frame->f_funcobj;
+    assert(PyFunction_Check(function));
+    assert(function->func_builtins == builtins);
+    assert(function->func_globals == globals);
+    uint32_t function_version = _PyFunction_GetVersionForCurrentState(function);
     /* In order to treat globals as constants, we need to
      * know that the globals dict is the one we expected, and
      * that it hasn't changed
@@ -181,7 +183,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = (uintptr_t)builtins;
+                    buffer[pc].operand = function_version;
                     function_checked |= 1;
                 }
                 break;
@@ -203,7 +205,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = (uintptr_t)globals;
+                    buffer[pc].operand = function_version;
                     function_checked |= 1;
                 }
                 break;
@@ -227,7 +229,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     return 1;
                 }
                 assert(PyFunction_Check(func));
-                if (prechecked_function_version == func->func_version) {
+                function_version = func->func_version;
+                if (prechecked_function_version == function_version) {
                     function_checked |= 1;
                 }
                 prechecked_function_version = 0;
@@ -245,6 +248,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 function_checked >>= 1;
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
                 assert(PyFunction_Check(func));
+                function_version = func->func_version;
                 globals = func->func_globals;
                 builtins = func->func_builtins;
                 break;
