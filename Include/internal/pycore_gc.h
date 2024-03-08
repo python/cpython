@@ -73,7 +73,7 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
 
 /* True if an object is shared between multiple threads and
  * needs special purpose when freeing to do the possibility
- * of in-flight lock-free reads occuring */
+ * of in-flight lock-free reads occurring */
 static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
     return (op->ob_gc_bits & _PyGC_BITS_SHARED) != 0;
 }
@@ -260,6 +260,13 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
+#ifdef Py_GIL_DISABLED
+struct _gc_thread_state {
+    /* Thread-local allocation count. */
+    Py_ssize_t alloc_count;
+};
+#endif
+
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 
@@ -279,15 +286,7 @@ extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
 extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
-extern void _Py_ClearFreeLists(_PyFreeListState *state, int is_finalization);
-extern void _PyTuple_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyFloat_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyList_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PySlice_ClearCache(_PyFreeListState *state);
-extern void _PyDict_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _PyAsyncGen_ClearFreeLists(_PyFreeListState *state, int is_finalization);
-extern void _PyContext_ClearFreeList(_PyFreeListState *state, int is_finalization);
-extern void _Py_ScheduleGC(PyInterpreterState *interp);
+extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
 #ifdef __cplusplus

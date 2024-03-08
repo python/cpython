@@ -170,7 +170,7 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -286,6 +286,19 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
+   .. attribute:: Enum._name_
+
+      Name of the member.
+
+   .. attribute:: Enum._value_
+
+      Value of the member, can be set in :meth:`~object.__new__`.
+
+   .. attribute:: Enum._order_
+
+      No longer used, kept for backward compatibility.
+      (class attribute, removed during class creation).
+
    .. attribute:: Enum._ignore_
 
       ``_ignore_`` is only used during creation and is removed from the
@@ -337,7 +350,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init__(self, \*args, \**kwds)
+   .. method:: Enum.__init__(self, *args, **kwds)
 
       By default, does nothing.  If multiple values are given in the member
       assignment, those values become separate arguments to ``__init__``; e.g.
@@ -348,7 +361,7 @@ Data Types
 
       ``Weekday.__init__()`` would be called as ``Weekday.__init__(self, 1, 'Mon')``
 
-   .. method:: Enum.__init_subclass__(cls, \**kwds)
+   .. method:: Enum.__init_subclass__(cls, **kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.
@@ -375,7 +388,7 @@ Data Types
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
 
-   .. method:: Enum.__new__(cls, \*args, \**kwds)
+   .. method:: Enum.__new__(cls, *args, **kwds)
 
       By default, doesn't exist.  If specified, either in the enum class
       definition or in a mixin class (such as ``int``), all values given
@@ -386,6 +399,9 @@ Data Types
          ...     SEVENTEEN = '1a', 16
 
       results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
+
+      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
+               call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
@@ -823,8 +839,8 @@ Supported ``_sunder_`` names
 - :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
   :class:`str`, that will not be transformed into members, and will be removed
   from the final class
-- :attr:`~Enum._order_` -- used in Python 2/3 code to ensure member order is
-  consistent (class attribute, removed during class creation)
+- :attr:`~Enum._order_` -- no longer used, kept for backward
+  compatibility (class attribute, removed during class creation)
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
 

@@ -62,7 +62,6 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.13.
    Brevity is key.
 
-
 .. PEP-sized items next.
 
 Important deprecations, removals or restrictions:
@@ -194,6 +193,53 @@ Other Language Changes
   (Contributed by Levi Sabah, Zackery Spytz and Hugo van Kemenade in
   :gh:`73965`.)
 
+* Add :exc:`PythonFinalizationError` exception. This exception derived from
+  :exc:`RuntimeError` is raised when an operation is blocked during
+  the :term:`Python finalization <interpreter shutdown>`.
+
+  The following functions now raise PythonFinalizationError, instead of
+  :exc:`RuntimeError`:
+
+  * :func:`_thread.start_new_thread`.
+  * :class:`subprocess.Popen`.
+  * :func:`os.fork`.
+  * :func:`os.forkpty`.
+
+  (Contributed by Victor Stinner in :gh:`114570`.)
+
+* Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425)
+  by adding five new methods:
+
+  * :meth:`xml.etree.ElementTree.XMLParser.flush`
+  * :meth:`xml.etree.ElementTree.XMLPullParser.flush`
+  * :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+  * :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
+  * :meth:`!xml.sax.expatreader.ExpatParser.flush`
+
+  (Contributed by Sebastian Pipping in :gh:`115623`.)
+
+* When :func:`asyncio.TaskGroup.create_task` is called on an inactive
+  :class:`asyncio.TaskGroup`, the given coroutine will be closed (which
+  prevents a :exc:`RuntimeWarning` about the given coroutine being
+  never awaited).
+
+  (Contributed by Arthur Tacca and Jason Zhang in :gh:`115957`.)
+
+* The :func:`ssl.create_default_context` API now includes
+  :data:`ssl.VERIFY_X509_PARTIAL_CHAIN` and :data:`ssl.VERIFY_X509_STRICT`
+  in its default flags.
+
+  .. note::
+
+   :data:`ssl.VERIFY_X509_STRICT` may reject pre-:rfc:`5280` or malformed
+   certificates that the underlying OpenSSL implementation otherwise would
+   accept. While disabling this is not recommended, you can do so using::
+
+      ctx = ssl.create_default_context()
+      ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+
+  (Contributed by William Woodruff in :gh:`112389`.)
+
 New Modules
 ===========
 
@@ -219,8 +265,26 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+* Add ``clear()`` method in order to implement ``MutableSequence``.
+  (Contributed by Mike Zimin in :gh:`114894`.)
+
 ast
 ---
+
+* The constructors of node types in the :mod:`ast` module are now stricter
+  in the arguments they accept, and have more intuitive behaviour when
+  arguments are omitted.
+
+  If an optional field on an AST node is not included as an argument when
+  constructing an instance, the field will now be set to ``None``. Similarly,
+  if a list field is omitted, that field will now be set to an empty list.
+  (Previously, in both cases, the attribute would be missing on the newly
+  constructed AST node instance.)
+
+  If other arguments are omitted, a :exc:`DeprecationWarning` is emitted.
+  This will cause an exception in Python 3.15. Similarly, passing a keyword
+  argument that does not map to a field on the AST node is now deprecated,
+  and will raise an exception in Python 3.15.
 
 * :func:`ast.parse` now accepts an optional argument ``optimize``
   which is passed on to the :func:`compile` built-in. This makes it
@@ -233,6 +297,20 @@ asyncio
 * :meth:`asyncio.loop.create_unix_server` will now automatically remove
   the Unix socket when the server is closed.
   (Contributed by Pierre Ossman in :gh:`111246`.)
+
+* :meth:`asyncio.DatagramTransport.sendto` will now send zero-length
+  datagrams if called with an empty bytes object. The transport flow
+  control also now accounts for the datagram header when calculating
+  the buffer size.
+  (Contributed by Jamie Phan in :gh:`115199`.)
+
+base64
+---
+
+* Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
+  and decoding z85 data.
+  See `Z85  specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+  (Contributed by Matan Perelman in :gh:`75299`.)
 
 copy
 ----
@@ -261,6 +339,16 @@ dis
   The offsets can be added with the new ``-O`` command line option or
   the ``show_offsets`` parameter.
   (Contributed by Irit Katriel in :gh:`112137`.)
+
+dbm
+---
+
+* Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
+  from the database.
+  (Contributed by Donghee Na in :gh:`107122`.)
+
+* Add new :mod:`dbm.sqlite3` backend, and make it the default :mod:`!dbm` backend.
+  (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 doctest
 -------
@@ -312,6 +400,14 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+
+itertools
+---------
+
+* Added a ``strict`` option to :func:`itertools.batched`.
+  This raises a :exc:`ValueError` if the final batch is shorter
+  than the specified batch size.
+  (Contributed by Raymond Hettinger in :gh:`113202`.)
 
 marshal
 -------
@@ -437,6 +533,13 @@ pdb
   command line option or :envvar:`PYTHONSAFEPATH` environment variable).
   (Contributed by Tian Gao and Christian Walther in :gh:`111762`.)
 
+queue
+-----
+
+* Add :meth:`queue.Queue.shutdown` (along with :exc:`queue.ShutDown`) for queue
+  termination.
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104750`.)
+
 re
 --
 * Rename :exc:`!re.error` to :exc:`re.PatternError` for improved clarity.
@@ -452,6 +555,14 @@ sqlite3
 * Add *filter* keyword-only parameter to :meth:`sqlite3.Connection.iterdump`
   for filtering database objects to dump.
   (Contributed by Mariusz Felisiak in :gh:`91602`.)
+
+statistics
+----------
+
+* Add :func:`statistics.kde` for kernel density estimation.
+  This makes it possible to estimate a continuous probability density function
+  from a fixed number of discrete samples.
+  (Contributed by Raymond Hettinger in :gh:`115863`.)
 
 subprocess
 ----------
@@ -492,6 +603,12 @@ tkinter
   ``w.wm_attributes(return_python_dict=True)`` returns the attributes as
   a dict instead of a tuple.
   (Contributed by Serhiy Storchaka in :gh:`43457`.)
+
+* Add new optional keyword-only parameter *return_ints* in
+  the :meth:`!Text.count` method.
+  Passing ``return_ints=True`` makes it always returning the single count
+  as an integer instead of a 1-tuple or ``None``.
+  (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
 * Add support of the "vsapi" element type in
   the :meth:`~tkinter.ttk.Style.element_create` method of
@@ -603,6 +720,7 @@ The internal architecture is roughly as follows.
 (JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
 Tier 2 IR by Mark Shannon and Guido van Rossum.
 Tier 2 optimizer by Ken Jin.)
+
 
 
 Deprecated
@@ -727,6 +845,13 @@ Deprecated
   coroutine.
   (Contributed by Irit Katriel in :gh:`81137`.)
 
+* The undocumented and unused ``tarfile`` attribute of :class:`tarfile.TarFile`
+  is deprecated and scheduled for removal in Python 3.16.
+
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -885,6 +1010,11 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* :func:`platform.java_ver` is deprecated and will be removed in 3.15.
+  It was largely untested, had a confusing API,
+  and was only useful for Jython support.
+  (Contributed by Nikita Sobolev in :gh:`116349`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -1310,13 +1440,6 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* :meth:`!tkinter.Text.count` now always returns an integer if one or less
-  counting options are specified.
-  Previously it could return a single count as a 1-tuple, an integer (only if
-  option ``"update"`` was specified) or ``None`` if no items found.
-  The result is now the same if ``wantobjects`` is set to ``0``.
-  (Contributed by Serhiy Storchaka in :gh:`97928`.)
-
 * Functions :c:func:`PyDict_GetItem`, :c:func:`PyDict_GetItemString`,
   :c:func:`PyMapping_HasKey`, :c:func:`PyMapping_HasKeyString`,
   :c:func:`PyObject_HasAttr`, :c:func:`PyObject_HasAttrString`, and
@@ -1372,6 +1495,12 @@ Build Changes
   ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* ``wasm32-wasi`` is now a tier 2 platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
+
+* ``wasm32-emscripten`` is no longer a supported platform.
+  (Contributed by Brett Cannon in :gh:`115192`.)
 
 
 C API Changes
@@ -1535,6 +1664,21 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add PyTime C API:
+
+  * :c:type:`PyTime_t` type.
+  * :c:var:`PyTime_MIN` and :c:var:`PyTime_MAX` constants.
+  * :c:func:`PyTime_AsSecondsDouble`
+    :c:func:`PyTime_Monotonic`, :c:func:`PyTime_PerfCounter`, and
+    :c:func:`PyTime_Time` functions.
+
+  (Contributed by Victor Stinner and Petr Viktorin in :gh:`110850`.)
+
+* Add :c:func:`PyLong_AsNativeBytes`, :c:func:`PyLong_FromNativeBytes` and
+  :c:func:`PyLong_FromUnsignedNativeBytes` functions to simplify converting
+  between native integer types and Python :class:`int` objects.
+  (Contributed by Steve Dower in :gh:`111140`.)
+
 
 Porting to Python 3.13
 ----------------------
@@ -1593,7 +1737,6 @@ Porting to Python 3.13
   Including ``<stddef.h>`` explicitly was already needed by all other
   platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
   (Contributed by Victor Stinner in :gh:`108765`.)
-
 
 Deprecated
 ----------

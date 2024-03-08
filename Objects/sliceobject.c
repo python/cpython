@@ -103,21 +103,17 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-void _PySlice_ClearCache(_PyFreeListState *state)
+void _PySlice_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
+    if (!is_finalization) {
+        return;
+    }
 #ifdef WITH_FREELISTS
-    PySliceObject *obj = state->slices.slice_cache;
+    PySliceObject *obj = freelists->slices.slice_cache;
     if (obj != NULL) {
-        state->slices.slice_cache = NULL;
+        freelists->slices.slice_cache = NULL;
         PyObject_GC_Del(obj);
     }
-#endif
-}
-
-void _PySlice_Fini(_PyFreeListState *state)
-{
-#ifdef WITH_FREELISTS
-    _PySlice_ClearCache(state);
 #endif
 }
 
@@ -131,10 +127,10 @@ _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
     assert(start != NULL && stop != NULL && step != NULL);
     PySliceObject *obj;
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
-    if (state->slices.slice_cache != NULL) {
-        obj = state->slices.slice_cache;
-        state->slices.slice_cache = NULL;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    if (freelists->slices.slice_cache != NULL) {
+        obj = freelists->slices.slice_cache;
+        freelists->slices.slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
     }
     else
@@ -369,9 +365,9 @@ slice_dealloc(PySliceObject *r)
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
 #ifdef WITH_FREELISTS
-    _PyFreeListState *state = _PyFreeListState_GET();
-    if (state->slices.slice_cache == NULL) {
-        state->slices.slice_cache = r;
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    if (freelists->slices.slice_cache == NULL) {
+        freelists->slices.slice_cache = r;
     }
     else
 #endif
