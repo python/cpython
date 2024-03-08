@@ -787,6 +787,32 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
 }
 
 static int
+_get_file_origin_from_spec(PyObject *spec, PyObject **origin)
+{
+    PyObject *has_location = NULL;
+    int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(has_location), &has_location);
+    if (rc <= 0) {
+        return rc;
+    }
+    rc = PyObject_IsTrue(has_location);
+    Py_DECREF(has_location);
+    if (rc <= 0) {
+        return rc;
+    }
+    // has_location is true, so origin is a location
+    rc = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), origin);
+    if (rc <= 0) {
+        return rc;
+    }
+    if (!PyUnicode_Check(*origin)) {
+        Py_DECREF(*origin);
+        *origin = NULL;
+        return 0;
+    }
+    return 1;
+}
+
+static int
 _is_module_possibly_shadowing(PyObject *origin)
 {
     // origin must be a unicode subtype
@@ -901,13 +927,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
 
     PyObject *origin = NULL;
-    int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
-    if (rc == -1) {
+    if (_get_file_origin_from_spec(spec, &origin) == -1) {
         goto done;
-    }
-    if (rc == 1 && !PyUnicode_Check(origin)) {
-        Py_DECREF(origin);
-        origin = NULL;
     }
 
     int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
