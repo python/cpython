@@ -3079,6 +3079,8 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
 static void
 fatal_output_debug(const char *msg)
 {
+    assert(msg != NULL);
+
     /* buffer of 256 bytes allocated on the stack */
     WCHAR buffer[256 / sizeof(WCHAR)];
     size_t buflen = Py_ARRAY_LENGTH(buffer) - 1;
@@ -3285,7 +3287,7 @@ _Py_DumpExtensionModules(int fd, PyInterpreterState *interp)
 
 
 static void _Py_NO_RETURN
-fatal_error(int fd, int header, const char *prefix, const char *msg,
+fatal_error(int fd, const char *prefix, const char *msg,
             int status)
 {
     static int reentrant = 0;
@@ -3297,20 +3299,18 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
     }
     reentrant = 1;
 
-    if (header) {
-        PUTS(fd, "Fatal Python error: ");
-        if (prefix) {
-            PUTS(fd, prefix);
-            PUTS(fd, ": ");
-        }
-        if (msg) {
-            PUTS(fd, msg);
-        }
-        else {
-            PUTS(fd, "<message not set>");
-        }
-        PUTS(fd, "\n");
+    PUTS(fd, "Fatal Python error: ");
+    if (prefix) {
+        PUTS(fd, prefix);
+        PUTS(fd, ": ");
     }
+    if (msg) {
+        PUTS(fd, msg);
+    }
+    else {
+        PUTS(fd, "<message not set>");
+    }
+    PUTS(fd, "\n");
 
     _PyRuntimeState *runtime = &_PyRuntime;
     fatal_error_dump_runtime(fd, runtime);
@@ -3360,7 +3360,12 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
     }
 
 #ifdef MS_WINDOWS
-    fatal_output_debug(msg);
+    if (msg) {
+        fatal_output_debug(msg);
+    }
+    else {
+        fatal_output_debug("<message not set>");
+    }
 #endif /* MS_WINDOWS */
 
     fatal_error_exit(status);
@@ -3372,44 +3377,33 @@ fatal_error(int fd, int header, const char *prefix, const char *msg,
 void _Py_NO_RETURN
 Py_FatalError(const char *msg)
 {
-    fatal_error(fileno(stderr), 1, NULL, msg, -1);
+    fatal_error(fileno(stderr), NULL, msg, -1);
 }
 
 
 void _Py_NO_RETURN
 _Py_FatalErrorFunc(const char *func, const char *msg)
 {
-    fatal_error(fileno(stderr), 1, func, msg, -1);
+    fatal_error(fileno(stderr), func, msg, -1);
 }
 
 
 void _Py_NO_RETURN
 _Py_FatalErrorFormat(const char *func, const char *format, ...)
 {
-    static int reentrant = 0;
-    if (reentrant) {
-        /* _Py_FatalErrorFormat() caused a second fatal error */
-        fatal_error_exit(-1);
-    }
-    reentrant = 1;
-
-    FILE *stream = stderr;
-    const int fd = fileno(stream);
-    PUTS(fd, "Fatal Python error: ");
-    if (func) {
-        PUTS(fd, func);
-        PUTS(fd, ": ");
-    }
-
     va_list vargs;
     va_start(vargs, format);
-    vfprintf(stream, format, vargs);
+    int length = vsnprintf(NULL, 0, format, vargs);
     va_end(vargs);
 
-    fputs("\n", stream);
-    fflush(stream);
+    char* msg = malloc(length + 1);
 
-    fatal_error(fd, 0, NULL, NULL, -1);
+    va_start(vargs, format);
+    vsnprintf(text, length + 1, format, vargs);
+    va_end(vargs);
+
+    fatal_error(fileno(stderr), func, msg, -1);
+    free(msg);
 }
 
 
