@@ -873,6 +873,8 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         return result;
     }
 
+    // The attribute was not found.  We make a best effort attempt at a useful error message,
+    // but only if we're not suppressing AttributeError.
     if (suppress == 1) {
         return NULL;
     }
@@ -890,18 +892,22 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
         Py_DECREF(mod_name);
         return NULL;
     }
+    if (spec == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "module '%U' has no attribute '%U'",
+                     mod_name, name);
+        Py_DECREF(mod_name);
+        return NULL;
+    }
+
     PyObject *origin = NULL;
-    if (spec) {
-        int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
-        if (rc == -1) {
-            Py_DECREF(spec);
-            Py_DECREF(mod_name);
-            return NULL;
-        }
-        if (rc == 1 && !PyUnicode_Check(origin)) {
-            Py_DECREF(origin);
-            origin = NULL;
-        }
+    int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
+    if (rc == -1) {
+        goto done;
+    }
+    if (rc == 1 && !PyUnicode_Check(origin)) {
+        Py_DECREF(origin);
+        origin = NULL;
     }
 
     int is_possibly_shadowing = _is_module_possibly_shadowing(origin);
@@ -973,7 +979,7 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
 
 done:
     Py_XDECREF(origin);
-    Py_XDECREF(spec);
+    Py_DECREF(spec);
     Py_DECREF(mod_name);
     return NULL;
 }
