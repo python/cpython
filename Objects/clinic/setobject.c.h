@@ -2,7 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(set_pop__doc__,
@@ -22,13 +21,7 @@ set_pop_impl(PySetObject *so);
 static PyObject *
 set_pop(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_pop_impl(so);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return set_pop_impl(so);
 }
 
 PyDoc_STRVAR(set_update__doc__,
@@ -81,13 +74,7 @@ set_copy_impl(PySetObject *so);
 static PyObject *
 set_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_copy_impl(so);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return set_copy_impl(so);
 }
 
 PyDoc_STRVAR(frozenset_copy__doc__,
@@ -105,13 +92,7 @@ frozenset_copy_impl(PySetObject *so);
 static PyObject *
 frozenset_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = frozenset_copy_impl(so);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return frozenset_copy_impl(so);
 }
 
 PyDoc_STRVAR(set_clear__doc__,
@@ -129,13 +110,7 @@ set_clear_impl(PySetObject *so);
 static PyObject *
 set_clear(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_clear_impl(so);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return set_clear_impl(so);
 }
 
 PyDoc_STRVAR(set_union__doc__,
@@ -252,21 +227,6 @@ PyDoc_STRVAR(set_isdisjoint__doc__,
 #define SET_ISDISJOINT_METHODDEF    \
     {"isdisjoint", (PyCFunction)set_isdisjoint, METH_O, set_isdisjoint__doc__},
 
-static PyObject *
-set_isdisjoint_impl(PySetObject *so, PyObject *other);
-
-static PyObject *
-set_isdisjoint(PySetObject *so, PyObject *other)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_isdisjoint_impl(so, other);
-    Py_END_CRITICAL_SECTION2();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(set_difference_update__doc__,
 "difference_update($self, /, *others)\n"
 "--\n"
@@ -355,21 +315,6 @@ PyDoc_STRVAR(set_symmetric_difference__doc__,
 #define SET_SYMMETRIC_DIFFERENCE_METHODDEF    \
     {"symmetric_difference", (PyCFunction)set_symmetric_difference, METH_O, set_symmetric_difference__doc__},
 
-static PyObject *
-set_symmetric_difference_impl(PySetObject *so, PyObject *other);
-
-static PyObject *
-set_symmetric_difference(PySetObject *so, PyObject *other)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_symmetric_difference_impl(so, other);
-    Py_END_CRITICAL_SECTION2();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(set_issubset__doc__,
 "issubset($self, other, /)\n"
 "--\n"
@@ -379,21 +324,6 @@ PyDoc_STRVAR(set_issubset__doc__,
 #define SET_ISSUBSET_METHODDEF    \
     {"issubset", (PyCFunction)set_issubset, METH_O, set_issubset__doc__},
 
-static PyObject *
-set_issubset_impl(PySetObject *so, PyObject *other);
-
-static PyObject *
-set_issubset(PySetObject *so, PyObject *other)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_issubset_impl(so, other);
-    Py_END_CRITICAL_SECTION2();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(set_issuperset__doc__,
 "issuperset($self, other, /)\n"
 "--\n"
@@ -402,21 +332,6 @@ PyDoc_STRVAR(set_issuperset__doc__,
 
 #define SET_ISSUPERSET_METHODDEF    \
     {"issuperset", (PyCFunction)set_issuperset, METH_O, set_issuperset__doc__},
-
-static PyObject *
-set_issuperset_impl(PySetObject *so, PyObject *other);
-
-static PyObject *
-set_issuperset(PySetObject *so, PyObject *other)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION2(so, other);
-    return_value = set_issuperset_impl(so, other);
-    Py_END_CRITICAL_SECTION2();
-
-    return return_value;
-}
 
 PyDoc_STRVAR(set_add__doc__,
 "add($self, object, /)\n"
@@ -429,21 +344,6 @@ PyDoc_STRVAR(set_add__doc__,
 #define SET_ADD_METHODDEF    \
     {"add", (PyCFunction)set_add, METH_O, set_add__doc__},
 
-static PyObject *
-set_add_impl(PySetObject *so, PyObject *key);
-
-static PyObject *
-set_add(PySetObject *so, PyObject *key)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_add_impl(so, key);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(set___contains____doc__,
 "__contains__($self, object, /)\n"
 "--\n"
@@ -452,21 +352,6 @@ PyDoc_STRVAR(set___contains____doc__,
 
 #define SET___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)set___contains__, METH_O|METH_COEXIST, set___contains____doc__},
-
-static PyObject *
-set___contains___impl(PySetObject *so, PyObject *key);
-
-static PyObject *
-set___contains__(PySetObject *so, PyObject *key)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set___contains___impl(so, key);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
 
 PyDoc_STRVAR(set_remove__doc__,
 "remove($self, object, /)\n"
@@ -479,21 +364,6 @@ PyDoc_STRVAR(set_remove__doc__,
 #define SET_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)set_remove, METH_O, set_remove__doc__},
 
-static PyObject *
-set_remove_impl(PySetObject *so, PyObject *key);
-
-static PyObject *
-set_remove(PySetObject *so, PyObject *key)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_remove_impl(so, key);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
-
 PyDoc_STRVAR(set_discard__doc__,
 "discard($self, object, /)\n"
 "--\n"
@@ -505,21 +375,6 @@ PyDoc_STRVAR(set_discard__doc__,
 
 #define SET_DISCARD_METHODDEF    \
     {"discard", (PyCFunction)set_discard, METH_O, set_discard__doc__},
-
-static PyObject *
-set_discard_impl(PySetObject *so, PyObject *key);
-
-static PyObject *
-set_discard(PySetObject *so, PyObject *key)
-{
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set_discard_impl(so, key);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
-}
 
 PyDoc_STRVAR(set___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -536,13 +391,7 @@ set___reduce___impl(PySetObject *so);
 static PyObject *
 set___reduce__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set___reduce___impl(so);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return set___reduce___impl(so);
 }
 
 PyDoc_STRVAR(set___sizeof____doc__,
@@ -560,12 +409,6 @@ set___sizeof___impl(PySetObject *so);
 static PyObject *
 set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(so);
-    return_value = set___sizeof___impl(so);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return set___sizeof___impl(so);
 }
-/*[clinic end generated code: output=de4ee725bd29f758 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=34a30591148da884 input=a9049054013a1b77]*/
