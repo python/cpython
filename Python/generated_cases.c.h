@@ -1472,12 +1472,12 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LIST_APPEND);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject **args;
+            PyObject *arg;
             PyObject *self;
             PyObject *callable;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            args = &stack_pointer[-1];
+            arg = stack_pointer[-1];
             self = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
@@ -1486,7 +1486,7 @@
             assert(self != NULL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             Py_DECREF(self);
@@ -1810,23 +1810,21 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_STR_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject **args;
+            PyObject *arg;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            args = &stack_pointer[-1];
+            arg = stack_pointer[-1];
             null = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PyObject_Str(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyUnicode_Type);  // I.e., callable
             if (res == NULL) goto pop_3_error;
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1839,23 +1837,21 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TUPLE_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject **args;
+            PyObject *arg;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            args = &stack_pointer[-1];
+            arg = stack_pointer[-1];
             null = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyTuple_Type);  // I.e., tuple
             if (res == NULL) goto pop_3_error;
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1868,23 +1864,21 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TYPE_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject **args;
+            PyObject *arg;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            args = &stack_pointer[-1];
+            arg = stack_pointer[-1];
             null = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
-            PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type, CALL);
             STAT_INC(CALL, hit);
-            res = Py_NewRef(Py_TYPE(obj));
-            Py_DECREF(obj);
-            Py_DECREF(&PyType_Type);  // I.e., callable
+            res = Py_NewRef(Py_TYPE(arg));
+            Py_DECREF(arg);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             DISPATCH();
