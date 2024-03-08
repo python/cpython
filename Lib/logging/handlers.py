@@ -483,9 +483,9 @@ class WatchedFileHandler(logging.FileHandler):
     def _statstream(self):
         if self.stream is None:
             return
-        stream_stat = os.fstat(self.stream.fileno())
-        self.dev = stream_stat.st_dev
-        self.ino = stream_stat.st_ino
+        sres = os.fstat(self.stream.fileno())
+        self.dev = sres.st_dev
+        self.ino = sres.st_ino
 
     def reopenIfNeeded(self):
         """
@@ -504,11 +504,10 @@ class WatchedFileHandler(logging.FileHandler):
         # and patch.
         try:
             # stat the file by path, checking for existence
-            stream_stat = os.stat(self.baseFilename)
+            sres = os.stat(self.baseFilename)
 
             # compare file system stat with that of our stream file handle
-            reopen = (stream_stat.st_dev != self.dev
-                      or stream_stat.st_ino != self.ino)
+            reopen = (sres.st_dev != self.dev or sres.st_ino != self.ino)
         except FileNotFoundError:
             reopen = True
 
