@@ -705,23 +705,33 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         fut = self.create_future()
         self._sock_accept(fut, sock)
         return await fut
+    
+    def _handle_socket_exception(self, fd, fut, sock):
+        self._ensure_fd_no_transport(fd)
+        handle = self._add_reader(fd, self._sock_accept, fut, sock)
+        fut.add_done_callback(
+            functools.partial(self._sock_read_done, fd, handle=handle))
 
     def _sock_accept(self, fut, sock):
         fd = sock.fileno()
-        try:
-            conn, address = sock.accept()
-            conn.setblocking(False)
-        except (BlockingIOError, InterruptedError):
-            self._ensure_fd_no_transport(fd)
-            handle = self._add_reader(fd, self._sock_accept, fut, sock)
-            fut.add_done_callback(
-                functools.partial(self._sock_read_done, fd, handle=handle))
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except BaseException as exc:
-            fut.set_exception(exc)
-        else:
-            fut.set_result((conn, address))
+        is_error_11 = True
+        while is_error_11:
+            try:
+                conn, address = sock.accept()
+                conn.setblocking(False)
+            except BlockingIOError as e:
+                if e.errno == 11:
+                    continue
+                self._handle_socket_exception(self, fd, fut, sock)
+            except InterruptedError:
+                self._handle_socket_exception(self, fd, fut, sock)
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
+                fut.set_exception(exc)
+            else:
+                fut.set_result((conn, address))
+            is_error_11 = False
 
     async def _sendfile_native(self, transp, file, offset, count):
         del self._transports[transp._sock_fd]
