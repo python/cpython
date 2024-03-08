@@ -24,7 +24,7 @@ To use, simply 'import logging.handlers' and log away!
 """
 
 import io, logging, socket, os, pickle, struct, time, re
-from stat import ST_DEV, ST_INO, ST_MTIME
+from stat import ST_DEV, ST_INO
 import queue
 import threading
 import copy
@@ -269,7 +269,15 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         # path object (see Issue #27493), but self.baseFilename will be a string
         filename = self.baseFilename
         if os.path.exists(filename):
-            t = os.stat(filename)[ST_MTIME]
+            # Use the minimum of file creation and modification time as the base of the
+            # rollover calculation
+            stat_result = os.stat(filename)
+            # Use st_birthtime whenever it is available or use st_ctime instead otherwise
+            try:
+                creation_time = stat_result.st_birthtime
+            except AttributeError:
+                creation_time = stat_result.st_ctime
+            t = int(min(creation_time, stat_result.st_mtime))
         else:
             t = int(time.time())
         self.rolloverAt = self.computeRollover(t)

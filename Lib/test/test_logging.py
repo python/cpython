@@ -6080,6 +6080,53 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
+    @unittest.skipUnless(support.has_st_birthtime, "st_birthtime not available or supported by Python on this OS")
+    def test_rollover_based_on_st_birthtime_only(self):
+        def add_record(message: str) -> None:
+            fh = logging.handlers.TimedRotatingFileHandler(
+                    self.fn, when='S', interval=4, encoding="utf-8", backupCount=1)
+            fmt = logging.Formatter('%(asctime)s %(message)s')
+            fh.setFormatter(fmt)
+            record = logging.makeLogRecord({'msg': message})
+            fh.emit(record)
+            fh.close()
+
+        add_record('testing - initial')
+        self.assertLogFile(self.fn)
+        # Sleep a little over the half of rollover time - and this value must be over
+        # 2 seconds, since this is the mtime resolution on FAT32 filesystems.
+        time.sleep(2.1)
+        add_record('testing - update before rollover to renew the st_mtime')
+        time.sleep(2.1)    # a little over the half of rollover time
+        add_record('testing - new record supposedly in the new file after rollover')
+
+        # At this point, the log file should be rotated if the rotation is based
+        # on creation time but should be not if it's based on creation time
+        found = False
+        now = datetime.datetime.now()
+        GO_BACK = 5 # seconds
+        for secs in range(GO_BACK):
+            prev = now - datetime.timedelta(seconds=secs)
+            fn = self.fn + prev.strftime(".%Y-%m-%d_%H-%M-%S")
+            found = os.path.exists(fn)
+            if found:
+                self.rmfiles.append(fn)
+                break
+        msg = 'No rotated files found, went back %d seconds' % GO_BACK
+        if not found:
+            # print additional diagnostics
+            dn, fn = os.path.split(self.fn)
+            files = [f for f in os.listdir(dn) if f.startswith(fn)]
+            print('Test time: %s' % now.strftime("%Y-%m-%d %H-%M-%S"), file=sys.stderr)
+            print('The only matching files are: %s' % files, file=sys.stderr)
+            for f in files:
+                print('Contents of %s:' % f)
+                path = os.path.join(dn, f)
+                print(os.stat(path))
+                with open(path, 'r') as tf:
+                    print(tf.read())
+        self.assertTrue(found, msg=msg)
+
     def test_rollover_at_midnight(self):
         atTime = datetime.datetime.now().time()
         fmt = logging.Formatter('%(asctime)s %(message)s')
