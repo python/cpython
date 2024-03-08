@@ -1171,7 +1171,8 @@ class CatchWarningTests(BaseTest):
         wmod = self.module
         my_log = []
 
-        def my_logger(message, category, filename, lineno, file=None, line=None):
+        def my_logger(message, category, filename, lineno, file=None,
+                      line=None, source=None):
             nonlocal my_log
             my_log.append(message)
 
