@@ -303,7 +303,7 @@ Methods and properties
 
 Pure paths provide the following methods and properties:
 
-.. attribute:: PurePath.pathmod
+.. attribute:: PurePath.flavour
 
    The implementation of the :mod:`os.path` module used for low-level path
    operations: either :mod:`posixpath` or :mod:`ntpath`.
