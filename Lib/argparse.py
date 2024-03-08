@@ -2153,10 +2153,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         while start_index <= max_option_string_index:
 
             # consume any Positionals preceding the next option
-            next_option_string_index = min([
-                index
-                for index in option_string_indices
-                if index >= start_index])
+            next_option_string_index = start_index
+            while next_option_string_index <= max_option_string_index:
+                if next_option_string_index in option_string_indices:
+                    break
+                next_option_string_index += 1
             if start_index != next_option_string_index:
                 positionals_end_index = consume_positionals(start_index)
 

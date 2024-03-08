@@ -143,23 +143,22 @@ dummy_func(
 
         tier1 inst(RESUME, (--)) {
             assert(frame == tstate->current_frame);
-            if (tstate->tracing == 0) {
-                uintptr_t global_version =
-                    _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
-                    ~_PY_EVAL_EVENTS_MASK;
-                uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
-                assert((code_version & 255) == 0);
-                if (code_version != global_version) {
-                    int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                    ERROR_IF(err, error);
-                    next_instr = this_instr;
-                    DISPATCH();
+            uintptr_t global_version =
+                _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
+                ~_PY_EVAL_EVENTS_MASK;
+            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            assert((code_version & 255) == 0);
+            if (code_version != global_version) {
+                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
+                ERROR_IF(err, error);
+                next_instr = this_instr;
+            }
+            else {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
+                    CHECK_EVAL_BREAKER();
                 }
+                this_instr->op.code = RESUME_CHECK;
             }
-            if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                CHECK_EVAL_BREAKER();
-            }
-            this_instr->op.code = RESUME_CHECK;
         }
 
         inst(RESUME_CHECK, (--)) {
@@ -170,13 +169,13 @@ dummy_func(
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            DEOPT_IF(eval_breaker != version && tstate->tracing == 0);
+            DEOPT_IF(eval_breaker != version);
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
-            if (code_version != global_version && tstate->tracing == 0) {
+            if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     GOTO_ERROR(error);
                 }
@@ -383,14 +382,15 @@ dummy_func(
             }
         }
 
-        inst(TO_BOOL_ALWAYS_TRUE, (unused/1, version/2, value -- res)) {
-            // This one is a bit weird, because we expect *some* failures:
-            assert(version);
-            EXIT_IF(Py_TYPE(value)->tp_version_tag != version);
-            STAT_INC(TO_BOOL, hit);
-            DECREF_INPUTS();
+        op(_REPLACE_WITH_TRUE, (value -- res)) {
+            Py_DECREF(value);
             res = Py_True;
         }
+
+        macro(TO_BOOL_ALWAYS_TRUE) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _REPLACE_WITH_TRUE;
 
         inst(UNARY_INVERT, (value -- res)) {
             res = PyNumber_Invert(value);
@@ -1307,14 +1307,14 @@ dummy_func(
 
         inst(DELETE_GLOBAL, (--)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err != 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                              NAME_ERROR_MSG, name);
-                }
+            if (err < 0) {
+                GOTO_ERROR(error);
+            }
+            if (err == 0) {
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                          NAME_ERROR_MSG, name);
                 GOTO_ERROR(error);
             }
         }
@@ -2237,8 +2237,46 @@ dummy_func(
             b = res ? Py_True : Py_False;
         }
 
-        inst(CONTAINS_OP, (left, right -- b)) {
+        family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
+            CONTAINS_OP_SET,
+            CONTAINS_OP_DICT,
+        };
+
+        op(_CONTAINS_OP, (left, right -- b)) {
             int res = PySequence_Contains(right, left);
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
+            b = (res ^ oparg) ? Py_True : Py_False;
+        }
+
+        specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_ContainsOp(right, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(CONTAINS_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;
+
+        inst(CONTAINS_OP_SET, (unused/1, left, right -- b)) {
+            DEOPT_IF(!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right)));
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
+            int res = _PySet_Contains((PySetObject *)right, left);
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
+            b = (res ^ oparg) ? Py_True : Py_False;
+        }
+
+        inst(CONTAINS_OP_DICT, (unused/1, left, right -- b)) {
+            DEOPT_IF(!PyDict_CheckExact(right));
+            STAT_INC(CONTAINS_OP, hit);
+            int res = PyDict_Contains(right, left);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
             b = (res ^ oparg) ? Py_True : Py_False;
@@ -2755,7 +2793,7 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -2790,7 +2828,7 @@ dummy_func(
                 GOTO_ERROR(error);
             }
             DECREF_INPUTS();
-            res = _PyObject_CallNoArgsTstate(tstate, enter);
+            res = PyObject_CallNoArgs(enter);
             Py_DECREF(enter);
             if (res == NULL) {
                 Py_DECREF(exit);
@@ -3822,9 +3860,9 @@ dummy_func(
         }
 
         inst(CONVERT_VALUE, (value -- result)) {
-            convertion_func_ptr  conv_fn;
+            conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
-            conv_fn = CONVERSION_FUNCTIONS[oparg];
+            conv_fn = _PyEval_ConversionFuncs[oparg];
             result = conv_fn(value);
             Py_DECREF(value);
             ERROR_IF(result == NULL, error);
@@ -4043,6 +4081,11 @@ dummy_func(
             value = ptr;
         }
 
+        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+            Py_DECREF(pop);
+            value = ptr;
+        }
+
         tier2 pure op(_LOAD_CONST_INLINE_WITH_NULL, (ptr/4 -- value, null)) {
             value = Py_NewRef(ptr);
             null = NULL;
@@ -4053,12 +4096,9 @@ dummy_func(
             null = NULL;
         }
 
-        tier2 op(_CHECK_GLOBALS, (dict/4 -- )) {
-            DEOPT_IF(GLOBALS() != dict);
-        }
-
-        tier2 op(_CHECK_BUILTINS, (dict/4 -- )) {
-            DEOPT_IF(BUILTINS() != dict);
+        tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
+            assert(PyFunction_Check(frame->f_funcobj));
+            DEOPT_IF(((PyFunctionObject *)frame->f_funcobj)->func_version != func_version);
         }
 
         /* Internal -- for testing executors */

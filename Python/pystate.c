@@ -795,7 +795,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
+    // At this time, all the threads should be cleared so we don't need atomic
+    // operations for instrumentation_version or eval_breaker.
     interp->ceval.instrumentation_version = 0;
+    tstate->eval_breaker = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -900,7 +903,7 @@ _PyInterpreterState_Clear(PyThreadState *tstate)
 
 
 static inline void tstate_deactivate(PyThreadState *tstate);
-static void tstate_set_detached(PyThreadState *tstate);
+static void tstate_set_detached(PyThreadState *tstate, int detached_state);
 static void zapthreads(PyInterpreterState *interp);
 
 void
@@ -1683,7 +1686,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
-    tstate_set_detached(tstate);
+    tstate_set_detached(tstate, _Py_THREAD_DETACHED);
     tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
     _PyEval_ReleaseLock(tstate->interp, NULL);
@@ -1856,13 +1859,13 @@ tstate_try_attach(PyThreadState *tstate)
 }
 
 static void
-tstate_set_detached(PyThreadState *tstate)
+tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
     assert(tstate->state == _Py_THREAD_ATTACHED);
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
+    _Py_atomic_store_int(&tstate->state, detached_state);
 #else
-    tstate->state = _Py_THREAD_DETACHED;
+    tstate->state = detached_state;
 #endif
 }
 
@@ -1932,7 +1935,7 @@ detach_thread(PyThreadState *tstate, int detached_state)
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
     tstate_deactivate(tstate);
-    tstate_set_detached(tstate);
+    tstate_set_detached(tstate, detached_state);
     current_fast_clear(&_PyRuntime);
     _PyEval_ReleaseLock(tstate->interp, tstate);
 }
@@ -2836,6 +2839,7 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     // the "backing" heap.
     mi_tld_t *tld = &mts->tld;
     _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
+    llist_init(&mts->page_list);
 
     // Exiting threads push any remaining in-use segments to the abandoned
     // pool to be re-claimed later by other threads. We use per-interpreter
@@ -2861,6 +2865,12 @@ tstate_mimalloc_bind(PyThreadState *tstate)
         _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
         mts->heaps[i].debug_offset = (uint8_t)debug_offsets[i];
     }
+
+    // Heaps that store Python objects should use QSBR to delay freeing
+    // mimalloc pages while there may be concurrent lock-free readers.
+    mts->heaps[_Py_MIMALLOC_HEAP_OBJECT].page_use_qsbr = true;
+    mts->heaps[_Py_MIMALLOC_HEAP_GC].page_use_qsbr = true;
+    mts->heaps[_Py_MIMALLOC_HEAP_GC_PRE].page_use_qsbr = true;
 
     // By default, object allocations use _Py_MIMALLOC_HEAP_OBJECT.
     // _PyObject_GC_New() and similar functions temporarily override this to
