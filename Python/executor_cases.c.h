@@ -383,15 +383,10 @@
             break;
         }
 
-        case _TO_BOOL_ALWAYS_TRUE: {
+        case _REPLACE_WITH_TRUE: {
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
-            uint32_t version = (uint32_t)CURRENT_OPERAND();
-            // This one is a bit weird, because we expect *some* failures:
-            assert(version);
-            if (Py_TYPE(value)->tp_version_tag != version) goto side_exit;
-            STAT_INC(TO_BOOL, hit);
             Py_DECREF(value);
             res = Py_True;
             stack_pointer[-1] = res;
@@ -1172,14 +1167,14 @@
         case _DELETE_GLOBAL: {
             oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err != 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                        NAME_ERROR_MSG, name);
-                }
+            if (err < 0) {
+                GOTO_ERROR(error);
+            }
+            if (err == 0) {
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                    NAME_ERROR_MSG, name);
                 GOTO_ERROR(error);
             }
             break;
@@ -2185,6 +2180,45 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             int res = PySequence_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error_tier_two;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_SET: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right))) goto deoptimize;
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
+            int res = _PySet_Contains((PySetObject *)right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error_tier_two;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            break;
+        }
+
+        case _CONTAINS_OP_DICT: {
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!PyDict_CheckExact(right)) goto deoptimize;
+            STAT_INC(CONTAINS_OP, hit);
+            int res = PyDict_Contains(right, left);
             Py_DECREF(left);
             Py_DECREF(right);
             if (res < 0) goto pop_2_error_tier_two;
@@ -3794,15 +3828,10 @@
             break;
         }
 
-        case _CHECK_GLOBALS: {
-            PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            if (GLOBALS() != dict) goto deoptimize;
-            break;
-        }
-
-        case _CHECK_BUILTINS: {
-            PyObject *dict = (PyObject *)CURRENT_OPERAND();
-            if (BUILTINS() != dict) goto deoptimize;
+        case _CHECK_FUNCTION: {
+            uint32_t func_version = (uint32_t)CURRENT_OPERAND();
+            assert(PyFunction_Check(frame->f_funcobj));
+            if (((PyFunctionObject *)frame->f_funcobj)->func_version != func_version) goto deoptimize;
             break;
         }
 

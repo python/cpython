@@ -1,18 +1,12 @@
 /* Test Vectorcall in the limited API */
 
-#include "pyconfig.h"   // Py_GIL_DISABLED
-
-#ifndef Py_GIL_DISABLED
-#define Py_LIMITED_API 0x030c0000 // 3.12
-#endif
-
 #include "parts.h"
 #include "clinic/vectorcall_limited.c.h"
 
 /*[clinic input]
-module _testcapi
+module _testlimitedcapi
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2700057f9c1135ba]*/
 
 static PyObject *
 LimitedVectorCallClass_tpcall(PyObject *self, PyObject *args, PyObject *kwargs) {
@@ -40,15 +34,15 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
 }
 
 /*[clinic input]
-_testcapi.call_vectorcall
+_testlimitedcapi.call_vectorcall
 
     callable: object
     /
 [clinic start generated code]*/
 
 static PyObject *
-_testcapi_call_vectorcall(PyObject *module, PyObject *callable)
-/*[clinic end generated code: output=bae81eec97fcaad7 input=55d88f92240957ee]*/
+_testlimitedcapi_call_vectorcall(PyObject *module, PyObject *callable)
+/*[clinic end generated code: output=9cbb7832263a8eef input=0743636c12dccb28]*/
 {
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
@@ -93,15 +87,15 @@ leave:
 }
 
 /*[clinic input]
-_testcapi.call_vectorcall_method
+_testlimitedcapi.call_vectorcall_method
 
     callable: object
     /
 [clinic start generated code]*/
 
 static PyObject *
-_testcapi_call_vectorcall_method(PyObject *module, PyObject *callable)
-/*[clinic end generated code: output=e661f48dda08b6fb input=5ba81c27511395b6]*/
+_testlimitedcapi_call_vectorcall_method(PyObject *module, PyObject *callable)
+/*[clinic end generated code: output=4558323a46cc09eb input=a736f7dbf15f1be5]*/
 {
     PyObject *args[3] = { NULL, NULL, NULL };
     PyObject *name = NULL, *kwname = NULL,
@@ -167,7 +161,7 @@ static PyType_Slot LimitedVectorallClass_slots[] = {
 };
 
 static PyType_Spec LimitedVectorCallClass_spec = {
-    .name = "_testcapi.LimitedVectorCallClass",
+    .name = "_testlimitedcapi.LimitedVectorCallClass",
     .basicsize = (int)(sizeof(PyObject) + sizeof(vectorcallfunc)),
     .flags = Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_HAVE_VECTORCALL
@@ -176,8 +170,8 @@ static PyType_Spec LimitedVectorCallClass_spec = {
 };
 
 static PyMethodDef TestMethods[] = {
-    _TESTCAPI_CALL_VECTORCALL_METHODDEF
-    _TESTCAPI_CALL_VECTORCALL_METHOD_METHODDEF
+    _TESTLIMITEDCAPI_CALL_VECTORCALL_METHODDEF
+    _TESTLIMITEDCAPI_CALL_VECTORCALL_METHOD_METHODDEF
     {NULL},
 };
 

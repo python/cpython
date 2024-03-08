@@ -2127,14 +2127,81 @@
 
         TARGET(CONTAINS_OP) {
             frame->instr_ptr = next_instr;
-            next_instr += 1;
+            next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP);
+            PREDICTED(CONTAINS_OP);
+            _Py_CODEUNIT *this_instr = next_instr - 2;
+            (void)this_instr;
             PyObject *right;
             PyObject *left;
             PyObject *b;
+            // _SPECIALIZE_CONTAINS_OP
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            int res = PySequence_Contains(right, left);
+            {
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                #if ENABLE_SPECIALIZATION
+                if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                    next_instr = this_instr;
+                    _Py_Specialize_ContainsOp(right, next_instr);
+                    DISPATCH_SAME_OPARG();
+                }
+                STAT_INC(CONTAINS_OP, deferred);
+                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                #endif  /* ENABLE_SPECIALIZATION */
+            }
+            // _CONTAINS_OP
+            {
+                int res = PySequence_Contains(right, left);
+                Py_DECREF(left);
+                Py_DECREF(right);
+                if (res < 0) goto pop_2_error;
+                b = (res ^ oparg) ? Py_True : Py_False;
+            }
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            DISPATCH();
+        }
+
+        TARGET(CONTAINS_OP_DICT) {
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(CONTAINS_OP_DICT);
+            static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            /* Skip 1 cache entry */
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            DEOPT_IF(!PyDict_CheckExact(right), CONTAINS_OP);
+            STAT_INC(CONTAINS_OP, hit);
+            int res = PyDict_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) goto pop_2_error;
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
+            DISPATCH();
+        }
+
+        TARGET(CONTAINS_OP_SET) {
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(CONTAINS_OP_SET);
+            static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            /* Skip 1 cache entry */
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            DEOPT_IF(!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right)), CONTAINS_OP);
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
+            int res = _PySet_Contains((PySetObject *)right, left);
             Py_DECREF(left);
             Py_DECREF(right);
             if (res < 0) goto pop_2_error;
@@ -2238,14 +2305,14 @@
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_GLOBAL);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err != 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                        NAME_ERROR_MSG, name);
-                }
+            if (err < 0) {
+                GOTO_ERROR(error);
+            }
+            if (err == 0) {
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                    NAME_ERROR_MSG, name);
                 GOTO_ERROR(error);
             }
             DISPATCH();
@@ -5580,17 +5647,24 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_ALWAYS_TRUE);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
+            PyObject *owner;
             PyObject *value;
             PyObject *res;
             /* Skip 1 cache entry */
-            value = stack_pointer[-1];
-            uint32_t version = read_u32(&this_instr[2].cache);
-            // This one is a bit weird, because we expect *some* failures:
-            assert(version);
-            DEOPT_IF(Py_TYPE(value)->tp_version_tag != version, TO_BOOL);
-            STAT_INC(TO_BOOL, hit);
-            Py_DECREF(value);
-            res = Py_True;
+            // _GUARD_TYPE_VERSION
+            owner = stack_pointer[-1];
+            {
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyTypeObject *tp = Py_TYPE(owner);
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, TO_BOOL);
+            }
+            // _REPLACE_WITH_TRUE
+            value = owner;
+            {
+                Py_DECREF(value);
+                res = Py_True;
+            }
             stack_pointer[-1] = res;
             DISPATCH();
         }
