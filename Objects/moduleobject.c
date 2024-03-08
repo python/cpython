@@ -787,7 +787,7 @@ _PyModuleSpec_IsUninitializedSubmodule(PyObject *spec, PyObject *name)
 }
 
 static int
-_get_file_origin_from_spec(PyObject *spec, PyObject **origin)
+_get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
 {
     PyObject *has_location = NULL;
     int rc = PyObject_GetOptionalAttr(spec, &_Py_ID(has_location), &has_location);
@@ -800,16 +800,18 @@ _get_file_origin_from_spec(PyObject *spec, PyObject **origin)
         return rc;
     }
     // has_location is true, so origin is a location
-    rc = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), origin);
+    PyObject *origin = NULL;
+    rc = PyObject_GetOptionalAttr(spec, &_Py_ID(origin), &origin);
     if (rc <= 0) {
         return rc;
     }
     assert(origin != NULL);
-    if (!PyUnicode_Check(*origin)) {
-        Py_DECREF(*origin);
-        *origin = NULL;
+    if (!PyUnicode_Check(origin)) {
+        Py_DECREF(origin);
+        *p_origin = NULL;
         return 0;
     }
+    *p_origin = origin;
     return 1;
 }
 
