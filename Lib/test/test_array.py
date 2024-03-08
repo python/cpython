@@ -100,6 +100,7 @@ UTF32_BE = 21
 class ArrayReconstructorTest(unittest.TestCase):
 
     def setUp(self):
+        self.enterContext(warnings.catch_warnings())
         warnings.filterwarnings(
             "ignore",
             message="The 'u' type code is deprecated and "
@@ -213,6 +214,14 @@ class BaseTest:
     # biggerexample: the same length as example, but bigger
     # outside: An entry that is not in example
     # minitemsize: the minimum guaranteed itemsize
+
+    def setUp(self):
+        self.enterContext(warnings.catch_warnings())
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
 
     def assertEntryEqual(self, entry1, entry2):
         self.assertEqual(entry1, entry2)
@@ -1004,6 +1013,29 @@ class BaseTest:
             a,
             array.array(self.typecode, self.example[3:]+self.example[:-1])
         )
+
+    def test_clear(self):
+        a = array.array(self.typecode, self.example)
+        with self.assertRaises(TypeError):
+            a.clear(42)
+        a.clear()
+        self.assertEqual(len(a), 0)
+        self.assertEqual(a.typecode, self.typecode)
+
+        a = array.array(self.typecode)
+        a.clear()
+        self.assertEqual(len(a), 0)
+        self.assertEqual(a.typecode, self.typecode)
+
+        a = array.array(self.typecode, self.example)
+        a.clear()
+        a.append(self.example[2])
+        a.append(self.example[3])
+        self.assertEqual(a, array.array(self.typecode, self.example[2:4]))
+
+        with memoryview(a):
+            with self.assertRaises(BufferError):
+                a.clear()
 
     def test_reverse(self):
         a = array.array(self.typecode, self.example)

@@ -62,21 +62,32 @@ typedef long stwodigits; /* signed variant of twodigits */
 #define PyLong_MASK     ((digit)(PyLong_BASE - 1))
 
 /* Long integer representation.
-   The absolute value of a number is equal to
-        SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
-   Negative numbers are represented with ob_size < 0;
-   zero is represented by ob_size == 0.
-   In a normalized number, ob_digit[abs(ob_size)-1] (the most significant
-   digit) is never zero.  Also, in all cases, for all valid i,
-        0 <= ob_digit[i] <= MASK.
-   The allocation function takes care of allocating extra memory
-   so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
-   We always allocate memory for at least one digit, so accessing ob_digit[0]
-   is always safe. However, in the case ob_size == 0, the contents of
-   ob_digit[0] may be undefined.
 
-   CAUTION:  Generic code manipulating subtypes of PyVarObject has to
-   aware that ints abuse  ob_size's sign bit.
+   Long integers are made up of a number of 30- or 15-bit digits, depending on
+   the platform. The number of digits (ndigits) is stored in the high bits of
+   the lv_tag field (lvtag >> _PyLong_NON_SIZE_BITS).
+
+   The absolute value of a number is equal to
+        SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(PyLong_SHIFT*i)
+
+   The sign of the value is stored in the lower 2 bits of lv_tag.
+
+    - 0: Positive
+    - 1: Zero
+    - 2: Negative
+
+   The third lowest bit of lv_tag is reserved for an immortality flag, but is
+   not currently used.
+
+   In a normalized number, ob_digit[ndigits-1] (the most significant
+   digit) is never zero.  Also, in all cases, for all valid i,
+        0 <= ob_digit[i] <= PyLong_MASK.
+
+   The allocation function takes care of allocating extra memory
+   so that ob_digit[0] ... ob_digit[ndigits-1] are actually available.
+   We always allocate memory for at least one digit, so accessing ob_digit[0]
+   is always safe. However, in the case ndigits == 0, the contents of
+   ob_digit[0] may be undefined.
 */
 
 typedef struct _PyLongValue {
@@ -89,13 +100,15 @@ struct _longobject {
     _PyLongValue long_value;
 };
 
-PyAPI_FUNC(PyLongObject *) _PyLong_New(Py_ssize_t);
+PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
 
-/* Return a copy of src. */
-PyAPI_FUNC(PyObject *) _PyLong_Copy(PyLongObject *src);
+// Return a copy of src.
+PyAPI_FUNC(PyObject*) _PyLong_Copy(PyLongObject *src);
 
-PyAPI_FUNC(PyLongObject *)
-_PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits);
+PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+    int negative,
+    Py_ssize_t digit_count,
+    digit *digits);
 
 
 /* Inline some internals for speed. These should be in pycore_long.h

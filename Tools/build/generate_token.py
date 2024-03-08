@@ -50,7 +50,7 @@ def update_file(file, content):
 
 
 token_h_template = f"""\
-/* {AUTO_GENERATED_BY_SCRIPT} */
+// {AUTO_GENERATED_BY_SCRIPT}
 """
 token_h_template += """\
 
@@ -84,7 +84,7 @@ extern "C" {
                                  (x) == FSTRING_MIDDLE)
 
 
-// Symbols exported for test_peg_generator
+// Export these 4 symbols for 'test_peg_generator'
 PyAPI_DATA(const char * const) _PyParser_TokenNames[]; /* Token names */
 PyAPI_FUNC(int) _PyToken_OneChar(int);
 PyAPI_FUNC(int) _PyToken_TwoChars(int, int);

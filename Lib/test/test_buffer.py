@@ -1029,6 +1029,7 @@ class TestBufferProtocol(unittest.TestCase):
                     ndim=ndim, shape=shape, strides=strides,
                     lst=lst, sliced=sliced)
 
+    @support.requires_resource('cpu')
     def test_ndarray_getbuf(self):
         requests = (
             # distinct flags
@@ -2760,6 +2761,7 @@ class TestBufferProtocol(unittest.TestCase):
             m = memoryview(ex)
             iter_roundtrip(ex, m, items, fmt)
 
+    @support.requires_resource('cpu')
     def test_memoryview_cast_1D_ND(self):
         # Cast between C-contiguous buffers. At least one buffer must
         # be 1D, at least one format must be 'c', 'b' or 'B'.
@@ -4583,6 +4585,33 @@ class TestPythonBufferProtocol(unittest.TestCase):
             buf.__release_buffer__(mv)
         self.assertEqual(buf.references, 0)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_buffer_invalid_flags(self):
+        buf = _testcapi.testBuf()
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_READ)
+        self.assertRaises(SystemError, buf.__buffer__, PyBUF_WRITE)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_invalid_flags(self):
+        # PyBuffer_FillInfo
+        source = b"abc"
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_READ)
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_WRITE)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_readonly_and_writable(self):
+        source = b"abc"
+        with _testcapi.buffer_fill_info(source, 1, PyBUF_SIMPLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertTrue(m.readonly)
+        with _testcapi.buffer_fill_info(source, 0, PyBUF_WRITABLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertFalse(m.readonly)
+        self.assertRaises(BufferError, _testcapi.buffer_fill_info,
+                          source, 1, PyBUF_WRITABLE)
+
     def test_inheritance(self):
         class A(bytearray):
             def __buffer__(self, flags):
@@ -4722,7 +4751,7 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with self.assertRaises(ValueError):
             c.buffer.tobytes()
 
-    def test_multiple_inheritance_buffer_last(self):
+    def test_multiple_inheritance_buffer_last_raising(self):
         class A:
             def __buffer__(self, flags):
                 raise RuntimeError("should not be called")
