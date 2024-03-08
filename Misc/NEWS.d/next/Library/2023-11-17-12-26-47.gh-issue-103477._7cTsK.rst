@@ -1,0 +1,1 @@
+Write gzip trailer with zlib, improving gzip compression performance on s390x by roughly 40%.
