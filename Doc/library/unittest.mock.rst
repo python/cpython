@@ -2833,14 +2833,16 @@ Sealing mocks
     .. versionadded:: 3.7
 
 
-Order of precedence of side_effect, return_value and wraps
-----------------------------------------------------------
+Order of precedence of :attr:`side_effect`, :attr:`return_value` and *wraps*
+----------------------------------------------------------------------------
 
 The order of their precedence is:
 
-:attr:`~Mock.side_effect` > :attr:`~Mock.return_value` > *wraps*
+1. :attr:`~Mock.side_effect`
+2. :attr:`~Mock.return_value`
+3. *wraps*
 
-If all three are set, mock will return the value from :attr:`~Mock.side_effect`
+If all three are set, mock will return the value from :attr:`~Mock.side_effect`,
 ignoring :attr:`~Mock.return_value` and the wrapped object altogether. If any
 two are set, the one with the higher precedence will return the value.
 Regardless of the order of which was set first, the order of precedence
@@ -2890,8 +2892,8 @@ the order of precedence will ignore it and move to the last successor which is
 the wrapped object.
 
 As the real call is being made to the wrapped object, creating an instance of
-this mock will return the real instance of the class. The positional arguments
-(if any) required by the wrapped object must be passed.
+this mock will return the real instance of the class. The positional arguments,
+if any, required by the wrapped object must be passed.
 
     >>> order_mock_instance = order_mock()
     >>> isinstance(order_mock_instance, Order)
@@ -2933,7 +2935,7 @@ precedence remains the same:
     'third'
 
 If :attr:`~Mock.side_effect` is exhausted, the order of precedence will not
-obtain value to return from the successors. Instead, ``StopIteration``
+cause a value to be obtained from the successors. Instead, ``StopIteration``
 exception is raised.
 
     >>> order_mock = Mock(spec=Order, wraps=Order)

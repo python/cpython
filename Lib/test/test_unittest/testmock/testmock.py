@@ -681,9 +681,9 @@ class MockTest(unittest.TestCase):
         real = Mock()
 
         mock = Mock(wraps=real)
-        # If "Mock" wraps an object, just by merely accessing its
+        # If "Mock" wraps an object, just accessing its
         # "return_value" ("NonCallableMock.__get_return_value") should not
-        # trigger settr descriptor ("NonCallableMock.__set_return_value") so
+        # trigger its descriptor ("NonCallableMock.__set_return_value") so
         # the default "return_value" should always be "sentinel.DEFAULT".
         self.assertEqual(mock.return_value, DEFAULT)
         # It will not be "sentinel.DFAULT" if the mock is not wrapping any
