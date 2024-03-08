@@ -1,0 +1,3 @@
+Properly calculate error ranges in the parser when raising
+:exc:`SyntaxError` exceptions caused by invalid byte sequences. Patch by
+Pablo Galindo

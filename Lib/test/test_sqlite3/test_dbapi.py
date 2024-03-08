@@ -31,7 +31,7 @@ import urllib.parse
 
 from test.support import (
     SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
-    is_emscripten, is_wasi
+    is_apple, is_emscripten, is_wasi
 )
 from test.support import gc_collect
 from test.support import threading_helper
@@ -40,6 +40,7 @@ from os import SEEK_SET, SEEK_CUR, SEEK_END
 from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE, unlink, temp_dir, FakePath
 
 from .util import memory_database, cx_limit
+from .util import MemoryDatabaseMixin
 
 
 class ModuleTests(unittest.TestCase):
@@ -583,6 +584,12 @@ class ConnectionTests(unittest.TestCase):
             cx.close()
         self.assertEqual(cm.filename, __file__)
 
+    def test_connection_resource_warning(self):
+        with self.assertWarns(ResourceWarning):
+            cx = sqlite.connect(":memory:")
+            del cx
+            gc_collect()
+
 
 class UninitialisedConnectionTests(unittest.TestCase):
     def setUp(self):
@@ -660,7 +667,7 @@ class OpenTests(unittest.TestCase):
             cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_apple, "skipped on Apple platforms")
     @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_with_undecodable_path(self):
@@ -706,7 +713,7 @@ class OpenTests(unittest.TestCase):
                 cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(sys.platform == "darwin", "skipped on macOS")
+    @unittest.skipIf(is_apple, "skipped on Apple platforms")
     @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
     @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
@@ -1734,10 +1741,9 @@ class ClosedConTests(unittest.TestCase):
         self.check(self.con)
 
 
-class ClosedCurTests(unittest.TestCase):
+class ClosedCurTests(MemoryDatabaseMixin, unittest.TestCase):
     def test_closed(self):
-        con = sqlite.connect(":memory:")
-        cur = con.cursor()
+        cur = self.cx.cursor()
         cur.close()
 
         for method_name in ("execute", "executemany", "executescript", "fetchall", "fetchmany", "fetchone"):
@@ -1848,7 +1854,7 @@ class SqliteOnConflictTests(unittest.TestCase):
 
 @requires_subprocess()
 class MultiprocessTests(unittest.TestCase):
-    CONNECTION_TIMEOUT = SHORT_TIMEOUT / 1000.  # Defaults to 30 ms
+    CONNECTION_TIMEOUT = 0  # Disable the busy timeout.
 
     def tearDown(self):
         unlink(TESTFN)

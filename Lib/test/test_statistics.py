@@ -698,14 +698,6 @@ class GlobalsTest(unittest.TestCase):
                             'missing name "%s" in __all__' % name)
 
 
-class DocTests(unittest.TestCase):
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -OO and above")
-    def test_doc_tests(self):
-        failed, tried = doctest.testmod(statistics, optionflags=doctest.ELLIPSIS)
-        self.assertGreater(tried, 0)
-        self.assertEqual(failed, 0)
-
 class StatisticsErrorTest(unittest.TestCase):
     def test_has_exception(self):
         errmsg = (
@@ -2145,6 +2137,7 @@ class TestSqrtHelpers(unittest.TestCase):
             self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
 
     @requires_IEEE_754
+    @support.requires_resource('cpu')
     def test_float_sqrt_of_frac(self):
 
         def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
@@ -2310,9 +2303,11 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(StatisticsError):
             geometric_mean([])                      # empty input
         with self.assertRaises(StatisticsError):
-            geometric_mean([3.5, 0.0, 5.25])        # zero input
-        with self.assertRaises(StatisticsError):
             geometric_mean([3.5, -4.0, 5.25])       # negative input
+        with self.assertRaises(StatisticsError):
+            geometric_mean([0.0, -4.0, 5.25])       # negative input with zero
+        with self.assertRaises(StatisticsError):
+            geometric_mean([3.5, -math.inf, 5.25])  # negative infinity
         with self.assertRaises(StatisticsError):
             geometric_mean(iter([]))                # empty iterator
         with self.assertRaises(TypeError):
@@ -2335,6 +2330,12 @@ class TestGeometricMean(unittest.TestCase):
         with self.assertRaises(ValueError):
             geometric_mean([Inf, -Inf])
 
+        # Cases with zero
+        self.assertEqual(geometric_mean([3, 0.0, 5]), 0.0)         # Any zero gives a zero
+        self.assertEqual(geometric_mean([3, -0.0, 5]), 0.0)        # Negative zero allowed
+        self.assertTrue(math.isnan(geometric_mean([0, NaN])))      # NaN beats zero
+        self.assertTrue(math.isnan(geometric_mean([0, Inf])))      # Because 0.0 * Inf -> NaN
+
     def test_mixed_int_and_float(self):
         # Regression test for b.p.o. issue #28327
         geometric_mean = statistics.geometric_mean
@@ -2350,6 +2351,66 @@ class TestGeometricMean(unittest.TestCase):
             with self.subTest(v=v):
                 actual_mean = geometric_mean(v)
                 self.assertAlmostEqual(actual_mean, expected_mean, places=5)
+
+
+class TestKDE(unittest.TestCase):
+
+    def test_kde(self):
+        kde = statistics.kde
+        StatisticsError = statistics.StatisticsError
+
+        kernels = ['normal', 'gauss', 'logistic', 'sigmoid', 'rectangular',
+                   'uniform', 'triangular', 'parabolic', 'epanechnikov',
+                   'quartic', 'biweight', 'triweight', 'cosine']
+
+        sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+
+        # The approximate integral of a PDF should be close to 1.0
+
+        def integrate(func, low, high, steps=10_000):
+            "Numeric approximation of a definite function integral."
+            dx = (high - low) / steps
+            midpoints = (low + (i + 1/2) * dx for i in range(steps))
+            return sum(map(func, midpoints)) * dx
+
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                f_hat = kde(sample, h=1.5, kernel=kernel)
+                area = integrate(f_hat, -20, 20)
+                self.assertAlmostEqual(area, 1.0, places=4)
+
+        # Check error cases
+
+        with self.assertRaises(StatisticsError):
+            kde([], h=1.0)                              # Empty dataset
+        with self.assertRaises(TypeError):
+            kde(['abc', 'def'], 1.5)                    # Non-numeric data
+        with self.assertRaises(TypeError):
+            kde(iter(sample), 1.5)                      # Data is not a sequence
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=0.0)                          # Zero bandwidth
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=0.0)                          # Negative bandwidth
+        with self.assertRaises(TypeError):
+            kde(sample, h='str')                        # Wrong bandwidth type
+        with self.assertRaises(StatisticsError):
+            kde(sample, h=1.0, kernel='bogus')          # Invalid kernel
+
+        # Test name and docstring of the generated function
+
+        h = 1.5
+        kernel = 'cosine'
+        f_hat = kde(sample, h, kernel)
+        self.assertEqual(f_hat.__name__, 'pdf')
+        self.assertIn(kernel, f_hat.__doc__)
+        self.assertIn(str(h), f_hat.__doc__)
+
+        # Test closed interval for the support boundaries.
+        # In particular, 'uniform' should non-zero at the boundaries.
+
+        f_hat = kde([0], 1.0, 'uniform')
+        self.assertEqual(f_hat(-1.0), 1/2)
+        self.assertEqual(f_hat(1.0), 1/2)
 
 
 class TestQuantiles(unittest.TestCase):
@@ -2461,6 +2522,11 @@ class TestQuantiles(unittest.TestCase):
             data = random.choices(range(100), k=k)
             q1, q2, q3 = quantiles(data, method='inclusive')
             self.assertEqual(q2, statistics.median(data))
+        # Base case with a single data point:  When estimating quantiles from
+        # a sample, we want to be able to add one sample point at a time,
+        # getting increasingly better estimates.
+        self.assertEqual(quantiles([10], n=4), [10.0, 10.0, 10.0])
+        self.assertEqual(quantiles([10], n=4, method='exclusive'), [10.0, 10.0, 10.0])
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles
@@ -2511,7 +2577,7 @@ class TestQuantiles(unittest.TestCase):
         with self.assertRaises(ValueError):
             quantiles([10, 20, 30], method='X') # method is unknown
         with self.assertRaises(StatisticsError):
-            quantiles([10], n=4)                # not enough data points
+            quantiles([], n=4)                  # not enough data points
         with self.assertRaises(TypeError):
             quantiles([10, None, 30], n=4)      # data is non-numeric
 
@@ -2849,6 +2915,7 @@ class TestNormalDist:
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_inv_cdf(self):
         NormalDist = self.module.NormalDist
 
@@ -3143,6 +3210,7 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
+    tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

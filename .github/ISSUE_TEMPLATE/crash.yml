@@ -8,6 +8,20 @@ body:
           This form is for hard crashes of the Python interpreter, segmentation faults, failed C-level assertions, and similar. Unexpected exceptions raised from Python functions in the standard library count as bugs rather than crashes.
 
           The CPython interpreter is written in a different programming language, C. A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: >
+        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
+        [Copy and paste code where possible rather than using screenshots](https://meta.stackoverflow.com/a/285557/13990016),
+        and put any code blocks inside triple backticks.
+
+      value: |
+        ```python
+        # Add a code block here, if required
+        ```
+    validations:
+      required: true
   - type: dropdown
     attributes:
       label: "CPython versions tested on:"
@@ -36,36 +50,5 @@ body:
     attributes:
       label: "Output from running 'python -VV' on the command line:"
       description: If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: What happened?
-      description: >
-        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
-        Put any code blocks inside triple backticks.
-
-      value: |
-        ```python
-        # Add a code block here, if required
-        ```
-    validations:
-      required: true
-  - type: textarea
-    attributes:
-      label: Error messages
-      description: >
-        Enter any error messages caused by the crash, including a core dump if there is one.
-        Feel free to leave this bit blank if it isn't relevant.
-      placeholder: |
-        Error messages should be formatted like this:
-
-        <details>
-        <summary>Error messages/core dump</summary>
-
-        ```
-        # paste errors here, if you have any
-        ```
-        </details>
     validations:
       required: false

@@ -173,7 +173,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 .. method:: HTMLParser.handle_charref(name)
 
    This method is called to process decimal and hexadecimal numeric character
-   references of the form ``&#NNN;`` and ``&#xNNN;``.  For example, the decimal
+   references of the form :samp:`&#{NNN};` and :samp:`&#x{NNN};`.  For example, the decimal
    equivalent for ``&gt;`` is ``&#62;``, whereas the hexadecimal is ``&#x3E;``;
    in this case the method will receive ``'62'`` or ``'x3E'``.  This method
    is never called if *convert_charrefs* is ``True``.

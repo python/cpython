@@ -33,8 +33,10 @@ echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
+echo.  --disable-gil  Enable experimental support for running without the GIL.
 echo.  --test-marker  Enable the test marker within the build.
 echo.  --regen        Regenerate all opcodes, grammar and tokens.
+echo.  --experimental-jit  Enable the experimental just-in-time compiler.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -80,9 +82,11 @@ if "%~1"=="-q" (set verbose=/v:q /nologo /clp:summary) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
+if "%~1"=="--disable-gil" (set UseDisableGil=true) & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
 if "%~1"=="-V" shift & goto Version
 if "%~1"=="--regen" (set Regen=true) & shift & goto CheckOpts
+if "%~1"=="--experimental-jit" (set UseJIT=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -172,7 +176,9 @@ echo on
  /p:IncludeExternals=%IncludeExternals%^
  /p:IncludeCTypes=%IncludeCTypes%^
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
+ /p:DisableGil=%UseDisableGil%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
+ /p:UseJIT=%UseJIT%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off

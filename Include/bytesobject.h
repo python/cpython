@@ -1,13 +1,10 @@
-
-/* Bytes object interface */
+// Bytes object interface
 
 #ifndef Py_BYTESOBJECT_H
 #define Py_BYTESOBJECT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdarg.h>               // va_list
 
 /*
 Type PyBytesObject represents a byte string.  An extra zero byte is
