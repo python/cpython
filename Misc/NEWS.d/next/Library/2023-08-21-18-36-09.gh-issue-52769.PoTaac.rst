@@ -1,0 +1,5 @@
+Add an "errors" return value to the *shutil.rmtree* when
+*ignore_errors=True*, based on the patch written in the #pycon 2013 sprint
+by andrewg (with r.david.murray's assistance). "errors" are returned in the
+same format as is expected in the *onexc* function (which is *function*,
+*path*, *excinfo*).

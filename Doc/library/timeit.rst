@@ -98,47 +98,55 @@ The module defines three convenience functions and a public class:
 
 .. class:: Timer(stmt='pass', setup='pass', timer=<timer function>, globals=None)
 
-   Class for timing execution speed of small code snippets.
+   Class for timing execution speed of small code snippets. A Timeit instance
+   will contain a function (see :meth:`Timer.timeit`) that executes a snippet of
+   *setup* code once and then times some number of executions of *stmt* code. The
+   code snippets, given as arguments *setup* and *stmt* when creating the
+   instance, may be either strings or callable objects.
 
-   The constructor takes a statement to be timed, an additional statement used
-   for setup, and a timer function.  Both statements default to ``'pass'``;
-   the timer function is platform-dependent (see the module doc string).
-   *stmt* and *setup* may also contain multiple statements separated by ``;``
-   or newlines, as long as they don't contain multi-line string literals.  The
-   statement will by default be executed within timeit's namespace; this behavior
-   can be controlled by passing a namespace to *globals*.
+   If *setup* or *stmt* is provided as a string, it may contain a python
+   expression, statement, or multiple statements separated by ";" or newlines.
+   Whitespace adhering to the usual Python indentation rules must follow any
+   newlines.
 
-   To measure the execution time of the first statement, use the :meth:`.timeit`
-   method.  The :meth:`.repeat` and :meth:`.autorange` methods are convenience
-   methods to call :meth:`.timeit` multiple times.
+   If *setup* or *stmt* is a callable object, (often a function), the object is
+   called with no arguments. Note that the timing overhead is a little larger in
+   this case because of the extra function calls required.
 
-   The execution time of *setup* is excluded from the overall timed execution run.
+   The *setup* and *stmt* parameters default to 'pass'. The *timer* parameter
+   defaults to a platform-dependent timer function (see the module doc string).
 
-   The *stmt* and *setup* parameters can also take objects that are callable
-   without arguments.  This will embed calls to them in a timer function that
-   will then be executed by :meth:`.timeit`.  Note that the timing overhead is a
-   little larger in this case because of the extra function calls.
+   When *setup* and *stmt* are run, they are run in a different namespace than
+   that of the code that calls :meth:`Timer.timeit()`. To give *stmt* (whether it
+   is a callable name or code string) access to objects defined in the code that
+   calls timeit, *setup* can import any needed objects. For example, if your code
+   defines function ``testfunc()``, *setup* can contain, ``from __main__ import
+   testfunc``, and code in *stmt* can then call ``testfunc``.
+
+   To measure the execution time of *stmt*, use the :meth:`Timer.timeit()` method.
+   The :meth:`Timer.repeat()` method is a convenience to call :meth:`Timer.timeit()`
+   multiple times and return a list of results.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
 
    .. method:: Timer.timeit(number=1000000)
 
-      Time *number* executions of the main statement.  This executes the setup
-      statement once, and then returns the time it takes to execute the main
-      statement a number of times.  The default timer returns seconds as a float.
+      Time *number* executions of the main snippet. This executes the setup
+      snippet once, and then returns the time it takes to execute the main
+      snippet a number of times. The default timer returns seconds as a float.
       The argument is the number of times through the loop, defaulting to one
-      million.  The main statement, the setup statement and the timer function
+      million. The main snippet, the setup snippet and the timer function
       to be used are passed to the constructor.
 
       .. note::
 
          By default, :meth:`.timeit` temporarily turns off :term:`garbage
-         collection` during the timing.  The advantage of this approach is that
-         it makes independent timings more comparable.  The disadvantage is
+         collection` during the timing. The advantage of this approach is that
+         it makes independent timings more comparable. The disadvantage is
          that GC may be an important component of the performance of the
-         function being measured.  If so, GC can be re-enabled as the first
-         statement in the *setup* string.  For example::
+         function being measured. If so, GC can be re-enabled as the first
+         snippet in the *setup* string. For example::
 
             timeit.Timer('for i in range(10): oct(i)', 'gc.enable()').timeit()
 
