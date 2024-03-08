@@ -73,7 +73,7 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
 
 /* True if an object is shared between multiple threads and
  * needs special purpose when freeing to do the possibility
- * of in-flight lock-free reads occuring */
+ * of in-flight lock-free reads occurring */
 static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
     return (op->ob_gc_bits & _PyGC_BITS_SHARED) != 0;
 }
