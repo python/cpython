@@ -835,6 +835,38 @@ class ImportTests(unittest.TestCase):
             stdout, stderr = popen.communicate()
             self.assertEqual(stdout, b'')  # no error
 
+    def test_package_shadowing_stdlib_module(self):
+        with os_helper.temp_dir() as tmp:
+            os.mkdir(os.path.join(tmp, "fractions"))
+            with open(os.path.join(tmp, "fractions", "__init__.py"), "w", encoding='utf-8') as f:
+                f.write("shadowing_module = True")
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
+import fractions
+fractions.shadowing_module
+fractions.Fraction
+""")
+
+            expected_error = (
+                rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
+                rb"\(consider renaming '.*fractions.__init__.py' since it has the "
+                rb"same name as the standard library module named 'fractions' "
+                rb"and takes precedence over it on sys.path\)"
+            )
+
+            popen = script_helper.spawn_python(os.path.join(tmp, "main.py"), cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            popen = script_helper.spawn_python('-m', 'main', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, expected_error)
+
+            # and there's no shadowing at all when using -P
+            popen = script_helper.spawn_python('-P', 'main.py', cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertRegex(stdout, b"module 'fractions' has no attribute 'shadowing_module'")
+
     def test_script_shadowing_third_party(self):
         with os_helper.temp_dir() as tmp:
             with open(os.path.join(tmp, "numpy.py"), "w", encoding='utf-8') as f:

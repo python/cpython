@@ -824,29 +824,39 @@ _is_module_possibly_shadowing(PyObject *origin)
     // origin must be a unicode subtype
     // Returns 1 if the module at origin could be shadowing a module of the
     // same name later in the module search path. The condition we check is basically:
-    // not sys.flags.safe_path and os.path.dirname(origin) == (sys.path[0] or os.getcwd())
+    // root = os.path.dirname(origin.removesuffix(os.sep + "__init__.py"))
+    // return not sys.flags.safe_path and root == (sys.path[0] or os.getcwd())
     // Returns 0 otherwise (or if we aren't sure)
     // Returns -1 if an error occurred that should be propagated
     if (origin == NULL) {
         return 0;
     }
+
+    // not sys.flags.safe_path
     const PyConfig *config = _Py_GetConfig();
     if (config->safe_path) {
         return 0;
     }
 
-    // os.path.dirname(origin)
-    wchar_t origin_dirname[MAXPATHLEN + 1];
-    Py_ssize_t size = PyUnicode_AsWideChar(origin, origin_dirname, MAXPATHLEN);
+    // root = os.path.dirname(origin.removesuffix(os.sep + "__init__.py"))
+    wchar_t root[MAXPATHLEN + 1];
+    Py_ssize_t size = PyUnicode_AsWideChar(origin, root, MAXPATHLEN);
     if (size < 0) {
         return -1;
     }
     assert(size <= MAXPATHLEN);
-    origin_dirname[size] = L'\0';
+    root[size] = L'\0';
 
-    wchar_t *sep = wcsrchr(origin_dirname, SEP);
-    if (!sep) {
+    wchar_t *sep = wcsrchr(root, SEP);
+    if (sep == NULL) {
         return 0;
+    }
+    if (wcscmp(sep + 1, L"__init__.py") == 0) {
+        *sep = L'\0';
+        sep = wcsrchr(root, SEP);
+        if (sep == NULL) {
+            return 0;
+        }
     }
     *sep = L'\0';
 
@@ -865,7 +875,7 @@ _is_module_possibly_shadowing(PyObject *origin)
         sys_path_0 = sys_path_0_buf;
     }
 
-    int result = wcscmp(sys_path_0, origin_dirname) == 0;
+    int result = wcscmp(sys_path_0, root) == 0;
     return result;
 }
 
