@@ -328,7 +328,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    your application, read *Appendix A.2.2* of NIST-SP-800-132_. The answers
    on the `stackexchange pbkdf2 iterations question`_ explain in detail.
 
-   *dklen* is the length of the derived key. If *dklen* is ``None`` then the
+   *dklen* is the length of the derived key in bytes. If *dklen* is ``None`` then the
    digest size of the hash algorithm *hash_name* is used, e.g. 64 for SHA-512.
 
    >>> from hashlib import pbkdf2_hmac
