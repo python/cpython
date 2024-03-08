@@ -1,0 +1,1 @@
+Fixed :func:`unittest.mock.create_autospec` to pass the call through to the wrapped object to return the real result.
