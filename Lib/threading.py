@@ -38,6 +38,7 @@ _allocate_lock = _thread.allocate_lock
 _LockType = _thread.LockType
 _thread_shutdown = _thread._shutdown
 _make_thread_handle = _thread._make_thread_handle
+_ThreadHandle = _thread._ThreadHandle
 get_ident = _thread.get_ident
 _get_main_thread_ident = _thread._get_main_thread_ident
 _is_main_interpreter = _thread._is_main_interpreter
@@ -913,7 +914,7 @@ class Thread:
         self._ident = None
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
-        self._handle = None
+        self._handle = _ThreadHandle()
         self._started = Event()
         self._initialized = True
         # Copy of sys.stderr used by self._invoke_excepthook()
@@ -928,11 +929,10 @@ class Thread:
         if new_ident is not None:
             # This thread is alive.
             self._ident = new_ident
-            if self._handle is not None:
-                assert self._handle.ident == new_ident
+            assert self._handle.ident == new_ident
         else:
-            # Otherwise, the thread is dead, Jim. If we had a handle
-            # _PyThread_AfterFork() already marked it done.
+            # Otherwise, the thread is dead, Jim.  _PyThread_AfterFork()
+            # already marked our handle done.
             pass
 
     def __repr__(self):
@@ -940,7 +940,7 @@ class Thread:
         status = "initial"
         if self._started.is_set():
             status = "started"
-        if self._handle and self._handle.is_done():
+        if self._handle.is_done():
             status = "stopped"
         if self._daemonic:
             status += " daemon"
@@ -968,7 +968,8 @@ class Thread:
             _limbo[self] = self
         try:
             # Start joinable thread
-            self._handle = _start_joinable_thread(self._bootstrap, daemon=self.daemon)
+            _start_joinable_thread(self._bootstrap, handle=self._handle,
+                                   daemon=self.daemon)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
