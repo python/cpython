@@ -19,13 +19,13 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
 .. c:macro:: PyHASH_MODULUS
 
-   The Mersenne prime ``P = 2**n -1``, used for numeric hash scheme.
+   The `Mersenne prime <https://en.wikipedia.org/wiki/Mersenne_prime>`_ ``P = 2**n -1``, used for numeric hash scheme.
 
    .. versionadded:: 3.13
 
 .. c:macro:: PyHASH_BITS
 
-   The exponent ``n`` of ``P``.
+   The exponent ``n`` of ``P`` in :c:macro:`PyHASH_MODULUS`.
 
    .. versionadded:: 3.13
 
