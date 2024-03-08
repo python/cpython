@@ -245,6 +245,65 @@ class MockTest(unittest.TestCase):
             with mock.patch('builtins.open', mock.mock_open()):
                 mock.mock_open()  # should still be valid with open() mocked
 
+    def test_create_autospec_wraps_class(self):
+        """Autospec a class with wraps & test if the call is passed to the
+        wrapped object."""
+        result = "real result"
+
+        class Result:
+            def get_result(self):
+                return result
+        class_mock = create_autospec(spec=Result, wraps=Result)
+        # Have to reassign the return_value to DEFAULT to return the real
+        # result (actual instance of "Result") when the mock is called.
+        class_mock.return_value = mock.DEFAULT
+        self.assertEqual(class_mock().get_result(), result)
+        # Autospec should also wrap child attributes of parent.
+        self.assertEqual(class_mock.get_result._mock_wraps, Result.get_result)
+
+    def test_create_autospec_instance_wraps_class(self):
+        """Autospec a class instance with wraps & test if the call is passed
+        to the wrapped object."""
+        result = "real result"
+
+        class Result:
+            @staticmethod
+            def get_result():
+                """This is a static method because when the mocked instance of
+                'Result' will call this method, it won't be able to consume
+                'self' argument."""
+                return result
+        instance_mock = create_autospec(spec=Result, instance=True, wraps=Result)
+        # Have to reassign the return_value to DEFAULT to return the real
+        # result from "Result.get_result" when the mocked instance of "Result"
+        # calls "get_result".
+        instance_mock.get_result.return_value = mock.DEFAULT
+        self.assertEqual(instance_mock.get_result(), result)
+        # Autospec should also wrap child attributes of the instance.
+        self.assertEqual(instance_mock.get_result._mock_wraps, Result.get_result)
+
+    def test_create_autospec_wraps_function_type(self):
+        """Autospec a function or a method with wraps & test if the call is
+        passed to the wrapped object."""
+        result = "real result"
+
+        class Result:
+            def get_result(self):
+                return result
+        func_mock = create_autospec(spec=Result.get_result, wraps=Result.get_result)
+        self.assertEqual(func_mock(Result()), result)
+
+    def test_explicit_return_value_even_if_mock_wraps_object(self):
+        """If the mock has an explicit return_value set then calls are not
+        passed to the wrapped object and the return_value is returned instead.
+        """
+        def my_func():
+            return None
+        func_mock = create_autospec(spec=my_func, wraps=my_func)
+        return_value = "explicit return value"
+        func_mock.return_value = return_value
+        self.assertEqual(func_mock(), return_value)
+
     def test_explicit_parent(self):
         parent = Mock()
         mock1 = Mock(parent=parent, return_value=None)
@@ -622,6 +681,14 @@ class MockTest(unittest.TestCase):
         real = Mock()
 
         mock = Mock(wraps=real)
+        # If "Mock" wraps an object, just accessing its
+        # "return_value" ("NonCallableMock.__get_return_value") should not
+        # trigger its descriptor ("NonCallableMock.__set_return_value") so
+        # the default "return_value" should always be "sentinel.DEFAULT".
+        self.assertEqual(mock.return_value, DEFAULT)
+        # It will not be "sentinel.DEFAULT" if the mock is not wrapping any
+        # object.
+        self.assertNotEqual(real.return_value, DEFAULT)
         self.assertEqual(mock(), real())
 
         real.reset_mock()
