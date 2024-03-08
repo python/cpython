@@ -686,7 +686,7 @@ class MockTest(unittest.TestCase):
         # trigger its descriptor ("NonCallableMock.__set_return_value") so
         # the default "return_value" should always be "sentinel.DEFAULT".
         self.assertEqual(mock.return_value, DEFAULT)
-        # It will not be "sentinel.DFAULT" if the mock is not wrapping any
+        # It will not be "sentinel.DEFAULT" if the mock is not wrapping any
         # object.
         self.assertNotEqual(real.return_value, DEFAULT)
         self.assertEqual(mock(), real())

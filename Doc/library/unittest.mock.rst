@@ -2878,8 +2878,8 @@ value to return.
     >>> order_mock.get_value()
     'second'
 
-Unless explicitly set, the default value of :attr:`~Mock.return_value` is
-:data:`DEFAULT`.
+When :class:`Mock` wraps an object, the default value of
+:attr:`~Mock.return_value` will be :data:`DEFAULT`.
 
     >>> order_mock = Mock(spec=Order, wraps=Order)
     >>> order_mock.return_value
@@ -2887,9 +2887,8 @@ Unless explicitly set, the default value of :attr:`~Mock.return_value` is
     >>> order_mock.get_value.return_value
     sentinel.DEFAULT
 
-Reassigning back to this value or not explicitly assigning any value to it,
-the order of precedence will ignore it and move to the last successor which is
-the wrapped object.
+The order of precedence will ignore this value and it will move to the last
+successor which is the wrapped object.
 
 As the real call is being made to the wrapped object, creating an instance of
 this mock will return the real instance of the class. The positional arguments,
