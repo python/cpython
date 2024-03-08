@@ -705,7 +705,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         fut = self.create_future()
         self._sock_accept(fut, sock)
         return await fut
-    
+
     def _handle_socket_exception(self, fd, fut, sock):
         self._ensure_fd_no_transport(fd)
         handle = self._add_reader(fd, self._sock_accept, fut, sock)
@@ -722,9 +722,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             except BlockingIOError as e:
                 if e.errno == 11:
                     continue
-                self._handle_socket_exception(fd, fut, sock)
+                self._handle_socket_exception(self, fd, fut, sock)
             except InterruptedError:
-                self._handle_socket_exception(fd, fut, sock)
+                self._handle_socket_exception(self, fd, fut, sock)
             except (SystemExit, KeyboardInterrupt):
                 raise
             except BaseException as exc:
