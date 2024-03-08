@@ -1918,6 +1918,9 @@ Py_FinalizeEx(void)
     runtime->initialized = 0;
     runtime->core_initialized = 0;
 
+    /* Ensure that remaining threads are detached */
+    _PyEval_StopTheWorldAll(runtime);
+
     // XXX Call something like _PyImport_Disable() here?
 
     /* Destroy the state of all threads of the interpreter, except of the
