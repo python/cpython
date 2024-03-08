@@ -101,7 +101,7 @@ class TestCase(unittest.TestCase):
         expected_output = "_DataclassParams(init=True,repr=True," \
                           "eq=True,order=False,unsafe_hash=False,frozen=True," \
                           "match_args=True,kw_only=False," \
-                          "slots=True,weakref_slot=False)"
+                          "slots=True,weakref_slot=False,signature=False)"
         self.assertEqual(repr_output, expected_output)
 
     def test_dataclass_params_signature(self):
