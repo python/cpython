@@ -2773,6 +2773,13 @@ static PyMethodDef PyCData_methods[] = {
     { NULL, NULL },
 };
 
+PyDoc_STRVAR(cdata_doc,
+"This non-public class is the common base class of all ctypes data types. Among other things, all ctypes type\n"
+"instances contain a memory block that hold C compatible data; the address of the memory block is returned\n"
+"by the addressof() helper function. Another instance variable is exposed as _objects; this contains\n"
+"other Python objects that need to be kept alive in case the memory block contains pointers."
+);
+
 PyTypeObject PyCData_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes._CData",
@@ -2794,7 +2801,7 @@ PyTypeObject PyCData_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("XXX to be provided"),            /* tp_doc */
+    cdata_doc,                                  /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -4903,6 +4910,13 @@ Simple_repr(CDataObject *self)
     return result;
 }
 
+
+PyDoc_STRVAR(simple_cdata_doc,
+"This non-public class is the base class of all fundamental ctypes data types.\n"
+"It contains the common attributes of the fundamentalctypes data types.\n"
+"_SimpleCData is a subclass of _CData, so it inherits their methods and attributes."
+);
+
 static PyTypeObject Simple_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes._SimpleCData",
@@ -4924,7 +4938,7 @@ static PyTypeObject Simple_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("XXX to be provided"),            /* tp_doc */
+    simple_cdata_doc,                           /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -5286,6 +5300,19 @@ static PyNumberMethods Pointer_as_number = {
     (inquiry)Pointer_bool, /* nb_bool */
 };
 
+
+PyDoc_STRVAR(cpointer_doc,
+"Private, abstract base class for pointers.\n"
+"\n"
+"Concrete pointer types are created by calling POINTER() with the type that will be pointed to; this is done\n"
+"automatically by pointer().\n"
+"\n"
+"If a pointer points to an array, its elements can be read and written using standard subscript and slice ac-\n"
+"cesses. Pointer objects have no size, so len() will raise TypeError. Negative subscripts will read from the\n"
+"memory before the pointer (as in C), and out-of-range subscripts will probably crash with an access violation\n"
+"(if you’re lucky)."
+);
+
 PyTypeObject PyCPointer_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_ctypes._Pointer",
@@ -5307,7 +5334,7 @@ PyTypeObject PyCPointer_Type = {
     0,                                          /* tp_setattro */
     &PyCData_as_buffer,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    PyDoc_STR("XXX to be provided"),            /* tp_doc */
+    cpointer_doc,                               /* tp_doc */
     (traverseproc)PyCData_traverse,             /* tp_traverse */
     (inquiry)PyCData_clear,                     /* tp_clear */
     0,                                          /* tp_richcompare */
