@@ -51,6 +51,7 @@ import base64
 import hmac
 import copy
 import datetime
+import platform
 import sys
 from email.base64mime import body_encode as encode_base64
 
@@ -263,7 +264,17 @@ class SMTP:
             # if that can't be calculated, that we should use a domain literal
             # instead (essentially an encoded IP address like [A.B.C.D]).
             fqdn = socket.getfqdn()
-            if '.' in fqdn:
+
+            # Get information about the platform the program is running on
+            platform_string = platform.platform().lower()
+
+            # Check if the environment is Windows Subsystem for Linux (WSL)
+            is_wsl = "microsoft" in platform_string and "linux" in platform_string
+
+            # If it's WSL, adjust the hostname by removing the last character (the dot)
+            if is_wsl:
+                self.local_hostname = fqdn[:-1]
+            elif '.' in fqdn:
                 self.local_hostname = fqdn
             else:
                 # We can't find an fqdn hostname, so use a domain literal
