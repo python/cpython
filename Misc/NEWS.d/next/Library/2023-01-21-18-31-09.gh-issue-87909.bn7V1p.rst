@@ -1,0 +1,3 @@
+Avoid an unusual case in :func:`shutil.copyfile` where the ``sendfile``
+system call might return an error on some kernels and filesystems after all
+data was transferred.
