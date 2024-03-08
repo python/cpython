@@ -21,6 +21,13 @@ typedef struct {
     Py_ssize_t allocated;
 } PyListObject;
 
+#ifdef Py_GIL_DISABLED
+typedef struct {
+    Py_ssize_t allocated;
+    PyObject *ob_item[1];
+} _PyListArray;
+#endif
+
 /* Cast argument to PyListObject* type. */
 #define _PyList_CAST(op) \
     (assert(PyList_Check(op)), _Py_CAST(PyListObject*, (op)))
