@@ -1859,12 +1859,17 @@ class datetime(date):
         try:
             separator_location = _find_isoformat_datetime_separator(date_string)
             dstr = date_string[0:separator_location]
-            tstr = date_string[(separator_location+1):]
+            sep = date_string[separator_location:separator_location+1]
+            tstr = date_string[separator_location+1:]
 
             date_components = _parse_isoformat_date(dstr)
         except ValueError:
             raise ValueError(
                 f'Invalid isoformat string: {date_string!r}') from None
+
+        if sep and (_is_ascii_digit(sep) or not tstr):
+            # Date and time most likely split at the wrong place, indicates wrong format.
+            raise ValueError(f'Invalid isoformat string: {date_string!r}')
 
         if tstr:
             try:
