@@ -874,6 +874,10 @@ frame_dealloc(PyFrameObject *f)
         _PyObject_GC_UNTRACK(f);
     }
 
+    if (f->f_weakreflist != NULL) {
+        PyObject_ClearWeakRefs((PyObject *)f);
+    }
+
     Py_TRASHCAN_BEGIN(f, frame_dealloc);
     PyObject *co = NULL;
 
@@ -1021,7 +1025,7 @@ PyTypeObject PyFrame_Type = {
     (traverseproc)frame_traverse,               /* tp_traverse */
     (inquiry)frame_tp_clear,                    /* tp_clear */
     0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    OFF(f_weakreflist),                         /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     frame_methods,                              /* tp_methods */
@@ -1055,6 +1059,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_trace_opcodes = 0;
     f->f_fast_as_locals = 0;
     f->f_lineno = 0;
+    f->f_weakreflist = NULL;
     return f;
 }
 
