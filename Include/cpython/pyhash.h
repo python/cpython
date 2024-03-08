@@ -10,19 +10,19 @@
    reduction modulo the prime 2**_PyHASH_BITS - 1. */
 
 #if SIZEOF_VOID_P >= 8
-#  define _PyHASH_BITS 61
+#  define PyHASH_BITS 61
 #else
-#  define _PyHASH_BITS 31
+#  define PyHASH_BITS 31
 #endif
 
-#define PyHASH_BITS _PyHASH_BITS
+#define PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
+#define PyHASH_INF 314159
+#define PyHASH_IMAG _PyHASH_MULTIPLIER
 
-#define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
-#define PyHASH_MODULUS _PyHASH_MODULUS
-#define _PyHASH_INF 314159
-#define PyHASH_INF _PyHASH_INF
-#define _PyHASH_IMAG _PyHASH_MULTIPLIER
-#define PyHASH_IMAG _PyHASH_IMAG
+#define _PyHASH_BITS PyHASH_BITS
+#define _PyHASH_MODULUS PyHASH_MODULUS
+#define _PyHASH_INF PyHASH_INF
+#define _PyHASH_IMAG PyHASH_IMAG
 
 /* Helpers for hash functions */
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(PyObject *, double);
