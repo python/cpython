@@ -1405,7 +1405,7 @@ class _DummyThread(Thread):
         _DeleteDummyThreadOnDel(self)
 
     def is_alive(self):
-        if self._started.is_set() and not self._handle.is_done():
+        if not self._handle.is_done() and self._started.is_set():
             return True
         raise RuntimeError("thread is not alive")
 
