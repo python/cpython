@@ -1,0 +1,1 @@
+Add name parameter to the multiprocessing module. Patch by Joannah Nanjekye.
