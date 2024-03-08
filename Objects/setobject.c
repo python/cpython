@@ -582,7 +582,7 @@ set_repr(PySetObject *so)
 static Py_ssize_t
 set_len(PySetObject *so)
 {
-    return _Py_atomic_load_ssize_relaxed(&so->used);
+    return FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
 }
 
 static int
