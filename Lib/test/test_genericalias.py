@@ -96,7 +96,7 @@ _UNPACKED_TUPLES = [
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
-    generic_types = [type, tuple, list, dict, set, frozenset, enumerate,
+    generic_types = [type, tuple, list, dict, set, frozenset, enumerate, map,
                      defaultdict, deque,
                      SequenceMatcher,
                      dircmp,
