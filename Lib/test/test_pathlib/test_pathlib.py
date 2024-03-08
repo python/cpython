@@ -570,6 +570,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
         p = P('foo')
         with unittest.mock.patch('pathlib.Path.__new__') as mock_new:
+            pp = pickle.loads(pickle.dumps(p))
             mock_new.assert_called_with(pathlib.Path, 'foo')
 
     def _test_cwd(self, p):
