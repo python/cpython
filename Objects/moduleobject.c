@@ -811,7 +811,6 @@ _get_file_origin_from_spec(PyObject *spec, PyObject **p_origin)
     assert(origin != NULL);
     if (!PyUnicode_Check(origin)) {
         Py_DECREF(origin);
-        *p_origin = NULL;
         return 0;
     }
     *p_origin = origin;
@@ -851,6 +850,7 @@ _is_module_possibly_shadowing(PyObject *origin)
     if (sep == NULL) {
         return 0;
     }
+    // If it's a package then we need to look one directory further up
     if (wcscmp(sep + 1, L"__init__.py") == 0) {
         *sep = L'\0';
         sep = wcsrchr(root, SEP);
