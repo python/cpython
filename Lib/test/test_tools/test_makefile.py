@@ -33,14 +33,17 @@ class TestMakefile(unittest.TestCase):
                     if '\t' not in line:
                         break
                     result.append(line.replace('\\', '').strip())
+
+        # In Python 3.11 (and lower), many test modules are not in
+        # the tests/ directory. This check ignores them.
+        result = [d for d in result if d.startswith('test/') or d == 'test']
+
         return result
 
     def test_makefile_test_folders(self):
         test_dirs = self.list_test_dirs()
-        idle_test = 'idlelib/idle_test'
-        self.assertIn(idle_test, test_dirs)
 
-        used = [idle_test]
+        used = []
         for dirpath, _, _ in os.walk(support.TEST_HOME_DIR):
             dirname = os.path.basename(dirpath)
             if dirname == '__pycache__':
