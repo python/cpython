@@ -242,7 +242,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
 
     /* fast path for one argument case of range */
     if (start == zero && step == one) {
-        if (_PyLong_IsPositive( (const PyLongObject *)stop) ) {
+        if (_PyLong_IsPositive((const PyLongObject *)stop)) {
             return Py_NewRef(stop);
         }
         else {
