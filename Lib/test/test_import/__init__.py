@@ -937,13 +937,22 @@ try:
     fractions.Fraction
 except AttributeError as e:
     print(str(e))
+
+fractions.__spec__.origin = 0
+try:
+    fractions.Fraction
+except AttributeError as e:
+    print(str(e))
 """)
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
             self.assertEqual(
                 stdout.splitlines(),
-                [b"module 'fractions' has no attribute 'Fraction'"],
+                [
+                    b"module 'fractions' has no attribute 'Fraction'",
+                    b"module 'fractions' has no attribute 'Fraction'"
+                ],
             )
 
     def test_script_shadowing_stdlib_sys_path_modification(self):
