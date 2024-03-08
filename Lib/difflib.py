@@ -371,20 +371,34 @@ class SequenceMatcher:
         # junk-free match ending with a[i-1] and b[j]
         j2len = {}
         nothing = []
+        b2jcache = {}
         for i in range(alo, ahi):
             # look at all instances of a[i] in b; note that because
             # b2j has no junk keys, the loop is skipped if a[i] is junk
             j2lenget = j2len.get
             newj2len = {}
-            for j in b2j.get(a[i], nothing):
-                # a[i] matches b[j]
-                if j < blo:
-                    continue
-                if j >= bhi:
-                    break
-                k = newj2len[j] = j2lenget(j-1, 0) + 1
-                if k > bestsize:
-                    besti, bestj, bestsize = i-k+1, j-k+1, k
+            if a[i] not in b2jcache:
+                cache = []
+                for j in b2j.get(a[i], nothing):
+                    # a[i] matches b[j]
+                    if j < blo:
+                        continue
+                    if j >= bhi:
+                        break
+                    cache.append(j)
+                    k = newj2len[j] = j2lenget(j-1, 0) + 1
+                    if k > bestsize:
+                        besti, bestj, bestsize = i-k+1, j-k+1, k
+                b2jcache[a[i]] = cache
+            else:
+                for j in b2jcache[a[i]]:
+                    # a[i] matches b[j]
+                    if j-1 in j2len:
+                        k = newj2len[j] = j2len[j-1] + 1
+                        if k > bestsize:
+                            besti, bestj, bestsize = i-k+1, j-k+1, k
+                    else:
+                        k = 1
             j2len = newj2len
 
         # Extend the best by non-junk elements on each end.  In particular,
