@@ -804,6 +804,7 @@ _get_file_origin_from_spec(PyObject *spec, PyObject **origin)
     if (rc <= 0) {
         return rc;
     }
+    assert(origin != NULL);
     if (!PyUnicode_Check(*origin)) {
         Py_DECREF(*origin);
         *origin = NULL;

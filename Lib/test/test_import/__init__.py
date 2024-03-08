@@ -928,6 +928,24 @@ except AttributeError as e:
                 ],
             )
 
+            with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write("""
+import fractions
+fractions.shadowing_module
+del fractions.__spec__.origin
+try:
+    fractions.Fraction
+except AttributeError as e:
+    print(str(e))
+""")
+
+            popen = script_helper.spawn_python("main.py", cwd=tmp)
+            stdout, stderr = popen.communicate()
+            self.assertEqual(
+                stdout.splitlines(),
+                [b"module 'fractions' has no attribute 'Fraction'"],
+            )
+
     def test_script_shadowing_stdlib_sys_path_modification(self):
         with os_helper.temp_dir() as tmp:
             with open(os.path.join(tmp, "fractions.py"), "w", encoding='utf-8') as f:
