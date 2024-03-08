@@ -2728,11 +2728,11 @@ disabled by default.
 ::
 
    >>> client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_3
+   >>> client_context.minimum_version = ssl.TLSVersion.TLSv1_2
    >>> client_context.maximum_version = ssl.TLSVersion.TLSv1_3
 
 
-The SSL context created above will only allow TLSv1.3 and later (if
+The SSL context created above will only allow TLSv1.2 and TLSv1.3 (if
 supported by your system) connections to a server. :const:`PROTOCOL_TLS_CLIENT`
 implies certificate validation and hostname checks by default. You have to
 load certificates into the context.
