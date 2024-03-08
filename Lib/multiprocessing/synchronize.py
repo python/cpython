@@ -79,7 +79,7 @@ class SemLock(object):
             from .resource_tracker import register
             register(self._semlock.name, "semaphore")
             util.Finalize(self, SemLock._cleanup, (self._semlock.name,),
-                          exitpriority=0)
+                          exitpriority=0, reentrant=False)
 
     @staticmethod
     def _cleanup(name):

@@ -199,14 +199,14 @@ class Queue(object):
             self._jointhread = Finalize(
                 self._thread, Queue._finalize_join,
                 [weakref.ref(self._thread)],
-                exitpriority=-5
+                exitpriority=-5, reentrant=False
                 )
 
         # Send sentinel to the thread queue object when garbage collected
         self._close = Finalize(
             self, Queue._finalize_close,
             [self._buffer, self._notempty],
-            exitpriority=10
+            exitpriority=10, reentrant=False
             )
 
     @staticmethod
