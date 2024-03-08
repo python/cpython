@@ -10,6 +10,8 @@ import unittest
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
+from test.support.classes import (FloatSubclass, OtherFloatSubclass, FloatLike,
+                                  FloatLikeSubclass, IndexLike, IntLike)
 from math import isinf, isnan, copysign, ldexp
 import math
 
@@ -26,11 +28,6 @@ NAN = float("nan")
 test_dir = os.path.dirname(__file__) or os.curdir
 format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
 
-class FloatSubclass(float):
-    pass
-
-class OtherFloatSubclass(float):
-    pass
 
 class GeneralFloatCases(unittest.TestCase):
 
@@ -181,24 +178,6 @@ class GeneralFloatCases(unittest.TestCase):
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
-        class Foo1(object):
-            def __float__(self):
-                return 42.
-
-        class Foo2(float):
-            def __float__(self):
-                return 42.
-
-        class Foo3(float):
-            def __new__(cls, value=0.):
-                return float.__new__(cls, 2*value)
-
-            def __float__(self):
-                return self
-
-        class Foo4(float):
-            def __float__(self):
-                return 42
 
         # Issue 5759: __float__ not called on str subclasses (though it is on
         # unicode subclasses).
@@ -206,58 +185,40 @@ class GeneralFloatCases(unittest.TestCase):
             def __float__(self):
                 return float(str(self)) + 1
 
-        self.assertEqual(float(Foo1()), 42.)
-        self.assertEqual(float(Foo2()), 42.)
+        self.assertEqual(float(FloatLike(42.)), 42.)
+        self.assertEqual(float(FloatLikeSubclass(21.)), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(Foo3(21)), 42.)
-        self.assertRaises(TypeError, float, Foo4(42))
+            self.assertEqual(float(FloatLikeSubclass(FloatSubclass(21))), 42.)
+        self.assertRaises(TypeError, float, FloatLikeSubclass(42))
         self.assertEqual(float(FooStr('8')), 9.)
 
-        class Foo5:
-            def __float__(self):
-                return ""
-        self.assertRaises(TypeError, time.sleep, Foo5())
+        self.assertRaises(TypeError, time.sleep, FloatLike(""))
 
         # Issue #24731
-        class F:
-            def __float__(self):
-                return OtherFloatSubclass(42.)
+        f = FloatLike(OtherFloatSubclass(42.))
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(F()), 42.)
+            self.assertEqual(float(f), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(float(F())), float)
+            self.assertIs(type(float(f)), float)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(FloatSubclass(F()), 42.)
+            self.assertEqual(FloatSubclass(f), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertIs(type(FloatSubclass(F())), FloatSubclass)
+            self.assertIs(type(FloatSubclass(f)), FloatSubclass)
 
-        class MyIndex:
-            def __init__(self, value):
-                self.value = value
-            def __index__(self):
-                return self.value
-
-        self.assertEqual(float(MyIndex(42)), 42.0)
-        self.assertRaises(OverflowError, float, MyIndex(2**2000))
-
-        class MyInt:
-            def __int__(self):
-                return 42
-
-        self.assertRaises(TypeError, float, MyInt())
+        self.assertEqual(float(IndexLike(42)), 42.0)
+        self.assertRaises(OverflowError, float, IndexLike(2**2000))
+        self.assertRaises(TypeError, float, IntLike(42))
 
     def test_keyword_args(self):
         with self.assertRaisesRegex(TypeError, 'keyword argument'):
             float(x='3.14')
 
     def test_keywords_in_subclass(self):
-        class subclass(float):
-            pass
-        u = subclass(2.5)
-        self.assertIs(type(u), subclass)
+        u = FloatSubclass(2.5)
+        self.assertIs(type(u), FloatSubclass)
         self.assertEqual(float(u), 2.5)
         with self.assertRaises(TypeError):
-            subclass(x=0)
+            FloatSubclass(x=0)
 
         class subclass_with_init(float):
             def __init__(self, arg, newarg=None):
