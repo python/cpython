@@ -19,6 +19,7 @@
 #define PyHASH_INF 314159
 #define PyHASH_IMAG _PyHASH_MULTIPLIER
 
+/* Aliases kept for backward compatibility with Python 3.12 */
 #define _PyHASH_BITS PyHASH_BITS
 #define _PyHASH_MODULUS PyHASH_MODULUS
 #define _PyHASH_INF PyHASH_INF
