@@ -4987,14 +4987,20 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, foo=4, bar=5),
                          (1, 2, 3, 4, 5, {}))
 
-        with self.assertRaisesRegex(TypeError, "but was passed as a keyword"):
-            self.call(test, 1, 2, foo=4, bar=5, c_po=10)
+        self.assertEqual(self.call(test, 1, 2, foo=4, bar=5, c_po=10),
+                         (1, 2, 3, 4, 5, {'c_po': 10}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
-            self.call(test, 1, 2, c_po=4)
+        self.assertEqual(self.call(test, 1, 2, c_po=4),
+                         (1, 2, 3, 42, 50, {'c_po': 4}))
 
-        with self.assertRaisesRegex(TypeError, "parameter is positional only"):
+        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
             self.call(test, a_po=1, b_po=2)
+
+        def without_var_kwargs(a_po, b_po, c_po=3, /, foo=42, *, bar=50):
+            return a_po, b_po, c_po, foo, bar
+
+        with self.assertRaisesRegex(TypeError, "positional-only arguments passed as keyword"):
+            self.call(without_var_kwargs, 1, 2, foo=4, bar=5, c_po=10)
 
     def test_signature_bind_with_self_arg(self):
         # Issue #17071: one of the parameters is named "self
