@@ -328,6 +328,27 @@ class PlatformTest(unittest.TestCase):
 
     def test_win32_ver(self):
         res = platform.win32_ver()
+        self.assertEqual(len(res), 4)
+        if support.MS_WINDOWS:
+            release, version, csd, ptype = res
+            if release:
+                releases = []
+                releases.extend(r for _k, r in platform._WIN32_CLIENT_RELEASES)
+                releases.extend(r for _k, r in platform._WIN32_SERVER_RELEASES)
+                self.assertIn(release, releases)
+            if version:
+                # It is rather hard to test explicit version without
+                # going deep into the details.
+                self.assertIn('.', version)
+            if csd:
+                self.assertTrue(csd.startswith('SP'), msg=csd)
+            if ptype:
+                if os.cpu_count() > 1:
+                    self.assertIn('Multiprocessor', ptype)
+                else:
+                    self.assertIn('Uniprocessor', ptype)
+        else:
+            self.assertTrue(all(part == '' for part in res), msg=res)
 
     def test_mac_ver(self):
         res = platform.mac_ver()
