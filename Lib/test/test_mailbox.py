@@ -702,7 +702,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self.assertEqual(self._box._factory, factory)
         for subdir in '', 'tmp', 'new', 'cur':
             path = os.path.join(self._path, subdir)
-            mode = os.stat(path)[stat.ST_MODE]
+            mode = os.stat(path).st_mode
             self.assertTrue(stat.S_ISDIR(mode), "Not a directory: '%s'" % path)
 
     def test_list_folders(self):
