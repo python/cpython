@@ -44,6 +44,7 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
 #  define _PyGC_BITS_UNREACHABLE    (4)
 #  define _PyGC_BITS_FROZEN         (8)
 #  define _PyGC_BITS_SHARED         (16)
+#  define _PyGC_BITS_SHARED_INLINE  (32)
 #endif
 
 /* True if the object is currently tracked by the GC. */
@@ -71,9 +72,12 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
 
 #ifdef Py_GIL_DISABLED
 
-/* True if an object is shared between multiple threads and
- * needs special purpose when freeing to do the possibility
- * of in-flight lock-free reads occurring */
+/* True if memory the object references is shared between
+ * multiple threads and needs special purpose when freeing
+ * those references due to the possibility of in-flight
+ * lock-free reads occurring.  The object is responsible
+ * for calling _PyMem_FreeDelayed on the referenced
+ * memory. */
 static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
     return (op->ob_gc_bits & _PyGC_BITS_SHARED) != 0;
 }
@@ -83,6 +87,23 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
     op->ob_gc_bits |= _PyGC_BITS_SHARED;
 }
 #define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
+
+/* True if the memory of the object is shared between multiple
+ * threads and needs special purpose when freeing due to
+ * the possibility of in-flight lock-free reads occurring.
+ * Objects with this bit that are GC objects will automatically
+ * delay-freed by PyObject_GC_Del.  */
+static inline int _PyObject_GC_IS_SHARED_INLINE(PyObject *op) {
+    return (op->ob_gc_bits & _PyGC_BITS_SHARED_INLINE) != 0;
+}
+#define _PyObject_GC_IS_SHARED_INLINE(op) \
+    _PyObject_GC_IS_SHARED_INLINE(_Py_CAST(PyObject*, op))
+
+static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
+    op->ob_gc_bits |= _PyGC_BITS_SHARED_INLINE;
+}
+#define _PyObject_GC_SET_SHARED_INLINE(op) \
+    _PyObject_GC_SET_SHARED_INLINE(_Py_CAST(PyObject*, op))
 
 #endif
 
