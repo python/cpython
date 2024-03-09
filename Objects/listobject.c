@@ -194,7 +194,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     }
     items = array->ob_item;
 #else
-    PyObject **items = PyMem_New(PyObject*, size);
+    items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
