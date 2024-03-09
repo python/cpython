@@ -90,7 +90,7 @@ free_list_items(PyObject** items, bool use_qsbr)
 static int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    Py_ssize_t new_allocated;
+    size_t new_allocated;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
@@ -138,11 +138,11 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     }
     PyObject **old_items = self->ob_item;
     if (self->ob_item) {
-        if (allocated < new_allocated) {
-            memcpy(&array->ob_item, self->ob_item, allocated * sizeof(PyObject*));
+        if (new_allocated < (size_t)allocated) {
+            memcpy(&array->ob_item, self->ob_item, new_allocated * sizeof(PyObject*));
         }
         else {
-            memcpy(&array->ob_item, self->ob_item, new_allocated * sizeof(PyObject*));
+            memcpy(&array->ob_item, self->ob_item, allocated * sizeof(PyObject*));
         }
     }
      _Py_atomic_store_ptr_release(&self->ob_item, &array->ob_item);
