@@ -177,6 +177,8 @@ platform.
 
    The largest area of mapped memory which the process may occupy.
 
+   .. availability:: FreeBSD >= 11.
+
 
 .. data:: RLIMIT_AS
 
