@@ -1695,6 +1695,7 @@ PyObject_GC_Del(void *op)
 {
     size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     if (_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_UNTRACK(op);
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
@@ -1707,8 +1708,13 @@ PyObject_GC_Del(void *op)
     }
 
     record_deallocation(_PyThreadState_GET());
-
-    PyObject_Free(((char *)op)-presize);
+    PyObject *self = (PyObject *)op;
+    if (_PyObject_GC_IS_SHARED_INLINE(self)) {
+        _PyObject_FreeDelayed(((char *)op)-presize);
+    }
+    else {
+        PyObject_Free(((char *)op)-presize);
+    }
 }
 
 int
