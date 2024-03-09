@@ -822,6 +822,12 @@ function.
        Return a :class:`Signature` (or its subclass) object for a given
        :ref:`frame object <frame-objects>`.
 
+       Notice that it is impossible to get signatures
+       with annotations from frames.
+       Because annotations are stored in functions.
+       Also note that default parameter values might
+       be modified inside the frame.
+
        .. versionadded:: 3.13
 
 

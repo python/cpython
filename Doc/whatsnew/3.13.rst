@@ -361,6 +361,12 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+inspect
+-------
+
+* Add :meth:`inspect.Signature.from_frame` to get signatures from frame objects
+  and to replace the old :func:`inspect.getargvalues` API.
+
 ipaddress
 ---------
 
