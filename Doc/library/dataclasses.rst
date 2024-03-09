@@ -717,7 +717,7 @@ Using dataclasses, *if* this code was valid::
   class D:
       x: list = []      # This code raises ValueError
       def add(self, element):
-          self.x += element
+          self.x.append(element)
 
 it would generate code similar to::
 
@@ -726,7 +726,7 @@ it would generate code similar to::
       def __init__(self, x=x):
           self.x = x
       def add(self, element):
-          self.x += element
+          self.x.append(element)
 
   assert D().x is D().x
 
