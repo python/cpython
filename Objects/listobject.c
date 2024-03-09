@@ -90,7 +90,7 @@ free_list_items(PyObject** items, bool use_qsbr)
 static int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    size_t new_allocated;
+    size_t new_allocated, num_allocated_bytes;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
@@ -139,11 +139,12 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     PyObject **old_items = self->ob_item;
     if (self->ob_item) {
         if (new_allocated < (size_t)allocated) {
-            memcpy(&array->ob_item, self->ob_item, new_allocated * sizeof(PyObject*));
+            num_allocated_bytes = new_allocated * sizeof(PyObject*);
         }
         else {
-            memcpy(&array->ob_item, self->ob_item, allocated * sizeof(PyObject*));
+            num_allocated_bytes = allocated * sizeof(PyObject*);
         }
+        memcpy(&array->ob_item, self->ob_item, num_allocated_bytes);
     }
      _Py_atomic_store_ptr_release(&self->ob_item, &array->ob_item);
     self->allocated = new_allocated;
@@ -154,7 +155,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 #else
     PyObject **items;
     if (new_allocated <= (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        items = PyMem_Realloc(self->ob_item, new_allocated * sizeof(PyObject *));
+        num_allocated_bytes = new_allocated * sizeof(PyObject *);
+        items = (PyObject **)PyMem_Realloc(self->ob_item, num_allocated_bytes);
     }
     else {
         // integer overflow
@@ -174,6 +176,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
+    PyObject **items;
     assert(self->ob_item == NULL);
     assert(size > 0);
 
@@ -189,15 +192,15 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         PyErr_NoMemory();
         return -1;
     }
-    self->ob_item = array->ob_item;
+    items = array->ob_item;
 #else
     PyObject **items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
-    self->ob_item = items;
 #endif
+    self->ob_item = items;
     self->allocated = size;
     return 0;
 }
@@ -266,8 +269,8 @@ PyList_New(Py_ssize_t size)
             Py_DECREF(op);
             return PyErr_NoMemory();
         }
+        memset(array->ob_item, 0, size * sizeof(PyObject *));
         op->ob_item = array->ob_item;
-        memset(op->ob_item, 0, size * sizeof(PyObject *));
 #else
         op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
 #endif
