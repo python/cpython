@@ -8,6 +8,15 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+
+// We hide some of the newer PyCodeObject fields behind macros.
+// This helps with backporting certain changes to 3.12.
+#define _PyCode_HAS_EXECUTORS(CODE) \
+    (CODE->co_executors != NULL)
+#define _PyCode_HAS_INSTRUMENTATION(CODE) \
+    (CODE->_co_instrumentation_version > 0)
+
+
 #define CODE_MAX_WATCHERS 8
 
 /* PEP 659
@@ -111,6 +120,12 @@ typedef struct {
 } _PyToBoolCache;
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
+
+typedef struct {
+    uint16_t counter;
+} _PyContainsOpCache;
+
+#define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
 
 // Borrowed references to common callables:
 struct callable_cache {
@@ -236,7 +251,12 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
+#ifdef Py_GIL_DISABLED
+// gh-115999 tracks progress on addressing this.
+#define ENABLE_SPECIALIZATION 0
+#else
 #define ENABLE_SPECIALIZATION 1
+#endif
 
 /* Specialization functions */
 
@@ -263,6 +283,7 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
@@ -295,6 +316,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
             _Py_stats->optimization_stats.name[bucket]++; \
         } \
     } while (0)
+#define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -313,6 +335,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define UOP_STAT_INC(opname, name) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
+#define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
@@ -394,27 +417,29 @@ write_varint(uint8_t *ptr, unsigned int val)
         val >>= 6;
         written++;
     }
-    *ptr = val;
+    *ptr = (uint8_t)val;
     return written;
 }
 
 static inline int
 write_signed_varint(uint8_t *ptr, int val)
 {
+    unsigned int uval;
     if (val < 0) {
-        val = ((-val)<<1) | 1;
+        // (unsigned int)(-val) has an undefined behavior for INT_MIN
+        uval = ((0 - (unsigned int)val) << 1) | 1;
     }
     else {
-        val = val << 1;
+        uval = (unsigned int)val << 1;
     }
-    return write_varint(ptr, val);
+    return write_varint(ptr, uval);
 }
 
 static inline int
 write_location_entry_start(uint8_t *ptr, int code, int length)
 {
     assert((code & 15) == code);
-    *ptr = 128 | (code << 3) | (length - 1);
+    *ptr = 128 | (uint8_t)(code << 3) | (uint8_t)(length - 1);
     return 1;
 }
 
@@ -454,9 +479,9 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 
 static inline uint16_t
-adaptive_counter_bits(int value, int backoff) {
-    return (value << ADAPTIVE_BACKOFF_BITS) |
-        (backoff & ((1<<ADAPTIVE_BACKOFF_BITS)-1));
+adaptive_counter_bits(uint16_t value, uint16_t backoff) {
+    return ((value << ADAPTIVE_BACKOFF_BITS)
+            | (backoff & ((1 << ADAPTIVE_BACKOFF_BITS) - 1)));
 }
 
 static inline uint16_t
@@ -473,12 +498,12 @@ adaptive_counter_cooldown(void) {
 
 static inline uint16_t
 adaptive_counter_backoff(uint16_t counter) {
-    unsigned int backoff = counter & ((1<<ADAPTIVE_BACKOFF_BITS)-1);
+    uint16_t backoff = counter & ((1 << ADAPTIVE_BACKOFF_BITS) - 1);
     backoff++;
     if (backoff > MAX_BACKOFF_VALUE) {
         backoff = MAX_BACKOFF_VALUE;
     }
-    unsigned int value = (1 << backoff) - 1;
+    uint16_t value = (uint16_t)(1 << backoff) - 1;
     return adaptive_counter_bits(value, backoff);
 }
 

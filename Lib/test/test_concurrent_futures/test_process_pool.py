@@ -98,6 +98,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
         # explicitly destroy the object to ensure that EventfulGCObj.__del__()
         # is called while manager is still running.
+        support.gc_collect()
         obj = None
         support.gc_collect()
 

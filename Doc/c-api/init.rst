@@ -332,7 +332,7 @@ Initializing and finalizing the interpreter
       pair: module; __main__
       pair: module; sys
       triple: module; search; path
-      single: Py_FinalizeEx()
+      single: Py_FinalizeEx (C function)
 
    Initialize the Python interpreter.  In an application embedding  Python,
    this should be called before using any other Python/C API functions; see
@@ -661,7 +661,7 @@ operations could cause problems in a multi-threaded program: for example, when
 two threads simultaneously increment the reference count of the same object, the
 reference count could end up being incremented only once instead of twice.
 
-.. index:: single: setswitchinterval() (in module sys)
+.. index:: single: setswitchinterval (in module sys)
 
 Therefore, the rule exists that only the thread that has acquired the
 :term:`GIL` may operate on Python objects or call Python/C API functions.
@@ -671,8 +671,7 @@ released around potentially blocking I/O operations like reading or writing
 a file, so that other Python threads can run in the meantime.
 
 .. index::
-   single: PyThreadState
-   single: PyThreadState
+   single: PyThreadState (C type)
 
 The Python interpreter keeps some thread-specific bookkeeping information
 inside a data structure called :c:type:`PyThreadState`.  There's also one
@@ -698,8 +697,8 @@ This is so common that a pair of macros exists to simplify it::
    Py_END_ALLOW_THREADS
 
 .. index::
-   single: Py_BEGIN_ALLOW_THREADS
-   single: Py_END_ALLOW_THREADS
+   single: Py_BEGIN_ALLOW_THREADS (C macro)
+   single: Py_END_ALLOW_THREADS (C macro)
 
 The :c:macro:`Py_BEGIN_ALLOW_THREADS` macro opens a new block and declares a
 hidden local variable; the :c:macro:`Py_END_ALLOW_THREADS` macro closes the
@@ -714,8 +713,8 @@ The block above expands to the following code::
    PyEval_RestoreThread(_save);
 
 .. index::
-   single: PyEval_RestoreThread()
-   single: PyEval_SaveThread()
+   single: PyEval_RestoreThread (C function)
+   single: PyEval_SaveThread (C function)
 
 Here is how these functions work: the global interpreter lock is used to protect the pointer to the
 current thread state.  When releasing the lock and saving the thread state,
@@ -1399,8 +1398,8 @@ function. You can create and destroy them using the following functions:
    may be stored internally on the :c:type:`PyInterpreterState`.
 
    .. index::
-      single: Py_FinalizeEx()
-      single: Py_Initialize()
+      single: Py_FinalizeEx (C function)
+      single: Py_Initialize (C function)
 
    Extension modules are shared between (sub-)interpreters as follows:
 
@@ -1428,7 +1427,7 @@ function. You can create and destroy them using the following functions:
       As with multi-phase initialization, this means that only C-level static
       and global variables are shared between these modules.
 
-   .. index:: single: close() (in module os)
+   .. index:: single: close (in module os)
 
 
 .. c:function:: PyThreadState* Py_NewInterpreter(void)
@@ -1451,7 +1450,7 @@ function. You can create and destroy them using the following functions:
 
 .. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
 
-   .. index:: single: Py_FinalizeEx()
+   .. index:: single: Py_FinalizeEx (C function)
 
    Destroy the (sub-)interpreter represented by the given thread state.
    The given thread state must be the current thread state.  See the
@@ -1543,8 +1542,6 @@ pointer and a void pointer argument.
 
 .. c:function:: int Py_AddPendingCall(int (*func)(void *), void *arg)
 
-   .. index:: single: Py_AddPendingCall()
-
    Schedule a function to be called from the main interpreter thread.  On
    success, ``0`` is returned and *func* is queued for being called in the
    main thread.  On failure, ``-1`` is returned without setting any exception.
@@ -1578,13 +1575,13 @@ pointer and a void pointer argument.
       function is generally **not** suitable for calling Python code from
       arbitrary C threads.  Instead, use the :ref:`PyGILState API<gilstate>`.
 
+   .. versionadded:: 3.1
+
    .. versionchanged:: 3.9
       If this function is called in a subinterpreter, the function *func* is
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
-
-   .. versionadded:: 3.1
 
 .. _profiling:
 
@@ -1662,7 +1659,8 @@ Python-level trace functions in previous versions.
 
    The value passed as the *what* parameter to a :c:type:`Py_tracefunc` function
    (but not a profiling function) when a line-number event is being reported.
-   It may be disabled for a frame by setting :attr:`f_trace_lines` to *0* on that frame.
+   It may be disabled for a frame by setting :attr:`~frame.f_trace_lines` to
+   *0* on that frame.
 
 
 .. c:var:: int PyTrace_RETURN
@@ -1694,7 +1692,7 @@ Python-level trace functions in previous versions.
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions (but not
    profiling functions) when a new opcode is about to be executed.  This event is
    not emitted by default: it must be explicitly requested by setting
-   :attr:`f_trace_opcodes` to *1* on the frame.
+   :attr:`~frame.f_trace_opcodes` to *1* on the frame.
 
 
 .. c:function:: void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)

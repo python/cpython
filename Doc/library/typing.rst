@@ -954,7 +954,6 @@ using ``[]``.
    be used for this concept instead. Type checkers should treat the two
    equivalently.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
 .. data:: Self
@@ -2604,10 +2603,10 @@ Functions and decorators
 
 .. function:: reveal_type(obj, /)
 
-   Reveal the inferred static type of an expression.
+   Ask a static type checker to reveal the inferred type of an expression.
 
    When a static type checker encounters a call to this function,
-   it emits a diagnostic with the type of the argument. For example::
+   it emits a diagnostic with the inferred type of the argument. For example::
 
       x: int = 1
       reveal_type(x)  # Revealed type is "builtins.int"
@@ -2615,21 +2614,20 @@ Functions and decorators
    This can be useful when you want to debug how your type checker
    handles a particular piece of code.
 
-   The function returns its argument unchanged, which allows using
-   it within an expression::
-
-      x = reveal_type(1)  # Revealed type is "builtins.int"
-
-   Most type checkers support ``reveal_type()`` anywhere, even if the
-   name is not imported from ``typing``. Importing the name from
-   ``typing`` allows your code to run without runtime errors and
-   communicates intent more clearly.
-
-   At runtime, this function prints the runtime type of its argument to stderr
-   and returns it unchanged::
+   At runtime, this function prints the runtime type of its argument to
+   :data:`sys.stderr` and returns the argument unchanged (allowing the call to
+   be used within an expression)::
 
       x = reveal_type(1)  # prints "Runtime type is int"
       print(x)  # prints "1"
+
+   Note that the runtime type may be different from (more or less specific
+   than) the type statically inferred by a type checker.
+
+   Most type checkers support ``reveal_type()`` anywhere, even if the
+   name is not imported from ``typing``. Importing the name from
+   ``typing``, however, allows your code to run without runtime errors and
+   communicates intent more clearly.
 
    .. versionadded:: 3.11
 
@@ -3293,7 +3291,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.ChainMap`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3304,7 +3301,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.Counter`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3315,7 +3311,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.deque`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3390,7 +3385,7 @@ Aliases to container ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Collection`.
 
-   .. versionadded:: 3.6.0
+   .. versionadded:: 3.6
 
    .. deprecated:: 3.9
       :class:`collections.abc.Collection` now supports subscripting (``[]``).
@@ -3682,7 +3677,6 @@ Aliases to :mod:`contextlib` ABCs
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
       :class:`contextlib.AbstractContextManager`
@@ -3693,7 +3687,6 @@ Aliases to :mod:`contextlib` ABCs
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9

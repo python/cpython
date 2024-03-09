@@ -104,6 +104,7 @@
       <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -111,6 +112,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\getpath.c">
+      <AdditionalIncludeDirectories>$(GeneratedFrozenModulesDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>
         PREFIX=NULL;
         EXEC_PREFIX=NULL;
@@ -204,6 +206,7 @@
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
     <ClInclude Include="..\Include\internal\pycore_atexit.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
+    <ClInclude Include="..\Include\internal\pycore_brc.h" />
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
     <ClInclude Include="..\Include\internal\pycore_bytesobject.h" />
     <ClInclude Include="..\Include\internal\pycore_call.h" />
@@ -230,6 +233,7 @@
     <ClInclude Include="..\Include\internal\pycore_floatobject.h" />
     <ClInclude Include="..\Include\internal\pycore_format.h" />
     <ClInclude Include="..\Include\internal\pycore_frame.h" />
+    <ClInclude Include="..\Include\internal\pycore_freelist.h" />
     <ClInclude Include="..\Include\internal\pycore_function.h" />
     <ClInclude Include="..\Include\internal\pycore_gc.h" />
     <ClInclude Include="..\Include\internal\pycore_genobject.h" />
@@ -245,6 +249,7 @@
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
+    <ClInclude Include="..\Include\internal\pycore_jit.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
     <ClInclude Include="..\Include\internal\pycore_llist.h" />
     <ClInclude Include="..\Include\internal\pycore_lock.h" />
@@ -253,6 +258,7 @@
     <ClInclude Include="..\Include\internal\pycore_moduleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_namespace.h" />
     <ClInclude Include="..\Include\internal\pycore_object.h" />
+    <ClInclude Include="..\Include\internal\pycore_object_alloc.h" />
     <ClInclude Include="..\Include\internal\pycore_object_state.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h" />
@@ -260,6 +266,7 @@
     <ClInclude Include="..\Include\internal\pycore_parking_lot.h" />
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_pyarena.h" />
+    <ClInclude Include="..\Include\internal\pycore_pyatomic_ft_wrappers.h" />
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h" />
     <ClInclude Include="..\Include\internal\pycore_pyhash.h" />
     <ClInclude Include="..\Include\internal\pycore_pylifecycle.h" />
@@ -269,6 +276,7 @@
     <ClInclude Include="..\Include\internal\pycore_pystats.h" />
     <ClInclude Include="..\Include\internal\pycore_pythonrun.h" />
     <ClInclude Include="..\Include\internal\pycore_pythread.h" />
+    <ClInclude Include="..\Include\internal\pycore_qsbr.h" />
     <ClInclude Include="..\Include\internal\pycore_range.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h" />
@@ -285,6 +293,7 @@
     <ClInclude Include="..\Include\internal\pycore_token.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h" />
+    <ClInclude Include="..\Include\internal\pycore_tstate.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
     <ClInclude Include="..\Include\internal\pycore_typeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
@@ -292,7 +301,6 @@
     <ClInclude Include="..\Include\internal\pycore_unionobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_unicodeobject_generated.h" />
-    <ClInclude Include="..\Include\internal\pycore_uops.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
@@ -377,7 +385,7 @@
     <ClInclude Include="..\Parser\string_parser.h" />
     <ClInclude Include="..\Parser\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
-    <ClInclude Include="..\PC\pyconfig.h" />
+    <ClInclude Include="..\PC\pyconfig.h.in" />
     <ClInclude Include="..\Python\condvar.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
@@ -422,6 +430,7 @@
     <ClInclude Include="..\Modules\_sre\sre_lib.h" />
     <ClCompile Include="..\Modules\_stat.c" />
     <ClCompile Include="..\Modules\_struct.c" />
+    <ClCompile Include="..\Modules\_suggestions.c" />
     <ClCompile Include="..\Modules\_weakref.c" />
     <ClCompile Include="..\Modules\arraymodule.c" />
     <ClCompile Include="..\Modules\atexitmodule.c" />
@@ -457,6 +466,7 @@
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\_xxsubinterpretersmodule.c" />
     <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c" />
+    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c" />
     <ClCompile Include="..\Modules\_io\fileio.c" />
     <ClCompile Include="..\Modules\_io\bytesio.c" />
     <ClCompile Include="..\Modules\_io\stringio.c" />
@@ -546,6 +556,7 @@
     <ClCompile Include="..\Python\ast_unparse.c" />
     <ClCompile Include="..\Python\bltinmodule.c" />
     <ClCompile Include="..\Python\bootstrap_hash.c" />
+    <ClCompile Include="..\Python\brc.c" />
     <ClCompile Include="..\Python\ceval.c" />
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
@@ -559,8 +570,13 @@
     <ClCompile Include="..\Python\flowgraph.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
-    <ClCompile Include="..\Python\frozen.c" />
+    <ClCompile Include="..\Python\frozen.c">
+      <AdditionalIncludeDirectories>$(GeneratedFrozenModulesDir)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="..\Python\future.c" />
+    <ClCompile Include="..\Python\gc.c" />
+    <ClCompile Include="..\Python\gc_free_threading.c" />
+    <ClCompile Include="..\Python\gc_gil.c" />
     <ClCompile Include="..\Python\getargs.c" />
     <ClCompile Include="..\Python\getcompiler.c" />
     <ClCompile Include="..\Python\getcopyright.c" />
@@ -575,14 +591,17 @@
     <ClCompile Include="..\Python\initconfig.c" />
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
+    <ClCompile Include="..\Python\jit.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\lock.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\object_stack.c" />
     <ClCompile Include="..\Python\optimizer.c" />
     <ClCompile Include="..\Python\optimizer_analysis.c" />
+    <ClCompile Include="..\Python\optimizer_symbols.c" />
     <ClCompile Include="..\Python\parking_lot.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
@@ -597,6 +616,7 @@
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />
+    <ClCompile Include="..\Python\qsbr.c" />
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\Python-ast.c" />
     <ClCompile Include="..\Python\Python-tokenize.c" />
@@ -614,7 +634,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN deepfreeze -->
-    <ClCompile Include="..\Python\deepfreeze\deepfreeze.c" />
+    <ClCompile Include="$(GeneratedFrozenModulesDir)deepfreeze.c" />
     <!-- END deepfreeze -->
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
@@ -644,6 +664,35 @@
     <Import Project="regen.targets" />
   </ImportGroup>
   <Target Name="_TriggerRegen" BeforeTargets="PrepareForBuild" DependsOnTargets="Regen" />
+
+  <Target Name="_UpdatePyconfig" BeforeTargets="PrepareForBuild">
+    <MakeDir Directories="$(IntDir)" Condition="!Exists($(IntDir))" />
+    <ItemGroup>
+      <PyConfigH Remove="@(PyConfigH)" />
+      <PyConfigH Include="@(ClInclude)" Condition="'%(Filename)%(Extension)' == 'pyconfig.h.in'" />
+    </ItemGroup>
+    <Error Text="Did not find pyconfig.h" Condition="@(ClInclude) == ''" />
+    <PropertyGroup>
+      <PyConfigH>@(PyConfigH->'%(FullPath)', ';')</PyConfigH>
+      <PyConfigHText>$([System.IO.File]::ReadAllText($(PyConfigH)))</PyConfigHText>
+      <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
+    </PropertyGroup>
+    <PropertyGroup Condition="$(DisableGil) == 'true'">
+      <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_GIL_DISABLED 1 */', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
+    </PropertyGroup>
+    <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+    <WriteLinesToFile File="$(IntDir)pyconfig.h"
+                      Lines="$(PyConfigHText)"
+                      Overwrite="true"
+                      Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
+  </Target>
+  <Target Name="_CopyPyconfig" Inputs="$(IntDir)pyconfig.h" Outputs="$(OutDir)pyconfig.h" AfterTargets="Build" DependsOnTargets="_UpdatePyconfig">
+    <Copy SourceFiles="$(IntDir)pyconfig.h" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="_CleanPyconfig" AfterTargets="Clean">
+    <Delete Files="$(IntDir)pyconfig.h;$(OutDir)pyconfig.h" />
+  </Target>
+
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <GIT Condition="$(GIT) == ''">git</GIT>

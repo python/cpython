@@ -70,12 +70,12 @@
     <ProjectGuid>{885D4898-D08D-4091-9C40-C700CFE3FC5A}</ProjectGuid>
     <RootNamespace>python3dll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <TargetName>python3</TargetName>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetName>$(Py3DllName)</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />

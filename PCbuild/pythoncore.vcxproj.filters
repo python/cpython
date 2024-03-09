@@ -546,6 +546,9 @@
     <ClInclude Include="..\Include\internal\pycore_bitutils.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_brc.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -618,6 +621,12 @@
     <ClInclude Include="..\Include\internal\pycore_format.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_frame.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_freelist.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_function.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -663,6 +672,9 @@
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_jit.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -687,6 +699,9 @@
     <ClInclude Include="..\Include\internal\pycore_object.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_object_alloc.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_object_state.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -706,6 +721,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pyarena.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pyatomic_ft_wrappers.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pyerrors.h">
@@ -733,6 +751,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pythread.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_qsbr.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_range.h">
@@ -780,6 +801,9 @@
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_tstate.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_tuple.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -793,9 +817,6 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unionobject.h">
-      <Filter>Include\internal</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_uops.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
@@ -927,6 +948,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_struct.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_suggestions.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_weakref.c">
@@ -1238,6 +1262,9 @@
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\brc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\ceval.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1275,6 +1302,15 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\future.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_free_threading.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\gc_gil.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\getargs.c">
@@ -1316,6 +1352,9 @@
     <ClCompile Include="..\Python\instrumentation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\jit.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1334,10 +1373,16 @@
     <ClCompile Include="..\Python\mystrtoul.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\object_stack.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\optimizer.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\optimizer_analysis.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\optimizer_symbols.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\parking_lot.c">
@@ -1380,6 +1425,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrtod.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\dtoa.c">
@@ -1500,6 +1548,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_xxinterpchannelsmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_xxinterpqueuesmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\string_parser.c">

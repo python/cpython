@@ -39,14 +39,14 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
-   .. method:: map(func, *iterables, timeout=None, chunksize=1)
+   .. method:: map(fn, *iterables, timeout=None, chunksize=1)
 
-      Similar to :func:`map(func, *iterables) <map>` except:
+      Similar to :func:`map(fn, *iterables) <map>` except:
 
       * the *iterables* are collected immediately rather than lazily;
 
-      * *func* is executed asynchronously and several calls to
-        *func* may be made concurrently.
+      * *fn* is executed asynchronously and several calls to
+        *fn* may be made concurrently.
 
       The returned iterator raises a :exc:`TimeoutError`
       if :meth:`~iterator.__next__` is called and the result isn't available
@@ -54,7 +54,7 @@ Executor Objects
       *timeout* can be an int or a float.  If *timeout* is not specified or
       ``None``, there is no limit to the wait time.
 
-      If a *func* call raises an exception, then that exception will be
+      If a *fn* call raises an exception, then that exception will be
       raised when its value is retrieved from the iterator.
 
       When using :class:`ProcessPoolExecutor`, this method chops *iterables*
@@ -171,8 +171,8 @@ And::
       should be higher than the number of workers
       for :class:`ProcessPoolExecutor`.
 
-   .. versionadded:: 3.6
-      The *thread_name_prefix* argument was added to allow users to
+   .. versionchanged:: 3.6
+      Added the *thread_name_prefix* parameter to allow users to
       control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
@@ -275,7 +275,8 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    .. versionchanged:: 3.3
       When one of the worker processes terminates abruptly, a
-      :exc:`BrokenProcessPool` error is now raised.  Previously, behaviour
+      :exc:`~concurrent.futures.process.BrokenProcessPool` error is now raised.
+      Previously, behaviour
       was undefined but operations on the executor or its futures would often
       freeze or deadlock.
 
@@ -493,23 +494,22 @@ Module Functions
    *return_when* indicates when this function should return.  It must be one of
    the following constants:
 
-   .. tabularcolumns:: |l|L|
+   .. list-table::
+      :header-rows: 1
 
-   +-----------------------------+----------------------------------------+
-   | Constant                    | Description                            |
-   +=============================+========================================+
-   | :const:`FIRST_COMPLETED`    | The function will return when any      |
-   |                             | future finishes or is cancelled.       |
-   +-----------------------------+----------------------------------------+
-   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
-   |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
-   |                             | exception then it is equivalent to     |
-   |                             | :const:`ALL_COMPLETED`.                |
-   +-----------------------------+----------------------------------------+
-   | :const:`ALL_COMPLETED`      | The function will return when all      |
-   |                             | futures finish or are cancelled.       |
-   +-----------------------------+----------------------------------------+
+      * - Constant
+        - Description
+
+      * - .. data:: FIRST_COMPLETED
+        - The function will return when any future finishes or is cancelled.
+
+      * - .. data:: FIRST_EXCEPTION
+        - The function will return when any future finishes by raising an
+          exception. If no future raises an exception
+          then it is equivalent to :const:`ALL_COMPLETED`.
+
+      * - .. data:: ALL_COMPLETED
+        - The function will return when all futures finish or are cancelled.
 
 .. function:: as_completed(fs, timeout=None)
 
@@ -570,7 +570,8 @@ Exception classes
 .. exception:: BrokenThreadPool
 
    Derived from :exc:`~concurrent.futures.BrokenExecutor`, this exception
-   class is raised when one of the workers of a :class:`ThreadPoolExecutor`
+   class is raised when one of the workers
+   of a :class:`~concurrent.futures.ThreadPoolExecutor`
    has failed initializing.
 
    .. versionadded:: 3.7
@@ -581,7 +582,8 @@ Exception classes
 
    Derived from :exc:`~concurrent.futures.BrokenExecutor` (formerly
    :exc:`RuntimeError`), this exception class is raised when one of the
-   workers of a :class:`ProcessPoolExecutor` has terminated in a non-clean
+   workers of a :class:`~concurrent.futures.ProcessPoolExecutor`
+   has terminated in a non-clean
    fashion (for example, if it was killed from the outside).
 
    .. versionadded:: 3.3

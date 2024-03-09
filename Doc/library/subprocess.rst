@@ -308,10 +308,10 @@ default values. The arguments that are most commonly needed are:
    If text mode is not used, *stdin*, *stdout* and *stderr* will be opened as
    binary streams. No encoding or line ending conversion is performed.
 
-   .. versionadded:: 3.6
-      Added *encoding* and *errors* parameters.
+   .. versionchanged:: 3.6
+      Added the *encoding* and *errors* parameters.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the *text* parameter as an alias for *universal_newlines*.
 
    .. note::
@@ -664,7 +664,8 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be one or more of the following flags:
+
+   If given, *creationflags*, can be one or more of the following flags:
 
    * :data:`CREATE_NEW_CONSOLE`
    * :data:`CREATE_NEW_PROCESS_GROUP`
@@ -684,8 +685,8 @@ functions.
    is only changed on platforms that support this (only Linux at this time of
    writing). Other platforms will ignore this parameter.
 
-   .. versionadded:: 3.10
-      The ``pipesize`` parameter was added.
+   .. versionchanged:: 3.10
+      Added the *pipesize* parameter.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -856,8 +857,8 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.terminate()
 
-   Stop the child. On POSIX OSs the method sends SIGTERM to the
-   child. On Windows the Win32 API function :c:func:`TerminateProcess` is called
+   Stop the child. On POSIX OSs the method sends :py:const:`~signal.SIGTERM` to the
+   child. On Windows the Win32 API function :c:func:`!TerminateProcess` is called
    to stop the child.
 
 
@@ -1461,8 +1462,8 @@ Return code handling translates as follows::
        print("There were some errors")
 
 
-Replacing functions from the :mod:`popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing functions from the :mod:`!popen2` module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
@@ -1538,8 +1539,8 @@ handling consistency are valid for these functions.
       as it did in Python 3.3.3 and earlier.  exitcode has the same value as
       :attr:`~Popen.returncode`.
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 .. function:: getoutput(cmd, *, encoding=None, errors=None)
 
@@ -1556,8 +1557,8 @@ handling consistency are valid for these functions.
    .. versionchanged:: 3.3.4
       Windows support added
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 
 Notes

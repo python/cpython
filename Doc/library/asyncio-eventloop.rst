@@ -605,6 +605,9 @@ Opening network connections
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port*,
       *allow_broadcast*, and *sock* parameters were added.
 
+   .. versionchanged:: 3.8
+      Added support for Windows.
+
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
       :ref:`socket.SO_REUSEADDR <socket-unix-constants>`
@@ -622,11 +625,8 @@ Opening network connections
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
-   .. versionchanged:: 3.8
-      Added support for Windows.
-
    .. versionchanged:: 3.11
-      The *reuse_address* parameter, disabled since Python 3.9.0, 3.8.1,
+      The *reuse_address* parameter, disabled since Python 3.8.1,
       3.7.6 and 3.6.10, has been entirely removed.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
@@ -671,6 +671,7 @@ Creating network servers
                         flags=socket.AI_PASSIVE, \
                         sock=None, backlog=100, ssl=None, \
                         reuse_address=None, reuse_port=None, \
+                        keep_alive=None, \
                         ssl_handshake_timeout=None, \
                         ssl_shutdown_timeout=None, \
                         start_serving=True)
@@ -734,6 +735,13 @@ Creating network servers
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on
      Windows.
+
+   * *keep_alive* set to ``True`` keeps connections active by enabling the
+     periodic transmission of messages.
+
+   .. versionchanged:: 3.13
+
+      Added the *keep_alive* parameter.
 
    * *ssl_handshake_timeout* is (for a TLS server) the time in seconds to wait
      for the TLS handshake to complete before aborting the connection.

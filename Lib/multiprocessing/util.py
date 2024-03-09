@@ -43,19 +43,19 @@ _log_to_stderr = False
 
 def sub_debug(msg, *args):
     if _logger:
-        _logger.log(SUBDEBUG, msg, *args)
+        _logger.log(SUBDEBUG, msg, *args, stacklevel=2)
 
 def debug(msg, *args):
     if _logger:
-        _logger.log(DEBUG, msg, *args)
+        _logger.log(DEBUG, msg, *args, stacklevel=2)
 
 def info(msg, *args):
     if _logger:
-        _logger.log(INFO, msg, *args)
+        _logger.log(INFO, msg, *args, stacklevel=2)
 
 def sub_warning(msg, *args):
     if _logger:
-        _logger.log(SUBWARNING, msg, *args)
+        _logger.log(SUBWARNING, msg, *args, stacklevel=2)
 
 def get_logger():
     '''

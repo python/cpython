@@ -399,10 +399,14 @@ PEP 626: Precise line numbers for debugging and other tools
 PEP 626 brings more precise and reliable line numbers for debugging, profiling and coverage tools.
 Tracing events, with the correct line number, are generated for all lines of code executed and only for lines of code that are executed.
 
-The ``f_lineno`` attribute of frame objects will always contain the expected line number.
+The :attr:`~frame.f_lineno` attribute of frame objects will always contain the
+expected line number.
 
-The ``co_lnotab`` attribute of code objects is deprecated and will be removed in 3.12.
-Code that needs to convert from offset to line number should use the new ``co_lines()`` method instead.
+The :attr:`~codeobject.co_lnotab` attribute of
+:ref:`code objects <code-objects>` is deprecated and
+will be removed in 3.12.
+Code that needs to convert from offset to line number should use the new
+:meth:`~codeobject.co_lines` method instead.
 
 PEP 634: Structural Pattern Matching
 ------------------------------------
@@ -824,7 +828,7 @@ Other Language Changes
   :meth:`~object.__index__` method).
   (Contributed by Serhiy Storchaka in :issue:`37999`.)
 
-* If :func:`object.__ipow__` returns :const:`NotImplemented`, the operator will
+* If :func:`object.__ipow__` returns :data:`NotImplemented`, the operator will
   correctly fall back to :func:`object.__pow__` and :func:`object.__rpow__` as expected.
   (Contributed by Alex Shkop in :issue:`38302`.)
 
@@ -1276,7 +1280,7 @@ Add negative indexing support to :attr:`PurePath.parents
 (Contributed by Yaroslav Pankovych in :issue:`21041`.)
 
 Add :meth:`Path.hardlink_to <pathlib.Path.hardlink_to>` method that
-supersedes :meth:`~pathlib.Path.link_to`. The new method has the same argument
+supersedes :meth:`!link_to`. The new method has the same argument
 order as :meth:`~pathlib.Path.symlink_to`.
 (Contributed by Barney Gale in :issue:`39950`.)
 
@@ -1312,8 +1316,8 @@ pyclbr
 ------
 
 Add an ``end_lineno`` attribute to the ``Function`` and ``Class``
-objects in the tree returned by :func:`pyclbr.readline` and
-:func:`pyclbr.readline_ex`.  It matches the existing (start) ``lineno``.
+objects in the tree returned by :func:`pyclbr.readmodule` and
+:func:`pyclbr.readmodule_ex`.  It matches the existing (start) ``lineno``.
 (Contributed by Aviral Srivastava in :issue:`38307`.)
 
 shelve
@@ -1512,6 +1516,13 @@ separator key, with ``&`` as the default.  This change also affects
 functions internally.  For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates :rfc:`3986`,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser in :mod:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :gh:`88048`)
 
 xml
 ---
@@ -1738,7 +1749,7 @@ Deprecated
 
   (Contributed by Jelle Zijlstra in :gh:`87889`.)
 
-* :meth:`pathlib.Path.link_to` is deprecated and slated for removal in
+* :meth:`!pathlib.Path.link_to` is deprecated and slated for removal in
   Python 3.12. Use :meth:`pathlib.Path.hardlink_to` instead.
   (Contributed by Barney Gale in :issue:`39950`.)
 
@@ -1769,7 +1780,7 @@ Deprecated
   * NPN features like :meth:`ssl.SSLSocket.selected_npn_protocol` and
     :meth:`ssl.SSLContext.set_npn_protocols` are replaced by ALPN.
 
-* The threading debug (:envvar:`PYTHONTHREADDEBUG` environment variable) is
+* The threading debug (:envvar:`!PYTHONTHREADDEBUG` environment variable) is
   deprecated in Python 3.10 and will be removed in Python 3.12. This feature
   requires a :ref:`debug build of Python <debug-build>`.
   (Contributed by Victor Stinner in :issue:`44584`.)
@@ -1959,11 +1970,11 @@ Changes in the C API
        source_buf = PyBytes_AsString(source_bytes_object);
        code = Py_CompileString(source_buf, filename, Py_file_input);
 
-  * For ``FrameObject`` objects, the ``f_lasti`` member now represents a wordcode
+  * For ``FrameObject`` objects, the :attr:`~frame.f_lasti` member now represents a wordcode
     offset instead of a simple offset into the bytecode string. This means that this
     number needs to be multiplied by 2 to be used with APIs that expect a byte offset
     instead (like :c:func:`PyCode_Addr2Line` for example). Notice as well that the
-    ``f_lasti`` member of ``FrameObject`` objects is not considered stable: please
+    :attr:`!f_lasti` member of ``FrameObject`` objects is not considered stable: please
     use :c:func:`PyFrame_GetLineNumber` instead.
 
 CPython bytecode changes
@@ -2311,3 +2322,43 @@ Removed
 
 * The ``PyThreadState.use_tracing`` member has been removed to optimize Python.
   (Contributed by Mark Shannon in :issue:`43760`.)
+
+
+Notable security feature in 3.10.7
+==================================
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for `CVE-2020-10735
+<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735>`_.
+This limit can be configured or disabled by environment variable, command
+line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+length limitation <int_max_str_digits>` documentation.  The default limit
+is 4300 digits in string form.
+
+Notable security feature in 3.10.8
+==================================
+
+The deprecated :mod:`!mailcap` module now refuses to inject unsafe text
+(filenames, MIME types, parameters) into shell commands. Instead of using such
+text, it will warn and act as if a match was not found (or for test commands,
+as if the test failed).
+(Contributed by Petr Viktorin in :gh:`98966`.)
+
+Notable changes in 3.10.12
+==========================
+
+tarfile
+-------
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.12, use without the *filter* argument will show a
+  :exc:`DeprecationWarning`.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)

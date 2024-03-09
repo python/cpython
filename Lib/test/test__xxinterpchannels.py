@@ -18,6 +18,11 @@ from test.test__xxsubinterpreters import (
 channels = import_helper.import_module('_xxinterpchannels')
 
 
+# Additional tests are found in Lib/test/test_interpreters/test_channels.py.
+# New tests should be added there.
+# XXX The tests here should be moved there.  See the note under LowLevelTests.
+
+
 ##################################
 # helpers
 
@@ -79,8 +84,7 @@ class Interpreter(namedtuple('Interpreter', 'name id')):
                 name = 'interp'
             elif name == 'main':
                 raise ValueError('name mismatch (unexpected "main")')
-            if not isinstance(id, interpreters.InterpreterID):
-                id = interpreters.InterpreterID(id)
+            assert isinstance(id, int), repr(id)
         elif not name or name == 'main':
             name = 'main'
             id = main
@@ -587,12 +591,12 @@ class ChannelTests(TestBase):
         cid = channels.create()
         interp = interpreters.create()
 
+        interpreters.set___main___attrs(interp, dict(cid=cid.send))
         out = _run_output(interp, dedent("""
             import _xxinterpchannels as _channels
             print(cid.end)
             _channels.send(cid, b'spam', blocking=False)
-            """),
-            dict(cid=cid.send))
+            """))
         obj = channels.recv(cid)
 
         self.assertEqual(obj, b'spam')

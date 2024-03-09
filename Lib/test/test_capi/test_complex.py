@@ -77,8 +77,14 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertEqual(realasdouble(FloatSubclass(4.25)), 4.25)
 
         # Test types with __complex__ dunder method
-        # Function doesn't support classes with __complex__ dunder, see #109598
-        self.assertRaises(TypeError, realasdouble, Complex())
+        self.assertEqual(realasdouble(Complex()), 4.25)
+        self.assertRaises(TypeError, realasdouble, BadComplex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(realasdouble(BadComplex2()), 4.25)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, realasdouble, BadComplex2())
+        self.assertRaises(RuntimeError, realasdouble, BadComplex3())
 
         # Test types with __float__ dunder method
         self.assertEqual(realasdouble(Float()), 4.25)
@@ -104,11 +110,22 @@ class CAPIComplexTest(unittest.TestCase):
         self.assertEqual(imagasdouble(FloatSubclass(4.25)), 0.0)
 
         # Test types with __complex__ dunder method
-        # Function doesn't support classes with __complex__ dunder, see #109598
-        self.assertEqual(imagasdouble(Complex()), 0.0)
+        self.assertEqual(imagasdouble(Complex()), 0.5)
+        self.assertRaises(TypeError, imagasdouble, BadComplex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(imagasdouble(BadComplex2()), 0.5)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.assertRaises(DeprecationWarning, imagasdouble, BadComplex2())
+        self.assertRaises(RuntimeError, imagasdouble, BadComplex3())
 
-        # Function returns 0.0 anyway, see #109598
-        self.assertEqual(imagasdouble(object()), 0.0)
+        # Test types with __float__ dunder method
+        self.assertEqual(imagasdouble(Float()), 0.0)
+        self.assertRaises(TypeError, imagasdouble, BadFloat())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(imagasdouble(BadFloat2()), 0.0)
+
+        self.assertRaises(TypeError, imagasdouble, object())
 
         # CRASHES imagasdouble(NULL)
 

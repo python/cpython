@@ -9,8 +9,10 @@ on:
     paths:
       - ".github/workflows/mypy.yml"
       - "Lib/test/libregrtest/**"
+      - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
+      - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
       - "Tools/wasm/**"
@@ -34,8 +36,10 @@ jobs:
       matrix:
         target: [
           "Lib/test/libregrtest",
+          "Tools/build/",
           "Tools/cases_generator",
           "Tools/clinic",
+          "Tools/jit",
           "Tools/peg_generator",
           "Tools/wasm",
         ]
@@ -44,7 +48,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip

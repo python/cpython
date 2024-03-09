@@ -122,10 +122,6 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
     # Load the test module and run the tests.
     test_name = result.test_name
     module_name = abs_module_name(test_name, runtests.test_dir)
-
-    # Remove the module from sys.module to reload it if it was already imported
-    sys.modules.pop(module_name, None)
-
     test_mod = importlib.import_module(module_name)
 
     if hasattr(test_mod, "test_main"):

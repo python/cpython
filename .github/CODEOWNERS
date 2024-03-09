@@ -21,6 +21,7 @@ configure*                    @erlend-aasland @corona10
 **/*context*                  @1st1
 **/*genobject*                @markshannon
 **/*hamt*                     @1st1
+**/*jit*                      @brandtbucher
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
@@ -36,10 +37,39 @@ Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
 Python/bytecodes.c            @markshannon @gvanrossum
 Python/optimizer*.c           @markshannon @gvanrossum
+Python/optimizer_analysis.c   @Fidget-Spinner
+Python/optimizer_bytecodes.c  @Fidget-Spinner
 Lib/test/test_patma.py        @brandtbucher
-Lib/test/test_peepholer.py    @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
 Lib/test/test_capi/test_misc.py  @markshannon @gvanrossum
+Tools/c-analyzer/             @ericsnowcurrently
+
+# dbm
+**/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
+
+# runtime state/lifecycle
+**/*pylifecycle*              @ericsnowcurrently
+**/*pystate*                  @ericsnowcurrently
+**/*preconfig*                @ericsnowcurrently
+**/*initconfig*               @ericsnowcurrently
+**/*pathconfig*               @ericsnowcurrently
+**/*sysmodule*                @ericsnowcurrently
+**/*bltinmodule*              @ericsnowcurrently
+**/*gil*                      @ericsnowcurrently
+Include/internal/pycore_runtime.h   @ericsnowcurrently
+Include/internal/pycore_interp.h    @ericsnowcurrently
+Include/internal/pycore_tstate.h    @ericsnowcurrently
+Include/internal/pycore_*_state.h   @ericsnowcurrently
+Include/internal/pycore_*_init.h    @ericsnowcurrently
+Include/internal/pycore_atexit.h    @ericsnowcurrently
+Include/internal/pycore_freelist.h  @ericsnowcurrently
+Include/internal/pycore_global_objects.h  @ericsnowcurrently
+Include/internal/pycore_obmalloc.h  @ericsnowcurrently
+Include/internal/pycore_pymem.h     @ericsnowcurrently
+Modules/main.c                @ericsnowcurrently
+Programs/_bootstrap_python.c  @ericsnowcurrently
+Programs/python.c             @ericsnowcurrently
+Tools/build/generate_global_objects.py  @ericsnowcurrently
 
 # Exceptions
 Lib/traceback.py              @iritkatriel
@@ -49,13 +79,13 @@ Objects/exceptions.c          @iritkatriel
 Python/traceback.c            @iritkatriel
 
 # Hashing
-**/*hashlib*                  @tiran
-**/*pyhash*                   @tiran
-**/*sha*                      @tiran
-**/*md5*                      @tiran
-**/*blake*                    @tiran
-/Modules/_blake2/**           @tiran
-/Modules/_sha3/**             @tiran
+**/*hashlib*                  @gpshead @tiran
+**/*pyhash*                   @gpshead @tiran
+**/sha*                       @gpshead @tiran
+Modules/md5*                  @gpshead @tiran
+**/*blake*                    @gpshead @tiran
+Modules/_blake2/**            @gpshead @tiran
+Modules/_hacl/**              @gpshead
 
 # logging
 **/*logging*                  @vsajip
@@ -75,7 +105,20 @@ Python/traceback.c            @iritkatriel
 # Import (including importlib).
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
 /Python/import.c              @kumaraditya303
-**/*importlib/resources/*      @jaraco @warsaw @FFY00
+Python/dynload_*.c            @ericsnowcurrently
+**/*freeze*                   @ericsnowcurrently
+**/*frozen*                   @ericsnowcurrently
+**/*modsupport*               @ericsnowcurrently
+**/*modulefinder*             @ericsnowcurrently
+**/*moduleobject*             @ericsnowcurrently
+**/*multiphase*               @ericsnowcurrently
+**/*pkgutil*                  @ericsnowcurrently
+**/*pythonrun*                @ericsnowcurrently
+**/*runpy*                    @ericsnowcurrently
+**/*singlephase*              @ericsnowcurrently
+Lib/test/test_module/         @ericsnowcurrently
+Doc/c-api/module.rst          @ericsnowcurrently
+**/*importlib/resources/*     @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
@@ -119,6 +162,9 @@ Lib/ast.py                    @isidentical
 /Lib/unittest/mock.py         @cjw296
 /Lib/test/test_unittest/testmock/* @cjw296
 
+# multiprocessing
+**/*multiprocessing*          @gpshead
+
 # SQLite 3
 **/*sqlite*                   @berkerpeksag @erlend-aasland
 
@@ -156,6 +202,8 @@ Doc/c-api/stable.rst          @encukou
 
 **/*dataclasses*              @ericvsmith
 
+**/*ensurepip*                @pfmoore @pradyunsg
+
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @JelleZijlstra @AlexWaygood
@@ -184,9 +232,25 @@ Doc/c-api/stable.rst          @encukou
 **/*zipfile/_path/*           @jaraco
 
 # Argument Clinic
-/Tools/clinic/**              @erlend-aasland @AlexWaygood
-/Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
+/Tools/clinic/**              @erlend-aasland
+/Lib/test/test_clinic.py      @erlend-aasland
 Doc/howto/clinic.rst          @erlend-aasland
+
+# Subinterpreters
+**/*interpreteridobject.*     @ericsnowcurrently
+**/*crossinterp*              @ericsnowcurrently
+Lib/test/support/interpreters/  @ericsnowcurrently
+Modules/_xx*interp*module.c   @ericsnowcurrently
+Lib/test/test_interpreters/   @ericsnowcurrently
 
 # WebAssembly
 /Tools/wasm/                  @brettcannon
+
+# SBOM
+/Misc/externals.spdx.json     @sethmlarson
+/Misc/sbom.spdx.json          @sethmlarson
+/Tools/build/generate_sbom.py @sethmlarson
+
+# Config Parser
+Lib/configparser.py           @jaraco
+Lib/test/test_configparser.py @jaraco
