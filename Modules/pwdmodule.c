@@ -74,20 +74,8 @@ mkpwent(PyObject *module, struct passwd *p)
 
     int setIndex = 0;
 
-#define SET_STRING(VAL)                                                    \
-    do {                                                                   \
-        const char* val = (VAL);                                           \
-        if (val) {                                                         \
-            PyObject *obj = PyUnicode_DecodeFSDefault(val);                \
-            if (obj == NULL) {                                             \
-                goto error;                                                \
-            }                                                              \
-            PyStructSequence_SET_ITEM(v, setIndex++, obj);                 \
-        }                                                                  \
-        else {                                                             \
-            PyStructSequence_SET_ITEM(v, setIndex++, Py_NewRef(Py_None));  \
-        }                                                                  \
-    } while(0)
+#define SET_STRING(VAL) \
+    SET_RESULT((VAL) ? PyUnicode_DecodeFSDefault((VAL)) : Py_NewRef(Py_None))
 
 #define SET_RESULT(CALL)                                     \
     do {                                                     \
