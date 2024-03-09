@@ -32,13 +32,18 @@ get_list_freelist(void)
 #endif
 
 #ifdef Py_GIL_DISABLED
+typedef struct {
+    Py_ssize_t allocated;
+    PyObject *ob_item[1];
+} _PyListArray;
+
 static _PyListArray *
 list_allocate_array(size_t capacity)
 {
     if (capacity > PY_SSIZE_T_MAX/sizeof(PyObject*) - 1) {
         return NULL;
     }
-    _PyListArray *array = PyMem_Malloc(sizeof(_PyListArray) + (capacity - 1) * sizeof(PyObject *));
+    _PyListArray *array = PyMem_Malloc(sizeof(_PyListArray) + (capacity-1) * sizeof(PyObject *));
     if (array == NULL) {
         return NULL;
     }
@@ -49,10 +54,8 @@ list_allocate_array(size_t capacity)
 static Py_ssize_t
 list_capacity(PyObject **items)
 {
-    char *mem = (char *)items;
-    mem -= offsetof(_PyListArray, ob_item);
-    _PyListArray *array = (_PyListArray *)mem;
-    return _Py_atomic_load_ssize_relaxed(&array->allocated);
+    _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
+    return array->allocated;
 }
 #endif
 
@@ -60,9 +63,7 @@ static void
 free_list_items(PyObject** items, bool use_qsbr)
 {
 #ifdef Py_GIL_DISABLED
-    char *mem = (char *)items;
-    mem -= offsetof(_PyListArray, ob_item);
-    _PyListArray *array = (_PyListArray *)mem;
+    _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
     if (use_qsbr) {
         _PyMem_FreeDelayed(array);
     }
@@ -124,14 +125,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
         new_allocated = 0;
 
 #ifdef Py_GIL_DISABLED
-    _PyListArray *array = NULL;
-    if (new_allocated <= (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        array = list_allocate_array(new_allocated);
-    }
-    else {
-        // integer overflow
-        array = NULL;
-    }
+    _PyListArray *array = list_allocate_array(new_allocated);
     if (array == NULL) {
         PyErr_NoMemory();
         return -1;
