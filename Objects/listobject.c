@@ -34,7 +34,7 @@ get_list_freelist(void)
 #ifdef Py_GIL_DISABLED
 typedef struct {
     Py_ssize_t allocated;
-    PyObject *ob_item[1];
+    PyObject *ob_item;
 } _PyListArray;
 
 static _PyListArray *
@@ -43,7 +43,7 @@ list_allocate_array(size_t capacity)
     if (capacity > PY_SSIZE_T_MAX/sizeof(PyObject*) - 1) {
         return NULL;
     }
-    _PyListArray *array = PyMem_Malloc(sizeof(_PyListArray) + (capacity-1) * sizeof(PyObject *));
+    _PyListArray *array = PyMem_Malloc(sizeof(_PyListArray) + capacity * sizeof(PyObject *));
     if (array == NULL) {
         return NULL;
     }
@@ -186,7 +186,7 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
         PyErr_NoMemory();
         return -1;
     }
-    items = array->ob_item;
+    items = &array->ob_item;
 #else
     items = PyMem_New(PyObject*, size);
     if (items == NULL) {
@@ -263,8 +263,8 @@ PyList_New(Py_ssize_t size)
             Py_DECREF(op);
             return PyErr_NoMemory();
         }
-        memset(array->ob_item, 0, size * sizeof(PyObject *));
-        op->ob_item = array->ob_item;
+        memset(&array->ob_item, 0, size * sizeof(PyObject *));
+        op->ob_item = &array->ob_item;
 #else
         op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
 #endif
@@ -294,7 +294,7 @@ list_new_prealloc(Py_ssize_t size)
         Py_DECREF(op);
         return PyErr_NoMemory();
     }
-    op->ob_item = array->ob_item;
+    op->ob_item = &array->ob_item;
 #else
     op->ob_item = PyMem_New(PyObject *, size);
     if (op->ob_item == NULL) {
