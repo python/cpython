@@ -2258,6 +2258,7 @@ def _signature_strip_non_python_syntax(signature):
     clean_signature = ''.join(text).strip().replace("\n", "")
     return clean_signature, self_parameter
 
+
 def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     """Private helper to parse content of '__text_signature__'
     and return a Signature based on it.

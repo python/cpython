@@ -1115,7 +1115,8 @@ Classes and functions
 
    .. deprecated-removed:: 3.13 3.15
       Use :meth:`Signature.from_frame` instead.
-      For Python version older than 3.13 use ``inspect313`` PyPI package.
+      For Python version older than 3.13 use
+      `inspect313 <https://pypi.org/project/inspect313/>`_ PyPI package.
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
@@ -1129,7 +1130,8 @@ Classes and functions
 
    .. deprecated-removed:: 3.13 3.15
       Use :meth:`Signature.from_frame` instead.
-      For Python version older than 3.13 use ``inspect313`` PyPI package.
+      For Python version older than 3.13 use
+      `inspect313 <https://pypi.org/project/inspect313/>`_ PyPI package.
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
