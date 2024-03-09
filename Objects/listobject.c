@@ -90,7 +90,7 @@ free_list_items(PyObject** items, bool use_qsbr)
 static int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    size_t new_allocated, num_allocated_bytes;
+    size_t new_allocated, target_bytes;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
@@ -139,12 +139,12 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     PyObject **old_items = self->ob_item;
     if (self->ob_item) {
         if (new_allocated < (size_t)allocated) {
-            num_allocated_bytes = new_allocated * sizeof(PyObject*);
+            target_bytes = new_allocated * sizeof(PyObject*);
         }
         else {
-            num_allocated_bytes = allocated * sizeof(PyObject*);
+            target_bytes = allocated * sizeof(PyObject*);
         }
-        memcpy(&array->ob_item, self->ob_item, num_allocated_bytes);
+        memcpy(&array->ob_item, self->ob_item, target_bytes);
     }
      _Py_atomic_store_ptr_release(&self->ob_item, &array->ob_item);
     self->allocated = new_allocated;
@@ -155,8 +155,8 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 #else
     PyObject **items;
     if (new_allocated <= (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        num_allocated_bytes = new_allocated * sizeof(PyObject *);
-        items = (PyObject **)PyMem_Realloc(self->ob_item, num_allocated_bytes);
+        target_bytes = new_allocated * sizeof(PyObject *);
+        items = (PyObject **)PyMem_Realloc(self->ob_item, target_bytes);
     }
     else {
         // integer overflow
