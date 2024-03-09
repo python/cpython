@@ -817,6 +817,13 @@ function.
        .. versionchanged:: 3.10
          The *globals*, *locals*, and *eval_str* parameters were added.
 
+   .. classmethod:: Signature.from_frame(frame)
+
+       Return a :class:`Signature` (or its subclass) object for a given
+       :ref:`frame object <frame-objects>`.
+
+       .. versionadded:: 3.13
+
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 

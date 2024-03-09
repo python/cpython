@@ -1,0 +1,3 @@
+Add :meth:`inspect.Signature.from_frame` to get a singature from a frame
+object, it will be used as a new alternative for older
+:func:`inspect.getargvalues` and :func:`inspect.formatargvalues`.
