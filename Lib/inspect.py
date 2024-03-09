@@ -3108,7 +3108,15 @@ class Signature:
 
     @classmethod
     def from_frame(cls, frame):
-        """Constructs Signature from a given frame object."""
+        """
+        Constructs Signature from a given frame object.
+
+        Notice that it is impossible to get signatures
+        with annotations from frames.
+        Because annotations are stored in functions.
+        Also note that default parameter values might
+        be modified inside the frame.
+        """
         if not isframe(frame):
             raise TypeError(f'Frame object expected, got: {type(frame)}')
 
