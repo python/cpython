@@ -1,3 +1,7 @@
+"""Test that doctest processes strings where examples are enclosed in
+markdown-style codeblocks.
+"""
+
 import unittest
 import doctest
 
@@ -61,12 +65,20 @@ It would be nice if doctest could test them too ...
 '''
 
 class TestMarkdownDocstring(unittest.TestCase):
-    def test_DoctestRunner_codeblocks(self):
+    """Test DocTestFinder processes docstrings including markup codeblocks"""
+
+    def test_DocTestFinder_codeblocks(self):
+        """A single codeblock in the docstring"""
+
+        # DocTestFinder returns a list of tests, we only need the first
         test = doctest.DocTestFinder().find(dummyfunction_codeblocks)[0]
         results = doctest.DocTestRunner().run(test)
         self.assertEqual(results, (0,1))
 
-    def test_DoctestRunner_multiplecodeblocks(self):
+    def test_DocTestFinder_multiplecodeblocks(self):
+        """Multiple codeblocks in the docstring"""
+
+        # DocTestFinder returns a list of tests, we only need the first
         test = doctest.DocTestFinder().find(dummyfunction_multiplecodeblocks)[0]
         results = doctest.DocTestRunner().run(test)
         self.assertEqual(results, (0,2))
