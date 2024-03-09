@@ -3,7 +3,7 @@
 PyHash API
 ----------
 
-See also the :c:member:`PyTypeObject.tp_hash` member.
+See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
 
 .. c:type:: Py_hash_t
 
@@ -17,6 +17,29 @@ See also the :c:member:`PyTypeObject.tp_hash` member.
 
    .. versionadded:: 3.2
 
+.. c:macro:: PyHASH_MODULUS
+
+   The `Mersenne prime <https://en.wikipedia.org/wiki/Mersenne_prime>`_ ``P = 2**n -1``, used for numeric hash scheme.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: PyHASH_BITS
+
+   The exponent ``n`` of ``P`` in :c:macro:`PyHASH_MODULUS`.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: PyHASH_INF
+
+   The hash value returned for a positive infinity.
+
+   .. versionadded:: 3.13
+
+.. c:macro:: PyHASH_IMAG
+
+   The multiplier used for the imaginary part of a complex number.
+
+   .. versionadded:: 3.13
 
 .. c:type:: PyHash_FuncDef
 

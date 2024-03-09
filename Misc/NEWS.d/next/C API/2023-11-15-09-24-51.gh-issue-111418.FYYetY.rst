@@ -1,0 +1,2 @@
+Add :c:macro:`PyHASH_MODULUS`, :c:macro:`PyHASH_BITS`, :c:macro:`PyHASH_INF`
+and :c:macro:`PyHASH_IMAG` C macros.  Patch by Sergey B Kirpichev.
