@@ -90,7 +90,7 @@ free_list_items(PyObject** items, bool use_qsbr)
 static int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    size_t new_allocated;
+    Py_ssize_t new_allocated;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
