@@ -4677,9 +4677,11 @@ class TestSignatureObject(unittest.TestCase):
 
         for func in (inspect.signature, inspect.Signature.from_callable):
             with self.subTest(func=func):
-                sig = func(compare, skip_bound_arg=False)
-                self.assertEqual(str(sig),
+                sig1 = func(compare, skip_bound_arg=False)
+                sig2 = func(compare, skip_bound_arg=True)
+                self.assertEqual(str(sig1),
                                  '(self: object, other: object) -> bool')
+                self.assertEqual(sig1, sig2)
 
 
 class TestParameterObject(unittest.TestCase):

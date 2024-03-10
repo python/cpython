@@ -695,7 +695,7 @@ function.
 
    .. versionchanged:: 3.13
       The *skip_bound_arg* parameter was added.
-      Pass ``False`` to keep the ``self`` parameter in a signature.
+      If *skip_bound_arg* is ``False``, keep ``self`` parameter in a signature.
 
    .. note::
 
