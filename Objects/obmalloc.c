@@ -446,6 +446,7 @@ _PyMem_ArenaFree(void *Py_UNUSED(ctx), void *ptr,
 /***************************/
 
 static int
+_Py_NO_SANITIZE_THREAD
 set_default_allocator_unlocked(PyMemAllocatorDomain domain, int debug,
                                PyMemAllocatorEx *old_alloc)
 {
