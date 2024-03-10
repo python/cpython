@@ -820,6 +820,17 @@ pylong_fromnativebytes(PyObject *module, PyObject *args)
     return res;
 }
 
+static PyObject *
+pylong_sign(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int ret = PyLong_Sign(arg);
+    if (ret == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
 
 static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF
@@ -851,6 +862,7 @@ static PyMethodDef test_methods[] = {
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
+    {"pylong_sign",                 pylong_sign,                METH_O},
     {NULL},
 };
 

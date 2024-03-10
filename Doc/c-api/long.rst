@@ -442,6 +442,16 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.13
 
 
+.. c:function:: int PyLong_Sign(PyObject *obj)
+
+   Return ``-1``, ``0`` or ``+1`` if the integer object *obj* is negative, zero
+   or positive, respectively.
+
+   Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyUnstable_Long_IsCompact(const PyLongObject* op)
 
    Return 1 if *op* is compact, 0 otherwise.

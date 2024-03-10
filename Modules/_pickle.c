@@ -2124,7 +2124,7 @@ save_long(PicklerObject *self, PyObject *obj)
         unsigned char *pdata;
         char header[5];
         int i;
-        int sign = _PyLong_Sign(obj);
+        int sign = PyLong_Sign(obj);
 
         if (sign == 0) {
             header[0] = LONG1;

@@ -22,7 +22,7 @@
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
-#include "pycore_long.h"          // _PyLong_Sign()
+#include "pycore_long.h"          // _PyLong_NumBits()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
@@ -1587,7 +1587,7 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
         if (plong == NULL)
             return NULL;
         nbits = _PyLong_NumBits(plong);
-        sign = _PyLong_Sign(plong);
+        sign = PyLong_Sign(plong);
 
         Py_DECREF(plong);
         if (nbits != testcases[i].nbits)

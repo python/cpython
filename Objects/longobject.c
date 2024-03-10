@@ -758,12 +758,19 @@ PyLong_AsUnsignedLongMask(PyObject *op)
 }
 
 int
-_PyLong_Sign(PyObject *vv)
+PyLong_Sign(PyObject *vv)
 {
+    if (vv == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (!PyLong_Check(vv)) {
+        PyErr_SetString(PyExc_TypeError, "an integer is required");
+        return -1;
+    }
+
     PyLongObject *v = (PyLongObject *)vv;
 
-    assert(v != NULL);
-    assert(PyLong_Check(v));
     if (_PyLong_IsCompact(v)) {
         return _PyLong_CompactSign(v);
     }

@@ -426,7 +426,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 
     else if (PyLong_Check(w)) {
         int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
-        int wsign = _PyLong_Sign(w);
+        int wsign = PyLong_Sign(w);
         size_t nbits;
         int exponent;
 
