@@ -3120,7 +3120,7 @@ class Signature:
         with annotations from frames,
         because annotations are stored
         in function inside ``__annotations__`` attribute.
-        Also note that default value are populated from frame's variables,
+        Also note that default values are populated from frame's variables,
         not real function's default values.
         """
         if not isframe(frame):

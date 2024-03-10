@@ -826,7 +826,7 @@ function.
        with annotations from frames,
        because annotations are stored
        in function inside :attr:`~function.__annotations__` attribute.
-       Also note that default value are populated from frame's variables,
+       Also note that default values are populated from frame's variables,
        not real function's default values.
 
        .. versionadded:: 3.13
