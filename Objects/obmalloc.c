@@ -848,6 +848,7 @@ get_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 }
 
 static void
+_Py_NO_SANITIZE_THREAD
 set_allocator_unlocked(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 {
     switch(domain)
