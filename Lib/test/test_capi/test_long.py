@@ -600,6 +600,7 @@ class LongTests(unittest.TestCase):
         self.assertEqual(check(False), 0)
 
         self.assertRaises(TypeError, check, 1.0)
+        self.assertRaises(TypeError, check, Index(123))
         self.assertRaises(SystemError, check, NULL)
 
 
