@@ -103,7 +103,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\list.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\long.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c" />
-    <ClCompile Include="..\Modules\_testlimitedcapi\set." />
+    <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
