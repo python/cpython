@@ -276,13 +276,13 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     not_sep = f'[^{escaped_seps}]'
     if include_hidden:
         one_last_segment = f'{not_sep}+'
-        one_segment = f'{one_last_segment}{any_sep}'
-        any_segments = f'(?:.+{any_sep})?'
+        one_segment = f'(?:{any_sep}|{one_last_segment}{any_sep})'
+        any_segments = f'{one_segment}*'
         any_last_segments = '.*'
     else:
         one_last_segment = f'[^{escaped_seps}.]{not_sep}*'
-        one_segment = f'{one_last_segment}{any_sep}'
-        any_segments = f'(?:{one_segment})*'
+        one_segment = f'(?:{any_sep}|{one_last_segment}{any_sep})'
+        any_segments = f'{one_segment}*'
         any_last_segments = f'{any_segments}(?:{one_last_segment})?'
 
     results = []
