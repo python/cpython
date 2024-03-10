@@ -15,7 +15,7 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import is_emscripten, is_wasi
-from test.support import set_recursion_limit
+from test.support import infinite_recursion
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
@@ -1199,7 +1199,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
-        with set_recursion_limit(recursion_limit):
+        with infinite_recursion(recursion_limit):
             list(base.walk())
             list(base.walk(top_down=False))
 
@@ -1239,7 +1239,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
-        with set_recursion_limit(recursion_limit):
+        with infinite_recursion(recursion_limit):
             list(base.glob('**/'))
 
     def test_glob_pathlike(self):
