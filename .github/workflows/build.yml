@@ -618,6 +618,7 @@ jobs:
             build_windows,
             build_windows_free_threading,
             build_asan,
+            build_tsan_free_threading,
             '
             || ''
           }}
