@@ -495,7 +495,7 @@ jobs:
         version: 15
         cc: 1
     - name: Configure CPython
-      run: ./configure --config-cache --disable-gil --with-thread-sanitizer
+      run: ./configure --config-cache --disable-gil --with-mimalloc --with-thread-sanitizer
     - name: Build CPython
       run: make -j4
     - name: Display build info
