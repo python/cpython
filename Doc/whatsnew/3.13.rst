@@ -365,8 +365,8 @@ inspect
 -------
 
 * Add *skip_bound_arg* parameter to :func:`inspect.Signature.from_callable`
-  and :func:`inspect.signature`, pass ``False``
-  to keep the ``self`` parameter in a signature.
+  and :func:`inspect.signature`: keep the ``self`` parameter
+  in the signature if *skip_bound_arg* is False.
   (Contributed by Nikita Sobolev in :gh:`108901`.)
 
 ipaddress
