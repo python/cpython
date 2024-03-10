@@ -2620,6 +2620,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
  * duplicated).
  */
 /*[clinic input]
+@critical_section
 list.sort
 
     *
@@ -2639,7 +2640,7 @@ The reverse flag can be set to sort in descending order.
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=a74c4cd3ec6b5c08]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=667bf25d0e3a3676]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -2666,7 +2667,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     saved_ob_item = self->ob_item;
     saved_allocated = self->allocated;
     Py_SET_SIZE(self, 0);
-    self->ob_item = NULL;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
     self->allocated = -1; /* any operation will reset it to >= 0 */
 
     if (keyfunc == NULL) {
@@ -2883,8 +2884,8 @@ keyfunc_fail:
     final_ob_item = self->ob_item;
     i = Py_SIZE(self);
     Py_SET_SIZE(self, saved_ob_size);
-    self->ob_item = saved_ob_item;
-    self->allocated = saved_allocated;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, saved_ob_item);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->allocated, saved_allocated);
     if (final_ob_item != NULL) {
         /* we cannot use list_clear() for this because it does not
            guarantee that the list is really empty when it returns */
@@ -2910,7 +2911,9 @@ PyList_Sort(PyObject *v)
         PyErr_BadInternalCall();
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(v);
     v = list_sort_impl((PyListObject *)v, NULL, 0);
+    Py_END_CRITICAL_SECTION();
     if (v == NULL)
         return -1;
     Py_DECREF(v);
