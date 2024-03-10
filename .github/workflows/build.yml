@@ -478,9 +478,6 @@ jobs:
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    env:
-      OPENSSL_VER: 3.0.13
-      PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
     - name: Runner image version
@@ -490,36 +487,12 @@ jobs:
       with:
         path: config.cache
         key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
-    - name: Register gcc problem matcher
-      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Set up clang-15 for TSAN
       uses: egor-tensin/setup-clang@v1
       with:
         version: 15
-    - name: Configure OpenSSL env vars
-      run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
-    - name: 'Restore OpenSSL build'
-      id: cache-openssl
-      uses: actions/cache@v4
-      with:
-        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
-    - name: Install OpenSSL
-      if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
     - name: Configure CPython
       run: ./configure --config-cache --with-thread-sanitizer --disable-gil
     - name: Build CPython
