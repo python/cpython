@@ -72,10 +72,46 @@ my_int_sum_impl(PyObject *module, int x, int y)
 }
 
 
+/*[clinic input]
+my_float_sum -> float
+
+    x: float
+    y: float
+    /
+
+[clinic start generated code]*/
+
+static float
+my_float_sum_impl(PyObject *module, float x, float y)
+/*[clinic end generated code: output=634f59a5a419cad7 input=d4b5313bdf4dc377]*/
+{
+    return x + y;
+}
+
+
+/*[clinic input]
+my_double_sum -> double
+
+    x: double
+    y: double
+    /
+
+[clinic start generated code]*/
+
+static double
+my_double_sum_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=a75576d9e4d8557f input=16b11c8aba172801]*/
+{
+    return x + y;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     MY_INT_FUNC_METHODDEF
     MY_INT_SUM_METHODDEF
+    MY_FLOAT_SUM_METHODDEF
+    MY_DOUBLE_SUM_METHODDEF
     {NULL, NULL}
 };
 
