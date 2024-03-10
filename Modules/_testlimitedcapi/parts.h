@@ -8,7 +8,8 @@
 
 // Use the limited C API
 #if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
-#  define Py_LIMITED_API 0x030c0000  // 3.12
+   // Need limited C API version 3.5 for PyModule_AddFunctions()
+#  define Py_LIMITED_API 0x03050000
 #endif
 
 // Make sure that the internal C API cannot be used.

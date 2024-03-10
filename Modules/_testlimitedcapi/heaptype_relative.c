@@ -1,3 +1,9 @@
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+   // Need limited C API 3.12 to test PyType_FromMetaclass()
+#  define Py_LIMITED_API 0x030c0000
+#endif
+
 #include "parts.h"
 #include <stddef.h>               // max_align_t
 #include <string.h>               // memset
