@@ -7,7 +7,7 @@
 #include "pyconfig.h"   // Py_GIL_DISABLED
 
 // Use the limited C API
-#ifndef Py_GIL_DISABLED
+#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
 #  define Py_LIMITED_API 0x030c0000  // 3.12
 #endif
 
@@ -30,6 +30,7 @@ int _PyTestCapi_Init_List(PyObject *module);
 int _PyTestCapi_Init_PyOS(PyObject *module);
 int _PyTestCapi_Init_Set(PyObject *module);
 int _PyTestCapi_Init_Sys(PyObject *module);
+int _PyTestCapi_Init_Unicode(PyObject *module);
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H

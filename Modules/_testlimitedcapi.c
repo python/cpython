@@ -53,6 +53,9 @@ PyInit__testlimitedcapi(void)
     if (_PyTestCapi_Init_Sys(mod) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Unicode(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_VectorcallLimited(mod) < 0) {
         return NULL;
     }
