@@ -5,7 +5,7 @@ import errno
 import stat
 import unittest
 
-from pathlib._abc import UnsupportedOperation, FlavourBase, PurePathBase, PathBase
+from pathlib._abc import UnsupportedOperation, ParserBase, PurePathBase, PathBase
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -38,8 +38,8 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(isinstance(UnsupportedOperation(), NotImplementedError))
 
 
-class FlavourBaseTest(unittest.TestCase):
-    cls = FlavourBase
+class ParserBaseTest(unittest.TestCase):
+    cls = ParserBase
 
     def test_unsupported_operation(self):
         m = self.cls()
@@ -109,13 +109,13 @@ class PurePathBaseTest(unittest.TestCase):
         self.assertIs(P.__gt__, object.__gt__)
         self.assertIs(P.__ge__, object.__ge__)
 
-    def test_flavour(self):
-        self.assertIsInstance(self.cls.flavour, FlavourBase)
+    def test_parser(self):
+        self.assertIsInstance(self.cls.parser, ParserBase)
 
 
 class DummyPurePath(PurePathBase):
     __slots__ = ()
-    flavour = posixpath
+    parser = posixpath
 
     def __eq__(self, other):
         if not isinstance(other, DummyPurePath):
@@ -137,14 +137,14 @@ class DummyPurePathTest(unittest.TestCase):
 
     def setUp(self):
         name = self.id().split('.')[-1]
-        if name in _tests_needing_posix and self.cls.flavour is not posixpath:
+        if name in _tests_needing_posix and self.cls.parser is not posixpath:
             self.skipTest('requires POSIX-flavoured path class')
-        if name in _tests_needing_windows and self.cls.flavour is posixpath:
+        if name in _tests_needing_windows and self.cls.parser is posixpath:
             self.skipTest('requires Windows-flavoured path class')
         p = self.cls('a')
-        self.flavour = p.flavour
-        self.sep = self.flavour.sep
-        self.altsep = self.flavour.altsep
+        self.parser = p.parser
+        self.sep = self.parser.sep
+        self.altsep = self.parser.altsep
 
     def test_constructor_common(self):
         P = self.cls
@@ -1413,7 +1413,7 @@ class DummyPath(PathBase):
     memory.
     """
     __slots__ = ()
-    flavour = posixpath
+    parser = posixpath
 
     _files = {}
     _directories = {}
@@ -1532,7 +1532,7 @@ class DummyPathTest(DummyPurePathTest):
         name = self.id().split('.')[-1]
         if name in _tests_needing_symlinks and not self.can_symlink:
             self.skipTest('requires symlinks')
-        flavour = self.cls.flavour
+        parser = self.cls.parser
         p = self.cls(self.base)
         p.mkdir(parents=True)
         p.joinpath('dirA').mkdir()
@@ -1554,8 +1554,8 @@ class DummyPathTest(DummyPurePathTest):
             p.joinpath('linkA').symlink_to('fileA')
             p.joinpath('brokenLink').symlink_to('non-existing')
             p.joinpath('linkB').symlink_to('dirB')
-            p.joinpath('dirA', 'linkC').symlink_to(flavour.join('..', 'dirB'))
-            p.joinpath('dirB', 'linkD').symlink_to(flavour.join('..', 'dirB'))
+            p.joinpath('dirA', 'linkC').symlink_to(parser.join('..', 'dirB'))
+            p.joinpath('dirB', 'linkD').symlink_to(parser.join('..', 'dirB'))
             p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
 
     def tearDown(self):
@@ -1575,13 +1575,13 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(cm.exception.errno, errno.ENOENT)
 
     def assertEqualNormCase(self, path_a, path_b):
-        normcase = self.flavour.normcase
+        normcase = self.parser.normcase
         self.assertEqual(normcase(path_a), normcase(path_b))
 
     def test_samefile(self):
-        flavour = self.flavour
-        fileA_path = flavour.join(self.base, 'fileA')
-        fileB_path = flavour.join(self.base, 'dirB', 'fileB')
+        parser = self.parser
+        fileA_path = parser.join(self.base, 'fileA')
+        fileB_path = parser.join(self.base, 'dirB', 'fileB')
         p = self.cls(fileA_path)
         pp = self.cls(fileA_path)
         q = self.cls(fileB_path)
@@ -1590,7 +1590,7 @@ class DummyPathTest(DummyPurePathTest):
         self.assertFalse(p.samefile(fileB_path))
         self.assertFalse(p.samefile(q))
         # Test the non-existent file case
-        non_existent = flavour.join(self.base, 'foo')
+        non_existent = parser.join(self.base, 'foo')
         r = self.cls(non_existent)
         self.assertRaises(FileNotFoundError, p.samefile, r)
         self.assertRaises(FileNotFoundError, p.samefile, non_existent)
@@ -2052,15 +2052,15 @@ class DummyPathTest(DummyPurePathTest):
             p.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         # Non-strict
-        flavour = self.flavour
+        parser = self.parser
         self.assertEqualNormCase(str(p.resolve(strict=False)),
-                                 flavour.join(self.base, 'foo'))
+                                 parser.join(self.base, 'foo'))
         p = P(self.base, 'foo', 'in', 'spam')
         self.assertEqualNormCase(str(p.resolve(strict=False)),
-                                 flavour.join(self.base, 'foo', 'in', 'spam'))
+                                 parser.join(self.base, 'foo', 'in', 'spam'))
         p = P(self.base, '..', 'foo', 'in', 'spam')
         self.assertEqualNormCase(str(p.resolve(strict=False)),
-                                 flavour.join(flavour.dirname(self.base), 'foo', 'in', 'spam'))
+                                 parser.join(parser.dirname(self.base), 'foo', 'in', 'spam'))
         # These are all relative symlinks.
         p = P(self.base, 'dirB', 'fileB')
         self._check_resolve_relative(p, p)
@@ -2075,7 +2075,7 @@ class DummyPathTest(DummyPurePathTest):
         self._check_resolve_relative(p, P(self.base, 'dirB', 'fileB', 'foo', 'in',
                                           'spam'), False)
         p = P(self.base, 'dirA', 'linkC', '..', 'foo', 'in', 'spam')
-        if self.cls.flavour is not posixpath:
+        if self.cls.parser is not posixpath:
             # In Windows, if linkY points to dirB, 'dirA\linkY\..'
             # resolves to 'dirA' without resolving linkY first.
             self._check_resolve_relative(p, P(self.base, 'dirA', 'foo', 'in',
@@ -2087,7 +2087,7 @@ class DummyPathTest(DummyPurePathTest):
         # Now create absolute symlinks.
         d = self.tempdir()
         P(self.base, 'dirA', 'linkX').symlink_to(d)
-        P(self.base, str(d), 'linkY').symlink_to(self.flavour.join(self.base, 'dirB'))
+        P(self.base, str(d), 'linkY').symlink_to(self.parser.join(self.base, 'dirB'))
         p = P(self.base, 'dirA', 'linkX', 'linkY', 'fileB')
         self._check_resolve_absolute(p, P(self.base, 'dirB', 'fileB'))
         # Non-strict
@@ -2095,7 +2095,7 @@ class DummyPathTest(DummyPurePathTest):
         self._check_resolve_relative(p, P(self.base, 'dirB', 'foo', 'in', 'spam'),
                                      False)
         p = P(self.base, 'dirA', 'linkX', 'linkY', '..', 'foo', 'in', 'spam')
-        if self.cls.flavour is not posixpath:
+        if self.cls.parser is not posixpath:
             # In Windows, if linkY points to dirB, 'dirA\linkY\..'
             # resolves to 'dirA' without resolving linkY first.
             self._check_resolve_relative(p, P(d, 'foo', 'in', 'spam'), False)
@@ -2107,11 +2107,11 @@ class DummyPathTest(DummyPurePathTest):
     @needs_symlinks
     def test_resolve_dot(self):
         # See http://web.archive.org/web/20200623062557/https://bitbucket.org/pitrou/pathlib/issues/9/
-        flavour = self.flavour
+        parser = self.parser
         p = self.cls(self.base)
         p.joinpath('0').symlink_to('.', target_is_directory=True)
-        p.joinpath('1').symlink_to(flavour.join('0', '0'), target_is_directory=True)
-        p.joinpath('2').symlink_to(flavour.join('1', '1'), target_is_directory=True)
+        p.joinpath('1').symlink_to(parser.join('0', '0'), target_is_directory=True)
+        p.joinpath('2').symlink_to(parser.join('1', '1'), target_is_directory=True)
         q = p / '2'
         self.assertEqual(q.resolve(strict=True), p)
         r = q / '3' / '4'
@@ -2139,11 +2139,11 @@ class DummyPathTest(DummyPurePathTest):
         p = self.cls(self.base, 'linkZ', 'foo')
         self.assertEqual(p.resolve(strict=False), p)
         # Loops with absolute symlinks.
-        self.cls(self.base, 'linkU').symlink_to(self.flavour.join(self.base, 'linkU/inside'))
+        self.cls(self.base, 'linkU').symlink_to(self.parser.join(self.base, 'linkU/inside'))
         self._check_symlink_loop(self.base, 'linkU')
-        self.cls(self.base, 'linkV').symlink_to(self.flavour.join(self.base, 'linkV'))
+        self.cls(self.base, 'linkV').symlink_to(self.parser.join(self.base, 'linkV'))
         self._check_symlink_loop(self.base, 'linkV')
-        self.cls(self.base, 'linkW').symlink_to(self.flavour.join(self.base, 'linkW/../linkW'))
+        self.cls(self.base, 'linkW').symlink_to(self.parser.join(self.base, 'linkW/../linkW'))
         self._check_symlink_loop(self.base, 'linkW')
         # Non-strict
         q = self.cls(self.base, 'linkW', 'foo')
@@ -2315,11 +2315,11 @@ class DummyPathTest(DummyPurePathTest):
 
     def _check_complex_symlinks(self, link0_target):
         # Test solving a non-looping chain of symlinks (issue #19887).
-        flavour = self.flavour
+        parser = self.parser
         P = self.cls(self.base)
-        P.joinpath('link1').symlink_to(flavour.join('link0', 'link0'), target_is_directory=True)
-        P.joinpath('link2').symlink_to(flavour.join('link1', 'link1'), target_is_directory=True)
-        P.joinpath('link3').symlink_to(flavour.join('link2', 'link2'), target_is_directory=True)
+        P.joinpath('link1').symlink_to(parser.join('link0', 'link0'), target_is_directory=True)
+        P.joinpath('link2').symlink_to(parser.join('link1', 'link1'), target_is_directory=True)
+        P.joinpath('link3').symlink_to(parser.join('link2', 'link2'), target_is_directory=True)
         P.joinpath('link0').symlink_to(link0_target, target_is_directory=True)
 
         # Resolve absolute paths.
@@ -2369,7 +2369,7 @@ class DummyPathTest(DummyPurePathTest):
 
     @needs_symlinks
     def test_complex_symlinks_relative_dot_dot(self):
-        self._check_complex_symlinks(self.flavour.join('dirA', '..'))
+        self._check_complex_symlinks(self.parser.join('dirA', '..'))
 
     def setUpWalk(self):
         # Build:
