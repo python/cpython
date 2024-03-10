@@ -2419,7 +2419,12 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     Parameter = cls._parameter_cls
 
     # Parameter information.
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
+    annotations = get_annotations(
+        func,
+        globals=globals,
+        locals=locals,
+        eval_str=eval_str,
+    )
     return _signature_from_code(
         func.__code__,
         annotations=annotations,
@@ -3112,10 +3117,11 @@ class Signature:
         Constructs Signature from a given frame object.
 
         Notice that it is impossible to get signatures
-        with annotations from frames.
-        Because annotations are stored in functions.
-        Also note that default parameter values might
-        be modified inside the frame.
+        with annotations from frames,
+        because annotations are stored
+        in function inside ``__annotations__`` attribute.
+        Also note that default value are populated from frame's variables,
+        not real function's default values.
         """
         if not isframe(frame):
             raise TypeError(f'Frame object expected, got: {type(frame)}')
