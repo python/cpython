@@ -3264,6 +3264,12 @@ AC_MSG_RESULT([no])
 with_tsan="no"
 ])
 
+if test "$with_tsan" = "yes"
+then
+  AC_DEFINE([MI_TSAN], [1],
+            [Define MI_TSAN for thread sanitizer])
+fi
+
 # Set info about shared libraries.
 AC_SUBST([SHLIB_SUFFIX])
 AC_SUBST([LDSHARED])

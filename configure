@@ -12718,6 +12718,13 @@ with_tsan="no"
 fi
 
 
+if test "$with_tsan" = "yes"
+then
+
+printf "%s\n" "#define MI_TSAN 1" >>confdefs.h
+
+fi
+
 # Set info about shared libraries.
 
 
