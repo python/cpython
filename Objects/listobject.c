@@ -2844,8 +2844,8 @@ keyfunc_fail:
     final_ob_item = self->ob_item;
     i = Py_SIZE(self);
     Py_SET_SIZE(self, saved_ob_size);
-    self->ob_item = saved_ob_item;
-    self->allocated = saved_allocated;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, saved_ob_item);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->allocated, saved_allocated);
     if (final_ob_item != NULL) {
         /* we cannot use list_clear() for this because it does not
            guarantee that the list is really empty when it returns */
