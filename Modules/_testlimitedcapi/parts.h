@@ -26,6 +26,7 @@ int _PyTestCapi_Init_Abstract(PyObject *module);
 int _PyTestCapi_Init_Bytes(PyObject *module);
 int _PyTestCapi_Init_ByteArray(PyObject *module);
 int _PyTestCapi_Init_Dict(PyObject *module);
+int _PyTestCapi_Init_Float(PyObject *module);
 int _PyTestCapi_Init_HeaptypeRelative(PyObject *module);
 int _PyTestCapi_Init_List(PyObject *module);
 int _PyTestCapi_Init_Long(PyObject *module);
