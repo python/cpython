@@ -9,10 +9,43 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\Modules\_testlimitedcapi\abstract.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\bytes.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\bytearray.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\dict.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\float.c">
+        <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\list.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\long.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\set.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\sys.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c">
+        <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
