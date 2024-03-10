@@ -294,6 +294,8 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             continue
         if recursive:
             if part == '**':
+                if idx == 0:
+                    results.append(fr'(?!{any_sep})')
                 if idx < last_part_idx:
                     if parts[idx + 1] != '**':
                         results.append(any_segments)
