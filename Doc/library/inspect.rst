@@ -665,6 +665,11 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   If *follow_wrapped* is ``False`` *callable* will not be unwrapped
+   (``callable.__wrapped__`` will not be used to unwrap decorated callables).
+
+   If *skip_bound_arg* is ``False``, keep ``self`` parameter in a signature.
+
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
@@ -686,16 +691,12 @@ function.
 
    .. versionchanged:: 3.5
       The *follow_wrapped* parameter was added.
-      Pass ``False`` to get a signature of
-      *callable* specifically (``callable.__wrapped__`` will not be used to
-      unwrap decorated callables.)
 
    .. versionchanged:: 3.10
       The *globals*, *locals*, and *eval_str* parameters were added.
 
    .. versionchanged:: 3.13
       The *skip_bound_arg* parameter was added.
-      If *skip_bound_arg* is ``False``, keep ``self`` parameter in a signature.
 
    .. note::
 
