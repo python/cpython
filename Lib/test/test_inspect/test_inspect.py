@@ -4679,6 +4679,16 @@ class TestSignatureFromFrame(unittest.TestCase):
         self.assertEqual(str(inspect.Signature.from_frame(fr)),
                          '(a=1, /, b=2, *c)')
 
+    def test_clear_frame(self):
+        ns = {}
+        def inner(a=1, /, c=5, *, b=2):
+            ns['fr'] = inspect.currentframe()
+
+        inner()
+        ns['fr'].clear()
+        self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
+                         '(a, /, c, *, b)')
+
     def test_from_method_frame(self):
         ns = {}
         class _A:
