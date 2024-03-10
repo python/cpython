@@ -7,8 +7,13 @@ extern "C" {
 /* The unique ellipsis object "..." */
 
 PyAPI_DATA(PyObject) _Py_EllipsisObject; /* Don't use this directly */
+PyAPI_FUNC(PyObject*) _Py_GetEllipsis(void);
 
-#define Py_Ellipsis (&_Py_EllipsisObject)
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_Ellipsis _Py_GetEllipsis()
+#else
+#  define Py_Ellipsis (&_Py_EllipsisObject)
+#endif
 
 /* Slice object interface */
 

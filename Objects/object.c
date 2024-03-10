@@ -2920,6 +2920,8 @@ PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 }
 
 
+// -- Stable ABI ------------------------------------------------------------
+
 #undef Py_NewRef
 #undef Py_XNewRef
 
@@ -2970,3 +2972,9 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 {
     Py_SET_REFCNT(ob, refcnt);
 }
+
+PyObject* _Py_GetNone(void)
+{ return &_Py_NoneStruct; }
+
+PyObject* _Py_GetNotImplemented(void)
+{ return &_Py_NotImplementedStruct; }

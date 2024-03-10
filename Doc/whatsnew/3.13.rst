@@ -1645,6 +1645,11 @@ New Features
   between native integer types and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
 
+* In the limited C API version 3.13, getting ``Py_None``, ``Py_False``,
+  ``Py_True``, ``Py_Ellipsis`` and ``Py_NotImplemented`` singletons is now
+  implemented as function calls at the stable ABI level to hide implementation
+  details. Getting these constants still return borrowed references.
+  (Contributed by Victor Stinner in :gh:`115754`.)
 
 Porting to Python 3.13
 ----------------------

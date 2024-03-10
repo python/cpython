@@ -721,3 +721,9 @@ PyTypeObject PySlice_Type = {
     0,                                          /* tp_alloc */
     slice_new,                                  /* tp_new */
 };
+
+
+// -- Stable ABI ------------------------------------------------------------
+
+PyObject* _Py_GetEllipsis(void)
+{ return &_Py_EllipsisObject; }

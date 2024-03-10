@@ -16,10 +16,17 @@ extern "C" {
 /* Don't use these directly */
 PyAPI_DATA(PyLongObject) _Py_FalseStruct;
 PyAPI_DATA(PyLongObject) _Py_TrueStruct;
+PyAPI_FUNC(PyObject*) _Py_GetFalse(void);
+PyAPI_FUNC(PyObject*) _Py_GetTrue(void);
 
-/* Use these macros */
-#define Py_False _PyObject_CAST(&_Py_FalseStruct)
-#define Py_True _PyObject_CAST(&_Py_TrueStruct)
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_False _Py_GetFalse()
+#  define Py_True _Py_GetTrue()
+#else
+#  define Py_False _PyObject_CAST(&_Py_FalseStruct)
+#  define Py_True _PyObject_CAST(&_Py_TrueStruct)
+#endif
+
 
 // Test if an object is the True singleton, the same as "x is True" in Python.
 PyAPI_FUNC(int) Py_IsTrue(PyObject *x);

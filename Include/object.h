@@ -1070,7 +1070,13 @@ _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
-#define Py_None (&_Py_NoneStruct)
+PyAPI_FUNC(PyObject*) _Py_GetNone(void);
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_None _Py_GetNone()
+#else
+#  define Py_None (&_Py_NoneStruct)
+#endif
 
 // Test if an object is the None singleton, the same as "x is None" in Python.
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);
@@ -1084,7 +1090,13 @@ Py_NotImplemented is a singleton used to signal that an operation is
 not implemented for a given type combination.
 */
 PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
-#define Py_NotImplemented (&_Py_NotImplementedStruct)
+PyAPI_FUNC(PyObject*) _Py_GetNotImplemented(void);
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_NotImplemented _Py_GetNotImplemented()
+#else
+#  define Py_NotImplemented (&_Py_NotImplementedStruct)
+#endif
 
 /* Macro for returning Py_NotImplemented from a function */
 #define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
