@@ -1588,7 +1588,7 @@
    <sysmacros.h>. */
 #undef MAJOR_IN_SYSMACROS
 
-/* Define MI_TSAN for thread sanitizer */
+/* Define MI_TSAN for mimalloc thread sanitizer support */
 #undef MI_TSAN
 
 /* Define if mvwdelch in curses.h is an expression. */
