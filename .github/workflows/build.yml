@@ -493,6 +493,9 @@ jobs:
       uses: egor-tensin/setup-clang@v1
       with:
         version: 15
+      run: |
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clangxx" >> $GITHUB_ENV
     - name: Configure CPython
       run: ./configure --config-cache --with-thread-sanitizer --disable-gil
     - name: Build CPython
