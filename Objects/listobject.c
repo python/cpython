@@ -1634,56 +1634,107 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
     return -1;
 }
 
+static void
+reverse_sortslice(sortslice *s, Py_ssize_t n)
+{
+    reverse_slice(s->keys, &s->keys[n]);
+    if (s->values != NULL)
+        reverse_slice(s->values, &s->values[n]);
+}
+
 /*
-Return the length of the run beginning at lo, in the slice [lo, hi).  lo < hi
-is required on entry.  "A run" is the longest ascending sequence, with
-
-    lo[0] <= lo[1] <= lo[2] <= ...
-
-or the longest descending sequence, with
-
-    lo[0] > lo[1] > lo[2] > ...
-
-Boolean *descending is set to 0 in the former case, or to 1 in the latter.
-For its intended use in a stable mergesort, the strictness of the defn of
-"descending" is needed so that the caller can safely reverse a descending
-sequence without violating stability (strict > ensures there are no equal
-elements to get out of order).
+Return the length of the run beginning at slo->keys, spanning no more than
+nremaining elements. The run beginning there may be ascending or descending,
+but the function permutes it in place, if needed, so that it's always ascending
+upon return.
 
 Returns -1 in case of error.
 */
 static Py_ssize_t
-count_run(MergeState *ms, PyObject **lo, PyObject **hi, int *descending)
+count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
 {
-    Py_ssize_t k;
+    Py_ssize_t k; /* used by IFLT macro expansion */
     Py_ssize_t n;
+    PyObject **lo = slo->keys;
 
-    assert(lo < hi);
-    *descending = 0;
-    ++lo;
-    if (lo == hi)
+    /* We're n elements into the slice, and the most recent neq+1 elments are
+     * all equal. This reverses them in-place, and resets neq for reuse.
+     */
+#define REVERSE_LAST_NEQ                        \
+    if (neq) {                                  \
+        sortslice slice = *slo;                 \
+        ++neq;                                  \
+        sortslice_advance(&slice, n - neq);     \
+        reverse_sortslice(&slice, neq);         \
+        neq = 0;                                \
+    }
+
+    assert(nremaining);
+    n = 1;
+    if (n == nremaining)
         return 1;
+    ++lo;
 
-    n = 2;
-    IFLT(*lo, *(lo-1)) {
-        *descending = 1;
-        for (lo = lo+1; lo < hi; ++lo, ++n) {
-            IFLT(*lo, *(lo-1))
-                ;
-            else
+    /* try ascending run first */
+    for ( ; n < nremaining; ++lo, ++n) {
+        IFLT(*lo, *(lo-1))
+            break;
+    }
+    if (n == nremaining)
+        return n;
+    /* *lo is strictly less */
+    /* If n is 1 now, there the first compare established it's a descending
+     * run, so fall through to the descending case. But if n > 1, there are
+     * n elements in an ascending run terminated by the strictly less *lo.
+     * If the first key < *(lo-1), *somewhere* along the way the sequence
+     & increased, so we're done (there is no descending run).
+     ^ Else first key >= *(lo-1), which implies that the entire ascending run
+     * consists of equal elements. In that case, this is a descending run,
+     * and we reverse the all-equal prefix in-place.
+     */
+    if (n > 1) {
+        IFLT(slo->keys[0], *(lo - 1))
+            return n;
+        reverse_sortslice(slo, n);
+    }
+    ++lo;
+    ++n;
+    /* Finish descending run. All-squal subruns are reversed in-place on the
+     * fly. Their original order will be restored at the end by the whole-slice
+     * reversal.
+     */
+    Py_ssize_t neq = 0;
+    for ( ; n < nremaining; ++lo, ++n) {
+        IFLT(*lo, *(lo - 1)) {
+            /* This ends the most recent run of equal elments, but still in
+             * the "descending" direction.
+             */
+            REVERSE_LAST_NEQ
+        }
+        else {
+            IFLT(*(lo - 1), *lo) /* descending run is over */
                 break;
+            else /* not x < y and not y < x implies x == y */
+                ++neq;
         }
     }
-    else {
-        for (lo = lo+1; lo < hi; ++lo, ++n) {
-            IFLT(*lo, *(lo-1))
-                break;
-        }
+    REVERSE_LAST_NEQ
+    reverse_sortslice(slo, n); /* transform to ascending run */
+
+    /* And after reversing, it's possible this can be extended by a
+     * naturally increasing suffix; e.g., [3, 2, 3, 4, 1] makes an
+     * ascending run from the first 4 elements.
+     */
+    for ( ; n < nremaining; ++lo, ++n) {
+        IFLT(*lo, *(lo-1))
+            break;
     }
 
     return n;
 fail:
     return -1;
+
+#undef REVERSE_LAST_NEQ
 }
 
 /*
@@ -2401,14 +2452,6 @@ merge_compute_minrun(Py_ssize_t n)
     return n + r;
 }
 
-static void
-reverse_sortslice(sortslice *s, Py_ssize_t n)
-{
-    reverse_slice(s->keys, &s->keys[n]);
-    if (s->values != NULL)
-        reverse_slice(s->values, &s->values[n]);
-}
-
 /* Here we define custom comparison functions to optimize for the cases one commonly
  * encounters in practice: homogeneous lists, often of one of the basic types. */
 
@@ -2775,15 +2818,12 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
      */
     minrun = merge_compute_minrun(nremaining);
     do {
-        int descending;
         Py_ssize_t n;
 
         /* Identify next run. */
-        n = count_run(&ms, lo.keys, lo.keys + nremaining, &descending);
+        n = count_run(&ms, &lo, nremaining);
         if (n < 0)
             goto fail;
-        if (descending)
-            reverse_sortslice(&lo, n);
         /* If short, extend to min(minrun, nremaining). */
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
