@@ -527,7 +527,7 @@ dummy_func(void) {
             sym_matches_type(callable, &PyFunction_Type) &&
             (sym_is_null(self_or_null) || sym_is_not_null(self_or_null))) {
             assert(PyFunction_Check(sym_get_const(callable)));
-            PyFunctionObject *func = sym_get_const(callable);
+            PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
             if (func->func_version != func_version) {
                 goto hit_bottom;
             }
