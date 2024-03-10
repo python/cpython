@@ -480,22 +480,14 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
     - uses: actions/checkout@v4
-    - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Set up clang-15 for TSAN
-      uses: egor-tensin/setup-clang@v1
+    - name: Set up GCC-10 for ASAN
+      uses: egor-tensin/setup-gcc@v1
       with:
-        version: 15
-        cc: 1
+        version: 11
     - name: Configure CPython
-      run: ./configure --config-cache --disable-gil --with-mimalloc --with-thread-sanitizer
+      run: ./configure --disable-gil --with-thread-sanitizer
     - name: Build CPython
       run: make -j4
     - name: Display build info
