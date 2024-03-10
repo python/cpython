@@ -361,6 +361,14 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+inspect
+-------
+
+* Add *skip_bound_arg* parameter to :func:`inspect.Signature.from_callable`
+  and :func:`inspect.signature`, pass ``False``
+  to keep the ``self`` parameter in a signature.
+  (Contributed by Nikita Sobolev in :gh:`108901`.)
+
 ipaddress
 ---------
 
