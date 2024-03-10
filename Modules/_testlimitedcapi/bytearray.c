@@ -1,4 +1,3 @@
-#define Py_LIMITED_API 0x030c0000
 #include "parts.h"
 #include "util.h"
 
