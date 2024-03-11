@@ -3048,6 +3048,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"warn_default_encoding",   "-X warn_default_encoding"},
     {"safe_path", "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
+    {"gil",                     "-X gil"},
     {0}
 };
 
@@ -3097,6 +3098,16 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
     SetFlag(config->warn_default_encoding);
     SetFlagObj(PyBool_FromLong(config->safe_path));
     SetFlag(config->int_max_str_digits);
+#ifdef Py_GIL_DISABLED
+    if (config->enable_gil == _PyConfig_GIL_DEFAULT) {
+        SetFlagObj(Py_NewRef(Py_None));
+    }
+    else {
+        SetFlag(config->enable_gil);
+    }
+#else
+    SetFlagObj(PyLong_FromLong(1));
+#endif
 #undef SetFlagObj
 #undef SetFlag
     return 0;
