@@ -1645,6 +1645,9 @@ New Features
   between native integer types and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
 
+* Add :c:func:`PyLong_Sign` function (former private :c:func:`!_PyLong_Sign`)
+  to test sign of :class:`int` objects.  Contributed by Sergey B Kirpichev.
+
 
 Porting to Python 3.13
 ----------------------
