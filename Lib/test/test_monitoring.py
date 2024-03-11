@@ -1877,14 +1877,14 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def setUp(self):
         super(TestCApiEventGeneration, self).setUp()
 
-        def cb(*args):
-            self.results.append(('cb',) + args)
+        self.codelike = _testinternalcapi.CodeLike(2)
 
-        def cb2(*args):
-            self.results.append(('cb2',) + args)
+        def cb(name, args):
+            self.results.append((name,) + args)
 
-        self.cb = cb
-        self.cb2 = cb2
+        self.cb1 = lambda codelike, *args : cb('cb1', args)
+        self.cb2 = lambda codelike, *args : cb('cb2', args)
+        self.cb3 = lambda codelike, *args : cb('cb3', args)
 
         events = sys.monitoring.events
         capi = _testinternalcapi
@@ -1907,22 +1907,28 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         ]
 
     def test_fire_event(self):
-        for offset, (event, function, *args) in enumerate(self.cases):
+        for event, function, *args in self.cases:
+            offset = 0
+            self.codelike = _testinternalcapi.CodeLike(2)
             with self.subTest(event):
-                output = (function.__name__, offset, *args)
+                output = (offset, *args)
                 # Register TEST_TOOL and TEST_TOOL2, but activate only TEST_TOOL
-                sys.monitoring.register_callback(TEST_TOOL, event, self.cb)
+                sys.monitoring.register_callback(TEST_TOOL, event, self.cb1)
                 sys.monitoring.register_callback(TEST_TOOL2, event, self.cb2)
                 active = 1 << TEST_TOOL
 
                 try:
                     self.results = []
                     # fire one of each event type
-                    for offset, (_, function, *args) in enumerate(self.cases):
-                        res = function(function.__name__, offset, active, *args)
-                        self.assertEqual(res, active)
+                    for _, function, *args in self.cases:
+                        res = function(self.codelike, offset, active, *args)
+                        try:
+                          self.assertEqual(res, active)
+                        except:
+                          breakpoint()
+                          raise
 
-                    self.assertEqual(self.results, [('cb',) + output])
+                    self.assertEqual(self.results, [('cb1',) + output])
                 finally:
                     sys.monitoring.register_callback(TEST_TOOL, event, None)
                     sys.monitoring.register_callback(TEST_TOOL2, event, None)
@@ -1933,12 +1939,14 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                            events.EXCEPTION_HANDLED, events.PY_UNWIND }
 
         def cb_disable(*args):
-            self.cb(*args)
+            self.cb1(*args)
             return sys.monitoring.DISABLE
 
-        for offset, (event, function, *args) in enumerate(self.cases):
+        for event, function, *args in self.cases:
+            offset = 1
+            self.codelike = _testinternalcapi.CodeLike(2)
             with self.subTest(function.__name__):
-                output = (function.__name__, offset, *args)
+                output = (offset, *args)
 
                 sys.monitoring.register_callback(TEST_TOOL, event, cb_disable)
                 active = 1 << TEST_TOOL
@@ -1946,16 +1954,48 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                 try:
                     # fire one of each event type
                     self.results = []
-                    for offset, (f_event, function, *args) in enumerate(self.cases):
+                    for f_event, function, *args in self.cases:
                         if f_event == event and f_event in cannot_disable:
                             with self.assertRaises(ValueError):
-                                res = function(function.__name__, offset, active, *args)
-                            self.assertEqual(res, active)
+                                res = function(self.codelike, offset, active, *args)
+                            try:
+                              self.assertEqual(res, active)
+                            except:
+                              breakpoint()
+                              raise
                         else:
-                            res = function(function.__name__, offset, active, *args)
+                            res = function(self.codelike, offset, active, *args)
                             self.assertEqual(res, 0 if f_event == event else active)
-                    self.assertEqual(self.results, [('cb',) + output])
+                    self.assertEqual(self.results, [('cb1',) + output])
 
                 finally:
                     sys.monitoring.register_callback(TEST_TOOL, event, None)
                     sys.monitoring.register_callback(TEST_TOOL2, event, None)
+
+    def test_enter_scope(self):
+        events = sys.monitoring.events
+        capi = _testinternalcapi
+
+        cl = _testinternalcapi.CodeLike(2)
+        capi.enter_scope_py_start_py_return(cl)    # events = [PY_START, PY_RETURN]
+
+        sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_START, self.cb1)
+
+        self.results = []
+        capi.fire_event_py_start(cl, 0, 1 << sys.monitoring.PROFILER_ID)
+        capi.fire_event_py_return(cl, 1, 1 << sys.monitoring.PROFILER_ID, 42)
+        self.assertEqual(self.results, [('cb1', 0)])
+
+        sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_RETURN, self.cb2)
+
+        self.results = []
+        capi.fire_event_py_start(cl, 0, 1 << sys.monitoring.PROFILER_ID)
+        capi.fire_event_py_return(cl, 1, 1 << sys.monitoring.PROFILER_ID, 42)
+        self.assertEqual(self.results, [('cb1', 0), ('cb2', 1, 42)])
+
+        sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_START, None)
+
+        self.results = []
+        capi.fire_event_py_start(cl, 0, 1 << sys.monitoring.PROFILER_ID)
+        capi.fire_event_py_return(cl, 1, 1 << sys.monitoring.PROFILER_ID, 42)
+        self.assertEqual(self.results, [('cb2', 1, 42)])
