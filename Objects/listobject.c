@@ -1570,10 +1570,11 @@ struct s_MergeState {
 /* binarysort is the best method for sorting small arrays: it does
    few compares, but can do data movement quadratic in the number of
    elements.
-   [lo, hi) is a contiguous slice of a list, and is sorted via
+   [lo.keys, hi) is a contiguous slice of a list of keys, and is sorted via
    binary insertion.  This sort is stable.
-   On entry, must have lo <= start <= hi, and that [lo, start) is already
-   sorted (pass start == lo if you don't know!).
+   On entry, must have lo.keys <= start <= hi, and that
+   [lo.keys, start) is already sorted (pass start == lo.keys if you don't
+   know!).
    If islt() complains return -1, else 0.
    Even in case of error, the output slice will be some permutation of
    the input (nothing is lost or duplicated).
@@ -1586,7 +1587,7 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
     PyObject *pivot;
 
     assert(lo.keys <= start && start <= hi);
-    /* assert [lo, start) is sorted */
+    /* assert [lo.keys, start) is sorted */
     if (lo.keys == start)
         ++start;
     for (; start < hi; ++start) {
@@ -1595,9 +1596,9 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
         r = start;
         pivot = *r;
         /* Invariants:
-         * pivot >= all in [lo, l).
+         * pivot >= all in [lo.keys, l).
          * pivot  < all in [r, start).
-         * The second is vacuously true at the start.
+         * These are vacuously true at the start.
          */
         assert(l < r);
         do {
@@ -1608,7 +1609,7 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
                 l = p+1;
         } while (l < r);
         assert(l == r);
-        /* The invariants still hold, so pivot >= all in [lo, l) and
+        /* The invariants still hold, so pivot >= all in [lo.keys, l) and
            pivot < all in [l, start), so pivot belongs at l.  Note
            that if there are elements equal to pivot, l points to the
            first slot after them -- that's why this sort is stable.
@@ -1623,7 +1624,7 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
             p = start + offset;
             pivot = *p;
             l += offset;
-            for (p = start + offset; p > l; --p)
+            for ( ; p > l; --p)
                 *p = *(p-1);
             *l = pivot;
         }
