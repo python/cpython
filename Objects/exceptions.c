@@ -1809,6 +1809,10 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
     if (self->filename != Py_None) {
         size_t cwd_len = 100;
         char* cwd = NULL;
+
+        // fetch exception state in order to restore it later
+        PyObject *exc = PyErr_GetRaisedException();
+
         while (true) {
             char* tmp = realloc(cwd, cwd_len);
             if (!tmp) {
@@ -1824,8 +1828,6 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
                 PyObject* py_cwd = PyUnicode_FromString(cwd);
                 if (py_cwd) {
                     self->cwd = py_cwd;
-                } else {
-                    PyErr_Clear();
                 }
                 break;
             }
@@ -1838,6 +1840,9 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
             cwd_len *= 2;
         }
         free(cwd);
+
+        // restore exception state
+        PyErr_SetRaisedException(exc);
     }
 
     /* Steals the reference to args */
