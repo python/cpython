@@ -2496,13 +2496,18 @@
 [typedef.PyCFunctionFastWithKeywords]
     added = '3.13'
     # "abi-only" since 3.10.  (Same story as PyCFunctionFast.)
-[typedef._Py_GetNone]
+[function._Py_GetNone]
     added = '3.13'
-[typedef._Py_GetFalse]
+    abi_only = true
+[function._Py_GetFalse]
     added = '3.13'
-[typedef._Py_GetTrue]
+    abi_only = true
+[function._Py_GetTrue]
     added = '3.13'
-[typedef._Py_GetEllipsis]
+    abi_only = true
+[function._Py_GetEllipsis]
     added = '3.13'
-[typedef._Py_GetNotImplemented]
+    abi_only = true
+[function._Py_GetNotImplemented]
     added = '3.13'
+    abi_only = true
