@@ -1611,7 +1611,7 @@ def global_flag_repr(self):
     cls_name = self.__class__.__name__
     if self._name_ is None:
         return "%s.%s(%r)" % (module, cls_name, self._value_)
-    if _is_single_bit(self):
+    if _is_single_bit(self._value_):
         return '%s.%s' % (module, self._name_)
     if self._boundary_ is not FlagBoundary.KEEP:
         return '|'.join(['%s.%s' % (module, name) for name in self.name.split('|')])
