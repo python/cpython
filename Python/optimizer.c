@@ -1033,6 +1033,7 @@ uop_optimize(
             break;
         }
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
+        assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
     }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
