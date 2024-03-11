@@ -10,6 +10,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
@@ -546,7 +547,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
         /* Whether or not it is less than or equal to
            zero is determined by the sign of ob_size
         */
-        if (PyLong_Sign(value) < 0)
+        if (_PyLong_Sign(value) < 0)
             result = PY_OFF_T_MIN;
         else
             result = PY_OFF_T_MAX;

@@ -758,7 +758,20 @@ PyLong_AsUnsignedLongMask(PyObject *op)
 }
 
 int
-PyLong_Sign(PyObject *vv)
+_PyLong_Sign(PyObject *vv)
+{
+    PyLongObject *v = (PyLongObject *)vv;
+
+    assert(v != NULL);
+    assert(PyLong_Check(v));
+    if (_PyLong_IsCompact(v)) {
+        return _PyLong_CompactSign(v);
+    }
+    return _PyLong_NonCompactSign(v);
+}
+
+int
+PyLong_Sign(PyObject *vv, int *sign)
 {
     if (vv == NULL) {
         PyErr_BadInternalCall();
@@ -769,12 +782,8 @@ PyLong_Sign(PyObject *vv)
         return -1;
     }
 
-    PyLongObject *v = (PyLongObject *)vv;
-
-    if (_PyLong_IsCompact(v)) {
-        return _PyLong_CompactSign(v);
-    }
-    return _PyLong_NonCompactSign(v);
+    *sign = _PyLong_Sign(vv);
+    return 0;
 }
 
 static int

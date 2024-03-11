@@ -1440,7 +1440,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    if (PyLong_Sign(length_attr) == -1) {
+    if (_PyLong_Sign(length_attr) == -1) {
         Py_DECREF(length_attr);
         PyErr_SetString(PyExc_ValueError,
                         "The '_length_' attribute must not be negative");

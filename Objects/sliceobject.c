@@ -429,7 +429,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
         step = evaluate_slice_index(self->step);
         if (step == NULL)
             goto error;
-        step_sign = PyLong_Sign(step);
+        step_sign = _PyLong_Sign(step);
         if (step_sign == 0) {
             PyErr_SetString(PyExc_ValueError,
                             "slice step cannot be zero");

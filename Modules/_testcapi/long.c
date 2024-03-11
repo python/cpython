@@ -824,11 +824,11 @@ static PyObject *
 pylong_sign(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
-    int ret = PyLong_Sign(arg);
-    if (ret == -1 && PyErr_Occurred()) {
+    int sign;
+    if (PyLong_Sign(arg, &sign) == -1) {
         return NULL;
     }
-    return PyLong_FromLong(ret);
+    return PyLong_FromLong(sign);
 }
 
 

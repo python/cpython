@@ -1,2 +1,1 @@
-Add :c:func:`PyLong_Sign` function (former private :c:func:`!_PyLong_Sign`).
-Patch by Sergey B Kirpichev.
+Add :c:func:`PyLong_Sign` function.  Patch by Sergey B Kirpichev.
