@@ -248,7 +248,7 @@ Don't un-adapt :opcode:`COMPARE_OP` when collecting specialization stats.
 .. nonce: RX_AzJ
 .. section: Core and Builtins
 
-Fix specialization stats gathering for :opcode:`PRECALL` instructions.
+Fix specialization stats gathering for :opcode:`!PRECALL` instructions.
 
 ..
 

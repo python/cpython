@@ -54,7 +54,8 @@ class Handle:
             info.append('cancelled')
         if self._callback is not None:
             info.append(format_helpers._format_callback_source(
-                self._callback, self._args))
+                self._callback, self._args,
+                debug=self._loop.get_debug()))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append(f'created at {frame[0]}:{frame[1]}')
@@ -90,7 +91,8 @@ class Handle:
             raise
         except BaseException as exc:
             cb = format_helpers._format_callback_source(
-                self._callback, self._args)
+                self._callback, self._args,
+                debug=self._loop.get_debug())
             msg = f'Exception in callback {cb}'
             context = {
                 'message': msg,

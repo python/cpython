@@ -2,7 +2,7 @@
 import unittest
 import dis
 from test import support
-from test.support import import_helper
+from test.support import import_helper, requires_specialization
 try:
     from sys import _clear_type_cache
 except ImportError:
@@ -79,8 +79,22 @@ class TypeCacheTests(unittest.TestCase):
 
         _clear_type_cache()
 
+    def test_per_class_limit(self):
+        class C:
+            x = 0
+
+        type_assign_version(C)
+        orig_version = type_get_version(C)
+        for i in range(1001):
+            C.x = i
+            type_assign_version(C)
+
+        new_version = type_get_version(C)
+        self.assertEqual(new_version, 0)
+
 
 @support.cpython_only
+@requires_specialization
 class TypeCacheWithSpecializationTests(unittest.TestCase):
     def tearDown(self):
         _clear_type_cache()
