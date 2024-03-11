@@ -668,7 +668,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
-        if sys.platform.startswith(("linux", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
@@ -1101,8 +1101,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertEqual(stderr.rstrip(), b"")
 
-    @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
-                         'need sys.getandroidapilevel()')
+    @unittest.skipUnless(sys.platform == "android", "Android only")
     def test_getandroidapilevel(self):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)

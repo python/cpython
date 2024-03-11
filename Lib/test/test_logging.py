@@ -603,7 +603,7 @@ class HandlerTest(BaseTest):
     def test_builtin_handlers(self):
         # We can't actually *use* too many handlers in the tests,
         # but we can try instantiating them with various options
-        if sys.platform in ('linux', 'darwin'):
+        if sys.platform in ('linux', 'android', 'darwin'):
             for existing in (True, False):
                 fn = make_temp_file()
                 if not existing:
@@ -667,7 +667,7 @@ class HandlerTest(BaseTest):
                     (logging.handlers.RotatingFileHandler, (pfn, 'a')),
                     (logging.handlers.TimedRotatingFileHandler, (pfn, 'h')),
                 )
-        if sys.platform in ('linux', 'darwin'):
+        if sys.platform in ('linux', 'android', 'darwin'):
             cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
         for cls, args in cases:
             h = cls(*args, encoding="utf-8")

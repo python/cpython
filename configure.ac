@@ -362,6 +362,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;

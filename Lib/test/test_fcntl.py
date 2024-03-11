@@ -129,8 +129,8 @@ class TestFcntl(unittest.TestCase):
             fcntl.fcntl(BadFile(INT_MIN - 1), fcntl.F_SETFL, os.O_NONBLOCK)
 
     @unittest.skipIf(
-        any(platform.machine().startswith(name) for name in {"arm", "aarch"})
-        and platform.system() in {"Linux", "Android"},
+        platform.machine().startswith(("arm", "aarch"))
+        and platform.system() in ("Linux", "Android"),
         "ARM Linux returns EINVAL for F_NOTIFY DN_MULTISHOT")
     def test_fcntl_64_bit(self):
         # Issue #1309352: fcntl shouldn't fail when the third arg fits in a

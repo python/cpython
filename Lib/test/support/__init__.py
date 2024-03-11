@@ -520,7 +520,7 @@ MS_WINDOWS = (sys.platform == 'win32')
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
-is_android = hasattr(sys, 'getandroidapilevel')
+is_android = sys.platform == "android"
 
 if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'

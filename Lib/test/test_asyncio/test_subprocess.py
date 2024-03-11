@@ -480,7 +480,8 @@ class SubprocessMixin:
         self.assertEqual(output, None)
         self.assertEqual(exitcode, 0)
 
-    @unittest.skipIf(sys.platform != 'linux', "Don't have /dev/stdin")
+    @unittest.skipIf(sys.platform not in ('linux', 'android'),
+                     "Don't have /dev/stdin")
     def test_devstdin_input(self):
 
         async def devstdin_input(message):

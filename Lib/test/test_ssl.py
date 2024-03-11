@@ -4914,7 +4914,7 @@ class TestPreHandshakeClose(unittest.TestCase):
                         pass  # closed, protocol error, etc.
 
     def non_linux_skip_if_other_okay_error(self, err):
-        if sys.platform == "linux":
+        if sys.platform in ("linux", "android"):
             return  # Expect the full test setup to always work on Linux.
         if (isinstance(err, ConnectionResetError) or
             (isinstance(err, OSError) and err.errno == errno.EINVAL) or
