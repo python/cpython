@@ -2343,6 +2343,17 @@ void
 _PyMonitoringScopeBegin(PyMonitoringState *state_array, uint64_t *version,
                         uint8_t *event_types, uint32_t length)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (global_version(interp) == *version) {
+        return;
+    }
+
+    _Py_GlobalMonitors *m = &interp->monitors;
+    for (uint32_t i = 0; i < length; i++) {
+        state_array[i].active = m->tools[event_types[i]];
+        state_array[i].opaque = m->tools[event_types[i]];
+    }
+    *version = global_version(interp);
 }
 
 int
