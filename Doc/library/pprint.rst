@@ -44,6 +44,17 @@ Functions
    *args* and *kwargs* will be passed to :func:`~pprint.pprint` as formatting
    parameters.
 
+      >>> import pprint
+      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
+      >>> stuff.insert(0, stuff)
+      >>> pprint.pprint(stuff)
+      [<Recursion on list with id=...>,
+       'spam',
+       'eggs',
+       'lumberjack',
+       'knights',
+       'ni']
+
    .. versionadded:: 3.8
 
 
@@ -62,18 +73,7 @@ Functions
    described in its documentation below.
 
    Note that *sort_dicts* default is ``True`` and you might want to use
-   :func:`~pprint.pp` instead.::
-
-      >>> import pprint
-      >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
-      >>> stuff.insert(0, stuff)
-      >>> pprint.pprint(stuff)
-      [<Recursion on list with id=...>,
-       'spam',
-       'eggs',
-       'lumberjack',
-       'knights',
-       'ni']
+   :func:`~pprint.pp` instead.
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
                       compact=False, sort_dicts=True, underscore_numbers=False)
