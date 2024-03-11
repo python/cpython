@@ -1062,7 +1062,7 @@ static PyType_Slot pycstruct_type_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycstruct_type_spec = {
+static PyType_Spec pycstruct_type_spec = {
     .name = "_ctypes.PyCStructType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -2327,7 +2327,7 @@ static PyType_Slot pycsimple_type_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycsimple_type_spec = {
+static PyType_Spec pycsimple_type_spec = {
     .name = "_ctypes.PyCSimpleType",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -2906,7 +2906,7 @@ static PyType_Slot pycdata_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycdata_spec = {
+static PyType_Spec pycdata_spec = {
     .name = "_ctypes._CData",
     .basicsize = sizeof(CDataObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -4323,7 +4323,7 @@ static PyType_Slot pycfuncptr_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycfuncptr_spec = {
+static PyType_Spec pycfuncptr_spec = {
     .name = "_ctypes.CFuncPtr",
     .basicsize = sizeof(PyCFuncPtrObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
@@ -4461,7 +4461,7 @@ static PyType_Slot pycstruct_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycstruct_spec = {
+static PyType_Spec pycstruct_spec = {
     .name = "_ctypes.Structure",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -4476,7 +4476,7 @@ static PyType_Slot pycunion_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycunion_spec = {
+static PyType_Spec pycunion_spec = {
     .name = "_ctypes.Union",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -4778,7 +4778,7 @@ static PyType_Slot pycarray_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycarray_spec = {
+static PyType_Spec pycarray_spec = {
     .name = "_ctypes.Array",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -4967,7 +4967,7 @@ static PyType_Slot pycsimple_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycsimple_spec = {
+static PyType_Spec pycsimple_spec = {
     .name = "_ctypes._SimpleCData",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
@@ -5325,7 +5325,7 @@ static PyType_Slot pycpointer_slots[] = {
     {0, NULL},
 };
 
-PyType_Spec pycpointer_spec = {
+static PyType_Spec pycpointer_spec = {
     .name = "_ctypes._Pointer",
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
