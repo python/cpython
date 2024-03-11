@@ -417,6 +417,7 @@ PyEval_ThreadsInitialized(void)
     return _PyEval_ThreadsInitialized();
 }
 
+#ifndef NDEBUG
 static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
@@ -425,6 +426,7 @@ current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
     }
     return _Py_atomic_load_int_relaxed(&gil->locked);
 }
+#endif
 
 static void
 init_shared_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
