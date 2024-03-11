@@ -63,53 +63,52 @@ static struct PyModuleDef pwdmodule;
 
 #define DEFAULT_BUFFER_SIZE 1024
 
-static void
-sets(PyObject *v, int i, const char* val)
-{
-  if (val) {
-      PyObject *o = PyUnicode_DecodeFSDefault(val);
-      PyStructSequence_SET_ITEM(v, i, o);
-  }
-  else {
-      PyStructSequence_SET_ITEM(v, i, Py_None);
-      Py_INCREF(Py_None);
-  }
-}
-
 static PyObject *
 mkpwent(PyObject *module, struct passwd *p)
 {
-    int setIndex = 0;
     PyObject *v = PyStructSequence_New(get_pwd_state(module)->StructPwdType);
-    if (v == NULL)
-        return NULL;
-
-#define SETS(i,val) sets(v, i, val)
-
-    SETS(setIndex++, p->pw_name);
-#if defined(HAVE_STRUCT_PASSWD_PW_PASSWD) && !defined(__ANDROID__)
-    SETS(setIndex++, p->pw_passwd);
-#else
-    SETS(setIndex++, "");
-#endif
-    PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromUid(p->pw_uid));
-    PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromGid(p->pw_gid));
-#if defined(HAVE_STRUCT_PASSWD_PW_GECOS)
-    SETS(setIndex++, p->pw_gecos);
-#else
-    SETS(setIndex++, "");
-#endif
-    SETS(setIndex++, p->pw_dir);
-    SETS(setIndex++, p->pw_shell);
-
-#undef SETS
-
-    if (PyErr_Occurred()) {
-        Py_XDECREF(v);
+    if (v == NULL) {
         return NULL;
     }
 
+    int setIndex = 0;
+
+#define SET_STRING(VAL) \
+    SET_RESULT((VAL) ? PyUnicode_DecodeFSDefault((VAL)) : Py_NewRef(Py_None))
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            goto error;                                      \
+        }                                                    \
+        PyStructSequence_SET_ITEM(v, setIndex++, item);      \
+    } while(0)
+
+    SET_STRING(p->pw_name);
+#if defined(HAVE_STRUCT_PASSWD_PW_PASSWD) && !defined(__ANDROID__)
+    SET_STRING(p->pw_passwd);
+#else
+    SET_STRING("");
+#endif
+    SET_RESULT(_PyLong_FromUid(p->pw_uid));
+    SET_RESULT(_PyLong_FromGid(p->pw_gid));
+#if defined(HAVE_STRUCT_PASSWD_PW_GECOS)
+    SET_STRING(p->pw_gecos);
+#else
+    SET_STRING("");
+#endif
+    SET_STRING(p->pw_dir);
+    SET_STRING(p->pw_shell);
+
+#undef SET_STRING
+#undef SET_RESULT
+
     return v;
+
+error:
+    Py_DECREF(v);
+    return NULL;
 }
 
 /*[clinic input]
