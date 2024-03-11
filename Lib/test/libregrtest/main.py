@@ -91,7 +91,7 @@ class Regrtest:
         if ns.use_mp is None:
             if ns.tsan:
                 # For TSAN tests, use number of CPU of the current process.
-                num_workers = os.process_cpu_count()
+                num_workers = os.process_cpu_count() # type: ignore[attr-defined]
             else:
                 num_workers = 0  # run sequentially
         elif ns.use_mp <= 0:
