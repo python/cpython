@@ -4888,13 +4888,18 @@ fi
 if test "$ac_sys_system" = "Linux-android"; then
   # When these functions are used in an unprivileged process, they crash rather
   # than returning an error.
-  privileged_funcs="chroot initgroups setegid seteuid setgid sethostname
+  blocked_funcs="chroot initgroups setegid seteuid setgid sethostname
     setregid setresgid setresuid setreuid setuid"
 
   # These functions are unimplemented and always return an error.
-  unimplemented_funcs="sem_open sem_unlink"
+  blocked_funcs="$blocked_funcs sem_open sem_unlink"
 
-  for name in $privileged_funcs $unimplemented_funcs; do
+  # On API level 21, when fchmodat is called with the unimplemented flag
+  # AT_SYMLINK_NOFOLLOW, instead of returning ENOTSUP as it should, it actually
+  # follows the symlink.
+  blocked_funcs="$blocked_funcs fchmodat"
+
+  for name in $blocked_funcs; do
     AS_VAR_PUSHDEF([func_var], [ac_cv_func_$name])
     AS_VAR_SET([func_var], [no])
     AS_VAR_POPDEF([func_var])
