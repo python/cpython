@@ -29,6 +29,7 @@ class FunctionalAPIBase():
         self.assertEqual(
             importlib.resources.read_text(
                 self.anchor02, 'subdirectory', 'subsubdir', 'resource.txt',
+                encoding='utf-8',
             ),
             'a resource',
         )
@@ -71,6 +72,7 @@ class FunctionalAPIBase():
             self.assertEqual(f.read(), 'Hello, UTF-8 world!\n')
         with importlib.resources.open_text(
             self.anchor02, 'subdirectory', 'subsubdir', 'resource.txt',
+            encoding='utf-8',
         ) as f:
             self.assertEqual(f.read(), 'a resource')
         with self.assertRaises(IsADirectoryError):
@@ -163,6 +165,19 @@ class FunctionalAPIBase():
                 # Unknown module
                 with self.assertRaises(ModuleNotFoundError):
                     func('$missing module$')
+
+    def test_text_errors(self):
+        for func in (
+            importlib.resources.read_text,
+            importlib.resources.open_text,
+        ):
+            with self.subTest(func=func):
+                # Multiple path arguments need explicit encoding argument.
+                with self.assertRaises(TypeError):
+                    func(
+                        self.anchor02, 'subdirectory',
+                        'subsubdir', 'resource.txt',
+                    )
 
 
 class FunctionalAPITest_StringAnchor(

@@ -120,10 +120,17 @@ For all the following functions:
 
       importlib.resources.read_text(my_module, "info.txt")
 
-  To get the text of ``info/chapter1.txt``, use::
+  To get the contents of ``pics/painting.png`` as bytes, use::
 
-      importlib.resources.read_text(my_module, "info", "chapter1.txt")
+      importlib.resources.read_binary(my_module, "pics", "painting.png")
 
+  For backward compatibility reasons, functions that read text require
+  an explicit *encoding* argument if multiple *path_names* are given.
+
+  So, to get the text of ``info/chapter1.txt``, use::
+
+      importlib.resources.read_text(my_module, "info", "chapter1.txt",
+                                    encoding='utf-8')
 
 .. function:: open_binary(anchor, *path_names)
 
@@ -151,6 +158,10 @@ For all the following functions:
     See :ref:`the introduction <importlib_resources_functional>` for
     details on *anchor* and *path_names*.
     *encoding* and *errors* have the same meaning as in built-in :func:`open`.
+
+    For backward compatibility reasons, the *encoding* argument must be given
+    explicitly if there are multiple *path_names*.
+    This limitation is scheduled to be removed in Python 3.15.
 
     This function returns a :class:`~typing.TextIO` object,
     that is, a text stream open for reading.
@@ -187,6 +198,10 @@ For all the following functions:
     See :ref:`the introduction <importlib_resources_functional>` for
     details on *anchor* and *path_names*.
     *encoding* and *errors* have the same meaning as in built-in :func:`open`.
+
+    For backward compatibility reasons, the *encoding* argument must be given
+    explicitly if there are multiple *path_names*.
+    This limitation is scheduled to be removed in Python 3.15.
 
     For a single path name *name*, this function is roughly equivalent to::
 
