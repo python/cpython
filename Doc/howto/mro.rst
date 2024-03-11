@@ -29,20 +29,6 @@ Acknowledgments:
    Joan G. Stark for the pythonic pictures. Finally, Guido van Rossum who
    enthusiastically added this document to the official Python 2.3 home-page.*
 
-----
-
- .. code-block:: text
-
-
-
-                                   .-=-.          .--.
-                       __        .'     '.       /  " )
-               _     .'  '.     /   .-.   \     /  .-'\
-              ( \   / .-.  \   /   /   \   \   /  /    ^
-               \ `-` /   \  `-'   /     \   `-`  /
-             jgs`-.-`     '.____.'       `.____.'
-
-
 The beginning
 -------------
 
@@ -146,18 +132,6 @@ conflict among bases Y, X) forbidding the naive programmer from creating
 ambiguous hierarchies.  Python 2.2 instead does not raise an exception,
 but chooses an *ad hoc* ordering (CABXYO in this case).
 
-----
-
- .. code-block:: text
-
-               _                   .-=-.          .-==-.
-              { }      __        .' O o '.       /  -<' )
-              { }    .' O'.     / o .-. O \     /  .--v`
-              { }   / .-. o\   /O  /   \  o\   /O /
-               \ `-` /   \ O`-'o  /     \  O`-`o /
-           jgs  `-.-`     '.____.'       `.____.'
-
-
 The C3 Method Resolution Order
 ------------------------------
 
@@ -226,32 +200,6 @@ The computation of the merge is trivial if C has only one parent
 However, in the case of multiple inheritance things are more cumbersome
 and I don't expect you can understand the rule without a couple of
 examples ;-)
-
-----
-
- .. code-block:: text
-
-               .-'-.
-             /'     `\
-           /' _.-.-._ `\
-          |  (|)   (|)  |
-          |   \__"__/   |
-          \    |v.v|    /
-           \   | | |   /
-            `\ |=^-| /'
-              `|=-=|'
-               | - |
-               |=  |
-               |-=-|
-         _.-=-=|= -|=-=-._
-        (      |___|      )
-       ( `-=-=-=-=-=-=-=-` )
-       (`-=-=-=-=-=-=-=-=-`)
-       (`-=-=-=-=-=-=-=-=-`)
-        (`-=-=-=-=-=-=-=-`)
-         (`-=-=-=-=-=-=-`)
-     jgs  `-=-=-=-=-=-=-`
-
 
 Examples
 --------
@@ -411,16 +359,6 @@ tail of YXO whereas Y is in the tail of XYO:  therefore there are no
 good heads and the C3 algorithm stops.  Python 2.3 raises an error and
 refuses to create the class C.
 
-----
-
- .. code-block:: text
-
-                                 __
-               (\   .-.   .-.   /_")
-                \\_//^\\_//^\\_//
-           jgs   `"`   `"`   `"`
-
-
 Bad Method Resolution Orders
 ----------------------------
 
@@ -533,16 +471,6 @@ example:
 2. the default food for Pythonistas is spam !  (but you already knew
    that ;-)
 
-----
-
- .. code-block:: text
-
-                                 __
-               (\   .-.   .-.   /_")
-                \\_//^\\_//^\\_//
-           jgs   `"`   `"`   `"`
-
-
 Having discussed the issue of local precedence ordering, let me now
 consider the issue of monotonicity.  My goal is to show that neither the
 MRO for classic classes nor that for Python 2.2 new style classes is
@@ -621,17 +549,6 @@ since the local precedence list of the class Z is [K1, K2, K3] (K2
 precedes K3), whereas in the linearization of Z K2 *follows* K3.  These
 problems explain why the 2.2 rule has been dismissed in favor of the C3
 rule.
-
-----
-
- .. code-block:: text
-
-                                                                     __
-               (\   .-.   .-.   .-.   .-.   .-.   .-.   .-.   .-.   /_")
-                \\_//^\\_//^\\_//^\\_//^\\_//^\\_//^\\_//^\\_//^\\_//
-            jgs  `"`   `"`   `"`   `"`   `"`   `"`   `"`   `"`   `"`
-
-
 
 The end
 -------
@@ -732,17 +649,6 @@ have discussed in this paper.::
 That's all folks,
 
                             enjoy !
-
-
-----
-
-.. code-block:: text
-
-
-                __
-               ("_\   .-.   .-.   .-.   .-.   .-.   .-.   .-.   .-.   /)
-                  \\_//^\\_//^\\_//^\\_//^\\_//^\\_//^\\_//^\\_//^\\_//
-            jgs    `"`   `"`   `"`   `"`   `"`   `"`   `"`   `"`   `"`
 
 
 Resources
