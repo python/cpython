@@ -794,30 +794,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(result[0].rc, 0, result)
 
     def test_const_eliminate_function_guards(self):
-        """Note: this function must be executed in a subprocess, because when other tests are run,
-        the globals of this module might get affected, causing globals to constant promotion
-        to fail.
-        """
-
-        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
-        import _testinternalcapi
-        import opcode
-
-        def get_first_executor(func):
-            code = func.__code__
-            co_code = code.co_code
-            JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
-            for i in range(0, len(co_code), 2):
-                if co_code[i] == JUMP_BACKWARD:
-                    try:
-                        return _testinternalcapi.get_executor(code, i)
-                    except ValueError:
-                        pass
-            return None
-
-        def get_opnames(ex):
-            return {item[0] for item in ex}
-
+        ns = {}
+        src = textwrap.dedent("""
         def func(n):
             return n
 
@@ -825,20 +803,15 @@ class TestUopsOptimization(unittest.TestCase):
             for i in range(n):
                 x = func(i)
             return x
-
-        opt = _testinternalcapi.new_uop_optimizer()
-        _testinternalcapi.set_optimizer(opt)
-        testfunc(64)
-
-        ex = get_first_executor(testfunc)
-        assert ex is not None
+        """)
+        exec(src, ns, ns)
+        testfunc = ns['testfunc']
+        _, ex = self._run_with_optimizer(testfunc, 20)
+        self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        print(uops)
-        assert "_LOAD_GLOBAL_MODULE" not in uops
-        assert "_LOAD_CONST_INLINE_WITH_NULL" in uops
-        assert "_CHECK_FUNCTION_EXACT_ARGS" not in uops
-        """))
-        self.assertEqual(result[0].rc, 0, result)
+        self.assertNotIn("_LOAD_GLOBAL_MODULE", uops)
+        self.assertIn("_LOAD_CONST_INLINE_WITH_NULL", uops)
+        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
 
     def test_float_add_constant_propagation(self):
         def testfunc(n):
