@@ -99,7 +99,7 @@ def make_build_python(context):
 
 def unpack_deps(host):
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-1", "libffi-3.4.4-1", "openssl-3.0.13-0",
+    for name_ver in ["bzip2-1.0.8-1", "libffi-3.4.4-1", "openssl-3.0.13-1",
                      "sqlite-3.45.1-0", "xz-5.4.6-0"]:
         filename = f"{name_ver}-{host}.tar.gz"
         run(["wget", f"{deps_url}/{name_ver}/{filename}"])
