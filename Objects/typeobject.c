@@ -3112,16 +3112,46 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
+        _PyObject_InlineValues(obj)->valid) {
+        PyObject *dict = _PyObject_MaterializeManagedDict(obj);
+        if (dict == NULL) {
+            return -1;
+        }
+
+        int res;
+        Py_BEGIN_CRITICAL_SECTION2(obj, dict);
+
+        res = _PyDict_DetachFromObject((PyDictObject *)*dictptr, obj);
+
+        if (res >= 0) {
+            Py_SETREF(*dictptr, Py_XNewRef(value));
+        }
+
+        Py_END_CRITICAL_SECTION2();
+
+        if (res < 0) {
+            return -1;
+        }
+        return 0;
+    }
+#endif
+
     if (*dictptr) {
         assert(PyDict_Check(*dictptr));
+
         if (_PyDict_DetachFromObject((PyDictObject *)*dictptr, obj)) {
             return -1;
         }
+
         Py_SETREF(*dictptr, Py_XNewRef(value));
     }
     else {
         *dictptr = Py_XNewRef(value);
     }
+
     return 0;
 }
 
@@ -6087,14 +6117,17 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-            PyDictObject *dict = _PyObject_GetManagedDict(self);
-            if (dict == NULL) {
-                dict = (PyDictObject *)_PyObject_MaterializeManagedDict(self);
-                if (dict == NULL) {
-                    return -1;
-                }
+            PyDictObject *dict = _PyObject_MaterializeManagedDict(self);
+            bool error = false;
+
+            Py_BEGIN_CRITICAL_SECTION2(self, dict);
+
+            if (dict == NULL || _PyDict_DetachFromObject(dict, self)) {
+                error = true;
             }
-            if (_PyDict_DetachFromObject(dict, self)) {
+
+            Py_END_CRITICAL_SECTION2();
+            if (error) {
                 return -1;
             }
         }

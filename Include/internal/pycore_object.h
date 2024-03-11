@@ -657,7 +657,7 @@ static inline void
 _PyObject_SetManagedDict(PyObject *obj, PyObject *dict)
 {
     PyManagedDictPointer *ptr = _PyObject_ManagedDictPointer(obj);
-    FT_ATOMIC_STORE_PTR_RELEASE(ptr->dict, dict);
+    FT_ATOMIC_STORE_PTR_RELEASE(ptr->dict, (PyDictObject *)dict);
 }
 
 static inline PyDictValues *

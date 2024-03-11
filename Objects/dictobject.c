@@ -6623,14 +6623,20 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
 PyObject *
 _PyObject_MaterializeManagedDict(PyObject *obj)
 {
-    PyObject *dict;
+    PyObject *dict = (PyObject *)_PyObject_GetManagedDict(obj);
+    if (dict != NULL) {
+        return dict;
+    }
+
     Py_BEGIN_CRITICAL_SECTION(obj);
 
+#ifdef Py_GIL_DISABLED
     dict = (PyObject *)_PyObject_GetManagedDict(obj);
     if (dict != NULL) {
         // We raced with another thread creating the dict
         goto exit;
     }
+#endif
 
     OBJECT_STAT_INC(dict_materialized_on_request);
 
@@ -6748,13 +6754,13 @@ _PyObject_TryStoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *val
     int res;
     // We have a valid inline values, at least for now...  There are two potential
     // races with having the values become invalid.  One is the dictionary
-    // being detached from the object, which only happens when the object is freed,
-    // so that's not a concern.  The other is if someone is inserting into the dictionary
-    // directly and therefore causing it to resize.
+    // being detached from the object.  The other is if someone is inserting
+    // into the dictionary directly and therefore causing it to resize.
+    //
     // If we haven't materialized the dictionary yet we lock on the object, which
     // will also be used to prevent the dictionary from being materialized while
     // we're doing the insertion.  If we race and the dictionary gets created
-    // then we'll need to relace the object lock and lock the dictionary to
+    // then we'll need to release the object lock and lock the dictionary to
     // prevent resizing.
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
@@ -6764,7 +6770,8 @@ _PyObject_TryStoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *val
 
         if (dict == NULL) {
             res = store_instance_attr_lock_held(obj, values, name, value);
-        } else {
+        }
+        else {
             // We lost a race with the materialization of the dict, we'll
             // try the insert with it...
             retry_with_dict = 1;
@@ -6773,12 +6780,14 @@ _PyObject_TryStoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *val
         if (retry_with_dict) {
             goto with_dict;
         }
-    } else {
+    }
+    else {
 with_dict:
         Py_BEGIN_CRITICAL_SECTION(dict);
         if (dict->ma_values == values) {
             res = store_instance_attr_lock_held(obj, values, name, value);
-        } else {
+        }
+        else {
             // Caller needs to insert into dict
             res = 1;
         }
@@ -6821,6 +6830,9 @@ _PyObject_ManagedDictValidityCheck(PyObject *obj)
 }
 #endif
 
+// Attempts to get an instance attribute from the inline values.  Returns 0 if
+// the lookup from the inline values was successful or 1 if the inline values
+// are no longer valid.  No error is set in either case.
 int
 _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr)
 {
@@ -6840,28 +6852,53 @@ _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr
 
 #ifdef Py_GIL_DISABLED
     PyObject *value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
-    if (value != NULL && !_Py_TryIncref(&values->values[ix], value)) {
-        int res = 0;
-        // Try again with the object locked...
+    if (value == NULL || _Py_TryIncref(&values->values[ix], value)) {
+        *attr = value;
+        return 0;
+    }
+
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+        // No dict, lock the object to prevent one from being
+        // materialized...
+        bool success = false;
         Py_BEGIN_CRITICAL_SECTION(obj);
-        // We could actually race with a dictioanry resize here.  The
-        // inline values will continue to hold references to previous
-        // values, so if we're racing with a resize + insert into the
-        // value we're reading it's just like we won the race.
-        if (!values->valid) {
-            res = 1;
-            goto exit;
+
+        dict = _PyObject_GetManagedDict(obj);
+        if (dict == NULL) {
+            // Still no dict, we can read from the values
+            assert(values->valid);
+            value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+            *attr = Py_XNewRef(value);
+            success = true;
         }
 
-        value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
-        *attr = Py_XNewRef(value);
-exit:
         Py_END_CRITICAL_SECTION();
 
-        return res;
+        if (success) {
+            return 0;
+        }
     }
-    *attr = value;
-    return 0;
+
+    // We have a dictionary, we'll need to lock it to prevent
+    // the values from being resized.
+    assert(dict != NULL);
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+
+    if (dict->ma_values == values &&
+        FT_ATOMIC_LOAD_UINT8_RELAXED(values->valid)) {
+        value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+        *attr = Py_XNewRef(value);
+        res = 0;
+    } else {
+        // Caller needs to lookup from the dictionary
+        res = 1;
+    }
+
+    Py_END_CRITICAL_SECTION();
+
+    return res;
 #else
     PyObject *value = values->values[ix];
     *attr = Py_XNewRef(value);
@@ -6919,10 +6956,12 @@ _PyObject_FreeInstanceAttributes(PyObject *self)
         }
     }
     else {
+        Py_BEGIN_CRITICAL_SECTION(dict);
         if (_PyDict_DetachFromObject(dict, self)) {
              PyErr_WriteUnraisable(self);
         }
         assert(!values->valid);
+        Py_END_CRITICAL_SECTION();
     }
 }
 
@@ -6980,28 +7019,24 @@ PyObject_ClearManagedDict(PyObject *obj)
 int
 _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 {
-    int res = 0;
-    Py_BEGIN_CRITICAL_SECTION(mp);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
 
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     if (mp->ma_values == NULL || mp->ma_values != _PyObject_InlineValues(obj)) {
-        goto exit;
+        return -1;
     }
     assert(mp->ma_values->embedded);
     assert(mp->ma_values->valid);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     mp->ma_values = copy_values(mp->ma_values);
     if (mp->ma_values == NULL) {
-        res = -1;
-        goto exit;
+        return -1;
     }
+
     _PyObject_InlineValues(obj)->valid = 0;
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     ASSERT_CONSISTENT(mp);
-
-exit:
-    Py_END_CRITICAL_SECTION();
-    return res;
+    return 0;
 }
 
 PyObject *
