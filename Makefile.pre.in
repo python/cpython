@@ -2065,7 +2065,11 @@ TESTSUBDIRS=	ctypes/test \
 		tkinter/test/test_tkinter \
 		tkinter/test/test_ttk \
 		unittest/test \
-		unittest/test/testmock
+		unittest/test/testmock \
+		test/test_concurrent_futures \
+		test/test_multiprocessing_fork \
+		test/test_multiprocessing_forkserver \
+		test/test_multiprocessing_spawn
 
 TEST_MODULES=@TEST_MODULES@
 libinstall:	all $(srcdir)/Modules/xxmodule.c
