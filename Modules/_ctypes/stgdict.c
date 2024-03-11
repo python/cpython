@@ -30,6 +30,7 @@ _stginfo_from_type(ctypes_state *state, PyTypeObject *type, StgInfo **result)
         return 0;
     }
     StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
+    assert(info != NULL);
     if (!info->initialized) {
         // StgInfo is not initialized. This happens in abstract classes.
         return 0;
@@ -51,7 +52,8 @@ PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
 }
 // from either a type or an instance:
 int
-PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result) {
+PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
+{
     if (PyType_Check(obj)) {
         return _stginfo_from_type(state, (PyTypeObject *)obj, result);
     }
@@ -784,6 +786,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
                 StgInfo *einfo;
                 if (PyStgInfo_FromType(st, info->proto, &einfo) < 0) {
+                    Py_DECREF(pair);
                     return -1;
                 }
                 if (einfo == NULL) {
@@ -891,6 +894,8 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                 Py_ssize_t length = info->length;
                 StgInfo *einfo;
                 if (PyStgInfo_FromType(st, info->proto, &einfo) < 0) {
+                    Py_DECREF(pair);
+                    PyMem_Free(type_block);
                     return -1;
                 }
                 if (einfo == NULL) {

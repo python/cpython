@@ -640,6 +640,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
     info->paramfunc = StructUnionType_paramfunc;
 
     if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_fields_), &fields) < 0) {
+        Py_DECREF(attrdict);
         return -1;
     }
     Py_CLEAR(attrdict);
@@ -662,7 +663,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
         }
 
         /* copy base info */
-        if (-1 == PyCStgInfo_clone(info, baseinfo)) {
+        if (PyCStgInfo_clone(info, baseinfo) < 0) {
             return -1;
         }
         info->flags &= ~DICTFLAG_FINAL; /* clear the 'final' flag in the subclass info */
@@ -2561,7 +2562,7 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    Py_CLEAR(attrdict);
+    Py_DECREF(attrdict);
     return 0;
 }
 
@@ -2699,9 +2700,7 @@ PyCData_traverse(CDataObject *self, visitproc visit, void *arg)
     Py_VISIT(self->b_objects);
     Py_VISIT((PyObject *)self->b_base);
     PyTypeObject *type = Py_TYPE(self);
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        Py_VISIT(type);
-    }
+    Py_VISIT(type);
     return 0;
 }
 
@@ -2721,14 +2720,10 @@ static void
 PyCData_dealloc(PyObject *self)
 {
     PyTypeObject *type = Py_TYPE(self);
-    if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
-        PyObject_GC_UnTrack(self);
-    }
+    PyObject_GC_UnTrack(self);
     PyCData_clear((CDataObject *)self);
     type->tp_free(self);
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        Py_DECREF(type);
-    }
+    Py_DECREF(type);
 }
 
 static PyMemberDef PyCData_members[] = {
@@ -3389,7 +3384,7 @@ static PPROC FindAddress(void *handle, const char *name, PyObject *type)
     ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, (PyObject *)type, &info) < 0) {
-        return -1;
+        return NULL;
     }
     /* It should not happen that info is NULL, but better be safe */
     if (info==NULL || info->flags & FUNCFLAG_CDECL)
@@ -4967,8 +4962,8 @@ static PyType_Slot pycsimple_slots[] = {
 
 PyType_Spec pycsimple_spec = {
     .name = "_ctypes._SimpleCData",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-              | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycsimple_slots,
 };
 
@@ -5312,7 +5307,6 @@ Pointer_bool(CDataObject *self)
 
 static PyType_Slot pycpointer_slots[] = {
     {Py_tp_doc, PyDoc_STR("XXX to be provided")},
-    {Py_tp_getset, },
     {Py_tp_getset, Pointer_getsets},
     {Py_tp_init, Pointer_init},
     {Py_tp_new, Pointer_new},

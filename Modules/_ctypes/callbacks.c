@@ -176,7 +176,8 @@ static void _CallPythonObject(void *mem,
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
                BTW, the same problem occurs when they are pushed as parameters
             */
-        } else if (info) {
+        }
+        else if (info) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
