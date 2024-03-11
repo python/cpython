@@ -20,12 +20,12 @@ complaint you get while you are still learning Python::
    >>> while True print('Hello world')
      File "<stdin>", line 1
        while True print('Hello world')
-                      ^
+                  ^^^^^
    SyntaxError: invalid syntax
 
-The parser repeats the offending line and displays a little 'arrow' pointing at
-the earliest point in the line where the error was detected.  The error is
-caused by (or at least detected at) the token *preceding* the arrow: in the
+The parser repeats the offending line and displays little 'arrow's pointing
+at the token in the line where the error was detected.  The error may be
+caused by the absence of a token *before* the indicated token.  In the
 example, the error is detected at the function :func:`print`, since a colon
 (``':'``) is missing before it.  File name and line number are printed so you
 know where to look in case the input came from a script.
