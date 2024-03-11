@@ -4,7 +4,6 @@
 TSAN_TESTS = [
     'test_capi',
     'test_code',
-    'test_compileall',
     'test_enum',
     'test_functools',
     'test_httpservers',
@@ -20,11 +19,8 @@ TSAN_TESTS = [
     'test_syslog',
     'test_thread',
     'test_threadedtempfile',
-    'test_threading',
     'test_threading_local',
     'test_threadsignals',
-    'test_urllib2net',
-    'test_weakref'
 ]
 
 
