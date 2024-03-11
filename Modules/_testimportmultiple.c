@@ -5,9 +5,8 @@
  */
 
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
 #ifndef Py_GIL_DISABLED
-#define Py_LIMITED_API 0x03020000
+#  define Py_LIMITED_API 0x03020000
 #endif
 
 #include <Python.h>

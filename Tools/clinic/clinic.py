@@ -66,8 +66,9 @@ from libclinic import ClinicError
 #
 
 
-# match '#define Py_LIMITED_API'
-LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
+# Match '#define Py_LIMITED_API'.
+# Match '#  define Py_LIMITED_API 0x030d0000' (without the version).
+LIMITED_CAPI_REGEX = re.compile(r'# *define +Py_LIMITED_API')
 
 
 class Sentinels(enum.Enum):
