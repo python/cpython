@@ -2,19 +2,17 @@
 # chosen to run a thread sanitizer in a reasonable executable time.
 
 TSAN_TESTS = [
-    'test_capi',
     'test_code',
     'test_enum',
     'test_functools',
     'test_httpservers',
     'test_imaplib',
-    'test_import',
     'test_importlib',
     'test_io',
     'test_logging',
-    'test_queue',
-    'test_smtpnet',
-    'test_socketserver',
+    'test_tuple',
+    'test_list',
+    'test_dict',
     'test_ssl',
     'test_syslog',
     'test_thread',
