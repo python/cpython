@@ -21,7 +21,11 @@
 #  error "Py_BUILD_CORE macro must not be defined"
 #endif
 
-int _PyTestCapi_Init_VectorcallLimited(PyObject *module);
+int _PyTestCapi_Init_ByteArray(PyObject *module);
+int _PyTestCapi_Init_Bytes(PyObject *module);
 int _PyTestCapi_Init_HeaptypeRelative(PyObject *module);
+int _PyTestCapi_Init_PyOS(PyObject *module);
+int _PyTestCapi_Init_Sys(PyObject *module);
+int _PyTestCapi_Init_VectorcallLimited(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H
