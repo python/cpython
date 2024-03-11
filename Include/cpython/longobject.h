@@ -43,7 +43,7 @@ PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
 
 /* PyLong_Sign.  Retrieve the sign of the integer value (0, -1 or +1) in a
    variable sign.  Return 0 on success, else -1 with an exception set. */
-PyAPI_FUNC(int) PyLong_Sign(PyObject *v, int* sign);
+PyAPI_FUNC(int) PyLong_Sign(PyObject *v, int *sign);
 
 PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
 
