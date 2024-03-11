@@ -4752,7 +4752,7 @@ fi
 
 if test "$with_mimalloc" = yes; then
   if test "$with_tsan" = yes; then
-    AC_DEFINE([MI_TSAN], [1], [Define MI_TSAN for mimalloc thread sanitizer support])
+    AC_DEFINE([MI_TSAN], [1], [Define MI_TSAN for thread sanitizer])
   fi
 fi
 
