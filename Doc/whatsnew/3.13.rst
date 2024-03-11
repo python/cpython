@@ -380,7 +380,7 @@ For text-reading functions, the *encoding* and *errors* must now be given as
 keyword arguments.
 
 The :func:`~importlib.resources.contents()` remains deprecated in favor of
-the full-featured :class:`~importlib.resources.Traversable` API.
+the full-featured :class:`~importlib.resources.abc.Traversable` API.
 However, there is now no plan to remove it.
 
 (Contributed by Petr Viktorin in :gh:`106532`.)
