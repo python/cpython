@@ -20,67 +20,6 @@
  * See ctypes.h for details.
  */
 
-// Get a PyCTypeDataObject. These return -1 on error, 0 if "not found", 1 on OK.
-static int
-_stginfo_from_type(ctypes_state *state, PyTypeObject *type, StgInfo **result)
-{
-    *result = NULL;
-    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
-        // not a ctypes class.
-        return 0;
-    }
-    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
-    assert(info != NULL);
-    if (!info->initialized) {
-        // StgInfo is not initialized. This happens in abstract classes.
-        return 0;
-    }
-    *result = info;
-    return 1;
-}
-// from a type:
-int
-PyStgInfo_FromType(ctypes_state *state, PyObject *type, StgInfo **result)
-{
-    return _stginfo_from_type(state, (PyTypeObject *)type, result);
-}
-// from an instance:
-int
-PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
-{
-    return _stginfo_from_type(state, Py_TYPE(obj), result);
-}
-// from either a type or an instance:
-int
-PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
-{
-    if (PyType_Check(obj)) {
-        return _stginfo_from_type(state, (PyTypeObject *)obj, result);
-    }
-    return _stginfo_from_type(state, Py_TYPE(obj), result);
-}
-
-// Initialize StgInfo on a newly created type
-StgInfo *
-PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
-{
-    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
-        PyErr_Format(PyExc_SystemError,
-                     "'%s' is not a ctypes class.",
-                     type->tp_name);
-        return NULL;
-    }
-    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
-    if (info->initialized) {
-        PyErr_Format(PyExc_SystemError,
-                     "StgInfo of '%s' is already initialized.",
-                     type->tp_name);
-        return NULL;
-    }
-    info->initialized = 1;
-    return info;
-}
-
 int
 PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {

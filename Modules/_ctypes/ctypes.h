@@ -232,6 +232,8 @@ typedef struct {
  the fields that are now in StgInfo. The mechanism was called "StgDict"; a few
  references to that name might remain.
 
+ Functions for accessing StgInfo are `static inline` for performance;
+ see later in this file.
 
  ****************************************************************
 
@@ -299,17 +301,6 @@ typedef struct {
 /*      Py_ssize_t *strides;    */ /* unused in ctypes */
 /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 } StgInfo;
-
-// Get a PyCTypeDataObject. These Return -1 on error, 0 if "not found", 1 on OK.
-// from a type:
-extern int PyStgInfo_FromType(ctypes_state *state, PyObject *obj, StgInfo **result);
-// from an instance:
-extern int PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result);
-// from either a type or an instance:
-extern int PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result);
-
-// Initialize StgInfo on a newly created type
-extern StgInfo *PyStgInfo_Init(ctypes_state *state, PyTypeObject *type);
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 
@@ -413,8 +404,74 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc);
 #define Py_ffi_closure_alloc ffi_closure_alloc
 #endif
 
-/*
- Local Variables:
- compile-command: "python setup.py -q build install --home ~"
- End:
-*/
+
+/****************************************************************
+ * Accessing StgInfo -- these are inlined for performance reasons.
+ */
+
+// `PyStgInfo_From**` functions get a PyCTypeDataObject.
+// These return -1 on error, 0 if "not found", 1 on OK.
+// (Currently, these do not return -1 in practice. This might change
+// in the future.)
+
+//
+// Common helper:
+static inline int
+_stginfo_from_type(ctypes_state *state, PyTypeObject *type, StgInfo **result)
+{
+    *result = NULL;
+    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
+        // not a ctypes class.
+        return 0;
+    }
+    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
+    assert(info != NULL);
+    if (!info->initialized) {
+        // StgInfo is not initialized. This happens in abstract classes.
+        return 0;
+    }
+    *result = info;
+    return 1;
+}
+// from a type:
+static inline int
+PyStgInfo_FromType(ctypes_state *state, PyObject *type, StgInfo **result)
+{
+    return _stginfo_from_type(state, (PyTypeObject *)type, result);
+}
+// from an instance:
+static inline int
+PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
+{
+    return _stginfo_from_type(state, Py_TYPE(obj), result);
+}
+// from either a type or an instance:
+static inline int
+PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
+{
+    if (PyType_Check(obj)) {
+        return _stginfo_from_type(state, (PyTypeObject *)obj, result);
+    }
+    return _stginfo_from_type(state, Py_TYPE(obj), result);
+}
+
+// Initialize StgInfo on a newly created type
+static inline StgInfo *
+PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
+{
+    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
+        PyErr_Format(PyExc_SystemError,
+                     "'%s' is not a ctypes class.",
+                     type->tp_name);
+        return NULL;
+    }
+    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
+    if (info->initialized) {
+        PyErr_Format(PyExc_SystemError,
+                     "StgInfo of '%s' is already initialized.",
+                     type->tp_name);
+        return NULL;
+    }
+    info->initialized = 1;
+    return info;
+}
