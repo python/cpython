@@ -175,6 +175,14 @@ class AbstractServer:
         """Stop serving.  This leaves existing connections open."""
         raise NotImplementedError
 
+    def close_clients(self):
+        """Close all active connections."""
+        raise NotImplementedError
+
+    def abort_clients(self):
+        """Close all active connections immediately."""
+        raise NotImplementedError
+
     def get_loop(self):
         """Get the event loop the Server object is attached to."""
         raise NotImplementedError
