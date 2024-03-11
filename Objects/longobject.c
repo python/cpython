@@ -1965,7 +1965,9 @@ long_to_decimal_string_internal(PyObject *aa,
     digit *pout, *pin, rem, tenpow;
     int negative;
     int d;
-    int kind;
+    int kind = 0;
+
+    assert(writer == NULL || bytes_writer == NULL);
 
     a = (PyLongObject *)aa;
     if (a == NULL || !PyLong_Check(a)) {
@@ -2194,11 +2196,12 @@ long_format_binary(PyObject *aa, int base, int alternate,
     PyObject *v = NULL;
     Py_ssize_t sz;
     Py_ssize_t size_a;
-    int kind;
+    int kind = 0;
     int negative;
     int bits;
 
     assert(base == 2 || base == 8 || base == 16);
+    assert(writer == NULL || bytes_writer == NULL);
     if (a == NULL || !PyLong_Check(a)) {
         PyErr_BadInternalCall();
         return -1;
