@@ -444,7 +444,6 @@ Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
 Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
-Modules/_testcapi/unicode.c	-	_testcapimodule	-
 Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
 Modules/_testcapi/watchers.c	-	g_type_modified_events	-
