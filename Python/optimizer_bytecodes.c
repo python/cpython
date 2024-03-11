@@ -521,28 +521,6 @@ dummy_func(void) {
         OUT_OF_SPACE_IF_NULL(self = sym_new_not_null(ctx));
     }
 
-
-    op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
-        if (sym_is_const(callable) &&
-            sym_matches_type(callable, &PyFunction_Type) &&
-            (sym_is_null(self_or_null) || sym_is_not_null(self_or_null))) {
-            assert(PyFunction_Check(sym_get_const(callable)));
-            PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
-            if (func->func_version != func_version) {
-                goto hit_bottom;
-            }
-            PyCodeObject *code = (PyCodeObject *)func->func_code;
-            int argcount = oparg + sym_is_not_null(self_or_null);
-            if (code->co_argcount != argcount) {
-                goto hit_bottom;
-            }
-            REPLACE_OP(this_instr, _NOP, 0, 0);
-        }
-        if (!sym_set_type(callable, &PyFunction_Type)) {
-            goto hit_bottom;
-        }
-    }
-
     op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
         if (!sym_set_null(null)) {
             goto hit_bottom;

@@ -793,26 +793,6 @@ class TestUopsOptimization(unittest.TestCase):
         """))
         self.assertEqual(result[0].rc, 0, result)
 
-    def test_const_eliminate_function_guards(self):
-        ns = {}
-        src = textwrap.dedent("""
-        def func(n):
-            return n
-
-        def testfunc(n):
-            for i in range(n):
-                x = func(i)
-            return x
-        """)
-        exec(src, ns, ns)
-        testfunc = ns['testfunc']
-        _, ex = self._run_with_optimizer(testfunc, 20)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertNotIn("_LOAD_GLOBAL_MODULE", uops)
-        self.assertIn("_LOAD_CONST_INLINE_WITH_NULL", uops)
-        self.assertNotIn("_CHECK_FUNCTION_EXACT_ARGS", uops)
-
     def test_float_add_constant_propagation(self):
         def testfunc(n):
             a = 1.0
