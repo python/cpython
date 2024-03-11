@@ -238,7 +238,7 @@ descending run, all-equal sub-runs of elements are reversed in-place, on the
 fly. Their original relative order is restored "by magic" via the final
 "reverse the entire run" step.
 
-This makes processing descending runs a little most costly. We only use
+This makes processing descending runs a little more costly. We only use
 `__lt__` comparisons, so that `x == y` has to be deduced from
 `not x < y and not y < x`. But so long as a run remains strictly decreasing,
 only one of those compares needs to be done per loop iteration. So the primsry
