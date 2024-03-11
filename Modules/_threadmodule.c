@@ -1737,12 +1737,18 @@ do_start_new_thread(thread_module_state *state, PyObject *func, PyObject *args,
         return -1;
     }
 
-    if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
-        return -1;
+    if (!daemon) {
+        // Add the handle before starting the thread to avoid adding a handle
+        // to a thread that has already finished (i.e. if the thread finishes
+        // before the call to `ThreadHandle_start()` below returns).
+        add_to_shutdown_handles(state, handle);
     }
 
-    if (!daemon) {
-        add_to_shutdown_handles(state, handle);
+    if (ThreadHandle_start(handle, func, args, kwargs) < 0) {
+        if (!daemon) {
+            remove_from_shutdown_handles(handle);
+        }
+        return -1;
     }
 
     return 0;
