@@ -92,8 +92,8 @@ class Regrtest:
             if ns.tsan:
                 # For TSAN tests, use number of CPU of the current process.
                 #
-                # os.process.cpu_count() is new in Python 3.13; 
-                # mypy doesn't know about it yet 
+                # os.process.cpu_count() is new in Python 3.13;
+                # mypy doesn't know about it yet
                 num_workers = os.process_cpu_count() # type: ignore[attr-defined]
             else:
                 num_workers = 0  # run sequentially
