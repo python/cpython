@@ -740,6 +740,7 @@ extern "C" {
     INIT_ID(_abc_impl), \
     INIT_ID(_abstract_), \
     INIT_ID(_active), \
+    INIT_ID(_align_), \
     INIT_ID(_annotation), \
     INIT_ID(_anonymous_), \
     INIT_ID(_argtypes_), \
@@ -750,6 +751,7 @@ extern "C" {
     INIT_ID(_check_retval_), \
     INIT_ID(_dealloc_warn), \
     INIT_ID(_feature_version), \
+    INIT_ID(_field_types), \
     INIT_ID(_fields_), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
@@ -881,6 +883,7 @@ extern "C" {
     INIT_ID(defaultaction), \
     INIT_ID(delete), \
     INIT_ID(depth), \
+    INIT_ID(desired_access), \
     INIT_ID(detect_types), \
     INIT_ID(deterministic), \
     INIT_ID(device), \
@@ -938,6 +941,7 @@ extern "C" {
     INIT_ID(fileno), \
     INIT_ID(filepath), \
     INIT_ID(fillvalue), \
+    INIT_ID(filter), \
     INIT_ID(filters), \
     INIT_ID(final), \
     INIT_ID(find_class), \
@@ -970,6 +974,7 @@ extern "C" {
     INIT_ID(groups), \
     INIT_ID(h), \
     INIT_ID(handle), \
+    INIT_ID(handle_seq), \
     INIT_ID(hash_name), \
     INIT_ID(header), \
     INIT_ID(headers), \
@@ -987,9 +992,12 @@ extern "C" {
     INIT_ID(indexgroup), \
     INIT_ID(inf), \
     INIT_ID(infer_variance), \
+    INIT_ID(inherit_handle), \
     INIT_ID(inheritable), \
     INIT_ID(initial), \
     INIT_ID(initial_bytes), \
+    INIT_ID(initial_owner), \
+    INIT_ID(initial_state), \
     INIT_ID(initial_value), \
     INIT_ID(initval), \
     INIT_ID(inner_size), \
@@ -1045,6 +1053,7 @@ extern "C" {
     INIT_ID(locals), \
     INIT_ID(logoption), \
     INIT_ID(loop), \
+    INIT_ID(manual_reset), \
     INIT_ID(mapping), \
     INIT_ID(match), \
     INIT_ID(max_length), \
@@ -1061,6 +1070,7 @@ extern "C" {
     INIT_ID(metadata), \
     INIT_ID(method), \
     INIT_ID(microsecond), \
+    INIT_ID(milliseconds), \
     INIT_ID(minute), \
     INIT_ID(mod), \
     INIT_ID(mode), \
@@ -1070,6 +1080,7 @@ extern "C" {
     INIT_ID(month), \
     INIT_ID(mro), \
     INIT_ID(msg), \
+    INIT_ID(mutex), \
     INIT_ID(mycmp), \
     INIT_ID(n), \
     INIT_ID(n_arg), \
@@ -1173,6 +1184,7 @@ extern "C" {
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
     INIT_ID(second), \
+    INIT_ID(security_attributes), \
     INIT_ID(seek), \
     INIT_ID(seekable), \
     INIT_ID(selectors), \
@@ -1260,6 +1272,7 @@ extern "C" {
     INIT_ID(values), \
     INIT_ID(version), \
     INIT_ID(volume), \
+    INIT_ID(wait_all), \
     INIT_ID(warnings), \
     INIT_ID(warnoptions), \
     INIT_ID(wbits), \

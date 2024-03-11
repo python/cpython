@@ -1,0 +1,2 @@
+Fix an issue where an abandoned :class:`StreamWriter` would not be garbage
+collected.
