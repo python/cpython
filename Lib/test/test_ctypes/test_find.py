@@ -132,9 +132,20 @@ class FindLibraryLinux(unittest.TestCase):
 @unittest.skipUnless(sys.platform == 'android', 'Test only valid for Android')
 class FindLibraryAndroid(unittest.TestCase):
     def test_find(self):
-        for name in ["c", "m", "z", "log"]:
+        for name in [
+            "c", "m",  # POSIX
+            "z",  # Non-POSIX, but present on Linux
+            "log",  # Not present on Linux
+        ]:
             with self.subTest(name=name):
-                self.assertIsNotNone(find_library(name))
+                path = find_library(name)
+                self.assertIsInstance(path, str)
+                self.assertEqual(
+                    os.path.dirname(path),
+                    "/system/lib64" if "64" in os.uname().machine
+                    else "/system/lib")
+                self.assertEqual(os.path.basename(path), f"lib{name}.so")
+                self.assertTrue(os.path.isfile(path), path)
 
         for name in ["libc", "nonexistent"]:
             with self.subTest(name=name):
