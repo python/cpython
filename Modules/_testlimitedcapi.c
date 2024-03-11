@@ -35,6 +35,9 @@ PyInit__testlimitedcapi(void)
     if (_PyTestCapi_Init_HeaptypeRelative(mod) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_List(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_PyOS(mod) < 0) {
         return NULL;
     }
