@@ -1715,20 +1715,10 @@ class AppleFrameworkLoader(ExtensionFileLoader):
     """A loader for modules that have been packaged as frameworks for
     compatibility with Apple's iOS App Store policies.
     """
-    def __init__(self, fullname, dylib_file, parent_paths=None):
-        super().__init__(fullname, dylib_file)
-        self.parent_paths = parent_paths
-
     def create_module(self, spec):
         mod = super().create_module(spec)
-        if self.parent_paths:
-            for parent_path in self.parent_paths:
-                if _path_isdir(parent_path):
-                    mod.__file__ = _path_join(
-                        parent_path,
-                        _path_split(self.path)[-1],
-                    )
-                    break
+        if spec.loader_state.origfile is not None:
+            mod.__file__ = spec.loader_state.origfile
         return mod
 
 
@@ -1742,19 +1732,33 @@ class AppleFrameworkFinder:
         self.frameworks_path = frameworks_path
 
     def find_spec(self, fullname, paths, target=None):
-        name = fullname.split(".")[-1]
+        name = fullname.rpartition(".")[-1]
 
         for extension in EXTENSION_SUFFIXES:
             dylib_file = _path_join(
                 self.frameworks_path,
-                f"{fullname}.framework", f"{name}{extension}"
+                f"{fullname}.framework",
+                f"{name}{extension}",
             )
             _bootstrap._verbose_message("Looking for Apple Framework dylib {}", dylib_file)
 
             dylib_exists = _path_isfile(dylib_file)
             if dylib_exists:
-                loader = AppleFrameworkLoader(fullname, dylib_file, paths)
-                return _bootstrap.spec_from_loader(fullname, loader)
+                origfile = None
+                if paths:
+                    for parent_path in paths:
+                        if _path_isdir(parent_path):
+                            origfile = _path_join(
+                                parent_path,
+                                _path_split(self.path)[-1],
+                            )
+                            break
+                loader = AppleFrameworkLoader(fullname, dylib_file)
+                spec = _bootstrap.spec_from_loader(fullname, loader)
+                spec.loader_state = type(sys.implementation)(
+                    origfile=origfile,
+                )
+                return spec
 
         return None
 
