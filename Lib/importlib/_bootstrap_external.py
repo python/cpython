@@ -1714,31 +1714,6 @@ class FileFinder:
 class AppleFrameworkLoader(ExtensionFileLoader):
     """A loader for modules that have been packaged as frameworks for
     compatibility with Apple's iOS App Store policies.
-
-    For compatibility with the iOS App Store, *all* binary modules in an iOS
-    app must be .dylib objects, contained in a framework with appropriate
-    metadata, stored in the ``Frameworks`` folder of the packaged app. There
-    can be only a single binary per framework, and there can be no executable
-    binary material outside the Frameworks folder.
-
-    If you're trying to run ``from foo.bar import _whiz``, and ``_whiz`` is
-    implemented with the binary module ``foo/bar/_whiz.abi3.dylib`` (or any
-    other ABI .dylib extension), this loader will look for
-    ``{sys.executable}/Frameworks/foo.bar._whiz.framework/_whiz.abi3.dylib``
-    (forming the package name by taking the full import path of the library,
-    and replacing ``/`` with ``.``).
-
-    However, the ``__file__`` attribute of the ``_whiz`` module will report as
-    the original location inside the ``foo/bar`` subdirectory. This so that
-    code that depends on walking directory trees will continue to work as
-    expected based on the *original* file location.
-
-    The Xcode project building the app is responsible for converting any
-    ``.dylib`` files from wherever they exist in the ``PYTHONPATH`` into
-    frameworks in the ``Frameworks`` folder (including the addition of
-    framework metadata, and signing the resulting framework). This will usually
-    be done with a build step in the Xcode project; see the iOS documentation
-    for details on how to construct this build step.
     """
     def __init__(self, fullname, dylib_file, parent_paths=None):
         super().__init__(fullname, dylib_file)

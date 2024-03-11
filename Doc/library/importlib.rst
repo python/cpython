@@ -1255,9 +1255,8 @@ find and load modules.
    If you're trying to run ``from foo.bar import _whiz``, and ``_whiz`` is
    implemented with the binary module ``foo/bar/_whiz.abi3.dylib`` (or any
    other ABI .dylib extension), this loader will look for
-   ``{sys.executable}/Frameworks/foo.bar._whiz.framework/_whiz.abi3.dylib``
-   (forming the package name by taking the full import path of the library,
-   and replacing ``/`` with ``.``).
+   ``{dirname(sys.executable)}/Frameworks/foo.bar._whiz.framework/_whiz.abi3.dylib``
+   (forming the framework name from the full name of the module).
 
    However, this loader will re-write the ``__file__`` attribute of the
    ``_whiz`` module will report as the original location inside the ``foo/bar``
