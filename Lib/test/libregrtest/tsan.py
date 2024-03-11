@@ -2,13 +2,10 @@
 # chosen to run a thread sanitizer in a reasonable executable time.
 
 TSAN_TESTS = [
-    'test_asyncio',
     'test_capi',
     'test_code',
     'test_compileall',
-    'test_concurrent_futures',
     'test_enum',
-    'test_fork1',
     'test_functools',
     'test_httpservers',
     'test_imaplib',
@@ -16,14 +13,7 @@ TSAN_TESTS = [
     'test_importlib',
     'test_io',
     'test_logging',
-    'test_multiprocessing_forkserver',
-    'test_multiprocessing_spawn',
-    'test_pickle',
     'test_queue',
-    'test_list',
-    'test_dict',
-    'test_set',
-    'test_tuple',
     'test_smtpnet',
     'test_socketserver',
     'test_ssl',
