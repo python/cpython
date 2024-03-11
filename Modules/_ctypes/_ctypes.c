@@ -455,20 +455,29 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static void
+_ctype_clear_stginfo(StgInfo *info)
+{
+    assert(info);
+    Py_CLEAR(info->proto);
+    Py_CLEAR(info->argtypes);
+    Py_CLEAR(info->converters);
+    Py_CLEAR(info->restype);
+    Py_CLEAR(info->checker);
+}
+
 static int
 CType_Type_clear(PyObject *self)
 {
     ctypes_state *st = GLOBAL_STATE();
-    StgInfo *info;
-    if (PyStgInfo_FromType(st, self, &info) < 0) {
-        return -1;
-    }
-    if (info) {
-        Py_CLEAR(info->proto);
-        Py_CLEAR(info->argtypes);
-        Py_CLEAR(info->converters);
-        Py_CLEAR(info->restype);
-        Py_CLEAR(info->checker);
+    if (st && st->PyCType_Type) {
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, self, &info) < 0) {
+            return -1;
+        }
+        if (info) {
+            _ctype_clear_stginfo(info);
+        }
     }
     return 0;
 }
@@ -477,18 +486,25 @@ static void
 CType_Type_dealloc(PyObject *self)
 {
     ctypes_state *st = GLOBAL_STATE();
-    StgInfo *info;
-    if (PyStgInfo_FromType(st, self, &info) < 0) {
-        // ignore exception
-    }
-    if (info) {
-        PyMem_Free(info->ffi_type_pointer.elements);
-        PyMem_Free(info->format);
-        PyMem_Free(info->shape);
+
+    if (st && st->PyCType_Type) {
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, self, &info) < 0) {
+            PyErr_WriteUnraisable(self);
+            PyErr_Clear();
+        }
+        if (info) {
+            PyMem_Free(info->ffi_type_pointer.elements);
+            info->ffi_type_pointer.elements = NULL;
+            PyMem_Free(info->format);
+            info->format = NULL;
+            PyMem_Free(info->shape);
+            info->shape = NULL;
+            _ctype_clear_stginfo(info);
+        }
     }
 
     PyTypeObject *tp = Py_TYPE(self);
-    (void)CType_Type_clear(self);
     PyType_Type.tp_dealloc(self);
     Py_DECREF(tp);
 }
