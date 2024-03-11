@@ -684,13 +684,15 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
-            _Py_UopsSymbol **values;
-            values = &stack_pointer[-1];
-            for (int _i = oparg; --_i >= 0;) {
-                values[_i] = sym_new_unknown(ctx);
-                if (values[_i] == NULL) goto out_of_space;
-            }
-            stack_pointer += -1 + oparg;
+            _Py_UopsSymbol *val1;
+            _Py_UopsSymbol *val0;
+            val1 = sym_new_unknown(ctx);
+            if (val1 == NULL) goto out_of_space;
+            val0 = sym_new_unknown(ctx);
+            if (val0 == NULL) goto out_of_space;
+            stack_pointer[-1] = val1;
+            stack_pointer[0] = val0;
+            stack_pointer += 1;
             break;
         }
 
@@ -1632,8 +1634,8 @@
             _Py_UopsSymbol *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 
@@ -1641,8 +1643,8 @@
             _Py_UopsSymbol *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 
@@ -1650,8 +1652,8 @@
             _Py_UopsSymbol *res;
             res = sym_new_unknown(ctx);
             if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 

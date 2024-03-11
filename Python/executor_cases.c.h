@@ -1061,18 +1061,20 @@
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
             PyObject *seq;
-            PyObject **values;
+            PyObject *val1;
+            PyObject *val0;
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
-            values = &stack_pointer[-1];
+            assert(oparg == 2);
             if (!PyTuple_CheckExact(seq)) goto deoptimize;
             if (PyTuple_GET_SIZE(seq) != 2) goto deoptimize;
-            assert(oparg == 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
-            values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            val0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            val1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
             Py_DECREF(seq);
-            stack_pointer += -1 + oparg;
+            stack_pointer[-1] = val1;
+            stack_pointer[0] = val0;
+            stack_pointer += 1;
             break;
         }
 
@@ -3057,71 +3059,65 @@
         /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 */
 
         case _CALL_TYPE_1: {
-            PyObject **args;
+            PyObject *arg;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
             assert(oparg == 1);
             if (null != NULL) goto deoptimize;
-            PyObject *obj = args[0];
             if (callable != (PyObject *)&PyType_Type) goto deoptimize;
             STAT_INC(CALL, hit);
-            res = Py_NewRef(Py_TYPE(obj));
-            Py_DECREF(obj);
-            Py_DECREF(&PyType_Type);  // I.e., callable
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            res = Py_NewRef(Py_TYPE(arg));
+            Py_DECREF(arg);
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 
         case _CALL_STR_1: {
-            PyObject **args;
+            PyObject *arg;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
             assert(oparg == 1);
             if (null != NULL) goto deoptimize;
             if (callable != (PyObject *)&PyUnicode_Type) goto deoptimize;
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PyObject_Str(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyUnicode_Type);  // I.e., callable
-            if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            if (res == NULL) goto pop_3_error_tier_two;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             CHECK_EVAL_BREAKER();
             break;
         }
 
         case _CALL_TUPLE_1: {
-            PyObject **args;
+            PyObject *arg;
             PyObject *null;
             PyObject *callable;
             PyObject *res;
             oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
             assert(oparg == 1);
             if (null != NULL) goto deoptimize;
             if (callable != (PyObject *)&PyTuple_Type) goto deoptimize;
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyTuple_Type);  // I.e., tuple
-            if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            if (res == NULL) goto pop_3_error_tier_two;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             CHECK_EVAL_BREAKER();
             break;
         }
