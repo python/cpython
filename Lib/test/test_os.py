@@ -34,7 +34,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
-from test.support import set_recursion_limit
+from test.support import infinite_recursion
 from test.support import warnings_helper
 from platform import win32_is_iot
 
@@ -1496,7 +1496,7 @@ class WalkTests(unittest.TestCase):
     def test_walk_above_recursion_limit(self):
         depth = 50
         os.makedirs(os.path.join(self.walk_path, *(['d'] * depth)))
-        with set_recursion_limit(depth - 5):
+        with infinite_recursion(depth - 5):
             all = list(self.walk(self.walk_path))
 
         sub2_path = self.sub2_tree[0]
@@ -3533,9 +3533,8 @@ class ProgramPriorityTests(unittest.TestCase):
 class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
-    SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
-                               not sys.platform.startswith("solaris") and \
-                               not sys.platform.startswith("sunos")
+    SUPPORT_HEADERS_TRAILERS = (
+        not sys.platform.startswith(("linux", "android", "solaris", "sunos")))
     requires_headers_trailers = unittest.skipUnless(SUPPORT_HEADERS_TRAILERS,
             'requires headers and trailers support')
     requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
@@ -5256,7 +5255,7 @@ class ForkTests(unittest.TestCase):
         else:
             assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
-    @unittest.skipUnless(sys.platform in ("linux", "darwin"),
+    @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
                          "Only Linux and macOS detect this today.")
     def test_fork_warns_when_non_python_thread_exists(self):
         code = """if 1:

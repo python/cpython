@@ -1586,6 +1586,7 @@ tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     assert(tstate->state != _Py_THREAD_ATTACHED);
+    tstate_verify_not_active(tstate);
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1664,8 +1665,8 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
     tstate_set_detached(tstate, _Py_THREAD_DETACHED);
-    tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
+    tstate_delete_common(tstate);
     _PyEval_ReleaseLock(tstate->interp, NULL);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
