@@ -603,4 +603,13 @@ extern "C" {
 #  define _SGI_MP_SOURCE
 #endif
 
+// C API compatibility version
+#ifndef Py_COMPAT_API_VERSION
+#  define Py_COMPAT_API_VERSION PY_VERSION_HEX
+#endif
+
+// Latest C API changes are scheduled in Python 3.15
+#define Py_COMPAT_API_VERSION_MAX 0x030f0000
+
+
 #endif /* Py_PYPORT_H */
