@@ -1,0 +1,2 @@
+Fix ``server_close()`` method implementation of :class:`TCPServer`.
+Now call parent method ``shutdown()`` to stop :class:`BaseServer` ``server_forever()`` infinite loop.
