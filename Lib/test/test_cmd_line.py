@@ -869,6 +869,39 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_GIL and -X gil only supported in Py_GIL_DISABLED builds")
+    def test_python_gil(self):
+        cases = [
+            # (env, opt, expected, msg)
+            (None, None, 'None', "no options set"),
+            ('0', None, '0', "PYTHON_GIL=0"),
+            ('1', None, '1', "PYTHON_GIL=1"),
+            ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
+            (None, '0', '0', "-X gil=0"),
+            (None, '1', '1', "-X gil=1"),
+        ]
+
+        code = "import sys; print(sys.flags.gil)"
+        environ = dict(os.environ)
+
+        for env, opt, expected, msg in cases:
+            with self.subTest(msg, env=env, opt=opt):
+                environ.pop('PYTHON_GIL', None)
+                if env is not None:
+                    environ['PYTHON_GIL'] = env
+                extra_args = []
+                if opt is not None:
+                    extra_args = ['-X', f'gil={opt}']
+
+                proc = subprocess.run([sys.executable, *extra_args, '-c', code],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
+                                      text=True, env=environ)
+                self.assertEqual(proc.returncode, 0, proc)
+                self.assertEqual(proc.stdout.rstrip(), expected)
+                self.assertEqual(proc.stderr, '')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'bpo-32457 only applies on Windows')
     def test_argv0_normalization(self):

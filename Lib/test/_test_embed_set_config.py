@@ -9,6 +9,7 @@ import _testinternalcapi
 import os
 import sys
 import unittest
+from test import support
 from test.support import MS_WINDOWS
 
 
@@ -210,6 +211,19 @@ class SetConfigTests(unittest.TestCase):
         self.assertEqual(sys.flags.hash_randomization, 1)
         self.set_config(use_hash_seed=1, hash_seed=123)
         self.assertEqual(sys.flags.hash_randomization, 1)
+
+        if support.Py_GIL_DISABLED:
+            self.set_config(enable_gil=-1)
+            self.assertEqual(sys.flags.gil, None)
+            self.set_config(enable_gil=0)
+            self.assertEqual(sys.flags.gil, 0)
+            self.set_config(enable_gil=1)
+            self.assertEqual(sys.flags.gil, 1)
+        else:
+            # Builds without Py_GIL_DISABLED don't have
+            # PyConfig.enable_gil. sys.flags.gil is always defined to 1, for
+            # consistency.
+            self.assertEqual(sys.flags.gil, 1)
 
     def test_options(self):
         self.check(warnoptions=[])
