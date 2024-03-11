@@ -4640,13 +4640,7 @@ class TestSignatureObject(unittest.TestCase):
 
         for follow_wrapped in (True, False):
             unbound_sigs = {
-                My.method: '(self, arg: int) -> None',
                 My().method: '(self, arg: int) -> None',
-                My.decorated: (
-                    '(self, arg: int) -> None'
-                    if follow_wrapped else
-                    '(*args, **kwargs) -> None'
-                ),
                 My().decorated: (
                     '(self, arg: int) -> None'
                     if follow_wrapped else
@@ -4657,13 +4651,7 @@ class TestSignatureObject(unittest.TestCase):
             }
 
             bound_sigs = {
-                My.method: '(self, arg: int) -> None',
                 My().method: '(arg: int) -> None',
-                My.decorated: (
-                    '(self, arg: int) -> None'
-                    if follow_wrapped else
-                    '(*args, **kwargs) -> None'
-                ),
                 My().decorated: (
                     '(arg: int) -> None'
                     if follow_wrapped else
@@ -4674,6 +4662,12 @@ class TestSignatureObject(unittest.TestCase):
             }
 
             common_sigs = {
+                My.method: '(self, arg: int) -> None',
+                My.decorated: (
+                    '(self, arg: int) -> None'
+                    if follow_wrapped else
+                    '(*args, **kwargs) -> None'
+                ),
                 My.st: '(arg1: str) -> bool',
                 My().st: '(arg1: str) -> bool',
             }
