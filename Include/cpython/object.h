@@ -321,23 +321,43 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
  * The memcpy() implementation does not emit a compiler warning if 'src' has
  * not the same type than 'src': any pointer type is accepted for 'src'.
  */
-#ifdef _Py_TYPEOF
-#define Py_SETREF(dst, src) \
-    do { \
-        _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
-        _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
-        *_tmp_dst_ptr = (src); \
-        Py_DECREF(_tmp_old_dst); \
-    } while (0)
+#ifdef Py_GIL_DISABLED
+  #ifdef _Py_TYPEOF
+    #define Py_SETREF(dst, src) \
+        do { \
+            _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+            _Py_TYPEOF(dst) _tmp_old_dst = (_Py_TYPEOF(src))_Py_atomic_exchange_ptr(\
+                _tmp_dst_ptr, src); \
+            Py_DECREF(_tmp_old_dst); \
+        } while (0)
+  #else
+    #define Py_SETREF(dst, src) \
+        do { \
+            PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+            PyObject *_tmp_src = _PyObject_CAST(src); \
+            PyObject *_tmp_old_dst = _Py_atomic_exchange_ptr(_tmp_dst_ptr, _tmp_src); \
+            Py_DECREF(_tmp_old_dst); \
+        } while (0)
+  #endif
 #else
-#define Py_SETREF(dst, src) \
-    do { \
-        PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
-        PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
-        PyObject *_tmp_src = _PyObject_CAST(src); \
-        memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
-        Py_DECREF(_tmp_old_dst); \
-    } while (0)
+  #ifdef _Py_TYPEOF
+    #define Py_SETREF(dst, src) \
+        do { \
+            _Py_TYPEOF(dst)* _tmp_dst_ptr = &(dst); \
+            _Py_TYPEOF(dst) _tmp_old_dst = (*_tmp_dst_ptr); \
+            *_tmp_dst_ptr = (src); \
+            Py_DECREF(_tmp_old_dst); \
+        } while (0)
+  #else
+    #define Py_SETREF(dst, src) \
+        do { \
+            PyObject **_tmp_dst_ptr = _Py_CAST(PyObject**, &(dst)); \
+            PyObject *_tmp_old_dst = (*_tmp_dst_ptr); \
+            PyObject *_tmp_src = _PyObject_CAST(src); \
+            memcpy(_tmp_dst_ptr, &_tmp_src, sizeof(PyObject*)); \
+            Py_DECREF(_tmp_old_dst); \
+        } while (0)
+  #endif
 #endif
 
 /* Py_XSETREF() is a variant of Py_SETREF() that uses Py_XDECREF() instead of
