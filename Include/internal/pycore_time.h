@@ -132,8 +132,10 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
 PyAPI_FUNC(PyTime_t) _PyTime_FromSeconds(int seconds);
 
 // Create a timestamp from a number of seconds in double.
-// Export for '_socket' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round);
+extern int _PyTime_FromSecondsDouble(
+    double seconds,
+    _PyTime_round_t round,
+    PyTime_t *result);
 
 // Macro to create a timestamp from a number of seconds, no integer overflow.
 // Only use the macro for small values, prefer _PyTime_FromSeconds().
