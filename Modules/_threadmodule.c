@@ -1618,7 +1618,10 @@ PyInit__thread(void)
     ThreadError = PyExc_RuntimeError;
     Py_INCREF(ThreadError);
 
-    PyDict_SetItemString(d, "error", ThreadError);
+    if (PyDict_SetItemString(d, "error", ThreadError) < 0) {
+        return -1;
+    }
+    
     Locktype.tp_doc = lock_doc;
     Py_INCREF(&Locktype);
     PyDict_SetItemString(d, "LockType", (PyObject *)&Locktype);
