@@ -116,7 +116,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CALL_LEN:
             return 2 + oparg;
         case CALL_LIST_APPEND:
-            return 2 + oparg;
+            return 3;
         case CALL_METHOD_DESCRIPTOR_FAST:
             return 2 + oparg;
         case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
@@ -130,11 +130,11 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case CALL_PY_WITH_DEFAULTS:
             return 2 + oparg;
         case CALL_STR_1:
-            return 2 + oparg;
+            return 3;
         case CALL_TUPLE_1:
-            return 2 + oparg;
+            return 3;
         case CALL_TYPE_1:
-            return 2 + oparg;
+            return 3;
         case CHECK_EG_MATCH:
             return 2;
         case CHECK_EXC_MATCH:
@@ -879,7 +879,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case UNPACK_SEQUENCE_TUPLE:
             return oparg;
         case UNPACK_SEQUENCE_TWO_TUPLE:
-            return oparg;
+            return 2;
         case WITH_EXCEPT_START:
             return 5;
         case YIELD_VALUE:
