@@ -510,7 +510,8 @@ CType_Type_dealloc(PyObject *self)
 }
 
 static PyObject *
-CType_Type_sizeof(PyObject *self) {
+CType_Type_sizeof(PyObject *self)
+{
     Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
     size += Py_TYPE(self)->tp_itemsize * Py_SIZE(self);
 
