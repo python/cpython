@@ -981,6 +981,62 @@ class TestNtpath(NtpathTestCase):
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
             self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
+    def test_isreserved(self):
+        self.assertFalse(ntpath.isreserved(''))
+        self.assertFalse(ntpath.isreserved('.'))
+        self.assertFalse(ntpath.isreserved('..'))
+        self.assertFalse(ntpath.isreserved('/'))
+        self.assertFalse(ntpath.isreserved('/foo/bar'))
+        # A name that ends with a space or dot is reserved.
+        self.assertTrue(ntpath.isreserved('foo.'))
+        self.assertTrue(ntpath.isreserved('foo '))
+        # ASCII control characters are reserved.
+        self.assertTrue(ntpath.isreserved('\foo'))
+        # Wildcard characters, colon, and pipe are reserved.
+        self.assertTrue(ntpath.isreserved('foo*bar'))
+        self.assertTrue(ntpath.isreserved('foo?bar'))
+        self.assertTrue(ntpath.isreserved('foo"bar'))
+        self.assertTrue(ntpath.isreserved('foo<bar'))
+        self.assertTrue(ntpath.isreserved('foo>bar'))
+        self.assertTrue(ntpath.isreserved('foo:bar'))
+        self.assertTrue(ntpath.isreserved('foo|bar'))
+        # Case-insensitive DOS-device names are reserved.
+        self.assertTrue(ntpath.isreserved('nul'))
+        self.assertTrue(ntpath.isreserved('aux'))
+        self.assertTrue(ntpath.isreserved('prn'))
+        self.assertTrue(ntpath.isreserved('con'))
+        self.assertTrue(ntpath.isreserved('conin$'))
+        self.assertTrue(ntpath.isreserved('conout$'))
+        # COM/LPT + 1-9 or + superscript 1-3 are reserved.
+        self.assertTrue(ntpath.isreserved('COM1'))
+        self.assertTrue(ntpath.isreserved('LPT9'))
+        self.assertTrue(ntpath.isreserved('com\xb9'))
+        self.assertTrue(ntpath.isreserved('com\xb2'))
+        self.assertTrue(ntpath.isreserved('lpt\xb3'))
+        # DOS-device name matching ignores characters after a dot or
+        # a colon and also ignores trailing spaces.
+        self.assertTrue(ntpath.isreserved('NUL.txt'))
+        self.assertTrue(ntpath.isreserved('PRN  '))
+        self.assertTrue(ntpath.isreserved('AUX  .txt'))
+        self.assertTrue(ntpath.isreserved('COM1:bar'))
+        self.assertTrue(ntpath.isreserved('LPT9   :bar'))
+        # DOS-device names are only matched at the beginning
+        # of a path component.
+        self.assertFalse(ntpath.isreserved('bar.com9'))
+        self.assertFalse(ntpath.isreserved('bar.lpt9'))
+        # The entire path is checked, except for the drive.
+        self.assertTrue(ntpath.isreserved('c:/bar/baz/NUL'))
+        self.assertTrue(ntpath.isreserved('c:/NUL/bar/baz'))
+        self.assertFalse(ntpath.isreserved('//./NUL'))
+        # Bytes are supported.
+        self.assertFalse(ntpath.isreserved(b''))
+        self.assertFalse(ntpath.isreserved(b'.'))
+        self.assertFalse(ntpath.isreserved(b'..'))
+        self.assertFalse(ntpath.isreserved(b'/'))
+        self.assertFalse(ntpath.isreserved(b'/foo/bar'))
+        self.assertTrue(ntpath.isreserved(b'foo.'))
+        self.assertTrue(ntpath.isreserved(b'nul'))
+
     def assertEqualCI(self, s1, s2):
         """Assert that two strings are equal ignoring case differences."""
         self.assertEqual(s1.lower(), s2.lower())

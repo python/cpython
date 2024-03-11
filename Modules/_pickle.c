@@ -2162,7 +2162,8 @@ save_long(PicklerObject *self, PyObject *obj)
         pdata = (unsigned char *)PyBytes_AS_STRING(repr);
         i = _PyLong_AsByteArray((PyLongObject *)obj,
                                 pdata, nbytes,
-                                1 /* little endian */ , 1 /* signed */ );
+                                1 /* little endian */ , 1 /* signed */ ,
+                                1 /* with exceptions */);
         if (i < 0)
             goto error;
         /* If the int is negative, this may be a byte more than

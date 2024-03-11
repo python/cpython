@@ -77,6 +77,27 @@ is the module's name in the Python package namespace.
 
 .. class:: Logger
 
+   .. attribute:: Logger.name
+
+      This is the logger's name, and is the value that was passed to :func:`getLogger`
+      to obtain the logger.
+
+      .. note:: This attribute should be treated as read-only.
+
+   .. attribute:: Logger.level
+
+      The threshold of this logger, as set by the :meth:`setLevel` method.
+
+      .. note:: Do not set this attribute directly - always use :meth:`setLevel`,
+         which has checks for the level passed to it.
+
+   .. attribute:: Logger.parent
+
+      The parent logger of this logger. It may change based on later instantiation
+      of loggers which are higher up in the namespace hierarchy.
+
+      .. note:: This value should be treated as read-only.
+
    .. attribute:: Logger.propagate
 
       If this attribute evaluates to true, events logged to this logger will be
@@ -107,6 +128,21 @@ is the module's name in the Python package namespace.
          provided that their propagate setting is left set to ``True``. A common
          scenario is to attach handlers only to the root logger, and to let
          propagation take care of the rest.
+
+   .. attribute:: Logger.handlers
+
+      The list of handlers directly attached to this logger instance.
+
+      .. note:: This attribute should be treated as read-only; it is normally changed via
+         the :meth:`addHandler` and :meth:`removeHandler` methods, which use locks to ensure
+         thread-safe operation.
+
+   .. attribute:: Logger.disabled
+
+      This attribute disables handling of any events. It is set to ``False`` in the
+      initializer, and only changed by logging configuration code.
+
+      .. note:: This attribute should be treated as read-only.
 
    .. method:: Logger.setLevel(level)
 
@@ -531,12 +567,12 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
       This method should be called from handlers when an exception is encountered
       during an :meth:`emit` call. If the module-level attribute
-      ``raiseExceptions`` is ``False``, exceptions get silently ignored. This is
+      :data:`raiseExceptions` is ``False``, exceptions get silently ignored. This is
       what is mostly wanted for a logging system - most users will not care about
       errors in the logging system, they are more interested in application
       errors. You could, however, replace this with a custom handler if you wish.
       The specified record is the one which was being processed when the exception
-      occurred. (The default value of ``raiseExceptions`` is ``True``, as that is
+      occurred. (The default value of :data:`raiseExceptions` is ``True``, as that is
       more useful during development).
 
 
@@ -1493,6 +1529,18 @@ Module-Level Attributes
    behaviour for some reason, ``lastResort`` can be set to ``None``.
 
    .. versionadded:: 3.2
+
+.. attribute:: raiseExceptions
+
+   Used to see if exceptions during handling should be propagated.
+
+   Default: ``True``.
+
+   If :data:`raiseExceptions` is ``False``,
+   exceptions get silently ignored. This is what is mostly wanted
+   for a logging system - most users will not care about errors in
+   the logging system, they are more interested in application errors.
+
 
 Integration with the warnings module
 ------------------------------------

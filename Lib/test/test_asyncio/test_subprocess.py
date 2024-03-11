@@ -13,6 +13,8 @@ from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import os_helper
 
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test module requires subprocess")
 
 if support.MS_WINDOWS:
     import msvcrt
