@@ -5,7 +5,7 @@ TSAN_TESTS = [
     'test_asyncio',
     'test_capi',
     'test_code',
-    'test_compilerall',
+    'test_compileall',
     'test_concurrent_futures',
     'test_enum',
     'test_fork1',
