@@ -17298,14 +17298,6 @@ elif test "$disable_gil" = "yes"; then
   as_fn_error $? "--disable-gil requires mimalloc memory allocator (--with-mimalloc)." "$LINENO" 5
 fi
 
-if test "$with_mimalloc" = yes; then
-  if test "$with_tsan" = yes; then
-
-printf "%s\n" "#define MI_TSAN 1" >>confdefs.h
-
-  fi
-fi
-
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
 printf "%s\n" "$with_mimalloc" >&6; }
 

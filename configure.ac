@@ -4750,12 +4750,6 @@ elif test "$disable_gil" = "yes"; then
   AC_MSG_ERROR([--disable-gil requires mimalloc memory allocator (--with-mimalloc).])
 fi
 
-if test "$with_mimalloc" = yes; then
-  if test "$with_tsan" = yes; then
-    AC_DEFINE([MI_TSAN], [1], [Define MI_TSAN for thread sanitizer])
-  fi
-fi
-
 AC_MSG_RESULT([$with_mimalloc])
 AC_SUBST([WITH_MIMALLOC])
 AC_SUBST([MIMALLOC_HEADERS])
