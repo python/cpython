@@ -4631,7 +4631,7 @@ class TestSignatureFromFrame(unittest.TestCase):
 
         inner(1, 2, d=4)
         self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
-                         '(a=1, /, b=2, *e, c=3, d=4, **f)')
+                         '(a, /, b, *e, c, d, **f)')
 
     def test_from_frame_with_pos_only_defaults(self):
         ns = {}
@@ -4640,7 +4640,7 @@ class TestSignatureFromFrame(unittest.TestCase):
 
         inner(d=4)
         self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
-                         '(a=1, /, b=2, *e, c=3, d=4, **f)')
+                         '(a, /, b, *e, c, d, **f)')
 
     def test_from_frame_no_locals(self):
         ns = {}
@@ -4658,7 +4658,7 @@ class TestSignatureFromFrame(unittest.TestCase):
 
         inner(a=1)
         self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
-                         '(*, a=1, b=2, **c)')
+                         '(*, a, b, **c)')
 
     def test_from_frame_no_kw(self):
         ns = {}
@@ -4667,7 +4667,7 @@ class TestSignatureFromFrame(unittest.TestCase):
 
         inner(1, 2)
         self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
-                         '(a=1, /, b=2, *c)')
+                         '(a, /, b, *c)')
 
     def test_from_frame_with_nonlocal(self):
         fr = None
@@ -4677,7 +4677,7 @@ class TestSignatureFromFrame(unittest.TestCase):
 
         inner(1, 2)
         self.assertEqual(str(inspect.Signature.from_frame(fr)),
-                         '(a=1, /, b=2, *c)')
+                         '(a, /, b, *c)')
 
     def test_clear_frame(self):
         ns = {}
@@ -4694,12 +4694,10 @@ class TestSignatureFromFrame(unittest.TestCase):
         class _A:
             def inner(self, a, *, b):
                 ns['fr'] = inspect.currentframe()
-            def __repr__(self):
-                return '_A'
 
         _A().inner(1, b=2)
         self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
-                         '(self=_A, a=1, *, b=2)')
+                         '(self, a, *, b)')
 
     def test_from_frame_defaults_change(self):
         ns = {}
@@ -4710,13 +4708,13 @@ class TestSignatureFromFrame(unittest.TestCase):
 
         inner()
         self.assertEqual(str(inspect.Signature.from_frame(ns['fr'])),
-                         '(a=3, /, c=5, *, b=4)')
+                         '(a, /, c, *, b)')
 
     def test_from_frame_mod(self):
         self.assertEqual(str(inspect.Signature.from_frame(mod.fr)),
-                         '(x=11, y=14)')
+                         '(x, y)')
         self.assertEqual(str(inspect.Signature.from_frame(mod.fr.f_back)),
-                         '(a=7, /, b=8, c=9, d=3, e=4, f=5, *g, **h)')
+                         '(a, /, b, c, d, e, f, *g, **h)')
 
     def test_from_not_frame(self):
         with self.assertRaisesRegex(TypeError, 'Frame object expected'):

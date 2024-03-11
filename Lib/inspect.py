@@ -3117,36 +3117,19 @@ class Signature:
         Constructs Signature from a given frame object.
 
         Notice that it is impossible to get signatures
-        with annotations from frames,
+        with defaults or annotations from frames,
         because annotations are stored
-        in function inside ``__annotations__`` attribute.
-        Also note that default values are populated from frame's variables,
-        not real function's default values.
+        in a function inside ``__defaults__``, ``__kwdefaults__``,
+        and ``__annotations__`` attributes.
         """
         if not isframe(frame):
             raise TypeError(f'Frame object expected, got: {type(frame)}')
 
-        func_code = frame.f_code
-        pos_count = func_code.co_argcount
-        arg_names = func_code.co_varnames
-        keyword_only_count = func_code.co_kwonlyargcount
-
-        defaults = []
-        kwdefaults = {}
-        if frame.f_locals:
-            for name in arg_names[:pos_count]:
-                if name in frame.f_locals:
-                    defaults.append(frame.f_locals[name])
-
-            for name in arg_names[pos_count : pos_count + keyword_only_count]:
-                if name in frame.f_locals:
-                    kwdefaults.update({name: frame.f_locals[name]})
-
         return _signature_from_code(
-            func_code,
+            frame.f_code,
             annotations={},
-            defaults=defaults,
-            kwdefaults=kwdefaults,
+            defaults=(),
+            kwdefaults={},
             cls=cls,
             is_duck_function=False,
         )

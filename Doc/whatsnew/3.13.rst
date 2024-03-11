@@ -364,8 +364,7 @@ built on debug mode <debug-build>`.
 inspect
 -------
 
-* Add :meth:`inspect.Signature.from_frame` to get signatures from frame objects
-  and to replace the old :func:`inspect.getargvalues` API.
+* Add :meth:`inspect.Signature.from_frame` to get signatures from frame objects.
 
 ipaddress
 ---------

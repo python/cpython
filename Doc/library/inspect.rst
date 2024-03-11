@@ -823,11 +823,10 @@ function.
        :ref:`frame object <frame-objects>`.
 
        Notice that it is impossible to get signatures
-       with annotations from frames,
+       with defaults or annotations from frames,
        because annotations are stored
-       in function inside :attr:`~function.__annotations__` attribute.
-       Also note that default values are populated from frame's variables,
-       not real function's default values.
+       in a function inside ``__defaults__``, ``__kwdefaults__``,
+       and ``__annotations__`` attributes.
 
        .. versionadded:: 3.13
 
