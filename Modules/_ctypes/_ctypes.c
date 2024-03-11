@@ -2067,14 +2067,11 @@ PyCSimpleType_paramfunc(CDataObject *self)
 static int
 PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *result;
     PyObject *proto;
     const char *proto_str;
     Py_ssize_t proto_len;
     PyMethodDef *ml;
     struct fielddesc *fmt;
-
-    result = (PyTypeObject *)self;
 
     if (PyObject_GetOptionalAttr(self, &_Py_ID(_type_), &proto) < 0) {
         return -1;
@@ -2133,7 +2130,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     stginfo->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
 #endif
     if (stginfo->format == NULL) {
-        Py_DECREF(self);
         Py_DECREF(proto);
         return -1;
     }
@@ -2182,7 +2178,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
             int x;
             meth = PyDescr_NewClassMethod((PyTypeObject*)self, ml);
             if (!meth) {
-                Py_DECREF(self);
                 return -1;
             }
             x = PyDict_SetItemString(((PyTypeObject*)self)->tp_dict,
@@ -2190,7 +2185,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
                                      meth);
             Py_DECREF(meth);
             if (x == -1) {
-                Py_DECREF(self);
                 return -1;
             }
         }
@@ -2204,12 +2198,10 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *swapped = CreateSwappedType(type, args, kwds,
                                               proto, fmt);
         if (swapped == NULL) {
-            Py_DECREF(self);
             return -1;
         }
         StgInfo *sw_info;
         if (PyStgInfo_FromType(st, swapped, &sw_info) < 0) {
-            Py_DECREF(self);
             return -1;
         }
         assert(sw_info);
@@ -2230,7 +2222,6 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
         Py_DECREF(swapped);
         if (PyErr_Occurred()) {
-            Py_DECREF(result);
             return -1;
         }
     };
