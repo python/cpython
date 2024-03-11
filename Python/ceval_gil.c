@@ -219,6 +219,11 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX assert(tstate == NULL || !tstate->_status.cleared);
 
     struct _gil_runtime_state *gil = ceval->gil;
+#ifdef Py_GIL_DISABLED
+    if (!gil->enabled) {
+        return;
+    }
+#endif
     if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
@@ -294,6 +299,11 @@ take_gil(PyThreadState *tstate)
     assert(_PyThreadState_CheckConsistency(tstate));
     PyInterpreterState *interp = tstate->interp;
     struct _gil_runtime_state *gil = interp->ceval.gil;
+#ifdef Py_GIL_DISABLED
+    if (!gil->enabled) {
+        return;
+    }
+#endif
 
     /* Check that _PyEval_InitThreads() was called to create the lock */
     assert(gil_created(gil));
@@ -440,6 +450,11 @@ static void
 init_own_gil(PyInterpreterState *interp, struct _gil_runtime_state *gil)
 {
     assert(!gil_created(gil));
+#ifdef Py_GIL_DISABLED
+    // gh-116329: Once it is safe to do so, change this condition to
+    // (enable_gil == _PyConfig_GIL_ENABLE), so the GIL is disabled by default.
+    gil->enabled = _PyInterpreterState_GetConfig(interp)->enable_gil != _PyConfig_GIL_DISABLE;
+#endif
     create_gil(gil);
     assert(gil_created(gil));
     interp->ceval.gil = gil;

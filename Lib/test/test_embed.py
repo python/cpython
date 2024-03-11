@@ -523,6 +523,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT['_pystats'] = 0
     if support.Py_DEBUG:
         CONFIG_COMPAT['run_presite'] = None
+    if support.Py_GIL_DISABLED:
+        CONFIG_COMPAT['enable_gil'] = -1
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
