@@ -6279,8 +6279,8 @@ PyDoc_STRVAR(os_timerfd_settime__doc__,
     {"timerfd_settime", _PyCFunction_CAST(os_timerfd_settime), METH_FASTCALL|METH_KEYWORDS, os_timerfd_settime__doc__},
 
 static PyObject *
-os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
-                        double interval);
+os_timerfd_settime_impl(PyObject *module, int fd, int flags,
+                        double initial_double, double interval_double);
 
 static PyObject *
 os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -6315,8 +6315,8 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     int fd;
     int flags = 0;
-    double initial = 0.0;
-    double interval = 0.0;
+    double initial_double = 0.0;
+    double interval_double = 0.0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
@@ -6339,12 +6339,12 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     }
     if (args[2]) {
         if (PyFloat_CheckExact(args[2])) {
-            initial = PyFloat_AS_DOUBLE(args[2]);
+            initial_double = PyFloat_AS_DOUBLE(args[2]);
         }
         else
         {
-            initial = PyFloat_AsDouble(args[2]);
-            if (initial == -1.0 && PyErr_Occurred()) {
+            initial_double = PyFloat_AsDouble(args[2]);
+            if (initial_double == -1.0 && PyErr_Occurred()) {
                 goto exit;
             }
         }
@@ -6353,17 +6353,17 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         }
     }
     if (PyFloat_CheckExact(args[3])) {
-        interval = PyFloat_AS_DOUBLE(args[3]);
+        interval_double = PyFloat_AS_DOUBLE(args[3]);
     }
     else
     {
-        interval = PyFloat_AsDouble(args[3]);
-        if (interval == -1.0 && PyErr_Occurred()) {
+        interval_double = PyFloat_AsDouble(args[3]);
+        if (interval_double == -1.0 && PyErr_Occurred()) {
             goto exit;
         }
     }
 skip_optional_kwonly:
-    return_value = os_timerfd_settime_impl(module, fd, flags, initial, interval);
+    return_value = os_timerfd_settime_impl(module, fd, flags, initial_double, interval_double);
 
 exit:
     return return_value;
@@ -12588,4 +12588,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=268af5cbc8baa9d4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2965306970f31c5d input=a9049054013a1b77]*/

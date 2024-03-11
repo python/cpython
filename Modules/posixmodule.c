@@ -10483,30 +10483,40 @@ os.timerfd_settime
     *
     flags: int = 0
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
-    initial: double = 0.0
+    initial as initial_double: double = 0.0
         The initial expiration time, in seconds.
-    interval: double = 0.0
+    interval as interval_double: double = 0.0
         The timer's interval, in seconds.
 
 Alter a timer file descriptor's internal timer in seconds.
 [clinic start generated code]*/
 
 static PyObject *
-os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
-                        double interval)
-/*[clinic end generated code: output=0dda31115317adb9 input=6c24e47e7a4d799e]*/
+os_timerfd_settime_impl(PyObject *module, int fd, int flags,
+                        double initial_double, double interval_double)
+/*[clinic end generated code: output=df4c1bce6859224e input=81d2c0d7e936e8a7]*/
 {
-    struct itimerspec new_value;
-    struct itimerspec old_value;
-    int result;
-    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(initial, _PyTime_ROUND_FLOOR), &new_value.it_value) < 0) {
+    PyTime_t initial, interval;
+    if (_PyTime_FromSecondsDouble(initial_double, _PyTime_ROUND_FLOOR,
+                                  &initial) < 0) {
+        return NULL;
+    }
+    if (_PyTime_FromSecondsDouble(interval_double, _PyTime_ROUND_FLOOR,
+                                  &interval) < 0) {
+        return NULL;
+    }
+
+    struct itimerspec new_value, old_value;
+    if (_PyTime_AsTimespec(initial, &new_value.it_value) < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid initial value");
         return NULL;
     }
-    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(interval, _PyTime_ROUND_FLOOR), &new_value.it_interval) < 0) {
+    if (_PyTime_AsTimespec(interval, &new_value.it_interval) < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid interval value");
         return NULL;
     }
+
+    int result;
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS
