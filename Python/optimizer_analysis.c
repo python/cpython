@@ -430,7 +430,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _SET_IP:
-                buffer[pc].opcode = NOP;
+                buffer[pc].opcode = _NOP;
                 last_set_ip = pc;
                 break;
             case _CHECK_VALIDITY:
@@ -438,7 +438,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = false;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 break;
             case _CHECK_VALIDITY_AND_SET_IP:
@@ -447,7 +447,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _CHECK_VALIDITY;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 last_set_ip = pc;
                 break;
@@ -463,7 +463,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     last->opcode == _COPY
                 ) {
                     last->opcode = _NOP;
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 if (last->opcode == _REPLACE_WITH_TRUE) {
                     last->opcode = _NOP;

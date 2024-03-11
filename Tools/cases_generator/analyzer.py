@@ -335,6 +335,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictOrValues_IsValues",
     "_PyObject_DictOrValuesPointer",
     "_PyDictOrValues_GetValues",
+    "_PyDictValues_AddToInsertionOrder",
     "_PyObject_MakeInstanceAttributesFromDict",
     "Py_DECREF",
     "_Py_DECREF_SPECIALIZED",
@@ -355,8 +356,10 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsCompact",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_CompactValue",
+    "_PyLong_DigitCount",
     "_Py_NewRef",
     "_Py_IsImmortal",
+    "PyLong_FromLong",
     "_Py_STR",
     "_PyLong_Add",
     "_PyLong_Multiply",
@@ -368,6 +371,17 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_atomic_load_uintptr_relaxed",
     "_PyFrame_GetCode",
     "_PyThreadState_HasStackSpace",
+    "_PyUnicode_Equal",
+    "_PyFrame_SetStackPointer",
+    "_PyType_HasFeature",
+    "PyUnicode_Concat",
+    "_PyList_FromArraySteal",
+    "_PyTuple_FromArraySteal",
+    "PySlice_New",
+    "_Py_LeaveRecursiveCallPy",
+    "CALL_STAT_INC",
+    "maybe_lltrace_resume_frame",
+    "_PyUnicode_JoinArray",
 )
 
 ESCAPING_FUNCTIONS = (
@@ -378,6 +392,8 @@ ESCAPING_FUNCTIONS = (
 
 def makes_escaping_api_call(instr: parser.InstDef) -> bool:
     if "CALL_INTRINSIC" in instr.name:
+        return True
+    if instr.name == "_BINARY_OP":
         return True
     tkns = iter(instr.tokens)
     for tkn in tkns:
