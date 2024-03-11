@@ -220,11 +220,11 @@ means non-decreasing:
 
 or "descending", which means non-increasing:
 
-    a0 >= a1 >= a2  ...
+    a0 >= a1 >= a2 >= ...
 
 Note that a run is always at least 2 long, unless we start at the array's
 last element. If all elements in the array are equal, it can be viewed as
-both inceasing and decreasing. Upon return, the run count_run() identifies
+both ascending and descending. Upon return, the run count_run() identifies
 is always ascending.
 
 Reversal is done via the obvious fast "swap elements starting at each
