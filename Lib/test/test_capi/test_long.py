@@ -590,18 +590,18 @@ class LongTests(unittest.TestCase):
 
     def test_long_sign(self):
         # Test PyLong_Sign()
-        check = _testcapi.pylong_sign
-        self.assertEqual(check(1), 1)
-        self.assertEqual(check(123456), 1)
-        self.assertEqual(check(-2), -1)
-        self.assertEqual(check(0), 0)
-        self.assertEqual(check(True), 1)
-        self.assertEqual(check(IntSubclass(-11)), -1)
-        self.assertEqual(check(False), 0)
+        sign = _testcapi.pylong_sign
+        self.assertEqual(sign(1), 1)
+        self.assertEqual(sign(123456), 1)
+        self.assertEqual(sign(-2), -1)
+        self.assertEqual(sign(0), 0)
+        self.assertEqual(sign(True), 1)
+        self.assertEqual(sign(IntSubclass(-11)), -1)
+        self.assertEqual(sign(False), 0)
 
-        self.assertRaises(TypeError, check, 1.0)
-        self.assertRaises(TypeError, check, Index(123))
-        self.assertRaises(SystemError, check, NULL)
+        self.assertRaises(TypeError, sign, 1.0)
+        self.assertRaises(TypeError, sign, Index(123))
+        self.assertRaises(SystemError, sign, NULL)
 
 
 if __name__ == "__main__":
