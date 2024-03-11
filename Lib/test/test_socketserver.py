@@ -11,6 +11,7 @@ import socket
 import threading
 import unittest
 import socketserver
+from socketserver import BaseServer
 
 import test.support
 from test.support import reap_children, verbose
@@ -18,6 +19,8 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 
+from Lib.http.server import HTTPServer, ThreadingHTTPServer, SimpleHTTPRequestHandler
+from Lib.threading import Thread
 
 test.support.requires("network")
 test.support.requires_working_socket(module=True)
@@ -284,6 +287,27 @@ class SocketServerTest(unittest.TestCase):
                                     socketserver.StreamRequestHandler) as server:
             pass
         self.assertEqual(-1, server.socket.fileno())
+
+    def test_ThreadingHTTPServer_serve_forever(self):
+        class Myserver(ThreadingHTTPServer):
+            pass
+
+        class WrappingThread(Thread):
+            def __init__(self):
+                super().__init__(target=self.serve)
+                self.server = Myserver((HOST, 0), lambda: None)
+
+            def serve(self):
+                self.server.serve_forever()
+
+            def stop(self):
+                self.server.server_close()
+
+        wrapping_thread = WrappingThread()
+        wrapping_thread.start()
+        wrapping_thread.stop()
+        wrapping_thread.join()
+        self.assertTrue(True)
 
 
 class ErrorHandlerTest(unittest.TestCase):
