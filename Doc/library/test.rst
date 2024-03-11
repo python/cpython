@@ -352,6 +352,13 @@ The :mod:`test.support` module defines the following constants:
    Set to the ``data`` directory within the test package.
 
 
+.. data:: TSAN
+
+   Set when tests can be skipped when they are not useful for ThreadSanitizer.
+
+   .. versionadded:: 3.13
+
+
 .. data:: MAX_Py_ssize_t
 
    Set to :data:`sys.maxsize` for big memory tests.
