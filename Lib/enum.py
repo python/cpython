@@ -169,8 +169,6 @@ def _dedent(text):
 class _not_given:
     def __repr__(self):
         return('<not given>')
-    def __bool__(self):
-        return False
 _not_given = _not_given()
 
 class _auto_null:
@@ -765,7 +763,7 @@ class EnumType(type):
                     )
         return cls._create_(
                 class_name=value,
-                names=names or None,
+                names=None if names is _not_given else names,
                 module=module,
                 qualname=qualname,
                 type=type,
