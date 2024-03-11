@@ -4963,7 +4963,6 @@ static PyType_Slot pycsimple_slots[] = {
     {Py_tp_new, GenericPyCData_new},
     {Py_bf_getbuffer, PyCData_NewGetBuffer},
     {Py_nb_bool, Simple_bool},
-    // traverse, dealloc, clear Py_TPFLAGS_HAVE_GC are inherited
     {0, NULL},
 };
 
