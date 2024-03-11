@@ -1,0 +1,3 @@
+Add :meth:`asyncio.Server.close_clients` and
+:meth:`asyncio.Server.abort_clients` methods which allow to more forcefully
+close an asyncio server.
