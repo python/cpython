@@ -217,8 +217,13 @@ class SetConfigTests(unittest.TestCase):
             self.assertEqual(sys.flags.gil, None)
             self.set_config(enable_gil=0)
             self.assertEqual(sys.flags.gil, 0)
-        self.set_config(enable_gil=1)
-        self.assertEqual(sys.flags.gil, 1)
+            self.set_config(enable_gil=1)
+            self.assertEqual(sys.flags.gil, 1)
+        else:
+            # Builds without Py_GIL_DISABLED don't have
+            # PyConfig.enable_gil. sys.flags.gil is always defined to 1, for
+            # consistency.
+            self.assertEqual(sys.flags.gil, 1)
 
     def test_options(self):
         self.check(warnoptions=[])
