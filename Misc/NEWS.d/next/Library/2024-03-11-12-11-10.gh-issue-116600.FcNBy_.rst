@@ -1,1 +1,1 @@
-Fix :func:`repr` for global :class:~enum.Flag members
+Fix :func:`repr` for global :class:~enum.Flag members.
