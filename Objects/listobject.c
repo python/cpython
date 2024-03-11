@@ -31,6 +31,50 @@ get_list_freelist(void)
 }
 #endif
 
+#ifdef Py_GIL_DISABLED
+typedef struct {
+    Py_ssize_t allocated;
+    PyObject *ob_item[];
+} _PyListArray;
+
+static _PyListArray *
+list_allocate_array(size_t capacity)
+{
+    if (capacity > PY_SSIZE_T_MAX/sizeof(PyObject*) - 1) {
+        return NULL;
+    }
+    _PyListArray *array = PyMem_Malloc(sizeof(_PyListArray) + capacity * sizeof(PyObject *));
+    if (array == NULL) {
+        return NULL;
+    }
+    array->allocated = capacity;
+    return array;
+}
+
+static Py_ssize_t
+list_capacity(PyObject **items)
+{
+    _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
+    return array->allocated;
+}
+#endif
+
+static void
+free_list_items(PyObject** items, bool use_qsbr)
+{
+#ifdef Py_GIL_DISABLED
+    _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
+    if (use_qsbr) {
+        _PyMem_FreeDelayed(array);
+    }
+    else {
+        PyMem_Free(array);
+    }
+#else
+    PyMem_Free(items);
+#endif
+}
+
 /* Ensure ob_item has room for at least newsize elements, and set
  * ob_size to newsize.  If newsize > ob_size on entry, the content
  * of the new slots at exit is undefined heap trash; it's the caller's
@@ -47,8 +91,7 @@ get_list_freelist(void)
 static int
 list_resize(PyListObject *self, Py_ssize_t newsize)
 {
-    PyObject **items;
-    size_t new_allocated, num_allocated_bytes;
+    size_t new_allocated, target_bytes;
     Py_ssize_t allocated = self->allocated;
 
     /* Bypass realloc() when a previous overallocation is large enough
@@ -80,9 +123,34 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
 
     if (newsize == 0)
         new_allocated = 0;
+
+#ifdef Py_GIL_DISABLED
+    _PyListArray *array = list_allocate_array(new_allocated);
+    if (array == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    PyObject **old_items = self->ob_item;
+    if (self->ob_item) {
+        if (new_allocated < (size_t)allocated) {
+            target_bytes = new_allocated * sizeof(PyObject*);
+        }
+        else {
+            target_bytes = allocated * sizeof(PyObject*);
+        }
+        memcpy(array->ob_item, self->ob_item, target_bytes);
+    }
+     _Py_atomic_store_ptr_release(&self->ob_item, &array->ob_item);
+    self->allocated = new_allocated;
+    Py_SET_SIZE(self, newsize);
+    if (old_items != NULL) {
+        free_list_items(old_items, _PyObject_GC_IS_SHARED(self));
+    }
+#else
+    PyObject **items;
     if (new_allocated <= (size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)) {
-        num_allocated_bytes = new_allocated * sizeof(PyObject *);
-        items = (PyObject **)PyMem_Realloc(self->ob_item, num_allocated_bytes);
+        target_bytes = new_allocated * sizeof(PyObject *);
+        items = (PyObject **)PyMem_Realloc(self->ob_item, target_bytes);
     }
     else {
         // integer overflow
@@ -95,12 +163,14 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     self->ob_item = items;
     Py_SET_SIZE(self, newsize);
     self->allocated = new_allocated;
+#endif
     return 0;
 }
 
 static int
 list_preallocate_exact(PyListObject *self, Py_ssize_t size)
 {
+    PyObject **items;
     assert(self->ob_item == NULL);
     assert(size > 0);
 
@@ -110,11 +180,20 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
      * allocated size up to the nearest even number.
      */
     size = (size + 1) & ~(size_t)1;
-    PyObject **items = PyMem_New(PyObject*, size);
+#ifdef Py_GIL_DISABLED
+    _PyListArray *array = list_allocate_array(size);
+    if (array == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    items = array->ob_item;
+#else
+    items = PyMem_New(PyObject*, size);
     if (items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
+#endif
     self->ob_item = items;
     self->allocated = size;
     return 0;
@@ -178,7 +257,17 @@ PyList_New(Py_ssize_t size)
         op->ob_item = NULL;
     }
     else {
+#ifdef Py_GIL_DISABLED
+        _PyListArray *array = list_allocate_array(size);
+        if (array == NULL) {
+            Py_DECREF(op);
+            return PyErr_NoMemory();
+        }
+        memset(&array->ob_item, 0, size * sizeof(PyObject *));
+        op->ob_item = array->ob_item;
+#else
         op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+#endif
         if (op->ob_item == NULL) {
             Py_DECREF(op);
             return PyErr_NoMemory();
@@ -199,11 +288,20 @@ list_new_prealloc(Py_ssize_t size)
         return NULL;
     }
     assert(op->ob_item == NULL);
+#ifdef Py_GIL_DISABLED
+    _PyListArray *array = list_allocate_array(size);
+    if (array == NULL) {
+        Py_DECREF(op);
+        return PyErr_NoMemory();
+    }
+    op->ob_item = array->ob_item;
+#else
     op->ob_item = PyMem_New(PyObject *, size);
     if (op->ob_item == NULL) {
         Py_DECREF(op);
         return PyErr_NoMemory();
     }
+#endif
     op->allocated = size;
     return (PyObject *) op;
 }
@@ -268,7 +366,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
     if (ob_item == NULL) {
         return NULL;
     }
-    Py_ssize_t cap = _Py_atomic_load_ssize_relaxed(&op->allocated);
+    Py_ssize_t cap = list_capacity(ob_item);
     assert(cap != -1 && cap >= size);
     if (!valid_index(i, cap)) {
         return NULL;
@@ -438,7 +536,7 @@ list_dealloc(PyObject *self)
         while (--i >= 0) {
             Py_XDECREF(op->ob_item[i]);
         }
-        PyMem_Free(op->ob_item);
+        free_list_items(op->ob_item, false);
     }
 #ifdef WITH_FREELISTS
     struct _Py_list_freelist *list_freelist = get_list_freelist();
@@ -737,12 +835,7 @@ list_clear_impl(PyListObject *a, bool is_resize)
 #else
     bool use_qsbr = false;
 #endif
-    if (use_qsbr) {
-        _PyMem_FreeDelayed(items);
-    }
-    else {
-        PyMem_Free(items);
-    }
+    free_list_items(items, use_qsbr);
     // Note that there is no guarantee that the list is actually empty
     // at this point, because XDECREF may have populated it indirectly again!
 }
@@ -2484,6 +2577,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
  * duplicated).
  */
 /*[clinic input]
+@critical_section
 list.sort
 
     *
@@ -2503,7 +2597,7 @@ The reverse flag can be set to sort in descending order.
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=a74c4cd3ec6b5c08]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=667bf25d0e3a3676]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;
@@ -2530,7 +2624,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     saved_ob_item = self->ob_item;
     saved_allocated = self->allocated;
     Py_SET_SIZE(self, 0);
-    self->ob_item = NULL;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, NULL);
     self->allocated = -1; /* any operation will reset it to >= 0 */
 
     if (keyfunc == NULL) {
@@ -2750,15 +2844,20 @@ keyfunc_fail:
     final_ob_item = self->ob_item;
     i = Py_SIZE(self);
     Py_SET_SIZE(self, saved_ob_size);
-    self->ob_item = saved_ob_item;
-    self->allocated = saved_allocated;
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item, saved_ob_item);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->allocated, saved_allocated);
     if (final_ob_item != NULL) {
         /* we cannot use list_clear() for this because it does not
            guarantee that the list is really empty when it returns */
         while (--i >= 0) {
             Py_XDECREF(final_ob_item[i]);
         }
-        PyMem_Free(final_ob_item);
+#ifdef Py_GIL_DISABLED
+        bool use_qsbr = _PyObject_GC_IS_SHARED(self);
+#else
+        bool use_qsbr = false;
+#endif
+        free_list_items(final_ob_item, use_qsbr);
     }
     return Py_XNewRef(result);
 }
@@ -2772,7 +2871,9 @@ PyList_Sort(PyObject *v)
         PyErr_BadInternalCall();
         return -1;
     }
+    Py_BEGIN_CRITICAL_SECTION(v);
     v = list_sort_impl((PyListObject *)v, NULL, 0);
+    Py_END_CRITICAL_SECTION();
     if (v == NULL)
         return -1;
     Py_DECREF(v);
