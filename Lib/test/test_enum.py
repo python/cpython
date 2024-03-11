@@ -3436,6 +3436,8 @@ class TestSpecial(unittest.TestCase):
                 empty_enum = Enum('empty_enum', nothing, type=e_type)
                 self.assertEqual(len(empty_enum), 0)
                 self.assertRaisesRegex(TypeError, 'has no members', empty_enum, 0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
 
 
 class TestOrder(unittest.TestCase):
