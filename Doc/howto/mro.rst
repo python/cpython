@@ -382,10 +382,10 @@ A lazy programmer can obtain the MRO directly from Python 2.2, since in
 this case it coincides with the Python 2.3 linearization.  It is enough
 to invoke the .mro() method of class A:
 
-  >>> A.mro()
-  (<class '__main__.A'>, <class '__main__.B'>, <class '__main__.E'>,
-  <class '__main__.C'>, <class '__main__.D'>, <class '__main__.F'>,
-  <type 'object'>)
+  >>> A.mro()  # doctest: +NORMALIZE_WHITESPACE
+  [<class 'A'>, <class 'B'>, <class 'E'>,
+  <class 'C'>, <class 'D'>, <class 'F'>,
+  <class 'object'>]
 
 Finally, let me consider the example discussed in the first section,
 involving a serious order disagreement.  In this case, it is
@@ -434,7 +434,7 @@ following example:
 
   >>> F=type('Food',(),{'remember2buy':'spam'})
   >>> E=type('Eggs',(F,),{'remember2buy':'eggs'})
-  >>> G=type('GoodFood',(F,E),{}) # under Python 2.3 this is an error!
+  >>> G=type('GoodFood',(F,E),{}) # under Python 2.3 this is an error!  # doctest: +SKIP
 
 with inheritance diagram
 
@@ -456,7 +456,7 @@ we would expect the attribute *G.remember2buy* to be inherited by
 *F.rembermer2buy* and not by *E.remember2buy*:  nevertheless Python 2.2
 gives
 
-  >>> G.remember2buy
+  >>> G.remember2buy  # doctest: +SKIP
   'eggs'
 
 This is a breaking of local precedence ordering since the order in the
@@ -473,8 +473,8 @@ it is a different from old style classes:
 
   >>> class F: remember2buy='spam'
   >>> class E(F): remember2buy='eggs'
-  >>> class G(F,E): pass
-  >>> G.remember2buy
+  >>> class G(F,E): pass  # doctest: +SKIP
+  >>> G.remember2buy  # doctest: +SKIP
   'spam'
 
 In this case the MRO is GFEF and the local precedence ordering is
