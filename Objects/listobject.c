@@ -1635,7 +1635,7 @@ binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
 }
 
 static void
-reverse_sortslice(sortslice *s, Py_ssize_t n)
+sortslice_reverse(sortslice *s, Py_ssize_t n)
 {
     reverse_slice(s->keys, &s->keys[n]);
     if (s->values != NULL)
@@ -1665,7 +1665,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
         sortslice slice = *slo;                 \
         ++neq;                                  \
         sortslice_advance(&slice, n - neq);     \
-        reverse_sortslice(&slice, neq);         \
+        sortslice_reverse(&slice, neq);         \
         neq = 0;                                \
     }
 
@@ -1695,7 +1695,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
     if (n > 1) {
         IFLT(slo->keys[0], *(lo - 1))
             return n;
-        reverse_sortslice(slo, n);
+        sortslice_reverse(slo, n);
     }
     ++lo;
     ++n;
@@ -1719,7 +1719,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
         }
     }
     REVERSE_LAST_NEQ
-    reverse_sortslice(slo, n); /* transform to ascending run */
+    sortslice_reverse(slo, n); /* transform to ascending run */
 
     /* And after reversing, it's possible this can be extended by a
      * naturally increasing suffix; e.g., [3, 2, 3, 4, 1] makes an
