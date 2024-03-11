@@ -134,7 +134,7 @@ class TestBase(unittest.TestCase):
 
         # Exhaustively test stability across all lists of small lengths
         # and only a few distinct elements.
-        # This can prooke edge cases that randomization is unlikely to find.
+        # This can provoke edge cases that randomization is unlikely to find.
         # But it can grow very expensive quickly, so don't overdo it.
         NELTS = 3
         MAXSIZE = 9
