@@ -160,8 +160,8 @@ bytes_concat(PyObject *Py_UNUSED(module), PyObject *args)
     if (new) {
         assert(left != NULL);
         assert(PyBytes_CheckExact(left));
-        left = PyBytes_FromStringAndSize(PyBytes_AS_STRING(left),
-                                         PyBytes_GET_SIZE(left));
+        left = PyBytes_FromStringAndSize(PyBytes_AsString(left),
+                                         PyBytes_Size(left));
         if (left == NULL) {
             return NULL;
         }
@@ -191,8 +191,8 @@ bytes_concatanddel(PyObject *Py_UNUSED(module), PyObject *args)
     if (new) {
         assert(left != NULL);
         assert(PyBytes_CheckExact(left));
-        left = PyBytes_FromStringAndSize(PyBytes_AS_STRING(left),
-                                         PyBytes_GET_SIZE(left));
+        left = PyBytes_FromStringAndSize(PyBytes_AsString(left),
+                                         PyBytes_Size(left));
         if (left == NULL) {
             return NULL;
         }
