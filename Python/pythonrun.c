@@ -1278,7 +1278,8 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     if (globals == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "globals are NULL");
         return NULL;
-    } else {
+    }
+    else {
         int has_builtins = PyDict_ContainsString(globals, "__builtins__");
         if (has_builtins < 0) {
             return NULL;
