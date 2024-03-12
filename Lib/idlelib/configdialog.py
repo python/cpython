@@ -1971,11 +1971,8 @@ class ExtPage(Frame):
             opt_list = sorted(default | user)
 
             # Bring 'enable' options to the beginning of the list.
-            enables = [
-                opt_name
-                for opt_name in opt_list
-                if opt_name.startswith('enable')
-            ]
+            enables = [opt_name for opt_name in opt_list
+                       if opt_name.startswith('enable')]
             for opt_name in enables:
                 opt_list.remove(opt_name)
             opt_list = enables + opt_list
