@@ -1,7 +1,9 @@
 #include "parts.h"
 #include "../_testcapi/util.h"  // NULLABLE, RETURN_INT
 
-#include "pycore_instruments.h"
+#include "monitoring.h"
+
+#include "internal/pycore_instruments.h"
 
 typedef struct {
     PyObject_HEAD
@@ -121,7 +123,7 @@ fire_event_py_start(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FirePyStartEvent(state, codelike, offset);
+    int res = PyMonitoring_FirePyStartEvent(state, codelike, offset);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -139,7 +141,7 @@ fire_event_py_resume(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FirePyResumeEvent(state, codelike, offset);
+    int res = PyMonitoring_FirePyResumeEvent(state, codelike, offset);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -158,7 +160,7 @@ fire_event_py_return(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval);
+    int res = PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -177,7 +179,7 @@ fire_event_py_yield(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval);
+    int res = PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -197,7 +199,7 @@ fire_event_call(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0);
+    int res = PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -216,7 +218,7 @@ fire_event_line(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireLineEvent(state, codelike, offset, lineno);
+    int res = PyMonitoring_FireLineEvent(state, codelike, offset, lineno);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -234,7 +236,7 @@ fire_event_jump(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset);
+    int res = PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -252,7 +254,7 @@ fire_event_branch(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset);
+    int res = PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -271,7 +273,7 @@ fire_event_py_throw(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FirePyThrowEvent(state, codelike, offset, exception);
+    int res = PyMonitoring_FirePyThrowEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -290,7 +292,7 @@ fire_event_raise(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireRaiseEvent(state, codelike, offset, exception);
+    int res = PyMonitoring_FireRaiseEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -309,7 +311,7 @@ fire_event_reraise(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireReraiseEvent(state, codelike, offset, exception);
+    int res = PyMonitoring_FireReraiseEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -328,7 +330,7 @@ fire_event_exception_handled(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireExceptionHandledEvent(state, codelike, offset, exception);
+    int res = PyMonitoring_FireExceptionHandledEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -347,7 +349,7 @@ fire_event_py_unwind(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FirePyUnwindEvent(state, codelike, offset, exception);
+    int res = PyMonitoring_FirePyUnwindEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -367,7 +369,7 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
     state->active = active;
 
-    int res = _PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception);
+    int res = PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -383,7 +385,7 @@ enter_scope_py_start_py_return(PyObject *self, PyObject *args)
     PyCodeLikeObject *codelike = (PyCodeLikeObject *) codelike_obj;
 
     uint8_t events[] = { PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RETURN };
-    _PyMonitoringScopeBegin(codelike->monitoring_states, &codelike->version, events, 2);
+    PyMonitoringScopeBegin(codelike->monitoring_states, &codelike->version, events, 2);
 
     Py_RETURN_NONE;
 }

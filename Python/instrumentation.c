@@ -1,5 +1,6 @@
 #include "Python.h"
 
+#include "monitoring.h"
 #include "opcode_ids.h"
 
 #include "pycore_bitutils.h"      // _Py_popcount32
@@ -2359,9 +2360,7 @@ _PyMonitoringScopeBegin(PyMonitoringState *state_array, uint64_t *version,
 int
 _PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[3] = { NULL, NULL, NULL };
     return capi_call_instrumentation(state, codelike, offset, args, 2,
                                      PY_MONITORING_EVENT_PY_START);
@@ -2370,21 +2369,19 @@ _PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, uin
 int
 _PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[3] = { NULL, NULL, NULL };
     return capi_call_instrumentation(state, codelike, offset, args, 2,
                                      PY_MONITORING_EVENT_PY_RESUME);
 }
 
+
+
 int
 _PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                 PyObject* retval)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, retval };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_RETURN);
@@ -2394,9 +2391,7 @@ int
 _PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                PyObject* retval)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, retval };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_YIELD);
@@ -2406,9 +2401,7 @@ int
 _PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                             PyObject* callable, PyObject *arg0)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[5] = { NULL, NULL, NULL, callable, arg0 };
     return capi_call_instrumentation(state, codelike, offset, args, 4,
                                      PY_MONITORING_EVENT_CALL);
@@ -2418,9 +2411,7 @@ int
 _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                              PyObject *lineno)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, lineno };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_LINE);
@@ -2430,9 +2421,7 @@ int
 _PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                             PyObject *target_offset)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, target_offset };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_JUMP);
@@ -2442,9 +2431,7 @@ int
 _PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                               PyObject *target_offset)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, target_offset };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_BRANCH);
@@ -2454,9 +2441,7 @@ int
 _PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                PyObject *exception)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_THROW);
@@ -2466,9 +2451,7 @@ int
 _PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                              PyObject *exception)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_RAISE);
@@ -2478,9 +2461,7 @@ int
 _PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                PyObject *exception)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_RERAISE);
@@ -2490,9 +2471,7 @@ int
 _PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                         PyObject *exception)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_EXCEPTION_HANDLED);
@@ -2502,9 +2481,7 @@ int
 _PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                 PyObject *exception)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_PY_UNWIND);
@@ -2514,10 +2491,143 @@ int
 _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                      PyObject *exception)
 {
-    if (!state->active) {
-        return 0;
-    }
+    assert(state->active);
     PyObject *args[4] = { NULL, NULL, NULL, exception };
     return capi_call_instrumentation(state, codelike, offset, args, 3,
                                      PY_MONITORING_EVENT_STOP_ITERATION);
 }
+
+
+
+#ifdef Py_LIMITED_API
+void
+PyMonitoringScopeBegin(PyMonitoringState *state_array, uint64_t *version,
+                       uint8_t *event_types, uint32_t length)
+{
+    _PyMonitoringScopeBegin(state_array, version, event_types, length);
+}
+
+int
+PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
+{
+    IF_ACTIVE(_PyMonitoring_FirePyStartEvent(state, codelike, offset));
+}
+
+int
+PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
+{
+    IF_ACTIVE(_PyMonitoring_FirePyResumeEvent(state, codelike, offset));
+}
+
+int
+PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                               PyObject *retval)
+{
+    IF_ACTIVE(_PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval));
+}
+
+int
+PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject *retval)
+{
+    IF_ACTIVE(_PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval));
+}
+
+int
+PyMonitoring_FirePyCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject* callable, PyObject *arg0)
+{
+    IF_ACTIVE(_PyMonitoring_FirePyCallEvent(state, codelike, offset, callable, arg0));
+}
+
+int
+PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                           PyObject* callable, PyObject *arg0)
+{
+    IF_ACTIVE(_PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0));
+}
+
+int
+PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                           PyObject *lineno);
+{
+    IF_ACTIVE(_PyMonitoring_FireLineEvent(state, codelike, offset, lineno));
+}
+
+int
+PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
+{
+    IF_ACTIVE(_PyMonitoring_FireInstructionEvent(state, codelike, offset));
+}
+
+int
+PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                           PyObject *target_offset)
+{
+    IF_ACTIVE(_PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset));
+}
+
+int
+PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                           PyObject *target_offset)
+{
+    IF_ACTIVE(_PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset));
+}
+
+int
+PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                             PyObject *target_offset)
+{
+    IF_ACTIVE(_PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset);
+}
+
+int
+PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject *callable, PyObject *arg0)
+{
+    IF_ACTIVE(_PyMonitoring_FireCReturnEvent(state, codelike, offset, callable, arg0));
+}
+
+int
+PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject *exception)
+{
+    IF_ACTIVE(_PyMonitoring_FirePyThrowEvent(state, codelike, offset, exception));
+}
+
+int
+PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                            PyObject *exception);
+{
+    IF_ACTIVE(_PyMonitoring_FireRaiseEvent(state, codelike, offset, exception));
+}
+
+int
+PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                              PyObject *exception)
+{
+    IF_ACTIVE(_PyMonitoring_FireReraiseEvent(state, codelike, offset, exception));
+}
+
+int
+PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                                       PyObject *exception)
+{
+    IF_ACTIVE(_PyMonitoring_FireExceptionHandledEvent(state, codelike, offset, exception));
+}
+
+int
+PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                             PyObject *callable, PyObject *arg0)
+{
+    IF_ACTIVE(_PyMonitoring_FireCRaiseEvent(state,  codelike, offset, callable, arg0));
+}
+
+int
+PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
+                                    PyObject *exception)
+{
+    IF_ACTIVE(_PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception));
+}
+
+#endif
