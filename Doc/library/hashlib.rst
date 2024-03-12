@@ -77,8 +77,6 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
    :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`
    were added.
-
-.. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
 
 .. _hashlib-usedforsecurity:
@@ -121,7 +119,7 @@ More condensed:
 Constructors
 ------------
 
-.. function:: new(name[, data], \*, usedforsecurity=True)
+.. function:: new(name[, data], *, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
@@ -136,16 +134,16 @@ Using :func:`new` with an algorithm name:
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 
-.. function:: md5([, data], \*, usedforsecurity=True)
-.. function:: sha1([, data], \*, usedforsecurity=True)
-.. function:: sha224([, data], \*, usedforsecurity=True)
-.. function:: sha256([, data], \*, usedforsecurity=True)
-.. function:: sha384([, data], \*, usedforsecurity=True)
-.. function:: sha512([, data], \*, usedforsecurity=True)
-.. function:: sha3_224([, data], \*, usedforsecurity=True)
-.. function:: sha3_256([, data], \*, usedforsecurity=True)
-.. function:: sha3_384([, data], \*, usedforsecurity=True)
-.. function:: sha3_512([, data], \*, usedforsecurity=True)
+.. function:: md5([, data], *, usedforsecurity=True)
+.. function:: sha1([, data], *, usedforsecurity=True)
+.. function:: sha224([, data], *, usedforsecurity=True)
+.. function:: sha256([, data], *, usedforsecurity=True)
+.. function:: sha384([, data], *, usedforsecurity=True)
+.. function:: sha512([, data], *, usedforsecurity=True)
+.. function:: sha3_224([, data], *, usedforsecurity=True)
+.. function:: sha3_256([, data], *, usedforsecurity=True)
+.. function:: sha3_384([, data], *, usedforsecurity=True)
+.. function:: sha3_512([, data], *, usedforsecurity=True)
 
 Named constructors such as these are faster than passing an algorithm name to
 :func:`new`.
@@ -234,8 +232,8 @@ A hash object has the following methods:
 SHAKE variable length digests
 -----------------------------
 
-.. function:: shake_128([, data], \*, usedforsecurity=True)
-.. function:: shake_256([, data], \*, usedforsecurity=True)
+.. function:: shake_128([, data], *, usedforsecurity=True)
+.. function:: shake_256([, data], *, usedforsecurity=True)
 
 The :func:`shake_128` and :func:`shake_256` algorithms provide variable
 length digests with length_in_bits//2 up to 128 or 256 bits of security.
@@ -363,6 +361,8 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
 
    .. versionadded:: 3.6
 
+
+.. _hashlib-blake2:
 
 BLAKE2
 ------

@@ -7,6 +7,8 @@ from ctypes import (Structure, Array, sizeof, addressof,
                     c_char, c_wchar, c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulonglong, c_float, c_double, c_longdouble)
 from test.support import bigmemtest, _2G
+from ._support import (_CData, PyCArrayType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 formats = "bBhHiIlLqQfd"
@@ -23,6 +25,18 @@ def ARRAY(*args):
 
 
 class ArrayTestCase(unittest.TestCase):
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(Array.mro(), [Array, _CData, object])
+
+        self.assertEqual(PyCArrayType.__name__, "PyCArrayType")
+        self.assertEqual(type(PyCArrayType), type)
+
+    def test_type_flags(self):
+        for cls in Array, PyCArrayType:
+            with self.subTest(cls=cls):
+                self.assertTrue(cls.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(cls.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
     def test_simple(self):
         # create classes holding simple numeric types, and check
         # various properties.
@@ -189,10 +203,10 @@ class ArrayTestCase(unittest.TestCase):
             class T(Array):
                 pass
         with self.assertRaises(AttributeError):
-            class T(Array):
+            class T2(Array):
                 _type_ = c_int
         with self.assertRaises(AttributeError):
-            class T(Array):
+            class T3(Array):
                 _length_ = 13
 
     def test_bad_length(self):
@@ -201,15 +215,15 @@ class ArrayTestCase(unittest.TestCase):
                 _type_ = c_int
                 _length_ = - sys.maxsize * 2
         with self.assertRaises(ValueError):
-            class T(Array):
+            class T2(Array):
                 _type_ = c_int
                 _length_ = -1
         with self.assertRaises(TypeError):
-            class T(Array):
+            class T3(Array):
                 _type_ = c_int
                 _length_ = 1.87
         with self.assertRaises(OverflowError):
-            class T(Array):
+            class T4(Array):
                 _type_ = c_int
                 _length_ = sys.maxsize * 2
 

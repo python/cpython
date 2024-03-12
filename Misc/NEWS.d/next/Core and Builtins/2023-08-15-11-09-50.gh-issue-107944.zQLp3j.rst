@@ -1,2 +1,0 @@
-Improve error message for function calls with bad keyword arguments. Patch
-by Pablo Galindo

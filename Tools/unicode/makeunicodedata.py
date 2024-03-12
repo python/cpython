@@ -44,7 +44,7 @@ VERSION = "3.3"
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
-UNIDATA_VERSION = "15.0.0"
+UNIDATA_VERSION = "15.1.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -101,15 +101,16 @@ EXTENDED_CASE_MASK = 0x4000
 
 # these ranges need to match unicodedata.c:is_unified_ideograph
 cjk_ranges = [
-    ('3400', '4DBF'),
-    ('4E00', '9FFF'),
-    ('20000', '2A6DF'),
-    ('2A700', '2B739'),
-    ('2B740', '2B81D'),
-    ('2B820', '2CEA1'),
-    ('2CEB0', '2EBE0'),
-    ('30000', '3134A'),
-    ('31350', '323AF'),
+    ('3400', '4DBF'),    # CJK Ideograph Extension A CJK
+    ('4E00', '9FFF'),    # CJK Ideograph
+    ('20000', '2A6DF'),  # CJK Ideograph Extension B
+    ('2A700', '2B739'),  # CJK Ideograph Extension C
+    ('2B740', '2B81D'),  # CJK Ideograph Extension D
+    ('2B820', '2CEA1'),  # CJK Ideograph Extension E
+    ('2CEB0', '2EBE0'),  # CJK Ideograph Extension F
+    ('2EBF0', '2EE5D'),  # CJK Ideograph Extension I
+    ('30000', '3134A'),  # CJK Ideograph Extension G
+    ('31350', '323AF'),  # CJK Ideograph Extension H
 ]
 
 
@@ -622,120 +623,12 @@ def makeunicodetype(unicode, trace):
 # unicode name database
 
 def makeunicodename(unicode, trace):
+    from dawg import build_compression_dawg
 
     FILE = "Modules/unicodename_db.h"
 
     print("--- Preparing", FILE, "...")
 
-    # collect names
-    names = [None] * len(unicode.chars)
-
-    for char in unicode.chars:
-        record = unicode.table[char]
-        if record:
-            name = record.name.strip()
-            if name and name[0] != "<":
-                names[char] = name + chr(0)
-
-    print(len([n for n in names if n is not None]), "distinct names")
-
-    # collect unique words from names (note that we differ between
-    # words inside a sentence, and words ending a sentence.  the
-    # latter includes the trailing null byte.
-
-    words = {}
-    n = b = 0
-    for char in unicode.chars:
-        name = names[char]
-        if name:
-            w = name.split()
-            b = b + len(name)
-            n = n + len(w)
-            for w in w:
-                l = words.get(w)
-                if l:
-                    l.append(None)
-                else:
-                    words[w] = [len(words)]
-
-    print(n, "words in text;", b, "bytes")
-
-    wordlist = list(words.items())
-
-    # sort on falling frequency, then by name
-    def word_key(a):
-        aword, alist = a
-        return -len(alist), aword
-    wordlist.sort(key=word_key)
-
-    # figure out how many phrasebook escapes we need
-    escapes = 0
-    while escapes * 256 < len(wordlist):
-        escapes = escapes + 1
-    print(escapes, "escapes")
-
-    short = 256 - escapes
-
-    assert short > 0
-
-    print(short, "short indexes in lexicon")
-
-    # statistics
-    n = 0
-    for i in range(short):
-        n = n + len(wordlist[i][1])
-    print(n, "short indexes in phrasebook")
-
-    # pick the most commonly used words, and sort the rest on falling
-    # length (to maximize overlap)
-
-    wordlist, wordtail = wordlist[:short], wordlist[short:]
-    wordtail.sort(key=lambda a: a[0], reverse=True)
-    wordlist.extend(wordtail)
-
-    # generate lexicon from words
-
-    lexicon_offset = [0]
-    lexicon = ""
-    words = {}
-
-    # build a lexicon string
-    offset = 0
-    for w, x in wordlist:
-        # encoding: bit 7 indicates last character in word (chr(128)
-        # indicates the last character in an entire string)
-        ww = w[:-1] + chr(ord(w[-1])+128)
-        # reuse string tails, when possible
-        o = lexicon.find(ww)
-        if o < 0:
-            o = offset
-            lexicon = lexicon + ww
-            offset = offset + len(w)
-        words[w] = len(lexicon_offset)
-        lexicon_offset.append(o)
-
-    lexicon = list(map(ord, lexicon))
-
-    # generate phrasebook from names and lexicon
-    phrasebook = [0]
-    phrasebook_offset = [0] * len(unicode.chars)
-    for char in unicode.chars:
-        name = names[char]
-        if name:
-            w = name.split()
-            phrasebook_offset[char] = len(phrasebook)
-            for w in w:
-                i = words[w]
-                if i < short:
-                    phrasebook.append(i)
-                else:
-                    # store as two bytes
-                    phrasebook.append((i>>8) + short)
-                    phrasebook.append(i&255)
-
-    assert getsize(phrasebook) == 1
-
-    #
     # unicode name hash table
 
     # extract names
@@ -747,12 +640,6 @@ def makeunicodename(unicode, trace):
             if name and name[0] != "<":
                 data.append((name, char))
 
-    # the magic number 47 was chosen to minimize the number of
-    # collisions on the current data set.  if you like, change it
-    # and see what happens...
-
-    codehash = Hash("code", data, 47)
-
     print("--- Writing", FILE, "...")
 
     with open(FILE, "w") as fp:
@@ -761,24 +648,22 @@ def makeunicodename(unicode, trace):
         fprint("/* this file was generated by %s %s */" % (SCRIPT, VERSION))
         fprint()
         fprint("#define NAME_MAXLEN", 256)
+        assert max(len(x) for x in data) < 256
         fprint()
-        fprint("/* lexicon */")
-        Array("lexicon", lexicon).dump(fp, trace)
-        Array("lexicon_offset", lexicon_offset).dump(fp, trace)
-
-        # split decomposition index table
-        offset1, offset2, shift = splitbins(phrasebook_offset, trace)
-
-        fprint("/* code->name phrasebook */")
-        fprint("#define phrasebook_shift", shift)
-        fprint("#define phrasebook_short", short)
-
-        Array("phrasebook", phrasebook).dump(fp, trace)
-        Array("phrasebook_offset1", offset1).dump(fp, trace)
-        Array("phrasebook_offset2", offset2).dump(fp, trace)
 
         fprint("/* name->code dictionary */")
-        codehash.dump(fp, trace)
+        packed_dawg, pos_to_codepoint = build_compression_dawg(data)
+        notfound = len(pos_to_codepoint)
+        inverse_list = [notfound] * len(unicode.chars)
+        for pos, codepoint in enumerate(pos_to_codepoint):
+            inverse_list[codepoint] = pos
+        Array("packed_name_dawg", list(packed_dawg)).dump(fp, trace)
+        Array("dawg_pos_to_codepoint", pos_to_codepoint).dump(fp, trace)
+        index1, index2, shift = splitbins(inverse_list, trace)
+        fprint("#define DAWG_CODEPOINT_TO_POS_SHIFT", shift)
+        fprint("#define DAWG_CODEPOINT_TO_POS_NOTFOUND", notfound)
+        Array("dawg_codepoint_to_pos_index1", index1).dump(fp, trace)
+        Array("dawg_codepoint_to_pos_index2", index2).dump(fp, trace)
 
         fprint()
         fprint('static const unsigned int aliases_start = %#x;' %
@@ -1105,11 +990,15 @@ class UnicodeData:
                 table[i].east_asian_width = widths[i]
         self.widths = widths
 
-        for char, (p,) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+        for char, (propname, *propinfo) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+            if propinfo:
+                # this is not a binary property, ignore it
+                continue
+
             if table[char]:
                 # Some properties (e.g. Default_Ignorable_Code_Point)
                 # apply to unassigned code points; ignore them
-                table[char].binary_properties.add(p)
+                table[char].binary_properties.add(propname)
 
         for char_range, value in UcdFile(LINE_BREAK, version):
             if value not in MANDATORY_LINE_BREAKS:
@@ -1182,94 +1071,6 @@ class UnicodeData:
         # restrict character range to ISO Latin 1
         self.chars = list(range(256))
 
-
-# hash table tools
-
-# this is a straight-forward reimplementation of Python's built-in
-# dictionary type, using a static data structure, and a custom string
-# hash algorithm.
-
-def myhash(s, magic):
-    h = 0
-    for c in map(ord, s.upper()):
-        h = (h * magic) + c
-        ix = h & 0xff000000
-        if ix:
-            h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff
-    return h
-
-
-SIZES = [
-    (4,3), (8,3), (16,3), (32,5), (64,3), (128,3), (256,29), (512,17),
-    (1024,9), (2048,5), (4096,83), (8192,27), (16384,43), (32768,3),
-    (65536,45), (131072,9), (262144,39), (524288,39), (1048576,9),
-    (2097152,5), (4194304,3), (8388608,33), (16777216,27)
-]
-
-
-class Hash:
-    def __init__(self, name, data, magic):
-        # turn a (key, value) list into a static hash table structure
-
-        # determine table size
-        for size, poly in SIZES:
-            if size > len(data):
-                poly = size + poly
-                break
-        else:
-            raise AssertionError("ran out of polynomials")
-
-        print(size, "slots in hash table")
-
-        table = [None] * size
-
-        mask = size-1
-
-        n = 0
-
-        hash = myhash
-
-        # initialize hash table
-        for key, value in data:
-            h = hash(key, magic)
-            i = (~h) & mask
-            v = table[i]
-            if v is None:
-                table[i] = value
-                continue
-            incr = (h ^ (h >> 3)) & mask
-            if not incr:
-                incr = mask
-            while 1:
-                n = n + 1
-                i = (i + incr) & mask
-                v = table[i]
-                if v is None:
-                    table[i] = value
-                    break
-                incr = incr << 1
-                if incr > mask:
-                    incr = incr ^ poly
-
-        print(n, "collisions")
-        self.collisions = n
-
-        for i in range(len(table)):
-            if table[i] is None:
-                table[i] = 0
-
-        self.data = Array(name + "_hash", table)
-        self.magic = magic
-        self.name = name
-        self.size = size
-        self.poly = poly
-
-    def dump(self, file, trace):
-        # write data to file, as a C array
-        self.data.dump(file, trace)
-        file.write("#define %s_magic %d\n" % (self.name, self.magic))
-        file.write("#define %s_size %d\n" % (self.name, self.size))
-        file.write("#define %s_poly %d\n" % (self.name, self.poly))
 
 
 # stuff to deal with arrays of unsigned integers

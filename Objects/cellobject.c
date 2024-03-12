@@ -1,6 +1,7 @@
 /* Cell object implementation */
 
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 
 PyObject *

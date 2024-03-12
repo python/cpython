@@ -153,6 +153,17 @@ class CmdLineTest(unittest.TestCase):
                 res = assert_python_ok(*cmd)
                 self.assertRegex(res.out.decode('utf-8'), expected)
 
+    def test_env_var_frozen_modules(self):
+        tests = {
+            ('on', 'FrozenImporter'),
+            ('off', 'SourceFileLoader'),
+        }
+        for raw, expected in tests:
+            cmd = ['-c', 'import os; print(os.__spec__.loader, end="")']
+            with self.subTest(raw):
+                res = assert_python_ok(*cmd, PYTHON_FROZEN_MODULES=raw)
+                self.assertRegex(res.out.decode('utf-8'), expected)
+
     def test_run_module(self):
         # Test expected operation of the '-m' switch
         # Switch needs an argument
@@ -468,8 +479,9 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
         self.assertEqual(120, rc)
-        self.assertRegex(err.decode('ascii', 'ignore'),
-                         'Exception ignored in.*\nOSError: .*')
+        self.assertIn(b'Exception ignored on flushing sys.stdout:\n'
+                      b'OSError: '.replace(b'\n', os.linesep.encode()),
+                      err)
 
     def test_closed_stdout(self):
         # Issue #13444: if stdout has been explicitly closed, we should
@@ -622,15 +634,13 @@ class CmdLineTest(unittest.TestCase):
                 PYTHONDONTWRITEBYTECODE=value,
                 PYTHONVERBOSE=value,
             )
-            dont_write_bytecode = int(bool(value))
+            expected_bool = int(bool(value))
             code = (
                 "import sys; "
                 "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
-                    sys.flags.debug == sys.flags.optimize ==
-                    sys.flags.verbose ==
-                    {expected}
-                    and sys.flags.dont_write_bytecode == {dont_write_bytecode}
+                    sys.flags.optimize == sys.flags.verbose == {expected}
+                    and sys.flags.debug == sys.flags.dont_write_bytecode == {expected_bool}
                 ))"""
             )
             with self.subTest(envar_value=value):
@@ -726,6 +736,8 @@ class CmdLineTest(unittest.TestCase):
                 out = self.run_xdev("-c", code, check_exitcode=False)
             if support.with_pymalloc():
                 alloc_name = "pymalloc_debug"
+            elif support.Py_GIL_DISABLED:
+                alloc_name = "mimalloc_debug"
             else:
                 alloc_name = "malloc_debug"
             self.assertEqual(out, alloc_name)
@@ -799,10 +811,16 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), name)
         self.assertEqual(proc.returncode, 0)
 
+    @support.cpython_only
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
+        malloc = not support.Py_GIL_DISABLED
         pymalloc = support.with_pymalloc()
-        if pymalloc:
+        mimalloc = support.with_mimalloc()
+        if support.Py_GIL_DISABLED:
+            default_name = 'mimalloc_debug' if support.Py_DEBUG else 'mimalloc'
+            default_name_debug = 'mimalloc_debug'
+        elif pymalloc:
             default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
         else:
@@ -812,13 +830,21 @@ class CmdLineTest(unittest.TestCase):
         tests = [
             (None, default_name),
             ('debug', default_name_debug),
-            ('malloc', 'malloc'),
-            ('malloc_debug', 'malloc_debug'),
         ]
+        if malloc:
+            tests.extend([
+                ('malloc', 'malloc'),
+                ('malloc_debug', 'malloc_debug'),
+            ])
         if pymalloc:
             tests.extend((
                 ('pymalloc', 'pymalloc'),
                 ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+        if mimalloc:
+            tests.extend((
+                ('mimalloc', 'mimalloc'),
+                ('mimalloc_debug', 'mimalloc_debug'),
             ))
 
         for env_var, name in tests:
@@ -842,6 +868,39 @@ class CmdLineTest(unittest.TestCase):
                               universal_newlines=True, env=env)
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_GIL and -X gil only supported in Py_GIL_DISABLED builds")
+    def test_python_gil(self):
+        cases = [
+            # (env, opt, expected, msg)
+            (None, None, 'None', "no options set"),
+            ('0', None, '0', "PYTHON_GIL=0"),
+            ('1', None, '1', "PYTHON_GIL=1"),
+            ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
+            (None, '0', '0', "-X gil=0"),
+            (None, '1', '1', "-X gil=1"),
+        ]
+
+        code = "import sys; print(sys.flags.gil)"
+        environ = dict(os.environ)
+
+        for env, opt, expected, msg in cases:
+            with self.subTest(msg, env=env, opt=opt):
+                environ.pop('PYTHON_GIL', None)
+                if env is not None:
+                    environ['PYTHON_GIL'] = env
+                extra_args = []
+                if opt is not None:
+                    extra_args = ['-X', f'gil={opt}']
+
+                proc = subprocess.run([sys.executable, *extra_args, '-c', code],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
+                                      text=True, env=environ)
+                self.assertEqual(proc.returncode, 0, proc)
+                self.assertEqual(proc.stdout.rstrip(), expected)
+                self.assertEqual(proc.stderr, '')
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'bpo-32457 only applies on Windows')
@@ -877,11 +936,8 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
 
-        def res2int(res):
-            out = res.out.strip().decode("utf-8")
-            return tuple(int(i) for i in out.split())
-
         res = assert_python_ok('-c', code)
+        res2int = self.res2int
         current_max = sys.get_int_max_str_digits()
         self.assertEqual(res2int(res), (current_max, current_max))
         res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
@@ -900,6 +956,26 @@ class CmdLineTest(unittest.TestCase):
             PYTHONINTMAXSTRDIGITS='4000'
         )
         self.assertEqual(res2int(res), (6000, 6000))
+
+    def test_cpu_count(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
+        self.assertEqual(self.res2int(res), (4321, 4321))
+        res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (1234, 1234))
+
+    def test_cpu_count_default(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code)
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def res2int(self, res):
+        out = res.out.strip().decode("utf-8")
+        return tuple(int(i) for i in out.split())
 
 
 @unittest.skipIf(interpreter_requires_environment(),
