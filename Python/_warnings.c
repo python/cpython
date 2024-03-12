@@ -8,6 +8,8 @@
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 
+#include <stdbool.h>
+
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -397,7 +399,7 @@ static int
 already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
                int should_set)
 {
-    PyObject *version_obj, *already_warned;
+    PyObject *already_warned;
 
     if (key == NULL)
         return -1;
@@ -406,14 +408,17 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
     if (st == NULL) {
         return -1;
     }
-    version_obj = _PyDict_GetItemWithError(registry, &_Py_ID(version));
-    if (version_obj == NULL
+    PyObject *version_obj;
+    if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
+        return -1;
+    }
+    bool should_update_version = (
+        version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != st->filters_version)
-    {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
+        || PyLong_AsLong(version_obj) != st->filters_version
+    );
+    Py_XDECREF(version_obj);
+    if (should_update_version) {
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(st->filters_version);
         if (version_obj == NULL)
