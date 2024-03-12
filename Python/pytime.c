@@ -565,6 +565,7 @@ pytime_from_double(PyTime_t *tp, double value, _PyTime_round_t round,
     /* See comments in pytime_double_to_denominator */
     if (!((double)PyTime_MIN <= d && d < -(double)PyTime_MIN)) {
         pytime_time_t_overflow();
+        *tp = 0;
         return -1;
     }
     PyTime_t ns = (PyTime_t)d;
@@ -652,14 +653,10 @@ _PyTime_AsLong(PyTime_t ns)
     return PyLong_FromLongLong((long long)ns);
 }
 
-PyTime_t
-_PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round)
+int
+_PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round, PyTime_t *result)
 {
-    PyTime_t tp;
-    if(pytime_from_double(&tp, seconds, round, SEC_TO_NS) < 0) {
-        return -1;
-    }
-    return tp;
+    return pytime_from_double(result, seconds, round, SEC_TO_NS);
 }
 
 
