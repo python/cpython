@@ -1673,7 +1673,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
         neq = 0;                                \
     }
 
-    /* Sticking to only __lt__ compares is confusinig and error-prone. But in
+    /* Sticking to only __lt__ compares is confusing and error-prone. But in
      * this routine, almost all uses of IFLT can be captured by tiny macros
      * giving mnemonic names to the intent. Note that inline functios don't
      * work for this (IFLT expands to code including `goto fail`).
