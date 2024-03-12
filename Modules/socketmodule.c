@@ -1054,8 +1054,8 @@ init_sockobject(socket_state *state, PySocketSockObject *s,
     else
 #endif
     {
-        s->sock_timeout = state->defaulttimeout;
-        if (state->defaulttimeout >= 0) {
+        s->sock_timeout = _Py_atomic_load_int64_relaxed(&state->defaulttimeout);
+        if (s->sock_timeout >= 0) {
             if (internal_setblocking(s, 0) == -1) {
                 return -1;
             }
@@ -6913,11 +6913,12 @@ static PyObject *
 socket_getdefaulttimeout(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     socket_state *state = get_module_state(self);
-    if (state->defaulttimeout < 0) {
+    PyTime_t timeout = _Py_atomic_load_int64_relaxed(&state->defaulttimeout);
+    if (timeout < 0) {
         Py_RETURN_NONE;
     }
     else {
-        double seconds = PyTime_AsSecondsDouble(state->defaulttimeout);
+        double seconds = PyTime_AsSecondsDouble(timeout);
         return PyFloat_FromDouble(seconds);
     }
 }
@@ -6938,7 +6939,7 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
         return NULL;
 
     socket_state *state = get_module_state(self);
-    state->defaulttimeout = timeout;
+    _Py_atomic_store_int64_relaxed(&state->defaulttimeout, timeout);
 
     Py_RETURN_NONE;
 }
