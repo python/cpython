@@ -542,6 +542,45 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
 
     return release, vendor, vminfo, osinfo
 
+
+AndroidVer = collections.namedtuple(
+    "AndroidVer",
+    "release api_level min_api_level manufacturer model device")
+
+def android_ver(release="", api_level=0, min_api_level=0,
+                manufacturer="", model="", device=""):
+    if sys.platform == "android":
+        min_api_level = sys.getandroidapilevel()
+        try:
+            from ctypes import CDLL, c_char_p, create_string_buffer
+        except ImportError:
+            pass
+        else:
+            # An NDK developer confirmed that this is an officially-supported
+            # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
+            # private name mangling.
+            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
+            system_property_get.argtypes = (c_char_p, c_char_p)
+
+            def getprop(name, default):
+                PROP_VALUE_MAX = 92  # From sys/system_properties.h
+                buffer = create_string_buffer(PROP_VALUE_MAX)
+                length = system_property_get(name.encode("UTF-8"), buffer)
+                if length == 0:
+                    return default
+                else:
+                    return buffer.value.decode("UTF-8", "backslashreplace")
+
+            release = getprop("ro.build.version.release", release)
+            api_level = int(getprop("ro.build.version.sdk", api_level))
+            manufacturer = getprop("ro.product.manufacturer", manufacturer)
+            model = getprop("ro.product.model", model)
+            device = getprop("ro.product.device", device)
+
+    return AndroidVer(
+        release, api_level, min_api_level, manufacturer, model, device)
+
+
 ### System name aliasing
 
 def system_alias(system, release, version):
@@ -971,6 +1010,11 @@ def uname():
     if system == 'Microsoft' and release == 'Windows':
         system = 'Windows'
         release = 'Vista'
+
+    # On Android, return the name and version of the OS rather than the kernel.
+    if sys.platform == 'android':
+        system = 'Android'
+        release = android_ver().release
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''

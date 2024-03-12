@@ -219,6 +219,19 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[-1], res.processor)
         self.assertEqual(len(res), 6)
 
+        if os.name == "posix":
+            uname = os.uname()
+            self.assertEqual(res.node, uname.nodename)
+            self.assertEqual(res.version, uname.version)
+            self.assertEqual(res.machine, uname.machine)
+
+            if sys.platform == "android":
+                self.assertEqual(res.system, "Android")
+                self.assertEqual(res.release, platform.android_ver().release)
+            else:
+                self.assertEqual(res.system, uname.sysname)
+                self.assertEqual(res.release, uname.release)
+
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_without_wmi(self):
         def raises_oserror(*a):
@@ -429,6 +442,47 @@ class PlatformTest(unittest.TestCase):
             f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
         self.assertEqual(platform.libc_ver(filename, chunksize=chunksize),
                          ('glibc', '1.23.4'))
+
+    def test_android_ver(self):
+        res = platform.android_ver()
+        self.assertIsInstance(res, tuple)
+        self.assertEqual(res, (res.release, res.api_level, res.min_api_level,
+                               res.manufacturer, res.model, res.device))
+
+        if sys.platform == "android":
+            for name in ["release", "manufacturer", "model", "device"]:
+                with self.subTest(name):
+                    value = getattr(res, name)
+                    self.assertIsInstance(value, str)
+                    self.assertGreater(len(value), 0)
+
+            for name in ["api_level", "min_api_level"]:
+                with self.subTest(name):
+                    value = getattr(res, name)
+                    self.assertIsInstance(value, int)
+                    self.assertGreater(value, 0)
+
+            self.assertEqual(res.min_api_level, sys.getandroidapilevel())
+            self.assertGreaterEqual(res.api_level, res.min_api_level)
+
+        # When not running on Android, it should return the default values.
+        else:
+            self.assertEqual(res.release, "")
+            self.assertEqual(res.api_level, 0)
+            self.assertEqual(res.min_api_level, 0)
+            self.assertEqual(res.manufacturer, "")
+            self.assertEqual(res.model, "")
+            self.assertEqual(res.device, "")
+
+            # Default values may also be overridden using parameters.
+            res = platform.android_ver("alpha", 1, 2, "bravo", "charlie", "delta")
+            self.assertEqual(res.release, "alpha")
+            self.assertEqual(res.api_level, 1)
+            self.assertEqual(res.min_api_level, 2)
+            self.assertEqual(res.manufacturer, "bravo")
+            self.assertEqual(res.model, "charlie")
+            self.assertEqual(res.device, "delta")
+
 
     @support.cpython_only
     def test__comparable_version(self):

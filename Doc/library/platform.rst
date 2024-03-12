@@ -301,3 +301,34 @@ Linux Platforms
           return ids
 
    .. versionadded:: 3.10
+
+
+Android Platform
+----------------
+
+.. function:: android_ver(release="", api_level=0, min_api_level=0, \
+                          manufacturer="", model="", device="")
+
+   Get Android device information. Returns a :func:`~collections.namedtuple`
+   with the following attributes. Values which cannot be determined are set to
+   the defaults given as parameters.
+
+   * ``release`` - Android version of the device, as a string (e.g. ``"14"``)
+   * ``api_level`` - API level of the device, as an integer (e.g. ``34``)
+   * ``min_api_level`` - Minimum API level this build of Python can run on, as
+      an integer (e.g. ``23``).
+   * ``manufacturer`` - `manufacturer
+      <https://developer.android.com/reference/android/os/Build#MANUFACTURER>`__
+      of the device, as a string (e.g. ``"Google"``)
+   * ``model`` - `model name
+      <https://developer.android.com/reference/android/os/Build#MODEL>`__ of the
+      device, as a string (e.g. ``"Pixel 7"``)
+   * ``device`` - `device name
+      <https://developer.android.com/reference/android/os/Build#DEVICE>`__ of
+      the device, as a string (e.g. ``"panther"``)
+
+   Which one of ``model`` and ``device`` is more likely to be unique, and which
+   one is more likely to resemble the marketing name, varies between different
+   manufacturers.
+
+   .. versionadded:: 3.13
