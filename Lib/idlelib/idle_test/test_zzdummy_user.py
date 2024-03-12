@@ -29,17 +29,20 @@ test_defaultcfg = {
     'keys': config.IdleUserConfParser(''),
     'extensions': config.IdleUserConfParser(''),
 }
-test_defaultcfg["extensions"].read_dict(
-    {
-        "AutoComplete": {'popupwait': '2000'},
-        "CodeContext": {'maxlines': '15'},
-        "FormatParagraph": {'max-width': '72'},
-        "ParenMatch": {'style': 'expression', 'flash-delay': '500', 'bell': 'True'},
-    }
-)
-test_defaultcfg["keys"].read_dict(
-    {name: dict(real_defaultcfg["keys"][name]) for name in real_defaultcfg["keys"]}
-)
+test_defaultcfg["extensions"].read_dict({
+    "AutoComplete": {'popupwait': '2000'},
+    "CodeContext": {'maxlines': '15'},
+    "FormatParagraph": {'max-width': '72'},
+    "ParenMatch": {'style': 'expression', 'flash-delay': '500', 'bell': 'True'},
+})
+test_defaultcfg["main"].read_dict({
+    "Theme": {"default": 1, "name": "IDLE Classic", "name2": ""},
+    "Keys": {"default": 1, "name": "IDLE Classic", "name2": ""},
+})
+for key in ("keys",):
+    real_default = real_defaultcfg[key]
+    value = {name: dict(real_default[name]) for name in real_default}
+    test_defaultcfg[key].read_dict(value)
 code_sample = """\
 
 class C1:
@@ -111,6 +114,8 @@ class ZZDummyTest(unittest.TestCase):
         self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), ['ZzDummy', 'ZzDummy_cfgBindings', 'ZzDummy_bindings'])
         self.assertEqual(zzdummy.idleConf.GetSectionList('default', 'extensions'), ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch'])
         self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions())
+        self.assertEqual(zzdummy.idleConf.GetExtensionKeys("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>']})
+        self.assertEqual(zzdummy.idleConf.GetExtensionBindings("ZzDummy"), {'<<z-in>>': ['<Control-Shift-KeyRelease-Insert>'], '<<z-out>>': ['<Control-Shift-KeyRelease-Delete>']})
 
     def test_init(self):
         zz = self.zz
