@@ -214,18 +214,18 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
 
     async def test_abort_clients(self):
         async def serve(rd, wr):
-            nonlocal s_rd, s_wr
-            s_rd = rd
-            s_wr = wr
+            fut.set_result((rd, wr))
             await wr.wait_closed()
 
-        s_rd = s_wr = None
+        fut = asyncio.Future()
         srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
         self.addCleanup(srv.close)
 
         addr = srv.sockets[0].getsockname()
         (c_rd, c_wr) = await asyncio.open_connection(addr[0], addr[1], limit=4096)
         self.addCleanup(c_wr.close)
+
+        (s_rd, s_wr) = await fut
 
         # Limit the socket buffers so we can reliably overfill them
         s_sock = s_wr.get_extra_info('socket')
