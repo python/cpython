@@ -4656,8 +4656,6 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Tuple[Optional]
         with self.assertRaises(TypeError):
-            ClassVar[ClassVar[int]]
-        with self.assertRaises(TypeError):
             List[ClassVar[int]]
 
     def test_fail_with_bare_generic(self):
@@ -6013,16 +6011,6 @@ class ForwardRefTests(BaseTestCase):
         expected_result = {'foo': typing.ClassVar[int]}
         for clazz in [C, D, E, F]:
             self.assertEqual(get_type_hints(clazz), expected_result)
-
-    def test_nested_classvar_fails_forward_ref_check(self):
-        class E:
-            foo: 'typing.ClassVar[typing.ClassVar[int]]' = 7
-        class F:
-            foo: ClassVar['ClassVar[int]'] = 7
-
-        for clazz in [E, F]:
-            with self.assertRaises(TypeError):
-                get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
         depr_msg = (
@@ -8715,6 +8703,34 @@ class AnnotatedTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
         self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
+
+    def test_special_forms_nesting(self):
+        # These are uncommon types and are to ensure runtime
+        # is lax on validation. See gh-89547 for more context.
+        class CF:
+            x: ClassVar[Final[int]]
+
+        class FC:
+            x: Final[ClassVar[int]]
+
+        class ACF:
+            x: Annotated[ClassVar[Final[int]], "a decoration"]
+
+        class CAF:
+            x: ClassVar[Annotated[Final[int], "a decoration"]]
+
+        class AFC:
+            x: Annotated[Final[ClassVar[int]], "a decoration"]
+
+        class FAC:
+            x: Final[Annotated[ClassVar[int], "a decoration"]]
+
+        self.assertEqual(get_type_hints(CF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(FC, globals())['x'], Final[ClassVar[int]])
+        self.assertEqual(get_type_hints(ACF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(CAF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(AFC, globals())['x'], Final[ClassVar[int]])
+        self.assertEqual(get_type_hints(FAC, globals())['x'], Final[ClassVar[int]])
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError, "Cannot subclass .*Annotated"):

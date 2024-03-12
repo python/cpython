@@ -1,0 +1,1 @@
+Add support for nested typing special forms like Final[ClassVar[int]].
