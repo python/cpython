@@ -1689,10 +1689,10 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
     }
     if (n == nremaining)
         return n;
-    /* *lo is strictly less */
+    /* lo[n] is strictly less */
     /* If n is 1 now, then the first compare established it's a descending
      * run, so fall through to the descending case. But if n > 1, there are
-     * n elements in an ascending run terminated by the strictly less *lo.
+     * n elements in an ascending run terminated by the strictly less lo[n].
      * If the first key < lo[n-1], *somewhere* along the way the sequence
      * increased, so we're done (there is no descending run).
      * Else first key >= lo[n-1], which implies that the entire ascending run
