@@ -33,8 +33,8 @@ Acknowledgments:
    Paul Foley who pointed out various imprecisions and made me to add the
    part on local precedence ordering. David Goodger for help with the
    formatting in reStructuredText. David Mertz for help with the editing.
-   Joan G. Stark for the pythonic pictures. Finally, Guido van Rossum who
-   enthusiastically added this document to the official Python 2.3 home-page.*
+   Finally, Guido van Rossum who enthusiastically added this document to
+   the official Python 2.3 home-page.*
 
 The beginning
 -------------
