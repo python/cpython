@@ -1,5 +1,5 @@
 # Set of tests run by default if --tsan is specified.  The tests below were
-# chosen to run a thread sanitizer in a reasonable executable time.
+# chosen because they use threads and run in a reasonable amount of time.
 
 TSAN_TESTS = [
     'test_code',
