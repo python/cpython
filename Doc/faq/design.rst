@@ -292,8 +292,8 @@ It's suggested that you use a prefix for the method names, such as ``visit_`` in
 this example.  Without such a prefix, if values are coming from an untrusted
 source, an attacker would be able to call any method on your object.
 
-Imitating switch with fallthrough, as with Fortran's computed GOTO
-and C's switch-case-default, is possible, much harder, and less needed.
+Imitating switch with fallthrough, as with C's switch-case-default,
+is possible, much harder, and less needed.
 
 
 Can't you emulate threads in the interpreter instead of relying on an OS-specific thread implementation?
