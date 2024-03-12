@@ -932,17 +932,17 @@ setup_context(Py_ssize_t stack_level,
     }
 
     /* Setup module. */
-    *module = _PyDict_GetItemWithError(globals, &_Py_ID(__name__));
-    if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
-        Py_INCREF(*module);
-    }
-    else if (_PyErr_Occurred(tstate)) {
+    rc = PyDict_GetItemRef(globals, &_Py_ID(__name__), module);
+    if (rc < 0) {
         goto handle_error;
     }
-    else {
+    if (rc == 0) {
         *module = PyUnicode_FromString("<string>");
         if (*module == NULL)
             goto handle_error;
+    }
+    else {
+        assert(Py_IsNone(*module) || PyUnicode_Check(*module));
     }
 
     return 1;
