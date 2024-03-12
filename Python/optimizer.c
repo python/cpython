@@ -437,6 +437,7 @@ BRANCH_TO_GUARD[4][2] = {
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].format = UOP_FORMAT_TARGET; \
     trace[trace_length].oparg = (OPARG); \
     trace[trace_length].target = (TARGET); \
     trace[trace_length].operand = (OPERAND); \
@@ -450,6 +451,7 @@ BRANCH_TO_GUARD[4][2] = {
 #define ADD_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
     assert(trace_length < max_length); \
     trace[trace_length].opcode = (OPCODE); \
+    trace[trace_length].format = UOP_FORMAT_TARGET; \
     trace[trace_length].oparg = (OPARG); \
     trace[trace_length].target = (TARGET); \
     trace[trace_length].operand = (OPERAND); \
@@ -1117,7 +1119,7 @@ counter_optimize(
     _PyUOpInstruction buffer[3] = {
         { .opcode = _LOAD_CONST_INLINE_BORROW, .operand = (uintptr_t)self },
         { .opcode = _INTERNAL_INCREMENT_OPT_COUNTER },
-        { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)) }
+        { .opcode = _EXIT_TRACE, .target = (uint32_t)(target - _PyCode_CODE(code)), .format=UOP_FORMAT_TARGET }
     };
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &EMPTY_FILTER);
     if (executor == NULL) {

@@ -100,7 +100,7 @@ def tier2_replace_deopt(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") goto deoptimize;\n")
+    out.emit(") DEOPTIMIZE;\n")
 
 
 def tier2_replace_exit_if(

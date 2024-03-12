@@ -14,13 +14,13 @@
 
         case _RESUME_CHECK: {
             #if defined(__EMSCRIPTEN__)
-            if (_Py_emscripten_signal_clock == 0) goto deoptimize;
+            if (_Py_emscripten_signal_clock == 0) DEOPTIMIZE;
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
             #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            if (eval_breaker != version) goto deoptimize;
+            if (eval_breaker != version) DEOPTIMIZE;
             break;
         }
 
@@ -617,12 +617,12 @@
             PyObject *res;
             sub = stack_pointer[-1];
             list = stack_pointer[-2];
-            if (!PyLong_CheckExact(sub)) goto deoptimize;
-            if (!PyList_CheckExact(list)) goto deoptimize;
+            if (!PyLong_CheckExact(sub)) DEOPTIMIZE;
+            if (!PyList_CheckExact(list)) DEOPTIMIZE;
             // Deopt unless 0 <= sub < PyList_Size(list)
-            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) goto deoptimize;
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) DEOPTIMIZE;
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (index >= PyList_GET_SIZE(list)) goto deoptimize;
+            if (index >= PyList_GET_SIZE(list)) DEOPTIMIZE;
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyList_GET_ITEM(list, index);
             assert(res != NULL);
@@ -640,14 +640,14 @@
             PyObject *res;
             sub = stack_pointer[-1];
             str = stack_pointer[-2];
-            if (!PyLong_CheckExact(sub)) goto deoptimize;
-            if (!PyUnicode_CheckExact(str)) goto deoptimize;
-            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) goto deoptimize;
+            if (!PyLong_CheckExact(sub)) DEOPTIMIZE;
+            if (!PyUnicode_CheckExact(str)) DEOPTIMIZE;
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) DEOPTIMIZE;
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (PyUnicode_GET_LENGTH(str) <= index) goto deoptimize;
+            if (PyUnicode_GET_LENGTH(str) <= index) DEOPTIMIZE;
             // Specialize for reading an ASCII character from any string:
             Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
-            if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) goto deoptimize;
+            if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) DEOPTIMIZE;
             STAT_INC(BINARY_SUBSCR, hit);
             res = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
@@ -663,12 +663,12 @@
             PyObject *res;
             sub = stack_pointer[-1];
             tuple = stack_pointer[-2];
-            if (!PyLong_CheckExact(sub)) goto deoptimize;
-            if (!PyTuple_CheckExact(tuple)) goto deoptimize;
+            if (!PyLong_CheckExact(sub)) DEOPTIMIZE;
+            if (!PyTuple_CheckExact(tuple)) DEOPTIMIZE;
             // Deopt unless 0 <= sub < PyTuple_Size(list)
-            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) goto deoptimize;
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) DEOPTIMIZE;
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
-            if (index >= PyTuple_GET_SIZE(tuple)) goto deoptimize;
+            if (index >= PyTuple_GET_SIZE(tuple)) DEOPTIMIZE;
             STAT_INC(BINARY_SUBSCR, hit);
             res = PyTuple_GET_ITEM(tuple, index);
             assert(res != NULL);
@@ -686,7 +686,7 @@
             PyObject *res;
             sub = stack_pointer[-1];
             dict = stack_pointer[-2];
-            if (!PyDict_CheckExact(dict)) goto deoptimize;
+            if (!PyDict_CheckExact(dict)) DEOPTIMIZE;
             STAT_INC(BINARY_SUBSCR, hit);
             int rc = PyDict_GetItemRef(dict, sub, &res);
             if (rc == 0) {
@@ -751,13 +751,13 @@
             sub = stack_pointer[-1];
             list = stack_pointer[-2];
             value = stack_pointer[-3];
-            if (!PyLong_CheckExact(sub)) goto deoptimize;
-            if (!PyList_CheckExact(list)) goto deoptimize;
+            if (!PyLong_CheckExact(sub)) DEOPTIMIZE;
+            if (!PyList_CheckExact(list)) DEOPTIMIZE;
             // Ensure nonnegative, zero-or-one-digit ints.
-            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) goto deoptimize;
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) DEOPTIMIZE;
             Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
             // Ensure index < len(list)
-            if (index >= PyList_GET_SIZE(list)) goto deoptimize;
+            if (index >= PyList_GET_SIZE(list)) DEOPTIMIZE;
             STAT_INC(STORE_SUBSCR, hit);
             PyObject *old_value = PyList_GET_ITEM(list, index);
             PyList_SET_ITEM(list, index, value);
@@ -776,7 +776,7 @@
             sub = stack_pointer[-1];
             dict = stack_pointer[-2];
             value = stack_pointer[-3];
-            if (!PyDict_CheckExact(dict)) goto deoptimize;
+            if (!PyDict_CheckExact(dict)) DEOPTIMIZE;
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
             Py_DECREF(dict);
@@ -1066,8 +1066,8 @@
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
             assert(oparg == 2);
-            if (!PyTuple_CheckExact(seq)) goto deoptimize;
-            if (PyTuple_GET_SIZE(seq) != 2) goto deoptimize;
+            if (!PyTuple_CheckExact(seq)) DEOPTIMIZE;
+            if (PyTuple_GET_SIZE(seq) != 2) DEOPTIMIZE;
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             val1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
@@ -1084,8 +1084,8 @@
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
-            if (!PyTuple_CheckExact(seq)) goto deoptimize;
-            if (PyTuple_GET_SIZE(seq) != oparg) goto deoptimize;
+            if (!PyTuple_CheckExact(seq)) DEOPTIMIZE;
+            if (PyTuple_GET_SIZE(seq) != oparg) DEOPTIMIZE;
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
@@ -1102,8 +1102,8 @@
             oparg = CURRENT_OPARG();
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
-            if (!PyList_CheckExact(seq)) goto deoptimize;
-            if (PyList_GET_SIZE(seq) != oparg) goto deoptimize;
+            if (!PyList_CheckExact(seq)) DEOPTIMIZE;
+            if (PyList_GET_SIZE(seq) != oparg) DEOPTIMIZE;
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
@@ -1307,8 +1307,8 @@
         case _GUARD_GLOBALS_VERSION: {
             uint16_t version = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)GLOBALS();
-            if (!PyDict_CheckExact(dict)) goto deoptimize;
-            if (dict->ma_keys->dk_version != version) goto deoptimize;
+            if (!PyDict_CheckExact(dict)) DEOPTIMIZE;
+            if (dict->ma_keys->dk_version != version) DEOPTIMIZE;
             assert(DK_IS_UNICODE(dict->ma_keys));
             break;
         }
@@ -1316,8 +1316,8 @@
         case _GUARD_BUILTINS_VERSION: {
             uint16_t version = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)BUILTINS();
-            if (!PyDict_CheckExact(dict)) goto deoptimize;
-            if (dict->ma_keys->dk_version != version) goto deoptimize;
+            if (!PyDict_CheckExact(dict)) DEOPTIMIZE;
+            if (dict->ma_keys->dk_version != version) DEOPTIMIZE;
             assert(DK_IS_UNICODE(dict->ma_keys));
             break;
         }
@@ -1330,7 +1330,7 @@
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
             res = entries[index].me_value;
-            if (res == NULL) goto deoptimize;
+            if (res == NULL) DEOPTIMIZE;
             Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
@@ -1348,7 +1348,7 @@
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
             PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(bdict->ma_keys);
             res = entries[index].me_value;
-            if (res == NULL) goto deoptimize;
+            if (res == NULL) DEOPTIMIZE;
             Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
@@ -1697,8 +1697,8 @@
             class = stack_pointer[-2];
             global_super = stack_pointer[-3];
             assert(!(oparg & 1));
-            if (global_super != (PyObject *)&PySuper_Type) goto deoptimize;
-            if (!PyType_Check(class)) goto deoptimize;
+            if (global_super != (PyObject *)&PySuper_Type) DEOPTIMIZE;
+            if (!PyType_Check(class)) DEOPTIMIZE;
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
@@ -1722,8 +1722,8 @@
             class = stack_pointer[-2];
             global_super = stack_pointer[-3];
             assert(oparg & 1);
-            if (global_super != (PyObject *)&PySuper_Type) goto deoptimize;
-            if (!PyType_Check(class)) goto deoptimize;
+            if (global_super != (PyObject *)&PySuper_Type) DEOPTIMIZE;
+            if (!PyType_Check(class)) DEOPTIMIZE;
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyTypeObject *cls = (PyTypeObject *)class;
@@ -1806,7 +1806,7 @@
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) goto deoptimize;
+            if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) DEOPTIMIZE;
             break;
         }
 
@@ -1819,7 +1819,7 @@
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
-            if (attr == NULL) goto deoptimize;
+            if (attr == NULL) DEOPTIMIZE;
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1837,7 +1837,7 @@
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
-            if (attr == NULL) goto deoptimize;
+            if (attr == NULL) DEOPTIMIZE;
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1854,10 +1854,10 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)CURRENT_OPERAND();
-            if (!PyModule_CheckExact(owner)) goto deoptimize;
+            if (!PyModule_CheckExact(owner)) DEOPTIMIZE;
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
-            if (dict->ma_keys->dk_version != dict_version) goto deoptimize;
+            if (dict->ma_keys->dk_version != dict_version) DEOPTIMIZE;
             break;
         }
 
@@ -1873,7 +1873,7 @@
             assert(index < dict->ma_keys->dk_nentries);
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
             attr = ep->me_value;
-            if (attr == NULL) goto deoptimize;
+            if (attr == NULL) DEOPTIMIZE;
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1889,9 +1889,9 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            if (_PyDictOrValues_IsValues(dorv)) goto deoptimize;
+            if (_PyDictOrValues_IsValues(dorv)) DEOPTIMIZE;
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
-            if (dict == NULL) goto deoptimize;
+            if (dict == NULL) DEOPTIMIZE;
             assert(PyDict_CheckExact((PyObject *)dict));
             break;
         }
@@ -1905,19 +1905,19 @@
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
-            if (hint >= (size_t)dict->ma_keys->dk_nentries) goto deoptimize;
+            if (hint >= (size_t)dict->ma_keys->dk_nentries) DEOPTIMIZE;
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) goto deoptimize;
+                if (ep->me_key != name) DEOPTIMIZE;
                 attr = ep->me_value;
             }
             else {
                 PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) goto deoptimize;
+                if (ep->me_key != name) DEOPTIMIZE;
                 attr = ep->me_value;
             }
-            if (attr == NULL) goto deoptimize;
+            if (attr == NULL) DEOPTIMIZE;
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1937,7 +1937,7 @@
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
-            if (attr == NULL) goto deoptimize;
+            if (attr == NULL) DEOPTIMIZE;
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1955,7 +1955,7 @@
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
-            if (attr == NULL) goto deoptimize;
+            if (attr == NULL) DEOPTIMIZE;
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
             null = NULL;
@@ -1972,9 +1972,9 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
-            if (!PyType_Check(owner)) goto deoptimize;
+            if (!PyType_Check(owner)) DEOPTIMIZE;
             assert(type_version != 0);
-            if (((PyTypeObject *)owner)->tp_version_tag != type_version) goto deoptimize;
+            if (((PyTypeObject *)owner)->tp_version_tag != type_version) DEOPTIMIZE;
             break;
         }
 
@@ -2023,7 +2023,7 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            if (!_PyDictOrValues_IsValues(dorv)) goto deoptimize;
+            if (!_PyDictOrValues_IsValues(dorv)) DEOPTIMIZE;
             break;
         }
 
@@ -2118,8 +2118,8 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!_PyLong_IsCompact((PyLongObject *)left)) goto deoptimize;
-            if (!_PyLong_IsCompact((PyLongObject *)right)) goto deoptimize;
+            if (!_PyLong_IsCompact((PyLongObject *)left)) DEOPTIMIZE;
+            if (!_PyLong_IsCompact((PyLongObject *)right)) DEOPTIMIZE;
             STAT_INC(COMPARE_OP, hit);
             assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
                    _PyLong_DigitCount((PyLongObject *)right) <= 1);
@@ -2198,7 +2198,7 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right))) goto deoptimize;
+            if (!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right))) DEOPTIMIZE;
             STAT_INC(CONTAINS_OP, hit);
             // Note: both set and frozenset use the same seq_contains method!
             int res = _PySet_Contains((PySetObject *)right, left);
@@ -2218,7 +2218,7 @@
             oparg = CURRENT_OPARG();
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (!PyDict_CheckExact(right)) goto deoptimize;
+            if (!PyDict_CheckExact(right)) DEOPTIMIZE;
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right, left);
             Py_DECREF(left);
@@ -2438,7 +2438,7 @@
                 Py_DECREF(iter);
                 STACK_SHRINK(1);
                 /* The translator sets the deopt target just past END_FOR */
-                if (true) goto deoptimize;
+                if (true) DEOPTIMIZE;
             }
             // Common case: no jump, leave it to the code generator
             stack_pointer[0] = next;
@@ -2451,7 +2451,7 @@
         case _ITER_CHECK_LIST: {
             PyObject *iter;
             iter = stack_pointer[-1];
-            if (Py_TYPE(iter) != &PyListIter_Type) goto deoptimize;
+            if (Py_TYPE(iter) != &PyListIter_Type) DEOPTIMIZE;
             break;
         }
 
@@ -2463,8 +2463,8 @@
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
-            if (seq == NULL) goto deoptimize;
-            if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) goto deoptimize;
+            if (seq == NULL) DEOPTIMIZE;
+            if ((size_t)it->it_index >= (size_t)PyList_GET_SIZE(seq)) DEOPTIMIZE;
             break;
         }
 
@@ -2486,7 +2486,7 @@
         case _ITER_CHECK_TUPLE: {
             PyObject *iter;
             iter = stack_pointer[-1];
-            if (Py_TYPE(iter) != &PyTupleIter_Type) goto deoptimize;
+            if (Py_TYPE(iter) != &PyTupleIter_Type) DEOPTIMIZE;
             break;
         }
 
@@ -2498,8 +2498,8 @@
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
-            if (seq == NULL) goto deoptimize;
-            if (it->it_index >= PyTuple_GET_SIZE(seq)) goto deoptimize;
+            if (seq == NULL) DEOPTIMIZE;
+            if (it->it_index >= PyTuple_GET_SIZE(seq)) DEOPTIMIZE;
             break;
         }
 
@@ -2522,7 +2522,7 @@
             PyObject *iter;
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
-            if (Py_TYPE(r) != &PyRangeIter_Type) goto deoptimize;
+            if (Py_TYPE(r) != &PyRangeIter_Type) DEOPTIMIZE;
             break;
         }
 
@@ -2533,7 +2533,7 @@
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            if (r->len <= 0) goto deoptimize;
+            if (r->len <= 0) DEOPTIMIZE;
             break;
         }
 
@@ -2700,7 +2700,7 @@
             owner = stack_pointer[-1];
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) goto deoptimize;
+            if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) DEOPTIMIZE;
             break;
         }
 
@@ -2710,7 +2710,7 @@
             uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-            if (owner_heap_type->ht_cached_keys->dk_version != keys_version) goto deoptimize;
+            if (owner_heap_type->ht_cached_keys->dk_version != keys_version) DEOPTIMIZE;
             break;
         }
 
@@ -2792,7 +2792,7 @@
             assert(dictoffset > 0);
             PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
             /* This object has a __dict__, just not yet created */
-            if (dict != NULL) goto deoptimize;
+            if (dict != NULL) DEOPTIMIZE;
             break;
         }
 
@@ -2825,8 +2825,8 @@
             oparg = CURRENT_OPARG();
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            if (null != NULL) goto deoptimize;
-            if (Py_TYPE(callable) != &PyMethod_Type) goto deoptimize;
+            if (null != NULL) DEOPTIMIZE;
+            if (Py_TYPE(callable) != &PyMethod_Type) DEOPTIMIZE;
             break;
         }
 
@@ -2848,7 +2848,7 @@
         }
 
         case _CHECK_PEP_523: {
-            if (tstate->interp->eval_frame) goto deoptimize;
+            if (tstate->interp->eval_frame) DEOPTIMIZE;
             break;
         }
 
@@ -2859,11 +2859,11 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
-            if (!PyFunction_Check(callable)) goto deoptimize;
+            if (!PyFunction_Check(callable)) DEOPTIMIZE;
             PyFunctionObject *func = (PyFunctionObject *)callable;
-            if (func->func_version != func_version) goto deoptimize;
+            if (func->func_version != func_version) DEOPTIMIZE;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
-            if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
+            if (code->co_argcount != oparg + (self_or_null != NULL)) DEOPTIMIZE;
             break;
         }
 
@@ -2873,8 +2873,8 @@
             callable = stack_pointer[-2 - oparg];
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
-            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
-            if (tstate->py_recursion_remaining <= 1) goto deoptimize;
+            if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) DEOPTIMIZE;
+            if (tstate->py_recursion_remaining <= 1) DEOPTIMIZE;
             break;
         }
 
@@ -3068,8 +3068,8 @@
             null = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
-            if (null != NULL) goto deoptimize;
-            if (callable != (PyObject *)&PyType_Type) goto deoptimize;
+            if (null != NULL) DEOPTIMIZE;
+            if (callable != (PyObject *)&PyType_Type) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             res = Py_NewRef(Py_TYPE(arg));
             Py_DECREF(arg);
@@ -3088,8 +3088,8 @@
             null = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
-            if (null != NULL) goto deoptimize;
-            if (callable != (PyObject *)&PyUnicode_Type) goto deoptimize;
+            if (null != NULL) DEOPTIMIZE;
+            if (callable != (PyObject *)&PyUnicode_Type) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             res = PyObject_Str(arg);
             Py_DECREF(arg);
@@ -3110,8 +3110,8 @@
             null = stack_pointer[-2];
             callable = stack_pointer[-3];
             assert(oparg == 1);
-            if (null != NULL) goto deoptimize;
-            if (callable != (PyObject *)&PyTuple_Type) goto deoptimize;
+            if (null != NULL) DEOPTIMIZE;
+            if (callable != (PyObject *)&PyTuple_Type) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
@@ -3152,9 +3152,9 @@
                 args--;
                 total_args++;
             }
-            if (!PyType_Check(callable)) goto deoptimize;
+            if (!PyType_Check(callable)) DEOPTIMIZE;
             PyTypeObject *tp = (PyTypeObject *)callable;
-            if (tp->tp_vectorcall == NULL) goto deoptimize;
+            if (tp->tp_vectorcall == NULL) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
             /* Free the arguments. */
@@ -3184,9 +3184,9 @@
                 args--;
                 total_args++;
             }
-            if (total_args != 1) goto deoptimize;
-            if (!PyCFunction_CheckExact(callable)) goto deoptimize;
-            if (PyCFunction_GET_FLAGS(callable) != METH_O) goto deoptimize;
+            if (total_args != 1) DEOPTIMIZE;
+            if (!PyCFunction_CheckExact(callable)) DEOPTIMIZE;
+            if (PyCFunction_GET_FLAGS(callable) != METH_O) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             // This is slower but CPython promises to check all non-vectorcall
@@ -3222,8 +3222,8 @@
                 args--;
                 total_args++;
             }
-            if (!PyCFunction_CheckExact(callable)) goto deoptimize;
-            if (PyCFunction_GET_FLAGS(callable) != METH_FASTCALL) goto deoptimize;
+            if (!PyCFunction_CheckExact(callable)) DEOPTIMIZE;
+            if (PyCFunction_GET_FLAGS(callable) != METH_FASTCALL) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
             /* res = func(self, args, nargs) */
@@ -3264,8 +3264,8 @@
                 args--;
                 total_args++;
             }
-            if (!PyCFunction_CheckExact(callable)) goto deoptimize;
-            if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) goto deoptimize;
+            if (!PyCFunction_CheckExact(callable)) DEOPTIMIZE;
+            if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
             PyCFunctionFastWithKeywords cfunc =
@@ -3300,9 +3300,9 @@
                 args--;
                 total_args++;
             }
-            if (total_args != 1) goto deoptimize;
+            if (total_args != 1) DEOPTIMIZE;
             PyInterpreterState *interp = tstate->interp;
-            if (callable != interp->callable_cache.len) goto deoptimize;
+            if (callable != interp->callable_cache.len) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
@@ -3334,9 +3334,9 @@
                 args--;
                 total_args++;
             }
-            if (total_args != 2) goto deoptimize;
+            if (total_args != 2) DEOPTIMIZE;
             PyInterpreterState *interp = tstate->interp;
-            if (callable != interp->callable_cache.isinstance) goto deoptimize;
+            if (callable != interp->callable_cache.isinstance) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             PyObject *cls = args[1];
             PyObject *inst = args[0];
@@ -3370,13 +3370,13 @@
                 total_args++;
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            if (total_args != 2) goto deoptimize;
-            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) goto deoptimize;
+            if (total_args != 2) DEOPTIMIZE;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) DEOPTIMIZE;
             PyMethodDef *meth = method->d_method;
-            if (meth->ml_flags != METH_O) goto deoptimize;
+            if (meth->ml_flags != METH_O) DEOPTIMIZE;
             PyObject *arg = args[1];
             PyObject *self = args[0];
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) goto deoptimize;
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
@@ -3412,12 +3412,12 @@
                 total_args++;
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) goto deoptimize;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) DEOPTIMIZE;
             PyMethodDef *meth = method->d_method;
-            if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) goto deoptimize;
+            if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) DEOPTIMIZE;
             PyTypeObject *d_type = method->d_common.d_type;
             PyObject *self = args[0];
-            if (!Py_IS_TYPE(self, d_type)) goto deoptimize;
+            if (!Py_IS_TYPE(self, d_type)) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
@@ -3451,13 +3451,13 @@
                 args--;
                 total_args++;
             }
-            if (total_args != 1) goto deoptimize;
+            if (total_args != 1) DEOPTIMIZE;
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) goto deoptimize;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) DEOPTIMIZE;
             PyMethodDef *meth = method->d_method;
             PyObject *self = args[0];
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) goto deoptimize;
-            if (meth->ml_flags != METH_NOARGS) goto deoptimize;
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) DEOPTIMIZE;
+            if (meth->ml_flags != METH_NOARGS) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             // This is slower but CPython promises to check all non-vectorcall
@@ -3493,11 +3493,11 @@
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
             /* Builtin METH_FASTCALL methods, without keywords */
-            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) goto deoptimize;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) DEOPTIMIZE;
             PyMethodDef *meth = method->d_method;
-            if (meth->ml_flags != METH_FASTCALL) goto deoptimize;
+            if (meth->ml_flags != METH_FASTCALL) DEOPTIMIZE;
             PyObject *self = args[0];
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) goto deoptimize;
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) DEOPTIMIZE;
             STAT_INC(CALL, hit);
             PyCFunctionFast cfunc =
             (PyCFunctionFast)(void(*)(void))meth->ml_meth;
@@ -3767,7 +3767,7 @@
         }
 
         case _CHECK_VALIDITY: {
-            if (!current_executor->vm_data.valid) goto deoptimize;
+            if (!current_executor->vm_data.valid) DEOPTIMIZE;
             break;
         }
 
@@ -3827,7 +3827,7 @@
         case _CHECK_FUNCTION: {
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             assert(PyFunction_Check(frame->f_funcobj));
-            if (((PyFunctionObject *)frame->f_funcobj)->func_version != func_version) goto deoptimize;
+            if (((PyFunctionObject *)frame->f_funcobj)->func_version != func_version) DEOPTIMIZE;
             break;
         }
 
@@ -3893,7 +3893,7 @@
 
         case _CHECK_VALIDITY_AND_SET_IP: {
             PyObject *instr_ptr = (PyObject *)CURRENT_OPERAND();
-            if (!current_executor->vm_data.valid) goto deoptimize;
+            if (!current_executor->vm_data.valid) DEOPTIMIZE;
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
             break;
         }

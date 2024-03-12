@@ -981,10 +981,7 @@ enter_tier_two:
 #define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
 
 #undef DEOPT_IF
-#define DEOPT_IF(COND, INSTNAME) \
-    if ((COND)) {                \
-        goto deoptimize;\
-    }
+#define DEOPTIMIZE goto deoptimize
 
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
