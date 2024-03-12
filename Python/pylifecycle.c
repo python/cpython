@@ -1911,15 +1911,15 @@ Py_FinalizeEx(void)
     int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
 
+    /* Ensure that remaining threads are detached */
+    _PyEval_StopTheWorldAll(runtime);
+
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
     _PyRuntimeState_SetFinalizing(runtime, tstate);
     runtime->initialized = 0;
     runtime->core_initialized = 0;
-
-    /* Ensure that remaining threads are detached */
-    _PyEval_StopTheWorldAll(runtime);
 
     // XXX Call something like _PyImport_Disable() here?
 
