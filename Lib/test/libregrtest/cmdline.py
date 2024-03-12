@@ -335,7 +335,7 @@ def _create_parser():
     group.add_argument('--pgo-extended', action='store_true',
                        help='enable extended PGO training (slower training)')
     group.add_argument('--tsan', dest='tsan', action='store_true',
-                       help='enable TSAN test')
+                       help='run a subset of test cases that are proper for the TSAN test')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
