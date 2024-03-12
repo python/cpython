@@ -998,7 +998,7 @@ The following recipes have a more mathematical flavor:
 
    def sum_of_squares(it):
        "Add up the squares of the input values."
-       # sum_of_squares([10, 20, 30]) -> 1400
+       # sum_of_squares([10, 20, 30]) --> 1400
        return math.sumprod(*tee(it))
 
    def reshape(matrix, cols):
@@ -1066,7 +1066,7 @@ The following recipes have a more mathematical flavor:
           f(x)  =  x³ -4x² -17x + 60
           f'(x) = 3x² -8x  -17
        """
-       # polynomial_derivative([1, -4, -17, 60]) -> [3, -8, -17]
+       # polynomial_derivative([1, -4, -17, 60]) --> [3, -8, -17]
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(operator.mul, coefficients, powers))
