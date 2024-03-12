@@ -95,6 +95,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(safe_path, BOOL),
     SPEC(int_max_str_digits, INT),
     SPEC(cpu_count, INT),
+#ifdef Py_GIL_DISABLED
+    SPEC(enable_gil, INT),
+#endif
     SPEC(pathconfig_warnings, BOOL),
     SPEC(program_name, WSTR),
     SPEC(pythonpath_env, WSTR_OPT),
@@ -278,6 +281,9 @@ static const char usage_envvars[] =
 "PYTHON_CPU_COUNT: Overrides the return value of os.process_cpu_count(),\n"
 "                  os.cpu_count(), and multiprocessing.cpu_count() if set to\n"
 "                  a positive integer.\n"
+#ifdef Py_GIL_DISABLED
+"PYTHON_GIL      : When set to 0, disables the GIL.\n"
+#endif
 "PYTHONDEVMODE   : enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
@@ -862,6 +868,9 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+#ifdef Py_GIL_DISABLED
+    config->enable_gil = _PyConfig_GIL_DEFAULT;
+#endif
 }
 
 
@@ -1574,6 +1583,24 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
     return 0;
 }
 
+static PyStatus
+config_read_gil(PyConfig *config, size_t len, wchar_t first_char)
+{
+#ifdef Py_GIL_DISABLED
+    if (len == 1 && first_char == L'0') {
+        config->enable_gil = _PyConfig_GIL_DISABLE;
+    }
+    else if (len == 1 && first_char == L'1') {
+        config->enable_gil = _PyConfig_GIL_ENABLE;
+    }
+    else {
+        return _PyStatus_ERR("PYTHON_GIL / -X gil must be \"0\" or \"1\"");
+    }
+    return _PyStatus_OK();
+#else
+    return _PyStatus_ERR("PYTHON_GIL / -X gil are not supported by this build");
+#endif
+}
 
 static PyStatus
 config_read_env_vars(PyConfig *config)
@@ -1650,6 +1677,15 @@ config_read_env_vars(PyConfig *config)
 
     if (config_get_env(config, "PYTHONSAFEPATH")) {
         config->safe_path = 1;
+    }
+
+    const char *gil = config_get_env(config, "PYTHON_GIL");
+    if (gil != NULL) {
+        size_t len = strlen(gil);
+        status = config_read_gil(config, len, gil[0]);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     return _PyStatus_OK();
@@ -2205,6 +2241,15 @@ config_read(PyConfig *config, int compute_path_config)
     /* -X options */
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
+    }
+
+    const wchar_t *x_gil = config_get_xoption_value(config, L"gil");
+    if (x_gil != NULL) {
+        size_t len = wcslen(x_gil);
+        status = config_read_gil(config, len, x_gil[0]);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
 #ifdef Py_STATS

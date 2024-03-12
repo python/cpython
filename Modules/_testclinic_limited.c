@@ -4,11 +4,10 @@
 #undef Py_BUILD_CORE_MODULE
 #undef Py_BUILD_CORE_BUILTIN
 
+// For now, AC only supports the limited C API version 3.13
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
 #ifndef Py_GIL_DISABLED
-// For now, only limited C API 3.13 is supported
-#define Py_LIMITED_API 0x030d0000
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 /* Always enable assertions */
