@@ -1682,12 +1682,8 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
 #define IF_NEXT_SMALLER IFLT(lo[n], lo[n-1])
 
     assert(nremaining);
-    n = 1;
-    if (n == nremaining)
-        return 1;
-
     /* try ascending run first */
-    for ( ; n < nremaining; ++n) {
+    for (n = 1; n < nremaining; ++n) {
         IF_NEXT_SMALLER
             break;
     }
