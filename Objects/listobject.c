@@ -1179,7 +1179,7 @@ list_extend_fast(PyListObject *self, PyObject *iterable)
 }
 
 static int
-list_extend_iter(PyListObject *self, PyObject *iterable)
+list_extend_iter_lock_held(PyListObject *self, PyObject *iterable)
 {
     PyObject *it = PyObject_GetIter(iterable);
     if (it == NULL) {
@@ -1253,45 +1253,50 @@ list_extend_iter(PyListObject *self, PyObject *iterable)
     return -1;
 }
 
+static int
+list_extend_lock_held(PyListObject *self, PyObject *iterable)
+{
+    iterable = PySequence_Fast(iterable, "argument must be iterable");
+    if (!iterable) {
+        return -1;
+    }
+
+    int res = list_extend_fast(self, iterable);
+    Py_DECREF(iterable);
+    return res;
+}
 
 static int
-list_extend(PyListObject *self, PyObject *iterable)
+_list_extend(PyListObject *self, PyObject *iterable)
 {
     // Special cases:
     // 1) lists and tuples which can use PySequence_Fast ops
     // 2) extending self to self requires making a copy first
-    if (PyList_CheckExact(iterable)
-        || PyTuple_CheckExact(iterable)
-        || (PyObject *)self == iterable)
-    {
-        iterable = PySequence_Fast(iterable, "argument must be iterable");
-        if (!iterable) {
-            return -1;
-        }
-
-        int res = list_extend_fast(self, iterable);
-        Py_DECREF(iterable);
-        return res;
+    // TODO(@corona10): Add more special cases for other types.
+    int res = -1;
+    if ((PyObject *)self == iterable) {
+        res = list_extend_lock_held(self, iterable);
+    }
+    else if (PyList_CheckExact(iterable)) {
+        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+        res = list_extend_lock_held(self, iterable);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (PyTuple_CheckExact(iterable)) {
+        Py_BEGIN_CRITICAL_SECTION(self);
+        res = list_extend_lock_held(self, iterable);
+        Py_END_CRITICAL_SECTION();
     }
     else {
-        return list_extend_iter(self, iterable);
+        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+        res = list_extend_iter_lock_held(self, iterable);
+        Py_END_CRITICAL_SECTION2();
     }
+    return res;
 }
-
-
-PyObject *
-_PyList_Extend(PyListObject *self, PyObject *iterable)
-{
-    if (list_extend(self, iterable) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
 
 /*[clinic input]
-@critical_section self iterable
-list.extend as py_list_extend
+list.extend as list_extend
 
      iterable: object
      /
@@ -1300,12 +1305,20 @@ Extend list by appending elements from the iterable.
 [clinic start generated code]*/
 
 static PyObject *
-py_list_extend_impl(PyListObject *self, PyObject *iterable)
-/*[clinic end generated code: output=a2f115ceace2c845 input=1d42175414e1a5f3]*/
+list_extend(PyListObject *self, PyObject *iterable)
+/*[clinic end generated code: output=630fb3bca0c8e789 input=979da7597a515791]*/
 {
-    return _PyList_Extend(self, iterable);
+    if (_list_extend(self, iterable) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
+PyObject *
+_PyList_Extend(PyListObject *self, PyObject *iterable)
+{
+    return list_extend(self, iterable);
+}
 
 int
 PyList_Extend(PyObject *self, PyObject *iterable)
@@ -1314,7 +1327,7 @@ PyList_Extend(PyObject *self, PyObject *iterable)
         PyErr_BadInternalCall();
         return -1;
     }
-    return list_extend((PyListObject*)self, iterable);
+    return _list_extend((PyListObject*)self, iterable);
 }
 
 
@@ -1334,7 +1347,7 @@ static PyObject *
 list_inplace_concat(PyObject *_self, PyObject *other)
 {
     PyListObject *self = (PyListObject *)_self;
-    if (list_extend(self, other) < 0) {
+    if (_list_extend(self, other) < 0) {
         return NULL;
     }
     return Py_NewRef(self);
@@ -3168,7 +3181,7 @@ list___init___impl(PyListObject *self, PyObject *iterable)
         list_clear(self);
     }
     if (iterable != NULL) {
-        if (list_extend(self, iterable) < 0) {
+        if (_list_extend(self, iterable) < 0) {
             return -1;
         }
     }
@@ -3229,7 +3242,7 @@ static PyMethodDef list_methods[] = {
     LIST_COPY_METHODDEF
     LIST_APPEND_METHODDEF
     LIST_INSERT_METHODDEF
-    PY_LIST_EXTEND_METHODDEF
+    LIST_EXTEND_METHODDEF
     LIST_POP_METHODDEF
     LIST_REMOVE_METHODDEF
     LIST_INDEX_METHODDEF
