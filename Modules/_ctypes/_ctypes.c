@@ -944,7 +944,7 @@ CDataType_from_param(PyObject *type, PyObject *value)
             return NULL;
         }
         /* If we got a PyCArgObject, we must check if the object packed in it
-           is an instance of the type's dict->proto */
+           is an instance of the type's info->proto */
         if(info && ob) {
             res = PyObject_IsInstance(ob, info->proto);
             if (res == -1)
