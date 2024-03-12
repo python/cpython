@@ -1168,6 +1168,7 @@ The following recipes have a more mathematical flavor:
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> # Verify that the input is consumed lazily
     >>> it = iter('abcdef')
     >>> take(3, it)
     ['a', 'b', 'c']
@@ -1185,11 +1186,18 @@ The following recipes have a more mathematical flavor:
 
     >>> list(tail(3, 'ABCDEFG'))
     ['E', 'F', 'G']
+    >>> # Verify the input is consumed greedily
+    >>> input_iterator = iter('ABCDEFG')
+    >>> output_iterator = tail(3, input_iterator)
+    >>> list(input_iterator)
+    []
 
     >>> it = iter(range(10))
     >>> consume(it, 3)
+    >>> # Verify the input is consumed lazily
     >>> next(it)
     3
+    >>> # Verify the input is consumed completely
     >>> consume(it)
     >>> next(it, 'Done')
     'Done'
@@ -1198,6 +1206,7 @@ The following recipes have a more mathematical flavor:
     'd'
     >>> nth('abcde', 9) is None
     True
+    >>> # Verify that the input is consumed lazily
     >>> it = iter('abcde')
     >>> nth(it, 2)
     'c'
@@ -1208,6 +1217,9 @@ The following recipes have a more mathematical flavor:
     [True, True, True, False, False]
     >>> [all_equal(s, key=str.casefold) for s in ('', 'A', 'AaAa', 'AAAB', 'AAABA')]
     [True, True, True, False, False]
+    >>> # Verify that the input is consumed lazily and that only
+    >>> # one element of a second equivalence class is used to disprove
+    >>> # the assertion that all elements are equal.
     >>> it = iter('aaabbbccc')
     >>> all_equal(it)
     False
@@ -1235,6 +1247,11 @@ The following recipes have a more mathematical flavor:
 
     >>> list(ncycles('abc', 3))
     ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
+    >>> # Verify greedy consumption of input iterator
+    >>> input_iterator = iter('abc')
+    >>> output_iterator = ncycles(input_iterator, 3)
+    >>> list(input_iterator)
+    []
 
     >>> sum_of_squares([10, 20, 30])
     1400
@@ -1261,13 +1278,22 @@ The following recipes have a more mathematical flavor:
 
     >>> list(transpose([(1, 2, 3), (11, 22, 33)]))
     [(1, 11), (2, 22), (3, 33)]
+    >>> # Verify that the inputs are consumed lazily
+    >>> input1 = iter([1, 2, 3])
+    >>> input2 = iter([11, 22, 33])
+    >>> output_iterator = transpose([input1, input2])
+    >>> next(output_iterator)
+    (1, 11)
+    >>> list(zip(input1, input2))
+    [(2, 22), (3, 33)]
 
     >>> list(matmul([(7, 5), (3, 5)], [[2, 5], [7, 9]]))
     [(49, 80), (41, 60)]
     >>> list(matmul([[2, 5], [7, 9], [3, 4]], [[7, 11, 5, 4, 9], [3, 5, 2, 6, 3]]))
     [(29, 47, 20, 38, 33), (76, 122, 53, 82, 90), (33, 53, 23, 36, 39)]
 
-    >>> list(convolve([1, -1, -20], [1, -3]) == [1, -4, -17, 60]
+    >>> list(convolve([1, -1, -20], [1, -3])) == [1, -4, -17, 60]
+    True
     >>> data = [20, 40, 24, 32, 20, 28, 16]
     >>> list(convolve(data, [0.25, 0.25, 0.25, 0.25]))
     [5.0, 15.0, 21.0, 29.0, 29.0, 26.0, 24.0, 16.0, 11.0, 4.0]
@@ -1275,6 +1301,18 @@ The following recipes have a more mathematical flavor:
     [20, 20, -16, 8, -12, 8, -12, -16]
     >>> list(convolve(data, [1, -2, 1]))
     [20, 0, -36, 24, -20, 20, -20, -4, 16]
+    >>> # Verify signal is consumed lazily and the kernel greedily
+    >>> signal_iterator = iter([10, 20, 30, 40, 50])
+    >>> kernel_iterator = iter([1, 2, 3])
+    >>> output_iterator = convolve(signal_iterator, kernel_iterator)
+    >>> list(kernel_iterator)
+    []
+    >>> next(output_iterator)
+    10
+    >>> next(output_iterator)
+    40
+    >>> list(signal_iterator)
+    [30, 40, 50]
 
     >>> from fractions import Fraction
     >>> from decimal import Decimal
@@ -1362,6 +1400,17 @@ The following recipes have a more mathematical flavor:
     >>> # Test list input. Lists do not support None for the stop argument
     >>> list(iter_index(list('AABCADEAF'), 'A'))
     [0, 1, 4, 7]
+    >>> # Verify that input is consumed lazily
+    >>> input_iterator = iter('AABCADEAF')
+    >>> output_iterator = iter_index(input_iterator, 'A')
+    >>> next(output_iterator)
+    0
+    >>> next(output_iterator)
+    1
+    >>> next(output_iterator)
+    4
+    >>> ''.join(input_iterator)
+    'DEAF'
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
@@ -1513,6 +1562,17 @@ The following recipes have a more mathematical flavor:
     [0, 2, 4, 6, 8]
     >>> list(odds)
     [1, 3, 5, 7, 9]
+    >>> # Verify that the input is consumed lazily
+    >>> input_iterator = iter(range(10))
+    >>> evens, odds = partition(is_odd, input_iterator)
+    >>> next(odds)
+    1
+    >>> next(odds)
+    3
+    >>> next(evens)
+    0
+    >>> list(input_iterator)
+    [4, 5, 6, 7, 8, 9]
 
     >>> list(subslices('ABCD'))
     ['A', 'AB', 'ABC', 'ABCD', 'B', 'BC', 'BCD', 'C', 'CD', 'D']
@@ -1532,6 +1592,13 @@ The following recipes have a more mathematical flavor:
     ['A', 'B', 'C', 'D']
     >>> list(unique_everseen('ABBcCAD', str.casefold))
     ['A', 'B', 'c', 'D']
+    >>> # Verify that the input is consumed lazily
+    >>> input_iterator = iter('AAAABBBCCDAABBB')
+    >>> output_iterator = unique_everseen(input_iterator)
+    >>> next(output_iterator)
+    'A'
+    >>> ''.join(input_iterator)
+    'AAABBBCCDAABBB'
 
     >>> list(unique_justseen('AAAABBBCCDAABBB'))
     ['A', 'B', 'C', 'D', 'A', 'B']
@@ -1539,6 +1606,13 @@ The following recipes have a more mathematical flavor:
     ['A', 'B', 'C', 'A', 'D']
     >>> list(unique_justseen('ABBcCAD', str.casefold))
     ['A', 'B', 'c', 'A', 'D']
+    >>> # Verify that the input is consumed lazily
+    >>> input_iterator = iter('AAAABBBCCDAABBB')
+    >>> output_iterator = unique_justseen(input_iterator)
+    >>> next(output_iterator)
+    'A'
+    >>> ''.join(input_iterator)
+    'AAABBBCCDAABBB'
 
     >>> d = dict(a=1, b=2, c=3)
     >>> it = iter_except(d.popitem, KeyError)
@@ -1559,6 +1633,7 @@ The following recipes have a more mathematical flavor:
 
     >>> first_true('ABC0DEF1', '9', str.isdigit)
     '0'
+    >>> # Verify that inputs are consumed lazily
     >>> it = iter('ABC0DEF1')
     >>> first_true(it, predicate=str.isdigit)
     '0'
