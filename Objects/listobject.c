@@ -10,6 +10,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include <stddef.h>
 
 /*[clinic input]
@@ -1267,6 +1268,28 @@ list_extend_lock_held(PyListObject *self, PyObject *iterable)
 }
 
 static int
+list_extend_set(PyListObject *self, PySetObject *other)
+{
+    Py_ssize_t m = Py_SIZE(self);
+    Py_ssize_t n = PySet_GET_SIZE(other);
+    if (list_resize(self, m + n) < 0) {
+        return -1;
+    }
+    /* populate the end of self with iterable's items */
+    Py_ssize_t setpos = 0;
+    Py_hash_t hash;
+    PyObject *key;
+    PyObject **dest = self->ob_item + m;
+    while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
+        Py_INCREF(key);
+        *dest = key;
+        dest++;
+    }
+    Py_SET_SIZE(self, m + n);
+    return 0;
+}
+
+static int
 _list_extend(PyListObject *self, PyObject *iterable)
 {
     // Special cases:
@@ -1289,12 +1312,7 @@ _list_extend(PyListObject *self, PyObject *iterable)
     }
     else if (PyAnySet_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION2(self, iterable);
-        res = list_extend_lock_held(self, iterable);
-        Py_END_CRITICAL_SECTION2();
-    }
-    else if (PyDictKeys_Check(iterable)) {
-        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
-        res = list_extend_lock_held(self, iterable);
+        res = list_extend_set(self, (PySetObject *)iterable);
         Py_END_CRITICAL_SECTION2();
     }
     else {
