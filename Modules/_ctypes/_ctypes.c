@@ -491,7 +491,6 @@ CType_Type_dealloc(PyObject *self)
         StgInfo *info;
         if (PyStgInfo_FromType(st, self, &info) < 0) {
             PyErr_WriteUnraisable(self);
-            PyErr_Clear();
         }
         if (info) {
             PyMem_Free(info->ffi_type_pointer.elements);
