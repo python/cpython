@@ -23,12 +23,6 @@
 // Forward declarations
 static struct PyModuleDef thread_module;
 
-static void
-thread_run(void *boot_raw);
-struct bootstate;
-static void
-thread_bootstate_free(struct bootstate *boot, int decref);
-
 // Module state
 typedef struct {
     PyTypeObject *excepthook_type;
@@ -109,18 +103,6 @@ typedef struct {
 
     Py_ssize_t refcount;
 } ThreadHandle;
-
-// bootstate is used to "bootstrap" new threads. Any arguments needed by
-// `thread_run()`, which can only take a single argument due to platform
-// limitations, are contained in bootstate.
-struct bootstate {
-    PyThreadState *tstate;
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-    ThreadHandle *handle;
-    PyEvent handle_ready;
-};
 
 static inline int
 get_thread_handle_state(ThreadHandle *handle)
@@ -290,6 +272,99 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
         llist_remove(node);
         remove_from_shutdown_handles(handle);
     }
+}
+
+// bootstate is used to "bootstrap" new threads. Any arguments needed by
+// `thread_run()`, which can only take a single argument due to platform
+// limitations, are contained in bootstate.
+struct bootstate {
+    PyThreadState *tstate;
+    PyObject *func;
+    PyObject *args;
+    PyObject *kwargs;
+    ThreadHandle *handle;
+    PyEvent handle_ready;
+};
+
+static void
+thread_bootstate_free(struct bootstate *boot, int decref)
+{
+    if (decref) {
+        Py_DECREF(boot->func);
+        Py_DECREF(boot->args);
+        Py_XDECREF(boot->kwargs);
+    }
+    ThreadHandle_decref(boot->handle);
+    PyMem_RawFree(boot);
+}
+
+static void
+thread_run(void *boot_raw)
+{
+    struct bootstate *boot = (struct bootstate *) boot_raw;
+    PyThreadState *tstate = boot->tstate;
+
+    // Wait until the handle is marked as running
+    PyEvent_Wait(&boot->handle_ready);
+
+    // `handle` needs to be manipulated after bootstate has been freed
+    ThreadHandle *handle = boot->handle;
+    ThreadHandle_incref(handle);
+
+    // gh-108987: If _thread.start_new_thread() is called before or while
+    // Python is being finalized, thread_run() can called *after*.
+    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
+    // threads must exit, except of the thread calling Py_Finalize() whch holds
+    // the GIL and must not exit.
+    //
+    // At this stage, tstate can be a dangling pointer (point to freed memory),
+    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
+    if (_PyThreadState_MustExit(tstate)) {
+        // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
+        // These functions are called on tstate indirectly by Py_Finalize()
+        // which calls _PyInterpreterState_Clear().
+        //
+        // Py_DECREF() cannot be called because the GIL is not held: leak
+        // references on purpose. Python is being finalized anyway.
+        thread_bootstate_free(boot, 0);
+        goto exit;
+    }
+
+    _PyThreadState_Bind(tstate);
+    PyEval_AcquireThread(tstate);
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
+
+    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
+    if (res == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_SystemExit))
+            /* SystemExit is ignored silently */
+            PyErr_Clear();
+        else {
+            PyErr_FormatUnraisable(
+                "Exception ignored in thread started by %R", boot->func);
+        }
+    }
+    else {
+        Py_DECREF(res);
+    }
+
+    thread_bootstate_free(boot, 1);
+
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
+    PyThreadState_Clear(tstate);
+    _PyThreadState_DeleteCurrent(tstate);
+
+exit:
+    // Don't need to wait for this thread anymore
+    remove_from_shutdown_handles(handle);
+
+    _PyEvent_Notify(&handle->thread_is_exiting);
+    ThreadHandle_decref(handle);
+
+    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
+    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
+    // to open the libgcc_s.so library (ex: EMFILE error).
+    return;
 }
 
 static int
@@ -1620,88 +1695,6 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 }
 
 /* Module functions */
-
-static void
-thread_bootstate_free(struct bootstate *boot, int decref)
-{
-    if (decref) {
-        Py_DECREF(boot->func);
-        Py_DECREF(boot->args);
-        Py_XDECREF(boot->kwargs);
-    }
-    ThreadHandle_decref(boot->handle);
-    PyMem_RawFree(boot);
-}
-
-
-static void
-thread_run(void *boot_raw)
-{
-    struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate = boot->tstate;
-
-    // Wait until the handle is marked as running
-    PyEvent_Wait(&boot->handle_ready);
-
-    // `handle` needs to be manipulated after bootstate has been freed
-    ThreadHandle *handle = boot->handle;
-    ThreadHandle_incref(handle);
-
-    // gh-108987: If _thread.start_new_thread() is called before or while
-    // Python is being finalized, thread_run() can called *after*.
-    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
-    // threads must exit, except of the thread calling Py_Finalize() whch holds
-    // the GIL and must not exit.
-    //
-    // At this stage, tstate can be a dangling pointer (point to freed memory),
-    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
-    if (_PyThreadState_MustExit(tstate)) {
-        // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
-        // These functions are called on tstate indirectly by Py_Finalize()
-        // which calls _PyInterpreterState_Clear().
-        //
-        // Py_DECREF() cannot be called because the GIL is not held: leak
-        // references on purpose. Python is being finalized anyway.
-        thread_bootstate_free(boot, 0);
-        goto exit;
-    }
-
-    _PyThreadState_Bind(tstate);
-    PyEval_AcquireThread(tstate);
-    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
-
-    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_SystemExit))
-            /* SystemExit is ignored silently */
-            PyErr_Clear();
-        else {
-            PyErr_FormatUnraisable(
-                "Exception ignored in thread started by %R", boot->func);
-        }
-    }
-    else {
-        Py_DECREF(res);
-    }
-
-    thread_bootstate_free(boot, 1);
-
-    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
-    PyThreadState_Clear(tstate);
-    _PyThreadState_DeleteCurrent(tstate);
-
-exit:
-    // Don't need to wait for this thread anymore
-    remove_from_shutdown_handles(handle);
-
-    _PyEvent_Notify(&handle->thread_is_exiting);
-    ThreadHandle_decref(handle);
-
-    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
-    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
-    // to open the libgcc_s.so library (ex: EMFILE error).
-    return;
-}
 
 static PyObject *
 thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
