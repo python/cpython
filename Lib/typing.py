@@ -144,6 +144,7 @@ __all__ = [
     'override',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'ReadOnly',
     'Required',
     'reveal_type',
     'runtime_checkable',
@@ -2301,7 +2302,7 @@ def _strip_annotations(t):
     """Strip the annotations from a given type."""
     if isinstance(t, _AnnotatedAlias):
         return _strip_annotations(t.__origin__)
-    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired):
+    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired, ReadOnly):
         return _strip_annotations(t.__args__[0])
     if isinstance(t, _GenericAlias):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
@@ -2922,6 +2923,28 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
+def _get_typeddict_qualifiers(annotation_type):
+    while True:
+        annotation_origin = get_origin(annotation_type)
+        if annotation_origin is Annotated:
+            annotation_args = get_args(annotation_type)
+            if annotation_args:
+                annotation_type = annotation_args[0]
+            else:
+                break
+        elif annotation_origin is Required:
+            yield Required
+            (annotation_type,) = get_args(annotation_type)
+        elif annotation_origin is NotRequired:
+            yield NotRequired
+            (annotation_type,) = get_args(annotation_type)
+        elif annotation_origin is ReadOnly:
+            yield ReadOnly
+            (annotation_type,) = get_args(annotation_type)
+        else:
+            break
+
+
 class _TypedDictMeta(type):
     def __new__(cls, name, bases, ns, total=True):
         """Create a new typed dict class object.
@@ -2955,6 +2978,8 @@ class _TypedDictMeta(type):
         }
         required_keys = set()
         optional_keys = set()
+        readonly_keys = set()
+        mutable_keys = set()
 
         for base in bases:
             annotations.update(base.__dict__.get('__annotations__', {}))
@@ -2967,18 +2992,15 @@ class _TypedDictMeta(type):
             required_keys -= base_optional
             optional_keys |= base_optional
 
+            readonly_keys.update(base.__dict__.get('__readonly_keys__', ()))
+            mutable_keys.update(base.__dict__.get('__mutable_keys__', ()))
+
         annotations.update(own_annotations)
         for annotation_key, annotation_type in own_annotations.items():
-            annotation_origin = get_origin(annotation_type)
-            if annotation_origin is Annotated:
-                annotation_args = get_args(annotation_type)
-                if annotation_args:
-                    annotation_type = annotation_args[0]
-                    annotation_origin = get_origin(annotation_type)
-
-            if annotation_origin is Required:
+            qualifiers = set(_get_typeddict_qualifiers(annotation_type))
+            if Required in qualifiers:
                 is_required = True
-            elif annotation_origin is NotRequired:
+            elif NotRequired in qualifiers:
                 is_required = False
             else:
                 is_required = total
@@ -2990,6 +3012,17 @@ class _TypedDictMeta(type):
                 optional_keys.add(annotation_key)
                 required_keys.discard(annotation_key)
 
+            if ReadOnly in qualifiers:
+                if annotation_key in mutable_keys:
+                    raise TypeError(
+                        f"Cannot override mutable key {annotation_key!r}"
+                        " with read-only key"
+                    )
+                readonly_keys.add(annotation_key)
+            else:
+                mutable_keys.add(annotation_key)
+                readonly_keys.discard(annotation_key)
+
         assert required_keys.isdisjoint(optional_keys), (
             f"Required keys overlap with optional keys in {name}:"
             f" {required_keys=}, {optional_keys=}"
@@ -2997,6 +3030,8 @@ class _TypedDictMeta(type):
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
+        tp_dict.__readonly_keys__ = frozenset(readonly_keys)
+        tp_dict.__mutable_keys__ = frozenset(mutable_keys)
         tp_dict.__total__ = total
         return tp_dict
 
@@ -3055,6 +3090,14 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
             y: NotRequired[int]  # the "y" key can be omitted
 
     See PEP 655 for more details on Required and NotRequired.
+
+    The ReadOnly special form can be used
+    to mark individual keys as immutable for type checkers::
+
+        class DatabaseUser(TypedDict):
+            id: ReadOnly[int]  # the "id" key must not be modified
+            username: str      # the "username" key can be changed
+
     """
     if fields is _sentinel or fields is None:
         import warnings
@@ -3126,6 +3169,26 @@ def NotRequired(self, parameters):
             title='The Matrix',  # typechecker error if key is omitted
             year=1999,
         )
+    """
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
+    return _GenericAlias(self, (item,))
+
+
+@_SpecialForm
+def ReadOnly(self, parameters):
+    """A special typing construct to mark an item of a TypedDict as read-only.
+
+    For example::
+
+        class Movie(TypedDict):
+            title: ReadOnly[str]
+            year: int
+
+        def mutate_movie(m: Movie) -> None:
+            m["year"] = 1992  # allowed
+            m["title"] = "The Matrix"  # typechecker error
+
+    There is no runtime checking for this property.
     """
     item = _type_check(parameters, f'{self._name} accepts only a single type.')
     return _GenericAlias(self, (item,))

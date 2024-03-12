@@ -602,6 +602,10 @@ typing
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
 
+* Add :data:`typing.ReadOnly`, a special typing construct to mark
+  an item of a :class:`typing.TypedDict` as read-only for type checkers.
+  See :pep:`705` for more details.
+
 unicodedata
 -----------
 

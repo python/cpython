@@ -31,7 +31,7 @@ from typing import reveal_type
 from typing import dataclass_transform
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
-from typing import NamedTuple, NotRequired, Required, TypedDict
+from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
@@ -8321,6 +8321,69 @@ class TypedDictTests(BaseTestCase):
                 self.assertEqual(klass.__required_keys__, set())
                 self.assertEqual(klass.__optional_keys__, set())
                 self.assertIsInstance(klass(), dict)
+
+    def test_readonly_inheritance(self):
+        class Base1(TypedDict):
+            a: ReadOnly[int]
+
+        class Child1(Base1):
+            b: str
+
+        self.assertEqual(Child1.__readonly_keys__, frozenset({'a'}))
+        self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
+
+        class Base2(TypedDict):
+            a: ReadOnly[int]
+
+        class Child2(Base2):
+            b: str
+
+        self.assertEqual(Child1.__readonly_keys__, frozenset({'a'}))
+        self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
+
+    def test_cannot_make_mutable_key_readonly(self):
+        class Base(TypedDict):
+            a: int
+
+        with self.assertRaises(TypeError):
+            class Child(Base):
+                a: ReadOnly[int]
+
+    def test_can_make_readonly_key_mutable(self):
+        class Base(TypedDict):
+            a: ReadOnly[int]
+
+        class Child(Base):
+            a: int
+
+        self.assertEqual(Child.__readonly_keys__, frozenset())
+        self.assertEqual(Child.__mutable_keys__, frozenset({'a'}))
+
+    def test_combine_qualifiers(self):
+        class AllTheThings(TypedDict):
+            a: Annotated[Required[ReadOnly[int]], "why not"]
+            b: Required[Annotated[ReadOnly[int], "why not"]]
+            c: ReadOnly[NotRequired[Annotated[int, "why not"]]]
+            d: NotRequired[Annotated[int, "why not"]]
+
+        self.assertEqual(AllTheThings.__required_keys__, frozenset({'a', 'b'}))
+        self.assertEqual(AllTheThings.__optional_keys__, frozenset({'c', 'd'}))
+        self.assertEqual(AllTheThings.__readonly_keys__, frozenset({'a', 'b', 'c'}))
+        self.assertEqual(AllTheThings.__mutable_keys__, frozenset({'d'}))
+
+        self.assertEqual(
+            get_type_hints(AllTheThings, include_extras=False),
+            {'a': int, 'b': int, 'c': int, 'd': int},
+        )
+        self.assertEqual(
+            get_type_hints(AllTheThings, include_extras=True),
+            {
+                'a': Annotated[Required[ReadOnly[int]], 'why not'],
+                'b': Required[Annotated[ReadOnly[int], 'why not']],
+                'c': ReadOnly[NotRequired[Annotated[int, 'why not']]],
+                'd': NotRequired[Annotated[int, 'why not']],
+            },
+        )
 
 
 class RequiredTests(BaseTestCase):
