@@ -1298,7 +1298,9 @@ _list_extend(PyListObject *self, PyObject *iterable)
     // TODO(@corona10): Add more special cases for other types.
     int res = -1;
     if ((PyObject *)self == iterable) {
+        Py_BEGIN_CRITICAL_SECTION(self);
         res = list_extend_lock_held(self, iterable);
+        Py_END_CRITICAL_SECTION();
     }
     else if (PyList_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION2(self, iterable);
