@@ -2496,3 +2496,5 @@
 [typedef.PyCFunctionFastWithKeywords]
     added = '3.13'
     # "abi-only" since 3.10.  (Same story as PyCFunctionFast.)
+[function.PyLong_FileDescriptor_Converter]
+    added = '3.13'

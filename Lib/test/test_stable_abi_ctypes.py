@@ -396,6 +396,7 @@ SYMBOL_NAMES = (
     "PyLong_AsUnsignedLongLongMask",
     "PyLong_AsUnsignedLongMask",
     "PyLong_AsVoidPtr",
+    "PyLong_FileDescriptor_Converter",
     "PyLong_FromDouble",
     "PyLong_FromLong",
     "PyLong_FromLongLong",
