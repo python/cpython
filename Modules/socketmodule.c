@@ -3249,6 +3249,17 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
             return PyLong_FromUnsignedLong(vflag);
         }
 #endif
+
+#ifdef AF_RDS
+        if (s->sock_family == AF_RDS) {
+            res = getsockopt(s->sock_fd, level, optname,
+                        buf, &buflen);
+            if (res < 0){
+                return PyLong_FromUnsignedLong(buflen);
+            }
+        }
+#endif
+
         flagsize = sizeof flag;
         res = getsockopt(s->sock_fd, level, optname,
                          (void *)&flag, &flagsize);
@@ -3263,11 +3274,20 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
         return NULL;
         }
 #endif
+
+#ifdef AF_RDS
+    if (s->sock_family == AF_RDS) {
+        goto get_buf;
+    }
+#endif
+
     if (buflen <= 0 || buflen > 1024) {
         PyErr_SetString(PyExc_OSError,
                         "getsockopt buflen out of range");
         return NULL;
     }
+
+get_buf:
     buf = PyBytes_FromStringAndSize((char *)NULL, buflen);
     if (buf == NULL)
         return NULL;
@@ -3278,6 +3298,15 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
         return s->errorhandler();
     }
     _PyBytes_Resize(&buf, buflen);
+
+#ifdef AF_RDS
+    if (s->sock_family == AF_RDS) {
+        PyObject *each = PyBytes_FromFormat("%d",res);
+        _PyBytes_Resize(&each, 4);
+        PyBytes_Concat(&buf, each);
+    }
+#endif
+
     return buf;
 }
 
