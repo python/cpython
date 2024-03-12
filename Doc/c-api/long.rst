@@ -467,7 +467,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: int PyLong_FileDescriptor_Converter(PyObject *p, void *ptr)
 
    Convert a Python object to a file descript (C ``int`` type).
-   Set `*ptr` and return ``1`` on success. Set an exception and return ``0`` on error.
+   Set *\*ptr* and return ``1`` on success. Set an exception and return ``0`` on error.
 
    It can be used with the ``O&`` format when :ref:`parsing arguments
    <arg-parsing>`.
