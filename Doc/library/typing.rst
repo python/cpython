@@ -1277,7 +1277,7 @@ These can be used as types in annotations. They all support subscription using
 
 .. data:: ReadOnly
 
-   A special typing construct to mark an item of a TypedDict as read-only.
+   A special typing construct to mark an item of a :class:`TypedDict` as read-only.
 
    For example::
 
@@ -2475,7 +2475,7 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
-   Support of :data:`ReadOnly` is reflected in the following attributes::
+   Support for :data:`ReadOnly` is reflected in the following attributes::
 
    .. attribute:: __readonly_keys__
 
