@@ -1701,7 +1701,6 @@ idna_converter(PyObject *obj, struct maybe_idna *data)
         return 1;
     }
     data->obj = NULL;
-    len = -1;
     if (PyBytes_Check(obj)) {
         data->buf = PyBytes_AsString(obj);
         len = PyBytes_Size(obj);
