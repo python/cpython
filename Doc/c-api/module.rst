@@ -411,6 +411,31 @@ The available slot types are:
 
    .. versionadded:: 3.12
 
+.. c:macro: Py_mod_gil
+
+   Specifies one of the following values:
+
+   .. c:macro:: Py_MOD_GIL_USED
+
+      The module assumes the presence of the global interpreter lock (GIL), and
+      may access global state without synchronization.
+
+   .. c:macro:: Py_MOD_GIL_NOT_USED
+
+      The module is safe to run without an active GIL.
+
+   This slot is only used by Python builds configured with
+   :option:`--disable-gil`, and determines whether or not importing this module
+   will cause the GIL to be automatically enabled. See :envvar:`PYTHON_GIL` and
+   :option:`-X gil <-X>` for more detail.
+
+   Multiple ``Py_mod_gil`` slots may not be specified in one module definition.
+
+   If ``Py_mod_gil`` is not specified, the import machinery defaults to
+   ``Py_MOD_GIL_USED``.
+
+   .. versionadded: 3.13
+
 See :PEP:`489` for more details on multi-phase initialization.
 
 Low-level module creation functions

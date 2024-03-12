@@ -3,6 +3,8 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_EnableGIL()
+#include "pycore_initconfig.h"    // _PyConfig_GIL_DEFAULT
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
@@ -249,6 +251,8 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     PyObject *m = NULL;
     int has_multiple_interpreters_slot = 0;
     void *multiple_interpreters = (void *)0;
+    int has_gil_slot = 0;
+    void *gil_slot = (void *)Py_MOD_GIL_USED;
     int has_execution_slots = 0;
     const char *name;
     int ret;
@@ -303,6 +307,17 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 multiple_interpreters = cur_slot->value;
                 has_multiple_interpreters_slot = 1;
                 break;
+            case Py_mod_gil:
+                if (has_gil_slot) {
+                    PyErr_Format(
+                       PyExc_SystemError,
+                       "module %s has more than one 'gil' slot",
+                       name);
+                    goto error;
+                }
+                gil_slot = cur_slot->value;
+                has_gil_slot = 1;
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -332,6 +347,27 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     {
         goto error;
     }
+
+#ifdef Py_GIL_DISABLED
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+    if (gil_slot == Py_MOD_GIL_USED && config->enable_gil == _PyConfig_GIL_DEFAULT) {
+        if (_PyEval_EnableGIL(tstate)) {
+            PyErr_WarnFormat(
+                PyExc_RuntimeWarning,
+                1,
+                "The global interpreter lock (GIL) has been enabled to load "
+                "module '%s', which has not declared that it can run safely "
+                "without the GIL. To override this behavior and keep the GIL "
+                "disabled (at your own risk), run with PYTHON_GIL=0 or -Xgil=0.",
+                name
+            );
+        }
+        if (config->verbose) {
+            PySys_FormatStderr("# loading module '%s', which requires the GIL\n", name);
+        }
+    }
+#endif
 
     if (create) {
         m = create(spec, def);
@@ -458,6 +494,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 }
                 break;
             case Py_mod_multiple_interpreters:
+            case Py_mod_gil:
                 /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:

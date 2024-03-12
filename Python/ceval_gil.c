@@ -969,6 +969,51 @@ _PyEval_InitState(PyInterpreterState *interp)
     _gil_initialize(&interp->_gil);
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyEval_EnableGIL(PyThreadState *tstate)
+{
+    struct _gil_runtime_state *gil = tstate->interp->ceval.gil;
+
+    // gil->enabled only transitions from 0 to 1, and only while the world is
+    // stopped, so this can be read without any synchronization.
+    if (gil->enabled) {
+        return 0;
+    }
+
+    // Enabling the GIL changes what it means to be an "attached" thread. To
+    // safely make this transition, we:
+    // 1. Detach the current thread.
+    // 2. Stop the world to detach (and suspend) all other threads.
+    // 3. Enable the GIL, if nobody else did between our check above and when
+    //    our stop-the-world begins.
+    // 4. Start the world.
+    // 5. Attach the current thread. Other threads may attach and hold the GIL
+    //    before this thread, which is harmless.
+    _PyThreadState_Detach(tstate);
+
+    // This could be an interpreter-local stop-the-world in situations where we
+    // know that this interpreter's GIL is not shared (and that it won't become
+    // shared before the stop-the-world begins). This operation will happen at
+    // most once per interpreter, though, so we always stop the whole world to
+    // keep things simpler.
+    _PyEval_StopTheWorldAll(&_PyRuntime);
+
+    int this_thread_enabled = 1;
+    if (gil->enabled) {
+        // A different thread enabled the GIL since our check above.
+        this_thread_enabled = 0;
+    } else {
+        gil->enabled = 1;
+    }
+
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+    _PyThreadState_Attach(tstate);
+
+    return this_thread_enabled;
+}
+#endif
+
 
 /* Do periodic things, like check for signals and async I/0.
 * We need to do reasonably frequently, but not too frequently.
