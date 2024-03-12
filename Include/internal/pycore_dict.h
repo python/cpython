@@ -167,7 +167,7 @@ struct _dictkeysobject {
     char dk_indices[];  /* char is required to avoid strict aliasing. */
 
     /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
-       see the DK_ENTRIES() macro */
+       see the DK_ENTRIES() / DK_UNICODE_ENTRIES() functions below */
 };
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */
