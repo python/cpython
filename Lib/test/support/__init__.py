@@ -520,7 +520,7 @@ MS_WINDOWS = (sys.platform == 'win32')
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
-is_android = hasattr(sys, 'getandroidapilevel')
+is_android = sys.platform == "android"
 
 if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -1153,8 +1153,9 @@ def refcount_test(test):
 def requires_limited_api(test):
     try:
         import _testcapi
+        import _testlimitedcapi
     except ImportError:
-        return unittest.skip('needs _testcapi module')(test)
+        return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
 
 def requires_specialization(test):

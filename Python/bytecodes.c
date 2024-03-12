@@ -129,6 +129,8 @@ dummy_func(
     PyObject *top;
     PyObject *type;
     PyObject *typevars;
+    PyObject *val0;
+    PyObject *val1;
     int values_or_none;
 
     switch (opcode) {
@@ -382,14 +384,15 @@ dummy_func(
             }
         }
 
-        inst(TO_BOOL_ALWAYS_TRUE, (unused/1, version/2, value -- res)) {
-            // This one is a bit weird, because we expect *some* failures:
-            assert(version);
-            EXIT_IF(Py_TYPE(value)->tp_version_tag != version);
-            STAT_INC(TO_BOOL, hit);
-            DECREF_INPUTS();
+        op(_REPLACE_WITH_TRUE, (value -- res)) {
+            Py_DECREF(value);
             res = Py_True;
         }
+
+        macro(TO_BOOL_ALWAYS_TRUE) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _REPLACE_WITH_TRUE;
 
         inst(UNARY_INVERT, (value -- res)) {
             res = PyNumber_Invert(value);
@@ -1222,13 +1225,13 @@ dummy_func(
 
         macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE;
 
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- values[oparg])) {
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- val1, val0)) {
+            assert(oparg == 2);
             DEOPT_IF(!PyTuple_CheckExact(seq));
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2);
-            assert(oparg == 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
-            values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            val0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            val1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
             DECREF_INPUTS();
         }
 
@@ -1306,14 +1309,14 @@ dummy_func(
 
         inst(DELETE_GLOBAL, (--)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            int err;
-            err = PyDict_DelItem(GLOBALS(), name);
+            int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
-            if (err != 0) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                              NAME_ERROR_MSG, name);
-                }
+            if (err < 0) {
+                GOTO_ERROR(error);
+            }
+            if (err == 0) {
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                                          NAME_ERROR_MSG, name);
                 GOTO_ERROR(error);
             }
         }
@@ -2236,8 +2239,46 @@ dummy_func(
             b = res ? Py_True : Py_False;
         }
 
-        inst(CONTAINS_OP, (left, right -- b)) {
+        family(CONTAINS_OP, INLINE_CACHE_ENTRIES_CONTAINS_OP) = {
+            CONTAINS_OP_SET,
+            CONTAINS_OP_DICT,
+        };
+
+        op(_CONTAINS_OP, (left, right -- b)) {
             int res = PySequence_Contains(right, left);
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
+            b = (res ^ oparg) ? Py_True : Py_False;
+        }
+
+        specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_ContainsOp(right, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(CONTAINS_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+
+        macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;
+
+        inst(CONTAINS_OP_SET, (unused/1, left, right -- b)) {
+            DEOPT_IF(!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right)));
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
+            int res = _PySet_Contains((PySetObject *)right, left);
+            DECREF_INPUTS();
+            ERROR_IF(res < 0, error);
+            b = (res ^ oparg) ? Py_True : Py_False;
+        }
+
+        inst(CONTAINS_OP_DICT, (unused/1, left, right -- b)) {
+            DEOPT_IF(!PyDict_CheckExact(right));
+            STAT_INC(CONTAINS_OP, hit);
+            int res = PyDict_Contains(right, left);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
             b = (res ^ oparg) ? Py_True : Py_False;
@@ -3197,39 +3238,33 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
-            PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type);
             STAT_INC(CALL, hit);
-            res = Py_NewRef(Py_TYPE(obj));
-            Py_DECREF(obj);
-            Py_DECREF(&PyType_Type);  // I.e., callable
+            res = Py_NewRef(Py_TYPE(arg));
+            Py_DECREF(arg);
         }
 
-        inst(CALL_STR_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        inst(CALL_STR_1, (unused/1, unused/2, callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PyObject_Str(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyUnicode_Type);  // I.e., callable
             ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_TUPLE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        inst(CALL_TUPLE_1, (unused/1, unused/2, callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyTuple_Type);  // I.e., tuple
             ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }
@@ -3451,14 +3486,14 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
+        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- unused)) {
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
             assert(self != NULL);
             DEOPT_IF(!PyList_Check(self));
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             Py_DECREF(self);
@@ -4057,12 +4092,9 @@ dummy_func(
             null = NULL;
         }
 
-        tier2 op(_CHECK_GLOBALS, (dict/4 -- )) {
-            DEOPT_IF(GLOBALS() != dict);
-        }
-
-        tier2 op(_CHECK_BUILTINS, (dict/4 -- )) {
-            DEOPT_IF(BUILTINS() != dict);
+        tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
+            assert(PyFunction_Check(frame->f_funcobj));
+            DEOPT_IF(((PyFunctionObject *)frame->f_funcobj)->func_version != func_version);
         }
 
         /* Internal -- for testing executors */

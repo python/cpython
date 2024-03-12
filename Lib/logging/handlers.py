@@ -23,11 +23,17 @@ Copyright (C) 2001-2021 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging.handlers' and log away!
 """
 
-import io, logging, socket, os, pickle, struct, time, re
-from stat import ST_DEV, ST_INO, ST_MTIME
-import queue
-import threading
 import copy
+import io
+import logging
+import os
+import pickle
+import queue
+import re
+import socket
+import struct
+import threading
+import time
 
 #
 # Some constants...
@@ -269,7 +275,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         # path object (see Issue #27493), but self.baseFilename will be a string
         filename = self.baseFilename
         if os.path.exists(filename):
-            t = os.stat(filename)[ST_MTIME]
+            t = int(os.stat(filename).st_mtime)
         else:
             t = int(time.time())
         self.rolloverAt = self.computeRollover(t)
@@ -459,8 +465,7 @@ class WatchedFileHandler(logging.FileHandler):
     This handler is not appropriate for use under Windows, because
     under Windows open files cannot be moved or renamed - logging
     opens the files with exclusive locks - and so there is no need
-    for such a handler. Furthermore, ST_INO is not supported under
-    Windows; stat always returns zero for this value.
+    for such a handler.
 
     This handler is based on a suggestion and patch by Chad J.
     Schroeder.
@@ -476,9 +481,11 @@ class WatchedFileHandler(logging.FileHandler):
         self._statstream()
 
     def _statstream(self):
-        if self.stream:
-            sres = os.fstat(self.stream.fileno())
-            self.dev, self.ino = sres[ST_DEV], sres[ST_INO]
+        if self.stream is None:
+            return
+        sres = os.fstat(self.stream.fileno())
+        self.dev = sres.st_dev
+        self.ino = sres.st_ino
 
     def reopenIfNeeded(self):
         """
@@ -488,6 +495,9 @@ class WatchedFileHandler(logging.FileHandler):
         has, close the old stream and reopen the file to get the
         current stream.
         """
+        if self.stream is None:
+            return
+
         # Reduce the chance of race conditions by stat'ing by path only
         # once and then fstat'ing our new fd if we opened a new log stream.
         # See issue #14632: Thanks to John Mulligan for the problem report
@@ -495,18 +505,23 @@ class WatchedFileHandler(logging.FileHandler):
         try:
             # stat the file by path, checking for existence
             sres = os.stat(self.baseFilename)
+
+            # compare file system stat with that of our stream file handle
+            reopen = (sres.st_dev != self.dev or sres.st_ino != self.ino)
         except FileNotFoundError:
-            sres = None
-        # compare file system stat with that of our stream file handle
-        if not sres or sres[ST_DEV] != self.dev or sres[ST_INO] != self.ino:
-            if self.stream is not None:
-                # we have an open file handle, clean it up
-                self.stream.flush()
-                self.stream.close()
-                self.stream = None  # See Issue #21742: _open () might fail.
-                # open a new file handle and get new stat info from that fd
-                self.stream = self._open()
-                self._statstream()
+            reopen = True
+
+        if not reopen:
+            return
+
+        # we have an open file handle, clean it up
+        self.stream.flush()
+        self.stream.close()
+        self.stream = None  # See Issue #21742: _open () might fail.
+
+        # open a new file handle and get new stat info from that fd
+        self.stream = self._open()
+        self._statstream()
 
     def emit(self, record):
         """

@@ -268,7 +268,9 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
 skip_optional_kwonly:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = list_sort_impl(self, keyfunc, reverse);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -452,4 +454,4 @@ list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl(self);
 }
-/*[clinic end generated code: output=26dfb2c9846348f9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a77eda9931ec0c20 input=a9049054013a1b77]*/

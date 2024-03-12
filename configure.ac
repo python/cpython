@@ -362,6 +362,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -377,6 +378,52 @@ then
     fi
 fi
 AC_MSG_RESULT(["$MACHDEP"])
+
+# On cross-compile builds, configure will look for a host-specific compiler by
+# prepending the user-provided host triple to the required binary name.
+#
+# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# which isn't a binary that exists, and isn't very convenient, as it contains the
+# iOS version. As the default cross-compiler name won't exist, configure falls
+# back to gcc, which *definitely* won't work. We're providing wrapper scripts for
+# these tools; the binary names of these scripts are better defaults than "gcc".
+# This only requires that the user put the platform scripts folder (e.g.,
+# "iOS/Resources/bin") in their path, rather than defining platform-specific
+# names/paths for AR, CC, CPP, and CXX explicitly; and if the user forgets to
+# either put the platform scripts folder in the path, or specify CC etc,
+# configure will fail.
+if test -z "$AR"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) AR=arm64-apple-ios-simulator-ar ;;
+		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
+		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
+		*)
+	esac
+fi
+if test -z "$CC"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CC=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CC=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CC=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
+if test -z "$CPP"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CPP=arm64-apple-ios-simulator-cpp ;;
+		aarch64-apple-ios*)           CPP=arm64-apple-ios-cpp ;;
+		x86_64-apple-ios*-simulator)  CPP=x86_64-apple-ios-simulator-cpp ;;
+		*)
+	esac
+fi
+if test -z "$CXX"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
 
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE([universalsdk],
@@ -487,37 +534,38 @@ AC_ARG_ENABLE([framework],
 [
 	case $enableval in
 	yes)
-		if test "$ac_sys_system" = "iOS"; then
-			AC_MSG_ERROR([iOS builds must provide an explicit path for --enable-framework])
-		fi
-
-		enableval=/Library/Frameworks
+		case $ac_sys_system in
+			Darwin) enableval=/Library/Frameworks ;;
+			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
+			*) AC_MSG_ERROR([Unknown platform for framework build])
+		esac
 	esac
+
 	case $enableval in
 	no)
-		if test "$ac_sys_system" = "iOS"; then
-			AC_MSG_ERROR([iOS builds must use --enable-framework=<install path>])
-		fi
+		case $ac_sys_system in
+			iOS) AC_MSG_ERROR([iOS builds must use --enable-framework]) ;;
+			*)
+				PYTHONFRAMEWORK=
+				PYTHONFRAMEWORKDIR=no-framework
+				PYTHONFRAMEWORKPREFIX=
+				PYTHONFRAMEWORKINSTALLDIR=
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+				RESSRCDIR=
+				FRAMEWORKINSTALLFIRST=
+				FRAMEWORKINSTALLLAST=
+				FRAMEWORKALTINSTALLFIRST=
+				FRAMEWORKALTINSTALLLAST=
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="commoninstall bininstall maninstall"
 
-		PYTHONFRAMEWORK=
-		PYTHONFRAMEWORKDIR=no-framework
-		PYTHONFRAMEWORKPREFIX=
-		PYTHONFRAMEWORKINSTALLDIR=
-		PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-		RESSRCDIR=
-		FRAMEWORKINSTALLFIRST=
-		FRAMEWORKINSTALLLAST=
-		FRAMEWORKALTINSTALLFIRST=
-		FRAMEWORKALTINSTALLLAST=
-		FRAMEWORKPYTHONW=
-		INSTALLTARGETS="commoninstall bininstall maninstall"
-
-		if test "x${prefix}" = "xNONE"; then
-			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-		else
-			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-		fi
-		enable_framework=
+				if test "x${prefix}" = "xNONE"; then
+					FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+				else
+					FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+				fi
+				enable_framework=
+		esac
 		;;
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
@@ -605,29 +653,28 @@ AC_ARG_ENABLE([framework],
 			esac
 		esac
 	],[
-	if test "$ac_sys_system" = "iOS"; then
-		AC_MSG_ERROR([iOS builds must use --enable-framework=<install path>])
-	fi
-
-	PYTHONFRAMEWORK=
-	PYTHONFRAMEWORKDIR=no-framework
-	PYTHONFRAMEWORKPREFIX=
-	PYTHONFRAMEWORKINSTALLDIR=
-	PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-	RESSRCDIR=
-	FRAMEWORKINSTALLFIRST=
-	FRAMEWORKINSTALLLAST=
-	FRAMEWORKALTINSTALLFIRST=
-	FRAMEWORKALTINSTALLLAST=
-	FRAMEWORKPYTHONW=
-	INSTALLTARGETS="commoninstall bininstall maninstall"
-	if test "x${prefix}" = "xNONE" ; then
-		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-	else
-		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-	fi
-	enable_framework=
-
+	case $ac_sys_system in
+		iOS) AC_MSG_ERROR([iOS builds must use --enable-framework]) ;;
+		*)
+			PYTHONFRAMEWORK=
+			PYTHONFRAMEWORKDIR=no-framework
+			PYTHONFRAMEWORKPREFIX=
+			PYTHONFRAMEWORKINSTALLDIR=
+			PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+			RESSRCDIR=
+			FRAMEWORKINSTALLFIRST=
+			FRAMEWORKINSTALLLAST=
+			FRAMEWORKALTINSTALLFIRST=
+			FRAMEWORKALTINSTALLLAST=
+			FRAMEWORKPYTHONW=
+			INSTALLTARGETS="commoninstall bininstall maninstall"
+			if test "x${prefix}" = "xNONE" ; then
+				FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+			else
+				FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+			fi
+			enable_framework=
+	esac
 ])
 AC_SUBST([PYTHONFRAMEWORK])
 AC_SUBST([PYTHONFRAMEWORKIDENTIFIER])
@@ -3320,8 +3367,8 @@ then
 		fi
 		;;
 	iOS/*)
-		LDSHARED='$(CC) -dynamiclib -F . -framework Python'
-		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework Python'
+		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
 	Emscripten|WASI)
@@ -6767,6 +6814,7 @@ SRCDIRS="\
   Modules/_sre \
   Modules/_testcapi \
   Modules/_testinternalcapi \
+  Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -7576,10 +7624,12 @@ PY_STDLIB_MOD([_testcapi],
     [], [], [$LIBATOMIC])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testlimitedcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([_testsinglephase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testexternalinspection], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
