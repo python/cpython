@@ -910,10 +910,11 @@ which incur interpreter overhead.
        else:
            # Fast path for sequences
            stop = len(iterable) if stop is None else stop
-           i = start - 1
+           i = start
            try:
                while True:
-                   yield (i := seq_index(value, i+1, stop))
+                   yield (i := seq_index(value, i, stop))
+                   i += 1
            except ValueError:
                pass
 
