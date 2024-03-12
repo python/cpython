@@ -1368,7 +1368,11 @@ class _NamespacePath:
 
     def _get_parent_path(self):
         parent_module_name, path_attr_name = self._find_parent_path_names()
-        return getattr(sys.modules[parent_module_name], path_attr_name)
+        try:
+            module = sys.modules[parent_module_name]
+        except KeyError:
+            return sys.path
+        return getattr(module, path_attr_name)
 
     def _recalculate(self):
         # If the parent's path has changed, recalculate _path

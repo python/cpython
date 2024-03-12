@@ -319,6 +319,17 @@ class ModuleAndNamespacePackageInSameDir(NamespacePackageTest):
         self.assertEqual(a_test.attr, 'in module')
 
 
+class DirectoryHomonym(NamespacePackageTest):
+    paths = ['']
+
+    def test_namespace_package_submodule_homonym(self):
+        submodule_path = 'project4.homonym'
+        got = importlib.machinery.PathFinder.find_spec(submodule_path)
+        self.assertEqual(got.name, submodule_path)
+        self.assertIsNone(got.loader)
+        self.assertNotIn('project4', got.submodule_search_locations[0])
+
+
 class ReloadTests(NamespacePackageTest):
     paths = ['portion1']
 
