@@ -2008,3 +2008,7 @@
             break;
         }
 
+        case _DEOPT: {
+            break;
+        }
+

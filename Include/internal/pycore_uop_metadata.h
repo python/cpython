@@ -243,6 +243,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_START_EXECUTOR] = 0,
     [_FATAL_ERROR] = HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
+    [_DEOPT] = HAS_DEOPT_FLAG,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -321,6 +322,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DELETE_GLOBAL] = "_DELETE_GLOBAL",
     [_DELETE_NAME] = "_DELETE_NAME",
     [_DELETE_SUBSCR] = "_DELETE_SUBSCR",
+    [_DEOPT] = "_DEOPT",
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
     [_END_SEND] = "_END_SEND",

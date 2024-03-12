@@ -4157,6 +4157,10 @@ dummy_func(
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
+        tier2 op(_DEOPT, (--)) {
+            DEOPT_IF(1);
+        }
+
 // END BYTECODES //
 
     }

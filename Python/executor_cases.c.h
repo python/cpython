@@ -3898,4 +3898,9 @@
             break;
         }
 
+        case _DEOPT: {
+            if (1) DEOPTIMIZE;
+            break;
+        }
+
 #undef TIER_TWO
