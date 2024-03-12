@@ -6,3 +6,6 @@
 PyAPI_FUNC(FILE*) _Py_fopen_obj(
     PyObject *path,
     const char *mode);
+
+// Alias kept for backward compatibility with Python 3.12
+#define _PyLong_FileDescriptor_Converter PyLong_FileDescriptor_Converter
