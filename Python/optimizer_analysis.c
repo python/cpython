@@ -394,7 +394,7 @@ optimize_uops(
     }
 
     _Py_uop_abstractcontext_fini(ctx);
-    return 1;
+    return trace_len;
 
 out_of_space:
     DPRINTF(1, "Out of space in abstract interpreter\n");
@@ -543,19 +543,19 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
 
 //  0 - failure, no error raised, just fall back to Tier 1
 // -1 - failure, and raise error
-//  1 - optimizer success
+//  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
     _PyInterpreterFrame *frame,
     _PyUOpInstruction *buffer,
-    int buffer_size,
+    int length,
     int curr_stacklen,
     _PyBloomFilter *dependencies
 )
 {
     OPT_STAT_INC(optimizer_attempts);
 
-    int err = remove_globals(frame, buffer, buffer_size, dependencies);
+    int err = remove_globals(frame, buffer, length, dependencies);
     if (err == 0) {
         goto not_ready;
     }
@@ -563,21 +563,21 @@ _Py_uop_analyze_and_optimize(
         goto error;
     }
 
-    peephole_opt(frame, buffer, buffer_size);
+    peephole_opt(frame, buffer, length);
 
-    err = optimize_uops(
+    length = optimize_uops(
         (PyCodeObject *)frame->f_executable, buffer,
-        buffer_size, curr_stacklen, dependencies);
+        length, curr_stacklen, dependencies);
 
     if (err == 0) {
         goto not_ready;
     }
     assert(err == 1);
 
-    remove_unneeded_uops(buffer, buffer_size);
+    remove_unneeded_uops(buffer, length);
 
     OPT_STAT_INC(optimizer_successes);
-    return 1;
+    return length;
 not_ready:
     return 0;
 error:

@@ -51,25 +51,25 @@ typedef struct {
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
 
-static inline uint32_t uop_get_target(_PyUOpInstruction *inst)
+static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
 {
     assert(inst->format == UOP_FORMAT_TARGET);
     return inst->target;
 }
 
-static inline uint16_t uop_get_exit_index(_PyUOpInstruction *inst)
+static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
 {
     assert(inst->format == UOP_FORMAT_EXIT);
     return inst->exit_index;
 }
 
-static inline uint16_t uop_get_deopt_target(_PyUOpInstruction *inst)
+static inline uint16_t uop_get_deopt_target(const _PyUOpInstruction *inst)
 {
     assert(inst->format == UOP_FORMAT_DEOPT);
     return inst->deopt_target;
 }
 
-static inline uint16_t uop_get_error_target(_PyUOpInstruction *inst)
+static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 {
     assert(inst->format != UOP_FORMAT_TARGET);
     return inst->error_target;

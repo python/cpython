@@ -494,7 +494,7 @@ BRANCH_TO_GUARD[4][2] = {
     code = (PyCodeObject *)trace_stack[trace_stack_depth].func->func_code; \
     instr = trace_stack[trace_stack_depth].instr;
 
-/* Returns 1 on success,
+/* Returns the length of the trace on success,
  * 0 if it failed to produce a worthwhile trace,
  * and -1 on an error.
  */
@@ -514,7 +514,7 @@ translate_bytecode_to_trace(
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
-    int max_length = buffer_size;
+    int max_length = buffer_size-1;
     struct {
         PyFunctionObject *func;
         _Py_CODEUNIT *instr;
@@ -587,6 +587,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             }
         }
 
+        if (OPCODE_HAS_DEOPT(opcode) || OPCODE_HAS_ERROR(opcode)) {
+            // Make space for exit code
+            max_length--;
+        }
         switch (opcode) {
             case POP_JUMP_IF_NONE:
             case POP_JUMP_IF_NOT_NONE:
@@ -622,10 +626,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
                             instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
                     instr = target_instr;
-                    ADD_TO_TRACE(uopcode, max_length, 0, INSTR_IP(next_instr, code));
+                    ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(next_instr, code));
                     goto top;
                 }
-                ADD_TO_TRACE(uopcode, max_length, 0, INSTR_IP(target_instr, code));
+                ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(target_instr, code));
                 break;
             }
 
@@ -821,8 +825,8 @@ done:
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code),
             trace_length);
-    OPT_HIST(trace_length + buffer_size - max_length, trace_length_hist);
-    return 1;
+    OPT_HIST(trace_length, trace_length_hist);
+    return trace_length;
 }
 
 #undef RESERVE
@@ -1005,24 +1009,24 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
-    int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
-    if (err <= 0) {
+    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
+    if (length <= 0) {
         // Error or nothing translated
-        return err;
+        return length;
     }
     OPT_STAT_INC(traces_created);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
-        err = _Py_uop_analyze_and_optimize(frame, buffer,
+        length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            UOP_MAX_TRACE_LENGTH,
                                            curr_stackentries, &dependencies);
-        if (err <= 0) {
-            return err;
+        if (length <= 0) {
+            return length;
         }
     }
-    assert(err == 1);
+    assert(length >= 1);
     /* Fix up */
-    for (int pc = 0; pc < UOP_MAX_TRACE_LENGTH; pc++) {
+    for (int pc = 0; pc < length; pc++) {
         int opcode = buffer[pc].opcode;
         int oparg = buffer[pc].oparg;
         if (_PyUop_Flags[opcode] & HAS_OPARG_AND_1_FLAG) {

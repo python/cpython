@@ -1010,6 +1010,7 @@ enter_tier_two:
 #endif
 
     assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
+tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
@@ -1082,6 +1083,12 @@ error_tier_two:
 
 // Jump here from DEOPT_IF()
 deoptimize:
+    if (next_uop[-1].format == UOP_FORMAT_DEOPT) {
+        uint16_t deopt_target = uop_get_deopt_target(&next_uop[-1]);
+        next_uop = current_executor->trace + deopt_target;
+        goto tier2_dispatch;
+    }
+    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
