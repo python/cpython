@@ -3628,6 +3628,28 @@ class TestSlots(unittest.TestCase):
                 self.assertEqual(inst.cached_cl2(), 53)
                 self.assertEqual(inst.cached_cl3(), 64)
 
+    def test_super_without_params_single_wrapper(self):
+        def decorator(func):
+            @wraps(func)
+            def inner(*args, **kwargs):
+                return func(*args, **kwargs)
+            return inner
+
+        for slots in (True, False):
+            with self.subTest(slots=slots):
+                @dataclass(slots=True)
+                class A:
+                    def method(self):
+                        return 1
+
+                @dataclass(slots=True)
+                class B(A):
+                    @decorator
+                    def method(self):
+                        return super().method()
+
+                self.assertEqual(B().method(), 1)
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):

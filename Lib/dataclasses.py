@@ -1234,6 +1234,7 @@ def _add_slots(cls, is_frozen, weakref_slot):
     # as `method.__closure__`.  Since we replace the class with a
     # clone, we rewrite these references so it keeps working.
     for item in cls.__dict__.values():
+        item = inspect.unwrap(item)
         if isinstance(item, (classmethod, staticmethod)):
             closure_cells = getattr(item.__func__, "__closure__", None)
         elif isinstance(item, property):
