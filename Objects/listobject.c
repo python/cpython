@@ -1656,7 +1656,10 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
 {
     Py_ssize_t k; /* used by IFLT macro expansion */
     Py_ssize_t n;
-    PyObject **lo = slo->keys;
+    PyObject ** const lo = slo->keys;
+
+    /* In general, as things go on we've established that the slice starts
+       with a monotone run of n elements, starting at lo. */
 
     /* We're n elements into the slice, and the most recent neq+1 elments are
      * all equal. This reverses them in-place, and resets neq for reuse.
@@ -1670,15 +1673,22 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
         neq = 0;                                \
     }
 
+    /* Sticking to only __lt__ compares is confusinig and error-prone. But in
+     * this routine, almost all uses of IFLT can be captured by tiny macros
+     * giving mnemonic names to the intent. Note that inline functios don't
+     * work for this (IFLT expands to code including `goto fail`).
+     */
+#define IF_NEXT_LARGER  IFLT(lo[n-1], lo[n])
+#define IF_NEXT_SMALLER IFLT(lo[n], lo[n-1])
+
     assert(nremaining);
     n = 1;
     if (n == nremaining)
         return 1;
-    ++lo;
 
     /* try ascending run first */
-    for ( ; n < nremaining; ++lo, ++n) {
-        IFLT(*lo, *(lo-1))
+    for ( ; n < nremaining; ++n) {
+        IF_NEXT_SMALLER
             break;
     }
     if (n == nremaining)
@@ -1687,33 +1697,33 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
     /* If n is 1 now, then the first compare established it's a descending
      * run, so fall through to the descending case. But if n > 1, there are
      * n elements in an ascending run terminated by the strictly less *lo.
-     * If the first key < *(lo-1), *somewhere* along the way the sequence
+     * If the first key < lo[n-1], *somewhere* along the way the sequence
      * increased, so we're done (there is no descending run).
-     * Else first key >= *(lo-1), which implies that the entire ascending run
+     * Else first key >= lo[n-1], which implies that the entire ascending run
      * consists of equal elements. In that case, this is a descending run,
      * and we reverse the all-equal prefix in-place.
      */
     if (n > 1) {
-        IFLT(slo->keys[0], *(lo - 1))
+        IFLT(lo[0], lo[n-1])
             return n;
         sortslice_reverse(slo, n);
     }
-    ++lo;
-    ++n;
+    ++n; /* in all cases it's been established that lo[n] has been resolved */
+
     /* Finish descending run. All-squal subruns are reversed in-place on the
      * fly. Their original order will be restored at the end by the whole-slice
      * reversal.
      */
     Py_ssize_t neq = 0;
-    for ( ; n < nremaining; ++lo, ++n) {
-        IFLT(*lo, *(lo - 1)) {
+    for ( ; n < nremaining; ++n) {
+        IF_NEXT_SMALLER {
             /* This ends the most recent run of equal elments, but still in
              * the "descending" direction.
              */
             REVERSE_LAST_NEQ
         }
         else {
-            IFLT(*(lo - 1), *lo) /* descending run is over */
+            IF_NEXT_LARGER /* descending run is over */
                 break;
             else /* not x < y and not y < x implies x == y */
                 ++neq;
@@ -1726,8 +1736,8 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
      * naturally increasing suffix; e.g., [3, 2, 3, 4, 1] makes an
      * ascending run from the first 4 elements.
      */
-    for ( ; n < nremaining; ++lo, ++n) {
-        IFLT(*lo, *(lo-1))
+    for ( ; n < nremaining; ++n) {
+        IF_NEXT_SMALLER
             break;
     }
 
@@ -1736,6 +1746,8 @@ fail:
     return -1;
 
 #undef REVERSE_LAST_NEQ
+#undef IF_NEXT_SMALLER
+#undef IF_NEXT_LARGER
 }
 
 /*
