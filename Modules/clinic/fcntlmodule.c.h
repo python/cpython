@@ -2,7 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(fcntl_fcntl__doc__,
@@ -38,7 +37,7 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fcntl", nargs, 2, 3)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    if (!PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = PyLong_AsInt(args[1]);
@@ -108,7 +107,7 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("ioctl", nargs, 2, 4)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    if (!PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
@@ -158,7 +157,7 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("flock", nargs, 2, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    if (!PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = PyLong_AsInt(args[1]);
@@ -218,7 +217,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("lockf", nargs, 2, 5)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    if (!PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
     code = PyLong_AsInt(args[1]);
@@ -246,4 +245,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=732e33ba92042031 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6c003d9d31b3ef4 input=a9049054013a1b77]*/

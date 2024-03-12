@@ -1645,6 +1645,10 @@ New Features
   between native integer types and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
 
+* Add :c:func:`PyLong_FileDescriptor_Converter` function: convert a Python
+  object to a file descriptor. Function added the limited C API.
+  (Contributed by Victor Stinner in :gh:`116646`.)
+
 
 Porting to Python 3.13
 ----------------------

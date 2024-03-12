@@ -50,6 +50,12 @@ PyAPI_FUNC(char*) Py_EncodeLocale(
     size_t *error_pos);
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+// PyArg converter to convert a Python int objet to a C int.
+// Return 1 on success. Set an exception and return 0 on error.
+PyAPI_FUNC(int) PyLong_FileDescriptor_Converter(PyObject *, void *);
+#endif
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_FILEUTILS_H
 #  include "cpython/fileutils.h"

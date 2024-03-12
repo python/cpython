@@ -221,7 +221,7 @@ PyObject_AsFileDescriptor(PyObject *o)
 }
 
 int
-_PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
+PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
 {
     int fd = PyObject_AsFileDescriptor(o);
     if (fd == -1) {

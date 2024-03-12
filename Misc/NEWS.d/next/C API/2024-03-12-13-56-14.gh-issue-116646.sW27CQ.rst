@@ -1,0 +1,2 @@
+Add PyLong_FileDescriptor_Converter function: convert a Python object to a
+file descriptor. Function added the limited C API. Patch by Victor Stinner.
