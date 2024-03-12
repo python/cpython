@@ -1169,6 +1169,11 @@ The following recipes have a more mathematical flavor:
 
     >>> take(10, count())
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> it = iter('abcdef')
+    >>> take(3, it)
+    ['a', 'b', 'c']
+    >>> list(it)
+    ['d', 'e', 'f']
 
     >>> list(prepend(1, [2, 3, 4]))
     [1, 2, 3, 4]
@@ -1192,14 +1197,23 @@ The following recipes have a more mathematical flavor:
 
     >>> nth('abcde', 3)
     'd'
-
     >>> nth('abcde', 9) is None
     True
+    >>> it = iter('abcde')
+    >>> nth(it, 2)
+    'c'
+    >>> list(it)
+    ['d', 'e']
 
     >>> [all_equal(s) for s in ('', 'A', 'AAAA', 'AAAB', 'AAABA')]
     [True, True, True, False, False]
     >>> [all_equal(s, key=str.casefold) for s in ('', 'A', 'AaAa', 'AAAB', 'AAABA')]
     [True, True, True, False, False]
+    >>> it = iter('aaabbbccc')
+    >>> all_equal(it)
+    False
+    >>> ''.join(it)
+    'bbccc'
 
     >>> quantify(range(99), lambda x: x%2==0)
     50
@@ -1545,6 +1559,11 @@ The following recipes have a more mathematical flavor:
 
     >>> first_true('ABC0DEF1', '9', str.isdigit)
     '0'
+    >>> it = iter('ABC0DEF1')
+    >>> first_true(it, predicate=str.isdigit)
+    '0'
+    >>> ''.join(it)
+    'DEF1'
 
 
 .. testcode::
