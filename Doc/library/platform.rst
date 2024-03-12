@@ -142,11 +142,18 @@ Cross Platform
    Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'``. An empty string is
    returned if the value cannot be determined.
 
+   .. versionchanged:: 3.13
+      On Android, this now returns the Android version rather than the Linux
+      kernel version.
+
 
 .. function:: system()
 
    Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
    ``'Windows'``. An empty string is returned if the value cannot be determined.
+
+   .. versionchanged:: 3.13
+      On Android, this now returns ``'Android'`` rather than ``'Linux'``.
 
 
 .. function:: system_alias(system, release, version)
@@ -313,22 +320,27 @@ Android Platform
    with the following attributes. Values which cannot be determined are set to
    the defaults given as parameters.
 
-   * ``release`` - Android version of the device, as a string (e.g. ``"14"``)
-   * ``api_level`` - API level of the device, as an integer (e.g. ``34``)
-   * ``min_api_level`` - Minimum API level this build of Python can run on, as
-      an integer (e.g. ``23``).
-   * ``manufacturer`` - `manufacturer
-      <https://developer.android.com/reference/android/os/Build#MANUFACTURER>`__
-      of the device, as a string (e.g. ``"Google"``)
-   * ``model`` - `model name
-      <https://developer.android.com/reference/android/os/Build#MODEL>`__ of the
-      device, as a string (e.g. ``"Pixel 7"``)
-   * ``device`` - `device name
-      <https://developer.android.com/reference/android/os/Build#DEVICE>`__ of
-      the device, as a string (e.g. ``"panther"``)
+   * ``release`` - Android version, as a string (e.g. ``"14"``)
 
-   Which one of ``model`` and ``device`` is more likely to be unique, and which
-   one is more likely to resemble the marketing name, varies between different
-   manufacturers.
+   * ``api_level`` - API level, as an integer (e.g. ``34``)
+
+   * ``min_api_level`` - Minimum API level this build of Python can run on, as
+     an integer (e.g. ``21``)
+
+   * ``manufacturer`` - `manufacturer name
+     <https://developer.android.com/reference/android/os/Build#MANUFACTURER>`__
+     (e.g. ``"Google"``)
+
+   * ``model`` - `model name
+     <https://developer.android.com/reference/android/os/Build#MODEL>`__
+     (e.g. ``"Pixel 7"``)
+
+   * ``device`` - `device name
+     <https://developer.android.com/reference/android/os/Build#DEVICE>`__
+     (e.g. ``"panther"``)
+
+   Which one of ``model`` and ``device`` is more likely to distinguish different
+   device variants, and which one is more likely to resemble the marketing name,
+   varies between different manufacturers.
 
    .. versionadded:: 3.13
