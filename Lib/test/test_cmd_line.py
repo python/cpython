@@ -883,7 +883,7 @@ class CmdLineTest(unittest.TestCase):
     def test_python_gil(self):
         cases = [
             # (env, opt, expected, msg)
-            (None, None, 'None', "no options set"),
+            (None, None, '0', "no options set"),
             ('0', None, '0', "PYTHON_GIL=0"),
             ('1', None, '1', "PYTHON_GIL=1"),
             ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
