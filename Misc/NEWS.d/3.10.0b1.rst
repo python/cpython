@@ -1181,8 +1181,8 @@ Lewis Gaul.
 .. nonce: NzLVaR
 .. section: Library
 
-Add `pathlib.Path.hardlink_to()` method that supersedes `link_to()`. The new
-method has the same argument order as `symlink_to()`.
+Add ``pathlib.Path.hardlink_to()`` method that supersedes ``link_to()``. The new
+method has the same argument order as ``symlink_to()``.
 
 ..
 

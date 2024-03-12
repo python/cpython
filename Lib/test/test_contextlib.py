@@ -1297,6 +1297,24 @@ class TestSuppress(ExceptionIsLikeMixin, unittest.TestCase):
                 [KeyError("ke1"), KeyError("ke2")],
             ),
         )
+        # Check handling of BaseExceptionGroup, using GeneratorExit so that
+        # we don't accidentally discard a ctrl-c with KeyboardInterrupt.
+        with suppress(GeneratorExit):
+            raise BaseExceptionGroup("message", [GeneratorExit()])
+        # If we raise a BaseException group, we can still suppress parts
+        with self.assertRaises(BaseExceptionGroup) as eg1:
+            with suppress(KeyError):
+                raise BaseExceptionGroup("message", [GeneratorExit("g"), KeyError("k")])
+        self.assertExceptionIsLike(
+            eg1.exception, BaseExceptionGroup("message", [GeneratorExit("g")]),
+        )
+        # If we suppress all the leaf BaseExceptions, we get a non-base ExceptionGroup
+        with self.assertRaises(ExceptionGroup) as eg1:
+            with suppress(GeneratorExit):
+                raise BaseExceptionGroup("message", [GeneratorExit("g"), KeyError("k")])
+        self.assertExceptionIsLike(
+            eg1.exception, ExceptionGroup("message", [KeyError("k")]),
+        )
 
 
 class TestChdir(unittest.TestCase):
@@ -1318,7 +1336,7 @@ class TestChdir(unittest.TestCase):
     def test_reentrant(self):
         old_cwd = os.getcwd()
         target1 = self.make_relative_path('data')
-        target2 = self.make_relative_path('ziptestdata')
+        target2 = self.make_relative_path('archivetestdata')
         self.assertNotIn(old_cwd, (target1, target2))
         chdir1, chdir2 = chdir(target1), chdir(target2)
 

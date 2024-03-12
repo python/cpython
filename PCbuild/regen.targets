@@ -28,11 +28,16 @@
     </_TokenOutputs>
     <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
     <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
+    <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
+    <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(GeneratedPyConfigDir)pyconfig.h;$(PySourcePath)Tools\jit\**"/>
+    <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h"/>
+    <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
+    <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
   </ItemGroup>
 
   <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
     <Message Text="Touching source files to force regeneration" Importance="high" />
-    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs)"
+    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs);@(_CasesSources)"
            AlwaysCreate="False" />
   </Target>
 
@@ -77,9 +82,51 @@
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 
-  <Target Name="Regen"
+  <Target Name="_RegenCases"
+          Inputs="@(_CasesSources)" Outputs="@(_CasesOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate cases" Importance="high" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_id_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\target_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_id_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\py_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier1_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\optimizer_generator.py $(PySourcePath)Python\optimizer_bytecodes.c $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenJIT"
+          Condition="'$(UseJIT)' == 'true'"
+          DependsOnTargets="_UpdatePyconfig;FindPythonForBuild"
+          Inputs="@(_JITSources)"
+          Outputs="@(_JITOutputs)">
+    <PropertyGroup>
+      <JITArgs Condition="$(Platform) == 'ARM64'">aarch64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
+    </PropertyGroup>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)'
+          WorkingDirectory="$(GeneratedPyConfigDir)"/>
+  </Target>
+
+  <Target Name="_RegenNoPGUpdate"
           Condition="$(Configuration) != 'PGUpdate'"
           DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
+  </Target>
+
+  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT;_RegenCases">
     <Message Text="Generated sources are up to date" Importance="high" />
   </Target>
 
@@ -103,9 +150,7 @@
           Condition="($(Platform) == 'Win32' or $(Platform) == 'x64') and
                      $(Configuration) != 'PGInstrument' and $(Configuration) != 'PGUpdate'">
     <Message Text="Regenerate @(_TestFrozenOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
-    <Exec Command='setlocal
-set PYTHONPATH=$(PySourcePath)Lib
-"$(PythonExe)" Programs\freeze_test_frozenmain.py Programs\test_frozenmain.h'
+    <Exec Command='setlocal%0D%0Aset PYTHONPATH=$(PySourcePath)Lib%0D%0A"$(PythonExe)" Programs\freeze_test_frozenmain.py Programs\test_frozenmain.h'
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 

@@ -1,13 +1,14 @@
 import sys
+import trace
 
 from .runtests import RunTests
-from .result import State, TestResult, TestStats
+from .result import State, TestResult, TestStats, Location
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
 
 
-# Python uses exit code 1 when an exception is not catched
+# Python uses exit code 1 when an exception is not caught
 # argparse.ArgumentParser.error() uses exit code 2
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
@@ -33,7 +34,9 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[str] = []
+        self.testsuite_xml: list = []
+        # used by -T with -j
+        self.covered_lines: set[Location] = set()
 
     def is_all_good(self):
         return (not self.bad
@@ -114,20 +117,28 @@ class TestResults:
             self.worker_bug = True
 
         if result.has_meaningful_duration() and not rerun:
+            if result.duration is None:
+                raise ValueError("result.duration is None")
             self.test_times.append((result.duration, test_name))
         if result.stats is not None:
             self.stats.accumulate(result.stats)
         if rerun:
             self.rerun.append(test_name)
-
+        if result.covered_lines:
+            # we don't care about trace counts so we don't have to sum them up
+            self.covered_lines.update(result.covered_lines)
         xml_data = result.xml_data
         if xml_data:
             self.add_junit(xml_data)
 
+    def get_coverage_results(self) -> trace.CoverageResults:
+        counts = {loc: 1 for loc in self.covered_lines}
+        return trace.CoverageResults(counts=counts)
+
     def need_rerun(self):
         return bool(self.rerun_results)
 
-    def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
+    def prepare_rerun(self, *, clear: bool = True) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
         for result in self.rerun_results:
@@ -138,11 +149,12 @@ class TestResults:
             if match_tests:
                 match_tests_dict[result.test_name] = match_tests
 
-        # Clear previously failed tests
-        self.rerun_bad.extend(self.bad)
-        self.bad.clear()
-        self.env_changed.clear()
-        self.rerun_results.clear()
+        if clear:
+            # Clear previously failed tests
+            self.rerun_bad.extend(self.bad)
+            self.bad.clear()
+            self.env_changed.clear()
+            self.rerun_results.clear()
 
         return (tuple(tests), match_tests_dict)
 

@@ -64,6 +64,8 @@ extern "C" {
 #define RESUME_AFTER_YIELD_FROM 2
 #define RESUME_AFTER_AWAIT 3
 
+#define RESUME_OPARG_LOCATION_MASK 0x3
+#define RESUME_OPARG_DEPTH1_MASK 0x4
 
 #ifdef __cplusplus
 }

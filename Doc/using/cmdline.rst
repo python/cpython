@@ -369,16 +369,16 @@ Miscellaneous options
 
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
-   case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
+   case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
    http://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
 
+   .. versionadded:: 3.2.3
+
    .. versionchanged:: 3.7
       The option is no longer ignored.
-
-   .. versionadded:: 3.2.3
 
 
 .. option:: -s
@@ -535,12 +535,13 @@ Miscellaneous options
      location indicators when the interpreter displays tracebacks. See also
      :envvar:`PYTHONNODEBUGRANGES`.
    * ``-X frozen_modules`` determines whether or not frozen modules are
-     ignored by the import machinery.  A value of "on" means they get
-     imported and "off" means they are ignored.  The default is "on"
+     ignored by the import machinery.  A value of ``on`` means they get
+     imported and ``off`` means they are ignored.  The default is ``on``
      if this is an installed Python (the normal case).  If it's under
-     development (running from the source tree) then the default is "off".
-     Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
-     frozen modules are always used, even if this flag is set to "off".
+     development (running from the source tree) then the default is ``off``.
+     Note that the :mod:`!importlib_bootstrap` and
+     :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+     if this flag is set to ``off``. See also :envvar:`PYTHON_FROZEN_MODULES`.
    * ``-X perf`` enables support for the Linux ``perf`` profiler.
      When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
@@ -558,27 +559,29 @@ Miscellaneous options
      :mod:`__main__`. This can be used to execute code early during Python
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
+   * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
+     respectively. Only available in builds configured with
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
-   .. versionchanged:: 3.2
-      The :option:`-X` option was added.
+   .. versionadded:: 3.2
 
-   .. versionadded:: 3.3
-      The ``-X faulthandler`` option.
+   .. versionchanged:: 3.3
+      Added the ``-X faulthandler`` option.
 
-   .. versionadded:: 3.4
-      The ``-X showrefcount`` and ``-X tracemalloc`` options.
+   .. versionchanged:: 3.4
+      Added the ``-X showrefcount`` and ``-X tracemalloc`` options.
 
-   .. versionadded:: 3.6
-      The ``-X showalloccount`` option.
+   .. versionchanged:: 3.6
+      Added the ``-X showalloccount`` option.
 
-   .. versionadded:: 3.7
-      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
+   .. versionchanged:: 3.7
+      Added the ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
-   .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+   .. versionchanged:: 3.8
+      Added the ``-X pycache_prefix`` option. The ``-X dev`` option now logs
       ``close()`` exceptions in :class:`io.IOBase` destructor.
 
    .. versionchanged:: 3.9
@@ -587,30 +590,46 @@ Miscellaneous options
 
       The ``-X showalloccount`` option has been removed.
 
-   .. versionadded:: 3.10
-      The ``-X warn_default_encoding`` option.
+   .. versionchanged:: 3.10
+      Added the ``-X warn_default_encoding`` option.
+      Removed the ``-X oldparser`` option.
 
-   .. deprecated-removed:: 3.9 3.10
-      The ``-X oldparser`` option.
+   .. versionchanged:: 3.11
+      Added the ``-X no_debug_ranges``, ``-X frozen_modules`` and
+      ``-X int_max_str_digits`` options.
 
-   .. versionadded:: 3.11
-      The ``-X no_debug_ranges`` option.
+   .. versionchanged:: 3.12
+      Added the ``-X perf`` option.
 
-   .. versionadded:: 3.11
-      The ``-X frozen_modules`` option.
+   .. versionchanged:: 3.13
+      Added the ``-X cpu_count`` and ``-X presite`` options.
 
-   .. versionadded:: 3.11
-      The ``-X int_max_str_digits`` option.
+   .. versionchanged:: 3.13
+      Added the ``-X gil`` option.
 
-   .. versionadded:: 3.12
-      The ``-X perf`` option.
+.. _using-on-controlling-color:
 
-   .. versionadded:: 3.13
-      The ``-X cpu_count`` option.
+Controlling color
+~~~~~~~~~~~~~~~~~
 
-   .. versionadded:: 3.13
-      The ``-X presite`` option.
+The Python interpreter is configured by default to use colors to highlight
+output in certain situations such as when displaying tracebacks. This
+behavior can be controlled by setting different environment variables.
 
+Setting the environment variable ``TERM`` to ``dumb`` will disable color.
+
+If the environment variable ``FORCE_COLOR`` is set, then color will be
+enabled regardless of the value of TERM. This is useful on CI systems which
+aren’t terminals but can still display ANSI escape sequences.
+
+If the environment variable ``NO_COLOR`` is set, Python will disable all color
+in the output. This takes precedence over ``FORCE_COLOR``.
+
+All these environment variables are used also by other tools to control color
+output. To control the color output only in the Python interpreter, the
+:envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
+precedence over ``NO_COLOR``, which in turn takes precedence over
+``FORCE_COLOR``.
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -933,10 +952,10 @@ conflict.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
    * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
+   .. versionadded:: 3.6
+
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
-
-   .. versionadded:: 3.6
 
 
 .. envvar:: PYTHONMALLOCSTATS
@@ -1095,6 +1114,47 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_FROZEN_MODULES
+
+   If this variable is set to ``on`` or ``off``, it determines whether or not
+   frozen modules are ignored by the import machinery.  A value of ``on`` means
+   they get imported and ``off`` means they are ignored.  The default is ``on``
+   for non-debug builds (the normal case) and ``off`` for debug builds.
+   Note that the :mod:`!importlib_bootstrap` and
+   :mod:`!importlib_bootstrap_external` frozen modules are always used, even
+   if this flag is set to ``off``.
+
+   See also the :option:`-X frozen_modules <-X>` command-line option.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_COLORS
+
+   If this variable is set to ``1``, the interpreter will colorize various kinds
+   of output. Setting it to ``0`` deactivates this behavior.
+   See also :ref:`using-on-controlling-color`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_HISTORY
+
+   This environment variable can be used to set the location of a
+   ``.python_history`` file (by default, it is ``.python_history`` in the
+   user's home directory).
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_GIL
+
+   If this variable is set to ``1``, the global interpreter lock (GIL) will be
+   forced on. Setting it to ``0`` forces the GIL off.
+
+   See also the :option:`-X gil <-X>` command-line option, which takes
+   precedence over this variable.
+
+   Needs Python configured with the :option:`--disable-gil` build option.
+
+   .. versionadded:: 3.13
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

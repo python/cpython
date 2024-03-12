@@ -189,6 +189,7 @@ Objects/exceptions.c	-	_PyExc_ProcessLookupError	-
 Objects/exceptions.c	-	_PyExc_TimeoutError	-
 Objects/exceptions.c	-	_PyExc_EOFError	-
 Objects/exceptions.c	-	_PyExc_RuntimeError	-
+Objects/exceptions.c	-	_PyExc_PythonFinalizationError	-
 Objects/exceptions.c	-	_PyExc_RecursionError	-
 Objects/exceptions.c	-	_PyExc_NotImplementedError	-
 Objects/exceptions.c	-	_PyExc_NameError	-
@@ -197,6 +198,7 @@ Objects/exceptions.c	-	_PyExc_AttributeError	-
 Objects/exceptions.c	-	_PyExc_SyntaxError	-
 Objects/exceptions.c	-	_PyExc_IndentationError	-
 Objects/exceptions.c	-	_PyExc_TabError	-
+Objects/exceptions.c	-	_PyExc_IncompleteInputError	-
 Objects/exceptions.c	-	_PyExc_LookupError	-
 Objects/exceptions.c	-	_PyExc_IndexError	-
 Objects/exceptions.c	-	_PyExc_KeyError	-
@@ -253,6 +255,7 @@ Objects/exceptions.c	-	PyExc_ProcessLookupError	-
 Objects/exceptions.c	-	PyExc_TimeoutError	-
 Objects/exceptions.c	-	PyExc_EOFError	-
 Objects/exceptions.c	-	PyExc_RuntimeError	-
+Objects/exceptions.c	-	PyExc_PythonFinalizationError	-
 Objects/exceptions.c	-	PyExc_RecursionError	-
 Objects/exceptions.c	-	PyExc_NotImplementedError	-
 Objects/exceptions.c	-	PyExc_NameError	-
@@ -261,6 +264,7 @@ Objects/exceptions.c	-	PyExc_AttributeError	-
 Objects/exceptions.c	-	PyExc_SyntaxError	-
 Objects/exceptions.c	-	PyExc_IndentationError	-
 Objects/exceptions.c	-	PyExc_TabError	-
+Objects/exceptions.c	-	PyExc_IncompleteInputError	-
 Objects/exceptions.c	-	PyExc_LookupError	-
 Objects/exceptions.c	-	PyExc_IndexError	-
 Objects/exceptions.c	-	PyExc_KeyError	-
@@ -290,6 +294,10 @@ Objects/exceptions.c	-	PyExc_UnicodeWarning	-
 Objects/exceptions.c	-	PyExc_BytesWarning	-
 Objects/exceptions.c	-	PyExc_ResourceWarning	-
 Objects/exceptions.c	-	PyExc_EncodingWarning	-
+Python/crossinterp_exceptions.h	-	_PyExc_InterpreterError	-
+Python/crossinterp_exceptions.h	-	_PyExc_InterpreterNotFoundError	-
+Python/crossinterp_exceptions.h	-	PyExc_InterpreterError	-
+Python/crossinterp_exceptions.h	-	PyExc_InterpreterNotFoundError	-
 
 ##-----------------------
 ## singletons
@@ -328,6 +336,7 @@ Modules/_testclinic.c	-	DeprStarNew	-
 Modules/_testclinic.c	-	DeprKwdInit	-
 Modules/_testclinic.c	-	DeprKwdInitNoInline	-
 Modules/_testclinic.c	-	DeprKwdNew	-
+Modules/_testclinic.c	-	TestClass	-
 
 
 ##################################
@@ -473,3 +482,4 @@ Modules/readline.c	-	sigwinch_ohandler	-
 Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
+Modules/rotatingtree.c	-	random_mutex	-

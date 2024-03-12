@@ -28,7 +28,7 @@ from fileinput import FileInput
 from itertools import chain
 from http.cookies import Morsel
 try:
-    from multiprocessing.managers import ValueProxy
+    from multiprocessing.managers import ValueProxy, DictProxy, ListProxy
     from multiprocessing.pool import ApplyResult
     from multiprocessing.queues import SimpleQueue as MPSimpleQueue
     from multiprocessing.queues import Queue as MPQueue
@@ -36,6 +36,8 @@ try:
 except ImportError:
     # _multiprocessing module is optional
     ValueProxy = None
+    DictProxy = None
+    ListProxy = None
     ApplyResult = None
     MPSimpleQueue = None
     MPQueue = None
@@ -134,7 +136,7 @@ class BaseTest(unittest.TestCase):
     if ctypes is not None:
         generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
     if ValueProxy is not None:
-        generic_types.extend((ValueProxy, ApplyResult,
+        generic_types.extend((ValueProxy, DictProxy, ListProxy, ApplyResult,
                               MPSimpleQueue, MPQueue, MPJoinableQueue))
 
     def test_subscriptable(self):

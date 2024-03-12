@@ -133,8 +133,8 @@ class PyShellEditorWindow(EditorWindow):
     def __init__(self, *args):
         self.breakpoints = []
         EditorWindow.__init__(self, *args)
-        self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
-        self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
+        self.text.bind("<<set-breakpoint>>", self.set_breakpoint_event)
+        self.text.bind("<<clear-breakpoint>>", self.clear_breakpoint_event)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
         #TODO: don't read/write this from/to .idlerc when testing
@@ -155,8 +155,8 @@ class PyShellEditorWindow(EditorWindow):
         ("Copy", "<<copy>>", "rmenu_check_copy"),
         ("Paste", "<<paste>>", "rmenu_check_paste"),
         (None, None, None),
-        ("Set Breakpoint", "<<set-breakpoint-here>>", None),
-        ("Clear Breakpoint", "<<clear-breakpoint-here>>", None)
+        ("Set Breakpoint", "<<set-breakpoint>>", None),
+        ("Clear Breakpoint", "<<clear-breakpoint>>", None)
     ]
 
     def color_breakpoint_text(self, color=True):
@@ -181,11 +181,11 @@ class PyShellEditorWindow(EditorWindow):
             self.breakpoints.append(lineno)
         try:    # update the subprocess debugger
             debug = self.flist.pyshell.interp.debugger
-            debug.set_breakpoint_here(filename, lineno)
+            debug.set_breakpoint(filename, lineno)
         except: # but debugger may not be active right now....
             pass
 
-    def set_breakpoint_here(self, event=None):
+    def set_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -194,7 +194,7 @@ class PyShellEditorWindow(EditorWindow):
         lineno = int(float(text.index("insert")))
         self.set_breakpoint(lineno)
 
-    def clear_breakpoint_here(self, event=None):
+    def clear_breakpoint_event(self, event=None):
         text = self.text
         filename = self.io.filename
         if not filename:
@@ -209,7 +209,7 @@ class PyShellEditorWindow(EditorWindow):
                         "insert lineend +1char")
         try:
             debug = self.flist.pyshell.interp.debugger
-            debug.clear_breakpoint_here(filename, lineno)
+            debug.clear_breakpoint(filename, lineno)
         except:
             pass
 
@@ -1693,6 +1693,7 @@ def main():
         root.mainloop()
     root.destroy()
     capture_warnings(False)
+
 
 if __name__ == "__main__":
     main()

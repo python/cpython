@@ -18,8 +18,8 @@
 .. note::
 
    The Python runtime does not enforce function and variable type annotations.
-   They can be used by third party tools such as type checkers, IDEs, linters,
-   etc.
+   They can be used by third party tools such as :term:`type checkers <static type checker>`,
+   IDEs, linters, etc.
 
 --------------
 
@@ -954,7 +954,6 @@ using ``[]``.
    be used for this concept instead. Type checkers should treat the two
    equivalently.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
 .. data:: Self
@@ -1145,16 +1144,13 @@ These can be used as types in annotations. They all support subscription using
 
       from collections.abc import Callable
       from threading import Lock
-      from typing import Concatenate, ParamSpec, TypeVar
-
-      P = ParamSpec('P')
-      R = TypeVar('R')
+      from typing import Concatenate
 
       # Use this lock to ensure that only one thread is executing a function
       # at any time.
       my_lock = Lock()
 
-      def with_lock(f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
+      def with_lock[**P, R](f: Callable[Concatenate[Lock, P], R]) -> Callable[P, R]:
           '''A type-safe decorator which provides a lock.'''
           def inner(*args: P.args, **kwargs: P.kwargs) -> R:
               # Provide the lock as the first argument.
@@ -1277,6 +1273,26 @@ These can be used as types in annotations. They all support subscription using
    See :class:`TypedDict` and :pep:`655` for more details.
 
    .. versionadded:: 3.11
+
+.. data:: ReadOnly
+
+   A special typing construct to mark an item of a :class:`TypedDict` as read-only.
+
+   For example::
+
+      class Movie(TypedDict):
+         title: ReadOnly[str]
+         year: int
+
+      def mutate_movie(m: Movie) -> None:
+         m["year"] = 1992  # allowed
+         m["title"] = "The Matrix"  # typechecker error
+
+   There is no runtime checking for this property.
+
+   See :class:`TypedDict` and :pep:`705` for more details.
+
+   .. versionadded:: 3.13
 
 .. data:: Annotated
 
@@ -1954,7 +1970,7 @@ without the dedicated syntax, as documented below.
 
    .. doctest::
 
-      >>> from typing import ParamSpec
+      >>> from typing import ParamSpec, get_origin
       >>> P = ParamSpec("P")
       >>> get_origin(P.args) is P
       True
@@ -2458,6 +2474,22 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
+   Support for :data:`ReadOnly` is reflected in the following attributes::
+
+   .. attribute:: __readonly_keys__
+
+      A :class:`frozenset` containing the names of all read-only keys. Keys
+      are read-only if they carry the :data:`ReadOnly` qualifier.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: __mutable_keys__
+
+      A :class:`frozenset` containing the names of all mutable keys. Keys
+      are mutable if they do not carry the :data:`ReadOnly` qualifier.
+
+      .. versionadded:: 3.13
+
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
@@ -2471,6 +2503,9 @@ types.
 
    .. versionchanged:: 3.13
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
+
+   .. versionchanged:: 3.13
+      Support for the :data:`ReadOnly` qualifier was added.
 
    .. deprecated-removed:: 3.13 3.15
       When using the functional syntax to create a TypedDict class, failing to
@@ -2607,10 +2642,10 @@ Functions and decorators
 
 .. function:: reveal_type(obj, /)
 
-   Reveal the inferred static type of an expression.
+   Ask a static type checker to reveal the inferred type of an expression.
 
    When a static type checker encounters a call to this function,
-   it emits a diagnostic with the type of the argument. For example::
+   it emits a diagnostic with the inferred type of the argument. For example::
 
       x: int = 1
       reveal_type(x)  # Revealed type is "builtins.int"
@@ -2618,21 +2653,20 @@ Functions and decorators
    This can be useful when you want to debug how your type checker
    handles a particular piece of code.
 
-   The function returns its argument unchanged, which allows using
-   it within an expression::
-
-      x = reveal_type(1)  # Revealed type is "builtins.int"
-
-   Most type checkers support ``reveal_type()`` anywhere, even if the
-   name is not imported from ``typing``. Importing the name from
-   ``typing`` allows your code to run without runtime errors and
-   communicates intent more clearly.
-
-   At runtime, this function prints the runtime type of its argument to stderr
-   and returns it unchanged::
+   At runtime, this function prints the runtime type of its argument to
+   :data:`sys.stderr` and returns the argument unchanged (allowing the call to
+   be used within an expression)::
 
       x = reveal_type(1)  # prints "Runtime type is int"
       print(x)  # prints "1"
+
+   Note that the runtime type may be different from (more or less specific
+   than) the type statically inferred by a type checker.
+
+   Most type checkers support ``reveal_type()`` anywhere, even if the
+   name is not imported from ``typing``. Importing the name from
+   ``typing``, however, allows your code to run without runtime errors and
+   communicates intent more clearly.
 
    .. versionadded:: 3.11
 
@@ -3059,14 +3093,14 @@ Introspection helpers
 
    Return the set of members defined in a :class:`Protocol`.
 
-   ::
+   .. doctest::
 
       >>> from typing import Protocol, get_protocol_members
       >>> class P(Protocol):
       ...     def a(self) -> str: ...
       ...     b: int
-      >>> get_protocol_members(P)
-      frozenset({'a', 'b'})
+      >>> get_protocol_members(P) == frozenset({'a', 'b'})
+      True
 
    Raise :exc:`TypeError` for arguments that are not Protocols.
 
@@ -3296,7 +3330,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.ChainMap`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3307,7 +3340,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.Counter`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3318,7 +3350,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.deque`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3393,7 +3424,7 @@ Aliases to container ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Collection`.
 
-   .. versionadded:: 3.6.0
+   .. versionadded:: 3.6
 
    .. deprecated:: 3.9
       :class:`collections.abc.Collection` now supports subscripting (``[]``).
@@ -3685,7 +3716,6 @@ Aliases to :mod:`contextlib` ABCs
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
       :class:`contextlib.AbstractContextManager`
@@ -3696,7 +3726,6 @@ Aliases to :mod:`contextlib` ABCs
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9

@@ -36,12 +36,16 @@ extern PyFrameObject* _PyFrame_New_NoTrack(PyCodeObject *code);
 /* other API */
 
 typedef enum _framestate {
-    FRAME_CREATED = -2,
-    FRAME_SUSPENDED = -1,
+    FRAME_CREATED = -3,
+    FRAME_SUSPENDED = -2,
+    FRAME_SUSPENDED_YIELD_FROM = -1,
     FRAME_EXECUTING = 0,
     FRAME_COMPLETED = 1,
     FRAME_CLEARED = 4
 } PyFrameState;
+
+#define FRAME_STATE_SUSPENDED(S) ((S) == FRAME_SUSPENDED || (S) == FRAME_SUSPENDED_YIELD_FROM)
+#define FRAME_STATE_FINISHED(S) ((S) >= FRAME_COMPLETED)
 
 enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,

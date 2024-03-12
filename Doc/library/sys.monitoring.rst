@@ -54,6 +54,13 @@ Registering and using tools
 
    Should be called once a tool no longer requires *tool_id*.
 
+.. note::
+
+   :func:`free_tool_id` will not disable global or local events associated
+   with *tool_id*, nor will it unregister any callback functions. This
+   function is only intended to be used to notify the VM that the
+   particular *tool_id* is no longer in use.
+
 .. function:: get_tool(tool_id: int, /) -> str | None
 
    Returns the name of the tool if *tool_id* is in use,
@@ -68,9 +75,6 @@ following IDs are pre-defined to make co-operation of tools easier::
   sys.monitoring.PROFILER_ID = 2
   sys.monitoring.OPTIMIZER_ID = 5
 
-There is no obligation to set an ID, nor is there anything preventing a tool
-from using an ID even it is already in use.
-However, tools are encouraged to use a unique ID and respect other tools.
 
 Events
 ------
