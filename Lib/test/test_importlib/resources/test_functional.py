@@ -33,9 +33,11 @@ class FunctionalAPIBase():
             ),
             'a resource',
         )
-        with self.assertRaises(IsADirectoryError):
+        # Use generic OSError, since e.g. attempting to read a directory can
+        # fail with PermissionError rather than IsADirectoryError
+        with self.assertRaises(OSError):
             importlib.resources.read_text(self.anchor01)
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(OSError):
             importlib.resources.read_text(self.anchor01, 'no-such-file')
         with self.assertRaises(UnicodeDecodeError):
             importlib.resources.read_text(self.anchor01, 'utf-16.file')
@@ -75,9 +77,11 @@ class FunctionalAPIBase():
             encoding='utf-8',
         ) as f:
             self.assertEqual(f.read(), 'a resource')
-        with self.assertRaises(IsADirectoryError):
+        # Use generic OSError, since e.g. attempting to read a directory can
+        # fail with PermissionError rather than IsADirectoryError
+        with self.assertRaises(OSError):
             importlib.resources.open_text(self.anchor01)
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(OSError):
             importlib.resources.open_text(self.anchor01, 'no-such-file')
         with importlib.resources.open_text(self.anchor01, 'utf-16.file') as f:
             with self.assertRaises(UnicodeDecodeError):
@@ -128,7 +132,7 @@ class FunctionalAPIBase():
             set(c),
             {'utf-8.file', 'utf-16.file', 'binary.file', 'subdirectory'},
         )
-        with (self.assertRaises(NotADirectoryError),
+        with (self.assertRaises(OSError),
               check_warnings((".*contents.*", DeprecationWarning)),
               ):
             importlib.resources.contents(self.anchor01, 'utf-8.file')
