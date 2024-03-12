@@ -42,6 +42,8 @@ extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
 extern void _PyDict_MaybeUntrack(PyObject *mp);
 
+// Export for '_copy' shared extension
+PyAPI_FUNC(PyObject*) _PyDict_NewPresized(Py_ssize_t minused);
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
 

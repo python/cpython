@@ -115,8 +115,10 @@ d[bytearray] = bytearray.copy
 
 del d, t
 
-def deepcopy(x, memo=None, _nil=[]):
+def _deepcopy_fallback(x, memo=None, _nil=[]):
     """Deep copy operation on arbitrary Python objects.
+
+    This is the fallback from the C accelerator, and the main implementation if the C accelerator is not available.
 
     See the module's __doc__ string for more info.
     """
@@ -166,6 +168,13 @@ def deepcopy(x, memo=None, _nil=[]):
         memo[d] = y
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
+
+try:
+    from _copy import deepcopy
+except ImportError:
+    # the fallback is for projects like PyPy that reuse the stdlib
+    deepcopy = _deepcopy_fallback
+    deepcopy.__name__ = 'deepcopy'
 
 _deepcopy_dispatch = d = {}
 
