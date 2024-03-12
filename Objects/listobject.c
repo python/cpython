@@ -1256,13 +1256,13 @@ list_extend_iter_lock_held(PyListObject *self, PyObject *iterable)
 static int
 list_extend_lock_held(PyListObject *self, PyObject *iterable)
 {
-    iterable = PySequence_Fast(iterable, "argument must be iterable");
-    if (!iterable) {
+    PyObject *seq = PySequence_Fast(iterable, "argument must be iterable");
+    if (!seq) {
         return -1;
     }
 
-    int res = list_extend_fast(self, iterable);
-    Py_DECREF(iterable);
+    int res = list_extend_fast(self, seq);
+    Py_DECREF(seq);
     return res;
 }
 
