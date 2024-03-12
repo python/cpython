@@ -4161,6 +4161,30 @@ dummy_func(
             DEOPT_IF(1);
         }
 
+        tier2 op(_SIDE_EXIT, (--)) {
+            EXIT_IF(1);
+        }
+
+        tier2 op(_ERROR_0, (--)) {
+            ERROR_IF(1, error);
+        }
+
+        tier2 op(_ERROR_1, (value --)) {
+            ERROR_IF(1, error);
+        }
+
+        tier2 op(_ERROR_2, (value, value1 --)) {
+            ERROR_IF(1, error);
+        }
+
+        tier2 op(_ERROR_3, (value, value1, value2 --)) {
+            ERROR_IF(1, error);
+        }
+
+        tier2 op(_ERROR_4, (value, value1, value2, val --)) {
+            ERROR_IF(1, error);
+        }
+
 // END BYTECODES //
 
     }

@@ -15,6 +15,8 @@ extern const uint16_t _PyUop_Flags[MAX_UOP_ID+1];
 extern const uint8_t _PyUop_Replication[MAX_UOP_ID+1];
 extern const char * const _PyOpcode_uop_name[MAX_UOP_ID+1];
 
+extern int _PyUop_Popped(int opcode, int oparg);
+
 #ifdef NEED_OPCODE_METADATA
 const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_NOP] = HAS_PURE_FLAG,
@@ -244,6 +246,12 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_FATAL_ERROR] = HAS_ESCAPES_FLAG,
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = HAS_DEOPT_FLAG,
+    [_SIDE_EXIT] = HAS_DEOPT_FLAG | HAS_EXIT_FLAG,
+    [_ERROR_0] = HAS_ERROR_FLAG,
+    [_ERROR_1] = HAS_ERROR_FLAG,
+    [_ERROR_2] = HAS_ERROR_FLAG,
+    [_ERROR_3] = HAS_ERROR_FLAG,
+    [_ERROR_4] = HAS_ERROR_FLAG,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -326,6 +334,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
     [_END_SEND] = "_END_SEND",
+    [_ERROR_0] = "_ERROR_0",
+    [_ERROR_1] = "_ERROR_1",
+    [_ERROR_2] = "_ERROR_2",
+    [_ERROR_3] = "_ERROR_3",
+    [_ERROR_4] = "_ERROR_4",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
     [_EXIT_TRACE] = "_EXIT_TRACE",
     [_FATAL_ERROR] = "_FATAL_ERROR",
@@ -442,6 +455,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_SET_FUNCTION_ATTRIBUTE] = "_SET_FUNCTION_ATTRIBUTE",
     [_SET_IP] = "_SET_IP",
     [_SET_UPDATE] = "_SET_UPDATE",
+    [_SIDE_EXIT] = "_SIDE_EXIT",
     [_START_EXECUTOR] = "_START_EXECUTOR",
     [_STORE_ATTR] = "_STORE_ATTR",
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
@@ -481,6 +495,480 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
     [_WITH_EXCEPT_START] = "_WITH_EXCEPT_START",
 };
+int _PyUop_Popped(int opcode, int oparg)
+{
+    switch(opcode) {
+        case _NOP:
+            return 0;
+        case _RESUME_CHECK:
+            return 0;
+        case _LOAD_FAST_CHECK:
+            return 0;
+        case _LOAD_FAST_0:
+            return 0;
+        case _LOAD_FAST_1:
+            return 0;
+        case _LOAD_FAST_2:
+            return 0;
+        case _LOAD_FAST_3:
+            return 0;
+        case _LOAD_FAST_4:
+            return 0;
+        case _LOAD_FAST_5:
+            return 0;
+        case _LOAD_FAST_6:
+            return 0;
+        case _LOAD_FAST_7:
+            return 0;
+        case _LOAD_FAST:
+            return 0;
+        case _LOAD_FAST_AND_CLEAR:
+            return 0;
+        case _LOAD_FAST_LOAD_FAST:
+            return 0;
+        case _LOAD_CONST:
+            return 0;
+        case _STORE_FAST_0:
+            return 1;
+        case _STORE_FAST_1:
+            return 1;
+        case _STORE_FAST_2:
+            return 1;
+        case _STORE_FAST_3:
+            return 1;
+        case _STORE_FAST_4:
+            return 1;
+        case _STORE_FAST_5:
+            return 1;
+        case _STORE_FAST_6:
+            return 1;
+        case _STORE_FAST_7:
+            return 1;
+        case _STORE_FAST:
+            return 1;
+        case _STORE_FAST_LOAD_FAST:
+            return 1;
+        case _STORE_FAST_STORE_FAST:
+            return 2;
+        case _POP_TOP:
+            return 1;
+        case _PUSH_NULL:
+            return 0;
+        case _END_SEND:
+            return 2;
+        case _UNARY_NEGATIVE:
+            return 1;
+        case _UNARY_NOT:
+            return 1;
+        case _TO_BOOL:
+            return 1;
+        case _TO_BOOL_BOOL:
+            return 1;
+        case _TO_BOOL_INT:
+            return 1;
+        case _TO_BOOL_LIST:
+            return 1;
+        case _TO_BOOL_NONE:
+            return 1;
+        case _TO_BOOL_STR:
+            return 1;
+        case _REPLACE_WITH_TRUE:
+            return 1;
+        case _UNARY_INVERT:
+            return 1;
+        case _GUARD_BOTH_INT:
+            return 2;
+        case _BINARY_OP_MULTIPLY_INT:
+            return 2;
+        case _BINARY_OP_ADD_INT:
+            return 2;
+        case _BINARY_OP_SUBTRACT_INT:
+            return 2;
+        case _GUARD_BOTH_FLOAT:
+            return 2;
+        case _BINARY_OP_MULTIPLY_FLOAT:
+            return 2;
+        case _BINARY_OP_ADD_FLOAT:
+            return 2;
+        case _BINARY_OP_SUBTRACT_FLOAT:
+            return 2;
+        case _GUARD_BOTH_UNICODE:
+            return 2;
+        case _BINARY_OP_ADD_UNICODE:
+            return 2;
+        case _BINARY_SUBSCR:
+            return 2;
+        case _BINARY_SLICE:
+            return 3;
+        case _STORE_SLICE:
+            return 4;
+        case _BINARY_SUBSCR_LIST_INT:
+            return 2;
+        case _BINARY_SUBSCR_STR_INT:
+            return 2;
+        case _BINARY_SUBSCR_TUPLE_INT:
+            return 2;
+        case _BINARY_SUBSCR_DICT:
+            return 2;
+        case _LIST_APPEND:
+            return 2 + (oparg-1);
+        case _SET_ADD:
+            return 2 + (oparg-1);
+        case _STORE_SUBSCR:
+            return 3;
+        case _STORE_SUBSCR_LIST_INT:
+            return 3;
+        case _STORE_SUBSCR_DICT:
+            return 3;
+        case _DELETE_SUBSCR:
+            return 2;
+        case _CALL_INTRINSIC_1:
+            return 1;
+        case _CALL_INTRINSIC_2:
+            return 2;
+        case _POP_FRAME:
+            return 1;
+        case _GET_AITER:
+            return 1;
+        case _GET_ANEXT:
+            return 1;
+        case _GET_AWAITABLE:
+            return 1;
+        case _POP_EXCEPT:
+            return 1;
+        case _LOAD_ASSERTION_ERROR:
+            return 0;
+        case _LOAD_BUILD_CLASS:
+            return 0;
+        case _STORE_NAME:
+            return 1;
+        case _DELETE_NAME:
+            return 0;
+        case _UNPACK_SEQUENCE:
+            return 1;
+        case _UNPACK_SEQUENCE_TWO_TUPLE:
+            return 1;
+        case _UNPACK_SEQUENCE_TUPLE:
+            return 1;
+        case _UNPACK_SEQUENCE_LIST:
+            return 1;
+        case _UNPACK_EX:
+            return 1;
+        case _STORE_ATTR:
+            return 2;
+        case _DELETE_ATTR:
+            return 1;
+        case _STORE_GLOBAL:
+            return 1;
+        case _DELETE_GLOBAL:
+            return 0;
+        case _LOAD_LOCALS:
+            return 0;
+        case _LOAD_FROM_DICT_OR_GLOBALS:
+            return 1;
+        case _LOAD_NAME:
+            return 0;
+        case _LOAD_GLOBAL:
+            return 0;
+        case _GUARD_GLOBALS_VERSION:
+            return 0;
+        case _GUARD_BUILTINS_VERSION:
+            return 0;
+        case _LOAD_GLOBAL_MODULE:
+            return 0;
+        case _LOAD_GLOBAL_BUILTINS:
+            return 0;
+        case _DELETE_FAST:
+            return 0;
+        case _MAKE_CELL:
+            return 0;
+        case _DELETE_DEREF:
+            return 0;
+        case _LOAD_FROM_DICT_OR_DEREF:
+            return 1;
+        case _LOAD_DEREF:
+            return 0;
+        case _STORE_DEREF:
+            return 1;
+        case _COPY_FREE_VARS:
+            return 0;
+        case _BUILD_STRING:
+            return oparg;
+        case _BUILD_TUPLE:
+            return oparg;
+        case _BUILD_LIST:
+            return oparg;
+        case _LIST_EXTEND:
+            return 2 + (oparg-1);
+        case _SET_UPDATE:
+            return 2 + (oparg-1);
+        case _BUILD_SET:
+            return oparg;
+        case _BUILD_MAP:
+            return oparg*2;
+        case _SETUP_ANNOTATIONS:
+            return 0;
+        case _BUILD_CONST_KEY_MAP:
+            return 1 + oparg;
+        case _DICT_UPDATE:
+            return 2 + (oparg - 1);
+        case _DICT_MERGE:
+            return 5 + (oparg - 1);
+        case _MAP_ADD:
+            return 3 + (oparg - 1);
+        case _LOAD_SUPER_ATTR_ATTR:
+            return 3;
+        case _LOAD_SUPER_ATTR_METHOD:
+            return 3;
+        case _LOAD_ATTR:
+            return 1;
+        case _GUARD_TYPE_VERSION:
+            return 1;
+        case _CHECK_MANAGED_OBJECT_HAS_VALUES:
+            return 1;
+        case _LOAD_ATTR_INSTANCE_VALUE_0:
+            return 1;
+        case _LOAD_ATTR_INSTANCE_VALUE_1:
+            return 1;
+        case _LOAD_ATTR_INSTANCE_VALUE:
+            return 1;
+        case _CHECK_ATTR_MODULE:
+            return 1;
+        case _LOAD_ATTR_MODULE:
+            return 1;
+        case _CHECK_ATTR_WITH_HINT:
+            return 1;
+        case _LOAD_ATTR_WITH_HINT:
+            return 1;
+        case _LOAD_ATTR_SLOT_0:
+            return 1;
+        case _LOAD_ATTR_SLOT_1:
+            return 1;
+        case _LOAD_ATTR_SLOT:
+            return 1;
+        case _CHECK_ATTR_CLASS:
+            return 1;
+        case _LOAD_ATTR_CLASS_0:
+            return 1;
+        case _LOAD_ATTR_CLASS_1:
+            return 1;
+        case _LOAD_ATTR_CLASS:
+            return 1;
+        case _GUARD_DORV_VALUES:
+            return 1;
+        case _STORE_ATTR_INSTANCE_VALUE:
+            return 2;
+        case _STORE_ATTR_SLOT:
+            return 2;
+        case _COMPARE_OP:
+            return 2;
+        case _COMPARE_OP_FLOAT:
+            return 2;
+        case _COMPARE_OP_INT:
+            return 2;
+        case _COMPARE_OP_STR:
+            return 2;
+        case _IS_OP:
+            return 2;
+        case _CONTAINS_OP:
+            return 2;
+        case _CONTAINS_OP_SET:
+            return 2;
+        case _CONTAINS_OP_DICT:
+            return 2;
+        case _CHECK_EG_MATCH:
+            return 2;
+        case _CHECK_EXC_MATCH:
+            return 2;
+        case _IS_NONE:
+            return 1;
+        case _GET_LEN:
+            return 1;
+        case _MATCH_CLASS:
+            return 3;
+        case _MATCH_MAPPING:
+            return 1;
+        case _MATCH_SEQUENCE:
+            return 1;
+        case _MATCH_KEYS:
+            return 2;
+        case _GET_ITER:
+            return 1;
+        case _GET_YIELD_FROM_ITER:
+            return 1;
+        case _FOR_ITER_TIER_TWO:
+            return 1;
+        case _ITER_CHECK_LIST:
+            return 1;
+        case _GUARD_NOT_EXHAUSTED_LIST:
+            return 1;
+        case _ITER_NEXT_LIST:
+            return 1;
+        case _ITER_CHECK_TUPLE:
+            return 1;
+        case _GUARD_NOT_EXHAUSTED_TUPLE:
+            return 1;
+        case _ITER_NEXT_TUPLE:
+            return 1;
+        case _ITER_CHECK_RANGE:
+            return 1;
+        case _GUARD_NOT_EXHAUSTED_RANGE:
+            return 1;
+        case _ITER_NEXT_RANGE:
+            return 1;
+        case _BEFORE_ASYNC_WITH:
+            return 1;
+        case _BEFORE_WITH:
+            return 1;
+        case _WITH_EXCEPT_START:
+            return 4;
+        case _PUSH_EXC_INFO:
+            return 1;
+        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT:
+            return 1;
+        case _GUARD_KEYS_VERSION:
+            return 1;
+        case _LOAD_ATTR_METHOD_WITH_VALUES:
+            return 1;
+        case _LOAD_ATTR_METHOD_NO_DICT:
+            return 1;
+        case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES:
+            return 1;
+        case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT:
+            return 1;
+        case _CHECK_ATTR_METHOD_LAZY_DICT:
+            return 1;
+        case _LOAD_ATTR_METHOD_LAZY_DICT:
+            return 1;
+        case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS:
+            return 2 + oparg;
+        case _INIT_CALL_BOUND_METHOD_EXACT_ARGS:
+            return 2 + oparg;
+        case _CHECK_PEP_523:
+            return 0;
+        case _CHECK_FUNCTION_EXACT_ARGS:
+            return 2 + oparg;
+        case _CHECK_STACK_SPACE:
+            return 2 + oparg;
+        case _INIT_CALL_PY_EXACT_ARGS_0:
+            return 2 + oparg;
+        case _INIT_CALL_PY_EXACT_ARGS_1:
+            return 2 + oparg;
+        case _INIT_CALL_PY_EXACT_ARGS_2:
+            return 2 + oparg;
+        case _INIT_CALL_PY_EXACT_ARGS_3:
+            return 2 + oparg;
+        case _INIT_CALL_PY_EXACT_ARGS_4:
+            return 2 + oparg;
+        case _INIT_CALL_PY_EXACT_ARGS:
+            return 2 + oparg;
+        case _PUSH_FRAME:
+            return 1;
+        case _CALL_TYPE_1:
+            return 3;
+        case _CALL_STR_1:
+            return 3;
+        case _CALL_TUPLE_1:
+            return 3;
+        case _EXIT_INIT_CHECK:
+            return 1;
+        case _CALL_BUILTIN_CLASS:
+            return 2 + oparg;
+        case _CALL_BUILTIN_O:
+            return 2 + oparg;
+        case _CALL_BUILTIN_FAST:
+            return 2 + oparg;
+        case _CALL_BUILTIN_FAST_WITH_KEYWORDS:
+            return 2 + oparg;
+        case _CALL_LEN:
+            return 2 + oparg;
+        case _CALL_ISINSTANCE:
+            return 2 + oparg;
+        case _CALL_METHOD_DESCRIPTOR_O:
+            return 2 + oparg;
+        case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS:
+            return 2 + oparg;
+        case _CALL_METHOD_DESCRIPTOR_NOARGS:
+            return 2 + oparg;
+        case _CALL_METHOD_DESCRIPTOR_FAST:
+            return 2 + oparg;
+        case _MAKE_FUNCTION:
+            return 1;
+        case _SET_FUNCTION_ATTRIBUTE:
+            return 2;
+        case _BUILD_SLICE:
+            return 2 + ((oparg == 3) ? 1 : 0);
+        case _CONVERT_VALUE:
+            return 1;
+        case _FORMAT_SIMPLE:
+            return 1;
+        case _FORMAT_WITH_SPEC:
+            return 2;
+        case _COPY:
+            return 1 + (oparg-1);
+        case _BINARY_OP:
+            return 2;
+        case _SWAP:
+            return 2 + (oparg-2);
+        case _GUARD_IS_TRUE_POP:
+            return 1;
+        case _GUARD_IS_FALSE_POP:
+            return 1;
+        case _GUARD_IS_NONE_POP:
+            return 1;
+        case _GUARD_IS_NOT_NONE_POP:
+            return 1;
+        case _JUMP_TO_TOP:
+            return 0;
+        case _SET_IP:
+            return 0;
+        case _SAVE_RETURN_OFFSET:
+            return 0;
+        case _EXIT_TRACE:
+            return 0;
+        case _CHECK_VALIDITY:
+            return 0;
+        case _LOAD_CONST_INLINE:
+            return 0;
+        case _LOAD_CONST_INLINE_BORROW:
+            return 0;
+        case _POP_TOP_LOAD_CONST_INLINE_BORROW:
+            return 1;
+        case _LOAD_CONST_INLINE_WITH_NULL:
+            return 0;
+        case _LOAD_CONST_INLINE_BORROW_WITH_NULL:
+            return 0;
+        case _CHECK_FUNCTION:
+            return 0;
+        case _INTERNAL_INCREMENT_OPT_COUNTER:
+            return 1;
+        case _COLD_EXIT:
+            return 0;
+        case _START_EXECUTOR:
+            return 0;
+        case _FATAL_ERROR:
+            return 0;
+        case _CHECK_VALIDITY_AND_SET_IP:
+            return 0;
+        case _DEOPT:
+            return 0;
+        case _SIDE_EXIT:
+            return 0;
+        case _ERROR_0:
+            return 0;
+        case _ERROR_1:
+            return 1;
+        case _ERROR_2:
+            return 2;
+        case _ERROR_3:
+            return 3;
+        case _ERROR_4:
+            return 4;
+        default:
+            return -1;
+    }
+}
+
 #endif // NEED_OPCODE_METADATA
 
 

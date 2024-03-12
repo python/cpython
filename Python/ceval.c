@@ -982,6 +982,7 @@ enter_tier_two:
 
 #undef DEOPT_IF
 #define DEOPTIMIZE goto deoptimize
+#define JUMP_TO_ERROR goto error_tier_two
 
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
@@ -1055,15 +1056,6 @@ unbound_local_error_tier_two:
     );
     goto error_tier_two;
 
-// JUMP to any of these from ERROR_IF(..., error)
-pop_4_error_tier_two:
-    STACK_SHRINK(1);
-pop_3_error_tier_two:
-    STACK_SHRINK(1);
-pop_2_error_tier_two:
-    STACK_SHRINK(1);
-pop_1_error_tier_two:
-    STACK_SHRINK(1);
 error_tier_two:
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
@@ -1075,6 +1067,12 @@ error_tier_two:
     }
 #endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
+    if (next_uop[-1].format == UOP_FORMAT_DEOPT) {
+        uint16_t target = uop_get_error_target(&next_uop[-1]);
+        next_uop = current_executor->trace + target;
+        goto tier2_dispatch;
+    }
+    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
@@ -1084,8 +1082,8 @@ error_tier_two:
 // Jump here from DEOPT_IF()
 deoptimize:
     if (next_uop[-1].format == UOP_FORMAT_DEOPT) {
-        uint16_t deopt_target = uop_get_deopt_target(&next_uop[-1]);
-        next_uop = current_executor->trace + deopt_target;
+        uint16_t target = uop_get_deopt_target(&next_uop[-1]);
+        next_uop = current_executor->trace + target;
         goto tier2_dispatch;
     }
     assert(next_uop[-1].format == UOP_FORMAT_TARGET);
@@ -1106,6 +1104,12 @@ deoptimize:
 
 // Jump here from EXIT_IF()
 side_exit:
+    if (next_uop[-1].format == UOP_FORMAT_DEOPT) {
+        uint16_t target = uop_get_deopt_target(&next_uop[-1]);
+        next_uop = current_executor->trace + target;
+        goto tier2_dispatch;
+    }
+    assert(next_uop[-1].format == UOP_FORMAT_EXIT);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     uint32_t exit_index = next_uop[-1].exit_index;

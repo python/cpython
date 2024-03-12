@@ -72,20 +72,7 @@ def tier2_replace_error(
     label = next(tkn_iter).text
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
-    out.emit(") ")
-    c_offset = stack.peek_offset.to_c()
-    try:
-        offset = -int(c_offset)
-        close = ";\n"
-    except ValueError:
-        offset = None
-        out.emit(f"{{ stack_pointer += {c_offset}; ")
-        close = "; }\n"
-    out.emit("goto ")
-    if offset:
-        out.emit(f"pop_{offset}_")
-    out.emit(label + "_tier_two")
-    out.emit(close)
+    out.emit(") JUMP_TO_ERROR;\n")
 
 
 def tier2_replace_deopt(

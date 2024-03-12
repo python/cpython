@@ -859,34 +859,55 @@ count_exits_and_nops(_PyUOpInstruction *buffer, int length, int *exit_count_ptr)
     return nop_count;
 }
 
+static uint16_t ERRORS[5] = {
+    [0] = _ERROR_0,
+    [1] = _ERROR_1,
+    [2] = _ERROR_2,
+    [3] = _ERROR_3,
+    [4] = _ERROR_4,
+};
+
 /* Convert implicit exits, errors and deopts
  * into explicit ones. */
 static int
 prepare_for_execution(_PyUOpInstruction *buffer, int length)
 {
     int next_exit = length;
+    int exit_index = 0;
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
         int opcode = inst->opcode;
-        int current_exit = -1;
-        int current_exit_target = -1;
-        int current_error_target = -1;
-        int current_error = -1;
-        uint32_t target = uop_get_target(inst);
+        int32_t current_exit = -1;
+        int32_t current_exit_target = -1;
+        int32_t current_error_target = -1;
+        int32_t current_error = -1;
+        int32_t target = (int32_t)uop_get_target(inst);
         if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
             if (target != current_exit_target) {
                 current_exit_target = target;
-                buffer[next_exit].opcode = _PyUop_Flags[opcode] & HAS_EXIT_FLAG ? _SIDE_EXIT : _DEOPT;
-                buffer[next_exit].target = target;
+                if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
+                    buffer[next_exit].opcode = _SIDE_EXIT;
+                    buffer[next_exit].format = UOP_FORMAT_EXIT;
+                    buffer[next_exit].exit_index = exit_index;
+                }
+                else {
+                    buffer[next_exit].opcode = _DEOPT;
+                    buffer[next_exit].format = UOP_FORMAT_TARGET;
+                    buffer[next_exit].target = target;
+                    exit_index++;
+                }
                 current_exit = next_exit;
                 next_exit++;
             }
             buffer[i].deopt_target = current_exit;
+            buffer[i].format = _PyUop_Flags[opcode] & HAS_EXIT_FLAG ? UOP_FORMAT_EXIT : UOP_FORMAT_DEOPT ;
         }
         if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
             if (target != current_error_target) {
+                int popped = _PyUop_Popped(opcode, inst->oparg);
+                assert(popped < 5);
                 current_error_target = target;
-                buffer[next_exit].opcode = _PyUop_Flags[opcode] & HAS_EXIT_FLAG ? _ERROR;
+                buffer[next_exit].opcode = ERRORS[popped];
                 buffer[next_exit].target = target;
                 current_error = next_exit;
                 next_exit++;
@@ -935,7 +956,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[executor_length-1];
-    /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = length-1; i >= 0; i--) {
         int opcode = buffer[i].opcode;
         if (opcode == NOP) {
@@ -943,7 +963,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         }
         *dest = buffer[i];
         assert(opcode != _POP_JUMP_IF_FALSE && opcode != _POP_JUMP_IF_TRUE);
-        if (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) {
+        if (opcode == _SIDE_EXIT) {
             executor->exits[next_exit].target = buffer[i].target;
             dest->exit_index = next_exit;
             next_exit--;
@@ -956,6 +976,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(next_exit == -1);
     assert(dest == executor->trace);
     dest->opcode = _START_EXECUTOR;
+    dest->oparg = 0;
+    dest->target = 0;
     dest->operand = (uintptr_t)executor;
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
@@ -1011,33 +1033,6 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
 }
 
 static int
-insert_exits_and_deopts(
-    _PyUOpInstruction *buffer,
-    int length)
-{
-    assert(length < UOP_MAX_TRACE_LENGTH);
-    int last_target = -1;
-    int deopt_target = length-1;
-    int next_exit = 0;
-    for (int pc = 0; pc < length; pc++) {
-        int opcode = buffer[pc].opcode;
-        if (_PyUop_Flags[opcode] & HAS_DEOPT_FLAG) {
-            uint16_t target = uop_get_target(&buffer[pc]);
-            if (last_target != target) {
-                last_target = target;
-                deopt_target++;
-                buffer[deopt_target].opcode = _DEOPT;
-                buffer[deopt_target].target = target;
-                buffer[deopt_target].format = UOP_FORMAT_TARGET;
-            }
-            buffer[pc].format = UOP_FORMAT_DEOPT;
-            buffer[pc].deopt_target = deopt_target;
-        }
-    }
-    return deopt_target + 1;
-}
-
-static int
 uop_optimize(
     _PyOptimizerObject *self,
     _PyInterpreterFrame *frame,
@@ -1082,7 +1077,7 @@ uop_optimize(
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
         assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
     }
-    length = insert_exits_and_deopts(buffer, length);
+    length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
     if (executor == NULL) {

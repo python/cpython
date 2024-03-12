@@ -2012,3 +2012,31 @@
             break;
         }
 
+        case _SIDE_EXIT: {
+            break;
+        }
+
+        case _ERROR_0: {
+            break;
+        }
+
+        case _ERROR_1: {
+            stack_pointer += -1;
+            break;
+        }
+
+        case _ERROR_2: {
+            stack_pointer += -2;
+            break;
+        }
+
+        case _ERROR_3: {
+            stack_pointer += -3;
+            break;
+        }
+
+        case _ERROR_4: {
+            stack_pointer += -4;
+            break;
+        }
+
