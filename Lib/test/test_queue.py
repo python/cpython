@@ -586,8 +586,8 @@ class BaseQueueTestMixin(BlockingTestMixin):
             with self.assertRaises(self.queue.ShutDown):
                 q.get_nowait()
         else:
-            task = q.get()
-            self.assertEqual(task, "Y")
+            result = q.get()
+            self.assertEqual(result, "Y")
             q.task_done()
 
         for t in threads:
