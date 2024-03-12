@@ -1966,6 +1966,7 @@ long_to_decimal_string_internal(PyObject *aa,
     int negative;
     int d;
 
+    // writer or bytes_writer can be used, but not both at the same time.
     assert(writer == NULL || bytes_writer == NULL);
 
     a = (PyLongObject *)aa;
@@ -2201,6 +2202,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
     int bits;
 
     assert(base == 2 || base == 8 || base == 16);
+    // writer or bytes_writer can be used, but not both at the same time.
     assert(writer == NULL || bytes_writer == NULL);
     if (a == NULL || !PyLong_Check(a)) {
         PyErr_BadInternalCall();
