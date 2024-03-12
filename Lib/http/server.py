@@ -281,7 +281,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         requestline = str(self.raw_requestline, 'iso-8859-1')
         requestline = requestline.rstrip('\r\n')
         self.requestline = requestline
-        words = requestline.split()
+        words = requestline.split(' ')
         if len(words) == 0:
             return False
 
