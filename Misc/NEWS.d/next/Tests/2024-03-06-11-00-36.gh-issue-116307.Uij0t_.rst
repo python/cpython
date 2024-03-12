@@ -1,0 +1,3 @@
+Added import helper ``isolated_modules`` as ``CleanImport`` does not remove
+modules imported during the context. Use it in importlib.resources tests to
+avoid leaving ``mod`` around to impede importlib.metadata tests.
