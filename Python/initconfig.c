@@ -847,7 +847,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
 #ifdef Py_GIL_DISABLED
-    config->enable_gil = _PyConfig_GIL_DEFAULT;
+    config->enable_gil = _PyConfig_GIL_DISABLE;
 #endif
 }
 
