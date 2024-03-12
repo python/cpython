@@ -1675,7 +1675,7 @@ count_run(MergeState *ms, sortslice *slo, Py_ssize_t nremaining)
 
     /* Sticking to only __lt__ compares is confusing and error-prone. But in
      * this routine, almost all uses of IFLT can be captured by tiny macros
-     * giving mnemonic names to the intent. Note that inline functios don't
+     * giving mnemonic names to the intent. Note that inline functions don't
      * work for this (IFLT expands to code including `goto fail`).
      */
 #define IF_NEXT_LARGER  IFLT(lo[n-1], lo[n])
