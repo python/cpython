@@ -28,6 +28,7 @@ configuration problem notification and resolution.
 from configparser import ConfigParser
 import os
 import sys
+from collections import ChainMap
 
 from tkinter.font import Font
 import idlelib
@@ -468,61 +469,95 @@ class IdleConf:
                     extName = extn  # TODO return here?
         return extName
 
-    def GetExtensionKeys(self, extensionName):
+    def GetExtensionKeys(self, extension_name):
         """Return dict: {configurable extensionName event : active keybinding}.
 
         Events come from default config extension_cfgBindings section.
         Keybindings come from GetCurrentKeySet() active key dict,
         where previously used bindings are disabled.
         """
-        keysName = extensionName + '_cfgBindings'
-        activeKeys = self.GetCurrentKeySet()
-        extKeys = {}
-        if self.defaultCfg['extensions'].has_section(keysName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(keysName)
-            for eventName in eventNames:
-                event = '<<' + eventName + '>>'
-                binding = activeKeys[event]
-                extKeys[event] = binding
-        return extKeys
+        bindings_section = f'{extension_name}_cfgBindings'
+        current_keyset = idleConf.GetCurrentKeySet()
+        extension_keys = {}
 
-    def __GetRawExtensionKeys(self,extensionName):
+        event_names = set()
+        if self.userCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.userCfg['extensions'].GetOptionList(bindings_section)
+            )
+        if self.defaultCfg['extensions'].has_section(bindings_section):
+            event_names |= set(
+                self.defaultCfg['extensions'].GetOptionList(bindings_section)
+            )
+
+        for event_name in event_names:
+            event = f'<<{event_name}>>'
+            binding = current_keyset.get(event, None)
+            if binding is None:
+                continue
+            extension_keys[event] = binding
+        return extension_keys
+
+    def __GetRawExtensionKeys(self, extension_name):
         """Return dict {configurable extensionName event : keybinding list}.
 
         Events come from default config extension_cfgBindings section.
         Keybindings list come from the splitting of GetOption, which
         tries user config before default config.
         """
-        keysName = extensionName+'_cfgBindings'
-        extKeys = {}
-        if self.defaultCfg['extensions'].has_section(keysName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(keysName)
-            for eventName in eventNames:
-                binding = self.GetOption(
-                        'extensions', keysName, eventName, default='').split()
-                event = '<<' + eventName + '>>'
-                extKeys[event] = binding
-        return extKeys
+        bindings_section = f'{extension_name}_cfgBindings'
+        extension_keys = {}
 
-    def GetExtensionBindings(self, extensionName):
+        event_names = []
+        if self.userCfg['extensions'].has_section(bindings_section):
+            event_names.append(self.userCfg['extensions'].GetOptionList(bindings_section))
+        if self.defaultCfg['extensions'].has_section(bindings_section):
+            event_names.append(self.defaultCfg['extensions'].GetOptionList(bindings_section))
+
+        # Because chain map, favors user bindings over default bindings
+        for event_name in ChainMap(*event_names):
+            binding = self.GetOption(
+                'extensions',
+                bindings_section,
+                event_name,
+                default='',
+            ).split()
+            event = f'<<{event_name}>>'
+            extension_keys[event] = binding
+        return extension_keys
+
+    def GetExtensionBindings(self, extension_name):
         """Return dict {extensionName event : active or defined keybinding}.
 
         Augment self.GetExtensionKeys(extensionName) with mapping of non-
         configurable events (from default config) to GetOption splits,
         as in self.__GetRawExtensionKeys.
         """
-        bindsName = extensionName + '_bindings'
-        extBinds = self.GetExtensionKeys(extensionName)
-        #add the non-configurable bindings
-        if self.defaultCfg['extensions'].has_section(bindsName):
-            eventNames = self.defaultCfg['extensions'].GetOptionList(bindsName)
-            for eventName in eventNames:
-                binding = self.GetOption(
-                        'extensions', bindsName, eventName, default='').split()
-                event = '<<' + eventName + '>>'
-                extBinds[event] = binding
+        bindings_section = f'{extension_name}_bindings'
+        extension_keys = self.GetExtensionKeys(extension_name)
 
-        return extBinds
+        # add the non-configurable bindings
+        values = []
+        if self.userCfg['extensions'].has_section(bindings_section):
+            values.append(
+                self.userCfg['extensions'].GetOptionList(bindings_section)
+            )
+        if self.defaultCfg['extensions'].has_section(bindings_section):
+            values.append(
+                self.defaultCfg['extensions'].GetOptionList(bindings_section)
+            )
+
+        # Because chain map, favors user bindings over default bindings
+        for event_name in ChainMap(*values):
+            binding = self.GetOption(
+                'extensions',
+                bindings_section,
+                event_name,
+                default=''
+            ).split()
+            event = f'<<{event_name}>>'
+            extension_keys[event] = binding
+        return extension_keys
 
     def GetKeyBinding(self, keySetName, eventStr):
         """Return the keybinding list for keySetName eventStr.
@@ -757,7 +792,8 @@ class IdleConf:
         "Load all configuration files."
         for key in self.defaultCfg:
             self.defaultCfg[key].Load()
-            self.userCfg[key].Load() #same keys
+        for key in self.userCfg:
+            self.userCfg[key].Load()
 
     def SaveUserCfgFiles(self):
         "Write all loaded user configuration files to disk."
