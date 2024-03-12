@@ -1287,6 +1287,16 @@ _list_extend(PyListObject *self, PyObject *iterable)
         res = list_extend_lock_held(self, iterable);
         Py_END_CRITICAL_SECTION();
     }
+    else if (PyAnySet_CheckExact(iterable)) {
+        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+        res = list_extend_lock_held(self, iterable);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (PyDictKeys_Check(iterable)) {
+        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+        res = list_extend_lock_held(self, iterable);
+        Py_END_CRITICAL_SECTION2();
+    }
     else {
         Py_BEGIN_CRITICAL_SECTION2(self, iterable);
         res = list_extend_iter_lock_held(self, iterable);
