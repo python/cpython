@@ -1395,7 +1395,7 @@ do_start_new_thread(thread_module_state* state,
                         "thread is not supported for isolated subinterpreters");
         return -1;
     }
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't create new thread at interpreter shutdown");
         return -1;

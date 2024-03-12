@@ -1340,6 +1340,30 @@ class ThreadJoinOnShutdown(BaseTestCase):
         rc, out, err = assert_python_ok('-c', script)
         self.assertFalse(err)
 
+    def test_thread_from_thread(self):
+        script = """if True:
+            import threading
+            import time
+
+            def thread2():
+                time.sleep(0.05)
+                print("OK")
+
+            def thread1():
+                time.sleep(0.05)
+                t2 = threading.Thread(target=thread2)
+                t2.start()
+
+            t = threading.Thread(target=thread1)
+            t.start()
+            # do not join() -- the interpreter waits for non-daemon threads to
+            # finish.
+            """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(err, b"")
+        self.assertEqual(out, b"OK\n")
+        self.assertEqual(rc, 0)
+
     @skip_unless_reliable_fork
     def test_reinit_tls_after_fork(self):
         # Issue #13817: fork() would deadlock in a multithreaded program with
