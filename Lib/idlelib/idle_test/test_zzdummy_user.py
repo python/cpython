@@ -17,9 +17,11 @@ test_usercfg = {
     'keys': config.IdleUserConfParser(''),
     'extensions': config.IdleUserConfParser(''),
 }
-test_usercfg["extensions"].read_dict(
-    {"ZzDummy": {'enable': 'False', 'enable_shell': 'False', 'enable_editor': 'True', 'z-text': 'Z'}}
-)
+test_usercfg["extensions"].read_dict({
+    "ZzDummy": {'enable': 'True', 'enable_shell': 'False', 'enable_editor': 'True', 'z-text': 'Z'},
+    "ZzDummy_cfgBindings": {'z-in': '<Control-Shift-KeyRelease-Insert>'},
+    "ZzDummy_bindings": {'z-out': '<Control-Shift-KeyRelease-Delete>'},
+})
 real_defaultcfg = zzdummy.idleConf.defaultCfg
 test_defaultcfg = {
     'main': config.IdleUserConfParser(''),
@@ -34,6 +36,9 @@ test_defaultcfg["extensions"].read_dict(
         "FormatParagraph": {'max-width': '72'},
         "ParenMatch": {'style': 'expression', 'flash-delay': '500', 'bell': 'True'},
     }
+)
+test_defaultcfg["keys"].read_dict(
+    {name: dict(real_defaultcfg["keys"][name]) for name in real_defaultcfg["keys"]}
 )
 code_sample = """\
 
@@ -103,6 +108,8 @@ class ZZDummyTest(unittest.TestCase):
         return actual
 
     def test_exists(self):
+        self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), ['ZzDummy', 'ZzDummy_cfgBindings', 'ZzDummy_bindings'])
+        self.assertEqual(zzdummy.idleConf.GetSectionList('default', 'extensions'), ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch'])
         self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions())
 
     def test_init(self):

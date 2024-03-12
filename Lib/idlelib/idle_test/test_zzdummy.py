@@ -83,7 +83,9 @@ class ZZDummyTest(unittest.TestCase):
         return actual
 
     def test_exists(self):
-        self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions())
+        self.assertEqual(zzdummy.idleConf.GetSectionList('user', 'extensions'), [])
+        self.assertEqual(zzdummy.idleConf.GetSectionList('default', 'extensions'), ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy', 'ZzDummy_cfgBindings', 'ZzDummy_bindings'])
+        self.assertIn("ZzDummy", zzdummy.idleConf.GetExtensions(False))
 
     def test_init(self):
         zz = self.zz
