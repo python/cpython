@@ -89,10 +89,7 @@ class Regrtest:
 
         # Workers
         if ns.use_mp is None:
-            if ns.tsan:
-                num_workers = -1 # use the number of CPUs
-            else:
-                num_workers = 0  # run sequentially
+            num_workers = 0  # run sequentially
         elif ns.use_mp <= 0:
             num_workers = -1  # use the number of CPUs
         else:
