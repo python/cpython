@@ -376,12 +376,6 @@ force_done(ThreadHandle *handle)
     return 0;
 }
 
-static void
-start_failed(ThreadHandle *handle)
-{
-    _PyOnceFlag_CallOnce(&handle->once, (_Py_once_fn_t *)force_done, handle);
-}
-
 static int
 ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
                    PyObject *kwargs)
@@ -405,8 +399,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
     if (boot == NULL) {
         PyErr_NoMemory();
-        start_failed(self);
-        return -1;
+        goto start_failed;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
@@ -415,8 +408,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
         if (!PyErr_Occurred()) {
             PyErr_NoMemory();
         }
-        start_failed(self);
-        return -1;
+        goto start_failed;
     }
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
@@ -430,9 +422,8 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     if (PyThread_start_joinable_thread(thread_run, boot, &ident, &os_handle)) {
         PyThreadState_Clear(boot->tstate);
         thread_bootstate_free(boot, 1);
-        start_failed(self);
         PyErr_SetString(ThreadError, "can't start new thread");
-        return -1;
+        goto start_failed;
     }
 
     // Mark the handle running
@@ -448,6 +439,10 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     _PyEvent_Notify(&boot->handle_ready);
 
     return 0;
+
+start_failed:
+    _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)force_done, self);
+    return -1;
 }
 
 static int
