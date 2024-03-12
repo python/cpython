@@ -559,6 +559,9 @@ Miscellaneous options
      :mod:`__main__`. This can be used to execute code early during Python
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
+   * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
+     respectively. Only available in builds configured with
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -600,6 +603,9 @@ Miscellaneous options
 
    .. versionchanged:: 3.13
       Added the ``-X cpu_count`` and ``-X presite`` options.
+
+   .. versionchanged:: 3.13
+      Added the ``-X gil`` option.
 
 .. _using-on-controlling-color:
 
@@ -1135,6 +1141,18 @@ conflict.
    This environment variable can be used to set the location of a
    ``.python_history`` file (by default, it is ``.python_history`` in the
    user's home directory).
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_GIL
+
+   If this variable is set to ``1``, the global interpreter lock (GIL) will be
+   forced on. Setting it to ``0`` forces the GIL off.
+
+   See also the :option:`-X gil <-X>` command-line option, which takes
+   precedence over this variable.
+
+   Needs Python configured with the :option:`--disable-gil` build option.
 
    .. versionadded:: 3.13
 
