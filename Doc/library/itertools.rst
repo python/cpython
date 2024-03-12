@@ -1019,17 +1019,16 @@ The following recipes have a more mathematical flavor:
 
    def convolve(signal, kernel):
        """Discrete linear convolution of two iterables.
+       Equivalent to polynomial multiplication.
 
-       The kernel is fully consumed before the calculations begin.
-       The signal is consumed lazily and can be infinite.
-
-       Convolutions are mathematically commutative.
-       If the signal and kernel are swapped,
-       the output will be the same.
+       Convolutions are mathematically commutative; however, the inputs are
+       evaluated differently.  The signal is consumed lazily and can be
+       infinite. The kernel is fully consumed before the calculations begin.
 
        Article:  https://betterexplained.com/articles/intuitive-convolution/
        Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
        """
+       # convolve([1, -1, -20], [1, -3]) --> 1 -4 -17 60
        # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
        # convolve(data, [1/2, 0, -1/2]) --> 1st derivative estimate
        # convolve(data, [1, -2, 1]) --> 2nd derivative estimate
@@ -1268,6 +1267,7 @@ The following recipes have a more mathematical flavor:
     >>> list(matmul([[2, 5], [7, 9], [3, 4]], [[7, 11, 5, 4, 9], [3, 5, 2, 6, 3]]))
     [(29, 47, 20, 38, 33), (76, 122, 53, 82, 90), (33, 53, 23, 36, 39)]
 
+    >>> list(convolve([1, -1, -20], [1, -3]) == [1, -4, -17, 60]
     >>> data = [20, 40, 24, 32, 20, 28, 16]
     >>> list(convolve(data, [0.25, 0.25, 0.25, 0.25]))
     [5.0, 15.0, 21.0, 29.0, 29.0, 26.0, 24.0, 16.0, 11.0, 4.0]
