@@ -43,7 +43,7 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
     // be assigned already. That path does not exist anymore. We won't call any
     // Python code in this function and garbage collection will not run.
     // Notice that _PyFrame_New_NoTrack() can potentially raise a MemoryError,
-    // but it won't allocate traceback until the frame unwind so we are safe
+    // but it won't allocate a traceback until the frame unwinds, so we are safe
     // here.
     assert(frame->frame_obj == NULL);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
