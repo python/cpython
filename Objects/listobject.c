@@ -995,26 +995,28 @@ PyList_SetSlice(PyObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     return list_ass_slice((PyListObject *)a, ilow, ihigh, v);
 }
 
-static PyObject *
+static int
 list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
 {
     Py_ssize_t input_size = PyList_GET_SIZE(self);
     if (input_size == 0 || n == 1) {
-        return Py_NewRef(self);
+        return 0;
     }
 
     if (n < 1) {
         list_clear(self);
-        return Py_NewRef(self);
+        return 0;
     }
 
     if (input_size > PY_SSIZE_T_MAX / n) {
-        return PyErr_NoMemory();
+        PyErr_NoMemory();
+        return -1;
     }
     Py_ssize_t output_size = input_size * n;
 
-    if (list_resize(self, output_size) < 0)
-        return NULL;
+    if (list_resize(self, output_size) < 0) {
+        return -1;
+    }
 
     PyObject **items = self->ob_item;
     for (Py_ssize_t j = 0; j < input_size; j++) {
@@ -1022,8 +1024,7 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     }
     _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
                       sizeof(PyObject *)*input_size);
-
-    return Py_NewRef(self);
+    return 0;
 }
 
 static PyObject *
@@ -1032,7 +1033,12 @@ list_inplace_repeat(PyObject *_self, Py_ssize_t n)
     PyObject *ret;
     PyListObject *self = (PyListObject *) _self;
     Py_BEGIN_CRITICAL_SECTION(self);
-    ret = list_inplace_repeat_lock_held(self, n);
+    if (list_inplace_repeat_lock_held(self, n) < 0) {
+        ret = NULL;
+    }
+    else {
+        ret = Py_NewRef(self);
+    }
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -1292,14 +1298,13 @@ list_extend_set(PyListObject *self, PySetObject *other)
 static int
 _list_extend(PyListObject *self, PyObject *iterable)
 {
-    // Special cases:
-    // 1) lists and tuples which can use PySequence_Fast ops
-    // 2) extending self to self requires making a copy first
+    // Special case:
+    // lists and tuples which can use PySequence_Fast ops
     // TODO(@corona10): Add more special cases for other types.
     int res = -1;
     if ((PyObject *)self == iterable) {
         Py_BEGIN_CRITICAL_SECTION(self);
-        res = list_extend_lock_held(self, iterable);
+        res = list_inplace_repeat_lock_held(self, 2);
         Py_END_CRITICAL_SECTION();
     }
     else if (PyList_CheckExact(iterable)) {
@@ -1318,9 +1323,9 @@ _list_extend(PyListObject *self, PyObject *iterable)
         Py_END_CRITICAL_SECTION2();
     }
     else {
-        Py_BEGIN_CRITICAL_SECTION2(self, iterable);
+        Py_BEGIN_CRITICAL_SECTION(self);
         res = list_extend_iter_lock_held(self, iterable);
-        Py_END_CRITICAL_SECTION2();
+        Py_END_CRITICAL_SECTION();
     }
     return res;
 }
