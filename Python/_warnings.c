@@ -1,5 +1,4 @@
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -1065,12 +1064,12 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
         return NULL;
     }
 
-    module_name = _PyDict_GetItemWithError(module_globals, &_Py_ID(__name__));
-    if (!module_name) {
+    int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
+                               &module_name);
+    if (rc < 0 || rc == 0) {
         Py_DECREF(loader);
         return NULL;
     }
-    Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
     (void)PyObject_GetOptionalAttr(loader, &_Py_ID(get_source), &get_source);
