@@ -10,13 +10,31 @@ from idlelib import editor
 from idlelib import format
 
 
-usercfg = zzdummy.idleConf.userCfg
-testcfg = {
+real_usercfg = zzdummy.idleConf.userCfg
+test_usercfg = {
     'main': config.IdleUserConfParser(''),
     'highlight': config.IdleUserConfParser(''),
     'keys': config.IdleUserConfParser(''),
     'extensions': config.IdleUserConfParser(''),
 }
+test_usercfg["extensions"].read_dict(
+    {"ZzDummy": {'enable': 'False', 'enable_shell': 'False', 'enable_editor': 'True', 'z-text': 'Z'}}
+)
+real_defaultcfg = zzdummy.idleConf.defaultCfg
+test_defaultcfg = {
+    'main': config.IdleUserConfParser(''),
+    'highlight': config.IdleUserConfParser(''),
+    'keys': config.IdleUserConfParser(''),
+    'extensions': config.IdleUserConfParser(''),
+}
+test_defaultcfg["extensions"].read_dict(
+    {
+        "AutoComplete": {'popupwait': '2000'},
+        "CodeContext": {'maxlines': '15'},
+        "FormatParagraph": {'max-width': '72'},
+        "ParenMatch": {'style': 'expression', 'flash-delay': '500', 'bell': 'True'},
+    }
+)
 code_sample = """\
 
 class C1:
@@ -47,11 +65,13 @@ class ZZDummyTest(unittest.TestCase):
         root.withdraw()
         text = cls.text = Text(cls.root)
         cls.editor = DummyEditwin(root, text)
-        zzdummy.idleConf.userCfg = testcfg
+        zzdummy.idleConf.userCfg = test_usercfg
+        zzdummy.idleConf.defaultCfg = test_defaultcfg
 
     @classmethod
     def tearDownClass(cls):
-        zzdummy.idleConf.userCfg = usercfg
+        zzdummy.idleConf.defaultCfg = real_defaultcfg
+        zzdummy.idleConf.userCfg = real_usercfg
         del cls.editor, cls.text
         cls.root.update_idletasks()
         for id in cls.root.tk.call('after', 'info'):
@@ -92,7 +112,7 @@ class ZZDummyTest(unittest.TestCase):
 
     def test_reload(self):
         self.assertEqual(self.zz.ztext, '# ignore #')
-        testcfg['extensions'].SetOption('ZzDummy', 'z-text', 'spam')
+        test_usercfg['extensions'].SetOption('ZzDummy', 'z-text', 'spam')
         zzdummy.ZzDummy.reload()
         self.assertEqual(self.zz.ztext, 'spam')
 
