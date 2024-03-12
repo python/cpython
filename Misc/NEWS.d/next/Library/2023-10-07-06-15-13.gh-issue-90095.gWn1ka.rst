@@ -1,1 +1,0 @@
-Make .pdbrc and -c work with any valid pdb commands.

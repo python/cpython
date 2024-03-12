@@ -1,1 +1,0 @@
-:class:`list` is now compatible with the implementation of :pep:`703`.

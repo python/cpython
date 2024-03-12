@@ -1,1 +1,0 @@
-Add consistency in usage message IO between 2 versions of python-config.

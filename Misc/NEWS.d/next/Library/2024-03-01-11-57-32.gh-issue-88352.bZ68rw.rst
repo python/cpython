@@ -1,6 +1,0 @@
-Fix the computation of the next rollover time in the
-:class:`logging.TimedRotatingFileHandler` handler. :meth:`!computeRollover`
-now always returns a timestamp larger than the specified time and works
-correctly during the DST change. :meth:`!doRollover` no longer overwrite the
-already rolled over file, saving from data loss when run at midnight or
-during repeated time at the DST change.

@@ -1,4 +1,0 @@
-Improve algorithm for computing which rolled-over log files to delete in
-:class:`logging.TimedRotatingFileHandler`. It is now reliable for handlers
-without ``namer`` and with arbitrary deterministic ``namer`` that leaves the
-datetime part in the file name unmodified.
