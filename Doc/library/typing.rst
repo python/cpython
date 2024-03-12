@@ -1233,6 +1233,10 @@ These can be used as types in annotations. They all support subscription using
 
    .. versionadded:: 3.5.3
 
+   .. versionchanged:: 3.13
+
+      :data:`ClassVar` can now be nested in :data:`Final` and vice versa.
+
 .. data:: Final
 
    Special typing construct to indicate final names to type checkers.
@@ -1255,6 +1259,10 @@ These can be used as types in annotations. They all support subscription using
    more details.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+
+      :data:`Final` can now be nested in :data:`ClassVar` and vice versa.
 
 .. data:: Required
 
