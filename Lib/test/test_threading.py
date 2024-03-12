@@ -1202,21 +1202,21 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    def test_start_new_thread_at_exit(self):
+    def test_start_new_thread_at_finalization(self):
         code = """if 1:
-            import atexit
             import _thread
 
             def f():
                 print("shouldn't be printed")
 
-            def exit_handler():
-                _thread.start_new_thread(f, ())
-
-            atexit.register(exit_handler)
+            class AtFinalization:
+                def __del__(self):
+                    print("OK")
+                    _thread.start_new_thread(f, ())
+            at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out, b'OK\n')
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
 class ThreadJoinOnShutdown(BaseTestCase):
