@@ -5,7 +5,7 @@ from test.support import (verbose, refcount_test,
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
-from test.support import threading_helper
+from test.support import threading_helper, gc_threshold
 
 import gc
 import sys
@@ -1330,6 +1330,7 @@ class GCTogglingTests(unittest.TestCase):
             # with an empty __dict__.
             self.assertEqual(x, None)
 
+    @gc_threshold(1000, 0, 0)
     def test_bug1055820d(self):
         # Corresponds to temp2d.py in the bug report.  This is very much like
         # test_bug1055820c, but uses a __del__ method instead of a weakref
@@ -1397,6 +1398,7 @@ class GCTogglingTests(unittest.TestCase):
             # empty __dict__.
             self.assertEqual(x, None)
 
+    @gc_threshold(1000, 0, 0)
     def test_indirect_calls_with_gc_disabled(self):
         junk = []
         i = 0
