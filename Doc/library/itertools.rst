@@ -997,10 +997,10 @@ The following recipes have a more mathematical flavor:
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-   def sum_of_squares(it):
+   def sum_of_squares(iterable):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) --> 1400
-       return math.sumprod(*tee(it))
+       return math.sumprod(*tee(iterable))
 
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
