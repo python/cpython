@@ -86,14 +86,14 @@ join_thread(thandleobject *hobj)
 static void track_thread_handle_for_fork(thandleobject *);
 
 PyObject *
-_PyThreadHandle_NewObject(PyTypeObject *type)
+_PyThreadHandle_NewObject(void)
 {
     _PyEventRc *event = _PyEventRc_New();
     if (event == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    thandleobject *self = PyObject_New(thandleobject, type);
+    thandleobject *self = PyObject_New(thandleobject, &_PyThreadHandle_Type);
     if (self == NULL) {
         _PyEventRc_Decref(event);
         return NULL;
@@ -261,7 +261,6 @@ ThreadHandle_dealloc(thandleobject *self)
     }
     _PyEventRc_Decref(self->thread_is_exiting);
     PyObject_Free(self);
-    Py_DECREF(tp);
 }
 
 
@@ -273,28 +272,16 @@ ThreadHandle_repr(thandleobject *self)
 }
 
 
-static PyType_Slot ThreadHandle_Type_slots[] = {
-    {Py_tp_dealloc, (destructor)ThreadHandle_dealloc},
-    {Py_tp_repr, (reprfunc)ThreadHandle_repr},
-    {Py_tp_getset, ThreadHandle_getsetlist},
-    {Py_tp_methods, ThreadHandle_methods},
-    {0, 0}
+PyTypeObject _PyThreadHandle_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "_ThreadHandle",
+    .tp_basicsize = sizeof(thandleobject),
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = (destructor)ThreadHandle_dealloc,
+    .tp_repr = (reprfunc)ThreadHandle_repr,
+    .tp_getset = ThreadHandle_getsetlist,
+    .tp_methods = ThreadHandle_methods,
 };
-
-static PyType_Spec ThreadHandle_Type_spec = {
-    "_thread._ThreadHandle",
-    sizeof(thandleobject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    ThreadHandle_Type_slots,
-};
-
-
-PyTypeObject *
-_PyThreadHandle_NewType(void)
-{
-    return (PyTypeObject *)PyType_FromSpec(&ThreadHandle_Type_spec);
-}
 
 
 /*************/

@@ -35,7 +35,6 @@ typedef struct {
     PyTypeObject *lock_type;
     PyTypeObject *local_type;
     PyTypeObject *local_dummy_type;
-    PyTypeObject *thread_handle_type;
 } thread_module_state;
 
 static inline thread_module_state*
@@ -1545,8 +1544,6 @@ is SystemExit.\n");
 static PyObject *
 threadmod_start_joinable_thread(PyObject *module, PyObject *func)
 {
-    thread_module_state *state = get_thread_state(module);
-
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "thread function must be callable");
@@ -1557,7 +1554,7 @@ threadmod_start_joinable_thread(PyObject *module, PyObject *func)
         return NULL;
     }
 
-    PyObject *hobj = _PyThreadHandle_NewObject(state->thread_handle_type);
+    PyObject *hobj = _PyThreadHandle_NewObject();
     if (hobj == NULL) {
         return NULL;
     }
@@ -1829,11 +1826,9 @@ thread_module_exec(PyObject *module)
     PyThread_init_thread();
 
     // _ThreadHandle
-    state->thread_handle_type = _PyThreadHandle_NewType();
-    if (state->thread_handle_type == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(d, "_ThreadHandle", (PyObject *)state->thread_handle_type) < 0) {
+    if (PyDict_SetItemString(d, "_ThreadHandle",
+                             (PyObject *)&_PyThreadHandle_Type) < 0)
+    {
         return -1;
     }
 
@@ -1914,7 +1909,6 @@ thread_module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->lock_type);
     Py_VISIT(state->local_type);
     Py_VISIT(state->local_dummy_type);
-    Py_VISIT(state->thread_handle_type);
     return 0;
 }
 
@@ -1926,7 +1920,6 @@ thread_module_clear(PyObject *module)
     Py_CLEAR(state->lock_type);
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);
-    Py_CLEAR(state->thread_handle_type);
     return 0;
 }
 

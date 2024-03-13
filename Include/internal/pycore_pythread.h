@@ -167,10 +167,9 @@ typedef enum {
     THREAD_HANDLE_INVALID = 4,
 } _PyThreadHandleState;
 
-// XXX Make it a static type.
-extern PyTypeObject * _PyThreadHandle_NewType(void);
+extern PyTypeObject _PyThreadHandle_Type;
 
-extern PyObject * _PyThreadHandle_NewObject(PyTypeObject *);
+extern PyObject * _PyThreadHandle_NewObject(void);
 extern _PyEventRc * _PyThreadHandle_GetExitingEvent(PyObject *);
 extern void _PyThreadHandle_SetStarted(
     PyObject *obj,

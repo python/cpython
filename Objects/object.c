@@ -2301,6 +2301,7 @@ static PyTypeObject* static_types[] = {
     &_PyNone_Type,
     &_PyNotImplemented_Type,
     &_PyPositionsIterator,
+    &_PyThreadHandle_Type,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
     &_PyUOpExecutor_Type,
