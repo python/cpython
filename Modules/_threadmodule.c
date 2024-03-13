@@ -1497,7 +1497,7 @@ set_threadstate_finalizer(PyThreadState *tstate, PyObject *lock)
 /********************/
 
 static PyObject *
-thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
+threadmod_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
@@ -1515,7 +1515,7 @@ Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
 
 static PyObject *
-thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
+threadmod_start_new_thread(PyObject *module, PyObject *fargs)
 {
     PyObject *func, *args, *kwargs = NULL;
     thread_module_state *state = get_thread_state(module);
@@ -1567,7 +1567,7 @@ unhandled exception; a stack trace will be printed unless the exception\n\
 is SystemExit.\n");
 
 static PyObject *
-thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
+threadmod_start_joinable_thread(PyObject *module, PyObject *func)
 {
     thread_module_state *state = get_thread_state(module);
 
@@ -1613,7 +1613,7 @@ This function is not for third-party code, please use the\n\
 `threading` module instead.\n");
 
 static PyObject *
-thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
+threadmod_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyErr_SetNone(PyExc_SystemExit);
     return NULL;
@@ -1627,7 +1627,7 @@ This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
 
 static PyObject *
-thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
+threadmod_interrupt_main(PyObject *self, PyObject *args)
 {
     int signum = SIGINT;
     if (!PyArg_ParseTuple(args, "|i:signum", &signum)) {
@@ -1653,7 +1653,7 @@ Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
 );
 
 static PyObject *
-thread_PyThread_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
+threadmod_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return (PyObject *) newlockobject(module);
 }
@@ -1666,7 +1666,7 @@ Create a new lock object. See help(type(threading.Lock())) for\n\
 information about locks.");
 
 static PyObject *
-thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
+threadmod_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyThread_ident_t ident = PyThread_get_thread_ident_ex();
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
@@ -1689,7 +1689,7 @@ A thread's identity may be reused for another thread after it exits.");
 
 #ifdef PY_HAVE_THREAD_NATIVE_ID
 static PyObject *
-thread_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+threadmod_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     unsigned long native_id = PyThread_get_thread_native_id();
     return PyLong_FromUnsignedLong(native_id);
@@ -1704,7 +1704,7 @@ particular thread within a system.");
 #endif
 
 static PyObject *
-thread__count(PyObject *self, PyObject *Py_UNUSED(ignored))
+threadmod__count(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyLong_FromSsize_t(_Py_atomic_load_ssize(&interp->threads.count));
@@ -1723,7 +1723,7 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static PyObject *
-thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
+threadmod__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *lock = (PyObject *)newlockobject(module);
@@ -1746,7 +1746,7 @@ state is finalized (after it is untied from the interpreter).\n\
 This is a private API for the threading module.");
 
 static PyObject *
-thread_stack_size(PyObject *self, PyObject *args)
+threadmod_stack_size(PyObject *self, PyObject *args)
 {
     size_t old_size;
     Py_ssize_t new_size = 0;
@@ -1878,7 +1878,7 @@ static PyStructSequence_Desc ExceptHookArgs_desc = {
 
 
 static PyObject *
-thread_excepthook(PyObject *module, PyObject *args)
+threadmod_excepthook(PyObject *module, PyObject *args)
 {
     thread_module_state *state = get_thread_state(module);
 
@@ -1940,7 +1940,7 @@ PyDoc_STRVAR(excepthook_doc,
 Handle uncaught Thread.run() exception.");
 
 static PyObject *
-thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
+threadmod__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return PyBool_FromLong(_Py_IsMainInterpreter(interp));
@@ -1952,39 +1952,39 @@ PyDoc_STRVAR(thread__is_main_interpreter_doc,
 Return True if the current interpreter is the main Python interpreter.");
 
 static PyMethodDef thread_methods[] = {
-    {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
+    {"start_new_thread",        (PyCFunction)threadmod_start_new_thread,
      METH_VARARGS, start_new_doc},
-    {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
+    {"start_new",               (PyCFunction)threadmod_start_new_thread,
      METH_VARARGS, start_new_doc},
-    {"start_joinable_thread",   (PyCFunction)thread_PyThread_start_joinable_thread,
+    {"start_joinable_thread",   (PyCFunction)threadmod_start_joinable_thread,
      METH_O, start_joinable_doc},
-    {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
+    {"daemon_threads_allowed",  (PyCFunction)threadmod_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
-    {"allocate_lock",           thread_PyThread_allocate_lock,
+    {"allocate_lock",           threadmod_allocate_lock,
      METH_NOARGS, allocate_doc},
-    {"allocate",                thread_PyThread_allocate_lock,
+    {"allocate",                threadmod_allocate_lock,
      METH_NOARGS, allocate_doc},
-    {"exit_thread",             thread_PyThread_exit_thread,
+    {"exit_thread",             threadmod_exit_thread,
      METH_NOARGS, exit_doc},
-    {"exit",                    thread_PyThread_exit_thread,
+    {"exit",                    threadmod_exit_thread,
      METH_NOARGS, exit_doc},
-    {"interrupt_main",          (PyCFunction)thread_PyThread_interrupt_main,
+    {"interrupt_main",          (PyCFunction)threadmod_interrupt_main,
      METH_VARARGS, interrupt_doc},
-    {"get_ident",               thread_get_ident,
+    {"get_ident",               threadmod_get_ident,
      METH_NOARGS, get_ident_doc},
 #ifdef PY_HAVE_THREAD_NATIVE_ID
-    {"get_native_id",           thread_get_native_id,
+    {"get_native_id",           threadmod_get_native_id,
      METH_NOARGS, get_native_id_doc},
 #endif
-    {"_count",                  thread__count,
+    {"_count",                  threadmod__count,
      METH_NOARGS, _count_doc},
-    {"stack_size",              (PyCFunction)thread_stack_size,
+    {"stack_size",              (PyCFunction)threadmod_stack_size,
      METH_VARARGS, stack_size_doc},
-    {"_set_sentinel",           thread__set_sentinel,
+    {"_set_sentinel",           threadmod__set_sentinel,
      METH_NOARGS, _set_sentinel_doc},
-    {"_excepthook",             thread_excepthook,
+    {"_excepthook",             threadmod_excepthook,
      METH_O, excepthook_doc},
-    {"_is_main_interpreter",    thread__is_main_interpreter,
+    {"_is_main_interpreter",    threadmod__is_main_interpreter,
      METH_NOARGS, thread__is_main_interpreter_doc},
     {NULL,                      NULL}           /* sentinel */
 };
