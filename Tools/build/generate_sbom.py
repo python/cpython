@@ -7,9 +7,8 @@ import glob
 import pathlib
 import subprocess
 import sys
+import urllib.request
 import typing
-import zipfile
-from urllib.request import urlopen
 
 CPYTHON_ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
 
@@ -125,30 +124,41 @@ def filter_gitignored_paths(paths: list[str]) -> list[str]:
     return sorted([line.split()[-1] for line in git_check_ignore_lines if line.startswith("::")])
 
 
-def main() -> None:
-    sbom_path = CPYTHON_ROOT_DIR / "Misc/sbom.spdx.json"
-    sbom_data = json.loads(sbom_path.read_bytes())
-
-    # We regenerate all of this information. Package information
-    # should be preserved though since that is edited by humans.
-    sbom_data["files"] = []
-    sbom_data["relationships"] = []
-
-    # Ensure all packages in this tool are represented also in the SBOM file.
-    actual_names = {package["name"] for package in sbom_data["packages"]}
-    expected_names = set(PACKAGE_TO_FILES)
-    error_if(
-        actual_names != expected_names,
-        f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
+def get_externals() -> list[str]:
+    """
+    Parses 'PCbuild/get_externals.bat' for external libraries.
+    Returns a list of (git tag, name, version) tuples.
+    """
+    get_externals_bat_path = CPYTHON_ROOT_DIR / "PCbuild/get_externals.bat"
+    externals = re.findall(
+        r"set\s+libraries\s*=\s*%libraries%\s+([a-zA-Z0-9.-]+)\s",
+        get_externals_bat_path.read_text()
     )
+    return externals
 
-    # Make a bunch of assertions about the SBOM data to ensure it's consistent.
+
+def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
+    """Make a bunch of assertions about the SBOM package data to ensure it's consistent."""
+
     for package in sbom_data["packages"]:
         # Properties and ID must be properly formed.
         error_if(
             "name" not in package,
             "Package is missing the 'name' field"
         )
+
+        # Verify that the checksum matches the expected value
+        # and that the download URL is valid.
+        if "checksums" not in package or "CI" in os.environ:
+            download_location = package["downloadLocation"]
+            resp = urllib.request.urlopen(download_location)
+            error_if(resp.status != 200, f"Couldn't access URL: {download_location}'")
+
+            package["checksums"] = [{
+                "algorithm": "SHA256",
+                "checksumValue": hashlib.sha256(resp.read()).hexdigest()
+            }]
+
         missing_required_keys = REQUIRED_PROPERTIES_PACKAGE - set(package.keys())
         error_if(
             bool(missing_required_keys),
@@ -179,6 +189,26 @@ def main() -> None:
             license_concluded != "NOASSERTION",
             f"License identifier must be 'NOASSERTION'"
         )
+
+
+def create_source_sbom() -> None:
+    sbom_path = CPYTHON_ROOT_DIR / "Misc/sbom.spdx.json"
+    sbom_data = json.loads(sbom_path.read_bytes())
+
+    # We regenerate all of this information. Package information
+    # should be preserved though since that is edited by humans.
+    sbom_data["files"] = []
+    sbom_data["relationships"] = []
+
+    # Ensure all packages in this tool are represented also in the SBOM file.
+    actual_names = {package["name"] for package in sbom_data["packages"]}
+    expected_names = set(PACKAGE_TO_FILES)
+    error_if(
+        actual_names != expected_names,
+        f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
+    )
+
+    check_sbom_packages(sbom_data)
 
     # We call 'sorted()' here a lot to avoid filesystem scan order issues.
     for name, files in sorted(PACKAGE_TO_FILES.items()):
@@ -222,6 +252,50 @@ def main() -> None:
 
     # Update the SBOM on disk
     sbom_path.write_text(json.dumps(sbom_data, indent=2, sort_keys=True))
+
+
+def create_externals_sbom() -> None:
+    sbom_path = CPYTHON_ROOT_DIR / "Misc/externals.spdx.json"
+    sbom_data = json.loads(sbom_path.read_bytes())
+
+    externals = get_externals()
+    externals_name_to_version = {}
+    externals_name_to_git_tag = {}
+    for git_tag in externals:
+        name, _, version = git_tag.rpartition("-")
+        externals_name_to_version[name] = version
+        externals_name_to_git_tag[name] = git_tag
+
+    # Ensure all packages in this tool are represented also in the SBOM file.
+    actual_names = {package["name"] for package in sbom_data["packages"]}
+    expected_names = set(externals_name_to_version)
+    error_if(
+        actual_names != expected_names,
+        f"Packages defined in SBOM tool don't match those defined in SBOM file: {actual_names}, {expected_names}",
+    )
+
+    # Set the versionInfo and downloadLocation fields for all packages.
+    for package in sbom_data["packages"]:
+        package["versionInfo"] = externals_name_to_version[package["name"]]
+        download_location = (
+            f"https://github.com/python/cpython-source-deps/archive/refs/tags/{externals_name_to_git_tag[package['name']]}.tar.gz"
+        )
+        download_location_changed = download_location != package["downloadLocation"]
+        package["downloadLocation"] = download_location
+
+        # If the download URL has changed we want one to get recalulated.
+        if download_location_changed:
+            package.pop("checksums", None)
+
+    check_sbom_packages(sbom_data)
+
+    # Update the SBOM on disk
+    sbom_path.write_text(json.dumps(sbom_data, indent=2, sort_keys=True))
+
+
+def main() -> None:
+    create_source_sbom()
+    create_externals_sbom()
 
 
 if __name__ == "__main__":

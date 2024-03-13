@@ -21,9 +21,9 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
-def _make_clinic(*, filename='clinic_tests'):
+def _make_clinic(*, filename='clinic_tests', limited_capi=False):
     clang = clinic.CLanguage(filename)
-    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
+    c = clinic.Clinic(clang, filename=filename, limited_capi=limited_capi)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -2146,6 +2146,14 @@ class ClinicParserTest(TestCase):
                 expected_error = err_template.format(invalid_kind)
                 self.expect_failure(block, expected_error, lineno=3)
 
+    def test_init_cannot_define_a_return_type(self):
+        block = """
+            class Foo "" ""
+            Foo.__init__ -> long
+        """
+        expected_error = "__init__ methods cannot define a return type"
+        self.expect_failure(block, expected_error, lineno=1)
+
     def test_invalid_getset(self):
         annotations = ["@getter", "@setter"]
         for annotation in annotations:
@@ -2167,7 +2175,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = f"{annotation} method cannot define parameters"
+                expected_error = f"{annotation} methods cannot define parameters"
                 self.expect_failure(block, expected_error)
 
     def test_setter_docstring(self):
@@ -2647,7 +2655,6 @@ class ClinicExternalTest(TestCase):
                 bool()
                 double()
                 float()
-                init()
                 int()
                 long()
                 Py_ssize_t()
@@ -3607,6 +3614,46 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
 
 
+class LimitedCAPIOutputTests(unittest.TestCase):
+
+    def setUp(self):
+        self.clinic = _make_clinic(limited_capi=True)
+
+    @staticmethod
+    def wrap_clinic_input(block):
+        return dedent(f"""
+            /*[clinic input]
+            output everything buffer
+            {block}
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+
+    def test_limited_capi_float(self):
+        block = self.wrap_clinic_input("""
+            func
+                f: float
+                /
+        """)
+        generated = self.clinic.parse(block)
+        self.assertNotIn("PyFloat_AS_DOUBLE", generated)
+        self.assertIn("float f;", generated)
+        self.assertIn("f = (float) PyFloat_AsDouble", generated)
+
+    def test_limited_capi_double(self):
+        block = self.wrap_clinic_input("""
+            func
+                f: double
+                /
+        """)
+        generated = self.clinic.parse(block)
+        self.assertNotIn("PyFloat_AS_DOUBLE", generated)
+        self.assertIn("double f;", generated)
+        self.assertIn("f = PyFloat_AsDouble", generated)
+
+
 try:
     import _testclinic_limited
 except ImportError:
@@ -3636,6 +3683,20 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
             _testclinic_limited.my_int_sum(1.0, 2)
         with self.assertRaises(TypeError):
             _testclinic_limited.my_int_sum(1, "str")
+
+    def test_my_double_sum(self):
+        for func in (
+            _testclinic_limited.my_float_sum,
+            _testclinic_limited.my_double_sum,
+        ):
+            with self.subTest(func=func.__name__):
+                self.assertEqual(func(1.0, 2.5), 3.5)
+                with self.assertRaises(TypeError):
+                    func()
+                with self.assertRaises(TypeError):
+                    func(1)
+                with self.assertRaises(TypeError):
+                    func(1., "2")
 
 
 
@@ -3937,7 +3998,7 @@ class ClinicReprTests(unittest.TestCase):
             cls=None,
             c_basename=None,
             full_name='foofoo',
-            return_converter=clinic.init_return_converter(),
+            return_converter=clinic.int_return_converter(),
             kind=clinic.FunctionKind.METHOD_INIT,
             coexist=False
         )

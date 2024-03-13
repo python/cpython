@@ -140,13 +140,10 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
             goto error;
         }
 
-        if (PyDict_GetItemRef(mkw, &_Py_ID(metaclass), &meta) < 0) {
+        if (PyDict_Pop(mkw, &_Py_ID(metaclass), &meta) < 0) {
             goto error;
         }
         if (meta != NULL) {
-            if (PyDict_DelItem(mkw, &_Py_ID(metaclass)) < 0) {
-                goto error;
-            }
             /* metaclass is explicitly given, check if it's indeed a class */
             isclass = PyType_Check(meta);
         }
