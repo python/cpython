@@ -1022,6 +1022,7 @@ class CLanguage(Language):
                 """, indent=4)
 
                 if max_args != self.NO_VARARG:
+                    assert isinstance(max_args, int)
                     assert min_pos <= max_args, (min_pos, max_args)
                     nargs_atmost = ("" if min_pos == max_args else "at most ")
                     nargs_max_plural = ("" if max_args == 1 else "s")
