@@ -25,12 +25,12 @@ or *severity*.
 When to use logging
 ^^^^^^^^^^^^^^^^^^^
 
-You can access logging functionality by creating a logger via
-``logger = getLogger(__name__)``, and then calling :meth:`logger.debug`,
-:meth:`logger.info`, :meth:`logger.warning`, :meth:`logger.error` and
-:meth:`logger.critical`. To determine when to use logging, and to see which
-logger methods to use when, see the table below. It states, for each of a set
-of common tasks, the best tool to use for that task.
+You can access logging functionality by creating a logger via ``logger =
+getLogger(__name__)``, and then calling the logger's :meth:`~Logger.debug`,
+:meth:`~Logger.info`, :meth:`~Logger.warning`, :meth:`~Logger.error` and
+:meth:`~Logger.critical` methods. To determine when to use logging, and to see
+which logger methods to use when, see the table below. It states, for each of a
+set of common tasks, the best tool to use for that task.
 
 +-------------------------------------+--------------------------------------+
 | Task you want to perform            | The best tool for the task           |
@@ -39,8 +39,8 @@ of common tasks, the best tool to use for that task.
 | usage of a command line script or   |                                      |
 | program                             |                                      |
 +-------------------------------------+--------------------------------------+
-| Report events that occur during     | :func:`logger.info` (or              |
-| normal operation of a program (e.g. | :func:`logger.debug` for very        |
+| Report events that occur during     | A logger's :meth:`~Logger.info` (or  |
+| normal operation of a program (e.g. | :meth:`~Logger.debug` method for very|
 | for status monitoring or fault      | detailed output for diagnostic       |
 | investigation)                      | purposes)                            |
 +-------------------------------------+--------------------------------------+
@@ -49,17 +49,18 @@ of common tasks, the best tool to use for that task.
 |                                     | the client application should be     |
 |                                     | modified to eliminate the warning    |
 |                                     |                                      |
-|                                     | :func:`logger.warning` if there is   |
-|                                     | nothing the client application can do|
-|                                     | about the situation, but the event   |
-|                                     | should still be noted                |
+|                                     | A logger's :meth:`~Logger.warning`   |
+|                                     | method if there is nothing the client|
+|                                     | application can do about the         |
+|                                     | situation, but the event should still|
+|                                     | be noted                             |
 +-------------------------------------+--------------------------------------+
 | Report an error regarding a         | Raise an exception                   |
 | particular runtime event            |                                      |
 +-------------------------------------+--------------------------------------+
-| Report suppression of an error      | :func:`logger.error`,                |
-| without raising an exception (e.g.  | :func:`logger.exception` or          |
-| error handler in a long-running     | :func:`logger.critical` as           |
+| Report suppression of an error      | A logger's :meth:`~Logger.error`,    |
+| without raising an exception (e.g.  | :meth:`~Logger.exception` or         |
+| error handler in a long-running     | :meth:`~Logger.critical` method as   |
 | server process)                     | appropriate for the specific error   |
 |                                     | and application domain               |
 +-------------------------------------+--------------------------------------+
@@ -189,9 +190,9 @@ following example::
        raise ValueError('Invalid log level: %s' % loglevel)
    logging.basicConfig(level=numeric_level, ...)
 
-The call to :func:`basicConfig` should come *before* any calls to
-:func:`logger.debug`, :func:`logger.info`, etc. Otherwise, that logging event
-may not be handled in the desired manner.
+The call to :func:`basicConfig` should come *before* any calls to a logger's
+methods such as :meth:`~Logger.debug`, :meth:`~Logger.info`, etc. Otherwise,
+that logging event may not be handled in the desired manner.
 
 If you run the above script several times, the messages from successive runs
 are appended to the file *example.log*. If you want each run to start afresh,
