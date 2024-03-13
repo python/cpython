@@ -932,14 +932,14 @@ which incur interpreter overhead.
        # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
        # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
-       args = [iter(iterable)] * n
+       iterators = [iter(iterable)] * n
        match incomplete:
            case 'fill':
-               return zip_longest(*args, fillvalue=fillvalue)
+               return zip_longest(*iterators, fillvalue=fillvalue)
            case 'strict':
-               return zip(*args, strict=True)
+               return zip(*iterators, strict=True)
            case 'ignore':
-               return zip(*args)
+               return zip(*iterators)
            case _:
                raise ValueError('Expected fill, strict, or ignore')
 
