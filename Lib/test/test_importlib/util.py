@@ -29,6 +29,10 @@ if support.is_wasi:
     # But we also don't want to turn off dynamic loading for those that provide
     # a working implementation.
     EXTENSIONS = None
+
+    def _extension_details():
+        global EXTENSIONS
+        EXTENSIONS = None
 else:
     EXTENSIONS = types.SimpleNamespace()
     EXTENSIONS.path = None
@@ -50,7 +54,7 @@ else:
                     EXTENSIONS.file_path = file_path
                     return
 
-        _extension_details()
+_extension_details()
 
 
 def import_importlib(module_name):
