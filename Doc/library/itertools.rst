@@ -1311,10 +1311,10 @@ The following recipes have a more mathematical flavor:
 
     >>> from fractions import Fraction
     >>> from decimal import Decimal
-    >>> polynomial_eval([1, -4, -17, 60], x=2)
-    18
-    >>> x = 2; x**3 - 4*x**2 -17*x + 60
-    18
+    >>> polynomial_eval([1, -4, -17, 60], x=5)
+    0
+    >>> x = 5; x**3 - 4*x**2 -17*x + 60
+    0
     >>> polynomial_eval([1, -4, -17, 60], x=2.5)
     8.125
     >>> x = 2.5; x**3 - 4*x**2 -17*x + 60
