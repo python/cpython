@@ -1456,31 +1456,24 @@ exit:
 }
 
 static int
-do_start_new_thread(thread_module_state* state,
-                    PyObject *func, PyObject* args, PyObject* kwargs,
-                    int joinable,
-                    PyThread_ident_t* ident, PyThread_handle_t* handle,
-                    _PyEventRc *thread_is_exiting)
+do_start_new_thread(struct bootstate *boot, int joinable,
+                    PyThread_ident_t *p_ident, PyThread_handle_t *p_handle)
 {
-    struct bootstate *boot = thread_bootstate_new(
-            func, args, kwargs, thread_is_exiting);
-    if (boot == NULL) {
-        return -1;
-    }
-
     int err;
+    PyThread_ident_t ident = 0;
+    PyThread_handle_t handle = 0;
     if (joinable) {
-        err = PyThread_start_joinable_thread(thread_run, (void*) boot, ident, handle);
+        err = PyThread_start_joinable_thread(thread_run, (void*) boot, &ident, &handle);
     } else {
-        *handle = 0;
-        *ident = PyThread_start_new_thread(thread_run, (void*) boot);
-        err = (*ident == PYTHREAD_INVALID_THREAD_ID);
+        ident = PyThread_start_new_thread(thread_run, (void*) boot);
+        err = (*p_ident == PYTHREAD_INVALID_THREAD_ID);
     }
     if (err) {
         PyErr_SetString(ThreadError, "can't start new thread");
-        thread_bootstate_free(boot);
         return -1;
     }
+    *p_ident = ident;
+    *p_handle = handle;
     return 0;
 }
 
@@ -1738,8 +1731,6 @@ static PyObject *
 threadmod_start_new_thread(PyObject *module, PyObject *fargs)
 {
     PyObject *func, *args, *kwargs = NULL;
-    thread_module_state *state = get_thread_state(module);
-
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
                            &func, &args, &kwargs))
         return NULL;
@@ -1764,10 +1755,15 @@ threadmod_start_new_thread(PyObject *module, PyObject *fargs)
         return NULL;
     }
 
+    struct bootstate *boot = thread_bootstate_new(func, args, kwargs, NULL);
+    if (boot == NULL) {
+        return NULL;
+    }
+
     PyThread_ident_t ident = 0;
     PyThread_handle_t handle;
-    if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
-                            &ident, &handle, NULL)) {
+    if (do_start_new_thread(boot, /*joinable=*/ 0, &ident, &handle)) {
+        thread_bootstate_free(boot);
         return NULL;
     }
     return PyLong_FromUnsignedLongLong(ident);
@@ -1806,8 +1802,15 @@ threadmod_start_joinable_thread(PyObject *module, PyObject *func)
     if (hobj == NULL) {
         return NULL;
     }
-    if (do_start_new_thread(state, func, /* args */ NULL, /*kwargs=*/ NULL, /*joinable=*/ 1,
-                            &hobj->ident, &hobj->handle, hobj->thread_is_exiting)) {
+    struct bootstate *boot = thread_bootstate_new(
+            func, NULL, NULL, hobj->thread_is_exiting);
+    if (boot == NULL) {
+        Py_DECREF(hobj);
+        return NULL;
+    }
+    if (do_start_new_thread(boot, /*joinable=*/ 1,
+                            &hobj->ident, &hobj->handle)) {
+        thread_bootstate_free(boot);
         Py_DECREF(hobj);
         return NULL;
     }
