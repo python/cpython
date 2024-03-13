@@ -1104,7 +1104,7 @@ Connection objects
       .. versionchanged:: 3.12
          Added the *entrypoint* parameter.
 
-   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension_
+   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension
 
    .. method:: iterdump
 
