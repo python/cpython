@@ -53,13 +53,16 @@ from enum import Enum, _simple_enum
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 # The recognized platforms - known behaviors
-if sys.platform in ('win32', 'darwin', 'emscripten', 'wasi'):
+if sys.platform in {'win32', 'darwin', 'emscripten', 'wasi'}:
     _AIX = _LINUX = False
+elif sys.platform == 'linux':
+    _LINUX = True
+    _AIX = False
 else:
     import platform
     _platform_system = platform.system()
     _AIX     = _platform_system == 'AIX'
-    _LINUX   = _platform_system == 'Linux'
+    _LINUX   = _platform_system in ('Linux', 'Android')
 
 _MAC_DELIM = b':'
 _MAC_OMITS_LEADING_ZEROES = False

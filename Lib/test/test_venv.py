@@ -19,8 +19,10 @@ import sysconfig
 import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip, TEST_HOME_DIR)
+                          requires_subprocess, is_android, is_apple_mobile,
+                          is_emscripten, is_wasi,
+                          requires_venv_with_pip, TEST_HOME_DIR,
+                          requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -38,21 +40,26 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-if is_emscripten or is_wasi:
-    raise unittest.SkipTest("venv is not available on Emscripten/WASI.")
+if is_android or is_apple_mobile or is_emscripten or is_wasi:
+    raise unittest.SkipTest("venv is not available on this platform")
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        encoding=encoding)
+        env={**os.environ, "PYTHONHOME": ""})
     out, err = p.communicate()
     if p.returncode:
         if verbose and err:
-            print(err.decode('utf-8', 'backslashreplace'))
+            print(err.decode(encoding or 'utf-8', 'backslashreplace'))
         raise subprocess.CalledProcessError(
             p.returncode, cmd, out, err)
+    if encoding:
+        return (
+            out.decode(encoding, 'backslashreplace'),
+            err.decode(encoding, 'backslashreplace'),
+        )
     return out, err
 
 class BaseTest(unittest.TestCase):
@@ -80,6 +87,13 @@ class BaseTest(unittest.TestCase):
 
     def tearDown(self):
         rmtree(self.env_dir)
+
+    def envpy(self, *, real_env_dir=False):
+        if real_env_dir:
+            env_dir = os.path.realpath(self.env_dir)
+        else:
+            env_dir = self.env_dir
+        return os.path.join(env_dir, self.bindir, self.exe)
 
     def run_with_capture(self, func, *args, **kwargs):
         with captured_stdout() as output:
@@ -137,7 +151,8 @@ class BasicTest(BaseTest):
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
         copies = '' if os.name=='nt' else ' --copies'
-        cmd = f'command = {sys.executable} -m venv{copies} --without-pip {self.env_dir}'
+        cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
+               f'--without-scm-ignore-files {self.env_dir}')
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
@@ -147,35 +162,37 @@ class BasicTest(BaseTest):
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
     def test_config_file_command_key(self):
-        attrs = [
-            (None, None),
-            ('symlinks', '--copies'),
-            ('with_pip', '--without-pip'),
-            ('system_site_packages', '--system-site-packages'),
-            ('clear', '--clear'),
-            ('upgrade', '--upgrade'),
-            ('upgrade_deps', '--upgrade-deps'),
-            ('prompt', '--prompt'),
+        options = [
+            (None, None, None),  # Default case.
+            ('--copies', 'symlinks', False),
+            ('--without-pip', 'with_pip', False),
+            ('--system-site-packages', 'system_site_packages', True),
+            ('--clear', 'clear', True),
+            ('--upgrade', 'upgrade', True),
+            ('--upgrade-deps', 'upgrade_deps', True),
+            ('--prompt="foobar"', 'prompt', 'foobar'),
+            ('--without-scm-ignore-files', 'scm_ignore_files', frozenset()),
         ]
-        for attr, opt in attrs:
-            rmtree(self.env_dir)
-            if not attr:
-                b = venv.EnvBuilder()
-            else:
-                b = venv.EnvBuilder(
-                    **{attr: False if attr in ('with_pip', 'symlinks') else True})
-            b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
-            b._setup_pip = Mock() # avoid pip setup
-            self.run_with_capture(b.create, self.env_dir)
-            data = self.get_text_file_contents('pyvenv.cfg')
-            if not attr:
-                for opt in ('--system-site-packages', '--clear', '--upgrade',
-                        '--upgrade-deps', '--prompt'):
-                    self.assertNotRegex(data, rf'command = .* {opt}')
-            elif os.name=='nt' and attr=='symlinks':
-                pass
-            else:
-                self.assertRegex(data, rf'command = .* {opt}')
+        for opt, attr, value in options:
+            with self.subTest(opt=opt, attr=attr, value=value):
+                rmtree(self.env_dir)
+                if not attr:
+                    kwargs = {}
+                else:
+                    kwargs = {attr: value}
+                b = venv.EnvBuilder(**kwargs)
+                b.upgrade_dependencies = Mock() # avoid pip command to upgrade deps
+                b._setup_pip = Mock() # avoid pip setup
+                self.run_with_capture(b.create, self.env_dir)
+                data = self.get_text_file_contents('pyvenv.cfg')
+                if not attr or opt.endswith('git'):
+                    for opt in ('--system-site-packages', '--clear', '--upgrade',
+                                '--upgrade-deps', '--prompt'):
+                        self.assertNotRegex(data, rf'command = .* {opt}')
+                elif os.name=='nt' and attr=='symlinks':
+                    pass
+                else:
+                    self.assertRegex(data, rf'command = .* {opt}')
 
     def test_prompt(self):
         env_name = os.path.split(self.env_dir)[1]
@@ -185,7 +202,7 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(%s) ' % env_name)
+        self.assertEqual(context.prompt, env_name)
         self.assertNotIn("prompt = ", data)
 
         rmtree(self.env_dir)
@@ -193,7 +210,7 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(My prompt) ')
+        self.assertEqual(context.prompt, 'My prompt')
         self.assertIn("prompt = 'My prompt'\n", data)
 
         rmtree(self.env_dir)
@@ -202,13 +219,19 @@ class BasicTest(BaseTest):
         self.run_with_capture(builder.create, self.env_dir)
         context = builder.ensure_directories(self.env_dir)
         data = self.get_text_file_contents('pyvenv.cfg')
-        self.assertEqual(context.prompt, '(%s) ' % cwd)
+        self.assertEqual(context.prompt, cwd)
         self.assertIn("prompt = '%s'\n" % cwd, data)
 
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
-        bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
+        bin_path = 'bin'
         python_exe = os.path.split(sys.executable)[1]
+        if sys.platform == 'win32':
+            bin_path = 'Scripts'
+            if os.path.normcase(os.path.splitext(python_exe)[0]).endswith('_d'):
+                python_exe = 'python_d.exe'
+            else:
+                python_exe = 'python.exe'
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
                 os.path.join(fake_env_dir, bin_path, python_exe)
@@ -242,8 +265,7 @@ class BasicTest(BaseTest):
         # check a venv's prefixes
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
-        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
-        cmd = [envpy, '-c', None]
+        cmd = [self.envpy(), '-c', None]
         for prefix, expected in (
             ('prefix', self.env_dir),
             ('exec_prefix', self.env_dir),
@@ -260,8 +282,7 @@ class BasicTest(BaseTest):
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir, symlinks=False)
-        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
-        cmd = [envpy, '-c', None]
+        cmd = [self.envpy(), '-c', None]
         for call, expected in (
             # installation scheme
             ('get_preferred_scheme("prefix")', 'venv'),
@@ -269,11 +290,23 @@ class BasicTest(BaseTest):
             # build environment
             ('is_python_build()', str(sysconfig.is_python_build())),
             ('get_makefile_filename()', sysconfig.get_makefile_filename()),
-            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            ('get_config_h_filename()', sysconfig.get_config_h_filename()),
+            ('get_config_var("Py_GIL_DISABLED")',
+             str(sysconfig.get_config_var("Py_GIL_DISABLED")))):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
-                out, err = check_output(cmd)
-                self.assertEqual(out.strip(), expected.encode(), err)
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            ('_base_executable', sys._base_executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
 
     @requireVenvCreate
     @unittest.skipUnless(can_symlink(), 'Needs symlinks')
@@ -283,8 +316,7 @@ class BasicTest(BaseTest):
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir, symlinks=True)
-        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
-        cmd = [envpy, '-c', None]
+        cmd = [self.envpy(), '-c', None]
         for call, expected in (
             # installation scheme
             ('get_preferred_scheme("prefix")', 'venv'),
@@ -292,11 +324,24 @@ class BasicTest(BaseTest):
             # build environment
             ('is_python_build()', str(sysconfig.is_python_build())),
             ('get_makefile_filename()', sysconfig.get_makefile_filename()),
-            ('get_config_h_filename()', sysconfig.get_config_h_filename())):
+            ('get_config_h_filename()', sysconfig.get_config_h_filename()),
+            ('get_config_var("Py_GIL_DISABLED")',
+             str(sysconfig.get_config_var("Py_GIL_DISABLED")))):
             with self.subTest(call):
                 cmd[2] = 'import sysconfig; print(sysconfig.%s)' % call
-                out, err = check_output(cmd)
-                self.assertEqual(out.strip(), expected.encode(), err)
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
+        for attr, expected in (
+            ('executable', self.envpy()),
+            # Usually compare to sys.executable, but if we're running in our own
+            # venv then we really need to compare to our base executable
+            # HACK: Test fails on POSIX with unversioned binary (PR gh-113033)
+            #('_base_executable', sys._base_executable),
+        ):
+            with self.subTest(attr):
+                cmd[2] = f'import sys; print(sys.{attr})'
+                out, err = check_output(cmd, encoding='utf-8')
+                self.assertEqual(out.strip(), expected, err)
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (
@@ -423,8 +468,7 @@ class BasicTest(BaseTest):
         """
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
-        envpy = os.path.join(os.path.realpath(self.env_dir),
-                             self.bindir, self.exe)
+        envpy = self.envpy(real_env_dir=True)
         out, err = check_output([envpy, '-c',
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
@@ -437,8 +481,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         builder = venv.EnvBuilder(clear=True, symlinks=True)
         builder.create(self.env_dir)
-        envpy = os.path.join(os.path.realpath(self.env_dir),
-                             self.bindir, self.exe)
+        envpy = self.envpy(real_env_dir=True)
         out, err = check_output([envpy, '-c',
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
@@ -453,7 +496,6 @@ class BasicTest(BaseTest):
         builder = venv.EnvBuilder(clear=True)
         builder.create(env_dir)
         activate = os.path.join(env_dir, self.bindir, 'activate.bat')
-        envpy = os.path.join(env_dir, self.bindir, self.exe)
         out, err = check_output(
             [activate, '&', self.exe, '-c', 'print(0)'],
             encoding='oem',
@@ -472,9 +514,7 @@ class BasicTest(BaseTest):
 
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
-        envpy = os.path.join(os.path.realpath(self.env_dir),
-                             self.bindir, self.exe)
-        out, err = check_output([envpy, '-c',
+        out, err = check_output([self.envpy(real_env_dir=True), '-c',
             'from multiprocessing import Pool; '
             'pool = Pool(1); '
             'print(pool.apply_async("Python".lower).get(3)); '
@@ -490,10 +530,8 @@ class BasicTest(BaseTest):
 
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
-        envpy = os.path.join(os.path.realpath(self.env_dir),
-                             self.bindir, self.exe)
         script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
-        subprocess.check_call([envpy, script])
+        subprocess.check_call([self.envpy(real_env_dir=True), script])
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):
@@ -520,9 +558,7 @@ class BasicTest(BaseTest):
         builder = venv.EnvBuilder()
         builder.create(self.env_dir)
 
-        envpy = os.path.join(os.path.realpath(self.env_dir),
-                             self.bindir, self.exe)
-        out, err = check_output([envpy, '-c',
+        out, err = check_output([self.envpy(real_env_dir=True), '-c',
             'import os; print("__PYVENV_LAUNCHER__" in os.environ)'])
         self.assertEqual(out.strip(), 'False'.encode())
 
@@ -560,6 +596,7 @@ class BasicTest(BaseTest):
                                     platlibdir,
                                     stdlib_zip)
         additional_pythonpath_for_non_installed = []
+
         # Copy stdlib files to the non-installed python so venv can
         # correctly calculate the prefix.
         for eachpath in sys.path:
@@ -569,14 +606,19 @@ class BasicTest(BaseTest):
                         eachpath,
                         os.path.join(non_installed_dir, platlibdir))
             elif os.path.isfile(os.path.join(eachpath, "os.py")):
-                for name in os.listdir(eachpath):
+                names = os.listdir(eachpath)
+                ignored_names = copy_python_src_ignore(eachpath, names)
+                for name in names:
+                    if name in ignored_names:
+                        continue
                     if name == "site-packages":
                         continue
                     fn = os.path.join(eachpath, name)
                     if os.path.isfile(fn):
                         shutil.copy(fn, libdir)
                     elif os.path.isdir(fn):
-                        shutil.copytree(fn, os.path.join(libdir, name))
+                        shutil.copytree(fn, os.path.join(libdir, name),
+                                        ignore=copy_python_src_ignore)
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)
@@ -584,6 +626,7 @@ class BasicTest(BaseTest):
                "-m",
                "venv",
                "--without-pip",
+               "--without-scm-ignore-files",
                self.env_dir]
         # Our fake non-installed python is not fully functional because
         # it cannot find the extensions. Set PYTHONPATH so it can run the
@@ -608,13 +651,13 @@ class BasicTest(BaseTest):
             # prevent https://github.com/python/cpython/issues/104839
             child_env["ASAN_OPTIONS"] = asan_options
         subprocess.check_call(cmd, env=child_env)
-        envpy = os.path.join(self.env_dir, self.bindir, self.exe)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
-        cmd = [envpy, '-S', '-c', 'import sys; print(sys.path)']
+        cmd = [self.envpy(), '-S', '-c', 'import sys; print(sys.path)']
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 
+    @requireVenvCreate
     def test_activate_shell_script_has_no_dos_newlines(self):
         """
         Test that the `activate` shell script contains no CR LF.
@@ -631,13 +674,80 @@ class BasicTest(BaseTest):
                 error_message = f"CR LF found in line {i}"
                 self.assertFalse(line.endswith(b'\r\n'), error_message)
 
+    @requireVenvCreate
+    def test_scm_ignore_files_git(self):
+        """
+        Test that a .gitignore file is created when "git" is specified.
+        The file should contain a `*\n` line.
+        """
+        self.run_with_capture(venv.create, self.env_dir,
+                              scm_ignore_files={'git'})
+        file_lines = self.get_text_file_contents('.gitignore').splitlines()
+        self.assertIn('*', file_lines)
+
+    @requireVenvCreate
+    def test_create_scm_ignore_files_multiple(self):
+        """
+        Test that ``scm_ignore_files`` can work with multiple SCMs.
+        """
+        bzrignore_name = ".bzrignore"
+        contents = "# For Bazaar.\n*\n"
+
+        class BzrEnvBuilder(venv.EnvBuilder):
+            def create_bzr_ignore_file(self, context):
+                gitignore_path = os.path.join(context.env_dir, bzrignore_name)
+                with open(gitignore_path, 'w', encoding='utf-8') as file:
+                    file.write(contents)
+
+        builder = BzrEnvBuilder(scm_ignore_files={'git', 'bzr'})
+        self.run_with_capture(builder.create, self.env_dir)
+
+        gitignore_lines = self.get_text_file_contents('.gitignore').splitlines()
+        self.assertIn('*', gitignore_lines)
+
+        bzrignore = self.get_text_file_contents(bzrignore_name)
+        self.assertEqual(bzrignore, contents)
+
+    @requireVenvCreate
+    def test_create_scm_ignore_files_empty(self):
+        """
+        Test that no default ignore files are created when ``scm_ignore_files``
+        is empty.
+        """
+        # scm_ignore_files is set to frozenset() by default.
+        self.run_with_capture(venv.create, self.env_dir)
+        with self.assertRaises(FileNotFoundError):
+            self.get_text_file_contents('.gitignore')
+
+        self.assertIn("--without-scm-ignore-files",
+                      self.get_text_file_contents('pyvenv.cfg'))
+
+    @requireVenvCreate
+    def test_cli_with_scm_ignore_files(self):
+        """
+        Test that default SCM ignore files are created by default via the CLI.
+        """
+        self.run_with_capture(venv.main, ['--without-pip', self.env_dir])
+
+        gitignore_lines = self.get_text_file_contents('.gitignore').splitlines()
+        self.assertIn('*', gitignore_lines)
+
+    @requireVenvCreate
+    def test_cli_without_scm_ignore_files(self):
+        """
+        Test that ``--without-scm-ignore-files`` doesn't create SCM ignore files.
+        """
+        args = ['--without-pip', '--without-scm-ignore-files', self.env_dir]
+        self.run_with_capture(venv.main, args)
+
+        with self.assertRaises(FileNotFoundError):
+            self.get_text_file_contents('.gitignore')
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
     def assert_pip_not_installed(self):
-        envpy = os.path.join(os.path.realpath(self.env_dir),
-                             self.bindir, self.exe)
-        out, err = check_output([envpy, '-c',
+        out, err = check_output([self.envpy(real_env_dir=True), '-c',
             'try:\n import pip\nexcept ImportError:\n print("OK")'])
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
@@ -704,9 +814,9 @@ class EnsurePipTest(BaseTest):
                                           system_site_packages=system_site_packages,
                                           with_pip=True)
         # Ensure pip is available in the virtual environment
-        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         # Ignore DeprecationWarning since pip code is not part of Python
-        out, err = check_output([envpy, '-W', 'ignore::DeprecationWarning',
+        out, err = check_output([self.envpy(real_env_dir=True),
+               '-W', 'ignore::DeprecationWarning',
                '-W', 'ignore::ImportWarning', '-I',
                '-m', 'pip', '--version'])
         # We force everything to text, so unittest gives the detailed diff
@@ -727,7 +837,7 @@ class EnsurePipTest(BaseTest):
                 # It seems ensurepip._uninstall calls subprocesses which do not
                 # inherit the interpreter settings.
                 envvars["PYTHONWARNINGS"] = "ignore"
-                out, err = check_output([envpy,
+                out, err = check_output([self.envpy(real_env_dir=True),
                     '-W', 'ignore::DeprecationWarning',
                     '-W', 'ignore::ImportWarning', '-I',
                     '-m', 'ensurepip._uninstall'])
@@ -775,6 +885,7 @@ class EnsurePipTest(BaseTest):
             )
 
     @requires_venv_with_pip()
+    @requires_resource('cpu')
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

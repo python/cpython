@@ -1,7 +1,8 @@
 #include "Python.h"
 #include "errcode.h"
-#include "../Parser/tokenizer.h"
-#include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
+#include "../Parser/lexer/state.h"
+#include "../Parser/lexer/lexer.h"
+#include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
 static struct PyModuleDef _tokenizemodule;
@@ -37,15 +38,17 @@ typedef struct
 @classmethod
 _tokenizer.tokenizeriter.__new__ as tokenizeriter_new
 
-    source: str
+    readline: object
+    /
     *
     extra_tokens: bool
+    encoding: str(c_default="NULL") = 'utf-8'
 [clinic start generated code]*/
 
 static PyObject *
-tokenizeriter_new_impl(PyTypeObject *type, const char *source,
-                       int extra_tokens)
-/*[clinic end generated code: output=f6f9d8b4beec8106 input=90dc5b6a5df180c2]*/
+tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
+                       int extra_tokens, const char *encoding)
+/*[clinic end generated code: output=7501a1211683ce16 input=f7dddf8a613ae8bd]*/
 {
     tokenizeriterobject *self = (tokenizeriterobject *)type->tp_alloc(type, 0);
     if (self == NULL) {
@@ -55,7 +58,7 @@ tokenizeriter_new_impl(PyTypeObject *type, const char *source,
     if (filename == NULL) {
         return NULL;
     }
-    self->tok = _PyTokenizer_FromUTF8(source, 1, 1);
+    self->tok = _PyTokenizer_FromReadline(readline, encoding, 1, 1);
     if (self->tok == NULL) {
         Py_DECREF(filename);
         return NULL;
@@ -82,13 +85,9 @@ _tokenizer_error(struct tok_state *tok)
             msg = "invalid token";
             break;
         case E_EOF:
-            if (tok->level) {
-                    PyErr_Format(PyExc_SyntaxError,
-                                 "parenthesis '%c' was never closed",
-                                tok->parenstack[tok->level-1]);
-            } else {
-                PyErr_SetString(PyExc_SyntaxError, "unexpected EOF while parsing");
-            }
+            PyErr_SetString(PyExc_SyntaxError, "unexpected EOF in multi-line statement");
+            PyErr_SyntaxLocationObject(tok->filename, tok->lineno,
+                                       tok->inp - tok->buf < 0 ? 0 : (int)(tok->inp - tok->buf));
             return -1;
         case E_DEDENT:
             msg = "unindent does not match any outer indentation level";
@@ -208,6 +207,9 @@ tokenizeriter_next(tokenizeriterobject *it)
         line = PyUnicode_FromString("");
     } else {
         Py_ssize_t size = it->tok->inp - line_start;
+        if (size >= 1 && it->tok->implicit_newline) {
+            size -= 1;
+        }
         line = PyUnicode_DecodeUTF8(line_start, size, "replace");
     }
     if (line == NULL) {
@@ -223,7 +225,7 @@ tokenizeriter_next(tokenizeriterobject *it)
         col_offset = _PyPegen_byte_offset_to_character_offset(line, token.start - line_start);
     }
     if (token.end != NULL && token.end >= it->tok->line_start) {
-        end_col_offset = _PyPegen_byte_offset_to_character_offset(line, token.end - it->tok->line_start);
+        end_col_offset = _PyPegen_byte_offset_to_character_offset_raw(it->tok->line_start, token.end - it->tok->line_start);
     }
 
     if (it->tok->tok_extra_tokens) {
@@ -236,17 +238,27 @@ tokenizeriter_next(tokenizeriterobject *it)
         if (type > DEDENT && type < OP) {
             type = OP;
         }
-        else if (type == ASYNC || type == AWAIT) {
-            type = NAME;
-        }
         else if (type == NEWLINE) {
             Py_DECREF(str);
-            if (it->tok->start[0] == '\r') {
-                str = PyUnicode_FromString("\r\n");
-            } else {
-                str = PyUnicode_FromString("\n");
+            if (!it->tok->implicit_newline) {
+                if (it->tok->start[0] == '\r') {
+                    str = PyUnicode_FromString("\r\n");
+                } else {
+                    str = PyUnicode_FromString("\n");
+                }
             }
             end_col_offset++;
+        }
+        else if (type == NL) {
+            if (it->tok->implicit_newline) {
+                Py_DECREF(str);
+                str = PyUnicode_FromString("");
+            }
+        }
+
+        if (str == NULL) {
+            Py_DECREF(line);
+            goto exit;
         }
     }
 

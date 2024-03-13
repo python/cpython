@@ -8,7 +8,6 @@ import shutil
 import sys
 import subprocess
 import threading
-import warnings
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
@@ -391,15 +390,6 @@ class Konqueror(BaseBrowser):
             return (p.poll() is None)
 
 
-    def open(self, url, new=0, autoraise=True):
-        sys.audit("webbrowser.open", url)
-        if new:
-            ok = self._remote("LOADNEW " + url)
-        else:
-            ok = self._remote("LOAD " + url)
-        return ok
-
-
 class Edge(UnixBrowser):
     "Launcher class for Microsoft Edge browser."
 
@@ -428,12 +418,18 @@ def register_X_browsers():
     if shutil.which("gio"):
         register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
 
-    # Equivalent of gio open before 2015
-    if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
+    xdg_desktop = os.getenv("XDG_CURRENT_DESKTOP", "").split(":")
+
+    # The default GNOME3 browser
+    if (("GNOME" in xdg_desktop or
+         "GNOME_DESKTOP_SESSION_ID" in os.environ) and
+            shutil.which("gvfs-open")):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
 
     # The default KDE browser
-    if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
+    if (("KDE" in xdg_desktop or
+         "KDE_FULL_SESSION" in os.environ) and
+            shutil.which("kfmclient")):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
     # Common symbolic link for the default X11 browser
@@ -505,7 +501,12 @@ def register_standard_browsers():
             register("microsoft-edge", None, Edge("MicrosoftEdge.exe"))
     else:
         # Prefer X browsers if present
-        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
+        #
+        # NOTE: Do not check for X11 browser on macOS,
+        # XQuartz installation sets a DISPLAY environment variable and will
+        # autostart when someone tries to access the display. Mac users in
+        # general don't need an X11 browser.
+        if sys.platform != "darwin" and (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
             try:
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
@@ -578,21 +579,8 @@ if sys.platform == 'darwin':
         def __init__(self, name='default'):
             super().__init__(name)
 
-        @property
-        def _name(self):
-            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
-                          f' use {self.__class__.__name__}.name instead.',
-                          DeprecationWarning, stacklevel=2)
-            return self.name
-
-        @_name.setter
-        def _name(self, val):
-            warnings.warn(f'{self.__class__.__name__}._name is deprecated in 3.11'
-                          f' use {self.__class__.__name__}.name instead.',
-                          DeprecationWarning, stacklevel=2)
-            self.name = val
-
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:

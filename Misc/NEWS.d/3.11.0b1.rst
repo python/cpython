@@ -185,7 +185,7 @@ functions leave the current exception unchanged. Patch by Victor Stinner.
 .. section: Core and Builtins
 
 Fix a minor memory leak at exit: release the memory of the
-:class:`generic_alias_iterator` type. Patch by Dong-hee Na.
+:class:`generic_alias_iterator` type. Patch by Donghee Na.
 
 ..
 
@@ -403,8 +403,8 @@ so this led to crashes. The problem is now fixed.
 .. nonce: 6S_uoU
 .. section: Core and Builtins
 
-Make opcodes :opcode:`JUMP_IF_TRUE_OR_POP` and
-:opcode:`JUMP_IF_FALSE_OR_POP` relative rather than absolute.
+Make opcodes :opcode:`!JUMP_IF_TRUE_OR_POP` and
+:opcode:`!JUMP_IF_FALSE_OR_POP` relative rather than absolute.
 
 ..
 
@@ -437,7 +437,7 @@ cache when applicable.
 .. section: Core and Builtins
 
 Classes and functions that unconditionally declared their docstrings
-ignoring the `--without-doc-strings` compilation flag no longer do so.
+ignoring the ``--without-doc-strings`` compilation flag no longer do so.
 
 The classes affected are :class:`ctypes.UnionType`,
 :class:`pickle.PickleBuffer`, :class:`testcapi.RecursingInfinitelyError`,
@@ -576,7 +576,7 @@ planned). Patch by Alex Waygood.
 .. section: Library
 
 Deprecate nested classes in enum definitions becoming members -- in 3.13
-they will be normal classes; add `member` and `nonmember` functions to allow
+they will be normal classes; add ``member`` and ``nonmember`` functions to allow
 control over results now.
 
 ..
@@ -785,7 +785,7 @@ avoid :exc:`BrokenPipeError` at garbage collection and at
 .. nonce: V0YveU
 .. section: Library
 
-Add `datetime.UTC` alias for `datetime.timezone.utc`.
+Add ``datetime.UTC`` alias for ``datetime.timezone.utc``.
 
 Patch by Kabir Kwatra.
 
@@ -817,8 +817,8 @@ it is ever needed and document the existing mechanism for ``posix_spawn()``.
 .. nonce: HFtERN
 .. section: Library
 
-Fix :data:`signal.NSIG` value on FreeBSD to accept signal numbers greater
-than 32, like :data:`signal.SIGRTMIN` and :data:`signal.SIGRTMAX`. Patch by
+Fix :const:`signal.NSIG` value on FreeBSD to accept signal numbers greater
+than 32, like :const:`signal.SIGRTMIN` and :const:`signal.SIGRTMAX`. Patch by
 Victor Stinner.
 
 ..
@@ -1657,9 +1657,9 @@ Convert :mod:`csv` to use Argument Clinic for :func:`csv.field_size_limit`,
 .. nonce: z2WhDQ
 .. section: Library
 
-Raise an ArgumentError when the same subparser name is added twice to an
-`argparse.ArgumentParser`.  This is consistent with the (default) behavior
-when the same option string is added twice to an ArgumentParser.
+Raise an ``ArgumentError`` when the same subparser name is added twice to an
+``argparse.ArgumentParser``.  This is consistent with the (default) behavior
+when the same option string is added twice to an ``ArgumentParser``.
 
 ..
 
@@ -1712,7 +1712,7 @@ Aviv Palivoda and Erlend E. Aasland.
 .. nonce: kTjJLx
 .. section: Documentation
 
-Add a new `gh` role to the documentation to link to GitHub issues.
+Add a new ``gh`` role to the documentation to link to GitHub issues.
 
 ..
 
@@ -1799,7 +1799,7 @@ The documentation now lists which members of C structs are part of the
 .. nonce: FIVe9I
 .. section: Documentation
 
-All docstrings in code snippets are now wrapped into :func:`PyDoc_STR` to
+All docstrings in code snippets are now wrapped into :c:macro:`PyDoc_STR` to
 follow the guideline of `PEP 7's Documentation Strings paragraph
 <https://www.python.org/dev/peps/pep-0007/#documentation-strings>`_. Patch
 by Oleg Iarygin.
@@ -2028,8 +2028,8 @@ https://gitlab.com/warsaw/pynche
 .. nonce: 3mQ54t
 .. section: C API
 
-Deprecate the C functions: :c:func:`PySys_SetArgv`,
-:c:func:`PySys_SetArgvEx`, :c:func:`PySys_SetPath`. Patch by Victor Stinner.
+Deprecate the C functions: :c:func:`!PySys_SetArgv`,
+:c:func:`!PySys_SetArgvEx`, :c:func:`!PySys_SetPath`. Patch by Victor Stinner.
 
 ..
 
@@ -2068,9 +2068,9 @@ casts when the Python C API is used in C++. Patch by Victor Stinner.
 .. nonce: Cx-95G
 .. section: C API
 
-Mark functions as deprecated by :pep:`623`: :c:func:`PyUnicode_AS_DATA`,
-:c:func:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_GET_DATA_SIZE`,
-:c:func:`PyUnicode_GET_SIZE`. Patch by Victor Stinner.
+Mark functions as deprecated by :pep:`623`: :c:func:`!PyUnicode_AS_DATA`,
+:c:func:`!PyUnicode_AS_UNICODE`, :c:func:`!PyUnicode_GET_DATA_SIZE`,
+:c:func:`!PyUnicode_GET_SIZE`. Patch by Victor Stinner.
 
 ..
 

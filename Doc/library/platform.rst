@@ -46,7 +46,7 @@ Cross Platform
       universal files containing multiple architectures.
 
       To get at the "64-bitness" of the current interpreter, it is more
-      reliable to query the :attr:`sys.maxsize` attribute::
+      reliable to query the :data:`sys.maxsize` attribute::
 
          is_64bits = sys.maxsize > 2**32
 
@@ -195,6 +195,10 @@ Java Platform
    tuple ``(vm_name, vm_release, vm_vendor)`` and *osinfo* being a tuple
    ``(os_name, os_version, os_arch)``. Values which cannot be determined are set to
    the defaults given as parameters (which all default to ``''``).
+
+   .. deprecated-removed:: 3.13 3.15
+      It was largely untested, had a confusing API,
+      and was only useful for Jython support.
 
 
 Windows Platform

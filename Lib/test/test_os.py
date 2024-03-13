@@ -14,6 +14,7 @@ import locale
 import os
 import pickle
 import select
+import selectors
 import shutil
 import signal
 import socket
@@ -33,7 +34,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
-from test.support import set_recursion_limit
+from test.support import infinite_recursion
 from test.support import warnings_helper
 from platform import win32_is_iot
 
@@ -737,7 +738,7 @@ class StatAttributeTests(unittest.TestCase):
         # denied. See issue 28075.
         # os.environ['TEMP'] should be located on a volume that
         # supports file ACLs.
-        fname = os.path.join(os.environ['TEMP'], self.fname)
+        fname = os.path.join(os.environ['TEMP'], self.fname + "_access")
         self.addCleanup(os_helper.unlink, fname)
         create_file(fname, b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
@@ -912,6 +913,13 @@ class UtimeTests(unittest.TestCase):
             # Set to the current time in the old explicit way.
             os.utime(self.fname, None)
         self._test_utime_current(set_time)
+
+    def test_utime_nonexistent(self):
+        now = time.time()
+        filename = 'nonexistent'
+        with self.assertRaises(FileNotFoundError) as cm:
+            os.utime(filename, (now, now))
+        self.assertEqual(cm.exception.filename, filename)
 
     def get_file_system(self, path):
         if sys.platform == 'win32':
@@ -1142,9 +1150,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     def test_putenv_unsetenv_error(self):
         # Empty variable name is invalid.
         # "=" and null character are not allowed in a variable name.
-        for name in ('', '=name', 'na=me', 'name=', 'name\0', 'na\0me'):
+        for name in ('', '=name', 'na=me', 'name='):
             self.assertRaises((OSError, ValueError), os.putenv, name, "value")
             self.assertRaises((OSError, ValueError), os.unsetenv, name)
+        for name in ('name\0', 'na\0me'):
+            self.assertRaises(ValueError, os.putenv, name, "value")
+            self.assertRaises(ValueError, os.unsetenv, name)
 
         if sys.platform == "win32":
             # On Windows, an environment variable string ("name=value" string)
@@ -1287,6 +1298,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
+    is_fwalk = False
 
     # Wrapper to hide minor differences between os.walk and os.fwalk
     # to tests both functions with the same code base
@@ -1321,14 +1333,14 @@ class WalkTests(unittest.TestCase):
         self.sub11_path = join(self.sub1_path, "SUB11")
         sub2_path = join(self.walk_path, "SUB2")
         sub21_path = join(sub2_path, "SUB21")
-        tmp1_path = join(self.walk_path, "tmp1")
+        self.tmp1_path = join(self.walk_path, "tmp1")
         tmp2_path = join(self.sub1_path, "tmp2")
         tmp3_path = join(sub2_path, "tmp3")
         tmp5_path = join(sub21_path, "tmp3")
         self.link_path = join(sub2_path, "link")
         t2_path = join(os_helper.TESTFN, "TEST2")
         tmp4_path = join(os_helper.TESTFN, "TEST2", "tmp4")
-        broken_link_path = join(sub2_path, "broken_link")
+        self.broken_link_path = join(sub2_path, "broken_link")
         broken_link2_path = join(sub2_path, "broken_link2")
         broken_link3_path = join(sub2_path, "broken_link3")
 
@@ -1338,13 +1350,13 @@ class WalkTests(unittest.TestCase):
         os.makedirs(sub21_path)
         os.makedirs(t2_path)
 
-        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
+        for path in self.tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
             with open(path, "x", encoding='utf-8') as f:
                 f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
 
         if os_helper.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
-            os.symlink('broken', broken_link_path, True)
+            os.symlink('broken', self.broken_link_path, True)
             os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
             os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
             self.sub2_tree = (sub2_path, ["SUB21", "link"],
@@ -1440,6 +1452,11 @@ class WalkTests(unittest.TestCase):
         else:
             self.fail("Didn't follow symlink with followlinks=True")
 
+        walk_it = self.walk(self.broken_link_path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
     def test_walk_bad_dir(self):
         # Walk top-down.
         errors = []
@@ -1460,6 +1477,73 @@ class WalkTests(unittest.TestCase):
                     self.assertIn(os.path.join(root, dir2), roots)
         finally:
             os.rename(path1new, path1)
+
+    def test_walk_bad_dir2(self):
+        walk_it = self.walk('nonexisting')
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk('nonexisting', follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(self.tmp1_path)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_walk_named_pipe(self):
+        path = os_helper.TESTFN + '-pipe'
+        os.mkfifo(path)
+        self.addCleanup(os.unlink, path)
+
+        walk_it = self.walk(path)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_walk_named_pipe2(self):
+        path = os_helper.TESTFN + '-dir'
+        os.mkdir(path)
+        self.addCleanup(shutil.rmtree, path)
+        os.mkfifo(os.path.join(path, 'mypipe'))
+
+        errors = []
+        walk_it = self.walk(path, onerror=errors.append)
+        next(walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+        self.assertEqual(errors, [])
+
+        errors = []
+        walk_it = self.walk(path, onerror=errors.append)
+        root, dirs, files = next(walk_it)
+        self.assertEqual(root, path)
+        self.assertEqual(dirs, [])
+        self.assertEqual(files, ['mypipe'])
+        dirs.extend(files)
+        files.clear()
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+        if self.is_fwalk:
+            self.assertEqual(errors, [])
+        else:
+            self.assertEqual(len(errors), 1, errors)
+            self.assertIsInstance(errors[0], NotADirectoryError)
 
     def test_walk_many_open_files(self):
         depth = 30
@@ -1485,7 +1569,7 @@ class WalkTests(unittest.TestCase):
     def test_walk_above_recursion_limit(self):
         depth = 50
         os.makedirs(os.path.join(self.walk_path, *(['d'] * depth)))
-        with set_recursion_limit(depth - 5):
+        with infinite_recursion(depth - 5):
             all = list(self.walk(self.walk_path))
 
         sub2_path = self.sub2_tree[0]
@@ -1526,6 +1610,7 @@ class WalkTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
+    is_fwalk = True
 
     def walk(self, top, **kwargs):
         for root, dirs, files, root_fd in self.fwalk(top, **kwargs):
@@ -1580,6 +1665,9 @@ class FwalkTests(WalkTests):
 
     @unittest.skipIf(
         support.is_emscripten, "Cannot dup stdout on Emscripten"
+    )
+    @unittest.skipIf(
+        support.is_android, "dup return value is unpredictable on Android"
     )
     def test_fd_leak(self):
         # Since we're opening a lot of FDs, we must be careful to avoid leaks:
@@ -1732,7 +1820,7 @@ class MakedirTests(unittest.TestCase):
         os.removedirs(path)
 
 
-@os_helper.skip_unless_working_chmod
+@unittest.skipUnless(hasattr(os, "chown"), "requires os.chown()")
 class ChownFileTests(unittest.TestCase):
 
     @classmethod
@@ -2184,12 +2272,15 @@ class Win32ErrorTests(unittest.TestCase):
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdatasync", "fstat",
                "fstatvfs", "fsync", "tcgetpgrp", "ttyname"]
+    singles_fildes = {"fchdir", "fdatasync", "fsync"}
     #singles.append("close")
     #We omit close because it doesn't raise an exception on some platforms
     def get_single(f):
         def helper(self):
             if  hasattr(os, f):
                 self.check(getattr(os, f))
+                if f in self.singles_fildes:
+                    self.check_bool(getattr(os, f))
         return helper
     for f in singles:
         locals()["test_"+f] = get_single(f)
@@ -2203,8 +2294,16 @@ class TestInvalidFD(unittest.TestCase):
             self.fail("%r didn't raise an OSError with a bad file descriptor"
                       % f)
 
+    def check_bool(self, f, *args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            for fd in False, True:
+                with self.assertRaises(RuntimeWarning):
+                    f(fd, *args, **kwargs)
+
     def test_fdopen(self):
         self.check(os.fdopen, encoding="utf-8")
+        self.check_bool(os.fdopen, encoding="utf-8")
 
     @unittest.skipUnless(hasattr(os, 'isatty'), 'test needs os.isatty()')
     def test_isatty(self):
@@ -2266,11 +2365,14 @@ class TestInvalidFD(unittest.TestCase):
     def test_fpathconf(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
+        self.check_bool(os.pathconf, "PC_NAME_MAX")
+        self.check_bool(os.fpathconf, "PC_NAME_MAX")
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
         self.check(os.truncate, 0)
         self.check(os.ftruncate, 0)
+        self.check_bool(os.truncate, 0)
 
     @unittest.skipUnless(hasattr(os, 'lseek'), 'test needs os.lseek()')
     def test_lseek(self):
@@ -2467,8 +2569,10 @@ class Pep383Tests(unittest.TestCase):
         # test listdir without arguments
         current_directory = os.getcwd()
         try:
-            os.chdir(os.sep)
-            self.assertEqual(set(os.listdir()), set(os.listdir(os.sep)))
+            # The root directory is not readable on Android, so use a directory
+            # we created ourselves.
+            os.chdir(self.dir)
+            self.assertEqual(set(os.listdir()), expected)
         finally:
             os.chdir(current_directory)
 
@@ -2559,30 +2663,34 @@ class Win32KillTests(unittest.TestCase):
         tagname = "test_os_%s" % uuid.uuid1()
         m = mmap.mmap(-1, 1, tagname)
         m[0] = 0
+
         # Run a script which has console control handling enabled.
-        proc = subprocess.Popen([sys.executable,
-                   os.path.join(os.path.dirname(__file__),
-                                "win_console_handler.py"), tagname],
-                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-        # Let the interpreter startup before we send signals. See #3137.
-        count, max = 0, 100
-        while count < max and proc.poll() is None:
-            if m[0] == 1:
-                break
-            time.sleep(0.1)
-            count += 1
-        else:
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("Subprocess didn't finish initialization")
-        os.kill(proc.pid, event)
-        # proc.send_signal(event) could also be done here.
-        # Allow time for the signal to be passed and the process to exit.
-        time.sleep(0.5)
-        if not proc.poll():
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("subprocess did not stop on {}".format(name))
+        script = os.path.join(os.path.dirname(__file__),
+                              "win_console_handler.py")
+        cmd = [sys.executable, script, tagname]
+        proc = subprocess.Popen(cmd,
+                                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+        with proc:
+            # Let the interpreter startup before we send signals. See #3137.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if proc.poll() is None:
+                    break
+            else:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("Subprocess didn't finish initialization")
+
+            os.kill(proc.pid, event)
+
+            try:
+                # proc.send_signal(event) could also be done here.
+                # Allow time for the signal to be passed and the process to exit.
+                proc.wait(timeout=support.SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("subprocess did not stop on {}".format(name))
 
     @unittest.skip("subprocesses aren't inheriting Ctrl+C property")
     @support.requires_subprocess()
@@ -3070,6 +3178,65 @@ class Win32NtTests(unittest.TestCase):
             except subprocess.TimeoutExpired:
                 proc.terminate()
 
+    @support.requires_subprocess()
+    def test_stat_inaccessible_file(self):
+        filename = os_helper.TESTFN
+        ICACLS = os.path.expandvars(r"%SystemRoot%\System32\icacls.exe")
+
+        with open(filename, "wb") as f:
+            f.write(b'Test data')
+
+        stat1 = os.stat(filename)
+
+        try:
+            # Remove all permissions from the file
+            subprocess.check_output([ICACLS, filename, "/inheritance:r"],
+                                    stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as ex:
+            if support.verbose:
+                print(ICACLS, filename, "/inheritance:r", "failed.")
+                print(ex.stdout.decode("oem", "replace").rstrip())
+            try:
+                os.unlink(filename)
+            except OSError:
+                pass
+            self.skipTest("Unable to create inaccessible file")
+
+        def cleanup():
+            # Give delete permission. We are the file owner, so we can do this
+            # even though we removed all permissions earlier.
+            subprocess.check_output([ICACLS, filename, "/grant", "Everyone:(D)"],
+                                    stderr=subprocess.STDOUT)
+            os.unlink(filename)
+
+        self.addCleanup(cleanup)
+
+        if support.verbose:
+            print("File:", filename)
+            print("stat with access:", stat1)
+
+        # First test - we shouldn't raise here, because we still have access to
+        # the directory and can extract enough information from its metadata.
+        stat2 = os.stat(filename)
+
+        if support.verbose:
+            print(" without access:", stat2)
+
+        # We may not get st_dev/st_ino, so ensure those are 0 or match
+        self.assertIn(stat2.st_dev, (0, stat1.st_dev))
+        self.assertIn(stat2.st_ino, (0, stat1.st_ino))
+
+        # st_mode and st_size should match (for a normal file, at least)
+        self.assertEqual(stat1.st_mode, stat2.st_mode)
+        self.assertEqual(stat1.st_size, stat2.st_size)
+
+        # st_ctime and st_mtime should be the same
+        self.assertEqual(stat1.st_ctime, stat2.st_ctime)
+        self.assertEqual(stat1.st_mtime, stat2.st_mtime)
+
+        # st_atime should be the same or later
+        self.assertGreaterEqual(stat1.st_atime, stat2.st_atime)
+
 
 @os_helper.skip_unless_symlink
 class NonLocalSymlinkTests(unittest.TestCase):
@@ -3418,31 +3585,30 @@ class ProgramPriorityTests(unittest.TestCase):
     """Tests for os.getpriority() and os.setpriority()."""
 
     def test_set_get_priority(self):
-
         base = os.getpriority(os.PRIO_PROCESS, os.getpid())
-        os.setpriority(os.PRIO_PROCESS, os.getpid(), base + 1)
-        try:
-            new_prio = os.getpriority(os.PRIO_PROCESS, os.getpid())
-            if base >= 19 and new_prio <= 19:
-                raise unittest.SkipTest("unable to reliably test setpriority "
-                                        "at current nice level of %s" % base)
-            else:
-                self.assertEqual(new_prio, base + 1)
-        finally:
-            try:
-                os.setpriority(os.PRIO_PROCESS, os.getpid(), base)
-            except OSError as err:
-                if err.errno != errno.EACCES:
-                    raise
+        code = f"""if 1:
+        import os
+        os.setpriority(os.PRIO_PROCESS, os.getpid(), {base} + 1)
+        print(os.getpriority(os.PRIO_PROCESS, os.getpid()))
+        """
+
+        # Subprocess inherits the current process' priority.
+        _, out, _ = assert_python_ok("-c", code)
+        new_prio = int(out)
+        # nice value cap is 19 for linux and 20 for FreeBSD
+        if base >= 19 and new_prio <= base:
+            raise unittest.SkipTest("unable to reliably test setpriority "
+                                    "at current nice level of %s" % base)
+        else:
+            self.assertEqual(new_prio, base + 1)
 
 
 @unittest.skipUnless(hasattr(os, 'sendfile'), "test needs os.sendfile()")
 class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
-    SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
-                               not sys.platform.startswith("solaris") and \
-                               not sys.platform.startswith("sunos")
+    SUPPORT_HEADERS_TRAILERS = (
+        not sys.platform.startswith(("linux", "android", "solaris", "sunos")))
     requires_headers_trailers = unittest.skipUnless(SUPPORT_HEADERS_TRAILERS,
             'requires headers and trailers support')
     requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
@@ -3774,6 +3940,7 @@ class TermsizeTests(unittest.TestCase):
         self.assertGreaterEqual(size.columns, 0)
         self.assertGreaterEqual(size.lines, 0)
 
+    @support.requires_subprocess()
     def test_stty_match(self):
         """Check if stty returns the same results
 
@@ -3915,6 +4082,328 @@ class EventfdTests(unittest.TestCase):
         self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
         os.eventfd_read(fd)
 
+@unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
+@support.requires_linux_version(2, 6, 30)
+class TimerfdTests(unittest.TestCase):
+    # Tolerate a difference of 1 ms
+    CLOCK_RES_NS = 1_000_000
+    CLOCK_RES = CLOCK_RES_NS * 1e-9
+
+    def timerfd_create(self, *args, **kwargs):
+        fd = os.timerfd_create(*args, **kwargs)
+        self.assertGreaterEqual(fd, 0)
+        self.assertFalse(os.get_inheritable(fd))
+        self.addCleanup(os.close, fd)
+        return fd
+
+    def read_count_signaled(self, fd):
+        # read 8 bytes
+        data = os.read(fd, 8)
+        return int.from_bytes(data, byteorder=sys.byteorder)
+
+    def test_timerfd_initval(self):
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        initial_expiration = 0.25
+        interval = 0.125
+
+        # 1st call
+        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        self.assertAlmostEqual(interval2, 0.0, places=3)
+        self.assertAlmostEqual(next_expiration, 0.0, places=3)
+
+        # 2nd call
+        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+
+        # timerfd_gettime
+        next_expiration, interval2 = os.timerfd_gettime(fd)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+
+    def test_timerfd_non_blocking(self):
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        # 0.1 second later
+        initial_expiration = 0.1
+        os.timerfd_settime(fd, initial=initial_expiration, interval=0)
+
+        # read() raises OSError with errno is EAGAIN for non-blocking timer.
+        with self.assertRaises(OSError) as ctx:
+            self.read_count_signaled(fd)
+        self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+
+        # Wait more than 0.1 seconds
+        time.sleep(initial_expiration + 0.1)
+
+        # confirm if timerfd is readable and read() returns 1 as bytes.
+        self.assertEqual(self.read_count_signaled(fd), 1)
+
+    def test_timerfd_negative(self):
+        one_sec_in_nsec = 10**9
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        test_flags = [0, os.TFD_TIMER_ABSTIME]
+        if hasattr(os, 'TFD_TIMER_CANCEL_ON_SET'):
+            test_flags.append(os.TFD_TIMER_ABSTIME | os.TFD_TIMER_CANCEL_ON_SET)
+
+        # Any of 'initial' and 'interval' is negative value.
+        for initial, interval in ( (-1, 0), (1, -1), (-1, -1),  (-0.1, 0), (1, -0.1), (-0.1, -0.1)):
+            for flags in test_flags:
+                with self.subTest(flags=flags, initial=initial, interval=interval):
+                    with self.assertRaises(OSError) as context:
+                        os.timerfd_settime(fd, flags=flags, initial=initial, interval=interval)
+                    self.assertEqual(context.exception.errno, errno.EINVAL)
+
+                    with self.assertRaises(OSError) as context:
+                        initial_ns = int( one_sec_in_nsec * initial )
+                        interval_ns = int( one_sec_in_nsec * interval )
+                        os.timerfd_settime_ns(fd, flags=flags, initial=initial_ns, interval=interval_ns)
+                    self.assertEqual(context.exception.errno, errno.EINVAL)
+
+    def test_timerfd_interval(self):
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        # 1 second
+        initial_expiration = 1
+        # 0.5 second
+        interval = 0.5
+
+        os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+
+        # timerfd_gettime
+        next_expiration, interval2 = os.timerfd_gettime(fd)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+
+        count = 3
+        t = time.perf_counter()
+        for _ in range(count):
+            self.assertEqual(self.read_count_signaled(fd), 1)
+        t = time.perf_counter() - t
+
+        total_time = initial_expiration + interval * (count - 1)
+        self.assertGreater(t, total_time - self.CLOCK_RES)
+
+        # wait 3.5 time of interval
+        time.sleep( (count+0.5) * interval)
+        self.assertEqual(self.read_count_signaled(fd), count)
+
+    def test_timerfd_TFD_TIMER_ABSTIME(self):
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        now = time.clock_gettime(time.CLOCK_REALTIME)
+
+        # 1 second later from now.
+        offset = 1
+        initial_expiration = now + offset
+        # not interval timer
+        interval = 0
+
+        os.timerfd_settime(fd, flags=os.TFD_TIMER_ABSTIME, initial=initial_expiration, interval=interval)
+
+        # timerfd_gettime
+        # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
+        next_expiration, interval2 = os.timerfd_gettime(fd)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, offset, places=3)
+
+        t = time.perf_counter()
+        count_signaled = self.read_count_signaled(fd)
+        t = time.perf_counter() - t
+        self.assertEqual(count_signaled, 1)
+
+        self.assertGreater(t, offset - self.CLOCK_RES)
+
+    def test_timerfd_select(self):
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([], [], []))
+
+        # 0.25 second
+        initial_expiration = 0.25
+        # every 0.125 second
+        interval = 0.125
+
+        os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+
+        count = 3
+        t = time.perf_counter()
+        for _ in range(count):
+            rfd, wfd, xfd = select.select([fd], [fd], [fd], initial_expiration + interval)
+            self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
+            self.assertEqual(self.read_count_signaled(fd), 1)
+        t = time.perf_counter() - t
+
+        total_time = initial_expiration + interval * (count - 1)
+        self.assertGreater(t, total_time - self.CLOCK_RES)
+
+    def check_timerfd_poll(self, nanoseconds):
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        selector = selectors.DefaultSelector()
+        selector.register(fd, selectors.EVENT_READ)
+        self.addCleanup(selector.close)
+
+        sec_to_nsec = 10 ** 9
+        # 0.25 second
+        initial_expiration_ns = sec_to_nsec // 4
+        # every 0.125 second
+        interval_ns = sec_to_nsec // 8
+
+        if nanoseconds:
+            os.timerfd_settime_ns(fd,
+                                  initial=initial_expiration_ns,
+                                  interval=interval_ns)
+        else:
+            os.timerfd_settime(fd,
+                               initial=initial_expiration_ns / sec_to_nsec,
+                               interval=interval_ns / sec_to_nsec)
+
+        count = 3
+        if nanoseconds:
+            t = time.perf_counter_ns()
+        else:
+            t = time.perf_counter()
+        for i in range(count):
+            timeout_margin_ns = interval_ns
+            if i == 0:
+                timeout_ns = initial_expiration_ns + interval_ns + timeout_margin_ns
+            else:
+                timeout_ns = interval_ns + timeout_margin_ns
+
+            ready = selector.select(timeout_ns / sec_to_nsec)
+            self.assertEqual(len(ready), 1, ready)
+            event = ready[0][1]
+            self.assertEqual(event, selectors.EVENT_READ)
+
+            self.assertEqual(self.read_count_signaled(fd), 1)
+
+        total_time = initial_expiration_ns + interval_ns * (count - 1)
+        if nanoseconds:
+            dt = time.perf_counter_ns() - t
+            self.assertGreater(dt, total_time - self.CLOCK_RES_NS)
+        else:
+            dt = time.perf_counter() - t
+            self.assertGreater(dt, total_time / sec_to_nsec - self.CLOCK_RES)
+        selector.unregister(fd)
+
+    def test_timerfd_poll(self):
+        self.check_timerfd_poll(False)
+
+    def test_timerfd_ns_poll(self):
+        self.check_timerfd_poll(True)
+
+    def test_timerfd_ns_initval(self):
+        one_sec_in_nsec = 10**9
+        limit_error = one_sec_in_nsec // 10**3
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        # 1st call
+        initial_expiration_ns = 0
+        interval_ns = one_sec_in_nsec // 1000
+        next_expiration_ns, interval_ns2  = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+        self.assertEqual(interval_ns2, 0)
+        self.assertEqual(next_expiration_ns, 0)
+
+        # 2nd call
+        next_expiration_ns, interval_ns2 = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+        self.assertEqual(interval_ns2, interval_ns)
+        self.assertEqual(next_expiration_ns, initial_expiration_ns)
+
+        # timerfd_gettime
+        next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
+        self.assertEqual(interval_ns2, interval_ns)
+        self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
+
+        self.assertAlmostEqual(next_expiration_ns, initial_expiration_ns, delta=limit_error)
+
+    def test_timerfd_ns_interval(self):
+        one_sec_in_nsec = 10**9
+        limit_error = one_sec_in_nsec // 10**3
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        # 1 second
+        initial_expiration_ns = one_sec_in_nsec
+        # every 0.5 second
+        interval_ns = one_sec_in_nsec // 2
+
+        os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+
+        # timerfd_gettime
+        next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
+        self.assertEqual(interval_ns2, interval_ns)
+        self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
+
+        count = 3
+        t = time.perf_counter_ns()
+        for _ in range(count):
+            self.assertEqual(self.read_count_signaled(fd), 1)
+        t = time.perf_counter_ns() - t
+
+        total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
+        self.assertGreater(t, total_time_ns - self.CLOCK_RES_NS)
+
+        # wait 3.5 time of interval
+        time.sleep( (count+0.5) * interval_ns / one_sec_in_nsec)
+        self.assertEqual(self.read_count_signaled(fd), count)
+
+
+    def test_timerfd_ns_TFD_TIMER_ABSTIME(self):
+        one_sec_in_nsec = 10**9
+        limit_error = one_sec_in_nsec // 10**3
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        now_ns = time.clock_gettime_ns(time.CLOCK_REALTIME)
+
+        # 1 second later from now.
+        offset_ns = one_sec_in_nsec
+        initial_expiration_ns = now_ns + offset_ns
+        # not interval timer
+        interval_ns = 0
+
+        os.timerfd_settime_ns(fd, flags=os.TFD_TIMER_ABSTIME, initial=initial_expiration_ns, interval=interval_ns)
+
+        # timerfd_gettime
+        # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
+        next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
+        self.assertLess(abs(interval_ns2 - interval_ns),  limit_error)
+        self.assertLess(abs(next_expiration_ns - offset_ns),  limit_error)
+
+        t = time.perf_counter_ns()
+        count_signaled = self.read_count_signaled(fd)
+        t = time.perf_counter_ns() - t
+        self.assertEqual(count_signaled, 1)
+
+        self.assertGreater(t, offset_ns - self.CLOCK_RES_NS)
+
+    def test_timerfd_ns_select(self):
+        one_sec_in_nsec = 10**9
+
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([], [], []))
+
+        # 0.25 second
+        initial_expiration_ns = one_sec_in_nsec // 4
+        # every 0.125 second
+        interval_ns = one_sec_in_nsec // 8
+
+        os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+
+        count = 3
+        t = time.perf_counter_ns()
+        for _ in range(count):
+            rfd, wfd, xfd = select.select([fd], [fd], [fd], (initial_expiration_ns + interval_ns) / 1e9 )
+            self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
+            self.assertEqual(self.read_count_signaled(fd), 1)
+        t = time.perf_counter_ns() - t
+
+        total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
+        self.assertGreater(t, total_time_ns - self.CLOCK_RES_NS)
 
 class OSErrorTests(unittest.TestCase):
     def setUp(self):
@@ -3989,13 +4478,41 @@ class OSErrorTests(unittest.TestCase):
                     self.fail(f"No exception thrown by {func}")
 
 class CPUCountTests(unittest.TestCase):
+    def check_cpu_count(self, cpus):
+        if cpus is None:
+            self.skipTest("Could not determine the number of CPUs")
+
+        self.assertIsInstance(cpus, int)
+        self.assertGreater(cpus, 0)
+
     def test_cpu_count(self):
         cpus = os.cpu_count()
-        if cpus is not None:
-            self.assertIsInstance(cpus, int)
-            self.assertGreater(cpus, 0)
-        else:
+        self.check_cpu_count(cpus)
+
+    def test_process_cpu_count(self):
+        cpus = os.process_cpu_count()
+        self.assertLessEqual(cpus, os.cpu_count())
+        self.check_cpu_count(cpus)
+
+    @unittest.skipUnless(hasattr(os, 'sched_setaffinity'),
+                         "don't have sched affinity support")
+    def test_process_cpu_count_affinity(self):
+        affinity1 = os.process_cpu_count()
+        if affinity1 is None:
             self.skipTest("Could not determine the number of CPUs")
+
+        # Disable one CPU
+        mask = os.sched_getaffinity(0)
+        if len(mask) <= 1:
+            self.skipTest(f"sched_getaffinity() returns less than "
+                          f"2 CPUs: {sorted(mask)}")
+        self.addCleanup(os.sched_setaffinity, 0, list(mask))
+        mask.pop()
+        os.sched_setaffinity(0, mask)
+
+        # test process_cpu_count()
+        affinity2 = os.process_cpu_count()
+        self.assertEqual(affinity2, affinity1 - 1)
 
 
 # FD inheritance check is only useful for systems with process support.
@@ -4112,13 +4629,105 @@ class FDInheritanceTests(unittest.TestCase):
         self.assertEqual(os.dup2(fd, fd3, inheritable=False), fd3)
         self.assertFalse(os.get_inheritable(fd3))
 
-    @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
+@unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
+class PseudoterminalTests(unittest.TestCase):
+    def open_pty(self):
+        """Open a pty fd-pair, and schedule cleanup for it"""
+        main_fd, second_fd = os.openpty()
+        self.addCleanup(os.close, main_fd)
+        self.addCleanup(os.close, second_fd)
+        return main_fd, second_fd
+
     def test_openpty(self):
-        master_fd, slave_fd = os.openpty()
-        self.addCleanup(os.close, master_fd)
-        self.addCleanup(os.close, slave_fd)
-        self.assertEqual(os.get_inheritable(master_fd), False)
-        self.assertEqual(os.get_inheritable(slave_fd), False)
+        main_fd, second_fd = self.open_pty()
+        self.assertEqual(os.get_inheritable(main_fd), False)
+        self.assertEqual(os.get_inheritable(second_fd), False)
+
+    @unittest.skipUnless(hasattr(os, 'ptsname'), "need os.ptsname()")
+    @unittest.skipUnless(hasattr(os, 'O_RDWR'), "need os.O_RDWR")
+    @unittest.skipUnless(hasattr(os, 'O_NOCTTY'), "need os.O_NOCTTY")
+    def test_open_via_ptsname(self):
+        main_fd, second_fd = self.open_pty()
+        second_path = os.ptsname(main_fd)
+        reopened_second_fd = os.open(second_path, os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, reopened_second_fd)
+        os.write(reopened_second_fd, b'foo')
+        self.assertEqual(os.read(main_fd, 3), b'foo')
+
+    @unittest.skipUnless(hasattr(os, 'posix_openpt'), "need os.posix_openpt()")
+    @unittest.skipUnless(hasattr(os, 'grantpt'), "need os.grantpt()")
+    @unittest.skipUnless(hasattr(os, 'unlockpt'), "need os.unlockpt()")
+    @unittest.skipUnless(hasattr(os, 'ptsname'), "need os.ptsname()")
+    @unittest.skipUnless(hasattr(os, 'O_RDWR'), "need os.O_RDWR")
+    @unittest.skipUnless(hasattr(os, 'O_NOCTTY'), "need os.O_NOCTTY")
+    def test_posix_pty_functions(self):
+        mother_fd = os.posix_openpt(os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, mother_fd)
+        os.grantpt(mother_fd)
+        os.unlockpt(mother_fd)
+        son_path = os.ptsname(mother_fd)
+        son_fd = os.open(son_path, os.O_RDWR|os.O_NOCTTY)
+        self.addCleanup(os.close, son_fd)
+        self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
+
+    @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
+    @support.requires_subprocess()
+    def test_pipe_spawnl(self):
+        # gh-77046: On Windows, os.pipe() file descriptors must be created with
+        # _O_NOINHERIT to make them non-inheritable. UCRT has no public API to
+        # get (_osfile(fd) & _O_NOINHERIT), so use a functional test.
+        #
+        # Make sure that fd is not inherited by a child process created by
+        # os.spawnl(): get_osfhandle() and dup() must fail with EBADF.
+
+        fd, fd2 = os.pipe()
+        self.addCleanup(os.close, fd)
+        self.addCleanup(os.close, fd2)
+
+        code = textwrap.dedent(f"""
+            import errno
+            import os
+            import test.support
+            try:
+                import msvcrt
+            except ImportError:
+                msvcrt = None
+
+            fd = {fd}
+
+            with test.support.SuppressCrashReport():
+                if msvcrt is not None:
+                    try:
+                        handle = msvcrt.get_osfhandle(fd)
+                    except OSError as exc:
+                        if exc.errno != errno.EBADF:
+                            raise
+                        # get_osfhandle(fd) failed with EBADF as expected
+                    else:
+                        raise Exception("get_osfhandle() must fail")
+
+                try:
+                    fd3 = os.dup(fd)
+                except OSError as exc:
+                    if exc.errno != errno.EBADF:
+                        raise
+                    # os.dup(fd) failed with EBADF as expected
+                else:
+                    os.close(fd3)
+                    raise Exception("dup must fail")
+        """)
+
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        with open(filename, "w") as fp:
+            print(code, file=fp, end="")
+
+        executable = sys.executable
+        cmd = [executable, filename]
+        if os.name == "nt" and " " in cmd[0]:
+            cmd[0] = f'"{cmd[0]}"'
+        exitcode = os.spawnl(os.P_WAIT, executable, *cmd)
+        self.assertEqual(exitcode, 0)
 
 
 class PathTConverterTests(unittest.TestCase):
@@ -4307,7 +4916,7 @@ class TestScandir(unittest.TestCase):
                                os.name == 'nt')
 
     def test_attributes(self):
-        link = hasattr(os, 'link')
+        link = os_helper.can_hardlink()
         symlink = os_helper.can_symlink()
 
         dirname = os.path.join(self.path, "dir")
@@ -4647,6 +5256,45 @@ class TestPEP519(unittest.TestCase):
                 return ''
         self.assertFalse(hasattr(A(), '__dict__'))
 
+    def test_fspath_set_to_None(self):
+        class Foo:
+            __fspath__ = None
+
+        class Bar:
+            def __fspath__(self):
+                return 'bar'
+
+        class Baz(Bar):
+            __fspath__ = None
+
+        good_error_msg = (
+            r"expected str, bytes or os.PathLike object, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            self.fspath(Foo())
+
+        self.assertEqual(self.fspath(Bar()), 'bar')
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            self.fspath(Baz())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            open(Foo())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            open(Baz())
+
+        other_good_error_msg = (
+            r"should be string, bytes or os.PathLike, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Foo")):
+            os.rename(Foo(), "foooo")
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Baz")):
+            os.rename(Baz(), "bazzz")
+
 class TimesTests(unittest.TestCase):
     def test_times(self):
         times = os.times()
@@ -4676,9 +5324,12 @@ class ForkTests(unittest.TestCase):
                 support.wait_process(pid, exitcode=0)
         """
         assert_python_ok("-c", code)
-        assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
+        if support.Py_GIL_DISABLED:
+            assert_python_ok("-c", code, PYTHONMALLOC="mimalloc_debug")
+        else:
+            assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
-    @unittest.skipUnless(sys.platform in ("linux", "darwin"),
+    @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
                          "Only Linux and macOS detect this today.")
     def test_fork_warns_when_non_python_thread_exists(self):
         code = """if 1:
@@ -4705,6 +5356,22 @@ class ForkTests(unittest.TestCase):
         _, out, err = assert_python_ok("-c", code, PYTHONOPTIMIZE='0')
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
+
+    def test_fork_at_exit(self):
+        code = """if 1:
+            import atexit
+            import os
+
+            def exit_handler():
+                pid = os.fork()
+                if pid != 0:
+                    print("shouldn't be printed")
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(b"", out)
+        self.assertIn(b"can't fork at interpreter shutdown", err)
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested

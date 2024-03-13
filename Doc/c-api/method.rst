@@ -7,8 +7,8 @@ Instance Method Objects
 
 .. index:: pair: object; instancemethod
 
-An instance method is a wrapper for a :c:data:`PyCFunction` and the new way
-to bind a :c:data:`PyCFunction` to a class object. It replaces the former call
+An instance method is a wrapper for a :c:type:`PyCFunction` and the new way
+to bind a :c:type:`PyCFunction` to a class object. It replaces the former call
 ``PyMethod_New(func, NULL, class)``.
 
 

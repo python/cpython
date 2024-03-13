@@ -34,13 +34,14 @@ import re
 import sys
 from token import *
 from token import EXACT_TOKEN_TYPES
+import _tokenize
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 import token
 __all__ = token.__all__ + ["tokenize", "generate_tokens", "detect_encoding",
-                           "untokenize", "TokenInfo"]
+                           "untokenize", "TokenInfo", "open", "TokenError"]
 del token
 
 class TokenInfo(collections.namedtuple('TokenInfo', 'type string start end line')):
@@ -161,14 +162,13 @@ tabsize = 8
 class TokenError(Exception): pass
 
 
-class StopTokenizing(Exception): pass
-
 class Untokenizer:
 
     def __init__(self):
         self.tokens = []
         self.prev_row = 1
         self.prev_col = 0
+        self.prev_type = None
         self.encoding = None
 
     def add_whitespace(self, start):
@@ -183,6 +183,29 @@ class Untokenizer:
         col_offset = col - self.prev_col
         if col_offset:
             self.tokens.append(" " * col_offset)
+
+    def escape_brackets(self, token):
+        characters = []
+        consume_until_next_bracket = False
+        for character in token:
+            if character == "}":
+                if consume_until_next_bracket:
+                    consume_until_next_bracket = False
+                else:
+                    characters.append(character)
+            if character == "{":
+                n_backslashes = sum(
+                    1 for char in _itertools.takewhile(
+                        "\\".__eq__,
+                        characters[-2::-1]
+                    )
+                )
+                if n_backslashes % 2 == 0:
+                    characters.append(character)
+                else:
+                    consume_until_next_bracket = True
+            characters.append(character)
+        return "".join(characters)
 
     def untokenize(self, iterable):
         it = iter(iterable)
@@ -215,11 +238,13 @@ class Untokenizer:
                 startline = False
             elif tok_type == FSTRING_MIDDLE:
                 if '{' in token or '}' in token:
+                    token = self.escape_brackets(token)
+                    last_line = token.splitlines()[-1]
                     end_line, end_col = end
-                    end = (end_line, end_col + token.count('{') + token.count('}'))
-                    token = re.sub('{', '{{', token)
-                    token = re.sub('}', '}}', token)
-
+                    extra_chars = last_line.count("{{") + last_line.count("}}")
+                    end = (end_line, end_col + extra_chars)
+            elif tok_type in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
+                self.tokens.append(" ")
 
             self.add_whitespace(start)
             self.tokens.append(token)
@@ -227,6 +252,7 @@ class Untokenizer:
             if tok_type in (NEWLINE, NL):
                 self.prev_row += 1
                 self.prev_col = 0
+            self.prev_type = tok_type
         return "".join(self.tokens)
 
     def compat(self, token, iterable):
@@ -234,6 +260,7 @@ class Untokenizer:
         toks_append = self.tokens.append
         startline = token[0] in (NEWLINE, NL)
         prevstring = False
+        in_fstring = 0
 
         for tok in _itertools.chain([token], iterable):
             toknum, tokval = tok[:2]
@@ -252,6 +279,10 @@ class Untokenizer:
             else:
                 prevstring = False
 
+            if toknum == FSTRING_START:
+                in_fstring += 1
+            elif toknum == FSTRING_END:
+                in_fstring -= 1
             if toknum == INDENT:
                 indents.append(tokval)
                 continue
@@ -264,11 +295,18 @@ class Untokenizer:
                 toks_append(indents[-1])
                 startline = False
             elif toknum == FSTRING_MIDDLE:
-                if '{' in tokval or '}' in tokval:
-                    tokval = re.sub('{', '{{', tokval)
-                    tokval = re.sub('}', '}}', tokval)
+                tokval = self.escape_brackets(tokval)
+
+            # Insert a space between two consecutive brackets if we are in an f-string
+            if tokval in {"{", "}"} and self.tokens and self.tokens[-1] == tokval and in_fstring:
+                tokval = ' ' + tokval
+
+            # Insert a space between two consecutive f-strings
+            if toknum in (STRING, FSTRING_START) and self.prev_type in (STRING, FSTRING_END):
+                self.tokens.append(" ")
 
             toks_append(tokval)
+            self.prev_type = toknum
 
 
 def untokenize(iterable):
@@ -299,7 +337,7 @@ def untokenize(iterable):
 
 
 def _get_normal_name(orig_enc):
-    """Imitates get_normal_name in tokenizer.c."""
+    """Imitates get_normal_name in Parser/tokenizer/helpers.c."""
     # Only care about the first 12 characters.
     enc = orig_enc[:12].lower().replace("_", "-")
     if enc == "utf-8" or enc.startswith("utf-8-"):
@@ -443,12 +481,7 @@ def tokenize(readline):
             # BOM will already have been stripped.
             encoding = "utf-8"
         yield TokenInfo(ENCODING, encoding, (0, 0), (0, 0), '')
-    yield from _tokenize(rl_gen, encoding)
-
-def _tokenize(rl_gen, encoding):
-    source = b"".join(rl_gen).decode(encoding)
-    for token in _generate_tokens_from_c_tokenizer(source, extra_tokens=True):
-        yield token
+    yield from _generate_tokens_from_c_tokenizer(rl_gen.__next__, encoding, extra_tokens=True)
 
 def generate_tokens(readline):
     """Tokenize a source reading Python code as unicode strings.
@@ -456,16 +489,7 @@ def generate_tokens(readline):
     This has the same API as tokenize(), except that it expects the *readline*
     callable to return str objects instead of bytes.
     """
-    def _gen():
-        while True:
-            try:
-                line = readline()
-            except StopIteration:
-                return
-            if not line:
-                return
-            yield line.encode()
-    return _tokenize(_gen(), 'utf-8')
+    return _generate_tokens_from_c_tokenizer(readline, extra_tokens=True)
 
 def main():
     import argparse
@@ -502,9 +526,8 @@ def main():
                 tokens = list(tokenize(f.readline))
         else:
             filename = "<stdin>"
-            tokens = _tokenize(
-                (x.encode('utf-8') for x in iter(sys.stdin.readline, "")
-            ), "utf-8")
+            tokens = _generate_tokens_from_c_tokenizer(
+                sys.stdin.readline, extra_tokens=True)
 
 
         # Output the tokenization
@@ -531,11 +554,30 @@ def main():
         perror("unexpected error: %s" % err)
         raise
 
-def _generate_tokens_from_c_tokenizer(source, extra_tokens=False):
+def _transform_msg(msg):
+    """Transform error messages from the C tokenizer into the Python tokenize
+
+    The C tokenizer is more picky than the Python one, so we need to massage
+    the error messages a bit for backwards compatibility.
+    """
+    if "unterminated triple-quoted string literal" in msg:
+        return "EOF in multi-line string"
+    return msg
+
+def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False):
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
-    import _tokenize as c_tokenizer
-    for info in c_tokenizer.TokenizerIter(source, extra_tokens=extra_tokens):
-        yield TokenInfo._make(info)
+    if encoding is None:
+        it = _tokenize.TokenizerIter(source, extra_tokens=extra_tokens)
+    else:
+        it = _tokenize.TokenizerIter(source, encoding=encoding, extra_tokens=extra_tokens)
+    try:
+        for info in it:
+            yield TokenInfo._make(info)
+    except SyntaxError as e:
+        if type(e) != SyntaxError:
+            raise e from None
+        msg = _transform_msg(e.msg)
+        raise TokenError(msg, (e.lineno, e.offset)) from None
 
 
 if __name__ == "__main__":

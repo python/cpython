@@ -1,5 +1,6 @@
-
-import ast
+import dis
+import io
+import textwrap
 import types
 
 from test.support.bytecode_helper import AssemblerTestCase
@@ -24,11 +25,13 @@ class IsolatedAssembleTests(AssemblerTestCase):
         metadata.setdefault('filename', filename)
         return metadata
 
-    def assemble_test(self, insts, metadata, expected):
+    def insts_to_code_object(self, insts, metadata):
         metadata = self.complete_metadata(metadata)
         insts = self.complete_insts_info(insts)
+        return self.get_code_object(metadata['filename'], insts, metadata)
 
-        co = self.get_code_object(metadata['filename'], insts, metadata)
+    def assemble_test(self, insts, metadata, expected):
+        co = self.insts_to_code_object(insts, metadata)
         self.assertIsInstance(co, types.CodeType)
 
         expected_metadata = {}
@@ -72,3 +75,73 @@ class IsolatedAssembleTests(AssemblerTestCase):
         ]
         expected = {(3, 4) : 3.5, (-100, 200) : 50, (10, 18) : 14}
         self.assemble_test(insts, metadata, expected)
+
+
+    def test_expression_with_pseudo_instruction_load_closure(self):
+
+        def mod_two(x):
+            def inner():
+                return x
+            return inner() % 2
+
+        inner_code = mod_two.__code__.co_consts[1]
+        assert isinstance(inner_code, types.CodeType)
+
+        metadata = {
+            'filename' : 'mod_two.py',
+            'name'     : 'mod_two',
+            'qualname' : 'nested.mod_two',
+            'cellvars' : {'x' : 0},
+            'consts': {None: 0, inner_code: 1, 2: 2},
+            'argcount' : 1,
+            'varnames' : {'x' : 0},
+        }
+
+        instructions = [
+            ('RESUME', 0,),
+            ('LOAD_CLOSURE', 0, 1),
+            ('BUILD_TUPLE', 1, 1),
+            ('LOAD_CONST', 1, 1),
+            ('MAKE_FUNCTION', 0, 2),
+            ('SET_FUNCTION_ATTRIBUTE', 8, 2),
+            ('PUSH_NULL', 0, 1),
+            ('CALL', 0, 2),                     # (lambda: x)()
+            ('LOAD_CONST', 2, 2),               # 2
+            ('BINARY_OP', 6, 2),                # %
+            ('RETURN_VALUE', 0, 2)
+        ]
+
+        expected = {(0,): 0, (1,): 1, (2,): 0, (120,): 0, (121,): 1}
+        self.assemble_test(instructions, metadata, expected)
+
+
+    def test_exception_table(self):
+        metadata = {
+            'filename' : 'exc.py',
+            'name'     : 'exc',
+            'consts'   : {2 : 0},
+        }
+
+        # code for "try: pass\n except: pass"
+        insts = [
+            ('RESUME', 0),
+            ('SETUP_FINALLY', 3),
+            ('RETURN_CONST', 0),
+            ('SETUP_CLEANUP', 8),
+            ('PUSH_EXC_INFO', 0),
+            ('POP_TOP', 0),
+            ('POP_EXCEPT', 0),
+            ('RETURN_CONST', 0),
+            ('COPY', 3),
+            ('POP_EXCEPT', 0),
+            ('RERAISE', 1),
+        ]
+        co = self.insts_to_code_object(insts, metadata)
+        output = io.StringIO()
+        dis.dis(co, file=output)
+        exc_table = textwrap.dedent("""
+                                       ExceptionTable:
+                                         L1 to L2 -> L2 [0]
+                                         L2 to L3 -> L3 [1] lasti
+                                    """)
+        self.assertTrue(output.getvalue().endswith(exc_table))

@@ -1,8 +1,5 @@
 from importlib import machinery
-import sys
-import types
 import unittest
-import warnings
 
 from test.test_importlib import util
 
