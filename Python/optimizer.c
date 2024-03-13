@@ -1003,6 +1003,7 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    OPT_STAT_INC(attempts);
     int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
