@@ -777,8 +777,8 @@ well as with the built-in itertools such as ``map()``, ``filter()``,
 
 A secondary purpose of the recipes is to serve as an incubator.  The
 ``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
-recipes.  Currently, the ``sliding_window()`` and ``iter_index()`` recipes
-are being tested to see whether they prove their worth.
+recipes.  Currently, the ``sliding_window()``, ``iter_index()``, and ``sieve()``
+recipes are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
 the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
@@ -787,12 +787,12 @@ on the Python Package Index::
     python -m pip install more-itertools
 
 Many of the recipes offer the same high performance as the underlying toolset.
-Superior memory performance is kept by processing elements one at a time
-rather than bringing the whole iterable into memory all at once. Code volume is
-kept small by linking the tools together in a functional style which helps
-eliminate temporary variables.  High speed is retained by preferring
-"vectorized" building blocks over the use of for-loops and :term:`generator`\s
-which incur interpreter overhead.
+Superior memory performance is kept by processing elements one at a time rather
+than bringing the whole iterable into memory all at once. Code volume is kept
+small by linking the tools together in a `functional style
+<https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf>`_.  High speed
+is retained by preferring "vectorized" building blocks over the use of for-loops
+and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
@@ -865,6 +865,14 @@ which incur interpreter overhead.
        "Returns True if all the elements are equal to each other."
        return len(take(2, groupby(iterable, key))) <= 1
 
+   def unique_justseen(iterable, key=None):
+       "List unique elements, preserving order. Remember only the element just seen."
+       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
+       if key is None:
+           return map(operator.itemgetter(0), groupby(iterable))
+       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
@@ -880,35 +888,6 @@ which incur interpreter overhead.
                if k not in seen:
                    seen.add(k)
                    yield element
-
-   def unique_justseen(iterable, key=None):
-       "List unique elements, preserving order. Remember only the element just seen."
-       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
-       if key is None:
-           return map(operator.itemgetter(0), groupby(iterable))
-       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
-
-   def iter_index(iterable, value, start=0, stop=None):
-       "Return indices where a value occurs in a sequence or iterable."
-       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       seq_index = getattr(iterable, 'index', None)
-       if seq_index is None:
-           # Path for general iterables
-           it = islice(iterable, start, stop)
-           for i, element in enumerate(it, start):
-               if element is value or element == value:
-                   yield i
-       else:
-           # Path for sequences with an index() method
-           stop = len(iterable) if stop is None else stop
-           i = start
-           try:
-               while True:
-                   yield (i := seq_index(value, i, stop))
-                   i += 1
-           except ValueError:
-               pass
 
    def sliding_window(iterable, n):
        "Collect data into overlapping fixed-length chunks or blocks."
@@ -958,6 +937,27 @@ which incur interpreter overhead.
        # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
        slices = starmap(slice, combinations(range(len(seq) + 1), 2))
        return map(operator.getitem, repeat(seq), slices)
+
+   def iter_index(iterable, value, start=0, stop=None):
+       "Return indices where a value occurs in a sequence or iterable."
+       # iter_index('AABCADEAF', 'A') --> 0 1 4 7
+       seq_index = getattr(iterable, 'index', None)
+       if seq_index is None:
+           # Path for general iterables
+           it = islice(iterable, start, stop)
+           for i, element in enumerate(it, start):
+               if element is value or element == value:
+                   yield i
+       else:
+           # Path for sequences with an index() method
+           stop = len(iterable) if stop is None else stop
+           i = start
+           try:
+               while True:
+                   yield (i := seq_index(value, i, stop))
+                   i += 1
+           except ValueError:
+               pass
 
    def iter_except(func, exception, first=None):
        """ Call a function repeatedly until an exception is raised.
@@ -1039,8 +1039,8 @@ The following recipes have a more mathematical flavor:
 
        Computes with better numeric stability than Horner's method.
        """
-       # Evaluate x³ -4x² -17x + 60 at x = 2.5
-       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
+       # Evaluate x³ -4x² -17x + 60 at x = 5
+       # polynomial_eval([1, -4, -17, 60], x=5) --> 0
        n = len(coefficients)
        if not n:
            return type(x)(0)
@@ -1299,10 +1299,10 @@ The following recipes have a more mathematical flavor:
 
     >>> from fractions import Fraction
     >>> from decimal import Decimal
-    >>> polynomial_eval([1, -4, -17, 60], x=2)
-    18
-    >>> x = 2; x**3 - 4*x**2 -17*x + 60
-    18
+    >>> polynomial_eval([1, -4, -17, 60], x=5)
+    0
+    >>> x = 5; x**3 - 4*x**2 -17*x + 60
+    0
     >>> polynomial_eval([1, -4, -17, 60], x=2.5)
     8.125
     >>> x = 2.5; x**3 - 4*x**2 -17*x + 60
