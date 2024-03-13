@@ -1,0 +1,2 @@
+Accept an iterable of separators in :meth:`asyncio.StreamReader.readuntil`, stopping
+when one of them is encountered.
