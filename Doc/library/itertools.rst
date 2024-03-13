@@ -946,17 +946,11 @@ which incur interpreter overhead.
    def roundrobin(*iterables):
        "Visit input iterables in a cycle until each is exhausted."
        # roundrobin('ABC', 'D', 'EF') --> A D E B F C
-       # Recipe credited to George Sakkis
-       num_active = len(iterables)
-       nexts = cycle(iter(it).__next__ for it in iterables)
-       while num_active:
-           try:
-               for next in nexts:
-                   yield next()
-           except StopIteration:
-               # Remove the iterator we just exhausted from the cycle.
-               num_active -= 1
-               nexts = cycle(islice(nexts, num_active))
+       # Algorithm credited to George Sakkis
+       iterators = cycle(map(iter, iterables))
+       for cutoff in reversed(range(len(iterables))):
+           yield from map(next, iterators)
+           iterators = cycle(islice(iterators, cutoff))
 
    def partition(predicate, iterable):
        """Partition entries into false entries and true entries.
@@ -1570,6 +1564,9 @@ The following recipes have a more mathematical flavor:
 
     >>> list(roundrobin('abc', 'd', 'ef'))
     ['a', 'd', 'e', 'b', 'f', 'c']
+    >>> ranges = [range(5, 1000), range(4, 3000), range(0), range(3, 2000), range(2, 5000), range(1, 3500)]
+    >>> collections.Counter(roundrobin(ranges)) == collections.Counter(ranges)
+    True
 
     >>> def is_odd(x):
     ...     return x % 2 == 1
