@@ -645,7 +645,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.fileloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 
@@ -744,7 +745,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.fileloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 
@@ -769,7 +771,8 @@ class FactoryTests:
         self.assertEqual(spec.loader, self.pkgloader)
         self.assertEqual(spec.origin, self.path)
         self.assertIs(spec.loader_state, None)
-        self.assertEqual(spec.submodule_search_locations, [os.getcwd()])
+        location = cwd if (cwd := os.getcwd()) != '/' else ''
+        self.assertEqual(spec.submodule_search_locations, [location])
         self.assertEqual(spec.cached, self.cached)
         self.assertTrue(spec.has_location)
 
