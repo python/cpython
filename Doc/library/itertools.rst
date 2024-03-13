@@ -795,12 +795,12 @@ on the Python Package Index::
     python -m pip install more-itertools
 
 Many of the recipes offer the same high performance as the underlying toolset.
-Superior memory performance is kept by processing elements one at a time
-rather than bringing the whole iterable into memory all at once. Code volume is
-kept small by linking the tools together in a functional style which helps
-eliminate temporary variables.  High speed is retained by preferring
-"vectorized" building blocks over the use of for-loops and :term:`generator`\s
-which incur interpreter overhead.
+Superior memory performance is kept by processing elements one at a time rather
+than bringing the whole iterable into memory all at once. Code volume is kept
+small by linking the tools together in a `functional style
+<https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf>`_.  High speed
+is retained by preferring "vectorized" building blocks over the use of for-loops
+and :term:`generator`\s which incur interpreter overhead.
 
 .. testcode::
 
