@@ -214,8 +214,8 @@ write code that handles both IP versions correctly.  Address objects are
 
          address.is_global == address.ipv4_mapped.is_global
 
-      ``is_global`` has value opposite to :attr:`is_private`, except for the ``100.64.0.0/10``
-      IPv4 range where they are both ``False``.
+      ``is_global`` has value opposite to :attr:`is_private`, except for the shared address space
+      (``100.64.0.0/10`` range) where they are both ``False``.
 
       .. versionadded:: 3.4
 
