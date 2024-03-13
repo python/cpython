@@ -948,7 +948,7 @@ which incur interpreter overhead.
        # roundrobin('ABC', 'D', 'EF') --> A D E B F C
        # Algorithm credited to George Sakkis
        iterators = map(iter, iterables)
-       for num_active in reversed(range(len(iterables) + 1)):
+       for num_active in range(len(iterables), 0, -1):
            iterators = cycle(islice(iterators, num_active))
            yield from map(next, iterators)
 
