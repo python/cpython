@@ -800,7 +800,7 @@ than bringing the whole iterable into memory all at once. Code volume is kept
 small by linking the tools together in a `functional style
 <https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf>`_.  High speed
 is retained by preferring "vectorized" building blocks over the use of for-loops
-and :term:`generator`\s which incur interpreter overhead.
+and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
