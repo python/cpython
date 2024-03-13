@@ -129,7 +129,7 @@ PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int off
 #ifndef Py_LIMITED_API
 static inline int
 PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int offset,
-                           PyObject *lineno)
+                           int lineno)
 {
     _PyMonitoring_IF_ACTIVE(
         state,
@@ -138,7 +138,7 @@ PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int off
 #else
 extern int
 PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int offset,
-                           PyObject *lineno);
+                           int lineno);
 #endif
 
 #ifndef Py_LIMITED_API

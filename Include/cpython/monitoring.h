@@ -30,7 +30,7 @@ _PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int of
 
 PyAPI_FUNC(int)
 _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int offset,
-                            PyObject *lineno);
+                            int lineno);
 
 PyAPI_FUNC(int)
 _PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, int offset);

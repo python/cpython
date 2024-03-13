@@ -206,12 +206,10 @@ static PyObject *
 fire_event_line(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
-    PyObject *lineno;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &lineno)) {
+    int offset, active, lineno;
+    if (!PyArg_ParseTuple(args, "Oiii", &codelike, &offset, &active, &lineno)) {
         return NULL;
     }
-    NULLABLE(lineno);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];

@@ -2411,12 +2411,18 @@ _PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int of
 
 int
 _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int offset,
-                             PyObject *lineno)
+                            int lineno)
 {
     assert(state->active);
-    PyObject *args[4] = { NULL, NULL, NULL, lineno };
-    return capi_call_instrumentation(state, codelike, offset, args, 3,
-                                     PY_MONITORING_EVENT_LINE);
+    PyObject *lno = PyLong_FromLong(lineno);
+    if (lno == NULL) {
+        return -1;
+    }
+    PyObject *args[4] = { NULL, NULL, NULL, lno };
+    int res= capi_call_instrumentation(state, codelike, offset, args, 3,
+                                       PY_MONITORING_EVENT_LINE);
+    Py_DECREF(lno);
+    return res;
 }
 
 int
