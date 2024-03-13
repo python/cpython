@@ -1,0 +1,2 @@
+Fixed nuisance refleaks warnings in tests for importlib.metadata and
+importlib.resources.
