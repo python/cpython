@@ -4,10 +4,9 @@ import copy
 import types
 import inspect
 import keyword
-import functools
 import itertools
 import abc
-import _thread
+from reprlib import recursive_repr
 from types import FunctionType, GenericAlias
 
 
@@ -245,25 +244,6 @@ _ATOMIC_TYPES = frozenset({
     property,
 })
 
-# This function's logic is copied from "recursive_repr" function in
-# reprlib module to avoid dependency.
-def _recursive_repr(user_function):
-    # Decorator to make a repr function return "..." for a recursive
-    # call.
-    repr_running = set()
-
-    @functools.wraps(user_function)
-    def wrapper(self):
-        key = id(self), _thread.get_ident()
-        if key in repr_running:
-            return '...'
-        repr_running.add(key)
-        try:
-            result = user_function(self)
-        finally:
-            repr_running.discard(key)
-        return result
-    return wrapper
 
 class InitVar:
     __slots__ = ('type', )
@@ -322,7 +302,7 @@ class Field:
         self.kw_only = kw_only
         self._field_type = None
 
-    @_recursive_repr
+    @recursive_repr()
     def __repr__(self):
         return ('Field('
                 f'name={self.name!r},'
@@ -632,7 +612,7 @@ def _repr_fn(fields, globals):
                                 for f in fields]) +
                      ')"'],
                      globals=globals)
-    return _recursive_repr(fn)
+    return recursive_repr()(fn)
 
 
 def _frozen_get_del_attr(cls, fields, globals):
@@ -1332,58 +1312,69 @@ def asdict(obj, *, dict_factory=dict):
 
 
 def _asdict_inner(obj, dict_factory):
-    if type(obj) in _ATOMIC_TYPES:
+    obj_type = type(obj)
+    if obj_type in _ATOMIC_TYPES:
         return obj
-    elif _is_dataclass_instance(obj):
-        # fast path for the common case
+    elif hasattr(obj_type, _FIELDS):
+        # dataclass instance: fast path for the common case
         if dict_factory is dict:
             return {
                 f.name: _asdict_inner(getattr(obj, f.name), dict)
                 for f in fields(obj)
             }
         else:
-            result = []
-            for f in fields(obj):
-                value = _asdict_inner(getattr(obj, f.name), dict_factory)
-                result.append((f.name, value))
-            return dict_factory(result)
-    elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
-        # obj is a namedtuple.  Recurse into it, but the returned
-        # object is another namedtuple of the same type.  This is
-        # similar to how other list- or tuple-derived classes are
-        # treated (see below), but we just need to create them
-        # differently because a namedtuple's __init__ needs to be
-        # called differently (see bpo-34363).
+            return dict_factory([
+                (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
+                for f in fields(obj)
+            ])
+    # handle the builtin types first for speed; subclasses handled below
+    elif obj_type is list:
+        return [_asdict_inner(v, dict_factory) for v in obj]
+    elif obj_type is dict:
+        return {
+            _asdict_inner(k, dict_factory): _asdict_inner(v, dict_factory)
+            for k, v in obj.items()
+        }
+    elif obj_type is tuple:
+        return tuple([_asdict_inner(v, dict_factory) for v in obj])
+    elif issubclass(obj_type, tuple):
+        if hasattr(obj, '_fields'):
+            # obj is a namedtuple.  Recurse into it, but the returned
+            # object is another namedtuple of the same type.  This is
+            # similar to how other list- or tuple-derived classes are
+            # treated (see below), but we just need to create them
+            # differently because a namedtuple's __init__ needs to be
+            # called differently (see bpo-34363).
 
-        # I'm not using namedtuple's _asdict()
-        # method, because:
-        # - it does not recurse in to the namedtuple fields and
-        #   convert them to dicts (using dict_factory).
-        # - I don't actually want to return a dict here.  The main
-        #   use case here is json.dumps, and it handles converting
-        #   namedtuples to lists.  Admittedly we're losing some
-        #   information here when we produce a json list instead of a
-        #   dict.  Note that if we returned dicts here instead of
-        #   namedtuples, we could no longer call asdict() on a data
-        #   structure where a namedtuple was used as a dict key.
-
-        return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
-    elif isinstance(obj, (list, tuple)):
-        # Assume we can create an object of this type by passing in a
-        # generator (which is not true for namedtuples, handled
-        # above).
-        return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
-    elif isinstance(obj, dict):
-        if hasattr(type(obj), 'default_factory'):
+            # I'm not using namedtuple's _asdict()
+            # method, because:
+            # - it does not recurse in to the namedtuple fields and
+            #   convert them to dicts (using dict_factory).
+            # - I don't actually want to return a dict here.  The main
+            #   use case here is json.dumps, and it handles converting
+            #   namedtuples to lists.  Admittedly we're losing some
+            #   information here when we produce a json list instead of a
+            #   dict.  Note that if we returned dicts here instead of
+            #   namedtuples, we could no longer call asdict() on a data
+            #   structure where a namedtuple was used as a dict key.
+            return obj_type(*[_asdict_inner(v, dict_factory) for v in obj])
+        else:
+            return obj_type(_asdict_inner(v, dict_factory) for v in obj)
+    elif issubclass(obj_type, dict):
+        if hasattr(obj_type, 'default_factory'):
             # obj is a defaultdict, which has a different constructor from
             # dict as it requires the default_factory as its first arg.
-            result = type(obj)(getattr(obj, 'default_factory'))
+            result = obj_type(obj.default_factory)
             for k, v in obj.items():
                 result[_asdict_inner(k, dict_factory)] = _asdict_inner(v, dict_factory)
             return result
-        return type(obj)((_asdict_inner(k, dict_factory),
-                          _asdict_inner(v, dict_factory))
-                         for k, v in obj.items())
+        return obj_type((_asdict_inner(k, dict_factory),
+                         _asdict_inner(v, dict_factory))
+                        for k, v in obj.items())
+    elif issubclass(obj_type, list):
+        # Assume we can create an object of this type by passing in a
+        # generator
+        return obj_type(_asdict_inner(v, dict_factory) for v in obj)
     else:
         return copy.deepcopy(obj)
 
@@ -1416,11 +1407,10 @@ def _astuple_inner(obj, tuple_factory):
     if type(obj) in _ATOMIC_TYPES:
         return obj
     elif _is_dataclass_instance(obj):
-        result = []
-        for f in fields(obj):
-            value = _astuple_inner(getattr(obj, f.name), tuple_factory)
-            result.append(value)
-        return tuple_factory(result)
+        return tuple_factory([
+            _astuple_inner(getattr(obj, f.name), tuple_factory)
+            for f in fields(obj)
+        ])
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
         # object is another namedtuple of the same type.  This is
@@ -1558,14 +1548,14 @@ def replace(obj, /, **changes):
     return _replace(obj, **changes)
 
 
-def _replace(obj, /, **changes):
+def _replace(self, /, **changes):
     # We're going to mutate 'changes', but that's okay because it's a
-    # new dict, even if called with 'replace(obj, **my_changes)'.
+    # new dict, even if called with 'replace(self, **my_changes)'.
 
     # It's an error to have init=False fields in 'changes'.
-    # If a field is not in 'changes', read its value from the provided obj.
+    # If a field is not in 'changes', read its value from the provided 'self'.
 
-    for f in getattr(obj, _FIELDS).values():
+    for f in getattr(self, _FIELDS).values():
         # Only consider normal fields or InitVars.
         if f._field_type is _FIELD_CLASSVAR:
             continue
@@ -1582,11 +1572,11 @@ def _replace(obj, /, **changes):
             if f._field_type is _FIELD_INITVAR and f.default is MISSING:
                 raise TypeError(f"InitVar {f.name!r} "
                                 f'must be specified with replace()')
-            changes[f.name] = getattr(obj, f.name)
+            changes[f.name] = getattr(self, f.name)
 
     # Create the new object, which calls __init__() and
     # __post_init__() (if defined), using all of the init fields we've
     # added and/or left in 'changes'.  If there are values supplied in
     # changes that aren't fields, this will correctly raise a
     # TypeError.
-    return obj.__class__(**changes)
+    return self.__class__(**changes)

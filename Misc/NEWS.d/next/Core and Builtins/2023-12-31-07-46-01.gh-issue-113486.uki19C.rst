@@ -1,1 +1,0 @@
-No longer issue spurious ``PY_UNWIND`` events for optimized calls to classes.

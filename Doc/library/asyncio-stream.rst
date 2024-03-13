@@ -77,8 +77,8 @@ and work with streams:
    .. versionchanged:: 3.7
       Added the *ssl_handshake_timeout* parameter.
 
-   .. versionadded:: 3.8
-      Added *happy_eyeballs_delay* and *interleave* parameters.
+   .. versionchanged:: 3.8
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -347,7 +347,7 @@ StreamWriter
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
-   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
+   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
                           ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
       Upgrade an existing stream-based connection to TLS.

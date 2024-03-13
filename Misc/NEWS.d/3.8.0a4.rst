@@ -168,7 +168,7 @@ decoder.
 Changing ``dict`` keys during iteration of the dict itself, ``keys()``,
 ``values()``, or ``items()`` will now be detected in certain corner cases
 where keys are deleted/added so that the number of keys isn't changed. A
-`RuntimeError` will be raised after ``len(dict)`` iterations. Contributed by
+``RuntimeError`` will be raised after ``len(dict)`` iterations. Contributed by
 Thomas Perl.
 
 ..
@@ -580,7 +580,7 @@ is a dictionary.
 .. section: Library
 
 Calling ``stop()`` on an unstarted or stopped :func:`unittest.mock.patch`
-object will now return `None` instead of raising :exc:`RuntimeError`, making
+object will now return ``None`` instead of raising :exc:`RuntimeError`, making
 the method idempotent. Patch by Karthikeyan Singaravelan.
 
 ..
@@ -609,9 +609,9 @@ Add time module support and fix test_time faiures for VxWorks.
 .. nonce: i2Z1XR
 .. section: Library
 
-Added support for keyword arguments `default_namespace` and
-`xml_declaration` in functions ElementTree.tostring() and
-ElementTree.tostringlist().
+Added support for keyword arguments ``default_namespace`` and
+``xml_declaration`` in functions ``ElementTree.tostring()`` and
+``ElementTree.tostringlist()``.
 
 ..
 
@@ -744,7 +744,7 @@ Remove stale unix datagram socket before binding
 .. nonce: _4Q_bi
 .. section: Library
 
-Implemented Happy Eyeballs in `asyncio.create_connection()`. Added two new
+Implemented Happy Eyeballs in ``asyncio.create_connection()``. Added two new
 arguments, *happy_eyeballs_delay* and *interleave*, to specify Happy
 Eyeballs behavior.
 
@@ -1405,7 +1405,7 @@ only present in alpha releases of Python 3.8. Patch by Paul Ganssle.
 .. nonce: wpbWeb
 .. section: C API
 
-Modify ``PyObject_Init`` to correctly increase the refcount of heap-
-allocated Type objects. Also fix the refcounts of the heap-allocated types
+Modify ``PyObject_Init`` to correctly increase the refcount of heap-allocated
+Type objects. Also fix the refcounts of the heap-allocated types
 that were either doing this manually or not decreasing the type's refcount
 in tp_dealloc

@@ -333,6 +333,29 @@ class GlobTests(unittest.TestCase):
             eq(glob.glob('**', recursive=True, include_hidden=True),
                [join(*i) for i in full+rec])
 
+    def test_glob_non_directory(self):
+        eq = self.assertSequencesEqual_noorder
+        eq(self.rglob('EF'), self.joins(('EF',)))
+        eq(self.rglob('EF', ''), [])
+        eq(self.rglob('EF', '*'), [])
+        eq(self.rglob('EF', '**'), [])
+        eq(self.rglob('nonexistent'), [])
+        eq(self.rglob('nonexistent', ''), [])
+        eq(self.rglob('nonexistent', '*'), [])
+        eq(self.rglob('nonexistent', '**'), [])
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_glob_named_pipe(self):
+        path = os.path.join(self.tempdir, 'mypipe')
+        os.mkfifo(path)
+        self.assertEqual(self.rglob('mypipe'), [path])
+        self.assertEqual(self.rglob('mypipe*'), [path])
+        self.assertEqual(self.rglob('mypipe', ''), [])
+        self.assertEqual(self.rglob('mypipe', 'sub'), [])
+        self.assertEqual(self.rglob('mypipe', '*'), [])
+
     def test_glob_many_open_files(self):
         depth = 30
         base = os.path.join(self.tempdir, 'deep')

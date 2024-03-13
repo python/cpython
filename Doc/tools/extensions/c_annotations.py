@@ -42,7 +42,7 @@ REST_ROLE_MAP = {
 }
 
 
-# Monkeypatch nodes.Node.findall for forwards compatability
+# Monkeypatch nodes.Node.findall for forwards compatibility
 # This patch can be dropped when the minimum Sphinx version is 4.4.0
 # or the minimum Docutils version is 0.18.1.
 if docutils.__version_info__ < (0, 18, 1):

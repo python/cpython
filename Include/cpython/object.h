@@ -4,6 +4,7 @@
 
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
+PyAPI_FUNC(void) _Py_ResurrectReference(PyObject *op);
 
 #ifdef Py_REF_DEBUG
 /* These are useful as debugging aids when chasing down refleaks. */
@@ -228,6 +229,7 @@ struct _typeobject {
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+    uint16_t tp_versions_used;
 };
 
 /* This struct is used by the specializer

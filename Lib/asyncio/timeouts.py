@@ -109,10 +109,16 @@ class Timeout:
         if self._state is _State.EXPIRING:
             self._state = _State.EXPIRED
 
-            if self._task.uncancel() <= self._cancelling and exc_type is exceptions.CancelledError:
+            if self._task.uncancel() <= self._cancelling and exc_type is not None:
                 # Since there are no new cancel requests, we're
                 # handling this.
-                raise TimeoutError from exc_val
+                if issubclass(exc_type, exceptions.CancelledError):
+                    raise TimeoutError from exc_val
+                elif exc_val is not None:
+                    self._insert_timeout_error(exc_val)
+                    if isinstance(exc_val, ExceptionGroup):
+                        for exc in exc_val.exceptions:
+                            self._insert_timeout_error(exc)
         elif self._state is _State.ENTERED:
             self._state = _State.EXITED
 
@@ -124,6 +130,16 @@ class Timeout:
         self._state = _State.EXPIRING
         # drop the reference early
         self._timeout_handler = None
+
+    @staticmethod
+    def _insert_timeout_error(exc_val: BaseException) -> None:
+        while exc_val.__context__ is not None:
+            if isinstance(exc_val.__context__, exceptions.CancelledError):
+                te = TimeoutError()
+                te.__context__ = te.__cause__ = exc_val.__context__
+                exc_val.__context__ = te
+                break
+            exc_val = exc_val.__context__
 
 
 def timeout(delay: Optional[float]) -> Timeout:

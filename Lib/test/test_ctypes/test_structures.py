@@ -12,6 +12,8 @@ from ctypes.util import find_library
 from struct import calcsize
 from collections import namedtuple
 from test import support
+from ._support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
+                       Py_TPFLAGS_IMMUTABLETYPE)
 
 
 class SubclassesTest(unittest.TestCase):
@@ -69,6 +71,19 @@ class StructureTestCase(unittest.TestCase):
                "f": c_float,
                "d": c_double,
                }
+
+    def test_inheritance_hierarchy(self):
+        self.assertEqual(Structure.mro(), [Structure, _CData, object])
+
+        self.assertEqual(PyCStructType.__name__, "PyCStructType")
+        self.assertEqual(type(PyCStructType), type)
+
+
+    def test_type_flags(self):
+        for cls in Structure, PyCStructType:
+            with self.subTest(cls=cls):
+                self.assertTrue(Structure.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+                self.assertFalse(Structure.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
     def test_simple_structs(self):
         for code, tp in self.formats.items():

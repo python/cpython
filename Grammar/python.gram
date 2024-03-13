@@ -393,7 +393,7 @@ for_stmt[stmt_ty]:
 with_stmt[stmt_ty]:
     | invalid_with_stmt_indent
     | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' tc=[TYPE_COMMENT] b=block {
-       CHECK_VERSION(stmt_ty, 9, "Parenthesized context managers are", _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+       _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
         _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
     | 'async' 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
@@ -968,6 +968,8 @@ for_if_clause[comprehension_ty]:
         CHECK_VERSION(comprehension_ty, 6, "Async comprehensions are", _PyAST_comprehension(a, b, c, 1, p->arena)) }
     | 'for' a=star_targets 'in' ~ b=disjunction c[asdl_expr_seq*]=('if' z=disjunction { z })* {
         _PyAST_comprehension(a, b, c, 0, p->arena) }
+    | 'async'? 'for' (bitwise_or (',' bitwise_or)* [',']) !'in' {
+        RAISE_SYNTAX_ERROR("'in' expected after for-loop variables") }
     | invalid_for_target
 
 listcomp[expr_ty]:

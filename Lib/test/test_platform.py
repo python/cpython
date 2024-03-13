@@ -318,12 +318,44 @@ class PlatformTest(unittest.TestCase):
                     platform._uname_cache = None
 
     def test_java_ver(self):
-        res = platform.java_ver()
-        if sys.platform == 'java':  # Is never actually checked in CI
-            self.assertTrue(all(res))
+        import re
+        msg = re.escape(
+            "'java_ver' is deprecated and slated for removal in Python 3.15"
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            res = platform.java_ver()
+        self.assertEqual(len(res), 4)
 
+    @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
     def test_win32_ver(self):
-        res = platform.win32_ver()
+        release1, version1, csd1, ptype1 = 'a', 'b', 'c', 'd'
+        res = platform.win32_ver(release1, version1, csd1, ptype1)
+        self.assertEqual(len(res), 4)
+        release, version, csd, ptype = res
+        if release:
+            # Currently, release names always come from internal dicts,
+            # but this could change over time. For now, we just check that
+            # release is something different from what we have passed.
+            self.assertNotEqual(release, release1)
+        if version:
+            # It is rather hard to test explicit version without
+            # going deep into the details.
+            self.assertIn('.', version)
+            for v in version.split('.'):
+                int(v)  # should not fail
+        if csd:
+            self.assertTrue(csd.startswith('SP'), msg=csd)
+        if ptype:
+            if os.cpu_count() > 1:
+                self.assertIn('Multiprocessor', ptype)
+            else:
+                self.assertIn('Uniprocessor', ptype)
+
+    @unittest.skipIf(support.MS_WINDOWS, 'This test only makes sense on non Windows')
+    def test_win32_ver_on_non_windows(self):
+        release, version, csd, ptype = 'a', '1.0', 'c', 'd'
+        res = platform.win32_ver(release, version, csd, ptype)
+        self.assertSequenceEqual(res, (release, version, csd, ptype), seq_type=tuple)
 
     def test_mac_ver(self):
         res = platform.mac_ver()
@@ -472,7 +504,8 @@ class PlatformTest(unittest.TestCase):
                   'root:xnu-4570.71.2~1/RELEASE_X86_64'),
                  'x86_64', 'i386')
         arch = ('64bit', '')
-        with mock.patch.object(platform, 'uname', return_value=uname), \
+        with mock.patch.object(sys, "platform", "darwin"), \
+             mock.patch.object(platform, 'uname', return_value=uname), \
              mock.patch.object(platform, 'architecture', return_value=arch):
             for mac_ver, expected_terse, expected in [
                 # darwin: mac_ver() returns empty strings
