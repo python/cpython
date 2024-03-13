@@ -1247,7 +1247,7 @@ functions.
 .. function:: log(level, msg, *args, **kwargs)
 
    Logs a message with level *level* on the root logger. The arguments and behavior
-   are the otherwise same as for :func:`debug`.
+   are otherwise the same as for :func:`debug`.
 
 .. function:: disable(level=CRITICAL)
 
