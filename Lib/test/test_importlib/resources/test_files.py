@@ -3,6 +3,7 @@ import textwrap
 import unittest
 import warnings
 import importlib
+import inspect
 import contextlib
 
 from importlib import resources
@@ -90,6 +91,12 @@ class ModulesFilesTests(SiteDir, unittest.TestCase):
 
 
 class ImplicitContextFilesTests(SiteDir, unittest.TestCase):
+
+    def tearDown(self):
+        # clean up inspect state to avoid ref leaks (#116731)
+        inspect._filesbymodname.clear()
+        inspect.modulesbyfile.clear()
+
     def test_implicit_files(self):
         """
         Without any parameter, files() will infer the location as the caller.
