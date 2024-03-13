@@ -1,0 +1,1 @@
+change the behavior of :meth:`RobotFileParser.can_fetch` to return True when disallow and allow rule are equivalent in robots.txt
