@@ -524,6 +524,7 @@ OBJECT_OBJS=	\
 		Objects/setobject.o \
 		Objects/sliceobject.o \
 		Objects/structseq.o \
+		Objects/threadhandleobject.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \

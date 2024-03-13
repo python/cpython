@@ -1184,6 +1184,9 @@
     <ClCompile Include="..\Objects\structseq.c">
       <Filter>Objects</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\threadhandleobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\tupleobject.c">
       <Filter>Objects</Filter>
     </ClCompile>

@@ -153,6 +153,32 @@ PyAPI_FUNC(int) PyThread_join_thread(PyThread_handle_t);
  */
 PyAPI_FUNC(int) PyThread_detach_thread(PyThread_handle_t);
 
+
+/******************/
+/* thread handles */
+/******************/
+
+// Handles transition from RUNNING to one of JOINED, DETACHED, or INVALID (post
+// fork).
+typedef enum {
+    THREAD_HANDLE_RUNNING = 1,
+    THREAD_HANDLE_JOINED = 2,
+    THREAD_HANDLE_DETACHED = 3,
+    THREAD_HANDLE_INVALID = 4,
+} _PyThreadHandleState;
+
+// XXX Make it a static type.
+extern PyTypeObject * _PyThreadHandle_NewType(void);
+
+extern PyObject * _PyThreadHandle_NewObject(PyTypeObject *);
+extern _PyEventRc * _PyThreadHandle_GetExitingEvent(PyObject *);
+extern void _PyThreadHandle_SetStarted(
+    PyObject *obj,
+    PyThread_handle_t handle,
+    PyThread_ident_t ident
+);
+
+
 #ifdef __cplusplus
 }
 #endif
