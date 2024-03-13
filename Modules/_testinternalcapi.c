@@ -1769,9 +1769,6 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
         return 1;
     }
-    if (_PyTestInternalCapi_Init_Monitoring(module) < 0) {
-        return 1;
-    }
 
     Py_ssize_t sizeof_gc_head = 0;
 #ifndef Py_GIL_DISABLED

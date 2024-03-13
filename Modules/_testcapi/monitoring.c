@@ -1,8 +1,9 @@
 #include "parts.h"
-#include "../_testcapi/util.h"  // NULLABLE, RETURN_INT
+#include "util.h"
 
 #include "monitoring.h"
 
+#define Py_BUILD_CORE
 #include "internal/pycore_instruments.h"
 
 typedef struct {
@@ -410,7 +411,7 @@ static PyMethodDef TestMethods[] = {
 };
 
 int
-_PyTestInternalCapi_Init_Monitoring(PyObject *m)
+_PyTestCapi_Init_Monitoring(PyObject *m)
 {
     if (PyType_Ready(&PyCodeLike_Type) < 0) {
         return -1;

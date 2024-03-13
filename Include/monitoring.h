@@ -26,7 +26,6 @@ typedef struct _PyMonitoringState {
 
 #endif
 
-
 #ifndef Py_LIMITED_API
 static inline void
 PyMonitoringScopeBegin(PyMonitoringState *state_array, uint64_t *version,
