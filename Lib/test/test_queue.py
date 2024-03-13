@@ -567,7 +567,6 @@ class BaseQueueTestMixin(BlockingTestMixin):
         results = []
         go = threading.Event()
         q.put("Y")
-        nb = q.qsize()
         # queue not fulled
 
         thrds = (
@@ -578,13 +577,19 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for func, params in thrds:
             threads.append(threading.Thread(target=func, args=params))
             threads[-1].start()
-        self.assertEqual(q.unfinished_tasks, nb)
-        for i in range(nb):
-            t = threading.Thread(target=q.task_done)
-            t.start()
-            threads.append(t)
+        self.assertEqual(q.unfinished_tasks, 1)
+
         q.shutdown(immediate)
         go.set()
+
+        if immediate:
+            with self.assertRaises(self.queue.ShutDown):
+                q.get_nowait()
+        else:
+            result = q.get()
+            self.assertEqual(result, "Y")
+            q.task_done()
+
         for t in threads:
             t.join()
 
