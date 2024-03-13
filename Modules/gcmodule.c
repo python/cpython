@@ -2290,7 +2290,7 @@ _Py_RunGC(PyThreadState *tstate)
     GCState *gcstate = &tstate->interp->gc;
     if (!gcstate->enabled) {
         return;
-    } 
+    }
     gcstate->collecting = 1;
     gc_collect_generations(tstate);
     gcstate->collecting = 0;
