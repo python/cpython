@@ -1496,6 +1496,8 @@ set_threadstate_finalizer(PyThreadState *tstate, PyObject *lock)
 /* Module functions */
 /********************/
 
+/* runtime state inquiries */
+
 static PyObject *
 threadmod_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
@@ -1514,194 +1516,6 @@ PyDoc_STRVAR(daemon_threads_allowed_doc,
 Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
 
-static PyObject *
-threadmod_start_new_thread(PyObject *module, PyObject *fargs)
-{
-    PyObject *func, *args, *kwargs = NULL;
-    thread_module_state *state = get_thread_state(module);
-
-    if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
-                           &func, &args, &kwargs))
-        return NULL;
-    if (!PyCallable_Check(func)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "first arg must be callable");
-        return NULL;
-    }
-    if (!PyTuple_Check(args)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "2nd arg must be a tuple");
-        return NULL;
-    }
-    if (kwargs != NULL && !PyDict_Check(kwargs)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "optional 3rd arg must be a dictionary");
-        return NULL;
-    }
-
-    if (PySys_Audit("_thread.start_new_thread", "OOO",
-                    func, args, kwargs ? kwargs : Py_None) < 0) {
-        return NULL;
-    }
-
-    PyThread_ident_t ident = 0;
-    PyThread_handle_t handle;
-    if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
-                            &ident, &handle, NULL)) {
-        return NULL;
-    }
-    return PyLong_FromUnsignedLongLong(ident);
-}
-
-PyDoc_STRVAR(start_new_doc,
-"start_new_thread(function, args[, kwargs])\n\
-(start_new() is an obsolete synonym)\n\
-\n\
-Start a new thread and return its identifier.\n\
-\n\
-The thread will call the function with positional arguments from the\n\
-tuple args and keyword arguments taken from the optional dictionary\n\
-kwargs.  The thread exits when the function returns; the return value\n\
-is ignored.  The thread will also exit when the function raises an\n\
-unhandled exception; a stack trace will be printed unless the exception\n\
-is SystemExit.\n");
-
-static PyObject *
-threadmod_start_joinable_thread(PyObject *module, PyObject *func)
-{
-    thread_module_state *state = get_thread_state(module);
-
-    if (!PyCallable_Check(func)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "thread function must be callable");
-        return NULL;
-    }
-
-    if (PySys_Audit("_thread.start_joinable_thread", "O", func) < 0) {
-        return NULL;
-    }
-
-    PyObject* args = PyTuple_New(0);
-    if (args == NULL) {
-        return NULL;
-    }
-    ThreadHandleObject* hobj = new_thread_handle(state);
-    if (hobj == NULL) {
-        Py_DECREF(args);
-        return NULL;
-    }
-    if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
-                            &hobj->ident, &hobj->handle, hobj->thread_is_exiting)) {
-        Py_DECREF(args);
-        Py_DECREF(hobj);
-        return NULL;
-    }
-    set_thread_handle_state(hobj, THREAD_HANDLE_RUNNING);
-    Py_DECREF(args);
-    return (PyObject*) hobj;
-}
-
-PyDoc_STRVAR(start_joinable_doc,
-"start_joinable_thread(function)\n\
-\n\
-*For internal use only*: start a new thread.\n\
-\n\
-Like start_new_thread(), this starts a new thread calling the given function.\n\
-Unlike start_new_thread(), this returns a handle object with methods to join\n\
-or detach the given thread.\n\
-This function is not for third-party code, please use the\n\
-`threading` module instead.\n");
-
-static PyObject *
-threadmod_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyErr_SetNone(PyExc_SystemExit);
-    return NULL;
-}
-
-PyDoc_STRVAR(exit_doc,
-"exit()\n\
-(exit_thread() is an obsolete synonym)\n\
-\n\
-This is synonymous to ``raise SystemExit''.  It will cause the current\n\
-thread to exit silently unless the exception is caught.");
-
-static PyObject *
-threadmod_interrupt_main(PyObject *self, PyObject *args)
-{
-    int signum = SIGINT;
-    if (!PyArg_ParseTuple(args, "|i:signum", &signum)) {
-        return NULL;
-    }
-
-    if (PyErr_SetInterruptEx(signum)) {
-        PyErr_SetString(PyExc_ValueError, "signal number out of range");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(interrupt_doc,
-"interrupt_main(signum=signal.SIGINT, /)\n\
-\n\
-Simulate the arrival of the given signal in the main thread,\n\
-where the corresponding signal handler will be executed.\n\
-If *signum* is omitted, SIGINT is assumed.\n\
-A subthread can use this function to interrupt the main thread.\n\
-\n\
-Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
-);
-
-static PyObject *
-threadmod_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return (PyObject *) newlockobject(module);
-}
-
-PyDoc_STRVAR(allocate_doc,
-"allocate_lock() -> lock object\n\
-(allocate() is an obsolete synonym)\n\
-\n\
-Create a new lock object. See help(type(threading.Lock())) for\n\
-information about locks.");
-
-static PyObject *
-threadmod_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyThread_ident_t ident = PyThread_get_thread_ident_ex();
-    if (ident == PYTHREAD_INVALID_THREAD_ID) {
-        PyErr_SetString(ThreadError, "no current thread ident");
-        return NULL;
-    }
-    return PyLong_FromUnsignedLongLong(ident);
-}
-
-PyDoc_STRVAR(get_ident_doc,
-"get_ident() -> integer\n\
-\n\
-Return a non-zero integer that uniquely identifies the current thread\n\
-amongst other threads that exist simultaneously.\n\
-This may be used to identify per-thread resources.\n\
-Even though on some platforms threads identities may appear to be\n\
-allocated consecutive numbers starting at 1, this behavior should not\n\
-be relied upon, and the number should be seen purely as a magic cookie.\n\
-A thread's identity may be reused for another thread after it exits.");
-
-#ifdef PY_HAVE_THREAD_NATIVE_ID
-static PyObject *
-threadmod_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    unsigned long native_id = PyThread_get_thread_native_id();
-    return PyLong_FromUnsignedLong(native_id);
-}
-
-PyDoc_STRVAR(get_native_id_doc,
-"get_native_id() -> integer\n\
-\n\
-Return a non-negative integer identifying the thread as reported\n\
-by the OS (kernel). This may be used to uniquely identify a\n\
-particular thread within a system.");
-#endif
 
 static PyObject *
 threadmod__count(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1722,28 +1536,6 @@ yet finished.\n\
 This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
-static PyObject *
-threadmod__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *lock = (PyObject *)newlockobject(module);
-    if (lock == NULL) {
-        return NULL;
-    }
-    if (set_threadstate_finalizer(tstate, lock) < 0) {
-        Py_DECREF(lock);
-        return NULL;
-    }
-    return lock;
-}
-
-PyDoc_STRVAR(_set_sentinel_doc,
-"_set_sentinel() -> lock\n\
-\n\
-Set a sentinel lock that will be released when the current thread\n\
-state is finalized (after it is untied from the interpreter).\n\
-\n\
-This is a private API for the threading module.");
 
 static PyObject *
 threadmod_stack_size(PyObject *self, PyObject *args)
@@ -1798,6 +1590,234 @@ requiring allocation in multiples of the system memory page size\n\
 - platform documentation should be referred to for more information\n\
 (4 KiB pages are common; using multiples of 4096 for the stack size is\n\
 the suggested approach in the absence of more specific information).");
+
+
+/* signals */
+
+static PyObject *
+threadmod_interrupt_main(PyObject *self, PyObject *args)
+{
+    int signum = SIGINT;
+    if (!PyArg_ParseTuple(args, "|i:signum", &signum)) {
+        return NULL;
+    }
+
+    if (PyErr_SetInterruptEx(signum)) {
+        PyErr_SetString(PyExc_ValueError, "signal number out of range");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(interrupt_doc,
+"interrupt_main(signum=signal.SIGINT, /)\n\
+\n\
+Simulate the arrival of the given signal in the main thread,\n\
+where the corresponding signal handler will be executed.\n\
+If *signum* is omitted, SIGINT is assumed.\n\
+A subthread can use this function to interrupt the main thread.\n\
+\n\
+Note: the default signal handler for SIGINT raises ``KeyboardInterrupt``."
+);
+
+
+/* the current OS thread */
+
+static PyObject *
+threadmod_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyThread_ident_t ident = PyThread_get_thread_ident_ex();
+    if (ident == PYTHREAD_INVALID_THREAD_ID) {
+        PyErr_SetString(ThreadError, "no current thread ident");
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(ident);
+}
+
+PyDoc_STRVAR(get_ident_doc,
+"get_ident() -> integer\n\
+\n\
+Return a non-zero integer that uniquely identifies the current thread\n\
+amongst other threads that exist simultaneously.\n\
+This may be used to identify per-thread resources.\n\
+Even though on some platforms threads identities may appear to be\n\
+allocated consecutive numbers starting at 1, this behavior should not\n\
+be relied upon, and the number should be seen purely as a magic cookie.\n\
+A thread's identity may be reused for another thread after it exits.");
+
+
+#ifdef PY_HAVE_THREAD_NATIVE_ID
+static PyObject *
+threadmod_get_native_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    unsigned long native_id = PyThread_get_thread_native_id();
+    return PyLong_FromUnsignedLong(native_id);
+}
+
+PyDoc_STRVAR(get_native_id_doc,
+"get_native_id() -> integer\n\
+\n\
+Return a non-negative integer identifying the thread as reported\n\
+by the OS (kernel). This may be used to uniquely identify a\n\
+particular thread within a system.");
+#endif
+
+
+static PyObject *
+threadmod__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return PyBool_FromLong(_Py_IsMainInterpreter(interp));
+}
+
+PyDoc_STRVAR(thread__is_main_interpreter_doc,
+"_is_main_interpreter()\n\
+\n\
+Return True if the current interpreter is the main Python interpreter.");
+
+
+static PyObject *
+threadmod_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyErr_SetNone(PyExc_SystemExit);
+    return NULL;
+}
+
+PyDoc_STRVAR(exit_doc,
+"exit()\n\
+(exit_thread() is an obsolete synonym)\n\
+\n\
+This is synonymous to ``raise SystemExit''.  It will cause the current\n\
+thread to exit silently unless the exception is caught.");
+
+
+/* thread execution */
+
+static PyObject *
+threadmod_start_new_thread(PyObject *module, PyObject *fargs)
+{
+    PyObject *func, *args, *kwargs = NULL;
+    thread_module_state *state = get_thread_state(module);
+
+    if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
+                           &func, &args, &kwargs))
+        return NULL;
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "first arg must be callable");
+        return NULL;
+    }
+    if (!PyTuple_Check(args)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "2nd arg must be a tuple");
+        return NULL;
+    }
+    if (kwargs != NULL && !PyDict_Check(kwargs)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "optional 3rd arg must be a dictionary");
+        return NULL;
+    }
+
+    if (PySys_Audit("_thread.start_new_thread", "OOO",
+                    func, args, kwargs ? kwargs : Py_None) < 0) {
+        return NULL;
+    }
+
+    PyThread_ident_t ident = 0;
+    PyThread_handle_t handle;
+    if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
+                            &ident, &handle, NULL)) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(ident);
+}
+
+PyDoc_STRVAR(start_new_doc,
+"start_new_thread(function, args[, kwargs])\n\
+(start_new() is an obsolete synonym)\n\
+\n\
+Start a new thread and return its identifier.\n\
+\n\
+The thread will call the function with positional arguments from the\n\
+tuple args and keyword arguments taken from the optional dictionary\n\
+kwargs.  The thread exits when the function returns; the return value\n\
+is ignored.  The thread will also exit when the function raises an\n\
+unhandled exception; a stack trace will be printed unless the exception\n\
+is SystemExit.\n");
+
+
+static PyObject *
+threadmod_start_joinable_thread(PyObject *module, PyObject *func)
+{
+    thread_module_state *state = get_thread_state(module);
+
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "thread function must be callable");
+        return NULL;
+    }
+
+    if (PySys_Audit("_thread.start_joinable_thread", "O", func) < 0) {
+        return NULL;
+    }
+
+    PyObject* args = PyTuple_New(0);
+    if (args == NULL) {
+        return NULL;
+    }
+    ThreadHandleObject* hobj = new_thread_handle(state);
+    if (hobj == NULL) {
+        Py_DECREF(args);
+        return NULL;
+    }
+    if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
+                            &hobj->ident, &hobj->handle, hobj->thread_is_exiting)) {
+        Py_DECREF(args);
+        Py_DECREF(hobj);
+        return NULL;
+    }
+    set_thread_handle_state(hobj, THREAD_HANDLE_RUNNING);
+    Py_DECREF(args);
+    return (PyObject*) hobj;
+}
+
+PyDoc_STRVAR(start_joinable_doc,
+"start_joinable_thread(function)\n\
+\n\
+*For internal use only*: start a new thread.\n\
+\n\
+Like start_new_thread(), this starts a new thread calling the given function.\n\
+Unlike start_new_thread(), this returns a handle object with methods to join\n\
+or detach the given thread.\n\
+This function is not for third-party code, please use the\n\
+`threading` module instead.\n");
+
+
+static PyObject *
+threadmod__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *lock = (PyObject *)newlockobject(module);
+    if (lock == NULL) {
+        return NULL;
+    }
+    if (set_threadstate_finalizer(tstate, lock) < 0) {
+        Py_DECREF(lock);
+        return NULL;
+    }
+    return lock;
+}
+
+PyDoc_STRVAR(_set_sentinel_doc,
+"_set_sentinel() -> lock\n\
+\n\
+Set a sentinel lock that will be released when the current thread\n\
+state is finalized (after it is untied from the interpreter).\n\
+\n\
+This is a private API for the threading module.");
+
+
+/* thread excepthook */
 
 static int
 thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
@@ -1939,17 +1959,22 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+
+/* other */
+
 static PyObject *
-threadmod__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
+threadmod_allocate_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return PyBool_FromLong(_Py_IsMainInterpreter(interp));
+    return (PyObject *) newlockobject(module);
 }
 
-PyDoc_STRVAR(thread__is_main_interpreter_doc,
-"_is_main_interpreter()\n\
+PyDoc_STRVAR(allocate_doc,
+"allocate_lock() -> lock object\n\
+(allocate() is an obsolete synonym)\n\
 \n\
-Return True if the current interpreter is the main Python interpreter.");
+Create a new lock object. See help(type(threading.Lock())) for\n\
+information about locks.");
+
 
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)threadmod_start_new_thread,
