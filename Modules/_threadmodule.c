@@ -1302,19 +1302,96 @@ struct bootstate {
     _PyEventRc *thread_is_exiting;
 };
 
+static struct bootstate *
+thread_bootstate_new(PyObject *func, PyObject *args, PyObject *kwargs,
+                     _PyEventRc *thread_is_exiting)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "thread is not supported for isolated subinterpreters");
+        return NULL;
+    }
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_PythonFinalizationError,
+                        "can't create new thread at interpreter shutdown");
+        return NULL;
+    }
+
+    PyThreadState *tstate = _PyThreadState_New(
+            interp, _PyThreadState_WHENCE_THREADING);
+    if (tstate == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_NoMemory();
+        }
+        return NULL;
+    }
+
+    if (args == NULL) {
+        args = PyTuple_New(0);
+        if (args == NULL) {
+            PyThreadState_Clear(tstate);
+            PyThreadState_Delete(tstate);
+        }
+    }
+    else {
+        Py_INCREF(args);
+    }
+
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
+    if (boot == NULL) {
+        PyErr_NoMemory();
+        Py_DECREF(args);
+        PyThreadState_Clear(tstate);
+        PyThreadState_Delete(tstate);
+        return NULL;
+    }
+    *boot = (struct bootstate){
+        .tstate = tstate,
+        .func = Py_NewRef(func),
+        .args = args,
+        .kwargs = Py_XNewRef(kwargs),
+        .thread_is_exiting = thread_is_exiting,
+    };
+    if (thread_is_exiting != NULL) {
+        _PyEventRc_Incref(thread_is_exiting);
+    }
+    return boot;
+}
 
 static void
-thread_bootstate_free(struct bootstate *boot, int decref)
+thread_bootstate_free(struct bootstate *boot)
 {
-    if (decref) {
-        Py_DECREF(boot->func);
-        Py_DECREF(boot->args);
-        Py_XDECREF(boot->kwargs);
-    }
+    Py_XDECREF(boot->func);
+    Py_XDECREF(boot->args);
+    Py_XDECREF(boot->kwargs);
     if (boot->thread_is_exiting != NULL) {
         _PyEventRc_Decref(boot->thread_is_exiting);
     }
+    if (boot->tstate != NULL) {
+        PyThreadState_Clear(boot->tstate);
+        // XXX PyThreadState_Delete() too?
+    }
     PyMem_RawFree(boot);
+}
+
+static void
+thread_bootstate_finalizing(struct bootstate *boot)
+{
+    // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
+    // These functions are called on tstate indirectly by Py_Finalize()
+    // which calls _PyInterpreterState_Clear().
+    //
+    // Py_DECREF() cannot be called because the GIL is not held: leak
+    // references on purpose. Python is being finalized anyway.
+    boot->tstate = NULL;
+    boot->func = NULL;
+    boot->args = NULL;
+    boot->kwargs = NULL;
+    thread_bootstate_free(boot);
 }
 
 
@@ -1337,13 +1414,7 @@ thread_run(void *boot_raw)
     // At this stage, tstate can be a dangling pointer (point to freed memory),
     // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
     if (_PyThreadState_MustExit(tstate)) {
-        // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
-        // These functions are called on tstate indirectly by Py_Finalize()
-        // which calls _PyInterpreterState_Clear().
-        //
-        // Py_DECREF() cannot be called because the GIL is not held: leak
-        // references on purpose. Python is being finalized anyway.
-        thread_bootstate_free(boot, 0);
+        thread_bootstate_finalizing(boot);
         goto exit;
     }
 
@@ -1365,7 +1436,8 @@ thread_run(void *boot_raw)
         Py_DECREF(res);
     }
 
-    thread_bootstate_free(boot, 1);
+    boot->tstate = NULL;
+    thread_bootstate_free(boot);
 
     _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
     PyThreadState_Clear(tstate);
@@ -1390,40 +1462,10 @@ do_start_new_thread(thread_module_state* state,
                     PyThread_ident_t* ident, PyThread_handle_t* handle,
                     _PyEventRc *thread_is_exiting)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "thread is not supported for isolated subinterpreters");
-        return -1;
-    }
-    if (interp->finalizing) {
-        PyErr_SetString(PyExc_PythonFinalizationError,
-                        "can't create new thread at interpreter shutdown");
-        return -1;
-    }
-
-    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
-    // because it should be possible to call thread_bootstate_free()
-    // without holding the GIL.
-    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
+    struct bootstate *boot = thread_bootstate_new(
+            func, args, kwargs, thread_is_exiting);
     if (boot == NULL) {
-        PyErr_NoMemory();
         return -1;
-    }
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
-    if (boot->tstate == NULL) {
-        PyMem_RawFree(boot);
-        if (!PyErr_Occurred()) {
-            PyErr_NoMemory();
-        }
-        return -1;
-    }
-    boot->func = Py_NewRef(func);
-    boot->args = Py_NewRef(args);
-    boot->kwargs = Py_XNewRef(kwargs);
-    boot->thread_is_exiting = thread_is_exiting;
-    if (thread_is_exiting != NULL) {
-        _PyEventRc_Incref(thread_is_exiting);
     }
 
     int err;
@@ -1436,8 +1478,7 @@ do_start_new_thread(thread_module_state* state,
     }
     if (err) {
         PyErr_SetString(ThreadError, "can't start new thread");
-        PyThreadState_Clear(boot->tstate);
-        thread_bootstate_free(boot, 1);
+        thread_bootstate_free(boot);
         return -1;
     }
     return 0;
@@ -1761,23 +1802,16 @@ threadmod_start_joinable_thread(PyObject *module, PyObject *func)
         return NULL;
     }
 
-    PyObject* args = PyTuple_New(0);
-    if (args == NULL) {
-        return NULL;
-    }
     ThreadHandleObject* hobj = new_thread_handle(state);
     if (hobj == NULL) {
-        Py_DECREF(args);
         return NULL;
     }
-    if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
+    if (do_start_new_thread(state, func, /* args */ NULL, /*kwargs=*/ NULL, /*joinable=*/ 1,
                             &hobj->ident, &hobj->handle, hobj->thread_is_exiting)) {
-        Py_DECREF(args);
         Py_DECREF(hobj);
         return NULL;
     }
     set_thread_handle_state(hobj, THREAD_HANDLE_RUNNING);
-    Py_DECREF(args);
     return (PyObject*) hobj;
 }
 
