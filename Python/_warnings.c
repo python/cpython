@@ -935,13 +935,15 @@ setup_context(Py_ssize_t stack_level,
     if (rc < 0) {
         goto handle_error;
     }
-    if (rc == 0) {
-        *module = PyUnicode_FromString("<string>");
-        if (*module == NULL)
-            goto handle_error;
+    if (rc > 0) {
+        if (Py_IsNone(*module) || PyUnicode_Check(*module)) {
+            return 1;
+        }
+        Py_DECREF(*module);
     }
-    else {
-        assert(Py_IsNone(*module) || PyUnicode_Check(*module));
+    *module = PyUnicode_FromString("<string>");
+    if (*module == NULL) {
+        goto handle_error;
     }
 
     return 1;
