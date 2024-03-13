@@ -3844,17 +3844,15 @@ class size_t_converter(CConverter):
 
 class fildes_converter(CConverter):
     type = 'int'
-    converter = '_PyLong_FileDescriptor_Converter'
+    format_unit = ''
 
-    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
-        self.add_include('pycore_fileutils.h',
-                         '_PyLong_FileDescriptor_Converter()')
-
-    def _parse_arg(self, argname: str, displayname: str) -> str | None:
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         return self.format_code("""
-            {paramname} = PyObject_AsFileDescriptor({argname});
-            if ({paramname} == -1) {{{{
-                goto exit;
+            {{{{
+                {paramname} = PyObject_AsFileDescriptor({argname});
+                if ({paramname} < 0) {{{{
+                    goto exit;
+                }}}}
             }}}}
             """,
             argname=argname)

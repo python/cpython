@@ -220,17 +220,6 @@ PyObject_AsFileDescriptor(PyObject *o)
     return fd;
 }
 
-int
-_PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
-{
-    int fd = PyObject_AsFileDescriptor(o);
-    if (fd == -1) {
-        return 0;
-    }
-    *(int *)ptr = fd;
-    return 1;
-}
-
 char *
 _Py_UniversalNewlineFgetsWithSize(char *buf, int n, FILE *stream, PyObject *fobj, size_t* size)
 {

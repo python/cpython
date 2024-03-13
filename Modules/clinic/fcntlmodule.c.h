@@ -2,7 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(fcntl_fcntl__doc__,
@@ -38,8 +37,11 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fcntl", nargs, 2, 3)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
-        goto exit;
+    {
+        fd = PyObject_AsFileDescriptor(args[0]);
+        if (fd < 0) {
+            goto exit;
+        }
     }
     code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
@@ -108,8 +110,11 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("ioctl", nargs, 2, 4)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
-        goto exit;
+    {
+        fd = PyObject_AsFileDescriptor(args[0]);
+        if (fd < 0) {
+            goto exit;
+        }
     }
     code = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
     if (code == (unsigned int)-1 && PyErr_Occurred()) {
@@ -158,8 +163,11 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("flock", nargs, 2, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
-        goto exit;
+    {
+        fd = PyObject_AsFileDescriptor(args[0]);
+        if (fd < 0) {
+            goto exit;
+        }
     }
     code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
@@ -218,8 +226,11 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("lockf", nargs, 2, 5)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
-        goto exit;
+    {
+        fd = PyObject_AsFileDescriptor(args[0]);
+        if (fd < 0) {
+            goto exit;
+        }
     }
     code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
@@ -246,4 +257,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=732e33ba92042031 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8447e45cbd0dfc34 input=a9049054013a1b77]*/
