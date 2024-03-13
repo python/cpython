@@ -669,6 +669,23 @@ class TestRmTree(BaseTest, unittest.TestCase):
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_rmtree_on_named_pipe(self):
+        os.mkfifo(TESTFN)
+        try:
+            with self.assertRaises(NotADirectoryError):
+                shutil.rmtree(TESTFN)
+            self.assertTrue(os.path.exists(TESTFN))
+        finally:
+            os.unlink(TESTFN)
+
+        os.mkdir(TESTFN)
+        os.mkfifo(os.path.join(TESTFN, 'mypipe'))
+        shutil.rmtree(TESTFN)
+        self.assertFalse(os.path.exists(TESTFN))
+
 
 class TestCopyTree(BaseTest, unittest.TestCase):
 
