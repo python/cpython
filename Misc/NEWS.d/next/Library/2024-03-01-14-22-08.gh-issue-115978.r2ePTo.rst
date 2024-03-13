@@ -1,4 +1,0 @@
-Disable preadv(), readv(), pwritev(), and writev() on WASI.
-
-Under wasmtime for WASI 0.2, these functions don't pass test_posix
-(https://github.com/bytecodealliance/wasmtime/issues/7830).
