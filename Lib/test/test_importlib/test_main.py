@@ -2,6 +2,7 @@ import re
 import pickle
 import unittest
 import warnings
+import importlib
 import importlib.metadata
 import contextlib
 from test.support import os_helper
@@ -36,6 +37,9 @@ def suppress_known_deprecation():
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
     version_pattern = r'\d+\.\d+(\.\d)?'
+
+    def tearDown(self):
+        importlib.invalidate_caches()
 
     def test_retrieves_version_of_self(self):
         dist = Distribution.from_name('distinfo-pkg')

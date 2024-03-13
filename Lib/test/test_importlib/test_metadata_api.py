@@ -37,6 +37,9 @@ class APITests(
 ):
     version_pattern = r'\d+\.\d+(\.\d)?'
 
+    def tearDown(self):
+        importlib.invalidate_caches()
+
     def test_retrieves_version_of_self(self):
         pkg_version = version('egginfo-pkg')
         assert isinstance(pkg_version, str)
