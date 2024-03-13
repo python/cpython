@@ -1937,11 +1937,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                     # fire one of each event type
                     for _, function, *args in self.cases:
                         res = function(self.codelike, offset, active, *args)
-                        try:
-                          self.assertEqual(res, active)
-                        except:
-                          breakpoint()
-                          raise
+                        self.assertEqual(res, active)
 
                     self.assertEqual(self.results, [('cb1',) + output])
                 finally:
@@ -1973,11 +1969,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                         if f_event == event and f_event in cannot_disable:
                             with self.assertRaises(ValueError):
                                 res = function(self.codelike, offset, active, *args)
-                            try:
-                              self.assertEqual(res, active)
-                            except:
-                              breakpoint()
-                              raise
+                            self.assertEqual(res, active)
                         else:
                             res = function(self.codelike, offset, active, *args)
                             self.assertEqual(res, 0 if f_event == event else active)
