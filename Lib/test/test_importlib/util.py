@@ -28,8 +28,6 @@ if support.is_wasi:
     # We don't provide an implementation, so tests will fail.
     # But we also don't want to turn off dynamic loading for those that provide
     # a working implementation.
-    EXTENSIONS = None
-
     def _extension_details():
         global EXTENSIONS
         EXTENSIONS = None
