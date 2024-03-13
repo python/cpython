@@ -18,10 +18,6 @@ import types
 import contextlib
 
 
-if not support.has_subprocess_support:
-    raise unittest.SkipTest("test_CLI requires subprocess support.")
-
-
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
 # There are also related tests in `test_doctest2` module.
@@ -466,7 +462,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:33 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:29 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -2944,235 +2940,236 @@ Check doctest with a non-ascii filename:
     TestResults(failed=1, attempted=1)
     """
 
-def test_CLI(): r"""
-The doctest module can be used to run doctests against an arbitrary file.
-These tests test this CLI functionality.
+if support.has_subprocess_support:
+    def test_CLI(): r"""
+    The doctest module can be used to run doctests against an arbitrary file.
+    These tests test this CLI functionality.
 
-We'll use the support module's script_helpers for this, and write a test files
-to a temp dir to run the command against.  Due to a current limitation in
-script_helpers, though, we need a little utility function to turn the returned
-output into something we can doctest against:
+    We'll use the support module's script_helpers for this, and write a test files
+    to a temp dir to run the command against.  Due to a current limitation in
+    script_helpers, though, we need a little utility function to turn the returned
+    output into something we can doctest against:
 
-    >>> def normalize(s):
-    ...     return '\n'.join(s.decode().splitlines())
+        >>> def normalize(s):
+        ...     return '\n'.join(s.decode().splitlines())
 
-With those preliminaries out of the way, we'll start with a file with two
-simple tests and no errors.  We'll run both the unadorned doctest command, and
-the verbose version, and then check the output:
+    With those preliminaries out of the way, we'll start with a file with two
+    simple tests and no errors.  We'll run both the unadorned doctest command, and
+    the verbose version, and then check the output:
 
-    >>> from test.support import script_helper
-    >>> from test.support.os_helper import temp_dir
-    >>> with temp_dir() as tmpdir:
-    ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w', encoding='utf-8') as f:
-    ...         _ = f.write('This is a very simple test file.\n')
-    ...         _ = f.write('   >>> 1 + 1\n')
-    ...         _ = f.write('   2\n')
-    ...         _ = f.write('   >>> "a"\n')
-    ...         _ = f.write("   'a'\n")
-    ...         _ = f.write('\n')
-    ...         _ = f.write('And that is it.\n')
-    ...     rc1, out1, err1 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', fn)
-    ...     rc2, out2, err2 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', '-v', fn)
+        >>> from test.support import script_helper
+        >>> from test.support.os_helper import temp_dir
+        >>> with temp_dir() as tmpdir:
+        ...     fn = os.path.join(tmpdir, 'myfile.doc')
+        ...     with open(fn, 'w', encoding='utf-8') as f:
+        ...         _ = f.write('This is a very simple test file.\n')
+        ...         _ = f.write('   >>> 1 + 1\n')
+        ...         _ = f.write('   2\n')
+        ...         _ = f.write('   >>> "a"\n')
+        ...         _ = f.write("   'a'\n")
+        ...         _ = f.write('\n')
+        ...         _ = f.write('And that is it.\n')
+        ...     rc1, out1, err1 = script_helper.assert_python_ok(
+        ...             '-m', 'doctest', fn)
+        ...     rc2, out2, err2 = script_helper.assert_python_ok(
+        ...             '-m', 'doctest', '-v', fn)
 
-With no arguments and passing tests, we should get no output:
+    With no arguments and passing tests, we should get no output:
 
-    >>> rc1, out1, err1
-    (0, b'', b'')
+        >>> rc1, out1, err1
+        (0, b'', b'')
 
-With the verbose flag, we should see the test output, but no error output:
+    With the verbose flag, we should see the test output, but no error output:
 
-    >>> rc2, err2
-    (0, b'')
-    >>> print(normalize(out2))
-    Trying:
-        1 + 1
-    Expecting:
-        2
-    ok
-    Trying:
-        "a"
-    Expecting:
-        'a'
-    ok
-    1 items passed all tests:
-       2 tests in myfile.doc
-    2 tests in 1 items.
-    2 passed and 0 failed.
-    Test passed.
+        >>> rc2, err2
+        (0, b'')
+        >>> print(normalize(out2))
+        Trying:
+            1 + 1
+        Expecting:
+            2
+        ok
+        Trying:
+            "a"
+        Expecting:
+            'a'
+        ok
+        1 items passed all tests:
+        2 tests in myfile.doc
+        2 tests in 1 items.
+        2 passed and 0 failed.
+        Test passed.
 
-Now we'll write a couple files, one with three tests, the other a python module
-with two tests, both of the files having "errors" in the tests that can be made
-non-errors by applying the appropriate doctest options to the run (ELLIPSIS in
-the first file, NORMALIZE_WHITESPACE in the second).  This combination will
-allow thoroughly testing the -f and -o flags, as well as the doctest command's
-ability to process more than one file on the command line and, since the second
-file ends in '.py', its handling of python module files (as opposed to straight
-text files).
+    Now we'll write a couple files, one with three tests, the other a python module
+    with two tests, both of the files having "errors" in the tests that can be made
+    non-errors by applying the appropriate doctest options to the run (ELLIPSIS in
+    the first file, NORMALIZE_WHITESPACE in the second).  This combination will
+    allow thoroughly testing the -f and -o flags, as well as the doctest command's
+    ability to process more than one file on the command line and, since the second
+    file ends in '.py', its handling of python module files (as opposed to straight
+    text files).
 
-    >>> from test.support import script_helper
-    >>> from test.support.os_helper import temp_dir
-    >>> with temp_dir() as tmpdir:
-    ...     fn = os.path.join(tmpdir, 'myfile.doc')
-    ...     with open(fn, 'w', encoding="utf-8") as f:
-    ...         _ = f.write('This is another simple test file.\n')
-    ...         _ = f.write('   >>> 1 + 1\n')
-    ...         _ = f.write('   2\n')
-    ...         _ = f.write('   >>> "abcdef"\n')
-    ...         _ = f.write("   'a...f'\n")
-    ...         _ = f.write('   >>> "ajkml"\n')
-    ...         _ = f.write("   'a...l'\n")
-    ...         _ = f.write('\n')
-    ...         _ = f.write('And that is it.\n')
-    ...     fn2 = os.path.join(tmpdir, 'myfile2.py')
-    ...     with open(fn2, 'w', encoding='utf-8') as f:
-    ...         _ = f.write('def test_func():\n')
-    ...         _ = f.write('   \"\"\"\n')
-    ...         _ = f.write('   This is simple python test function.\n')
-    ...         _ = f.write('       >>> 1 + 1\n')
-    ...         _ = f.write('       2\n')
-    ...         _ = f.write('       >>> "abc   def"\n')
-    ...         _ = f.write("       'abc def'\n")
-    ...         _ = f.write("\n")
-    ...         _ = f.write('   \"\"\"\n')
-    ...     rc1, out1, err1 = script_helper.assert_python_failure(
-    ...             '-m', 'doctest', fn, fn2)
-    ...     rc2, out2, err2 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', '-o', 'ELLIPSIS', fn)
-    ...     rc3, out3, err3 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', '-o', 'ELLIPSIS',
-    ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2)
-    ...     rc4, out4, err4 = script_helper.assert_python_failure(
-    ...             '-m', 'doctest', '-f', fn, fn2)
-    ...     rc5, out5, err5 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', '-v', '-o', 'ELLIPSIS',
-    ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2)
+        >>> from test.support import script_helper
+        >>> from test.support.os_helper import temp_dir
+        >>> with temp_dir() as tmpdir:
+        ...     fn = os.path.join(tmpdir, 'myfile.doc')
+        ...     with open(fn, 'w', encoding="utf-8") as f:
+        ...         _ = f.write('This is another simple test file.\n')
+        ...         _ = f.write('   >>> 1 + 1\n')
+        ...         _ = f.write('   2\n')
+        ...         _ = f.write('   >>> "abcdef"\n')
+        ...         _ = f.write("   'a...f'\n")
+        ...         _ = f.write('   >>> "ajkml"\n')
+        ...         _ = f.write("   'a...l'\n")
+        ...         _ = f.write('\n')
+        ...         _ = f.write('And that is it.\n')
+        ...     fn2 = os.path.join(tmpdir, 'myfile2.py')
+        ...     with open(fn2, 'w', encoding='utf-8') as f:
+        ...         _ = f.write('def test_func():\n')
+        ...         _ = f.write('   \"\"\"\n')
+        ...         _ = f.write('   This is simple python test function.\n')
+        ...         _ = f.write('       >>> 1 + 1\n')
+        ...         _ = f.write('       2\n')
+        ...         _ = f.write('       >>> "abc   def"\n')
+        ...         _ = f.write("       'abc def'\n")
+        ...         _ = f.write("\n")
+        ...         _ = f.write('   \"\"\"\n')
+        ...     rc1, out1, err1 = script_helper.assert_python_failure(
+        ...             '-m', 'doctest', fn, fn2)
+        ...     rc2, out2, err2 = script_helper.assert_python_ok(
+        ...             '-m', 'doctest', '-o', 'ELLIPSIS', fn)
+        ...     rc3, out3, err3 = script_helper.assert_python_ok(
+        ...             '-m', 'doctest', '-o', 'ELLIPSIS',
+        ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2)
+        ...     rc4, out4, err4 = script_helper.assert_python_failure(
+        ...             '-m', 'doctest', '-f', fn, fn2)
+        ...     rc5, out5, err5 = script_helper.assert_python_ok(
+        ...             '-m', 'doctest', '-v', '-o', 'ELLIPSIS',
+        ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2)
 
-Our first test run will show the errors from the first file (doctest stops if a
-file has errors).  Note that doctest test-run error output appears on stdout,
-not stderr:
+    Our first test run will show the errors from the first file (doctest stops if a
+    file has errors).  Note that doctest test-run error output appears on stdout,
+    not stderr:
 
-    >>> rc1, err1
-    (1, b'')
-    >>> print(normalize(out1))                # doctest: +ELLIPSIS
-    **********************************************************************
-    File "...myfile.doc", line 4, in myfile.doc
-    Failed example:
-        "abcdef"
-    Expected:
-        'a...f'
-    Got:
-        'abcdef'
-    **********************************************************************
-    File "...myfile.doc", line 6, in myfile.doc
-    Failed example:
-        "ajkml"
-    Expected:
-        'a...l'
-    Got:
-        'ajkml'
-    **********************************************************************
-    1 items had failures:
-       2 of   3 in myfile.doc
-    ***Test Failed*** 2 failures.
+        >>> rc1, err1
+        (1, b'')
+        >>> print(normalize(out1))                # doctest: +ELLIPSIS
+        **********************************************************************
+        File "...myfile.doc", line 4, in myfile.doc
+        Failed example:
+            "abcdef"
+        Expected:
+            'a...f'
+        Got:
+            'abcdef'
+        **********************************************************************
+        File "...myfile.doc", line 6, in myfile.doc
+        Failed example:
+            "ajkml"
+        Expected:
+            'a...l'
+        Got:
+            'ajkml'
+        **********************************************************************
+        1 items had failures:
+        2 of   3 in myfile.doc
+        ***Test Failed*** 2 failures.
 
-With -o ELLIPSIS specified, the second run, against just the first file, should
-produce no errors, and with -o NORMALIZE_WHITESPACE also specified, neither
-should the third, which ran against both files:
+    With -o ELLIPSIS specified, the second run, against just the first file, should
+    produce no errors, and with -o NORMALIZE_WHITESPACE also specified, neither
+    should the third, which ran against both files:
 
-    >>> rc2, out2, err2
-    (0, b'', b'')
-    >>> rc3, out3, err3
-    (0, b'', b'')
+        >>> rc2, out2, err2
+        (0, b'', b'')
+        >>> rc3, out3, err3
+        (0, b'', b'')
 
-The fourth run uses FAIL_FAST, so we should see only one error:
+    The fourth run uses FAIL_FAST, so we should see only one error:
 
-    >>> rc4, err4
-    (1, b'')
-    >>> print(normalize(out4))                # doctest: +ELLIPSIS
-    **********************************************************************
-    File "...myfile.doc", line 4, in myfile.doc
-    Failed example:
-        "abcdef"
-    Expected:
-        'a...f'
-    Got:
-        'abcdef'
-    **********************************************************************
-    1 items had failures:
-       1 of   2 in myfile.doc
-    ***Test Failed*** 1 failures.
+        >>> rc4, err4
+        (1, b'')
+        >>> print(normalize(out4))                # doctest: +ELLIPSIS
+        **********************************************************************
+        File "...myfile.doc", line 4, in myfile.doc
+        Failed example:
+            "abcdef"
+        Expected:
+            'a...f'
+        Got:
+            'abcdef'
+        **********************************************************************
+        1 items had failures:
+        1 of   2 in myfile.doc
+        ***Test Failed*** 1 failures.
 
-The fifth test uses verbose with the two options, so we should get verbose
-success output for the tests in both files:
+    The fifth test uses verbose with the two options, so we should get verbose
+    success output for the tests in both files:
 
-    >>> rc5, err5
-    (0, b'')
-    >>> print(normalize(out5))
-    Trying:
-        1 + 1
-    Expecting:
-        2
-    ok
-    Trying:
-        "abcdef"
-    Expecting:
-        'a...f'
-    ok
-    Trying:
-        "ajkml"
-    Expecting:
-        'a...l'
-    ok
-    1 items passed all tests:
-       3 tests in myfile.doc
-    3 tests in 1 items.
-    3 passed and 0 failed.
-    Test passed.
-    Trying:
-        1 + 1
-    Expecting:
-        2
-    ok
-    Trying:
-        "abc   def"
-    Expecting:
-        'abc def'
-    ok
-    1 items had no tests:
-        myfile2
-    1 items passed all tests:
-       2 tests in myfile2.test_func
-    2 tests in 2 items.
-    2 passed and 0 failed.
-    Test passed.
+        >>> rc5, err5
+        (0, b'')
+        >>> print(normalize(out5))
+        Trying:
+            1 + 1
+        Expecting:
+            2
+        ok
+        Trying:
+            "abcdef"
+        Expecting:
+            'a...f'
+        ok
+        Trying:
+            "ajkml"
+        Expecting:
+            'a...l'
+        ok
+        1 items passed all tests:
+        3 tests in myfile.doc
+        3 tests in 1 items.
+        3 passed and 0 failed.
+        Test passed.
+        Trying:
+            1 + 1
+        Expecting:
+            2
+        ok
+        Trying:
+            "abc   def"
+        Expecting:
+            'abc def'
+        ok
+        1 items had no tests:
+            myfile2
+        1 items passed all tests:
+        2 tests in myfile2.test_func
+        2 tests in 2 items.
+        2 passed and 0 failed.
+        Test passed.
 
-We should also check some typical error cases.
+    We should also check some typical error cases.
 
-Invalid file name:
+    Invalid file name:
 
-    >>> rc, out, err = script_helper.assert_python_failure(
-    ...         '-m', 'doctest', 'nosuchfile')
-    >>> rc, out
-    (1, b'')
-    >>> # The exact error message changes depending on the platform.
-    >>> print(normalize(err))                    # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-      ...
-    FileNotFoundError: [Errno ...] ...nosuchfile...
+        >>> rc, out, err = script_helper.assert_python_failure(
+        ...         '-m', 'doctest', 'nosuchfile')
+        >>> rc, out
+        (1, b'')
+        >>> # The exact error message changes depending on the platform.
+        >>> print(normalize(err))                    # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        FileNotFoundError: [Errno ...] ...nosuchfile...
 
-Invalid doctest option:
+    Invalid doctest option:
 
-    >>> rc, out, err = script_helper.assert_python_failure(
-    ...         '-m', 'doctest', '-o', 'nosuchoption')
-    >>> rc, out
-    (2, b'')
-    >>> print(normalize(err))                    # doctest: +ELLIPSIS
-    usage...invalid...nosuchoption...
+        >>> rc, out, err = script_helper.assert_python_failure(
+        ...         '-m', 'doctest', '-o', 'nosuchoption')
+        >>> rc, out
+        (2, b'')
+        >>> print(normalize(err))                    # doctest: +ELLIPSIS
+        usage...invalid...nosuchoption...
 
-"""
+    """
 
 def test_no_trailing_whitespace_stripping():
     r"""
