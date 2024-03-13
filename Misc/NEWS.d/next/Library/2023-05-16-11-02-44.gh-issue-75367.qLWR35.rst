@@ -1,1 +1,0 @@
-Fix data descriptor detection in  :func:`inspect.getattr_static`.

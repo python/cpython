@@ -141,7 +141,7 @@ Module contents
      then :func:`dataclass` *may* add an implicit :meth:`~object.__hash__` method.
      Although not recommended, you can force :func:`dataclass` to create a
      :meth:`~object.__hash__` method with ``unsafe_hash=True``. This might be the case
-     if your class is logically immutable but can nonetheless be mutated.
+     if your class is logically immutable but can still be mutated.
      This is a specialized use case and should be considered carefully.
 
      Here are the rules governing implicit creation of a :meth:`~object.__hash__`
@@ -319,13 +319,11 @@ Module contents
    module-level method (see below).  Users should never instantiate a
    :class:`Field` object directly.  Its documented attributes are:
 
-     - ``name``: The name of the field.
-
-     - ``type``: The type of the field.
-
-     - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-       ``compare``, ``metadata``, and ``kw_only`` have the identical
-       meaning and values as they do in the :func:`field` function.
+   - ``name``: The name of the field.
+   - ``type``: The type of the field.
+   - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
+     ``compare``, ``metadata``, and ``kw_only`` have the identical
+     meaning and values as they do in the :func:`field` function.
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
@@ -456,6 +454,8 @@ Module contents
    ``replace()`` (or similarly named) method which handles instance
    copying.
 
+   Dataclass instances are also supported by generic function :func:`copy.replace`.
+
 .. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass or an instance of one,
@@ -536,10 +536,10 @@ class :meth:`~object.__init__` methods. If the base class has an :meth:`~object.
 that has to be called, it is common to call this method in a
 :meth:`__post_init__` method::
 
-    @dataclass
     class Rectangle:
-        height: float
-        width: float
+        def __init__(self, height, width):
+            self.height = height
+            self.width = width
 
     @dataclass
     class Square(Rectangle):
@@ -609,7 +609,7 @@ methods will raise a :exc:`FrozenInstanceError` when invoked.
 
 There is a tiny performance penalty when using ``frozen=True``:
 :meth:`~object.__init__` cannot use simple assignment to initialize fields, and
-must use :meth:`~object.__setattr__`.
+must use :meth:`!object.__setattr__`.
 
 Inheritance
 -----------
@@ -719,7 +719,7 @@ Using dataclasses, *if* this code was valid::
   class D:
       x: list = []      # This code raises ValueError
       def add(self, element):
-          self.x += element
+          self.x.append(element)
 
 it would generate code similar to::
 
@@ -728,7 +728,7 @@ it would generate code similar to::
       def __init__(self, x=x):
           self.x = x
       def add(self, element):
-          self.x += element
+          self.x.append(element)
 
   assert D().x is D().x
 
@@ -738,7 +738,7 @@ for ``x`` when creating a class instance will share the same copy
 of ``x``.  Because dataclasses just use normal Python class
 creation they also share this behavior.  There is no general way
 for Data Classes to detect this condition.  Instead, the
-:func:`dataclass` decorator will raise a :exc:`TypeError` if it
+:func:`dataclass` decorator will raise a :exc:`ValueError` if it
 detects an unhashable default parameter.  The assumption is that if
 a value is unhashable, it is mutable.  This is a partial solution,
 but it does protect against many common errors.

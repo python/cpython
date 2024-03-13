@@ -1,2 +1,0 @@
-Add :mod:`socket` constants for source-specific multicast.
-Patch by Reese Hyde.

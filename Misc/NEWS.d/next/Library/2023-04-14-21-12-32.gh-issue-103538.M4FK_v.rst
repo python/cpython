@@ -1,3 +1,0 @@
-Remove ``_tkinter`` module code guarded by definition of the ``TK_AQUA`` macro
-which was only needed for Tk 8.4.7 or earlier and was never actually defined by
-any build system or documented for manual use.

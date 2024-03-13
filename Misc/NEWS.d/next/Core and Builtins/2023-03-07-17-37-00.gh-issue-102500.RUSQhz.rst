@@ -1,3 +1,0 @@
-Make the buffer protocol accessible in Python code using the new
-``__buffer__`` and ``__release_buffer__`` magic methods. See :pep:`688` for
-details. Patch by Jelle Zijlstra.

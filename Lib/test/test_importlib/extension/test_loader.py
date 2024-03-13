@@ -1,4 +1,3 @@
-from warnings import catch_warnings
 from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
@@ -10,7 +9,7 @@ import unittest
 import warnings
 import importlib.util
 import importlib
-from test.support.script_helper import assert_python_failure
+from test.support import MISSING_C_DOCSTRINGS
 
 
 class LoaderTests:
@@ -375,7 +374,8 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             with self.subTest(name):
                 module = self.load_module_by_name(name)
                 self.assertEqual(module.__name__, name)
-                self.assertEqual(module.__doc__, "Module named in %s" % lang)
+                if not MISSING_C_DOCSTRINGS:
+                    self.assertEqual(module.__doc__, "Module named in %s" % lang)
 
 
 (Frozen_MultiPhaseExtensionModuleTests,

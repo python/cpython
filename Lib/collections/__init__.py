@@ -95,17 +95,19 @@ class OrderedDict(dict):
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
+    def __new__(cls, /, *args, **kwds):
+        "Create the ordered dict object and set up the underlying structures."
+        self = dict.__new__(cls)
+        self.__hardroot = _Link()
+        self.__root = root = _proxy(self.__hardroot)
+        root.prev = root.next = root
+        self.__map = {}
+        return self
+
     def __init__(self, other=(), /, **kwds):
         '''Initialize an ordered dictionary.  The signature is the same as
         regular dictionaries.  Keyword argument order is preserved.
         '''
-        try:
-            self.__root
-        except AttributeError:
-            self.__hardroot = _Link()
-            self.__root = root = _proxy(self.__hardroot)
-            root.prev = root.next = root
-            self.__map = {}
         self.__update(other, **kwds)
 
     def __setitem__(self, key, value,
@@ -455,7 +457,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     def _replace(self, /, **kwds):
         result = self._make(_map(kwds.pop, field_names, self))
         if kwds:
-            raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
+            raise TypeError(f'Got unexpected field names: {list(kwds)!r}')
         return result
 
     _replace.__doc__ = (f'Return a new {typename} object replacing specified '
@@ -493,6 +495,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_field_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
+        '__replace__': _replace,
         '_replace': _replace,
         '__repr__': __repr__,
         '_asdict': _asdict,
@@ -677,7 +680,7 @@ class Counter(dict):
 
         '''
         # The regular dict.update() operation makes no sense here because the
-        # replace behavior results in the some of original untouched counts
+        # replace behavior results in some of the original untouched counts
         # being mixed-in with all of the other counts for a mismash that
         # doesn't have a straight-forward interpretation in most counting
         # contexts.  Instead, we implement straight-addition.  Both the inputs

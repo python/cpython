@@ -2,7 +2,7 @@
 # license: PSFL.
 
 
-__all__ = ["TaskGroup"]
+__all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions
@@ -54,16 +54,14 @@ class TaskGroup:
     async def __aenter__(self):
         if self._entered:
             raise RuntimeError(
-                f"TaskGroup {self!r} has been already entered")
-        self._entered = True
-
+                f"TaskGroup {self!r} has already been entered")
         if self._loop is None:
             self._loop = events.get_running_loop()
-
         self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
+        self._entered = True
 
         return self
 
@@ -75,8 +73,10 @@ class TaskGroup:
                 self._base_error is None):
             self._base_error = exc
 
-        propagate_cancellation_error = \
-            exc if et is exceptions.CancelledError else None
+        if et is not None and issubclass(et, exceptions.CancelledError):
+            propagate_cancellation_error = exc
+        else:
+            propagate_cancellation_error = None
         if self._parent_cancel_requested:
             # If this flag is set we *must* call uncancel().
             if self._parent_task.uncancel() == 0:
@@ -132,10 +132,10 @@ class TaskGroup:
 
         # Propagate CancelledError if there is one, except if there
         # are other errors -- those have priority.
-        if propagate_cancellation_error and not self._errors:
+        if propagate_cancellation_error is not None and not self._errors:
             raise propagate_cancellation_error
 
-        if et is not None and et is not exceptions.CancelledError:
+        if et is not None and not issubclass(et, exceptions.CancelledError):
             self._errors.append(exc)
 
         if self._errors:
@@ -154,16 +154,19 @@ class TaskGroup:
         Similar to `asyncio.create_task`.
         """
         if not self._entered:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and not self._tasks:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is finished")
         if self._aborting:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
-            task = self._loop.create_task(coro)
+            task = self._loop.create_task(coro, name=name)
         else:
-            task = self._loop.create_task(coro, context=context)
-        tasks._set_task_name(task, name)
+            task = self._loop.create_task(coro, name=name, context=context)
+
         # optimization: Immediately call the done callback if the task is
         # already done (e.g. if the coro was able to complete eagerly),
         # and skip scheduling a done callback

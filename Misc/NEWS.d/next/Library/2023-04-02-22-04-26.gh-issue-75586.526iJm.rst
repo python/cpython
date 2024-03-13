@@ -1,1 +1,0 @@
-Fix various Windows-specific issues with ``shutil.which``.
