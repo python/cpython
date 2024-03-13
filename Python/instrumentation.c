@@ -1,6 +1,5 @@
 #include "Python.h"
 
-#include "monitoring.h"
 #include "opcode_ids.h"
 
 #include "pycore_bitutils.h"      // _Py_popcount32
@@ -2341,8 +2340,8 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, uint32_t
 }
 
 void
-_PyMonitoringScopeBegin(PyMonitoringState *state_array, uint64_t *version,
-                       uint8_t *event_types, uint32_t length)
+_PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
+                         uint8_t *event_types, uint32_t length)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (global_version(interp) == *version) {
@@ -2502,10 +2501,10 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
 #ifdef Py_LIMITED_API
 
 void
-PyMonitoringScopeBegin(PyMonitoringState *state_array, uint64_t *version,
+PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
                        uint8_t *event_types, uint32_t length)
 {
-    _PyMonitoringScopeBegin(state_array, version, event_types, length);
+    _PyMonitoring_BeginScope(state_array, version, event_types, length);
 }
 
 

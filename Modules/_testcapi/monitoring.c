@@ -386,7 +386,7 @@ enter_scope_py_start_py_return(PyObject *self, PyObject *args)
     PyCodeLikeObject *codelike = (PyCodeLikeObject *) codelike_obj;
 
     uint8_t events[] = { PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RETURN };
-    PyMonitoringScopeBegin(codelike->monitoring_states, &codelike->version, events, 2);
+    PyMonitoring_BeginScope(codelike->monitoring_states, &codelike->version, events, 2);
 
     Py_RETURN_NONE;
 }
