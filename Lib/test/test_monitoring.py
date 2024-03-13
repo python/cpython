@@ -9,7 +9,7 @@ import textwrap
 import types
 import unittest
 import asyncio
-import _testinternalcapi
+import _testcapi
 
 from test import support
 from test.support import requires_specialization, script_helper
@@ -1877,7 +1877,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def setUp(self):
         super(TestCApiEventGeneration, self).setUp()
 
-        self.codelike = _testinternalcapi.CodeLike(2)
+        self.codelike = _testcapi.CodeLike(2)
 
         def cb(name, args):
             self.results.append((name,) + args)
@@ -1887,7 +1887,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         self.cb3 = lambda codelike, *args : cb('cb3', args)
 
         events = sys.monitoring.events
-        capi = _testinternalcapi
+        capi = _testcapi
         self.cases = [
             # (Event, function, *args)
             (events.PY_START, capi.fire_event_py_start),
@@ -1909,7 +1909,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def test_fire_event(self):
         for event, function, *args in self.cases:
             offset = 0
-            self.codelike = _testinternalcapi.CodeLike(2)
+            self.codelike = _testcapi.CodeLike(2)
             with self.subTest(event):
                 output = (offset, *args)
                 # Register TEST_TOOL and TEST_TOOL2, but activate only TEST_TOOL
@@ -1944,7 +1944,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
         for event, function, *args in self.cases:
             offset = 1
-            self.codelike = _testinternalcapi.CodeLike(2)
+            self.codelike = _testcapi.CodeLike(2)
             with self.subTest(function.__name__):
                 output = (offset, *args)
 
@@ -1974,9 +1974,9 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
     def test_enter_scope(self):
         events = sys.monitoring.events
-        capi = _testinternalcapi
+        capi = _testcapi
 
-        cl = _testinternalcapi.CodeLike(2)
+        cl = _testcapi.CodeLike(2)
         capi.enter_scope_py_start_py_return(cl)    # events = [PY_START, PY_RETURN]
 
         sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_START, self.cb1)

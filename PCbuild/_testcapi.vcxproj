@@ -128,6 +128,7 @@
     <ClCompile Include="..\Modules\_testcapi\time.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />
+    <ClCompile Include="..\Modules\_testcapi\monitoring.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
