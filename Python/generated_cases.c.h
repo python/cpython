@@ -3371,7 +3371,6 @@
             // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
             // Double-check that the opcode isn't instrumented or something:
             if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
-                OPT_STAT_INC(attempts);
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                 while (oparg > 255) {
