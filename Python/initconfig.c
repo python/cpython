@@ -263,7 +263,7 @@ static const char usage_envvars[] =
 "                  The default is \"on\" for installed Python and \"off\" for\n"
 "                  a local build. (-X frozen_modules)\n"
 #ifdef Py_GIL_DISABLED
-"PYTHON_GIL      : When set to 0, disables the GIL (-X gil)\n"
+"PYTHON_GIL      : when set to 0, disables the GIL (-X gil)\n"
 #endif
 "PYTHONINSPECT   : inspect interactively after running script (-i)\n"
 "PYTHONINTMAXSTRDIGITS: limit the size of int<->str conversions;\n"
