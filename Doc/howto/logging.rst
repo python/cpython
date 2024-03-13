@@ -25,10 +25,12 @@ or *severity*.
 When to use logging
 ^^^^^^^^^^^^^^^^^^^
 
-Logging provides a set of convenience functions for simple logging usage. These
-are :func:`debug`, :func:`info`, :func:`warning`, :func:`error` and
-:func:`critical`. To determine when to use logging, see the table below, which
-states, for each of a set of common tasks, the best tool to use for it.
+You can access logging functionality by creating a logger via ``logger =
+getLogger(__name__)``, and then calling the logger's :meth:`~Logger.debug`,
+:meth:`~Logger.info`, :meth:`~Logger.warning`, :meth:`~Logger.error` and
+:meth:`~Logger.critical` methods. To determine when to use logging, and to see
+which logger methods to use when, see the table below. It states, for each of a
+set of common tasks, the best tool to use for that task.
 
 +-------------------------------------+--------------------------------------+
 | Task you want to perform            | The best tool for the task           |
@@ -37,8 +39,8 @@ states, for each of a set of common tasks, the best tool to use for it.
 | usage of a command line script or   |                                      |
 | program                             |                                      |
 +-------------------------------------+--------------------------------------+
-| Report events that occur during     | :func:`logging.info` (or             |
-| normal operation of a program (e.g. | :func:`logging.debug` for very       |
+| Report events that occur during     | A logger's :meth:`~Logger.info` (or  |
+| normal operation of a program (e.g. | :meth:`~Logger.debug` method for very|
 | for status monitoring or fault      | detailed output for diagnostic       |
 | investigation)                      | purposes)                            |
 +-------------------------------------+--------------------------------------+
@@ -47,22 +49,23 @@ states, for each of a set of common tasks, the best tool to use for it.
 |                                     | the client application should be     |
 |                                     | modified to eliminate the warning    |
 |                                     |                                      |
-|                                     | :func:`logging.warning` if there is  |
-|                                     | nothing the client application can do|
-|                                     | about the situation, but the event   |
-|                                     | should still be noted                |
+|                                     | A logger's :meth:`~Logger.warning`   |
+|                                     | method if there is nothing the client|
+|                                     | application can do about the         |
+|                                     | situation, but the event should still|
+|                                     | be noted                             |
 +-------------------------------------+--------------------------------------+
 | Report an error regarding a         | Raise an exception                   |
 | particular runtime event            |                                      |
 +-------------------------------------+--------------------------------------+
-| Report suppression of an error      | :func:`logging.error`,               |
-| without raising an exception (e.g.  | :func:`logging.exception` or         |
-| error handler in a long-running     | :func:`logging.critical` as          |
+| Report suppression of an error      | A logger's :meth:`~Logger.error`,    |
+| without raising an exception (e.g.  | :meth:`~Logger.exception` or         |
+| error handler in a long-running     | :meth:`~Logger.critical` method as   |
 | server process)                     | appropriate for the specific error   |
 |                                     | and application domain               |
 +-------------------------------------+--------------------------------------+
 
-The logging functions are named after the level or severity of the events
+The logger methods are named after the level or severity of the events
 they are used to track. The standard levels and their applicability are
 described below (in increasing order of severity):
 
@@ -116,12 +119,18 @@ If you type these lines into a script and run it, you'll see:
    WARNING:root:Watch out!
 
 printed out on the console. The ``INFO`` message doesn't appear because the
-default level is ``WARNING``. The printed message includes the indication of
-the level and the description of the event provided in the logging call, i.e.
-'Watch out!'. Don't worry about the 'root' part for now: it will be explained
-later. The actual output can be formatted quite flexibly if you need that;
-formatting options will also be explained later.
+default level is ``WARNING``. The printed message includes the indication of the
+level and the description of the event provided in the logging call, i.e.
+'Watch out!'. The actual output can be formatted quite flexibly if you need
+that; formatting options will also be explained later.
 
+Notice that in this example, we use functions directly on the ``logging``
+module, like ``logging.debug``, rather than creating a logger and calling
+functions on it. These functions operation on the root logger, but can be useful
+as they will call :func:`~logging.basicConfig` for you if it has not been called yet, like in
+this example.  In larger programs you'll usually want to control the logging
+configuration explicitly however - so for that reason as well as others, it's
+better to create loggers and call their methods.
 
 Logging to a file
 ^^^^^^^^^^^^^^^^^
@@ -131,11 +140,12 @@ look at that next. Be sure to try the following in a newly started Python
 interpreter, and don't just continue from the session described above::
 
    import logging
+   logger = logging.getLogger(__name__)
    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
-   logging.debug('This message should go to the log file')
-   logging.info('So should this')
-   logging.warning('And this, too')
-   logging.error('And non-ASCII stuff, too, like Øresund and Malmö')
+   logger.debug('This message should go to the log file')
+   logger.info('So should this')
+   logger.warning('And this, too')
+   logger.error('And non-ASCII stuff, too, like Øresund and Malmö')
 
 .. versionchanged:: 3.9
    The *encoding* argument was added. In earlier Python versions, or if not
@@ -149,10 +159,10 @@ messages:
 
 .. code-block:: none
 
-   DEBUG:root:This message should go to the log file
-   INFO:root:So should this
-   WARNING:root:And this, too
-   ERROR:root:And non-ASCII stuff, too, like Øresund and Malmö
+   DEBUG:__main__:This message should go to the log file
+   INFO:__main__:So should this
+   WARNING:__main__:And this, too
+   ERROR:__main__:And non-ASCII stuff, too, like Øresund and Malmö
 
 This example also shows how you can set the logging level which acts as the
 threshold for tracking. In this case, because we set the threshold to
@@ -181,11 +191,9 @@ following example::
        raise ValueError('Invalid log level: %s' % loglevel)
    logging.basicConfig(level=numeric_level, ...)
 
-The call to :func:`basicConfig` should come *before* any calls to
-:func:`debug`, :func:`info`, etc. Otherwise, those functions will call
-:func:`basicConfig` for you with the default options. As it's intended as a
-one-off simple configuration facility, only the first call will actually do
-anything: subsequent calls are effectively no-ops.
+The call to :func:`basicConfig` should come *before* any calls to a logger's
+methods such as :meth:`~Logger.debug`, :meth:`~Logger.info`, etc. Otherwise,
+that logging event may not be handled in the desired manner.
 
 If you run the above script several times, the messages from successive runs
 are appended to the file *example.log*. If you want each run to start afresh,
@@ -196,50 +204,6 @@ argument, by changing the call in the above example to::
 
 The output will be the same as before, but the log file is no longer appended
 to, so the messages from earlier runs are lost.
-
-
-Logging from multiple modules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If your program consists of multiple modules, here's an example of how you
-could organize logging in it::
-
-   # myapp.py
-   import logging
-   import mylib
-
-   def main():
-       logging.basicConfig(filename='myapp.log', level=logging.INFO)
-       logging.info('Started')
-       mylib.do_something()
-       logging.info('Finished')
-
-   if __name__ == '__main__':
-       main()
-
-::
-
-   # mylib.py
-   import logging
-
-   def do_something():
-       logging.info('Doing something')
-
-If you run *myapp.py*, you should see this in *myapp.log*:
-
-.. code-block:: none
-
-   INFO:root:Started
-   INFO:root:Doing something
-   INFO:root:Finished
-
-which is hopefully what you were expecting to see. You can generalize this to
-multiple modules, using the pattern in *mylib.py*. Note that for this simple
-usage pattern, you won't know, by looking in the log file, *where* in your
-application your messages came from, apart from looking at the event
-description. If you want to track the location of your messages, you'll need
-to refer to the documentation beyond the tutorial level -- see
-:ref:`logging-advanced-tutorial`.
 
 
 Logging variable data
