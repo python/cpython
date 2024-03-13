@@ -932,31 +932,25 @@ which incur interpreter overhead.
        # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
        # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
        # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
-       args = [iter(iterable)] * n
+       iterators = [iter(iterable)] * n
        match incomplete:
            case 'fill':
-               return zip_longest(*args, fillvalue=fillvalue)
+               return zip_longest(*iterators, fillvalue=fillvalue)
            case 'strict':
-               return zip(*args, strict=True)
+               return zip(*iterators, strict=True)
            case 'ignore':
-               return zip(*args)
+               return zip(*iterators)
            case _:
                raise ValueError('Expected fill, strict, or ignore')
 
    def roundrobin(*iterables):
        "Visit input iterables in a cycle until each is exhausted."
        # roundrobin('ABC', 'D', 'EF') --> A D E B F C
-       # Recipe credited to George Sakkis
-       num_active = len(iterables)
-       nexts = cycle(iter(it).__next__ for it in iterables)
-       while num_active:
-           try:
-               for next in nexts:
-                   yield next()
-           except StopIteration:
-               # Remove the iterator we just exhausted from the cycle.
-               num_active -= 1
-               nexts = cycle(islice(nexts, num_active))
+       # Algorithm credited to George Sakkis
+       iterators = map(iter, iterables)
+       for num_active in range(len(iterables), 0, -1):
+           iterators = cycle(islice(iterators, num_active))
+           yield from map(next, iterators)
 
    def partition(predicate, iterable):
        """Partition entries into false entries and true entries.
@@ -997,10 +991,10 @@ The following recipes have a more mathematical flavor:
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-   def sum_of_squares(it):
+   def sum_of_squares(iterable):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) --> 1400
-       return math.sumprod(*tee(it))
+       return math.sumprod(*tee(iterable))
 
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
@@ -1570,6 +1564,9 @@ The following recipes have a more mathematical flavor:
 
     >>> list(roundrobin('abc', 'd', 'ef'))
     ['a', 'd', 'e', 'b', 'f', 'c']
+    >>> ranges = [range(5, 1000), range(4, 3000), range(0), range(3, 2000), range(2, 5000), range(1, 3500)]
+    >>> collections.Counter(roundrobin(ranges)) == collections.Counter(ranges)
+    True
 
     >>> def is_odd(x):
     ...     return x % 2 == 1
