@@ -902,13 +902,13 @@ which incur interpreter overhead.
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
        seq_index = getattr(iterable, 'index', None)
        if seq_index is None:
-           # Slow path for general iterables
+           # Path for general iterables
            it = islice(iterable, start, stop)
            for i, element in enumerate(it, start):
                if element is value or element == value:
                    yield i
        else:
-           # Fast path for sequences
+           # Path for sequences with an index() method
            stop = len(iterable) if stop is None else stop
            i = start
            try:
@@ -1412,6 +1412,22 @@ The following recipes have a more mathematical flavor:
     4
     >>> ''.join(input_iterator)
     'DEAF'
+
+    >>> # Verify that the target value can be a sequence.
+    >>> seq = [[10, 20], [30, 40], 30, 40, [30, 40], 50]
+    >>> target = [30, 40]
+    >>> list(iter_index(seq, target))
+    [1, 4]
+
+    >>> # Verify faithfulness to type specific index() method behaviors.
+    >>> # For example, bytes and str perform subsequence searches
+    >>> # that do not match the general behavior specified
+    >>> # in collections.abc.Sequence.index().
+    >>> seq = 'abracadabra'
+    >>> target = 'ab'
+    >>> list(iter_index(seq, target))
+    [0, 7]
+
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
