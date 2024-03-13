@@ -4891,13 +4891,16 @@ if test "$ac_sys_system" = "Linux-android"; then
   blocked_funcs="chroot initgroups setegid seteuid setgid sethostname
     setregid setresgid setresuid setreuid setuid"
 
-  # These functions are unimplemented and always return an error.
+  # These functions are unimplemented and always return an error
+  # (https://android.googlesource.com/platform/system/sepolicy/+/refs/heads/android13-release/public/domain.te#1044)
   blocked_funcs="$blocked_funcs sem_open sem_unlink"
 
-  # On API level 21, when fchmodat is called with the unimplemented flag
+  # Before API level 23, when fchmodat is called with the unimplemented flag
   # AT_SYMLINK_NOFOLLOW, instead of returning ENOTSUP as it should, it actually
   # follows the symlink.
-  blocked_funcs="$blocked_funcs fchmodat"
+  if test "$ANDROID_API_LEVEL" -lt 23; then
+    blocked_funcs="$blocked_funcs fchmodat"
+  fi
 
   for name in $blocked_funcs; do
     AS_VAR_PUSHDEF([func_var], [ac_cv_func_$name])
@@ -5262,11 +5265,16 @@ then
   ])
 fi
 
-AC_CHECK_FUNCS([clock_nanosleep], [], [
-    AC_CHECK_LIB([rt], [clock_nanosleep], [
-        AC_DEFINE([HAVE_CLOCK_NANOSLEEP], [1])
-    ])
-])
+# On Android before API level 23, clock_nanosleep returns the wrong value when
+# interrupted by a signal (https://issuetracker.google.com/issues/216495770).
+if ! { test "$ac_sys_system" = "Linux-android" &&
+       test "$ANDROID_API_LEVEL" -lt 23; }; then
+  AC_CHECK_FUNCS([clock_nanosleep], [], [
+      AC_CHECK_LIB([rt], [clock_nanosleep], [
+          AC_DEFINE([HAVE_CLOCK_NANOSLEEP], [1])
+      ])
+  ])
+fi
 
 AC_CHECK_FUNCS([nanosleep], [], [
     AC_CHECK_LIB([rt], [nanosleep], [
