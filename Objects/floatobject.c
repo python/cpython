@@ -108,11 +108,8 @@ PyFloat_GetInfo(void)
         PyStructSequence_SET_ITEM(floatinfo, pos++, flag);  \
     } while (0)
 
-#define SetIntFlag(FLAG) \
-    SetFlag(PyLong_FromLong((FLAG)))
-
-#define SetDblFlag(FLAG) \
-    SetFlag(PyFloat_FromDouble((FLAG)))
+#define SetIntFlag(FLAG) SetFlag(PyLong_FromLong((FLAG)))
+#define SetDblFlag(FLAG) SetFlag(PyFloat_FromDouble((FLAG)))
 
     SetDblFlag(DBL_MAX);
     SetIntFlag(DBL_MAX_EXP);
