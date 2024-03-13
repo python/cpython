@@ -684,13 +684,15 @@
         }
 
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
-            _Py_UopsSymbol **values;
-            values = &stack_pointer[-1];
-            for (int _i = oparg; --_i >= 0;) {
-                values[_i] = sym_new_not_null(ctx);
-                if (values[_i] == NULL) goto out_of_space;
-            }
-            stack_pointer += -1 + oparg;
+            _Py_UopsSymbol *val1;
+            _Py_UopsSymbol *val0;
+            val1 = sym_new_not_null(ctx);
+            if (val1 == NULL) goto out_of_space;
+            val0 = sym_new_not_null(ctx);
+            if (val0 == NULL) goto out_of_space;
+            stack_pointer[-1] = val1;
+            stack_pointer[0] = val0;
+            stack_pointer += 1;
             break;
         }
 
@@ -1568,24 +1570,11 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand;
-            if (sym_is_const(callable) &&
-                sym_matches_type(callable, &PyFunction_Type) &&
-                (sym_is_null(self_or_null) || sym_is_not_null(self_or_null))) {
-                assert(PyFunction_Check(sym_get_const(callable)));
-                PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
-                if (func->func_version != func_version) {
-                    goto hit_bottom;
-                }
-                PyCodeObject *code = (PyCodeObject *)func->func_code;
-                int argcount = oparg + sym_is_not_null(self_or_null);
-                if (code->co_argcount != argcount) {
-                    goto hit_bottom;
-                }
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
             if (!sym_set_type(callable, &PyFunction_Type)) {
                 goto hit_bottom;
             }
+            (void)self_or_null;
+            (void)func_version;
             break;
         }
 
@@ -1648,8 +1637,8 @@
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 
@@ -1657,8 +1646,8 @@
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 
@@ -1666,8 +1655,8 @@
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
             break;
         }
 
