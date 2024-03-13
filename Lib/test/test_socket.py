@@ -209,7 +209,10 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
-HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
+# Older Android versions block UDPLITE with SELinux.
+HAVE_SOCKET_UDPLITE = (
+    hasattr(socket, "IPPROTO_UDPLITE")
+    and not (support.is_android and platform.android_ver().api_level < 29))
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
