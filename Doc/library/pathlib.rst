@@ -7,7 +7,7 @@
 
 .. versionadded:: 3.4
 
-**Source code:** :source:`Lib/pathlib/`
+**Source code:** :source:`Lib/pathlib.py`
 
 .. index:: single: path; operations
 
