@@ -1288,7 +1288,7 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 
 
 /********************/
-/* Module functions */
+/* thread execution */
 /********************/
 
 // bootstate is used to "bootstrap" new threads. Any arguments needed by
@@ -1383,24 +1383,6 @@ exit:
     return;
 }
 
-static PyObject *
-thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
-}
-
-PyDoc_STRVAR(daemon_threads_allowed_doc,
-"daemon_threads_allowed()\n\
-\n\
-Return True if daemon threads are allowed in the current interpreter,\n\
-and False otherwise.\n");
-
 static int
 do_start_new_thread(thread_module_state* state,
                     PyObject *func, PyObject* args, PyObject* kwargs,
@@ -1460,6 +1442,77 @@ do_start_new_thread(thread_module_state* state,
     }
     return 0;
 }
+
+
+static void
+release_sentinel(void *weakref_raw)
+{
+    PyObject *weakref = _PyObject_CAST(weakref_raw);
+
+    /* Tricky: this function is called when the current thread state
+       is being deleted.  Therefore, only simple C code can safely
+       execute here. */
+    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
+    if (lock != NULL) {
+        if (lock->locked) {
+            lock->locked = 0;
+            PyThread_release_lock(lock->lock_lock);
+        }
+        Py_DECREF(lock);
+    }
+
+    /* Deallocating a weakref with a NULL callback only calls
+       PyObject_GC_Del(), which can't call any Python code. */
+    Py_DECREF(weakref);
+}
+
+static int
+set_threadstate_finalizer(PyThreadState *tstate, PyObject *lock)
+{
+    PyObject *wr;
+    if (tstate->on_delete_data != NULL) {
+        /* We must support the re-creation of the lock from a
+           fork()ed child. */
+        assert(tstate->on_delete == &release_sentinel);
+        wr = (PyObject *) tstate->on_delete_data;
+        tstate->on_delete = NULL;
+        tstate->on_delete_data = NULL;
+        Py_DECREF(wr);
+    }
+
+    /* The lock is owned by whoever called set_threadstate_finalizer(),
+       but the weakref clings to the thread state. */
+    wr = PyWeakref_NewRef(lock, NULL);
+    if (wr == NULL) {
+        return -1;
+    }
+    tstate->on_delete_data = (void *) wr;
+    tstate->on_delete = &release_sentinel;
+    return 0;
+}
+
+
+/********************/
+/* Module functions */
+/********************/
+
+static PyObject *
+thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
+}
+
+PyDoc_STRVAR(daemon_threads_allowed_doc,
+"daemon_threads_allowed()\n\
+\n\
+Return True if daemon threads are allowed in the current interpreter,\n\
+and False otherwise.\n");
 
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
@@ -1669,57 +1722,19 @@ yet finished.\n\
 This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
-static void
-release_sentinel(void *weakref_raw)
-{
-    PyObject *weakref = _PyObject_CAST(weakref_raw);
-
-    /* Tricky: this function is called when the current thread state
-       is being deleted.  Therefore, only simple C code can safely
-       execute here. */
-    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
-    if (lock != NULL) {
-        if (lock->locked) {
-            lock->locked = 0;
-            PyThread_release_lock(lock->lock_lock);
-        }
-        Py_DECREF(lock);
-    }
-
-    /* Deallocating a weakref with a NULL callback only calls
-       PyObject_GC_Del(), which can't call any Python code. */
-    Py_DECREF(weakref);
-}
-
 static PyObject *
 thread__set_sentinel(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *wr;
     PyThreadState *tstate = _PyThreadState_GET();
-    lockobject *lock;
-
-    if (tstate->on_delete_data != NULL) {
-        /* We must support the re-creation of the lock from a
-           fork()ed child. */
-        assert(tstate->on_delete == &release_sentinel);
-        wr = (PyObject *) tstate->on_delete_data;
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-        Py_DECREF(wr);
-    }
-    lock = newlockobject(module);
-    if (lock == NULL)
+    PyObject *lock = (PyObject *)newlockobject(module);
+    if (lock == NULL) {
         return NULL;
-    /* The lock is owned by whoever called _set_sentinel(), but the weakref
-       hangs to the thread state. */
-    wr = PyWeakref_NewRef((PyObject *) lock, NULL);
-    if (wr == NULL) {
+    }
+    if (set_threadstate_finalizer(tstate, lock) < 0) {
         Py_DECREF(lock);
         return NULL;
     }
-    tstate->on_delete_data = (void *) wr;
-    tstate->on_delete = &release_sentinel;
-    return (PyObject *) lock;
+    return lock;
 }
 
 PyDoc_STRVAR(_set_sentinel_doc,
