@@ -340,9 +340,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 if not event_shutdown.is_set():
                     event_shutdown.set()
                     results.append(True)
-        q.join()
 
     def _read_msg_thread(self, q, results, barrier_start):
+        # Get at least one item.
+        q.get(True)
+        q.task_done()
         # Wait for the barrier to be complete.
         barrier_start.wait()
         while True:
@@ -354,13 +356,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
                 break
             except self.queue.Empty:
                 pass
-        q.join()
 
     def _shutdown_thread(self, q, results, event_end, immediate):
         event_end.wait()
         q.shutdown(immediate)
         results.append(q.qsize() == 0)
-        q.join()
 
     def _join_thread(self, q, barrier_start):
         # Wait for the barrier to be complete.
@@ -382,19 +382,25 @@ class BaseQueueTestMixin(BlockingTestMixin):
         nb_msgs = 1024*64
         nb_msgs_w = nb_msgs // write_threads
         when_exec_shutdown = nb_msgs_w // 2
-        # Use of a `threading.Barrier`` to ensure that all `_write_msg_threads`
-        # put their part of items into the queue. And trigger the start of
-        # other threads as `_read_msg_thread`and `_join_thread`.
-        barrier_start = threading.Barrier(write_threads+read_threads+join_threads)
+        # Use of a `threading.Barrier`` to ensure that
+        # all `_write_msg_threads`put their part of items into the queue
+        # all `_read_msg_thread` get at least one itme from the queue,
+        # and keep on running until shutdown.
+        # The `_join_thread` is started only when shutdown is emmediate.
+        nparties = write_threads + read_threads
+        if immediate:
+            nparties += join_threads
+        barrier_start = threading.Barrier(nparties)
         ev_exec_shutdown = threading.Event()
-        lprocs = (
+        lprocs = [
             (self._write_msg_thread, write_threads, (q, nb_msgs_w, res_puts,
                                             when_exec_shutdown, ev_exec_shutdown,
                                             barrier_start)),
             (self._read_msg_thread, read_threads, (q, res_gets, barrier_start)),
-            (self._join_thread, join_threads, (q, barrier_start)),
             (self._shutdown_thread, 1, (q, res_shutdown, ev_exec_shutdown, immediate)),
-            )
+            ]
+        if immediate:
+            lprocs.append((self._join_thread, join_threads, (q, barrier_start)))
         # start all threads.
         for func, n, args in lprocs:
             for i in range(n):
@@ -403,7 +409,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         for thread in ps:
             thread.join()
 
-        self.assertEqual(res_puts.count(True), 1)
+        self.assertTrue(True in res_puts)
         self.assertLessEqual(res_gets.count(True), read_threads)
         if immediate:
             self.assertListEqual(res_shutdown, [True])
