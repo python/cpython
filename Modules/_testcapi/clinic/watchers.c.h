@@ -2,8 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
-
 PyDoc_STRVAR(_testcapi_watch_dict__doc__,
 "watch_dict($module, watcher_id, dict, /)\n"
 "--\n"
@@ -22,7 +20,19 @@ _testcapi_watch_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int watcher_id;
     PyObject *dict;
 
-    if (!_PyArg_CheckPositional("watch_dict", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "watch_dict", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "watch_dict", nargs);
         goto exit;
     }
     watcher_id = PyLong_AsInt(args[0]);
@@ -54,7 +64,19 @@ _testcapi_unwatch_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     int watcher_id;
     PyObject *dict;
 
-    if (!_PyArg_CheckPositional("unwatch_dict", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unwatch_dict", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unwatch_dict", nargs);
         goto exit;
     }
     watcher_id = PyLong_AsInt(args[0]);
@@ -86,7 +108,19 @@ _testcapi_watch_type(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int watcher_id;
     PyObject *type;
 
-    if (!_PyArg_CheckPositional("watch_type", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "watch_type", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "watch_type", nargs);
         goto exit;
     }
     watcher_id = PyLong_AsInt(args[0]);
@@ -118,7 +152,19 @@ _testcapi_unwatch_type(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     int watcher_id;
     PyObject *type;
 
-    if (!_PyArg_CheckPositional("unwatch_type", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unwatch_type", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unwatch_type", nargs);
         goto exit;
     }
     watcher_id = PyLong_AsInt(args[0]);
@@ -151,7 +197,19 @@ _testcapi_set_func_defaults_via_capi(PyObject *module, PyObject *const *args, Py
     PyObject *func;
     PyObject *defaults;
 
-    if (!_PyArg_CheckPositional("set_func_defaults_via_capi", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "set_func_defaults_via_capi", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "set_func_defaults_via_capi", nargs);
         goto exit;
     }
     func = args[0];
@@ -181,7 +239,19 @@ _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, 
     PyObject *func;
     PyObject *defaults;
 
-    if (!_PyArg_CheckPositional("set_func_kwdefaults_via_capi", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "set_func_kwdefaults_via_capi", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "set_func_kwdefaults_via_capi", nargs);
         goto exit;
     }
     func = args[0];
@@ -191,4 +261,4 @@ _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0e07ce7f295917a5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2869b7c4f48f7886 input=a9049054013a1b77]*/

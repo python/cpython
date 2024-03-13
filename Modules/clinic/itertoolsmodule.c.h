@@ -124,7 +124,19 @@ pairwise_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("pairwise", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("pairwise", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (PyTuple_GET_SIZE(args) < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "pairwise", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "pairwise", PyTuple_GET_SIZE(args));
         goto exit;
     }
     iterable = PyTuple_GET_ITEM(args, 0);
@@ -218,7 +230,19 @@ itertools__grouper(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("_grouper", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("_grouper", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (PyTuple_GET_SIZE(args) < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_grouper", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_grouper", PyTuple_GET_SIZE(args));
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_state_by_cls()->groupby_type)) {
@@ -256,7 +280,19 @@ itertools_teedataobject(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("teedataobject", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("teedataobject", PyTuple_GET_SIZE(args), 3, 3)) {
+    if (PyTuple_GET_SIZE(args) < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "teedataobject", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "teedataobject", PyTuple_GET_SIZE(args));
         goto exit;
     }
     it = PyTuple_GET_ITEM(args, 0);
@@ -292,7 +328,19 @@ itertools__tee(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("_tee", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("_tee", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (PyTuple_GET_SIZE(args) < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "_tee", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "_tee", PyTuple_GET_SIZE(args));
         goto exit;
     }
     iterable = PyTuple_GET_ITEM(args, 0);
@@ -321,7 +369,19 @@ itertools_tee(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *iterable;
     Py_ssize_t n = 2;
 
-    if (!_PyArg_CheckPositional("tee", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "tee", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "tee", nargs);
         goto exit;
     }
     iterable = args[0];
@@ -367,7 +427,19 @@ itertools_cycle(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("cycle", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("cycle", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (PyTuple_GET_SIZE(args) < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "cycle", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "cycle", PyTuple_GET_SIZE(args));
         goto exit;
     }
     iterable = PyTuple_GET_ITEM(args, 0);
@@ -400,7 +472,19 @@ itertools_dropwhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("dropwhile", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("dropwhile", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (PyTuple_GET_SIZE(args) < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "dropwhile", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "dropwhile", PyTuple_GET_SIZE(args));
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -432,7 +516,19 @@ itertools_takewhile(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("takewhile", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("takewhile", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (PyTuple_GET_SIZE(args) < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "takewhile", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "takewhile", PyTuple_GET_SIZE(args));
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -464,7 +560,19 @@ itertools_starmap(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("starmap", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("starmap", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (PyTuple_GET_SIZE(args) < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "starmap", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "starmap", PyTuple_GET_SIZE(args));
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -844,7 +952,19 @@ itertools_filterfalse(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("filterfalse", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("filterfalse", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (PyTuple_GET_SIZE(args) < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "filterfalse", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "filterfalse", PyTuple_GET_SIZE(args));
         goto exit;
     }
     func = PyTuple_GET_ITEM(args, 0);
@@ -928,4 +1048,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6a515f765da86b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=70003b4d9f4e066e input=a9049054013a1b77]*/

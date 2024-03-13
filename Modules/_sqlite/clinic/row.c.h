@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 static PyObject *
 pysqlite_row_new_impl(PyTypeObject *type, pysqlite_Cursor *cursor,
@@ -20,7 +20,19 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Row", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("Row", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (PyTuple_GET_SIZE(args) < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "Row", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "Row", PyTuple_GET_SIZE(args));
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_state()->CursorType)) {
@@ -56,4 +68,4 @@ pysqlite_row_keys(pysqlite_Row *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_row_keys_impl(self);
 }
-/*[clinic end generated code: output=788bf817acc02b8e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7efd2aabfbeca2db input=a9049054013a1b77]*/

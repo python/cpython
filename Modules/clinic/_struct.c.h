@@ -283,7 +283,19 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyStructObject *s_object = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!_PyArg_CheckPositional("unpack", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unpack", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unpack", nargs);
         goto exit;
     }
     if (!cache_struct_converter(module, args[0], &s_object)) {
@@ -421,7 +433,19 @@ iter_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyStructObject *s_object = NULL;
     PyObject *buffer;
 
-    if (!_PyArg_CheckPositional("iter_unpack", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "iter_unpack", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "iter_unpack", nargs);
         goto exit;
     }
     if (!cache_struct_converter(module, args[0], &s_object)) {
@@ -436,4 +460,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=67bd299e5d72fee0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=650985a084c91ef2 input=a9049054013a1b77]*/

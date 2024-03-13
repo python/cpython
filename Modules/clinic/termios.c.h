@@ -3,7 +3,6 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(termios_tcgetattr__doc__,
 "tcgetattr($module, fd, /)\n"
@@ -66,7 +65,19 @@ termios_tcsetattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int when;
     PyObject *term;
 
-    if (!_PyArg_CheckPositional("tcsetattr", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "tcsetattr", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "tcsetattr", nargs);
         goto exit;
     }
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
@@ -105,7 +116,19 @@ termios_tcsendbreak(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int duration;
 
-    if (!_PyArg_CheckPositional("tcsendbreak", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcsendbreak", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcsendbreak", nargs);
         goto exit;
     }
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
@@ -171,7 +194,19 @@ termios_tcflush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int queue;
 
-    if (!_PyArg_CheckPositional("tcflush", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcflush", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcflush", nargs);
         goto exit;
     }
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
@@ -210,7 +245,19 @@ termios_tcflow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     int action;
 
-    if (!_PyArg_CheckPositional("tcflow", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcflow", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcflow", nargs);
         goto exit;
     }
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
@@ -277,7 +324,19 @@ termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fd;
     PyObject *winsz;
 
-    if (!_PyArg_CheckPositional("tcsetwinsize", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcsetwinsize", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "tcsetwinsize", nargs);
         goto exit;
     }
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
@@ -289,4 +348,4 @@ termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f31382658135c774 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3e6852f693d0891 input=a9049054013a1b77]*/

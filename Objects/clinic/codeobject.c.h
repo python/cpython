@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(code_new__doc__,
 "code(argcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,\n"
@@ -54,7 +54,19 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("code", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("code", PyTuple_GET_SIZE(args), 16, 18)) {
+    if (PyTuple_GET_SIZE(args) < 16) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 16 arguments, got %zd",
+            "code", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 18) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 18 arguments, got %zd",
+            "code", PyTuple_GET_SIZE(args));
         goto exit;
     }
     argcount = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
@@ -464,4 +476,4 @@ code__varname_from_oparg(PyCodeObject *self, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d604263a3ca72a0f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46301f0686762260 input=a9049054013a1b77]*/

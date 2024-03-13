@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
 "decimal($self, chr, default=<unrepresentable>, /)\n"
@@ -28,7 +28,19 @@ unicodedata_UCD_decimal(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_CheckPositional("decimal", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "decimal", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "decimal", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -74,7 +86,19 @@ unicodedata_UCD_digit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_CheckPositional("digit", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "digit", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "digit", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -121,7 +145,19 @@ unicodedata_UCD_numeric(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_CheckPositional("numeric", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "numeric", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "numeric", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -383,7 +419,19 @@ unicodedata_UCD_is_normalized(PyObject *self, PyObject *const *args, Py_ssize_t 
     PyObject *form;
     PyObject *input;
 
-    if (!_PyArg_CheckPositional("is_normalized", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "is_normalized", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "is_normalized", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -424,7 +472,19 @@ unicodedata_UCD_normalize(PyObject *self, PyObject *const *args, Py_ssize_t narg
     PyObject *form;
     PyObject *input;
 
-    if (!_PyArg_CheckPositional("normalize", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "normalize", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "normalize", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -465,7 +525,19 @@ unicodedata_UCD_name(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     int chr;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_CheckPositional("name", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "name", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "name", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -519,4 +591,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ea30f89007b2bfff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a1470f0d0cabae6 input=a9049054013a1b77]*/

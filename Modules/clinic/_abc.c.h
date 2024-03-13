@@ -2,8 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
-
 PyDoc_STRVAR(_abc__reset_registry__doc__,
 "_reset_registry($module, self, /)\n"
 "--\n"
@@ -67,7 +65,19 @@ _abc__abc_register(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *self;
     PyObject *subclass;
 
-    if (!_PyArg_CheckPositional("_abc_register", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_abc_register", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_abc_register", nargs);
         goto exit;
     }
     self = args[0];
@@ -98,7 +108,19 @@ _abc__abc_instancecheck(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *self;
     PyObject *instance;
 
-    if (!_PyArg_CheckPositional("_abc_instancecheck", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_abc_instancecheck", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_abc_instancecheck", nargs);
         goto exit;
     }
     self = args[0];
@@ -129,7 +151,19 @@ _abc__abc_subclasscheck(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *self;
     PyObject *subclass;
 
-    if (!_PyArg_CheckPositional("_abc_subclasscheck", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_abc_subclasscheck", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_abc_subclasscheck", nargs);
         goto exit;
     }
     self = args[0];
@@ -161,4 +195,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=1989b6716c950e17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6000b9eadb347306 input=a9049054013a1b77]*/

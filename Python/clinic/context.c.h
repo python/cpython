@@ -2,8 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
-
 PyDoc_STRVAR(_contextvars_Context_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -27,7 +25,19 @@ _contextvars_Context_get(PyContext *self, PyObject *const *args, Py_ssize_t narg
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_CheckPositional("get", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "get", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "get", nargs);
         goto exit;
     }
     key = args[0];
@@ -140,7 +150,19 @@ _contextvars_ContextVar_get(PyContextVar *self, PyObject *const *args, Py_ssize_
     PyObject *return_value = NULL;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_CheckPositional("get", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "get", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "get", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -179,4 +201,4 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=b667826178444c3f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=84ed71f390ea61fd input=a9049054013a1b77]*/

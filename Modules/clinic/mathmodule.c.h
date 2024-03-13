@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
@@ -130,7 +130,19 @@ math_ldexp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double x;
     PyObject *i;
 
-    if (!_PyArg_CheckPositional("ldexp", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "ldexp", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "ldexp", nargs);
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -225,7 +237,19 @@ math_fmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double x;
     double y;
 
-    if (!_PyArg_CheckPositional("fmod", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "fmod", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "fmod", nargs);
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -279,7 +303,19 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *p;
     PyObject *q;
 
-    if (!_PyArg_CheckPositional("dist", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "dist", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "dist", nargs);
         goto exit;
     }
     p = args[0];
@@ -316,7 +352,19 @@ math_sumprod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *p;
     PyObject *q;
 
-    if (!_PyArg_CheckPositional("sumprod", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "sumprod", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "sumprod", nargs);
         goto exit;
     }
     p = args[0];
@@ -346,7 +394,19 @@ math_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double x;
     double y;
 
-    if (!_PyArg_CheckPositional("pow", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "pow", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "pow", nargs);
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -770,7 +830,19 @@ math_perm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *n;
     PyObject *k = Py_None;
 
-    if (!_PyArg_CheckPositional("perm", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "perm", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "perm", nargs);
         goto exit;
     }
     n = args[0];
@@ -814,7 +886,19 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *n;
     PyObject *k;
 
-    if (!_PyArg_CheckPositional("comb", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "comb", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "comb", nargs);
         goto exit;
     }
     n = args[0];
@@ -950,4 +1034,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b2eeaed8d8a76d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4321f9bb43f168be input=a9049054013a1b77]*/

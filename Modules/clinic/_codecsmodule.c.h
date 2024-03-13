@@ -288,7 +288,19 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("escape_decode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "escape_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "escape_decode", nargs);
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -358,7 +370,19 @@ _codecs_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *data;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("escape_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "escape_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "escape_encode", nargs);
         goto exit;
     }
     if (!PyBytes_Check(args[0])) {
@@ -414,7 +438,19 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_7_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_7_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_7_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -480,7 +516,19 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_8_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_8_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_8_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -546,7 +594,19 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_16_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_16_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_16_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -612,7 +672,19 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_16_le_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_16_le_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_16_le_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -678,7 +750,19 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_16_be_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_16_be_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_16_be_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -746,7 +830,19 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     int byteorder = 0;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_16_ex_decode", nargs, 1, 4)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_16_ex_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 4) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 4 arguments, got %zd",
+            "utf_16_ex_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -819,7 +915,19 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_32_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_32_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_32_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -885,7 +993,19 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_32_le_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_32_le_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_32_le_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -951,7 +1071,19 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_32_be_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_32_be_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_32_be_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1019,7 +1151,19 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     int byteorder = 0;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("utf_32_ex_decode", nargs, 1, 4)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_32_ex_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 4) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 4 arguments, got %zd",
+            "utf_32_ex_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1092,7 +1236,19 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
     const char *errors = NULL;
     int final = 1;
 
-    if (!_PyArg_CheckPositional("unicode_escape_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "unicode_escape_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "unicode_escape_decode", nargs);
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -1170,7 +1326,19 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
     const char *errors = NULL;
     int final = 1;
 
-    if (!_PyArg_CheckPositional("raw_unicode_escape_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "raw_unicode_escape_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "raw_unicode_escape_decode", nargs);
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -1247,7 +1415,19 @@ _codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("latin_1_decode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "latin_1_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "latin_1_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1305,7 +1485,19 @@ _codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("ascii_decode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "ascii_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "ascii_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1364,7 +1556,19 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     const char *errors = NULL;
     PyObject *mapping = Py_None;
 
-    if (!_PyArg_CheckPositional("charmap_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "charmap_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "charmap_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1429,7 +1633,19 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("mbcs_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "mbcs_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "mbcs_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1499,7 +1715,19 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("oem_decode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "oem_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "oem_decode", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1570,7 +1798,19 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     const char *errors = NULL;
     int final = 0;
 
-    if (!_PyArg_CheckPositional("code_page_decode", nargs, 2, 4)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 2 arguments, got %zd",
+            "code_page_decode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 4) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 4 arguments, got %zd",
+            "code_page_decode", nargs);
         goto exit;
     }
     codepage = PyLong_AsInt(args[0]);
@@ -1641,7 +1881,19 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("readbuffer_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "readbuffer_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "readbuffer_encode", nargs);
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -1711,7 +1963,19 @@ _codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("utf_7_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_7_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "utf_7_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1766,7 +2030,19 @@ _codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("utf_8_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_8_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "utf_8_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1822,7 +2098,19 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int byteorder = 0;
 
-    if (!_PyArg_CheckPositional("utf_16_encode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_16_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_16_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1884,7 +2172,19 @@ _codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("utf_16_le_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_16_le_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "utf_16_le_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1939,7 +2239,19 @@ _codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("utf_16_be_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_16_be_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "utf_16_be_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1995,7 +2307,19 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *errors = NULL;
     int byteorder = 0;
 
-    if (!_PyArg_CheckPositional("utf_32_encode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_32_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "utf_32_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2057,7 +2381,19 @@ _codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("utf_32_le_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_32_le_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "utf_32_le_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2112,7 +2448,19 @@ _codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("utf_32_be_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "utf_32_be_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "utf_32_be_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2167,7 +2515,19 @@ _codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("unicode_escape_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "unicode_escape_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "unicode_escape_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2222,7 +2582,19 @@ _codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ss
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("raw_unicode_escape_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "raw_unicode_escape_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "raw_unicode_escape_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2277,7 +2649,19 @@ _codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("latin_1_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "latin_1_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "latin_1_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2332,7 +2716,19 @@ _codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("ascii_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "ascii_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "ascii_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2388,7 +2784,19 @@ _codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     const char *errors = NULL;
     PyObject *mapping = Py_None;
 
-    if (!_PyArg_CheckPositional("charmap_encode", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "charmap_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "charmap_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2476,7 +2884,19 @@ _codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("mbcs_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "mbcs_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "mbcs_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2534,7 +2954,19 @@ _codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("oem_encode", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "oem_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "oem_encode", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2594,7 +3026,19 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *str;
     const char *errors = NULL;
 
-    if (!_PyArg_CheckPositional("code_page_encode", nargs, 2, 3)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 2 arguments, got %zd",
+            "code_page_encode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "code_page_encode", nargs);
         goto exit;
     }
     code_page = PyLong_AsInt(args[0]);
@@ -2660,7 +3104,19 @@ _codecs_register_error(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     const char *errors;
     PyObject *handler;
 
-    if (!_PyArg_CheckPositional("register_error", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "register_error", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "register_error", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -2746,4 +3202,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=e50d5fdf65bd45fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=056a7c2b35245af1 input=a9049054013a1b77]*/

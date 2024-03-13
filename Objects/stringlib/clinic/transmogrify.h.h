@@ -95,7 +95,19 @@ stringlib_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!_PyArg_CheckPositional("ljust", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "ljust", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "ljust", nargs);
         goto exit;
     }
     {
@@ -151,7 +163,19 @@ stringlib_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!_PyArg_CheckPositional("rjust", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "rjust", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "rjust", nargs);
         goto exit;
     }
     {
@@ -207,7 +231,19 @@ stringlib_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t width;
     char fillchar = ' ';
 
-    if (!_PyArg_CheckPositional("center", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "center", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "center", nargs);
         goto exit;
     }
     {
@@ -279,4 +315,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b409bdf9ab68d5a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dee1938a7140a9d7 input=a9049054013a1b77]*/

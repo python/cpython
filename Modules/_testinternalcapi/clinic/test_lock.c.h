@@ -3,7 +3,6 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_testinternalcapi_benchmark_locks__doc__,
 "benchmark_locks($module, num_threads, use_pymutex=True,\n"
@@ -30,7 +29,19 @@ _testinternalcapi_benchmark_locks(PyObject *module, PyObject *const *args, Py_ss
     int critical_section_length = 1;
     int time_ms = 1000;
 
-    if (!_PyArg_CheckPositional("benchmark_locks", nargs, 1, 4)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "benchmark_locks", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 4) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 4 arguments, got %zd",
+            "benchmark_locks", nargs);
         goto exit;
     }
     {
@@ -72,4 +83,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=105105d759c0c271 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e233fd132ab048e1 input=a9049054013a1b77]*/

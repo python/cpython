@@ -205,7 +205,19 @@ builtin_format(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!_PyArg_CheckPositional("format", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "format", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "format", nargs);
         goto exit;
     }
     value = args[0];
@@ -383,7 +395,19 @@ builtin_divmod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *x;
     PyObject *y;
 
-    if (!_PyArg_CheckPositional("divmod", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "divmod", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "divmod", nargs);
         goto exit;
     }
     x = args[0];
@@ -421,7 +445,19 @@ builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *globals = Py_None;
     PyObject *locals = Py_None;
 
-    if (!_PyArg_CheckPositional("eval", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "eval", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "eval", nargs);
         goto exit;
     }
     source = args[0];
@@ -566,7 +602,19 @@ builtin_hasattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_CheckPositional("hasattr", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "hasattr", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "hasattr", nargs);
         goto exit;
     }
     obj = args[0];
@@ -612,7 +660,19 @@ builtin_setattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *name;
     PyObject *value;
 
-    if (!_PyArg_CheckPositional("setattr", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "setattr", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "setattr", nargs);
         goto exit;
     }
     obj = args[0];
@@ -645,7 +705,19 @@ builtin_delattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *name;
 
-    if (!_PyArg_CheckPositional("delattr", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "delattr", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "delattr", nargs);
         goto exit;
     }
     obj = args[0];
@@ -712,7 +784,19 @@ builtin_anext(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *aiterator;
     PyObject *default_value = NULL;
 
-    if (!_PyArg_CheckPositional("anext", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "anext", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "anext", nargs);
         goto exit;
     }
     aiterator = args[0];
@@ -968,7 +1052,19 @@ builtin_input(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *prompt = NULL;
 
-    if (!_PyArg_CheckPositional("input", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "input", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "input", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -1148,7 +1244,19 @@ builtin_isinstance(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *obj;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_CheckPositional("isinstance", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "isinstance", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "isinstance", nargs);
         goto exit;
     }
     obj = args[0];
@@ -1183,7 +1291,19 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *cls;
     PyObject *class_or_tuple;
 
-    if (!_PyArg_CheckPositional("issubclass", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "issubclass", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "issubclass", nargs);
         goto exit;
     }
     cls = args[0];
@@ -1193,4 +1313,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=643a8d5f900e0c36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8aff570d810cb1fe input=a9049054013a1b77]*/

@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_symtable_symtable__doc__,
 "symtable($module, source, filename, startstr, /)\n"
@@ -25,7 +25,19 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *filename;
     const char *startstr;
 
-    if (!_PyArg_CheckPositional("symtable", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "symtable", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "symtable", nargs);
         goto exit;
     }
     source = args[0];
@@ -50,4 +62,4 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=931964a76a72f850 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9c4a9ad16f718124 input=a9049054013a1b77]*/

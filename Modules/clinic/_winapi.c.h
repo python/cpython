@@ -337,7 +337,19 @@ _winapi_CreateJunction(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     LPCWSTR src_path = NULL;
     LPCWSTR dst_path = NULL;
 
-    if (!_PyArg_CheckPositional("CreateJunction", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "CreateJunction", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "CreateJunction", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -1978,4 +1990,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=1f5bbcfa8d1847c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0af1431bcf06467 input=a9049054013a1b77]*/

@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_ParseStack()
 
 PyDoc_STRVAR(_testcapi_float_pack__doc__,
 "float_pack($module, size, d, le, /)\n"
@@ -24,7 +24,19 @@ _testcapi_float_pack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double d;
     int le;
 
-    if (!_PyArg_CheckPositional("float_pack", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "float_pack", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "float_pack", nargs);
         goto exit;
     }
     size = PyLong_AsInt(args[0]);
@@ -81,4 +93,4 @@ _testcapi_float_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b43dfd3a77fe04ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=49c315676c86c396 input=a9049054013a1b77]*/

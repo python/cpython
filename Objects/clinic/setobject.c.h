@@ -3,7 +3,6 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(set_pop__doc__,
 "pop($self, /)\n"
@@ -49,7 +48,11 @@ set_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("update", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "update", nargs);
         goto exit;
     }
     __clinic_args = PyTuple_New(nargs - 0);
@@ -156,7 +159,11 @@ set_union(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("union", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "union", nargs);
         goto exit;
     }
     __clinic_args = PyTuple_New(nargs - 0);
@@ -191,7 +198,11 @@ set_intersection_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("intersection", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "intersection", nargs);
         goto exit;
     }
     __clinic_args = PyTuple_New(nargs - 0);
@@ -226,7 +237,11 @@ set_intersection_update_multi(PySetObject *so, PyObject *const *args, Py_ssize_t
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("intersection_update", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "intersection_update", nargs);
         goto exit;
     }
     __clinic_args = PyTuple_New(nargs - 0);
@@ -285,7 +300,11 @@ set_difference_update(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("difference_update", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "difference_update", nargs);
         goto exit;
     }
     __clinic_args = PyTuple_New(nargs - 0);
@@ -320,7 +339,11 @@ set_difference_multi(PySetObject *so, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("difference", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "difference", nargs);
         goto exit;
     }
     __clinic_args = PyTuple_New(nargs - 0);
@@ -568,4 +591,4 @@ set___sizeof__(PySetObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=de4ee725bd29f758 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc75fe62c2129a58 input=a9049054013a1b77]*/

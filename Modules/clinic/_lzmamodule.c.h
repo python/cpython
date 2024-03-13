@@ -308,7 +308,19 @@ _lzma__decode_filter_properties(PyObject *module, PyObject *const *args, Py_ssiz
     lzma_vli filter_id;
     Py_buffer encoded_props = {NULL, NULL};
 
-    if (!_PyArg_CheckPositional("_decode_filter_properties", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_decode_filter_properties", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_decode_filter_properties", nargs);
         goto exit;
     }
     if (!lzma_vli_converter(args[0], &filter_id)) {
@@ -327,4 +339,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=5e79c05ace76dc96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=990872aeeed8bbcc input=a9049054013a1b77]*/

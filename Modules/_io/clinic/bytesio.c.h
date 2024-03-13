@@ -7,7 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "readable($self, /)\n"
@@ -180,7 +180,19 @@ _io_BytesIO_read(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "read", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "read", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -217,7 +229,19 @@ _io_BytesIO_read1(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_CheckPositional("read1", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "read1", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "read1", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -255,7 +279,19 @@ _io_BytesIO_readline(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_CheckPositional("readline", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "readline", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "readline", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -293,7 +329,19 @@ _io_BytesIO_readlines(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *arg = Py_None;
 
-    if (!_PyArg_CheckPositional("readlines", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "readlines", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "readlines", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -364,7 +412,19 @@ _io_BytesIO_truncate(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = self->pos;
 
-    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "truncate", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "truncate", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -405,7 +465,19 @@ _io_BytesIO_seek(bytesio *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t pos;
     int whence = 0;
 
-    if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "seek", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "seek", nargs);
         goto exit;
     }
     {
@@ -534,4 +606,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ef116925b8b9e535 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ce69d01bd2dcf0f input=a9049054013a1b77]*/

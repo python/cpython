@@ -343,7 +343,19 @@ _tkinter_tkapp_createcommand(TkappObject *self, PyObject *const *args, Py_ssize_
     const char *name;
     PyObject *func;
 
-    if (!_PyArg_CheckPositional("createcommand", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "createcommand", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "createcommand", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -424,7 +436,19 @@ _tkinter_tkapp_createfilehandler(TkappObject *self, PyObject *const *args, Py_ss
     int mask;
     PyObject *func;
 
-    if (!_PyArg_CheckPositional("createfilehandler", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "createfilehandler", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "createfilehandler", nargs);
         goto exit;
     }
     file = args[0];
@@ -489,7 +513,19 @@ _tkinter_tkapp_createtimerhandler(TkappObject *self, PyObject *const *args, Py_s
     int milliseconds;
     PyObject *func;
 
-    if (!_PyArg_CheckPositional("createtimerhandler", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "createtimerhandler", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "createtimerhandler", nargs);
         goto exit;
     }
     milliseconds = PyLong_AsInt(args[0]);
@@ -520,7 +556,19 @@ _tkinter_tkapp_mainloop(TkappObject *self, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     int threshold = 0;
 
-    if (!_PyArg_CheckPositional("mainloop", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "mainloop", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "mainloop", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -554,7 +602,19 @@ _tkinter_tkapp_dooneevent(TkappObject *self, PyObject *const *args, Py_ssize_t n
     PyObject *return_value = NULL;
     int flags = 0;
 
-    if (!_PyArg_CheckPositional("dooneevent", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "dooneevent", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "dooneevent", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -684,7 +744,19 @@ _tkinter_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int sync = 0;
     const char *use = NULL;
 
-    if (!_PyArg_CheckPositional("create", nargs, 0, 8)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "create", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 8) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 8 arguments, got %zd",
+            "create", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -861,4 +933,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=d447501ec5aa9447 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=49d0f6f4142c15dd input=a9049054013a1b77]*/

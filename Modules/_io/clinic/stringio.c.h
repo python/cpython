@@ -8,7 +8,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_io_StringIO_getvalue__doc__,
 "getvalue($self, /)\n"
@@ -79,7 +79,19 @@ _io_StringIO_read(stringio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "read", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "read", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -117,7 +129,19 @@ _io_StringIO_readline(stringio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!_PyArg_CheckPositional("readline", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "readline", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "readline", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -157,7 +181,19 @@ _io_StringIO_truncate(stringio *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     Py_ssize_t size = self->pos;
 
-    if (!_PyArg_CheckPositional("truncate", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "truncate", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "truncate", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -200,7 +236,19 @@ _io_StringIO_seek(stringio *self, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t pos;
     int whence = 0;
 
-    if (!_PyArg_CheckPositional("seek", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "seek", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "seek", nargs);
         goto exit;
     }
     {
@@ -555,4 +603,4 @@ _io_StringIO_newlines_get(stringio *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=9ffea20cd32d4cd8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ebf32fa48369fa00 input=a9049054013a1b77]*/

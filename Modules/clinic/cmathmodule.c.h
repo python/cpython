@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(cmath_acos__doc__,
 "acos($module, z, /)\n"
@@ -659,7 +659,19 @@ cmath_log(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_complex x;
     PyObject *y_obj = NULL;
 
-    if (!_PyArg_CheckPositional("log", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "log", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "log", nargs);
         goto exit;
     }
     x = PyComplex_AsCComplex(args[0]);
@@ -754,7 +766,19 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     double r;
     double phi;
 
-    if (!_PyArg_CheckPositional("rect", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "rect", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "rect", nargs);
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -982,4 +1006,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=364093af55bfe53f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ff0bc5efb97a106e input=a9049054013a1b77]*/

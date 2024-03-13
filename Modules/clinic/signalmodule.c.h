@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(signal_default_int_handler__doc__,
 "default_int_handler($module, signalnum, frame, /)\n"
@@ -26,7 +26,19 @@ signal_default_int_handler(PyObject *module, PyObject *const *args, Py_ssize_t n
     int signalnum;
     PyObject *frame;
 
-    if (!_PyArg_CheckPositional("default_int_handler", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "default_int_handler", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "default_int_handler", nargs);
         goto exit;
     }
     signalnum = PyLong_AsInt(args[0]);
@@ -153,7 +165,19 @@ signal_signal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int signalnum;
     PyObject *handler;
 
-    if (!_PyArg_CheckPositional("signal", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "signal", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "signal", nargs);
         goto exit;
     }
     signalnum = PyLong_AsInt(args[0]);
@@ -257,7 +281,19 @@ signal_siginterrupt(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int signalnum;
     int flag;
 
-    if (!_PyArg_CheckPositional("siginterrupt", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "siginterrupt", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "siginterrupt", nargs);
         goto exit;
     }
     signalnum = PyLong_AsInt(args[0]);
@@ -304,7 +340,19 @@ signal_setitimer(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *seconds;
     PyObject *interval = NULL;
 
-    if (!_PyArg_CheckPositional("setitimer", nargs, 2, 3)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 2 arguments, got %zd",
+            "setitimer", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "setitimer", nargs);
         goto exit;
     }
     which = PyLong_AsInt(args[0]);
@@ -378,7 +426,19 @@ signal_pthread_sigmask(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     int how;
     sigset_t mask;
 
-    if (!_PyArg_CheckPositional("pthread_sigmask", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "pthread_sigmask", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "pthread_sigmask", nargs);
         goto exit;
     }
     how = PyLong_AsInt(args[0]);
@@ -538,7 +598,19 @@ signal_sigtimedwait(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     sigset_t sigset;
     PyObject *timeout_obj;
 
-    if (!_PyArg_CheckPositional("sigtimedwait", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "sigtimedwait", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "sigtimedwait", nargs);
         goto exit;
     }
     if (!_Py_Sigset_Converter(args[0], &sigset)) {
@@ -575,7 +647,19 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     unsigned long thread_id;
     int signalnum;
 
-    if (!_PyArg_CheckPositional("pthread_kill", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "pthread_kill", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "pthread_kill", nargs);
         goto exit;
     }
     if (!PyLong_Check(args[0])) {
@@ -619,7 +703,19 @@ signal_pidfd_send_signal(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *siginfo = Py_None;
     int flags = 0;
 
-    if (!_PyArg_CheckPositional("pidfd_send_signal", nargs, 2, 4)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 2 arguments, got %zd",
+            "pidfd_send_signal", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 4) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 4 arguments, got %zd",
+            "pidfd_send_signal", nargs);
         goto exit;
     }
     pidfd = PyLong_AsInt(args[0]);
@@ -701,4 +797,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=5a9928cb2dc75b5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a3acd127ff105c9 input=a9049054013a1b77]*/

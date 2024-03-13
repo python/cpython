@@ -314,7 +314,19 @@ bytes_strip(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_CheckPositional("strip", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "strip", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "strip", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -348,7 +360,19 @@ bytes_lstrip(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "lstrip", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "lstrip", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -382,7 +406,19 @@ bytes_rstrip(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *bytes = Py_None;
 
-    if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "rstrip", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "rstrip", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -489,7 +525,19 @@ bytes_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!_PyArg_CheckPositional("maketrans", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "maketrans", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "maketrans", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &frm, PyBUF_SIMPLE) != 0) {
@@ -541,7 +589,19 @@ bytes_replace(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!_PyArg_CheckPositional("replace", nargs, 2, 3)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 2 arguments, got %zd",
+            "replace", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "replace", nargs);
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &old, PyBUF_SIMPLE) != 0) {
@@ -1029,4 +1089,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a49dbbd78914a6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bbf8fb568d2767c5 input=a9049054013a1b77]*/

@@ -470,7 +470,19 @@ _multibytecodec_MultibyteStreamReader_read(MultibyteStreamReaderObject *self, Py
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "read", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "read", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -502,7 +514,19 @@ _multibytecodec_MultibyteStreamReader_readline(MultibyteStreamReaderObject *self
     PyObject *return_value = NULL;
     PyObject *sizeobj = Py_None;
 
-    if (!_PyArg_CheckPositional("readline", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "readline", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "readline", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -534,7 +558,19 @@ _multibytecodec_MultibyteStreamReader_readlines(MultibyteStreamReaderObject *sel
     PyObject *return_value = NULL;
     PyObject *sizehintobj = Py_None;
 
-    if (!_PyArg_CheckPositional("readlines", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "readlines", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "readlines", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -682,4 +718,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=ee767a6d93c7108a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5dfc4ca17f8ad508 input=a9049054013a1b77]*/

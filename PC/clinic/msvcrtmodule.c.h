@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(msvcrt_heapmin__doc__,
 "heapmin($module, /)\n"
@@ -52,7 +52,19 @@ msvcrt_locking(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int mode;
     long nbytes;
 
-    if (!_PyArg_CheckPositional("locking", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "locking", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "locking", nargs);
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -98,7 +110,19 @@ msvcrt_setmode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_CheckPositional("setmode", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "setmode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "setmode", nargs);
         goto exit;
     }
     fd = PyLong_AsInt(args[0]);
@@ -143,7 +167,19 @@ msvcrt_open_osfhandle(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int flags;
     long _return_value;
 
-    if (!_PyArg_CheckPositional("open_osfhandle", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "open_osfhandle", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "open_osfhandle", nargs);
         goto exit;
     }
     handle = PyLong_AsVoidPtr(args[0]);
@@ -507,7 +543,19 @@ msvcrt_CrtSetReportFile(PyObject *module, PyObject *const *args, Py_ssize_t narg
     void *file;
     void *_return_value;
 
-    if (!_PyArg_CheckPositional("CrtSetReportFile", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "CrtSetReportFile", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "CrtSetReportFile", nargs);
         goto exit;
     }
     type = PyLong_AsInt(args[0]);
@@ -554,7 +602,19 @@ msvcrt_CrtSetReportMode(PyObject *module, PyObject *const *args, Py_ssize_t narg
     int mode;
     long _return_value;
 
-    if (!_PyArg_CheckPositional("CrtSetReportMode", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "CrtSetReportMode", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "CrtSetReportMode", nargs);
         goto exit;
     }
     type = PyLong_AsInt(args[0]);
@@ -697,4 +757,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=de9687b46212c2ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79b34c44ab1f2fce input=a9049054013a1b77]*/

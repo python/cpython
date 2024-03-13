@@ -366,7 +366,19 @@ paramspec_typing_prepare_subst(paramspecobject *self, PyObject *const *args, Py_
     PyObject *alias;
     PyObject *__clinic_args;
 
-    if (!_PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "__typing_prepare_subst__", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "__typing_prepare_subst__", nargs);
         goto exit;
     }
     alias = args[0];
@@ -479,7 +491,19 @@ typevartuple_typing_prepare_subst(typevartupleobject *self, PyObject *const *arg
     PyObject *alias;
     PyObject *__clinic_args;
 
-    if (!_PyArg_CheckPositional("__typing_prepare_subst__", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "__typing_prepare_subst__", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "__typing_prepare_subst__", nargs);
         goto exit;
     }
     alias = args[0];
@@ -591,4 +615,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5a582d9d89ad787b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4776da545b12e4d1 input=a9049054013a1b77]*/

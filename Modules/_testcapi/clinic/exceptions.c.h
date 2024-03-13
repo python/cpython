@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_testcapi_err_set_raised__doc__,
 "err_set_raised($module, exception, /)\n"
@@ -35,7 +35,19 @@ _testcapi_exception_print(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *exc;
     int legacy = 0;
 
-    if (!_PyArg_CheckPositional("exception_print", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "exception_print", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "exception_print", nargs);
         goto exit;
     }
     exc = args[0];
@@ -174,7 +186,19 @@ _testcapi_exc_set_object(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *exc;
     PyObject *obj;
 
-    if (!_PyArg_CheckPositional("exc_set_object", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "exc_set_object", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "exc_set_object", nargs);
         goto exit;
     }
     exc = args[0];
@@ -204,7 +228,19 @@ _testcapi_exc_set_object_fetch(PyObject *module, PyObject *const *args, Py_ssize
     PyObject *exc;
     PyObject *obj;
 
-    if (!_PyArg_CheckPositional("exc_set_object_fetch", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "exc_set_object_fetch", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "exc_set_object_fetch", nargs);
         goto exit;
     }
     exc = args[0];
@@ -295,7 +331,19 @@ _testcapi_raise_exception(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *exc;
     int num_args;
 
-    if (!_PyArg_CheckPositional("raise_exception", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "raise_exception", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "raise_exception", nargs);
         goto exit;
     }
     exc = args[0];
@@ -375,7 +423,19 @@ _testcapi_set_exc_info(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *new_value;
     PyObject *new_tb;
 
-    if (!_PyArg_CheckPositional("set_exc_info", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "set_exc_info", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "set_exc_info", nargs);
         goto exit;
     }
     new_type = args[0];
@@ -415,7 +475,19 @@ _testcapi_traceback_print(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *traceback;
     PyObject *file;
 
-    if (!_PyArg_CheckPositional("traceback_print", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "traceback_print", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "traceback_print", nargs);
         goto exit;
     }
     traceback = args[0];
@@ -446,7 +518,19 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
     PyObject *orig;
     PyObject *excs;
 
-    if (!_PyArg_CheckPositional("unstable_exc_prep_reraise_star", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unstable_exc_prep_reraise_star", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "unstable_exc_prep_reraise_star", nargs);
         goto exit;
     }
     orig = args[0];
@@ -456,4 +540,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0b11ef105030a48e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ebf6eeabff03e65b input=a9049054013a1b77]*/

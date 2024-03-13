@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_gdbm_gdbm_get__doc__,
 "get($self, key, default=None, /)\n"
@@ -23,7 +23,19 @@ _gdbm_gdbm_get(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_CheckPositional("get", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "get", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "get", nargs);
         goto exit;
     }
     key = args[0];
@@ -58,7 +70,19 @@ _gdbm_gdbm_setdefault(gdbmobject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    if (!_PyArg_CheckPositional("setdefault", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "setdefault", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "setdefault", nargs);
         goto exit;
     }
     key = args[0];
@@ -307,7 +331,19 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *flags = "r";
     int mode = 438;
 
-    if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "open", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "open", nargs);
         goto exit;
     }
     filename = args[0];
@@ -340,4 +376,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b4c19905ac9967d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d7acbd17fd42e312 input=a9049054013a1b77]*/

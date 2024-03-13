@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
 "getweakrefcount($module, object, /)\n"
@@ -55,7 +55,19 @@ _weakref__remove_dead_weakref(PyObject *module, PyObject *const *args, Py_ssize_
     PyObject *dct;
     PyObject *key;
 
-    if (!_PyArg_CheckPositional("_remove_dead_weakref", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_remove_dead_weakref", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_remove_dead_weakref", nargs);
         goto exit;
     }
     if (!PyDict_Check(args[0])) {
@@ -116,7 +128,19 @@ _weakref_proxy(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *object;
     PyObject *callback = NULL;
 
-    if (!_PyArg_CheckPositional("proxy", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "proxy", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "proxy", nargs);
         goto exit;
     }
     object = args[0];
@@ -130,4 +154,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d5d30707212a9870 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0cb4aed58bdd4db input=a9049054013a1b77]*/

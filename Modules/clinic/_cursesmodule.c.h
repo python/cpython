@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
@@ -251,7 +251,19 @@ _curses_window_bkgd(PyCursesWindowObject *self, PyObject *const *args, Py_ssize_
     PyObject *ch;
     long attr = A_NORMAL;
 
-    if (!_PyArg_CheckPositional("bkgd", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "bkgd", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "bkgd", nargs);
         goto exit;
     }
     ch = args[0];
@@ -378,7 +390,19 @@ _curses_window_bkgdset(PyCursesWindowObject *self, PyObject *const *args, Py_ssi
     PyObject *ch;
     long attr = A_NORMAL;
 
-    if (!_PyArg_CheckPositional("bkgdset", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "bkgdset", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "bkgdset", nargs);
         goto exit;
     }
     ch = args[0];
@@ -449,7 +473,19 @@ _curses_window_border(PyCursesWindowObject *self, PyObject *const *args, Py_ssiz
     PyObject *bl = NULL;
     PyObject *br = NULL;
 
-    if (!_PyArg_CheckPositional("border", nargs, 0, 8)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "border", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 8) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 8 arguments, got %zd",
+            "border", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -661,7 +697,19 @@ _curses_window_echochar(PyCursesWindowObject *self, PyObject *const *args, Py_ss
     PyObject *ch;
     long attr = A_NORMAL;
 
-    if (!_PyArg_CheckPositional("echochar", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "echochar", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "echochar", nargs);
         goto exit;
     }
     ch = args[0];
@@ -705,7 +753,19 @@ _curses_window_enclose(PyCursesWindowObject *self, PyObject *const *args, Py_ssi
     int y;
     int x;
 
-    if (!_PyArg_CheckPositional("enclose", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "enclose", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "enclose", nargs);
         goto exit;
     }
     y = PyLong_AsInt(args[0]);
@@ -1505,7 +1565,19 @@ _curses_window_redrawln(PyCursesWindowObject *self, PyObject *const *args, Py_ss
     int beg;
     int num;
 
-    if (!_PyArg_CheckPositional("redrawln", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "redrawln", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "redrawln", nargs);
         goto exit;
     }
     beg = PyLong_AsInt(args[0]);
@@ -1604,7 +1676,19 @@ _curses_window_setscrreg(PyCursesWindowObject *self, PyObject *const *args, Py_s
     int top;
     int bottom;
 
-    if (!_PyArg_CheckPositional("setscrreg", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "setscrreg", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "setscrreg", nargs);
         goto exit;
     }
     top = PyLong_AsInt(args[0]);
@@ -1935,7 +2019,19 @@ _curses_cbreak(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_CheckPositional("cbreak", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "cbreak", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "cbreak", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -2171,7 +2267,19 @@ _curses_echo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_CheckPositional("echo", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "echo", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "echo", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -2341,7 +2449,19 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int z;
     unsigned long bstate;
 
-    if (!_PyArg_CheckPositional("ungetmouse", nargs, 5, 5)) {
+    if (nargs < 5) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 5 arguments, got %zd",
+            "ungetmouse", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 5) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 5 arguments, got %zd",
+            "ungetmouse", nargs);
         goto exit;
     }
     {
@@ -2572,7 +2692,19 @@ _curses_init_color(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     short g;
     short b;
 
-    if (!_PyArg_CheckPositional("init_color", nargs, 4, 4)) {
+    if (nargs < 4) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 4 arguments, got %zd",
+            "init_color", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 4) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 4 arguments, got %zd",
+            "init_color", nargs);
         goto exit;
     }
     if (!color_converter(args[0], &color_number)) {
@@ -2623,7 +2755,19 @@ _curses_init_pair(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int fg;
     int bg;
 
-    if (!_PyArg_CheckPositional("init_pair", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "init_pair", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "init_pair", nargs);
         goto exit;
     }
     if (!pair_converter(args[0], &pair_number)) {
@@ -2954,7 +3098,19 @@ _curses_is_term_resized(PyObject *module, PyObject *const *args, Py_ssize_t narg
     int nlines;
     int ncols;
 
-    if (!_PyArg_CheckPositional("is_term_resized", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "is_term_resized", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "is_term_resized", nargs);
         goto exit;
     }
     nlines = PyLong_AsInt(args[0]);
@@ -3211,7 +3367,19 @@ _curses_newpad(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int nlines;
     int ncols;
 
-    if (!_PyArg_CheckPositional("newpad", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "newpad", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "newpad", nargs);
         goto exit;
     }
     nlines = PyLong_AsInt(args[0]);
@@ -3307,7 +3475,19 @@ _curses_nl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_CheckPositional("nl", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "nl", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "nl", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -3539,7 +3719,19 @@ _curses_qiflush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_CheckPositional("qiflush", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "qiflush", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "qiflush", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -3602,7 +3794,19 @@ _curses_raw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     int flag = 1;
 
-    if (!_PyArg_CheckPositional("raw", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "raw", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "raw", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -3702,7 +3906,19 @@ _curses_resizeterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int nlines;
     int ncols;
 
-    if (!_PyArg_CheckPositional("resizeterm", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "resizeterm", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "resizeterm", nargs);
         goto exit;
     }
     nlines = PyLong_AsInt(args[0]);
@@ -3753,7 +3969,19 @@ _curses_resize_term(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int nlines;
     int ncols;
 
-    if (!_PyArg_CheckPositional("resize_term", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "resize_term", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "resize_term", nargs);
         goto exit;
     }
     nlines = PyLong_AsInt(args[0]);
@@ -3818,7 +4046,19 @@ _curses_setsyx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int y;
     int x;
 
-    if (!_PyArg_CheckPositional("setsyx", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "setsyx", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "setsyx", nargs);
         goto exit;
     }
     y = PyLong_AsInt(args[0]);
@@ -4318,4 +4558,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=96887782374f070a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9692746c6f87e211 input=a9049054013a1b77]*/

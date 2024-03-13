@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_heapq_heappush__doc__,
 "heappush($module, heap, item, /)\n"
@@ -23,7 +23,19 @@ _heapq_heappush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_CheckPositional("heappush", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "heappush", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "heappush", nargs);
         goto exit;
     }
     if (!PyList_Check(args[0])) {
@@ -94,7 +106,19 @@ _heapq_heapreplace(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_CheckPositional("heapreplace", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "heapreplace", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "heapreplace", nargs);
         goto exit;
     }
     if (!PyList_Check(args[0])) {
@@ -131,7 +155,19 @@ _heapq_heappushpop(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_CheckPositional("heappushpop", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "heappushpop", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "heappushpop", nargs);
         goto exit;
     }
     if (!PyList_Check(args[0])) {
@@ -224,7 +260,19 @@ _heapq__heapreplace_max(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_CheckPositional("_heapreplace_max", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_heapreplace_max", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_heapreplace_max", nargs);
         goto exit;
     }
     if (!PyList_Check(args[0])) {
@@ -267,4 +315,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=05f2afdf3bc54c9d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d00077081225bcc8 input=a9049054013a1b77]*/

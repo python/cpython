@@ -2,8 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
-
 PyDoc_STRVAR(_statistics__normal_dist_inv_cdf__doc__,
 "_normal_dist_inv_cdf($module, p, mu, sigma, /)\n"
 "--\n"
@@ -25,7 +23,19 @@ _statistics__normal_dist_inv_cdf(PyObject *module, PyObject *const *args, Py_ssi
     double sigma;
     double _return_value;
 
-    if (!_PyArg_CheckPositional("_normal_dist_inv_cdf", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "_normal_dist_inv_cdf", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "_normal_dist_inv_cdf", nargs);
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -67,4 +77,4 @@ _statistics__normal_dist_inv_cdf(PyObject *module, PyObject *const *args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e7cead17f9f3e19f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce13934ae01e4f59 input=a9049054013a1b77]*/

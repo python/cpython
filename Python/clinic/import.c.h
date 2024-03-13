@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_imp_lock_held__doc__,
 "lock_held($module, /)\n"
@@ -94,7 +94,19 @@ _imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyCodeObject *code;
     PyObject *path;
 
-    if (!_PyArg_CheckPositional("_fix_co_filename", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_fix_co_filename", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_fix_co_filename", nargs);
         goto exit;
     }
     if (!PyObject_TypeCheck(args[0], &PyCode_Type)) {
@@ -266,7 +278,19 @@ _imp_get_frozen_object(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *name;
     PyObject *dataobj = Py_None;
 
-    if (!_PyArg_CheckPositional("get_frozen_object", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "get_frozen_object", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "get_frozen_object", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -473,7 +497,19 @@ _imp_create_dynamic(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *spec;
     PyObject *file = NULL;
 
-    if (!_PyArg_CheckPositional("create_dynamic", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "create_dynamic", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "create_dynamic", nargs);
         goto exit;
     }
     spec = args[0];
@@ -623,4 +659,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=dbd63707bd40b07c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bfcbf6a98b42d84a input=a9049054013a1b77]*/

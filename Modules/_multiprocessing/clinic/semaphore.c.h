@@ -479,7 +479,19 @@ _multiprocessing_SemLock___exit__(SemLockObject *self, PyObject *const *args, Py
     PyObject *exc_value = Py_None;
     PyObject *exc_tb = Py_None;
 
-    if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "__exit__", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "__exit__", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -542,4 +554,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=d57992037e6770b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e40df6f465e506cf input=a9049054013a1b77]*/

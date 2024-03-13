@@ -2,8 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
-
 PyDoc_STRVAR(monitoring_use_tool_id__doc__,
 "use_tool_id($module, tool_id, name, /)\n"
 "--\n"
@@ -22,7 +20,19 @@ monitoring_use_tool_id(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     int tool_id;
     PyObject *name;
 
-    if (!_PyArg_CheckPositional("use_tool_id", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "use_tool_id", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "use_tool_id", nargs);
         goto exit;
     }
     tool_id = PyLong_AsInt(args[0]);
@@ -110,7 +120,19 @@ monitoring_register_callback(PyObject *module, PyObject *const *args, Py_ssize_t
     int event;
     PyObject *func;
 
-    if (!_PyArg_CheckPositional("register_callback", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "register_callback", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "register_callback", nargs);
         goto exit;
     }
     tool_id = PyLong_AsInt(args[0]);
@@ -178,7 +200,19 @@ monitoring_set_events(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     int tool_id;
     int event_set;
 
-    if (!_PyArg_CheckPositional("set_events", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "set_events", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "set_events", nargs);
         goto exit;
     }
     tool_id = PyLong_AsInt(args[0]);
@@ -215,7 +249,19 @@ monitoring_get_local_events(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *code;
     int _return_value;
 
-    if (!_PyArg_CheckPositional("get_local_events", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "get_local_events", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "get_local_events", nargs);
         goto exit;
     }
     tool_id = PyLong_AsInt(args[0]);
@@ -253,7 +299,19 @@ monitoring_set_local_events(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *code;
     int event_set;
 
-    if (!_PyArg_CheckPositional("set_local_events", nargs, 3, 3)) {
+    if (nargs < 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "set_local_events", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 3 arguments, got %zd",
+            "set_local_events", nargs);
         goto exit;
     }
     tool_id = PyLong_AsInt(args[0]);
@@ -304,4 +362,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=14ffc0884a6de50a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5331355dc515a844 input=a9049054013a1b77]*/

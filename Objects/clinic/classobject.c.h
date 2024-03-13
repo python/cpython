@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 
 PyDoc_STRVAR(method___reduce____doc__,
 "__reduce__($self, /)\n"
@@ -42,7 +42,19 @@ method_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("method", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("method", PyTuple_GET_SIZE(args), 2, 2)) {
+    if (PyTuple_GET_SIZE(args) < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "method", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "method", PyTuple_GET_SIZE(args));
         goto exit;
     }
     function = PyTuple_GET_ITEM(args, 0);
@@ -73,7 +85,19 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("instancemethod", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("instancemethod", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (PyTuple_GET_SIZE(args) < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "instancemethod", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "instancemethod", PyTuple_GET_SIZE(args));
         goto exit;
     }
     function = PyTuple_GET_ITEM(args, 0);
@@ -82,4 +106,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5a5e3f2d0726f189 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f25d0b51e94fe9dc input=a9049054013a1b77]*/

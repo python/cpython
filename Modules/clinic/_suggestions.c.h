@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_suggestions__generate_suggestions__doc__,
 "_generate_suggestions($module, candidates, item, /)\n"
@@ -24,7 +24,19 @@ _suggestions__generate_suggestions(PyObject *module, PyObject *const *args, Py_s
     PyObject *candidates;
     PyObject *item;
 
-    if (!_PyArg_CheckPositional("_generate_suggestions", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_generate_suggestions", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "_generate_suggestions", nargs);
         goto exit;
     }
     candidates = args[0];
@@ -38,4 +50,4 @@ _suggestions__generate_suggestions(PyObject *module, PyObject *const *args, Py_s
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d8e963cdae30b13 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fd15494b20682645 input=a9049054013a1b77]*/

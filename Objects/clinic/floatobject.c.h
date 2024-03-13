@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
@@ -96,7 +96,19 @@ float___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyObject *o_ndigits = Py_None;
 
-    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "__round__", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "__round__", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -213,7 +225,19 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("float", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("float", PyTuple_GET_SIZE(args), 0, 1)) {
+    if (PyTuple_GET_SIZE(args) < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "float", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "float", PyTuple_GET_SIZE(args));
         goto exit;
     }
     if (PyTuple_GET_SIZE(args) < 1) {
@@ -318,4 +342,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c79743c8551c30d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee032f6401dc3156 input=a9049054013a1b77]*/

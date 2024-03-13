@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 static int
 pysqlite_cursor_init_impl(pysqlite_Cursor *self,
@@ -24,7 +24,19 @@ pysqlite_cursor_init(PyObject *self, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("Cursor", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("Cursor", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (PyTuple_GET_SIZE(args) < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "Cursor", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "Cursor", PyTuple_GET_SIZE(args));
         goto exit;
     }
     if (!PyObject_TypeCheck(PyTuple_GET_ITEM(args, 0), clinic_state()->ConnectionType)) {
@@ -58,7 +70,19 @@ pysqlite_cursor_execute(pysqlite_Cursor *self, PyObject *const *args, Py_ssize_t
     PyObject *sql;
     PyObject *parameters = NULL;
 
-    if (!_PyArg_CheckPositional("execute", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "execute", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "execute", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -97,7 +121,19 @@ pysqlite_cursor_executemany(pysqlite_Cursor *self, PyObject *const *args, Py_ssi
     PyObject *sql;
     PyObject *seq_of_parameters;
 
-    if (!_PyArg_CheckPositional("executemany", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "executemany", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "executemany", nargs);
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
@@ -281,7 +317,19 @@ pysqlite_cursor_setoutputsize(pysqlite_Cursor *self, PyObject *const *args, Py_s
     PyObject *size;
     PyObject *column = Py_None;
 
-    if (!_PyArg_CheckPositional("setoutputsize", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "setoutputsize", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "setoutputsize", nargs);
         goto exit;
     }
     size = args[0];
@@ -313,4 +361,4 @@ pysqlite_cursor_close(pysqlite_Cursor *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl(self);
 }
-/*[clinic end generated code: output=a8ce095c3c80cf65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a494d8e20d5cb611 input=a9049054013a1b77]*/

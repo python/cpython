@@ -7,7 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
 "do_handshake($self, /)\n"
@@ -78,7 +78,19 @@ _ssl__SSLSocket_getpeercert(PySSLSocket *self, PyObject *const *args, Py_ssize_t
     PyObject *return_value = NULL;
     int binary_mode = 0;
 
-    if (!_PyArg_CheckPositional("getpeercert", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "getpeercert", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "getpeercert", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -439,7 +451,19 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
-    if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
+    if (PyTuple_GET_SIZE(args) < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "_SSLContext", PyTuple_GET_SIZE(args));
+        goto exit;
+    }
+
+    if (PyTuple_GET_SIZE(args) != 0 && PyTuple_GET_SIZE(args) > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 1 argument, got %zd",
+            "_SSLContext", PyTuple_GET_SIZE(args));
         goto exit;
     }
     proto_version = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
@@ -1195,7 +1219,19 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
     PyObject *return_value = NULL;
     int len = -1;
 
-    if (!_PyArg_CheckPositional("read", nargs, 0, 1)) {
+    if (nargs < 0) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 0 arguments, got %zd",
+            "read", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 1 argument, got %zd",
+            "read", nargs);
         goto exit;
     }
     if (nargs < 1) {
@@ -1288,7 +1324,19 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_buffer view = {NULL, NULL};
     double entropy;
 
-    if (!_PyArg_CheckPositional("RAND_add", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "RAND_add", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "RAND_add", nargs);
         goto exit;
     }
     if (PyUnicode_Check(args[0])) {
@@ -1664,4 +1712,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=fd1c3378fbba5240 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e26c084df9258e9c input=a9049054013a1b77]*/

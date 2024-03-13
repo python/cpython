@@ -325,7 +325,19 @@ _io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *encoding;
     int stacklevel = 2;
 
-    if (!_PyArg_CheckPositional("text_encoding", nargs, 1, 2)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "text_encoding", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 2 arguments, got %zd",
+            "text_encoding", nargs);
         goto exit;
     }
     encoding = args[0];
@@ -404,4 +416,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d60f4e778a600a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b0af1cb7a128565d input=a9049054013a1b77]*/

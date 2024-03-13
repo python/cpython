@@ -185,7 +185,19 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     const char *flags = "r";
     int mode = 438;
 
-    if (!_PyArg_CheckPositional("open", nargs, 1, 3)) {
+    if (nargs < 1) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at least 1 argument, got %zd",
+            "open", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 3) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected at most 3 arguments, got %zd",
+            "open", nargs);
         goto exit;
     }
     filename = args[0];
@@ -218,4 +230,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=743ce0cea116747e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64164936919b866f input=a9049054013a1b77]*/

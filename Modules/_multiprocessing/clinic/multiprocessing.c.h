@@ -2,7 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 #if defined(MS_WINDOWS)
 
@@ -55,7 +55,19 @@ _multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE handle;
     int size;
 
-    if (!_PyArg_CheckPositional("recv", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "recv", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "recv", nargs);
         goto exit;
     }
     handle = PyLong_AsVoidPtr(args[0]);
@@ -94,7 +106,19 @@ _multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE handle;
     Py_buffer buf = {NULL, NULL};
 
-    if (!_PyArg_CheckPositional("send", nargs, 2, 2)) {
+    if (nargs < 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "send", nargs);
+        goto exit;
+    }
+
+    if (nargs != 0 && nargs > 2) {
+        PyErr_Format(
+            PyExc_TypeError,
+            "%s expected 2 arguments, got %zd",
+            "send", nargs);
         goto exit;
     }
     handle = PyLong_AsVoidPtr(args[0]);
@@ -164,4 +188,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=73b4cb8428d816da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a1cb32b216f522e input=a9049054013a1b77]*/
