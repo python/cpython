@@ -10483,30 +10483,40 @@ os.timerfd_settime
     *
     flags: int = 0
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
-    initial: double = 0.0
+    initial as initial_double: double = 0.0
         The initial expiration time, in seconds.
-    interval: double = 0.0
+    interval as interval_double: double = 0.0
         The timer's interval, in seconds.
 
 Alter a timer file descriptor's internal timer in seconds.
 [clinic start generated code]*/
 
 static PyObject *
-os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
-                        double interval)
-/*[clinic end generated code: output=0dda31115317adb9 input=6c24e47e7a4d799e]*/
+os_timerfd_settime_impl(PyObject *module, int fd, int flags,
+                        double initial_double, double interval_double)
+/*[clinic end generated code: output=df4c1bce6859224e input=81d2c0d7e936e8a7]*/
 {
-    struct itimerspec new_value;
-    struct itimerspec old_value;
-    int result;
-    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(initial, _PyTime_ROUND_FLOOR), &new_value.it_value) < 0) {
+    PyTime_t initial, interval;
+    if (_PyTime_FromSecondsDouble(initial_double, _PyTime_ROUND_FLOOR,
+                                  &initial) < 0) {
+        return NULL;
+    }
+    if (_PyTime_FromSecondsDouble(interval_double, _PyTime_ROUND_FLOOR,
+                                  &interval) < 0) {
+        return NULL;
+    }
+
+    struct itimerspec new_value, old_value;
+    if (_PyTime_AsTimespec(initial, &new_value.it_value) < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid initial value");
         return NULL;
     }
-    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(interval, _PyTime_ROUND_FLOOR), &new_value.it_interval) < 0) {
+    if (_PyTime_AsTimespec(interval, &new_value.it_interval) < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid interval value");
         return NULL;
     }
+
+    int result;
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS
@@ -12970,46 +12980,50 @@ _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
     if (v == NULL)
         return NULL;
 
+    int pos = 0;
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(v);                                    \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(v, pos++, item);           \
+    } while(0)
+
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong((long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5, PyLong_FromLong((long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong((long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7, PyLong_FromLong((long) st.f_favail));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
+    SET_RESULT(PyLong_FromLong((long) st.f_bsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_frsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_blocks));
+    SET_RESULT(PyLong_FromLong((long) st.f_bfree));
+    SET_RESULT(PyLong_FromLong((long) st.f_bavail));
+    SET_RESULT(PyLong_FromLong((long) st.f_files));
+    SET_RESULT(PyLong_FromLong((long) st.f_ffree));
+    SET_RESULT(PyLong_FromLong((long) st.f_favail));
+    SET_RESULT(PyLong_FromLong((long) st.f_flag));
+    SET_RESULT(PyLong_FromLong((long) st.f_namemax));
 #else
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((long long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3,
-                              PyLong_FromLongLong((long long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4,
-                              PyLong_FromLongLong((long long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5,
-                              PyLong_FromLongLong((long long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7,
-                              PyLong_FromLongLong((long long) st.f_favail));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
+    SET_RESULT(PyLong_FromLong((long) st.f_bsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_frsize));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_blocks));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_bfree));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_bavail));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_files));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_ffree));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_favail));
+    SET_RESULT(PyLong_FromLong((long) st.f_flag));
+    SET_RESULT(PyLong_FromLong((long) st.f_namemax));
 #endif
 /* The _ALL_SOURCE feature test macro defines f_fsid as a structure
  * (issue #32390). */
 #if defined(_AIX) && defined(_ALL_SOURCE)
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+    SET_RESULT(PyLong_FromUnsignedLong(st.f_fsid.val[0]));
 #else
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
+    SET_RESULT(PyLong_FromUnsignedLong(st.f_fsid));
 #endif
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
-        return NULL;
-    }
+
+#undef SET_RESULT
 
     return v;
 }
@@ -14981,12 +14995,23 @@ os_get_terminal_size_impl(PyObject *module, int fd)
     termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);
     if (termsize == NULL)
         return NULL;
-    PyStructSequence_SET_ITEM(termsize, 0, PyLong_FromLong(columns));
-    PyStructSequence_SET_ITEM(termsize, 1, PyLong_FromLong(lines));
-    if (PyErr_Occurred()) {
-        Py_DECREF(termsize);
-        return NULL;
-    }
+
+    int pos = 0;
+
+#define SET_TERMSIZE(CALL)                                   \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(termsize);                             \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(termsize, pos++, item);    \
+    } while(0)
+
+    SET_TERMSIZE(PyLong_FromLong(columns));
+    SET_TERMSIZE(PyLong_FromLong(lines));
+#undef SET_TERMSIZE
+
     return termsize;
 }
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
