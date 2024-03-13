@@ -93,7 +93,7 @@ end:
     return res;
 }
 
-PyTypeObject PyCodeLike_Type = {
+static PyTypeObject PyCodeLike_Type = {
     .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "monitoring.CodeLike",
     .tp_doc = PyDoc_STR("CodeLike objects"),
