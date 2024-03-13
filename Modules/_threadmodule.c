@@ -1455,28 +1455,6 @@ exit:
     return;
 }
 
-static int
-do_start_new_thread(struct bootstate *boot, int joinable,
-                    PyThread_ident_t *p_ident, PyThread_handle_t *p_handle)
-{
-    int err;
-    PyThread_ident_t ident = 0;
-    PyThread_handle_t handle = 0;
-    if (joinable) {
-        err = PyThread_start_joinable_thread(thread_run, (void*) boot, &ident, &handle);
-    } else {
-        ident = PyThread_start_new_thread(thread_run, (void*) boot);
-        err = (*p_ident == PYTHREAD_INVALID_THREAD_ID);
-    }
-    if (err) {
-        PyErr_SetString(ThreadError, "can't start new thread");
-        return -1;
-    }
-    *p_ident = ident;
-    *p_handle = handle;
-    return 0;
-}
-
 
 static void
 release_sentinel(void *weakref_raw)
@@ -1760,9 +1738,9 @@ threadmod_start_new_thread(PyObject *module, PyObject *fargs)
         return NULL;
     }
 
-    PyThread_ident_t ident = 0;
-    PyThread_handle_t handle;
-    if (do_start_new_thread(boot, /*joinable=*/ 0, &ident, &handle)) {
+    PyThread_ident_t ident = PyThread_start_new_thread(thread_run, (void*) boot);
+    if (ident == PYTHREAD_INVALID_THREAD_ID) {
+        PyErr_SetString(ThreadError, "can't start new thread");
         thread_bootstate_free(boot);
         return NULL;
     }
@@ -1808,8 +1786,10 @@ threadmod_start_joinable_thread(PyObject *module, PyObject *func)
         Py_DECREF(hobj);
         return NULL;
     }
-    if (do_start_new_thread(boot, /*joinable=*/ 1,
-                            &hobj->ident, &hobj->handle)) {
+    if (PyThread_start_joinable_thread(
+            thread_run, (void*) boot, &hobj->ident, &hobj->handle) < 0)
+    {
+        PyErr_SetString(ThreadError, "can't start new thread");
         thread_bootstate_free(boot);
         Py_DECREF(hobj);
         return NULL;
