@@ -322,8 +322,36 @@ class PlatformTest(unittest.TestCase):
         if sys.platform == 'java':  # Is never actually checked in CI
             self.assertTrue(all(res))
 
+    @unittest.skipUnless(support.MS_WINDOWS, 'This test only makes sense on Windows')
     def test_win32_ver(self):
-        res = platform.win32_ver()
+        release1, version1, csd1, ptype1 = 'a', 'b', 'c', 'd'
+        res = platform.win32_ver(release1, version1, csd1, ptype1)
+        self.assertEqual(len(res), 4)
+        release, version, csd, ptype = res
+        if release:
+            # Currently, release names always come from internal dicts,
+            # but this could change over time. For now, we just check that
+            # release is something different from what we have passed.
+            self.assertNotEqual(release, release1)
+        if version:
+            # It is rather hard to test explicit version without
+            # going deep into the details.
+            self.assertIn('.', version)
+            for v in version.split('.'):
+                int(v)  # should not fail
+        if csd:
+            self.assertTrue(csd.startswith('SP'), msg=csd)
+        if ptype:
+            if os.cpu_count() > 1:
+                self.assertIn('Multiprocessor', ptype)
+            else:
+                self.assertIn('Uniprocessor', ptype)
+
+    @unittest.skipIf(support.MS_WINDOWS, 'This test only makes sense on non Windows')
+    def test_win32_ver_on_non_windows(self):
+        release, version, csd, ptype = 'a', '1.0', 'c', 'd'
+        res = platform.win32_ver(release, version, csd, ptype)
+        self.assertSequenceEqual(res, (release, version, csd, ptype), seq_type=tuple)
 
     def test_mac_ver(self):
         res = platform.mac_ver()
