@@ -1130,6 +1130,31 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
+    def test_unclosed_server_resource_warnings(self):
+        async def inner(rd, wr):
+            fut.set_result(True)
+            with self.assertWarns(ResourceWarning) as cm:
+                del wr
+                gc.collect()
+                self.assertEqual(len(cm.warnings), 1)
+                self.assertTrue(str(cm.warnings[0].message).startswith("unclosed <StreamWriter"))
+
+        async def outer():
+            srv = await asyncio.start_server(inner, socket_helper.HOSTv4, 0)
+            async with srv:
+                addr = srv.sockets[0].getsockname()
+                with socket.create_connection(addr):
+                    # Give the loop some time to notice the connection
+                    await fut
+
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+
+        fut = self.loop.create_future()
+        self.loop.run_until_complete(outer())
+
+        self.assertEqual(messages, [])
+
     def _basetest_unhandled_exceptions(self, handle_echo):
         port = socket_helper.find_unused_port()
 
@@ -1163,6 +1188,7 @@ os.close(fd)
 
     def test_unhandled_cancel(self):
         async def handle_echo(reader, writer):
+            writer.close()
             asyncio.current_task().cancel()
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])

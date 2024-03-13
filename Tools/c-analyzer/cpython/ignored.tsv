@@ -444,7 +444,6 @@ Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
 Modules/_testcapi/mem.c	-	FmHook	-
 Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
-Modules/_testcapi/unicode.c	-	_testcapimodule	-
 Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
 Modules/_testcapi/watchers.c	-	g_type_modified_events	-
@@ -740,6 +739,6 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
-Python/optimizer_analysis.c	-	_Py_UOpsAbstractFrame_Type	-
-Python/optimizer_analysis.c	-	_Py_UOpsAbstractInterpContext_Type	-
 Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
+Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
+Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-

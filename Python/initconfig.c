@@ -30,6 +30,7 @@ typedef enum {
     PyConfig_MEMBER_INT = 0,
     PyConfig_MEMBER_UINT = 1,
     PyConfig_MEMBER_ULONG = 2,
+    PyConfig_MEMBER_BOOL = 3,
 
     PyConfig_MEMBER_WSTR = 10,
     PyConfig_MEMBER_WSTR_OPT = 11,
@@ -45,61 +46,65 @@ typedef struct {
 #define SPEC(MEMBER, TYPE) \
     {#MEMBER, offsetof(PyConfig, MEMBER), PyConfig_MEMBER_##TYPE}
 
+// Update _test_embed_set_config when adding new members
 static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(_config_init, UINT),
-    SPEC(isolated, UINT),
-    SPEC(use_environment, UINT),
-    SPEC(dev_mode, UINT),
-    SPEC(install_signal_handlers, UINT),
-    SPEC(use_hash_seed, UINT),
+    SPEC(isolated, BOOL),
+    SPEC(use_environment, BOOL),
+    SPEC(dev_mode, BOOL),
+    SPEC(install_signal_handlers, BOOL),
+    SPEC(use_hash_seed, BOOL),
     SPEC(hash_seed, ULONG),
-    SPEC(faulthandler, UINT),
+    SPEC(faulthandler, BOOL),
     SPEC(tracemalloc, UINT),
-    SPEC(perf_profiling, UINT),
-    SPEC(import_time, UINT),
-    SPEC(code_debug_ranges, UINT),
-    SPEC(show_ref_count, UINT),
-    SPEC(dump_refs, UINT),
+    SPEC(perf_profiling, BOOL),
+    SPEC(import_time, BOOL),
+    SPEC(code_debug_ranges, BOOL),
+    SPEC(show_ref_count, BOOL),
+    SPEC(dump_refs, BOOL),
     SPEC(dump_refs_file, WSTR_OPT),
-    SPEC(malloc_stats, UINT),
+    SPEC(malloc_stats, BOOL),
     SPEC(filesystem_encoding, WSTR),
     SPEC(filesystem_errors, WSTR),
     SPEC(pycache_prefix, WSTR_OPT),
-    SPEC(parse_argv, UINT),
+    SPEC(parse_argv, BOOL),
     SPEC(orig_argv, WSTR_LIST),
     SPEC(argv, WSTR_LIST),
     SPEC(xoptions, WSTR_LIST),
     SPEC(warnoptions, WSTR_LIST),
-    SPEC(site_import, UINT),
+    SPEC(site_import, BOOL),
     SPEC(bytes_warning, UINT),
-    SPEC(warn_default_encoding, UINT),
-    SPEC(inspect, UINT),
-    SPEC(interactive, UINT),
+    SPEC(warn_default_encoding, BOOL),
+    SPEC(inspect, BOOL),
+    SPEC(interactive, BOOL),
     SPEC(optimization_level, UINT),
-    SPEC(parser_debug, UINT),
-    SPEC(write_bytecode, UINT),
+    SPEC(parser_debug, BOOL),
+    SPEC(write_bytecode, BOOL),
     SPEC(verbose, UINT),
-    SPEC(quiet, UINT),
-    SPEC(user_site_directory, UINT),
-    SPEC(configure_c_stdio, UINT),
-    SPEC(buffered_stdio, UINT),
+    SPEC(quiet, BOOL),
+    SPEC(user_site_directory, BOOL),
+    SPEC(configure_c_stdio, BOOL),
+    SPEC(buffered_stdio, BOOL),
     SPEC(stdio_encoding, WSTR),
     SPEC(stdio_errors, WSTR),
 #ifdef MS_WINDOWS
-    SPEC(legacy_windows_stdio, UINT),
+    SPEC(legacy_windows_stdio, BOOL),
 #endif
     SPEC(check_hash_pycs_mode, WSTR),
-    SPEC(use_frozen_modules, UINT),
-    SPEC(safe_path, UINT),
+    SPEC(use_frozen_modules, BOOL),
+    SPEC(safe_path, BOOL),
     SPEC(int_max_str_digits, INT),
     SPEC(cpu_count, INT),
-    SPEC(pathconfig_warnings, UINT),
+#ifdef Py_GIL_DISABLED
+    SPEC(enable_gil, INT),
+#endif
+    SPEC(pathconfig_warnings, BOOL),
     SPEC(program_name, WSTR),
     SPEC(pythonpath_env, WSTR_OPT),
     SPEC(home, WSTR_OPT),
     SPEC(platlibdir, WSTR),
     SPEC(sys_path_0, WSTR_OPT),
-    SPEC(module_search_paths_set, UINT),
+    SPEC(module_search_paths_set, BOOL),
     SPEC(module_search_paths, WSTR_LIST),
     SPEC(stdlib_dir, WSTR_OPT),
     SPEC(executable, WSTR_OPT),
@@ -108,15 +113,15 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_prefix, WSTR_OPT),
     SPEC(exec_prefix, WSTR_OPT),
     SPEC(base_exec_prefix, WSTR_OPT),
-    SPEC(skip_source_first_line, UINT),
+    SPEC(skip_source_first_line, BOOL),
     SPEC(run_command, WSTR_OPT),
     SPEC(run_module, WSTR_OPT),
     SPEC(run_filename, WSTR_OPT),
-    SPEC(_install_importlib, UINT),
-    SPEC(_init_main, UINT),
-    SPEC(_is_python_build, UINT),
+    SPEC(_install_importlib, BOOL),
+    SPEC(_init_main, BOOL),
+    SPEC(_is_python_build, BOOL),
 #ifdef Py_STATS
-    SPEC(_pystats, UINT),
+    SPEC(_pystats, BOOL),
 #endif
 #ifdef Py_DEBUG
     SPEC(run_presite, WSTR_OPT),
@@ -257,6 +262,9 @@ static const char usage_envvars[] =
 "PYTHON_FROZEN_MODULES: whether or not frozen modules should be used.\n"
 "                  The default is \"on\" for installed Python and \"off\" for\n"
 "                  a local build. (-X frozen_modules)\n"
+#ifdef Py_GIL_DISABLED
+"PYTHON_GIL      : When set to 0, disables the GIL (-X gil)\n"
+#endif
 "PYTHONINSPECT   : inspect interactively after running script (-i)\n"
 "PYTHONINTMAXSTRDIGITS: limit the size of int<->str conversions;\n"
 "                  0 disables the limit (-X int_max_str_digits=number)\n"
@@ -830,6 +838,9 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+#ifdef Py_GIL_DISABLED
+    config->enable_gil = _PyConfig_GIL_DEFAULT;
+#endif
 }
 
 
@@ -977,6 +988,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
         case PyConfig_MEMBER_UINT:
+        case PyConfig_MEMBER_BOOL:
         {
             *(int*)member = *(int*)member2;
             break;
@@ -1030,6 +1042,12 @@ _PyConfig_AsDict(const PyConfig *config)
         {
             int value = *(int*)member;
             obj = PyLong_FromLong(value);
+            break;
+        }
+        case PyConfig_MEMBER_BOOL:
+        {
+            int value = *(int*)member;
+            obj = PyBool_FromLong(value);
             break;
         }
         case PyConfig_MEMBER_ULONG:
@@ -1255,19 +1273,20 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         char *member = (char *)config + spec->offset;
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
-            if (config_dict_get_int(dict, spec->name, (int*)member) < 0) {
-                return -1;
-            }
-            break;
         case PyConfig_MEMBER_UINT:
+        case PyConfig_MEMBER_BOOL:
         {
             int value;
             if (config_dict_get_int(dict, spec->name, &value) < 0) {
                 return -1;
             }
-            if (value < 0) {
-                config_dict_invalid_value(spec->name);
-                return -1;
+            if (spec->type == PyConfig_MEMBER_BOOL
+                || spec->type == PyConfig_MEMBER_UINT)
+            {
+                if (value < 0) {
+                    config_dict_invalid_value(spec->name);
+                    return -1;
+                }
             }
             *(int*)member = value;
             break;
@@ -1534,6 +1553,24 @@ config_wstr_to_int(const wchar_t *wstr, int *result)
     return 0;
 }
 
+static PyStatus
+config_read_gil(PyConfig *config, size_t len, wchar_t first_char)
+{
+#ifdef Py_GIL_DISABLED
+    if (len == 1 && first_char == L'0') {
+        config->enable_gil = _PyConfig_GIL_DISABLE;
+    }
+    else if (len == 1 && first_char == L'1') {
+        config->enable_gil = _PyConfig_GIL_ENABLE;
+    }
+    else {
+        return _PyStatus_ERR("PYTHON_GIL / -X gil must be \"0\" or \"1\"");
+    }
+    return _PyStatus_OK();
+#else
+    return _PyStatus_ERR("PYTHON_GIL / -X gil are not supported by this build");
+#endif
+}
 
 static PyStatus
 config_read_env_vars(PyConfig *config)
@@ -1610,6 +1647,15 @@ config_read_env_vars(PyConfig *config)
 
     if (config_get_env(config, "PYTHONSAFEPATH")) {
         config->safe_path = 1;
+    }
+
+    const char *gil = config_get_env(config, "PYTHON_GIL");
+    if (gil != NULL) {
+        size_t len = strlen(gil);
+        status = config_read_gil(config, len, gil[0]);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     return _PyStatus_OK();
@@ -2165,6 +2211,15 @@ config_read(PyConfig *config, int compute_path_config)
     /* -X options */
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
+    }
+
+    const wchar_t *x_gil = config_get_xoption_value(config, L"gil");
+    if (x_gil != NULL) {
+        size_t len = wcslen(x_gil);
+        status = config_read_gil(config, len, x_gil[0]);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
 #ifdef Py_STATS
