@@ -1337,7 +1337,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
         iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
         (for IPv6) with the following exceptions:
 
-        * ``is_private`` is ``False`` for the ``100.64.0.0/10``
+        * ``is_private`` is ``False`` for ``100.64.0.0/10``
         * For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
             semantics of the underlying IPv4 addresses and the following condition holds
             (see :attr:`IPv6Address.ipv4_mapped`)::
