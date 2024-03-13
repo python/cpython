@@ -97,7 +97,7 @@ jobs:
         run: |
           brew install llvm@${{ matrix.llvm }}
           SDKROOT="$(xcrun --show-sdk-path)" \
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           make all --jobs 4
           ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
 
@@ -124,8 +124,8 @@ jobs:
           ${{ !matrix.debug && matrix.compiler == 'clang' && 'make profile-run-stamp --jobs 4' || '' }}
           export QEMU_LD_PREFIX="/usr/$HOST"
           CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}" \
-          CPP="$CC --preprocess" \
-          HOSTRUNNER=qemu-${{ matrix.architecture }} \
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
+            CPP="$CC --preprocess" \
+            HOSTRUNNER=qemu-${{ matrix.architecture }} \
+            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
           make all --jobs 4
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
