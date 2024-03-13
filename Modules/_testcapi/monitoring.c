@@ -71,9 +71,7 @@ CodeLike_str(PyCodeLikeObject *self)
         }
 
         for (int i = 0; i < self->num_events; i++) {
-            PyObject *part = PyUnicode_FromFormat("(active=%d, opaque=%d)",
-                                                  self->monitoring_states[i].active,
-                                                  self->monitoring_states[i].opaque);
+            PyObject *part = PyUnicode_FromFormat(" %d", self->monitoring_states[i].active);
             if (part == NULL) {
                 goto end;
             }
