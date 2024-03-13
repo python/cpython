@@ -101,10 +101,18 @@ PyFloat_GetInfo(void)
         return NULL;
     }
 
-#define SetIntFlag(flag) \
-    PyStructSequence_SET_ITEM(floatinfo, pos++, PyLong_FromLong(flag))
-#define SetDblFlag(flag) \
-    PyStructSequence_SET_ITEM(floatinfo, pos++, PyFloat_FromDouble(flag))
+#define SetFlag(CALL) \
+    do {                                                    \
+        PyObject *flag = (CALL);                            \
+        if (flag == NULL) {                                 \
+            Py_CLEAR(floatinfo);                            \
+            return NULL;                                    \
+        }                                                   \
+        PyStructSequence_SET_ITEM(floatinfo, pos++, flag);  \
+    } while (0)
+
+#define SetIntFlag(FLAG) SetFlag(PyLong_FromLong((FLAG)))
+#define SetDblFlag(FLAG) SetFlag(PyFloat_FromDouble((FLAG)))
 
     SetDblFlag(DBL_MAX);
     SetIntFlag(DBL_MAX_EXP);
@@ -119,11 +127,8 @@ PyFloat_GetInfo(void)
     SetIntFlag(FLT_ROUNDS);
 #undef SetIntFlag
 #undef SetDblFlag
+#undef SetFlag
 
-    if (PyErr_Occurred()) {
-        Py_CLEAR(floatinfo);
-        return NULL;
-    }
     return floatinfo;
 }
 
