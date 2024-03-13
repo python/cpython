@@ -1743,3 +1743,18 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.register_callback(0, E.INSTRUCTION, lambda *args: 0)
         sys.monitoring.set_events(0, E.LINE | E.INSTRUCTION)
         sys.monitoring.set_events(0, 0)
+
+    def test_call_function_ex(self):
+        def f(a, b):
+            return a + b
+        args = (1, 2)
+
+        call_data = []
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.CALL, lambda code, offset, callable, arg0: call_data.append((callable, arg0)))
+        sys.monitoring.set_events(0, E.CALL)
+        f(*args)
+        sys.monitoring.set_events(0, 0)
+        self.assertEqual(call_data[0], (f, 1))
