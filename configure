@@ -661,6 +661,10 @@ MODULE__XXTESTFUZZ_FALSE
 MODULE__XXTESTFUZZ_TRUE
 MODULE_XXSUBTYPE_FALSE
 MODULE_XXSUBTYPE_TRUE
+MODULE__TESTEXTERNALINSPECTION_FALSE
+MODULE__TESTEXTERNALINSPECTION_TRUE
+MODULE__TESTSINGLEPHASE_FALSE
+MODULE__TESTSINGLEPHASE_TRUE
 MODULE__TESTMULTIPHASE_FALSE
 MODULE__TESTMULTIPHASE_TRUE
 MODULE__TESTIMPORTMULTIPLE_FALSE
@@ -669,6 +673,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTLIMITEDCAPI_FALSE
+MODULE__TESTLIMITEDCAPI_TRUE
 MODULE__TESTCLINIC_LIMITED_FALSE
 MODULE__TESTCLINIC_LIMITED_TRUE
 MODULE__TESTCLINIC_FALSE
@@ -834,7 +840,8 @@ LIBPL
 PY_ENABLE_SHARED
 PLATLIBDIR
 BINLIBDEST
-LIBPYTHON
+MODULE_LDFLAGS
+MODULE_DEPS_SHARED
 EXT_SUFFIX
 ALT_SOABI
 SOABI
@@ -969,6 +976,7 @@ LDFLAGS
 CFLAGS
 CC
 HAS_XCRUN
+IOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
@@ -4028,6 +4036,9 @@ then
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
+	*-apple-ios*)
+		ac_sys_system=iOS
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -4060,6 +4071,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -4077,6 +4089,52 @@ printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
+
+# On cross-compile builds, configure will look for a host-specific compiler by
+# prepending the user-provided host triple to the required binary name.
+#
+# On iOS, this results in binaries like "arm64-apple-ios12.0-simulator-gcc",
+# which isn't a binary that exists, and isn't very convenient, as it contains the
+# iOS version. As the default cross-compiler name won't exist, configure falls
+# back to gcc, which *definitely* won't work. We're providing wrapper scripts for
+# these tools; the binary names of these scripts are better defaults than "gcc".
+# This only requires that the user put the platform scripts folder (e.g.,
+# "iOS/Resources/bin") in their path, rather than defining platform-specific
+# names/paths for AR, CC, CPP, and CXX explicitly; and if the user forgets to
+# either put the platform scripts folder in the path, or specify CC etc,
+# configure will fail.
+if test -z "$AR"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) AR=arm64-apple-ios-simulator-ar ;;
+		aarch64-apple-ios*)           AR=arm64-apple-ios-ar ;;
+		x86_64-apple-ios*-simulator)  AR=x86_64-apple-ios-simulator-ar ;;
+		*)
+	esac
+fi
+if test -z "$CC"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CC=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CC=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CC=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
+if test -z "$CPP"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CPP=arm64-apple-ios-simulator-cpp ;;
+		aarch64-apple-ios*)           CPP=arm64-apple-ios-cpp ;;
+		x86_64-apple-ios*-simulator)  CPP=x86_64-apple-ios-simulator-cpp ;;
+		*)
+	esac
+fi
+if test -z "$CXX"; then
+	case "$host" in
+		aarch64-apple-ios*-simulator) CXX=arm64-apple-ios-simulator-clang ;;
+		aarch64-apple-ios*)           CXX=arm64-apple-ios-clang ;;
+		x86_64-apple-ios*-simulator)  CXX=x86_64-apple-ios-simulator-clang ;;
+		*)
+	esac
+fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-universalsdk" >&5
 printf %s "checking for --enable-universalsdk... " >&6; }
@@ -4193,38 +4251,47 @@ then :
   enableval=$enable_framework;
 	case $enableval in
 	yes)
-		enableval=/Library/Frameworks
+		case $ac_sys_system in
+			Darwin) enableval=/Library/Frameworks ;;
+			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
+			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
+		esac
 	esac
+
 	case $enableval in
 	no)
-		PYTHONFRAMEWORK=
-		PYTHONFRAMEWORKDIR=no-framework
-		PYTHONFRAMEWORKPREFIX=
-		PYTHONFRAMEWORKINSTALLDIR=
-		PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-		RESSRCDIR=
-		FRAMEWORKINSTALLFIRST=
-		FRAMEWORKINSTALLLAST=
-		FRAMEWORKALTINSTALLFIRST=
-		FRAMEWORKALTINSTALLLAST=
-		FRAMEWORKPYTHONW=
-		INSTALLTARGETS="commoninstall bininstall maninstall"
+		case $ac_sys_system in
+			iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
+			*)
+				PYTHONFRAMEWORK=
+				PYTHONFRAMEWORKDIR=no-framework
+				PYTHONFRAMEWORKPREFIX=
+				PYTHONFRAMEWORKINSTALLDIR=
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+				RESSRCDIR=
+				FRAMEWORKINSTALLFIRST=
+				FRAMEWORKINSTALLLAST=
+				FRAMEWORKALTINSTALLFIRST=
+				FRAMEWORKALTINSTALLLAST=
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="commoninstall bininstall maninstall"
 
-		if test "x${prefix}" = "xNONE"; then
-			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-		else
-			FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-		fi
-		enable_framework=
+				if test "x${prefix}" = "xNONE"; then
+					FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+				else
+					FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+				fi
+				enable_framework=
+		esac
 		;;
 	*)
 		PYTHONFRAMEWORKPREFIX="${enableval}"
 		PYTHONFRAMEWORKINSTALLDIR=$PYTHONFRAMEWORKPREFIX/$PYTHONFRAMEWORKDIR
-		FRAMEWORKINSTALLFIRST="frameworkinstallstructure"
-		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure "
 
 		case $ac_sys_system in #(
 			Darwin) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallversionedstructure "
 				FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
 				FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
 				FRAMEWORKPYTHONW="frameworkpythonw"
@@ -4287,6 +4354,21 @@ then :
 				ac_config_files="$ac_config_files Mac/Resources/app/Info.plist"
 
 				;;
+			iOS) :
+				FRAMEWORKINSTALLFIRST="frameworkinstallunversionedstructure"
+				FRAMEWORKALTINSTALLFIRST="frameworkinstallunversionedstructure "
+				FRAMEWORKINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKALTINSTALLLAST="frameworkinstallmobileheaders"
+				FRAMEWORKPYTHONW=
+				INSTALLTARGETS="libinstall inclinstall sharedinstall"
+
+				prefix=$PYTHONFRAMEWORKPREFIX
+				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
+				RESSRCDIR=iOS/Resources
+
+				ac_config_files="$ac_config_files iOS/Resources/Info.plist"
+
+				;;
 			*)
 				as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 				;;
@@ -4295,25 +4377,28 @@ then :
 
 else $as_nop
 
-	PYTHONFRAMEWORK=
-	PYTHONFRAMEWORKDIR=no-framework
-	PYTHONFRAMEWORKPREFIX=
-	PYTHONFRAMEWORKINSTALLDIR=
-	PYTHONFRAMEWORKINSTALLNAMEPREFIX=
-	RESSRCDIR=
-	FRAMEWORKINSTALLFIRST=
-	FRAMEWORKINSTALLLAST=
-	FRAMEWORKALTINSTALLFIRST=
-	FRAMEWORKALTINSTALLLAST=
-	FRAMEWORKPYTHONW=
-	INSTALLTARGETS="commoninstall bininstall maninstall"
-	if test "x${prefix}" = "xNONE" ; then
-		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
-	else
-		FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
-	fi
-	enable_framework=
-
+	case $ac_sys_system in
+		iOS) as_fn_error $? "iOS builds must use --enable-framework" "$LINENO" 5 ;;
+		*)
+			PYTHONFRAMEWORK=
+			PYTHONFRAMEWORKDIR=no-framework
+			PYTHONFRAMEWORKPREFIX=
+			PYTHONFRAMEWORKINSTALLDIR=
+			PYTHONFRAMEWORKINSTALLNAMEPREFIX=
+			RESSRCDIR=
+			FRAMEWORKINSTALLFIRST=
+			FRAMEWORKINSTALLLAST=
+			FRAMEWORKALTINSTALLFIRST=
+			FRAMEWORKALTINSTALLLAST=
+			FRAMEWORKPYTHONW=
+			INSTALLTARGETS="commoninstall bininstall maninstall"
+			if test "x${prefix}" = "xNONE" ; then
+				FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
+			else
+				FRAMEWORKUNIXTOOLSPREFIX="${prefix}"
+			fi
+			enable_framework=
+	esac
 
 fi
 
@@ -4351,6 +4436,23 @@ if test "$cross_compiling" = yes; then
 		;;
 	*-*-cygwin*)
 		_host_ident=
+		;;
+	*-apple-ios*)
+		_host_os=`echo $host | cut -d '-' -f3`
+		_host_device=`echo $host | cut -d '-' -f4`
+		_host_device=${_host_device:=os}
+
+				IOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET:=12.0}
+
+		case "$host_cpu" in
+			aarch64)
+				_host_ident=${IOS_DEPLOYMENT_TARGET}-arm64-iphone${_host_device}
+				;;
+			*)
+				_host_ident=${IOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
+				;;
+		esac
 		;;
 	*-*-vxworks*)
 		_host_ident=$host_cpu
@@ -4429,6 +4531,9 @@ printf "%s\n" "#define _BSD_SOURCE 1" >>confdefs.h
   Darwin/[6789].*)
     define_xopen_source=no;;
   Darwin/[12][0-9].*)
+    define_xopen_source=no;;
+  # On iOS, defining _POSIX_C_SOURCE also disables platform specific features.
+  iOS/*)
     define_xopen_source=no;;
   # On QNX 6.3.2, defining _XOPEN_SOURCE prevents netdb.h from
   # defining NI_NUMERICHOST.
@@ -4519,6 +4624,17 @@ case $host in #(
 
     as_fn_append CFLAGS " -sMEMORY64=1"
     as_fn_append LDFLAGS " -sMEMORY64=1"
+   ;; #(
+  *) :
+     ;;
+esac
+
+case $ac_sys_system in #(
+  iOS) :
+
+    as_fn_append CFLAGS " -mios-version-min=${IOS_DEPLOYMENT_TARGET}"
+    as_fn_append LDFLAGS " -mios-version-min=${IOS_DEPLOYMENT_TARGET}"
+
    ;; #(
   *) :
      ;;
@@ -6786,6 +6902,8 @@ printf %s "checking for multiarch... " >&6; }
 case $ac_sys_system in #(
   Darwin*) :
     MULTIARCH="" ;; #(
+  iOS) :
+    MULTIARCH="" ;; #(
   FreeBSD*) :
     MULTIARCH="" ;; #(
   *) :
@@ -6806,6 +6924,8 @@ fi
 printf "%s\n" "$MULTIARCH" >&6; }
 
 case $ac_sys_system in #(
+  iOS) :
+    SOABI_PLATFORM=`echo "$PLATFORM_TRIPLET" | cut -d '-' -f2` ;; #(
   *) :
     SOABI_PLATFORM=$PLATFORM_TRIPLET
  ;;
@@ -6850,6 +6970,10 @@ case $host/$ac_cv_cc_name in #(
     s390x-*-linux-gnu/gcc) :
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-freebsd*/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    aarch64-apple-ios*-simulator/clang) :
+    PY_SUPPORT_TIER=3 ;; #(
+    aarch64-apple-ios*/clang) :
     PY_SUPPORT_TIER=3 ;; #(
   *) :
       PY_SUPPORT_TIER=0
@@ -7306,12 +7430,15 @@ printf %s "checking LDLIBRARY... " >&6; }
 # will find it with a -framework option). For this reason there is an
 # extra variable BLDLIBRARY against which Python and the extension
 # modules are linked, BLDLIBRARY. This is normally the same as
-# LDLIBRARY, but empty for MacOSX framework builds.
+# LDLIBRARY, but empty for MacOSX framework builds. iOS does the same,
+# but uses a non-versioned framework layout.
 if test "$enable_framework"
 then
   case $ac_sys_system in
     Darwin)
       LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)';;
+    iOS)
+      LDLIBRARY='$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)';;
     *)
       as_fn_error $? "Unknown platform for framework build" "$LINENO" 5;;
   esac
@@ -7330,6 +7457,7 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
   case $ac_sys_system in
     CYGWIN*)
       LDLIBRARY='libpython$(LDVERSION).dll.a'
+      BLDLIBRARY='-L. -lpython$(LDVERSION)'
       DLLLIBRARY='libpython$(LDVERSION).dll'
       ;;
     SunOS*)
@@ -7346,7 +7474,13 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
       LDLIBRARY='libpython$(LDVERSION).so'
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
       RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-      INSTSONAME="$LDLIBRARY".$SOVERSION
+
+      # The Android Gradle plugin will only package libraries whose names end
+      # with ".so".
+      if test "$ac_sys_system" != "Linux-android"; then
+          INSTSONAME="$LDLIBRARY".$SOVERSION
+      fi
+
       if test "$with_pydebug" != yes
       then
         PY3LIBRARY=libpython3.so
@@ -7369,6 +7503,9 @@ printf "%s\n" "#define Py_ENABLE_SHARED 1" >>confdefs.h
       BLDLIBRARY='-L. -lpython$(LDVERSION)'
       RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
       ;;
+    iOS)
+      LDLIBRARY='libpython$(LDVERSION).dylib'
+      ;;
     AIX*)
       LDLIBRARY='libpython$(LDVERSION).so'
       RUNSHARED=LIBPATH=`pwd`${LIBPATH:+:${LIBPATH}}
@@ -7384,11 +7521,15 @@ else # shared is disabled
       ;;
   esac
 fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
+printf "%s\n" "$LDLIBRARY" >&6; }
 
 if test "$cross_compiling" = yes; then
   RUNSHARED=
 fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
+printf %s "checking HOSTRUNNER... " >&6; }
 
 if test -z "$HOSTRUNNER"
 then
@@ -7565,24 +7706,19 @@ then :
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
 esac
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking HOSTRUNNER" >&5
-printf %s "checking HOSTRUNNER... " >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $HOSTRUNNER" >&5
 printf "%s\n" "$HOSTRUNNER" >&6; }
 
 if test -n "$HOSTRUNNER"; then
     PYTHON_FOR_BUILD="_PYTHON_HOSTRUNNER='$HOSTRUNNER' $PYTHON_FOR_BUILD"
 fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDLIBRARY" >&5
-printf "%s\n" "$LDLIBRARY" >&6; }
 
 # LIBRARY_DEPS, LINK_PYTHON_OBJS and LINK_PYTHON_DEPS variable
 case $ac_sys_system/$ac_sys_emscripten_target in #(
@@ -11218,41 +11354,21 @@ then :
 fi
 
 
-# checks for typedefs
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_t in time.h" >&5
-printf %s "checking for clock_t in time.h... " >&6; }
-if test ${ac_cv_clock_t_time_h+y}
+# Check for clock_t in time.h.
+ac_fn_c_check_type "$LINENO" "clock_t" "ac_cv_type_clock_t" "#include <time.h>
+"
+if test "x$ac_cv_type_clock_t" = xyes
 then :
-  printf %s "(cached) " >&6
+
+printf "%s\n" "#define HAVE_CLOCK_T 1" >>confdefs.h
+
+
 else $as_nop
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "clock_t" >/dev/null 2>&1
-then :
-  ac_cv_clock_t_time_h=yes
-else $as_nop
-  ac_cv_clock_t_time_h=no
-fi
-rm -rf conftest*
-
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_clock_t_time_h" >&5
-printf "%s\n" "$ac_cv_clock_t_time_h" >&6; }
-if test "x$ac_cv_clock_t_time_h" = xno
-then :
-
 
 printf "%s\n" "#define clock_t long" >>confdefs.h
 
-
 fi
+
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for makedev" >&5
 printf %s "checking for makedev... " >&6; }
@@ -11455,6 +11571,7 @@ printf "%s\n" "#define size_t unsigned int" >>confdefs.h
 
 fi
 
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uid_t in sys/types.h" >&5
 printf %s "checking for uid_t in sys/types.h... " >&6; }
 if test ${ac_cv_type_uid_t+y}
@@ -11494,11 +11611,15 @@ then :
 
 printf "%s\n" "#define HAVE_SSIZE_T 1" >>confdefs.h
 
+
 fi
 
 ac_fn_c_check_type "$LINENO" "__uint128_t" "ac_cv_type___uint128_t" "$ac_includes_default"
 if test "x$ac_cv_type___uint128_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE___UINT128_T 1" >>confdefs.h
+
 
 printf "%s\n" "#define HAVE_GCC_UINT128_T 1" >>confdefs.h
 
@@ -12619,6 +12740,7 @@ if test -z "$SHLIB_SUFFIX"; then
 		esac
 		;;
 	CYGWIN*)   SHLIB_SUFFIX=.dll;;
+	iOS)   SHLIB_SUFFIX=.dylib;;
 	*)	   SHLIB_SUFFIX=.so;;
 	esac
 fi
@@ -12700,6 +12822,11 @@ then
 			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		fi
+		;;
+	iOS/*)
+		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		BLDSHARED="$LDSHARED"
 		;;
 	Emscripten|WASI)
 		LDSHARED='$(CC) -shared'
@@ -12789,7 +12916,6 @@ then
 		 then CCSHARED="-fPIC";
 		 else CCSHARED="+z";
 		 fi;;
-	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
 	Emscripten*|WASI*)
 		if test "x$enable_wasm_dynamic_linking" = xyes
@@ -12830,30 +12956,34 @@ then
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
-	Darwin/*)
+	Darwin/*|iOS/*)
 		LINKFORSHARED="$extra_undefs -framework CoreFoundation"
 
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
-    stack_size="1000000"  # 16 MB
-    if test "$with_ubsan" = "yes"
-    then
-        # Undefined behavior sanitizer requires an even deeper stack
-        stack_size="4000000"  # 64 MB
-    fi
-
-    LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+		stack_size="1000000"  # 16 MB
+		if test "$with_ubsan" = "yes"
+		then
+			# Undefined behavior sanitizer requires an even deeper stack
+			stack_size="4000000"  # 64 MB
+		fi
 
 
 printf "%s\n" "#define THREAD_STACK_SIZE 0x$stack_size" >>confdefs.h
 
 
-		if test "$enable_framework"
-		then
-			LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+		if test $ac_sys_system = "Darwin"; then
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED"
+
+			if test "$enable_framework"; then
+				LINKFORSHARED="$LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
+			fi
+			LINKFORSHARED="$LINKFORSHARED"
+		elif test $ac_sys_system = "iOS"; then
+			LINKFORSHARED="-Wl,-stack_size,$stack_size $LINKFORSHARED "'$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)'
 		fi
-		LINKFORSHARED="$LINKFORSHARED";;
+		;;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
@@ -13653,7 +13783,14 @@ then :
 else $as_nop
   if test "$cross_compiling" = yes
 then :
+
+# "yes" changes the hash function to FNV, which causes problems with Numba
+# (https://github.com/numba/numba/blob/0.59.0/numba/cpython/hashing.py#L470).
+if test "$ac_sys_system" = "Linux-android"; then
+  ac_cv_aligned_required=no
+else
   ac_cv_aligned_required=yes
+fi
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -14241,6 +14378,10 @@ then :
   Darwin) :
 
             ctypes_malloc_closure=yes
+     ;; #(
+  iOS) :
+
+      ctypes_malloc_closure=yes
      ;; #(
   sunos5) :
     as_fn_append LIBFFI_LIBS " -mimpure-text"
@@ -16088,24 +16229,47 @@ else
     # (e.g. gnu pth with pthread emulation)
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _POSIX_THREADS in unistd.h" >&5
 printf %s "checking for _POSIX_THREADS in unistd.h... " >&6; }
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _POSIX_THREADS defined in unistd.h" >&5
+printf %s "checking for _POSIX_THREADS defined in unistd.h... " >&6; }
+if test ${ac_cv_defined__POSIX_THREADS_unistd_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
 #include <unistd.h>
-#ifdef _POSIX_THREADS
-yes
-#endif
+int
+main (void)
+{
 
+  #ifdef _POSIX_THREADS
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined__POSIX_THREADS_unistd_h=yes
+else $as_nop
+  ac_cv_defined__POSIX_THREADS_unistd_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined__POSIX_THREADS_unistd_h" >&5
+printf "%s\n" "$ac_cv_defined__POSIX_THREADS_unistd_h" >&6; }
+if test $ac_cv_defined__POSIX_THREADS_unistd_h != "no"
 then :
   unistd_defines_pthreads=yes
 else $as_nop
   unistd_defines_pthreads=no
 fi
-rm -rf conftest*
-
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $unistd_defines_pthreads" >&5
 printf "%s\n" "$unistd_defines_pthreads" >&6; }
 
@@ -16606,65 +16770,135 @@ ipv6lib=none
 ipv6trylibc=no
 
 if test "$ipv6" = yes -a "$cross_compiling" = no; then
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
-printf %s "checking ipv6 stack type... " >&6; }
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
 	do
 		case $i in
 		inria)
-						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for IPV6_INRIA_VERSION defined in netinet/in.h" >&5
+printf %s "checking for IPV6_INRIA_VERSION defined in netinet/in.h... " >&6; }
+if test ${ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 #include <netinet/in.h>
-#ifdef IPV6_INRIA_VERSION
-yes
-#endif
+int
+main (void)
+{
+
+  #ifdef IPV6_INRIA_VERSION
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h=yes
+else $as_nop
+  ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h" >&5
+printf "%s\n" "$ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h" >&6; }
+if test $ac_cv_defined_IPV6_INRIA_VERSION_netinet_in_h != "no"
 then :
   ipv6type=$i
 fi
-rm -rf conftest*
-
 			;;
 		kame)
-						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <netinet/in.h>
-#ifdef __KAME__
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __KAME__ defined in netinet/in.h" >&5
+printf %s "checking for __KAME__ defined in netinet/in.h... " >&6; }
+if test ${ac_cv_defined___KAME___netinet_in_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=inet6
-				ipv6libdir=/usr/local/v6/lib
-				ipv6trylibc=yes
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <netinet/in.h>
+int
+main (void)
+{
 
+  #ifdef __KAME__
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined___KAME___netinet_in_h=yes
+else $as_nop
+  ac_cv_defined___KAME___netinet_in_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined___KAME___netinet_in_h" >&5
+printf "%s\n" "$ac_cv_defined___KAME___netinet_in_h" >&6; }
+if test $ac_cv_defined___KAME___netinet_in_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=inet6
+                             ipv6libdir=/usr/local/v6/lib
+                             ipv6trylibc=yes
+fi
 			;;
 		linux-glibc)
-						cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <features.h>
-#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __GLIBC__ defined in features.h" >&5
+printf %s "checking for __GLIBC__ defined in features.h... " >&6; }
+if test ${ac_cv_defined___GLIBC___features_h+y}
 then :
-  ipv6type=$i;
-				ipv6trylibc=yes
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <features.h>
+int
+main (void)
+{
 
+  #ifdef __GLIBC__
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined___GLIBC___features_h=yes
+else $as_nop
+  ac_cv_defined___GLIBC___features_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined___GLIBC___features_h" >&5
+printf "%s\n" "$ac_cv_defined___GLIBC___features_h" >&6; }
+if test $ac_cv_defined___GLIBC___features_h != "no"
+then :
+  ipv6type=$i
+                             ipv6trylibc=yes
+fi
 			;;
 		linux-inet6)
 						if test -d /usr/inet6; then
@@ -16683,83 +16917,159 @@ rm -rf conftest*
                         fi
 			;;
 		toshiba)
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <sys/param.h>
-#ifdef _TOSHIBA_INET6
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _TOSHIBA_INET6 defined in sys/param.h" >&5
+printf %s "checking for _TOSHIBA_INET6 defined in sys/param.h... " >&6; }
+if test ${ac_cv_defined__TOSHIBA_INET6_sys_param_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/param.h>
+int
+main (void)
+{
 
+  #ifdef _TOSHIBA_INET6
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined__TOSHIBA_INET6_sys_param_h=yes
+else $as_nop
+  ac_cv_defined__TOSHIBA_INET6_sys_param_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined__TOSHIBA_INET6_sys_param_h" >&5
+printf "%s\n" "$ac_cv_defined__TOSHIBA_INET6_sys_param_h" >&6; }
+if test $ac_cv_defined__TOSHIBA_INET6_sys_param_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=inet6
+                             ipv6libdir=/usr/local/v6/lib
+fi
 			;;
 		v6d)
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include </usr/local/v6/include/sys/v6config.h>
-#ifdef __V6D__
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __V6D__ defined in /usr/local/v6/include/sys/v6config.h" >&5
+printf %s "checking for __V6D__ defined in /usr/local/v6/include/sys/v6config.h... " >&6; }
+if test ${ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=v6;
-				ipv6libdir=/usr/local/v6/lib;
-				BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include </usr/local/v6/include/sys/v6config.h>
+int
+main (void)
+{
 
+  #ifdef __V6D__
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h=yes
+else $as_nop
+  ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h" >&5
+printf "%s\n" "$ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h" >&6; }
+if test $ac_cv_defined___V6D____usr_local_v6_include_sys_v6config_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=v6
+                             ipv6libdir=/usr/local/v6/lib
+                             BASECFLAGS="-I/usr/local/v6/include $BASECFLAGS"
+fi
 			;;
 		zeta)
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-#include <sys/param.h>
-#ifdef _ZETA_MINAMI_INET6
-yes
-#endif
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _ZETA_MINAMI_INET6 defined in sys/param.h" >&5
+printf %s "checking for _ZETA_MINAMI_INET6 defined in sys/param.h... " >&6; }
+if test ${ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h+y}
 then :
-  ipv6type=$i;
-				ipv6lib=inet6;
-				ipv6libdir=/usr/local/v6/lib
-fi
-rm -rf conftest*
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/param.h>
+int
+main (void)
+{
 
+  #ifdef _ZETA_MINAMI_INET6
+  int ok;
+  (void)ok;
+  #else
+  choke me
+  #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h=yes
+else $as_nop
+  ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h" >&5
+printf "%s\n" "$ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h" >&6; }
+if test $ac_cv_defined__ZETA_MINAMI_INET6_sys_param_h != "no"
+then :
+  ipv6type=$i
+                             ipv6lib=inet6
+                             ipv6libdir=/usr/local/v6/lib
+fi
 			;;
 		esac
 		if test "$ipv6type" != "unknown"; then
 			break
 		fi
 	done
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
+printf %s "checking ipv6 stack type... " >&6; }
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ipv6type" >&5
 printf "%s\n" "$ipv6type" >&6; }
 fi
 
 if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 library" >&5
+printf %s "checking ipv6 library... " >&6; }
 	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
 		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: using lib$ipv6lib" >&5
-printf "%s\n" "$as_me: using lib$ipv6lib" >&6;}
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: lib$ipv6lib" >&5
+printf "%s\n" "lib$ipv6lib" >&6; }
 	else
     if test "x$ipv6trylibc" = xyes
 then :
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: using libc" >&5
-printf "%s\n" "$as_me: using libc" >&6;}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: libc" >&5
+printf "%s\n" "libc" >&6; }
 
 else $as_nop
 
@@ -17283,6 +17593,23 @@ else
 printf "%s\n" "$MACHDEP_OBJS" >&6; }
 fi
 
+if test "$ac_sys_system" = "Linux-android"; then
+  # When these functions are used in an unprivileged process, they crash rather
+  # than returning an error.
+  privileged_funcs="chroot initgroups setegid seteuid setgid setregid setresgid
+    setresuid setreuid setuid"
+
+  # These functions are unimplemented and always return an error.
+  unimplemented_funcs="sem_open sem_unlink"
+
+  for name in $privileged_funcs $unimplemented_funcs; do
+    as_func_var=`printf "%s\n" "ac_cv_func_$name" | $as_tr_sh`
+
+    eval "$as_func_var=no"
+
+  done
+fi
+
 # checks for library functions
 ac_fn_c_check_func "$LINENO" "accept4" "ac_cv_func_accept4"
 if test "x$ac_cv_func_accept4" = xyes
@@ -17494,12 +17821,6 @@ then :
   printf "%s\n" "#define HAVE_GETEGID 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
-if test "x$ac_cv_func_getentropy" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETENTROPY 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "geteuid" "ac_cv_func_geteuid"
 if test "x$ac_cv_func_geteuid" = xyes
 then :
@@ -17540,12 +17861,6 @@ ac_fn_c_check_func "$LINENO" "getgrouplist" "ac_cv_func_getgrouplist"
 if test "x$ac_cv_func_getgrouplist" = xyes
 then :
   printf "%s\n" "#define HAVE_GETGROUPLIST 1" >>confdefs.h
-
-fi
-ac_fn_c_check_func "$LINENO" "getgroups" "ac_cv_func_getgroups"
-if test "x$ac_cv_func_getgroups" = xyes
-then :
-  printf "%s\n" "#define HAVE_GETGROUPS 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "gethostname" "ac_cv_func_gethostname"
@@ -17914,6 +18229,12 @@ then :
   printf "%s\n" "#define HAVE_PREADV2 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "process_vm_readv" "ac_cv_func_process_vm_readv"
+if test "x$ac_cv_func_process_vm_readv" = xyes
+then :
+  printf "%s\n" "#define HAVE_PROCESS_VM_READV 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_cond_timedwait_relative_np" "ac_cv_func_pthread_cond_timedwait_relative_np"
 if test "x$ac_cv_func_pthread_cond_timedwait_relative_np" = xyes
 then :
@@ -18274,12 +18595,6 @@ then :
   printf "%s\n" "#define HAVE_SYSCONF 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "system" "ac_cv_func_system"
-if test "x$ac_cv_func_system" = xyes
-then :
-  printf "%s\n" "#define HAVE_SYSTEM 1" >>confdefs.h
-
-fi
 ac_fn_c_check_func "$LINENO" "tcgetpgrp" "ac_cv_func_tcgetpgrp"
 if test "x$ac_cv_func_tcgetpgrp" = xyes
 then :
@@ -18452,6 +18767,32 @@ if test "$MACHDEP" != linux; then
 if test "x$ac_cv_func_lchmod" = xyes
 then :
   printf "%s\n" "#define HAVE_LCHMOD 1" >>confdefs.h
+
+fi
+
+fi
+
+# iOS defines some system methods that can be linked (so they are
+# found by configure), but either raise a compilation error (because the
+# header definition prevents usage - autoconf doesn't use the headers), or
+# raise an error if used at runtime. Force these symbols off.
+if test "$ac_sys_system" != "iOS" ; then
+  ac_fn_c_check_func "$LINENO" "getentropy" "ac_cv_func_getentropy"
+if test "x$ac_cv_func_getentropy" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETENTROPY 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "getgroups" "ac_cv_func_getgroups"
+if test "x$ac_cv_func_getgroups" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETGROUPS 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "system" "ac_cv_func_system"
+if test "x$ac_cv_func_system" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYSTEM 1" >>confdefs.h
 
 fi
 
@@ -21752,6 +22093,11 @@ fi
 
 done
 
+# On Android and iOS, clock_settime can be linked (so it is found by
+# configure), but when used in an unprivileged process, it crashes rather than
+# returning an error. Force the symbol off.
+if test "$ac_sys_system" != "Linux-android" && test "$ac_sys_system" != "iOS"
+then
 
   for ac_func in clock_settime
 do :
@@ -21762,7 +22108,7 @@ then :
 
 else $as_nop
 
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_settime in -lrt" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for clock_settime in -lrt" >&5
 printf %s "checking for clock_settime in -lrt... " >&6; }
 if test ${ac_cv_lib_rt_clock_settime+y}
 then :
@@ -21800,7 +22146,7 @@ printf "%s\n" "$ac_cv_lib_rt_clock_settime" >&6; }
 if test "x$ac_cv_lib_rt_clock_settime" = xyes
 then :
 
-        printf "%s\n" "#define HAVE_CLOCK_SETTIME 1" >>confdefs.h
+          printf "%s\n" "#define HAVE_CLOCK_SETTIME 1" >>confdefs.h
 
 
 fi
@@ -21809,6 +22155,7 @@ fi
 fi
 
 done
+fi
 
 
   for ac_func in clock_nanosleep
@@ -22030,7 +22377,9 @@ else $as_nop
   if test "$cross_compiling" = yes
 then :
 
-if test "${enable_ipv6+set}" = set; then
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_buggy_getaddrinfo="no"
+elif test "${enable_ipv6+set}" = set; then
   ac_cv_buggy_getaddrinfo="no -- configured with --(en|dis)able-ipv6"
 else
   ac_cv_buggy_getaddrinfo=yes
@@ -23957,12 +24306,21 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 printf "%s\n" "$LDVERSION" >&6; }
 
-# On Android and Cygwin the shared libraries must be linked with libpython.
+# Configure the flags and dependencies used when compiling shared modules
 
+
+MODULE_DEPS_SHARED='$(MODULE_DEPS_STATIC) $(EXPORTSYMS)'
+MODULE_LDFLAGS=''
+
+# On Android and Cygwin the shared libraries must be linked with libpython.
 if test "$PY_ENABLE_SHARED" = "1" && ( test -n "$ANDROID_API_LEVEL" || test "$MACHDEP" = "cygwin"); then
-  LIBPYTHON="-lpython${VERSION}${ABIFLAGS}"
-else
-  LIBPYTHON=''
+  MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(LDLIBRARY)"
+  MODULE_LDFLAGS="\$(BLDLIBRARY)"
+fi
+
+# On iOS the shared libraries must be linked with the Python framework
+if test "$ac_sys_system" == "iOS"; then
+  MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
 
@@ -24957,6 +25315,7 @@ if test "x$ac_cv_type_rl_compdisp_func_t" = xyes
 then :
 
 printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
+
 
 fi
 
@@ -26693,24 +27052,28 @@ CPPFLAGS=$ac_save_cppflags
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for device files" >&5
 printf "%s\n" "$as_me: checking for device files" >&6;}
 
-if test "x$cross_compiling" = xyes; then
-  if test "${ac_cv_file__dev_ptmx+set}" != set; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
+if test "$ac_sys_system" = "Linux-android" || test "$ac_sys_system" = "iOS"; then
+  ac_cv_file__dev_ptmx=no
+  ac_cv_file__dev_ptc=no
+else
+  if test "x$cross_compiling" = xyes; then
+    if test "${ac_cv_file__dev_ptmx+set}" != set; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
 printf %s "checking for /dev/ptmx... " >&6; }
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
 printf "%s\n" "not set" >&6; }
-    as_fn_error $? "set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
-  fi
-  if test "${ac_cv_file__dev_ptc+set}" != set; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
+      as_fn_error $? "set ac_cv_file__dev_ptmx to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+    fi
+    if test "${ac_cv_file__dev_ptc+set}" != set; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
 printf %s "checking for /dev/ptc... " >&6; }
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not set" >&5
 printf "%s\n" "not set" >&6; }
-    as_fn_error $? "set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+      as_fn_error $? "set ac_cv_file__dev_ptc to yes/no in your CONFIG_SITE file when cross compiling" "$LINENO" 5
+    fi
   fi
-fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptmx" >&5
 printf %s "checking for /dev/ptmx... " >&6; }
 if test ${ac_cv_file__dev_ptmx+y}
 then :
@@ -26731,12 +27094,12 @@ then :
 
 fi
 
-if test "x$ac_cv_file__dev_ptmx" = xyes; then
+  if test "x$ac_cv_file__dev_ptmx" = xyes; then
 
 printf "%s\n" "#define HAVE_DEV_PTMX 1" >>confdefs.h
 
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
+  fi
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for /dev/ptc" >&5
 printf %s "checking for /dev/ptc... " >&6; }
 if test ${ac_cv_file__dev_ptc+y}
 then :
@@ -26757,10 +27120,11 @@ then :
 
 fi
 
-if test "x$ac_cv_file__dev_ptc" = xyes; then
+  if test "x$ac_cv_file__dev_ptc" = xyes; then
 
 printf "%s\n" "#define HAVE_DEV_PTC 1" >>confdefs.h
 
+  fi
 fi
 
 if test $ac_sys_system = Darwin
@@ -26779,6 +27143,9 @@ ac_fn_c_check_type "$LINENO" "socklen_t" "ac_cv_type_socklen_t" "
 "
 if test "x$ac_cv_type_socklen_t" = xyes
 then :
+
+printf "%s\n" "#define HAVE_SOCKLEN_T 1" >>confdefs.h
+
 
 else $as_nop
 
@@ -26939,6 +27306,7 @@ SRCDIRS="\
   Modules/_sre \
   Modules/_testcapi \
   Modules/_testinternalcapi \
+  Modules/_testlimitedcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -28143,6 +28511,27 @@ case $ac_sys_system in #(
  ;; #(
     Darwin) :
      ;; #(
+  iOS) :
+
+
+
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module__posixsubprocess=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_nis=n/a
+    py_cv_module_readline=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_spwd=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_=n/a
+
+   ;; #(
   CYGWIN*) :
 
 
@@ -30388,6 +30777,44 @@ fi
 printf "%s\n" "$py_cv_module__testclinic_limited" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testlimitedcapi" >&5
+printf %s "checking for stdlib extension module _testlimitedcapi... " >&6; }
+        if test "$py_cv_module__testlimitedcapi" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if true
+then :
+  py_cv_module__testlimitedcapi=yes
+else $as_nop
+  py_cv_module__testlimitedcapi=missing
+fi
+else $as_nop
+  py_cv_module__testlimitedcapi=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTLIMITEDCAPI_STATE=$py_cv_module__testlimitedcapi$as_nl"
+  if test "x$py_cv_module__testlimitedcapi" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testlimitedcapi" = yes; then
+  MODULE__TESTLIMITEDCAPI_TRUE=
+  MODULE__TESTLIMITEDCAPI_FALSE='#'
+else
+  MODULE__TESTLIMITEDCAPI_TRUE='#'
+  MODULE__TESTLIMITEDCAPI_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testlimitedcapi" >&5
+printf "%s\n" "$py_cv_module__testlimitedcapi" >&6; }
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 printf %s "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"
@@ -30538,6 +30965,82 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testmultiphase" >&5
 printf "%s\n" "$py_cv_module__testmultiphase" >&6; }
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testsinglephase" >&5
+printf %s "checking for stdlib extension module _testsinglephase... " >&6; }
+        if test "$py_cv_module__testsinglephase" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if test "$ac_cv_func_dlopen" = yes
+then :
+  py_cv_module__testsinglephase=yes
+else $as_nop
+  py_cv_module__testsinglephase=missing
+fi
+else $as_nop
+  py_cv_module__testsinglephase=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTSINGLEPHASE_STATE=$py_cv_module__testsinglephase$as_nl"
+  if test "x$py_cv_module__testsinglephase" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testsinglephase" = yes; then
+  MODULE__TESTSINGLEPHASE_TRUE=
+  MODULE__TESTSINGLEPHASE_FALSE='#'
+else
+  MODULE__TESTSINGLEPHASE_TRUE='#'
+  MODULE__TESTSINGLEPHASE_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testsinglephase" >&5
+printf "%s\n" "$py_cv_module__testsinglephase" >&6; }
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testexternalinspection" >&5
+printf %s "checking for stdlib extension module _testexternalinspection... " >&6; }
+        if test "$py_cv_module__testexternalinspection" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if true
+then :
+  py_cv_module__testexternalinspection=yes
+else $as_nop
+  py_cv_module__testexternalinspection=missing
+fi
+else $as_nop
+  py_cv_module__testexternalinspection=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTEXTERNALINSPECTION_STATE=$py_cv_module__testexternalinspection$as_nl"
+  if test "x$py_cv_module__testexternalinspection" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testexternalinspection" = yes; then
+  MODULE__TESTEXTERNALINSPECTION_TRUE=
+  MODULE__TESTEXTERNALINSPECTION_FALSE='#'
+else
+  MODULE__TESTEXTERNALINSPECTION_TRUE='#'
+  MODULE__TESTEXTERNALINSPECTION_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testexternalinspection" >&5
+printf "%s\n" "$py_cv_module__testexternalinspection" >&6; }
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module xxsubtype" >&5
@@ -31136,6 +31639,10 @@ if test -z "${MODULE__TESTCLINIC_LIMITED_TRUE}" && test -z "${MODULE__TESTCLINIC
   as_fn_error $? "conditional \"MODULE__TESTCLINIC_LIMITED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__TESTLIMITEDCAPI_TRUE}" && test -z "${MODULE__TESTLIMITEDCAPI_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTLIMITEDCAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTINTERNALCAPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -31150,6 +31657,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTMULTIPHASE_TRUE}" && test -z "${MODULE__TESTMULTIPHASE_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTMULTIPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTSINGLEPHASE_TRUE}" && test -z "${MODULE__TESTSINGLEPHASE_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTSINGLEPHASE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTEXTERNALINSPECTION_TRUE}" && test -z "${MODULE__TESTEXTERNALINSPECTION_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTEXTERNALINSPECTION\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE_XXSUBTYPE_TRUE}" && test -z "${MODULE_XXSUBTYPE_FALSE}"; then
@@ -31754,6 +32269,7 @@ do
     "Mac/PythonLauncher/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/PythonLauncher/Makefile" ;;
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
+    "iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES iOS/Resources/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;

@@ -162,7 +162,7 @@ jobs:
       - name: Build CPython
         run: |
           make -j4 regen-all
-          make regen-stdlib-module-names
+          make regen-stdlib-module-names regen-sbom
       - name: Check for changes
         run: |
           git add -u
@@ -300,6 +300,14 @@ jobs:
       run: make pythoninfo
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
+
+  build_wasi:
+    name: 'WASI'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-wasi.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
@@ -525,6 +533,7 @@ jobs:
     - build_ubuntu
     - build_ubuntu_free_threading
     - build_ubuntu_ssltests
+    - build_wasi
     - build_windows
     - build_windows_free_threading
     - test_hypothesis
@@ -558,6 +567,7 @@ jobs:
             build_ubuntu,
             build_ubuntu_free_threading,
             build_ubuntu_ssltests,
+            build_wasi,
             build_windows,
             build_windows_free_threading,
             build_asan,

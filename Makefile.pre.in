@@ -41,7 +41,7 @@ AR=		@AR@
 READELF=	@READELF@
 SOABI=		@SOABI@
 LDVERSION=	@LDVERSION@
-LIBPYTHON=	@LIBPYTHON@
+MODULE_LDFLAGS=@MODULE_LDFLAGS@
 GITVERSION=	@GITVERSION@
 GITTAG=		@GITTAG@
 GITBRANCH=	@GITBRANCH@
@@ -446,6 +446,7 @@ PYTHON_OBJS=	\
 		Python/object_stack.o \
 		Python/optimizer.o \
 		Python/optimizer_analysis.o \
+		Python/optimizer_symbols.o \
 		Python/parking_lot.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
@@ -458,6 +459,7 @@ PYTHON_OBJS=	\
 		Python/pystate.o \
 		Python/pythonrun.o \
 		Python/pytime.o \
+		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
 		Python/structmember.o \
@@ -650,6 +652,30 @@ all:		@DEF_MAKE_ALL_RULE@
 # First target in Makefile is implicit default. So .PHONY needs to come after
 # all.
 .PHONY: all
+
+# Provide quick help for common Makefile targets.
+.PHONY: help
+help:
+	@echo "Run 'make' to build the Python executable and extension modules"
+	@echo ""
+	@echo "or 'make <target>' where <target> is one of:"
+	@echo "  test         run the test suite"
+	@echo "  install      install built files"
+	@echo "  regen-all    regenerate a number of generated source files"
+	@echo "  clinic       run Argument Clinic over source files"
+	@echo ""
+	@echo "  clean        to remove build files"
+	@echo "  distclean    'clean' + remove other generated files (patch, exe, etc)"
+	@echo ""
+	@echo "  recheck      rerun configure with last cmdline options"
+	@echo "  reindent     reindent .py files in Lib directory"
+	@echo "  tags         build a tags file (useful for Emacs and other editors)"
+	@echo "  list-targets list all targets in the Makefile"
+
+# Display a full list of Makefile targets
+.PHONY: list-targets
+list-targets:
+	@grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
 
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -857,18 +883,16 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
 libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
-	if test $(INSTSONAME) != $(LDLIBRARY); then \
-		$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
+	$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
+	if test $(INSTSONAME) != $@; then \
 		$(LN) -f $(INSTSONAME) $@; \
-	else \
-		$(BLDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM); \
 	fi
 
 libpython3.so:	libpython$(LDVERSION).so
 	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
-	 $(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+	 $(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
 
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
@@ -910,6 +934,21 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 	$(LN) -fsn $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
 	$(LN) -fsn Versions/Current/$(PYTHONFRAMEWORK) $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK)
 	$(LN) -fsn Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
+
+# This rule is for iOS, which requires an annoyingly just slighly different
+# format for frameworks to macOS. It *doesn't* use a versioned framework, and
+# the Info.plist must be in the root of the framework.
+$(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK): \
+		$(LIBRARY) \
+		$(RESSRCDIR)/Info.plist
+	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)
+	$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
+		-all_load $(LIBRARY) \
+		-install_name $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
+		-compatibility_version $(VERSION) \
+		-current_version $(VERSION) \
+		-framework CoreFoundation $(LIBS);
+	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(PYTHONFRAMEWORKDIR)/Info.plist
 
 # This rule builds the Cygwin Python DLL and import library if configured
 # for a shared core library; otherwise, this rule is a noop.
@@ -1162,6 +1201,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pystats.h \
 		$(srcdir)/Include/internal/pycore_pythonrun.h \
 		$(srcdir)/Include/internal/pycore_pythread.h \
+		$(srcdir)/Include/internal/pycore_qsbr.h \
 		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
@@ -1625,10 +1665,10 @@ regen-unicodedata:
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects regen-sbom regen-jit
+	regen-test-levenshtein regen-global-objects regen-jit
 	@echo
 	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi, "
-	@echo "make regen-configure and make regen-unicodedata should be run manually"
+	@echo "make regen-configure, make regen-sbom, and make regen-unicodedata should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1856,39 +1896,72 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 
 Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
+
+# Regenerate various files from Python/bytecodes.c
+# Pass CASESFLAG=-l to insert #line directives in the output
+
 .PHONY: regen-cases
-regen-cases:
-	# Regenerate various files from Python/bytecodes.c
-	# Pass CASESFLAG=-l to insert #line directives in the output
+regen-cases: \
+        regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
+		regen-generated-cases regen-executor-cases regen-optimizer-cases \
+		regen-opcode-metadata regen-uop-metadata
+
+.PHONY: regen-opcode-ids
+regen-opcode-ids:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_id_generator.py \
 	    -o $(srcdir)/Include/opcode_ids.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
+
+.PHONY: regen-opcode-targets
+regen-opcode-targets:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/target_generator.py \
 	    -o $(srcdir)/Python/opcode_targets.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
+
+.PHONY: regen-uop-ids
+regen-uop-ids:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_id_generator.py \
 	    -o $(srcdir)/Include/internal/pycore_uop_ids.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_ids.h $(srcdir)/Include/internal/pycore_uop_ids.h.new
+
+.PHONY: regen-opcode-metadata-py
+regen-opcode-metadata-py:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/py_metadata_generator.py \
 	    -o $(srcdir)/Lib/_opcode_metadata.py.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
+
+.PHONY: regen-generated-cases
+regen-generated-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+
+.PHONY: regen-executor-cases
+regen-executor-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
 	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_abstract_generator.py \
-	    -o $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h.new \
-	    $(srcdir)/Python/tier2_redundancy_eliminator_bytecodes.c \
+	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+
+.PHONY: regen-optimizer-cases
+regen-optimizer-cases:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/optimizer_generator.py \
+	    -o $(srcdir)/Python/optimizer_cases.c.h.new \
+	    $(srcdir)/Python/optimizer_bytecodes.c \
 	    $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/optimizer_cases.c.h $(srcdir)/Python/optimizer_cases.c.h.new
+
+.PHONY: regen-opcode-metadata
+regen-opcode-metadata:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_metadata_generator.py \
 	    -o $(srcdir)/Include/internal/pycore_opcode_metadata.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
+
+.PHONY: regen-uop-metadata
+regen-uop-metadata:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_metadata_generator.py -o \
 	    $(srcdir)/Include/internal/pycore_uop_metadata.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_ids.h $(srcdir)/Include/internal/pycore_uop_ids.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_metadata.h $(srcdir)/Include/internal/pycore_uop_metadata.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h $(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
+
 
 Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
 
@@ -1910,7 +1983,7 @@ Python/optimizer.o: \
 Python/optimizer_analysis.o: \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h \
-		$(srcdir)/Python/tier2_redundancy_eliminator_cases.c.h
+		$(srcdir)/Python/optimizer_cases.c.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -1976,6 +2049,42 @@ testuniversal: all
 	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 	$(RUNSHARED) /usr/libexec/oah/translate \
 		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
+
+# Run the test suite on the iOS simulator. Must be run on a macOS machine with
+# a full Xcode install that has an iPhone SE (3rd edition) simulator available.
+# This must be run *after* a `make install` has completed the build. The
+# `--with-framework-name` argument *cannot* be used when configuring the build.
+XCFOLDER=iOSTestbed.$(MULTIARCH).$(shell date +%s)
+XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
+.PHONY: testios
+testios:
+	@if test "$(MACHDEP)" != "ios"; then \
+		echo "Cannot run the iOS testbed for a non-iOS build."; \
+		exit 1;\
+	fi
+	@if test "$(findstring -iphonesimulator,$(MULTIARCH))" != "-iphonesimulator"; then \
+		echo "Cannot run the iOS testbed for non-simulator builds."; \
+		exit 1;\
+	fi
+	@if test $(PYTHONFRAMEWORK) != "Python"; then \
+		echo "Cannot run the iOS testbed with a non-default framework name."; \
+		exit 1;\
+	fi
+	@if ! test -d $(PYTHONFRAMEWORKPREFIX); then \
+		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
+		exit 1;\
+	fi
+	# Copy the testbed project into the build folder
+	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
+	# Copy the framework from the install location to the testbed project.
+	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
+	# Run the test suite for the Xcode project, targeting the iOS simulator.
+	# If the suite fails, extract and print the console output, then re-raise the failure
+	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
+		xcrun xcresulttool get --path $(XCRESULT) --id $$(xcrun xcresulttool get --path $(XCRESULT) --format json | $(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])"); \
+		echo ; \
+		exit 1; \
+	fi
 
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
@@ -2605,10 +2714,11 @@ frameworkinstall: install
 # only have to cater for the structural bits of the framework.
 
 .PHONY: frameworkinstallframework
-frameworkinstallframework: frameworkinstallstructure install frameworkinstallmaclib
+frameworkinstallframework: @FRAMEWORKINSTALLFIRST@ install frameworkinstallmaclib
 
-.PHONY: frameworkinstallstructure
-frameworkinstallstructure:	$(LDLIBRARY)
+# macOS uses a versioned frameworks structure that includes a full install
+.PHONY: frameworkinstallversionedstructure
+frameworkinstallversionedstructure:	$(LDLIBRARY)
 	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
 		echo Not configured with --enable-framework; \
 		exit 1; \
@@ -2628,6 +2738,27 @@ frameworkinstallstructure:	$(LDLIBRARY)
 	$(LN) -fsn Versions/Current/Headers $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers
 	$(LN) -fsn Versions/Current/Resources $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+
+# iOS/tvOS/watchOS uses a non-versioned framework with Info.plist in the
+# framework root, no .lproj data, and only stub compilation assistance binaries
+.PHONY: frameworkinstallunversionedstructure
+frameworkinstallunversionedstructure:	$(LDLIBRARY)
+	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
+		echo Not configured with --enable-framework; \
+		exit 1; \
+	else true; \
+	fi
+	if test -d $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; then \
+		echo "Clearing stale header symlink directory"; \
+		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include; \
+	fi
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)
+	sed 's/%VERSION%/'"`$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import platform; print(platform.python_version())'`"'/g' < $(RESSRCDIR)/Info.plist > $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Info.plist
+	$(INSTALL_SHARED) $(LDLIBRARY) $(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
+	$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(BINDIR)
+	for file in $(srcdir)/$(RESSRCDIR)/bin/* ; do \
+		$(INSTALL) -m $(EXEMODE) $$file $(DESTDIR)$(BINDIR); \
+	done
 
 # This installs Mac/Lib into the framework
 # Install a number of symlinks to keep software that expects a normal unix
@@ -2668,6 +2799,19 @@ frameworkaltinstallunixtools:
 .PHONY: frameworkinstallextras
 frameworkinstallextras:
 	cd Mac && $(MAKE) installextras DESTDIR="$(DESTDIR)"
+
+# On iOS, bin/lib can't live inside the framework; include needs to be called
+# "Headers", but *must* be in the framework, and *not* include the `python3.X`
+# subdirectory. The install has put these folders in the same folder as
+# Python.framework; Move the headers to their final framework-compatible home.
+.PHONY: frameworkinstallmobileheaders
+frameworkinstallmobileheaders: frameworkinstallunversionedstructure inclinstall
+	if test -d $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; then \
+		echo "Removing old framework headers"; \
+		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
+	fi
+	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
+	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)"
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
@@ -2796,6 +2940,10 @@ clean-retain-profile: pycremoval
 	-find build -type f -a ! -name '*.gc??' -exec rm -f {} ';'
 	-rm -f Include/pydtrace_probes.h
 	-rm -f profile-gen-stamp
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/bin
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/lib
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/include
+	-rm -rf iOS/testbed/Python.xcframework/ios-*/Python.framework
 
 .PHONY: profile-removal
 profile-removal:
@@ -2821,6 +2969,8 @@ clobber: clean
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
+	-rm -rf iOS/Frameworks
+	-rm -rf iOSTestbed.*
 	-rm -f python-config.py python-config
 	-rm -rf cross-build
 
@@ -2915,7 +3065,7 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 
 # force rebuild when header file or module build flavor (static/shared) is changed
 MODULE_DEPS_STATIC=Modules/config.c
-MODULE_DEPS_SHARED=$(MODULE_DEPS_STATIC) $(EXPORTSYMS)
+MODULE_DEPS_SHARED=@MODULE_DEPS_SHARED@
 
 MODULE__CURSES_DEPS=$(srcdir)/Include/py_curses.h
 MODULE__CURSES_PANEL_DEPS=$(srcdir)/Include/py_curses.h

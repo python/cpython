@@ -313,7 +313,14 @@ class PurePathBase:
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
-        return self.with_name(stem + self.suffix)
+        suffix = self.suffix
+        if not suffix:
+            return self.with_name(stem)
+        elif not stem:
+            # If the suffix is non-empty, we can't make the stem empty.
+            raise ValueError(f"{self!r} has a non-empty suffix")
+        else:
+            return self.with_name(stem + suffix)
 
     def with_suffix(self, suffix):
         """Return a new path with the file suffix changed.  If the path
@@ -324,6 +331,7 @@ class PurePathBase:
         if not suffix:
             return self.with_name(stem)
         elif not stem:
+            # If the stem is empty, we can't make the suffix non-empty.
             raise ValueError(f"{self!r} has an empty name")
         elif suffix.startswith('.') and len(suffix) > 1:
             return self.with_name(stem + suffix)
@@ -781,7 +789,7 @@ class PathBase(PurePathBase):
     def _make_child_relpath(self, name):
         return self.joinpath(name)
 
-    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -838,7 +846,7 @@ class PathBase(PurePathBase):
                 paths = _select_children(paths, bool(stack), follow_symlinks, match)
         return paths
 
-    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=None):
+    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=True):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.

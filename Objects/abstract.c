@@ -1390,7 +1390,7 @@ _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
     }
 
 UNARY_FUNC(PyNumber_Negative, nb_negative, __neg__, "unary -")
-UNARY_FUNC(PyNumber_Positive, nb_positive, __pow__, "unary +")
+UNARY_FUNC(PyNumber_Positive, nb_positive, __pos__, "unary +")
 UNARY_FUNC(PyNumber_Invert, nb_invert, __invert__, "unary ~")
 UNARY_FUNC(PyNumber_Absolute, nb_absolute, __abs__, "abs()")
 

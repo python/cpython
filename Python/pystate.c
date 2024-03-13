@@ -395,6 +395,7 @@ _Py_COMP_DIAG_POP
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
+        &(runtime)->_main_interpreter.types.mutex, \
     }
 
 static void
@@ -498,6 +499,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (size_t i = 0; i < Py_ARRAY_LENGTH(locks); i++) {
         _PyMutex_at_fork_reinit(locks[i]);
     }
+
+    _PyTypes_AfterFork();
 
     /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
      * not force the default allocator. */
@@ -614,6 +617,7 @@ init_interpreter(PyInterpreterState *interp,
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
+    llist_init(&interp->mem_free_queue.head);
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -779,6 +783,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
+    assert(old != NULL);
     Py_DECREF(old);
 
     /* It is possible that any of the objects below have a finalizer
@@ -790,9 +795,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
-    // At this time, all the threads should be cleared so we don't need
-    // atomic operations for eval_breaker
-    interp->ceval.eval_breaker = 0;
+    // At this time, all the threads should be cleared so we don't need atomic
+    // operations for instrumentation_version or eval_breaker.
+    interp->ceval.instrumentation_version = 0;
+    tstate->eval_breaker = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -897,7 +903,7 @@ _PyInterpreterState_Clear(PyThreadState *tstate)
 
 
 static inline void tstate_deactivate(PyThreadState *tstate);
-static void tstate_set_detached(PyThreadState *tstate);
+static void tstate_set_detached(PyThreadState *tstate, int detached_state);
 static void zapthreads(PyInterpreterState *interp);
 
 void
@@ -949,6 +955,8 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     if (interp->id_mutex != NULL) {
         PyThread_free_lock(interp->id_mutex);
     }
+
+    _Py_qsbr_fini(interp);
 
     _PyObject_FiniState(interp);
 
@@ -1312,6 +1320,8 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     assert(interp != NULL);
     tstate->interp = interp;
+    tstate->eval_breaker =
+        _Py_atomic_load_uintptr_relaxed(&interp->ceval.instrumentation_version);
 
     // next/prev are set in add_threadstate().
     assert(tstate->next == NULL);
@@ -1341,11 +1351,13 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_top = NULL;
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
+    tstate->previous_executor = NULL;
 
 #ifdef Py_GIL_DISABLED
     // Initialize biased reference counting inter-thread queue
     _Py_brc_init_thread(tstate);
 #endif
+    llist_init(&_tstate->mem_free_queue);
 
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
@@ -1383,6 +1395,14 @@ new_threadstate(PyInterpreterState *interp, int whence)
     if (new_tstate == NULL) {
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t qsbr_idx = _Py_qsbr_reserve(interp);
+    if (qsbr_idx < 0) {
+        PyMem_RawFree(new_tstate);
+        return NULL;
+    }
+#endif
+
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(runtime);
 
@@ -1417,6 +1437,12 @@ new_threadstate(PyInterpreterState *interp, int whence)
         // Must be called with lock unlocked to avoid re-entrancy deadlock.
         PyMem_RawFree(new_tstate);
     }
+
+#ifdef Py_GIL_DISABLED
+    // Must be called with lock unlocked to avoid lock ordering deadlocks.
+    _Py_qsbr_register(tstate, interp, qsbr_idx);
+#endif
+
     return (PyThreadState *)tstate;
 }
 
@@ -1553,6 +1579,7 @@ PyThreadState_Clear(PyThreadState *tstate)
         // don't call _PyInterpreterState_SetNotRunningMain() yet.
         tstate->on_delete(tstate->on_delete_data);
     }
+
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
@@ -1561,6 +1588,9 @@ PyThreadState_Clear(PyThreadState *tstate)
     // Remove ourself from the biased reference counting table of threads.
     _Py_brc_remove_thread(tstate);
 #endif
+
+    // Merge our queue of pointers to be freed into the interpreter queue.
+    _PyMem_AbandonDelayed(tstate);
 
     _PyThreadState_ClearMimallocHeaps(tstate);
 
@@ -1579,6 +1609,7 @@ tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     assert(tstate->state != _Py_THREAD_ATTACHED);
+    tstate_verify_not_active(tstate);
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1607,6 +1638,10 @@ tstate_delete_common(PyThreadState *tstate)
         }
     }
     HEAD_UNLOCK(runtime);
+
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_unregister((_PyThreadStateImpl *)tstate);
+#endif
 
     // XXX Unbind in PyThreadState_Clear(), or earlier
     // (and assert not-equal here)?
@@ -1649,9 +1684,12 @@ void
 _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    tstate_set_detached(tstate);
-    tstate_delete_common(tstate);
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
+#endif
+    tstate_set_detached(tstate, _Py_THREAD_DETACHED);
     current_fast_clear(tstate->interp->runtime);
+    tstate_delete_common(tstate);
     _PyEval_ReleaseLock(tstate->interp, NULL);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
@@ -1822,13 +1860,13 @@ tstate_try_attach(PyThreadState *tstate)
 }
 
 static void
-tstate_set_detached(PyThreadState *tstate)
+tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
     assert(tstate->state == _Py_THREAD_ATTACHED);
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
+    _Py_atomic_store_int(&tstate->state, detached_state);
 #else
-    tstate->state = _Py_THREAD_DETACHED;
+    tstate->state = detached_state;
 #endif
 }
 
@@ -1870,6 +1908,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
         tstate_wait_attach(tstate);
     }
 
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_attach(((_PyThreadStateImpl *)tstate)->qsbr);
+#endif
+
     // Resume previous critical section. This acquires the lock(s) from the
     // top-most critical section.
     if (tstate->critical_section != 0) {
@@ -1890,8 +1932,11 @@ detach_thread(PyThreadState *tstate, int detached_state)
     if (tstate->critical_section != 0) {
         _PyCriticalSection_SuspendAll(tstate);
     }
+#ifdef Py_GIL_DISABLED
+    _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
+#endif
     tstate_deactivate(tstate);
-    tstate_set_detached(tstate);
+    tstate_set_detached(tstate, detached_state);
     current_fast_clear(&_PyRuntime);
     _PyEval_ReleaseLock(tstate->interp, tstate);
 }
@@ -1986,8 +2031,7 @@ park_detached_threads(struct _stoptheworld_state *stw)
             }
         }
         else if (state == _Py_THREAD_ATTACHED && t != stw->requester) {
-            // TODO: set this per-thread, rather than per-interpreter.
-            _Py_set_eval_breaker_bit(t->interp, _PY_EVAL_PLEASE_STOP_BIT, 1);
+            _Py_set_eval_breaker_bit(t, _PY_EVAL_PLEASE_STOP_BIT);
         }
     }
     stw->thread_countdown -= num_parked;
@@ -2038,7 +2082,7 @@ stop_the_world(struct _stoptheworld_state *stw)
             break;
         }
 
-        _PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
+        PyTime_t wait_ns = 1000*1000;  // 1ms (arbitrary, may need tuning)
         if (PyEvent_WaitTimed(&stw->stop_event, wait_ns)) {
             assert(stw->thread_countdown == 0);
             break;
@@ -2151,18 +2195,17 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
          * deadlock, we need to release head_mutex before
          * the decref.
          */
-        PyObject *old_exc = tstate->async_exc;
-        tstate->async_exc = Py_XNewRef(exc);
+        Py_XINCREF(exc);
+        PyObject *old_exc = _Py_atomic_exchange_ptr(&tstate->async_exc, exc);
         HEAD_UNLOCK(runtime);
 
         Py_XDECREF(old_exc);
-        _PyEval_SignalAsyncExc(tstate->interp);
+        _Py_set_eval_breaker_bit(tstate, _PY_ASYNC_EXCEPTION_BIT);
         return 1;
     }
     HEAD_UNLOCK(runtime);
     return 0;
 }
-
 
 //---------------------------------
 // API for the current thread state
@@ -2489,16 +2532,7 @@ PyGILState_Check(void)
         return 0;
     }
 
-#ifdef MS_WINDOWS
-    int err = GetLastError();
-#endif
-
     PyThreadState *tcur = gilstate_tss_get(runtime);
-
-#ifdef MS_WINDOWS
-    SetLastError(err);
-#endif
-
     return (tstate == tcur);
 }
 
@@ -2627,7 +2661,7 @@ _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
         return;
     }
     if (eval_frame != NULL) {
-        _Py_Executors_InvalidateAll(interp);
+        _Py_Executors_InvalidateAll(interp, 1);
     }
     RARE_EVENT_INC(set_eval_frame_func);
     interp->eval_frame = eval_frame;
@@ -2806,16 +2840,38 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     // the "backing" heap.
     mi_tld_t *tld = &mts->tld;
     _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
+    llist_init(&mts->page_list);
 
     // Exiting threads push any remaining in-use segments to the abandoned
     // pool to be re-claimed later by other threads. We use per-interpreter
     // pools to keep Python objects from different interpreters separate.
     tld->segments.abandoned = &tstate->interp->mimalloc.abandoned_pool;
 
+    // Don't fill in the first N bytes up to ob_type in debug builds. We may
+    // access ob_tid and the refcount fields in the dict and list lock-less
+    // accesses, so they must remain valid for a while after deallocation.
+    size_t base_offset = offsetof(PyObject, ob_type);
+    if (_PyMem_DebugEnabled()) {
+        // The debug allocator adds two words at the beginning of each block.
+        base_offset += 2 * sizeof(size_t);
+    }
+    size_t debug_offsets[_Py_MIMALLOC_HEAP_COUNT] = {
+        [_Py_MIMALLOC_HEAP_OBJECT] = base_offset,
+        [_Py_MIMALLOC_HEAP_GC] = base_offset,
+        [_Py_MIMALLOC_HEAP_GC_PRE] = base_offset + 2 * sizeof(PyObject *),
+    };
+
     // Initialize each heap
     for (uint8_t i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
         _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
+        mts->heaps[i].debug_offset = (uint8_t)debug_offsets[i];
     }
+
+    // Heaps that store Python objects should use QSBR to delay freeing
+    // mimalloc pages while there may be concurrent lock-free readers.
+    mts->heaps[_Py_MIMALLOC_HEAP_OBJECT].page_use_qsbr = true;
+    mts->heaps[_Py_MIMALLOC_HEAP_GC].page_use_qsbr = true;
+    mts->heaps[_Py_MIMALLOC_HEAP_GC_PRE].page_use_qsbr = true;
 
     // By default, object allocations use _Py_MIMALLOC_HEAP_OBJECT.
     // _PyObject_GC_New() and similar functions temporarily override this to

@@ -334,6 +334,13 @@ and reliable way to wait for all tasks in the group to finish.
 
       Create a task in this task group.
       The signature matches that of :func:`asyncio.create_task`.
+      If the task group is inactive (e.g. not yet entered,
+      already finished, or in the process of shutting down),
+      we will close the given ``coro``.
+
+      .. versionchanged:: 3.13
+
+         Close the given coroutine if the task group is not active.
 
 Example::
 

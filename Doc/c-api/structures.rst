@@ -187,26 +187,26 @@ Implementing functions and methods
                                         PyObject *kwargs);
 
 
-.. c:type:: _PyCFunctionFast
+.. c:type:: PyCFunctionFast
 
    Type of the functions used to implement Python callables in C
    with signature :c:macro:`METH_FASTCALL`.
    The function signature is::
 
-      PyObject *_PyCFunctionFast(PyObject *self,
-                                 PyObject *const *args,
-                                 Py_ssize_t nargs);
+      PyObject *PyCFunctionFast(PyObject *self,
+                                PyObject *const *args,
+                                Py_ssize_t nargs);
 
-.. c:type:: _PyCFunctionFastWithKeywords
+.. c:type:: PyCFunctionFastWithKeywords
 
    Type of the functions used to implement Python callables in C
    with signature :ref:`METH_FASTCALL | METH_KEYWORDS <METH_FASTCALL-METH_KEYWORDS>`.
    The function signature is::
 
-      PyObject *_PyCFunctionFastWithKeywords(PyObject *self,
-                                             PyObject *const *args,
-                                             Py_ssize_t nargs,
-                                             PyObject *kwnames);
+      PyObject *PyCFunctionFastWithKeywords(PyObject *self,
+                                            PyObject *const *args,
+                                            Py_ssize_t nargs,
+                                            PyObject *kwnames);
 
 .. c:type:: PyCMethod
 
@@ -290,7 +290,7 @@ There are these calling conventions:
 .. c:macro:: METH_FASTCALL
 
    Fast calling convention supporting only positional arguments.
-   The methods have the type :c:type:`_PyCFunctionFast`.
+   The methods have the type :c:type:`PyCFunctionFast`.
    The first parameter is *self*, the second parameter is a C array
    of :c:expr:`PyObject*` values indicating the arguments and the third
    parameter is the number of arguments (the length of the array).
@@ -306,7 +306,7 @@ There are these calling conventions:
 
 :c:expr:`METH_FASTCALL | METH_KEYWORDS`
    Extension of :c:macro:`METH_FASTCALL` supporting also keyword arguments,
-   with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
+   with methods of type :c:type:`PyCFunctionFastWithKeywords`.
    Keyword arguments are passed the same way as in the
    :ref:`vectorcall protocol <vectorcall>`:
    there is an additional fourth :c:expr:`PyObject*` parameter
@@ -702,12 +702,12 @@ Defining Getters and Setters
 
    .. c:member:: void* closure
 
-      Optional function pointer, providing additional data for getter and setter.
+      Optional user data pointer, providing additional data for getter and setter.
 
 .. c:type:: PyObject *(*getter)(PyObject *, void *)
 
    The ``get`` function takes one :c:expr:`PyObject*` parameter (the
-   instance) and a function pointer (the associated ``closure``):
+   instance) and a user data pointer (the associated ``closure``):
 
    It should return a new reference on success or ``NULL`` with a set exception
    on failure.
@@ -715,7 +715,7 @@ Defining Getters and Setters
 .. c:type:: int (*setter)(PyObject *, PyObject *, void *)
 
    ``set`` functions take two :c:expr:`PyObject*` parameters (the instance and
-   the value to be set) and a function pointer (the associated ``closure``):
+   the value to be set) and a user data pointer (the associated ``closure``):
 
    In case the attribute should be deleted the second parameter is ``NULL``.
    Should return ``0`` on success or ``-1`` with a set exception on failure.

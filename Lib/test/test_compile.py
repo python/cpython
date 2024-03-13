@@ -1,4 +1,6 @@
+import contextlib
 import dis
+import io
 import math
 import os
 import unittest
@@ -525,11 +527,11 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(TypeError, compile, co1, '<ast>', 'eval')
 
         # raise exception when node type is no start node
-        self.assertRaises(TypeError, compile, _ast.If(), '<ast>', 'exec')
+        self.assertRaises(TypeError, compile, _ast.If(test=_ast.Name(id='x', ctx=_ast.Load())), '<ast>', 'exec')
 
         # raise exception when node has invalid children
         ast = _ast.Module()
-        ast.body = [_ast.BoolOp()]
+        ast.body = [_ast.BoolOp(op=_ast.Or())]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
 
     def test_compile_invalid_typealias(self):
@@ -747,7 +749,7 @@ class TestSpecifics(unittest.TestCase):
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         ("docstring", "used"))
+                         (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -792,7 +794,7 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+        self.assertEqual(f1.__code__.co_consts, (f1.__doc__, 42))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -811,6 +813,30 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(
             'RETURN_CONST',
             list(dis.get_instructions(unused_code_at_end))[-1].opname)
+
+    @support.cpython_only
+    def test_docstring_omitted(self):
+        # See gh-115347
+        src = textwrap.dedent("""
+            def f():
+                "docstring1"
+                def h():
+                    "docstring2"
+                    return 42
+
+                class C:
+                    "docstring3"
+                    pass
+
+                return h
+        """)
+        for opt in [-1, 0, 1, 2]:
+            with self.subTest(opt=opt):
+                code = compile(src, "<test>", "exec", optimize=opt)
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    dis.dis(code)
+                self.assertNotIn('NOP' , output.getvalue())
 
     def test_dont_merge_constants(self):
         # Issue #25843: compile() must not merge constants which are equal
@@ -1021,6 +1047,8 @@ class TestSpecifics(unittest.TestCase):
 
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
+                if func is no_code1 and no_code1.__doc__ is None:
+                    continue
                 code = func.__code__
                 [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
@@ -1498,6 +1526,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
             line=4, end_line=4, column=8, end_column=13, occurrence=2)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_multiline_assert(self):
         snippet = textwrap.dedent("""\
             assert (a > 0 and
