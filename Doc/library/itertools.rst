@@ -947,10 +947,10 @@ which incur interpreter overhead.
        "Visit input iterables in a cycle until each is exhausted."
        # roundrobin('ABC', 'D', 'EF') --> A D E B F C
        # Algorithm credited to George Sakkis
-       iterators = cycle(map(iter, iterables))
-       for cutoff in reversed(range(len(iterables))):
+       iterators = map(iter, iterables)
+       for num_active in reversed(range(len(iterables) + 1)):
+           iterators = cycle(islice(iterators, num_active))
            yield from map(next, iterators)
-           iterators = cycle(islice(iterators, cutoff))
 
    def partition(predicate, iterable):
        """Partition entries into false entries and true entries.
