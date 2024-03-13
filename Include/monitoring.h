@@ -16,8 +16,8 @@ typedef struct _PyMonitoringState {
 #  include "cpython/monitoring.h"
 #  undef Py_CPYTHON_MONITORING_H
 
-#define IF_ACTIVE(X)  \
-    if (state->active) { \
+#define _PyMonitoring_IF_ACTIVE(STATE, X)  \
+    if ((STATE)->active) { \
         return (X); \
     } \
     else { \
@@ -44,7 +44,9 @@ PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
 static inline int
 PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
 {
-    IF_ACTIVE(_PyMonitoring_FirePyStartEvent(state, codelike, offset));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FirePyStartEvent(state, codelike, offset));
 }
 #else
 extern int
@@ -56,7 +58,9 @@ PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, uint
 static inline int
 PyMonitoring_FirePyResumeEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
 {
-    IF_ACTIVE(_PyMonitoring_FirePyResumeEvent(state, codelike, offset));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FirePyResumeEvent(state, codelike, offset));
 }
 #else
 extern int
@@ -68,7 +72,9 @@ static inline int
 PyMonitoring_FirePyReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                PyObject *retval)
 {
-    IF_ACTIVE(_PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval));
 }
 #else
 extern int
@@ -81,7 +87,9 @@ static inline int
 PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                               PyObject *retval)
 {
-    IF_ACTIVE(_PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval));
 }
 #else
 extern int
@@ -94,7 +102,9 @@ static inline int
 PyMonitoring_FirePyCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                               PyObject* callable, PyObject *arg0)
 {
-    IF_ACTIVE(_PyMonitoring_FirePyCallEvent(state, codelike, offset, callable, arg0));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FirePyCallEvent(state, codelike, offset, callable, arg0));
 }
 #else
 extern int
@@ -107,7 +117,9 @@ static inline int
 PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                            PyObject* callable, PyObject *arg0)
 {
-    IF_ACTIVE(_PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0));
 }
 #else
 extern int
@@ -120,7 +132,9 @@ static inline int
 PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                            PyObject *lineno)
 {
-    IF_ACTIVE(_PyMonitoring_FireLineEvent(state, codelike, offset, lineno));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireLineEvent(state, codelike, offset, lineno));
 }
 #else
 extern int
@@ -132,7 +146,9 @@ PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, uint32_
 static inline int
 PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)
 {
-    IF_ACTIVE(_PyMonitoring_FireInstructionEvent(state, codelike, offset));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireInstructionEvent(state, codelike, offset));
 }
 #else
 extern int
@@ -144,7 +160,9 @@ static inline int
 PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                            PyObject *target_offset)
 {
-    IF_ACTIVE(_PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset));
 }
 #else
 extern int
@@ -157,7 +175,9 @@ static inline int
 PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                              PyObject *target_offset)
 {
-    IF_ACTIVE(_PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset));
 }
 #else
 extern int
@@ -170,7 +190,9 @@ static inline int
 PyMonitoring_FireCReturnEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                               PyObject *callable, PyObject *arg0)
 {
-    IF_ACTIVE(_PyMonitoring_FireCReturnEvent(state, codelike, offset, callable, arg0));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireCReturnEvent(state, codelike, offset, callable, arg0));
 }
 #else
 extern int
@@ -183,7 +205,9 @@ static inline int
 PyMonitoring_FirePyThrowEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                               PyObject *exception)
 {
-    IF_ACTIVE(_PyMonitoring_FirePyThrowEvent(state, codelike, offset, exception));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FirePyThrowEvent(state, codelike, offset, exception));
 }
 #else
 extern int
@@ -196,7 +220,9 @@ static inline int
 PyMonitoring_FireRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                             PyObject *exception)
 {
-    IF_ACTIVE(_PyMonitoring_FireRaiseEvent(state, codelike, offset, exception));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireRaiseEvent(state, codelike, offset, exception));
 }
 #else
 extern int
@@ -209,7 +235,9 @@ static inline int
 PyMonitoring_FireReraiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                               PyObject *exception)
 {
-    IF_ACTIVE(_PyMonitoring_FireReraiseEvent(state, codelike, offset, exception));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireReraiseEvent(state, codelike, offset, exception));
 }
 #else
 extern int
@@ -222,7 +250,9 @@ static inline int
 PyMonitoring_FireExceptionHandledEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                        PyObject *exception)
 {
-    IF_ACTIVE(_PyMonitoring_FireExceptionHandledEvent(state, codelike, offset, exception));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireExceptionHandledEvent(state, codelike, offset, exception));
 }
 #else
 extern int
@@ -235,7 +265,9 @@ static inline int
 PyMonitoring_FireCRaiseEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                              PyObject *callable, PyObject *arg0)
 {
-    IF_ACTIVE(_PyMonitoring_FireCRaiseEvent(state,  codelike, offset, callable, arg0));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireCRaiseEvent(state,  codelike, offset, callable, arg0));
 }
 #else
 extern int
@@ -248,7 +280,9 @@ static inline int
 PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                PyObject *exception)
 {
-    IF_ACTIVE(_PyMonitoring_FirePyUnwindEvent(state, codelike, offset, exception));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FirePyUnwindEvent(state, codelike, offset, exception));
 }
 #else
 extern int
@@ -261,12 +295,18 @@ static inline int
 PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                     PyObject *exception)
 {
-    IF_ACTIVE(_PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception));
+    _PyMonitoring_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception));
 }
 #else
 extern int
 PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset,
                                     PyObject *exception);
+#endif
+
+#ifndef Py_LIMITED_API
+#undef _PyMonitoring_IF_ACTIVE
 #endif
 
 #ifdef __cplusplus
