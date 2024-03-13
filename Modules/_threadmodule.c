@@ -25,7 +25,11 @@
 // Forward declarations
 static struct PyModuleDef thread_module;
 
-// Module state
+
+/****************/
+/* Module state */
+/****************/
+
 typedef struct {
     PyTypeObject *excepthook_type;
     PyTypeObject *lock_type;
@@ -42,7 +46,10 @@ get_thread_state(PyObject *module)
     return (thread_module_state *)state;
 }
 
-// _ThreadHandle type
+
+/**********************/
+/* _ThreadHandle type */
+/**********************/
 
 // Handles transition from RUNNING to one of JOINED, DETACHED, or INVALID (post
 // fork).
@@ -267,7 +274,10 @@ static PyType_Spec ThreadHandle_Type_spec = {
     ThreadHandle_Type_slots,
 };
 
+
+/****************/
 /* Lock objects */
+/****************/
 
 typedef struct {
     PyObject_HEAD
@@ -519,7 +529,33 @@ static PyType_Spec lock_type_spec = {
     .slots = lock_type_slots,
 };
 
+static lockobject *
+newlockobject(PyObject *module)
+{
+    thread_module_state *state = get_thread_state(module);
+
+    PyTypeObject *type = state->lock_type;
+    lockobject *self = (lockobject *)type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    self->lock_lock = PyThread_allocate_lock();
+    self->locked = 0;
+    self->in_weakreflist = NULL;
+
+    if (self->lock_lock == NULL) {
+        Py_DECREF(self);
+        PyErr_SetString(ThreadError, "can't allocate lock");
+        return NULL;
+    }
+    return self;
+}
+
+
+/**************************/
 /* Recursive lock objects */
+/**************************/
 
 typedef struct {
     PyObject_HEAD
@@ -829,30 +865,10 @@ static PyType_Spec rlock_type_spec = {
     .slots = rlock_type_slots,
 };
 
-static lockobject *
-newlockobject(PyObject *module)
-{
-    thread_module_state *state = get_thread_state(module);
 
-    PyTypeObject *type = state->lock_type;
-    lockobject *self = (lockobject *)type->tp_alloc(type, 0);
-    if (self == NULL) {
-        return NULL;
-    }
-
-    self->lock_lock = PyThread_allocate_lock();
-    self->locked = 0;
-    self->in_weakreflist = NULL;
-
-    if (self->lock_lock == NULL) {
-        Py_DECREF(self);
-        PyErr_SetString(ThreadError, "can't allocate lock");
-        return NULL;
-    }
-    return self;
-}
-
+/************************/
 /* Thread-local objects */
+/************************/
 
 /* Quick overview:
 
@@ -1270,7 +1286,10 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
     Py_RETURN_NONE;
 }
 
+
+/********************/
 /* Module functions */
+/********************/
 
 // bootstate is used to "bootstrap" new threads. Any arguments needed by
 // `thread_run()`, which can only take a single argument due to platform
@@ -1956,7 +1975,9 @@ static PyMethodDef thread_methods[] = {
 };
 
 
+/***************************/
 /* Initialization function */
+/***************************/
 
 static int
 thread_module_exec(PyObject *module)
