@@ -33,8 +33,8 @@ static const char usage_line[] =
 /* Lines sorted by option name; keep in sync with usage_envvars* below */
 static const char usage_help[] = "\
 Options (and corresponding environment variables):\n\
--b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
-         and comparing bytes/bytearray with str. (-bb: issue errors)\n\
+-b     : issue warnings about converting bytes/bytearray to str and comparing\n\
+         bytes/bytearray with str or bytes with int. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
