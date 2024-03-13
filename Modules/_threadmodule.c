@@ -275,6 +275,222 @@ static PyType_Spec ThreadHandle_Type_spec = {
 };
 
 
+/********************/
+/* thread execution */
+/********************/
+
+// bootstate is used to "bootstrap" new threads. Any arguments needed by
+// `thread_run()`, which can only take a single argument due to platform
+// limitations, are contained in bootstate.
+struct bootstate {
+    PyThreadState *tstate;
+    PyObject *func;
+    PyObject *args;
+    PyObject *kwargs;
+    _PyEventRc *thread_is_exiting;
+};
+
+static struct bootstate *
+thread_bootstate_new(PyObject *func, PyObject *args, PyObject *kwargs,
+                     _PyEventRc *thread_is_exiting)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "thread is not supported for isolated subinterpreters");
+        return NULL;
+    }
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_PythonFinalizationError,
+                        "can't create new thread at interpreter shutdown");
+        return NULL;
+    }
+
+    PyThreadState *tstate = _PyThreadState_New(
+            interp, _PyThreadState_WHENCE_THREADING);
+    if (tstate == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_NoMemory();
+        }
+        return NULL;
+    }
+
+    if (args == NULL) {
+        args = PyTuple_New(0);
+        if (args == NULL) {
+            PyThreadState_Clear(tstate);
+            PyThreadState_Delete(tstate);
+        }
+    }
+    else {
+        Py_INCREF(args);
+    }
+
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
+    if (boot == NULL) {
+        PyErr_NoMemory();
+        Py_DECREF(args);
+        PyThreadState_Clear(tstate);
+        PyThreadState_Delete(tstate);
+        return NULL;
+    }
+    *boot = (struct bootstate){
+        .tstate = tstate,
+        .func = Py_NewRef(func),
+        .args = args,
+        .kwargs = Py_XNewRef(kwargs),
+        .thread_is_exiting = thread_is_exiting,
+    };
+    if (thread_is_exiting != NULL) {
+        _PyEventRc_Incref(thread_is_exiting);
+    }
+    return boot;
+}
+
+static void
+thread_bootstate_free(struct bootstate *boot)
+{
+    Py_XDECREF(boot->func);
+    Py_XDECREF(boot->args);
+    Py_XDECREF(boot->kwargs);
+    if (boot->thread_is_exiting != NULL) {
+        _PyEventRc_Decref(boot->thread_is_exiting);
+    }
+    if (boot->tstate != NULL) {
+        PyThreadState_Clear(boot->tstate);
+        // XXX PyThreadState_Delete() too?
+    }
+    PyMem_RawFree(boot);
+}
+
+static void
+thread_bootstate_finalizing(struct bootstate *boot)
+{
+    // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
+    // These functions are called on tstate indirectly by Py_Finalize()
+    // which calls _PyInterpreterState_Clear().
+    //
+    // Py_DECREF() cannot be called because the GIL is not held: leak
+    // references on purpose. Python is being finalized anyway.
+    boot->tstate = NULL;
+    boot->func = NULL;
+    boot->args = NULL;
+    boot->kwargs = NULL;
+    thread_bootstate_free(boot);
+}
+
+
+static void
+thread_run(void *boot_raw)
+{
+    struct bootstate *boot = (struct bootstate *) boot_raw;
+    PyThreadState *tstate = boot->tstate;
+
+    // `thread_is_exiting` needs to be set after bootstate has been freed
+    _PyEventRc *thread_is_exiting = boot->thread_is_exiting;
+    boot->thread_is_exiting = NULL;
+
+    // gh-108987: If _thread.start_new_thread() is called before or while
+    // Python is being finalized, thread_run() can called *after*.
+    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
+    // threads must exit, except of the thread calling Py_Finalize() whch holds
+    // the GIL and must not exit.
+    //
+    // At this stage, tstate can be a dangling pointer (point to freed memory),
+    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
+    if (_PyThreadState_MustExit(tstate)) {
+        thread_bootstate_finalizing(boot);
+        goto exit;
+    }
+
+    _PyThreadState_Bind(tstate);
+    PyEval_AcquireThread(tstate);
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
+
+    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
+    if (res == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_SystemExit))
+            /* SystemExit is ignored silently */
+            PyErr_Clear();
+        else {
+            PyErr_FormatUnraisable(
+                "Exception ignored in thread started by %R", boot->func);
+        }
+    }
+    else {
+        Py_DECREF(res);
+    }
+
+    boot->tstate = NULL;
+    thread_bootstate_free(boot);
+
+    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
+    PyThreadState_Clear(tstate);
+    _PyThreadState_DeleteCurrent(tstate);
+
+exit:
+    if (thread_is_exiting != NULL) {
+        _PyEvent_Notify(&thread_is_exiting->event);
+        _PyEventRc_Decref(thread_is_exiting);
+    }
+
+    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
+    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
+    // to open the libgcc_s.so library (ex: EMFILE error).
+    return;
+}
+
+
+static void _lock_unlock(PyObject *);
+
+static void
+release_sentinel(void *weakref_raw)
+{
+    PyObject *weakref = _PyObject_CAST(weakref_raw);
+
+    /* Tricky: this function is called when the current thread state
+       is being deleted.  Therefore, only simple C code can safely
+       execute here. */
+    PyObject *lock = _PyWeakref_GET_REF(weakref);
+    if (lock != NULL) {
+        _lock_unlock(lock);
+        Py_DECREF(lock);
+    }
+
+    /* Deallocating a weakref with a NULL callback only calls
+       PyObject_GC_Del(), which can't call any Python code. */
+    Py_DECREF(weakref);
+}
+
+static int
+set_threadstate_finalizer(PyThreadState *tstate, PyObject *lock)
+{
+    PyObject *wr;
+    if (tstate->on_delete_data != NULL) {
+        /* We must support the re-creation of the lock from a
+           fork()ed child. */
+        assert(tstate->on_delete == &release_sentinel);
+        wr = (PyObject *) tstate->on_delete_data;
+        tstate->on_delete = NULL;
+        tstate->on_delete_data = NULL;
+        Py_DECREF(wr);
+    }
+
+    /* The lock is owned by whoever called set_threadstate_finalizer(),
+       but the weakref clings to the thread state. */
+    wr = PyWeakref_NewRef(lock, NULL);
+    if (wr == NULL) {
+        return -1;
+    }
+    tstate->on_delete_data = (void *) wr;
+    tstate->on_delete = &release_sentinel;
+    return 0;
+}
+
+
 /****************/
 /* Lock objects */
 /****************/
@@ -390,6 +606,16 @@ the lock, and return True once the lock is acquired.\n\
 With an argument, this will only block if the argument is true,\n\
 and the return value reflects whether the lock is acquired.\n\
 The blocking operation is interruptible.");
+
+static void
+_lock_unlock(PyObject *obj)
+{
+    lockobject *lock = (lockobject *)obj;
+    if (lock->locked) {
+        lock->locked = 0;
+        PyThread_release_lock(lock->lock_lock);
+    }
+}
 
 static PyObject *
 lock_PyThread_release_lock(lockobject *self, PyObject *Py_UNUSED(ignored))
@@ -1284,223 +1510,6 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
     }
     Py_DECREF(self);
     Py_RETURN_NONE;
-}
-
-
-/********************/
-/* thread execution */
-/********************/
-
-// bootstate is used to "bootstrap" new threads. Any arguments needed by
-// `thread_run()`, which can only take a single argument due to platform
-// limitations, are contained in bootstate.
-struct bootstate {
-    PyThreadState *tstate;
-    PyObject *func;
-    PyObject *args;
-    PyObject *kwargs;
-    _PyEventRc *thread_is_exiting;
-};
-
-static struct bootstate *
-thread_bootstate_new(PyObject *func, PyObject *args, PyObject *kwargs,
-                     _PyEventRc *thread_is_exiting)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "thread is not supported for isolated subinterpreters");
-        return NULL;
-    }
-    if (interp->finalizing) {
-        PyErr_SetString(PyExc_PythonFinalizationError,
-                        "can't create new thread at interpreter shutdown");
-        return NULL;
-    }
-
-    PyThreadState *tstate = _PyThreadState_New(
-            interp, _PyThreadState_WHENCE_THREADING);
-    if (tstate == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_NoMemory();
-        }
-        return NULL;
-    }
-
-    if (args == NULL) {
-        args = PyTuple_New(0);
-        if (args == NULL) {
-            PyThreadState_Clear(tstate);
-            PyThreadState_Delete(tstate);
-        }
-    }
-    else {
-        Py_INCREF(args);
-    }
-
-    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
-    // because it should be possible to call thread_bootstate_free()
-    // without holding the GIL.
-    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
-    if (boot == NULL) {
-        PyErr_NoMemory();
-        Py_DECREF(args);
-        PyThreadState_Clear(tstate);
-        PyThreadState_Delete(tstate);
-        return NULL;
-    }
-    *boot = (struct bootstate){
-        .tstate = tstate,
-        .func = Py_NewRef(func),
-        .args = args,
-        .kwargs = Py_XNewRef(kwargs),
-        .thread_is_exiting = thread_is_exiting,
-    };
-    if (thread_is_exiting != NULL) {
-        _PyEventRc_Incref(thread_is_exiting);
-    }
-    return boot;
-}
-
-static void
-thread_bootstate_free(struct bootstate *boot)
-{
-    Py_XDECREF(boot->func);
-    Py_XDECREF(boot->args);
-    Py_XDECREF(boot->kwargs);
-    if (boot->thread_is_exiting != NULL) {
-        _PyEventRc_Decref(boot->thread_is_exiting);
-    }
-    if (boot->tstate != NULL) {
-        PyThreadState_Clear(boot->tstate);
-        // XXX PyThreadState_Delete() too?
-    }
-    PyMem_RawFree(boot);
-}
-
-static void
-thread_bootstate_finalizing(struct bootstate *boot)
-{
-    // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
-    // These functions are called on tstate indirectly by Py_Finalize()
-    // which calls _PyInterpreterState_Clear().
-    //
-    // Py_DECREF() cannot be called because the GIL is not held: leak
-    // references on purpose. Python is being finalized anyway.
-    boot->tstate = NULL;
-    boot->func = NULL;
-    boot->args = NULL;
-    boot->kwargs = NULL;
-    thread_bootstate_free(boot);
-}
-
-
-static void
-thread_run(void *boot_raw)
-{
-    struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate = boot->tstate;
-
-    // `thread_is_exiting` needs to be set after bootstate has been freed
-    _PyEventRc *thread_is_exiting = boot->thread_is_exiting;
-    boot->thread_is_exiting = NULL;
-
-    // gh-108987: If _thread.start_new_thread() is called before or while
-    // Python is being finalized, thread_run() can called *after*.
-    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
-    // threads must exit, except of the thread calling Py_Finalize() whch holds
-    // the GIL and must not exit.
-    //
-    // At this stage, tstate can be a dangling pointer (point to freed memory),
-    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
-    if (_PyThreadState_MustExit(tstate)) {
-        thread_bootstate_finalizing(boot);
-        goto exit;
-    }
-
-    _PyThreadState_Bind(tstate);
-    PyEval_AcquireThread(tstate);
-    _Py_atomic_add_ssize(&tstate->interp->threads.count, 1);
-
-    PyObject *res = PyObject_Call(boot->func, boot->args, boot->kwargs);
-    if (res == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_SystemExit))
-            /* SystemExit is ignored silently */
-            PyErr_Clear();
-        else {
-            PyErr_FormatUnraisable(
-                "Exception ignored in thread started by %R", boot->func);
-        }
-    }
-    else {
-        Py_DECREF(res);
-    }
-
-    boot->tstate = NULL;
-    thread_bootstate_free(boot);
-
-    _Py_atomic_add_ssize(&tstate->interp->threads.count, -1);
-    PyThreadState_Clear(tstate);
-    _PyThreadState_DeleteCurrent(tstate);
-
-exit:
-    if (thread_is_exiting != NULL) {
-        _PyEvent_Notify(&thread_is_exiting->event);
-        _PyEventRc_Decref(thread_is_exiting);
-    }
-
-    // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
-    // the glibc, pthread_exit() can abort the whole process if dlopen() fails
-    // to open the libgcc_s.so library (ex: EMFILE error).
-    return;
-}
-
-
-static void
-release_sentinel(void *weakref_raw)
-{
-    PyObject *weakref = _PyObject_CAST(weakref_raw);
-
-    /* Tricky: this function is called when the current thread state
-       is being deleted.  Therefore, only simple C code can safely
-       execute here. */
-    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
-    if (lock != NULL) {
-        if (lock->locked) {
-            lock->locked = 0;
-            PyThread_release_lock(lock->lock_lock);
-        }
-        Py_DECREF(lock);
-    }
-
-    /* Deallocating a weakref with a NULL callback only calls
-       PyObject_GC_Del(), which can't call any Python code. */
-    Py_DECREF(weakref);
-}
-
-static int
-set_threadstate_finalizer(PyThreadState *tstate, PyObject *lock)
-{
-    PyObject *wr;
-    if (tstate->on_delete_data != NULL) {
-        /* We must support the re-creation of the lock from a
-           fork()ed child. */
-        assert(tstate->on_delete == &release_sentinel);
-        wr = (PyObject *) tstate->on_delete_data;
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-        Py_DECREF(wr);
-    }
-
-    /* The lock is owned by whoever called set_threadstate_finalizer(),
-       but the weakref clings to the thread state. */
-    wr = PyWeakref_NewRef(lock, NULL);
-    if (wr == NULL) {
-        return -1;
-    }
-    tstate->on_delete_data = (void *) wr;
-    tstate->on_delete = &release_sentinel;
-    return 0;
 }
 
 
