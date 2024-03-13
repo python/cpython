@@ -142,8 +142,8 @@ static const char usage_line[] =
 /* Lines sorted by option name; keep in sync with usage_envvars* below */
 static const char usage_help[] = "\
 Options (and corresponding environment variables):\n\
--b     : issue warnings about str(bytes_instance), str(bytearray_instance)\n\
-         and comparing bytes/bytearray with str. (-bb: issue errors)\n\
+-b     : issue warnings about converting bytes/bytearray to str and comparing\n\
+         bytes/bytearray with str or bytes with int. (-bb: issue errors)\n\
 -B     : don't write .pyc files on import; also PYTHONDONTWRITEBYTECODE=x\n\
 -c cmd : program passed in as string (terminates option list)\n\
 -d     : turn on parser debugging output (for experts only, only works on\n\
@@ -187,19 +187,9 @@ arg ...: arguments passed to program in sys.argv[1:]\n\
 
 static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
--X faulthandler: enable faulthandler\n\
--X showrefcount: output the total reference count and number of used\n\
-         memory blocks when the program finishes or after each statement in\n\
-         the interactive interpreter.  This only works on debug builds\n\
--X tracemalloc: start tracing Python memory allocations using the\n\
-         tracemalloc module.  By default, only the most recent frame is stored\n\
-         in a traceback of a trace.  Use -X tracemalloc=NFRAME to start\n\
-         tracing with a traceback limit of NFRAME frames\n\
--X importtime: show how long each import takes.  It shows module name,\n\
-         cumulative time (including nested imports) and self time (excluding\n\
-         nested imports).  Note that its output may be broken in\n\
-         multi-threaded application.\n\
-         Typical usage is python3 -X importtime -c 'import asyncio'\n\
+-X cpu_count=[n|default]: Override the return value of os.cpu_count(),\n\
+         os.process_cpu_count(), and multiprocessing.cpu_count().  This can\n\
+         help users who need to limit resources in a container.\n\
 -X dev : enable CPython's \"development mode\", introducing additional runtime\n\
          checks which are too expensive to be enabled by default.  Effect of\n\
          the developer mode:\n\
@@ -211,12 +201,18 @@ The following implementation-specific options are available:\n\
           * Enable asyncio debug mode\n\
           * Set the dev_mode attribute of sys.flags to True\n\
           * io.IOBase destructor logs close() exceptions\n\
--X utf8: enable UTF-8 mode for operating system interfaces, overriding the\n\
-         default locale-aware mode.  -X utf8=0 explicitly disables UTF-8 mode\n\
-         (even when it would otherwise activate automatically)\n\
--X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted\n\
-         at the given directory instead of to the code tree\n\
--X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\n\
+-X faulthandler: enable faulthandler\n\
+-X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+         The default is \"on\" (or \"off\" if you are running a local build).\n\
+-X importtime: show how long each import takes.  It shows module name,\n\
+         cumulative time (including nested imports) and self time (excluding\n\
+         nested imports).  Note that its output may be broken in\n\
+         multi-threaded application.\n\
+         Typical usage is python3 -X importtime -c 'import asyncio'\n\
+-X int_max_str_digits=number: limit the size of int<->str conversions.\n\
+         This helps avoid denial of service attacks when parsing untrusted\n\
+         data.  The default is sys.int_info.default_max_str_digits.\n\
+         0 disables.\n\
 -X no_debug_ranges: disable the inclusion of the tables mapping extra location\n\
          information (end line, start column offset and end column offset) to\n\
          every instruction in code objects.  This is useful when smaller code\n\
@@ -227,23 +223,30 @@ The following implementation-specific options are available:\n\
          profiler will be able to report Python calls.  This option is only\n\
          available on some platforms and will do nothing if is not supported\n\
          on the current system.  The default value is \"off\".\n\
--X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
-         The default is \"on\" (or \"off\" if you are running a local build).\n\
--X int_max_str_digits=number: limit the size of int<->str conversions.\n\
-         This helps avoid denial of service attacks when parsing untrusted\n\
-         data.  The default is sys.int_info.default_max_str_digits.\n\
-         0 disables.\n\
--X cpu_count=[n|default]: Override the return value of os.cpu_count(),\n\
-         os.process_cpu_count(), and multiprocessing.cpu_count().  This can\n\
-         help users who need to limit resources in a container."
-#ifdef Py_STATS
-"\n\
--X pystats: Enable pystats collection at startup."
-#endif
+"
 #ifdef Py_DEBUG
-"\n\
--X presite=package.module: import this module before site.py is run."
+"-X presite=package.module: import this module before site.py is run.\n"
 #endif
+"\
+-X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted\n\
+         at the given directory instead of to the code tree\n\
+"
+#ifdef Py_STATS
+"-X pystats: Enable pystats collection at startup.\n"
+#endif
+"\
+-X showrefcount: output the total reference count and number of used\n\
+         memory blocks when the program finishes or after each statement in\n\
+         the interactive interpreter.  This only works on debug builds\n\
+-X tracemalloc: start tracing Python memory allocations using the\n\
+         tracemalloc module.  By default, only the most recent frame is stored\n\
+         in a traceback of a trace.  Use -X tracemalloc=NFRAME to start\n\
+         tracing with a traceback limit of NFRAME frames\n\
+-X utf8: enable UTF-8 mode for operating system interfaces, overriding the\n\
+         default locale-aware mode.  -X utf8=0 explicitly disables UTF-8 mode\n\
+         (even when it would otherwise activate automatically)\n\
+-X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None'\
+"
 ;
 
 /* Envvars that don't have equivalent command-line options are listed first */
@@ -256,18 +259,11 @@ static const char usage_envvars[] =
 "                  The default module search path uses %s.\n"
 "PYTHONPLATLIBDIR: override sys.platlibdir.\n"
 "PYTHONCASEOK    : ignore case in 'import' statements (Windows).\n"
-"PYTHONUTF8      : if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
-"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n"
 "PYTHONHASHSEED  : if this variable is set to 'random', a random value is used\n"
 "                  to seed the hashes of str and bytes objects.  It can also be\n"
 "                  set to an integer in the range [0,4294967295] to get hash\n"
 "                  values with a predictable seed.\n"
-"PYTHONINTMAXSTRDIGITS: limits the maximum digit characters in an int value\n"
-"                  when converting from a string and when converting an int\n"
-"                  back to a str.  A value of 0 disables the limit.\n"
-"                  Conversions to or from bases 2, 4, 8, 16, and 32 are never\n"
-"                  limited.\n"
 "PYTHONMALLOC    : set the Python memory allocators and/or install debug hooks\n"
 "                  on Python memory allocators.  Use PYTHONMALLOC=debug to\n"
 "                  install debug hooks.\n"
@@ -278,48 +274,57 @@ static const char usage_envvars[] =
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "                  debugger.  It can be set to the callable of your debugger of\n"
 "                  choice.\n"
-"PYTHON_CPU_COUNT: Overrides the return value of os.process_cpu_count(),\n"
-"                  os.cpu_count(), and multiprocessing.cpu_count() if set to\n"
-"                  a positive integer.\n"
-#ifdef Py_GIL_DISABLED
-"PYTHON_GIL      : When set to 0, disables the GIL.\n"
-#endif
-"PYTHONDEVMODE   : enable the development mode.\n"
-"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
-"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
-"PYTHONNODEBUGRANGES: if this variable is set, it disables the inclusion of\n"
-"                  the tables mapping extra location information (end line,\n"
-"                  start column offset and end column offset) to every\n"
-"                  instruction in code objects.  This is useful when smaller\n"
-"                  code objects and pyc files are desired as well as\n"
-"                  suppressing the extra visual location indicators when the\n"
-"                  interpreter displays tracebacks.\n"
-"PYTHON_FROZEN_MODULES: if this variable is set, it determines whether or not\n"
-"                  frozen modules should be used.  The default is \"on\" (or\n"
-"                  \"off\" if you are running a local build).\n"
 "PYTHON_COLORS   : if this variable is set to 1, the interpreter will colorize\n"
 "                  various kinds of output.  Setting it to 0 deactivates\n"
 "                  this behavior.\n"
 "PYTHON_HISTORY  : the location of a .python_history file.\n"
 "\n"
 "These variables have equivalent command-line options (see --help for details):\n"
+"PYTHON_CPU_COUNT: Overrides the return value of os.process_cpu_count(),\n"
+"                  os.cpu_count(), and multiprocessing.cpu_count() if set to\n"
+"                  a positive integer. (-X cpu_count)\n"
 "PYTHONDEBUG     : enable parser debug mode (-d)\n"
+"PYTHONDEVMODE   : enable the development mode (-X dev)\n"
 "PYTHONDONTWRITEBYTECODE: don't write .pyc files (-B)\n"
+"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors (-X faulthandler)\n"
+"PYTHON_FROZEN_MODULES: if this variable is set, it determines whether or not\n"
+"                  frozen modules should be used.  The default is \"on\" (or\n"
+"                  \"off\" if you are running a local build).\n"
+"                  (-X frozen_modules)\n"
+#ifdef Py_GIL_DISABLED
+"PYTHON_GIL      : when set to 0, disables the GIL (-X gil)\n"
+#endif
 "PYTHONINSPECT   : inspect interactively after running script (-i)\n"
-"PYTHONINTMAXSTRDIGITS: limit max digit characters in an int value\n"
+"PYTHONINTMAXSTRDIGITS: limits the maximum digit characters in an int value\n"
+"                  when converting from a string and when converting an int\n"
+"                  back to a str.  A value of 0 disables the limit.\n"
+"                  Conversions to or from bases 2, 4, 8, 16, and 32 are never\n"
+"                  limited.\n"
 "                  (-X int_max_str_digits=number)\n"
+"PYTHONNODEBUGRANGES: if this variable is set, it disables the inclusion of\n"
+"                  the tables mapping extra location information (end line,\n"
+"                  start column offset and end column offset) to every\n"
+"                  instruction in code objects.  This is useful when smaller\n"
+"                  code objects and pyc files are desired as well as\n"
+"                  suppressing the extra visual location indicators when the\n"
+"                  interpreter displays tracebacks. (-X no_debug_ranges)\n"
 "PYTHONNOUSERSITE: disable user site directory (-s)\n"
 "PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
-"PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
-"PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
-"PYTHONVERBOSE   : trace import statements (-v)\n"
-"PYTHONWARNINGS=arg: warning control (-W arg)\n"
-#ifdef Py_STATS
-"PYTHONSTATS     : turns on statistics gathering\n"
-#endif
 #ifdef Py_DEBUG
-"PYTHON_PRESITE=pkg.mod: import this module before site.py is run\n"
+"PYTHON_PRESITE=pkg.mod: import this module before site.py is run (-X presite)\n"
 #endif
+"PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
+"                  (-X pycache_prefix)\n"
+"PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
+#ifdef Py_STATS
+"PYTHONSTATS     : turns on statistics gathering (-X pystats)\n"
+#endif
+"PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
+"PYTHONUTF8      : if set to 1, enable the UTF-8 mode (-X utf8)\n"
+"PYTHONVERBOSE   : trace import statements (-v)\n"
+"PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'\n"
+"                  (-X warn_default_encoding)\n"
+"PYTHONWARNINGS=arg: warning control (-W arg)\n"
 ;
 
 #if defined(MS_WINDOWS)
