@@ -3390,7 +3390,7 @@ class POSIXProcessTestCase(BaseTestCase):
         at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'OK\n')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),

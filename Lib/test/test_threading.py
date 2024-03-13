@@ -1216,7 +1216,7 @@ class ThreadTests(BaseTestCase):
             at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'OK\n')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
 class ThreadJoinOnShutdown(BaseTestCase):
@@ -1361,7 +1361,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         rc, out, err = assert_python_ok('-c', script)
         self.assertEqual(err, b"")
-        self.assertEqual(out, b"OK\n")
+        self.assertEqual(out.strip(), b"OK")
         self.assertEqual(rc, 0)
 
     @skip_unless_reliable_fork
