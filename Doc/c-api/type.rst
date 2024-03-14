@@ -193,6 +193,13 @@ Type Objects
 
    .. versionadded:: 3.13
 
+.. c:function:: PyObject* PyType_GetModuleName(PyTypeObject *type)
+
+   Return the type's module name. Equivalent to getting the ``type.__module__``
+   attribute.
+
+   .. versionadded:: 3.13
+
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
