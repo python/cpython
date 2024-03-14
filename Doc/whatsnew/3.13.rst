@@ -1664,6 +1664,10 @@ New Features
   to ``"builtins"``.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
+* Add :c:func:`PyType_GetModuleName` function to get the type's module name.
+  Equivalent to getting the ``type.__module__`` attribute.
+  (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
+
 
 Porting to Python 3.13
 ----------------------

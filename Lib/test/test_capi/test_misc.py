@@ -1104,8 +1104,9 @@ class CAPITest(unittest.TestCase):
         class MyType:
             pass
 
-        from _testcapi import get_type_name, get_type_qualname, get_type_fullyqualname
-        from _testinternalcapi import get_type_module_name
+        from _testcapi import (
+            get_type_name, get_type_qualname,
+            get_type_fullyqualname, get_type_module_name)
 
         from collections import OrderedDict
         ht = _testcapi.get_heaptype_for_name()
