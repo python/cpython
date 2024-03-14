@@ -1533,6 +1533,10 @@
 
         /* _CALL is not a viable micro-op for tier 2 */
 
+        case _CHECK_PERIODIC: {
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             _Py_UopsSymbol *null;
             _Py_UopsSymbol *callable;
