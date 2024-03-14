@@ -402,7 +402,7 @@ partial_repr(partialobject *pto)
             goto done;
     }
 
-    mod = _PyType_GetModuleName(Py_TYPE(pto));
+    mod = PyType_GetModuleName(Py_TYPE(pto));
     if (mod == NULL) {
         goto error;
     }
