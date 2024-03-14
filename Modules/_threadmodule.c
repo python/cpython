@@ -75,7 +75,7 @@ typedef enum {
 // join has completed successfully all future joins complete immediately.
 typedef struct {
     PyObject_HEAD
-    struct llist_node node;  // linked list node (see _pythread_runtime_state)
+    struct llist_node fork_node;  // linked list node (see _pythread_runtime_state)
 
     // The `ident` and `handle` fields are immutable once the object is visible
     // to threads other than its creator, thus they do not need to be accessed
@@ -129,6 +129,8 @@ join_thread(thandleobject *hobj)
 }
 
 
+static void track_thread_handle_for_fork(thandleobject *);
+
 static PyObject *
 _PyThreadHandle_NewObject(PyTypeObject *type)
 {
@@ -148,9 +150,7 @@ _PyThreadHandle_NewObject(PyTypeObject *type)
     self->once = (_PyOnceFlag){0};
     self->state = THREAD_HANDLE_INVALID;
 
-    HEAD_LOCK(&_PyRuntime);
-    llist_insert_tail(&_PyRuntime.threads.handles, &self->node);
-    HEAD_UNLOCK(&_PyRuntime);
+    track_thread_handle_for_fork(self);
 
     return (PyObject *)self;
 }
@@ -172,6 +172,45 @@ static _PyEventRc *
 _PyThreadHandle_GetExitingEvent(PyObject *hobj)
 {
     return ((thandleobject *)hobj)->thread_is_exiting;
+}
+
+
+/* tracking thread handles for fork */
+
+static void
+track_thread_handle_for_fork(thandleobject *hobj)
+{
+    HEAD_LOCK(&_PyRuntime);
+    llist_insert_tail(&_PyRuntime.threads.handles, &hobj->fork_node);
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
+untrack_thread_handle_for_fork(thandleobject *hobj)
+{
+    HEAD_LOCK(&_PyRuntime);
+    if (hobj->fork_node.next != NULL) {
+        llist_remove(&hobj->fork_node);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
+clear_tracked_thread_handles(struct _pythread_runtime_state *state,
+                             PyThread_ident_t current)
+{
+    struct llist_node *node;
+    llist_for_each_safe(node, &state->handles) {
+        thandleobject *hobj = llist_data(node, thandleobject, fork_node);
+        if (hobj->ident == current) {
+            continue;
+        }
+
+        // Disallow calls to join() as they could crash. We are the only
+        // thread; it's safe to set this without an atomic.
+        hobj->state = THREAD_HANDLE_INVALID;
+        llist_remove(node);
+    }
 }
 
 
@@ -242,11 +281,7 @@ ThreadHandle_dealloc(thandleobject *self)
     PyObject *tp = (PyObject *) Py_TYPE(self);
 
     // Remove ourself from the global list of handles
-    HEAD_LOCK(&_PyRuntime);
-    if (self->node.next != NULL) {
-        llist_remove(&self->node);
-    }
-    HEAD_UNLOCK(&_PyRuntime);
+    untrack_thread_handle_for_fork(self);
 
     // It's safe to access state non-atomically:
     //   1. This is the destructor; nothing else holds a reference.
@@ -309,19 +344,7 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
     // that it happens before any ThreadHandles are deallocated, such as by a
     // GC cycle.
     PyThread_ident_t current = PyThread_get_thread_ident_ex();
-
-    struct llist_node *node;
-    llist_for_each_safe(node, &state->handles) {
-        thandleobject *hobj = llist_data(node, thandleobject, node);
-        if (hobj->ident == current) {
-            continue;
-        }
-
-        // Disallow calls to join() as they could crash. We are the only
-        // thread; it's safe to set this without an atomic.
-        hobj->state = THREAD_HANDLE_INVALID;
-        llist_remove(node);
-    }
+    clear_tracked_thread_handles(state, current);
 }
 
 
