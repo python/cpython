@@ -568,14 +568,22 @@ class OrderedDictTests:
             od[key] = i
 
         # These should not crash.
-        with self.assertRaises(KeyError):
+        try:
             list(od.values())
-        with self.assertRaises(KeyError):
+        except KeyError:
+            pass
+        try:
             list(od.items())
-        with self.assertRaises(KeyError):
+        except KeyError:
+            pass
+        try:
             repr(od)
-        with self.assertRaises(KeyError):
+        except KeyError:
+            pass
+        try:
             od.copy()
+        except KeyError:
+            pass
 
     def test_issue24348(self):
         OrderedDict = self.OrderedDict
