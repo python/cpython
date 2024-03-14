@@ -170,7 +170,7 @@ class Stencil:
                 offset -= 2
             case _:
                 return
-        if self.body[offset:] == jump and len(self.body[:offset]) % alignment == 0:
+        if self.body[offset:] == jump and offset % alignment == 0:
             self.body = self.body[:offset]
             self.holes.remove(hole)
 
