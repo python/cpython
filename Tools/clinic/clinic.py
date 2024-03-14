@@ -44,14 +44,13 @@ from typing import (
     Protocol,
     TypeVar,
     cast,
-    overload,
 )
 
 
 # Local imports.
 import libclinic
 import libclinic.cpp
-from libclinic import ClinicError
+from libclinic import ClinicError, fail, warn
 
 
 # TODO:
@@ -92,51 +91,6 @@ class Null:
 NULL = Null()
 
 TemplateDict = dict[str, str]
-
-
-@overload
-def warn_or_fail(
-    *args: object,
-    fail: Literal[True],
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> NoReturn: ...
-
-@overload
-def warn_or_fail(
-    *args: object,
-    fail: Literal[False] = False,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> None: ...
-
-def warn_or_fail(
-    *args: object,
-    fail: bool = False,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> None:
-    joined = " ".join([str(a) for a in args])
-    error = ClinicError(joined, filename=filename, lineno=line_number)
-    if fail:
-        raise error
-    else:
-        print(error.report(warn_only=True))
-
-
-def warn(
-    *args: object,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> None:
-    return warn_or_fail(*args, filename=filename, line_number=line_number, fail=False)
-
-def fail(
-    *args: object,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> NoReturn:
-    warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
 class CRenderData:
