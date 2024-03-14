@@ -3162,7 +3162,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             fmt = fmt.replace('{bad_argument2}', bad_argument2)
         return fmt.format(argname=argname, paramname=self.parser_name, **kwargs)
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         """Method called when self.converter is used to parse an argument."""
         pass
 
@@ -3448,7 +3448,7 @@ class unsigned_short_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         if self.converter == '_PyLong_UnsignedShort_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedShort_Converter()')
@@ -3535,7 +3535,7 @@ class unsigned_int_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         if self.converter == '_PyLong_UnsignedInt_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedInt_Converter()')
@@ -3596,7 +3596,7 @@ class unsigned_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         if self.converter == '_PyLong_UnsignedLong_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedLong_Converter()')
@@ -3652,7 +3652,7 @@ class unsigned_long_long_converter(CConverter):
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         if self.converter == '_PyLong_UnsignedLongLong_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedLongLong_Converter()')
@@ -3693,7 +3693,7 @@ class Py_ssize_t_converter(CConverter):
         else:
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         if self.converter == '_Py_convert_optional_to_ssize_t':
             self.add_include('pycore_abstract.h',
                              '_Py_convert_optional_to_ssize_t()')
@@ -3798,7 +3798,7 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         self.add_include('pycore_long.h',
                          '_PyLong_Size_t_Converter()')
 
@@ -3827,7 +3827,7 @@ class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
 
-    def use_converter(self):
+    def use_converter(self) -> None:
         self.add_include('pycore_fileutils.h',
                          '_PyLong_FileDescriptor_Converter()')
 
