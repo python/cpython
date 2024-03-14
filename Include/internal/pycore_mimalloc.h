@@ -32,6 +32,10 @@ typedef enum {
 #  define MI_DEBUG 0
 #endif
 
+#ifdef _Py_THREAD_SANITIZER
+#  define MI_TSAN 1
+#endif
+
 #include "mimalloc.h"
 #include "mimalloc/types.h"
 #include "mimalloc/internal.h"

@@ -18,7 +18,7 @@ class LoaderTests:
     """Test ExtensionFileLoader."""
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
         if util.EXTENSIONS.name in sys.builtin_module_names:
             raise unittest.SkipTest(
@@ -104,7 +104,7 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
     # Test loading extension modules without multi-phase initialization.
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
 
         # Apple extensions must be distributed as frameworks. This requires
@@ -192,7 +192,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     # Test loading extension modules with multi-phase initialization (PEP 489).
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
 
         # Apple extensions must be distributed as frameworks. This requires

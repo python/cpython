@@ -653,6 +653,30 @@ all:		@DEF_MAKE_ALL_RULE@
 # all.
 .PHONY: all
 
+# Provide quick help for common Makefile targets.
+.PHONY: help
+help:
+	@echo "Run 'make' to build the Python executable and extension modules"
+	@echo ""
+	@echo "or 'make <target>' where <target> is one of:"
+	@echo "  test         run the test suite"
+	@echo "  install      install built files"
+	@echo "  regen-all    regenerate a number of generated source files"
+	@echo "  clinic       run Argument Clinic over source files"
+	@echo ""
+	@echo "  clean        to remove build files"
+	@echo "  distclean    'clean' + remove other generated files (patch, exe, etc)"
+	@echo ""
+	@echo "  recheck      rerun configure with last cmdline options"
+	@echo "  reindent     reindent .py files in Lib directory"
+	@echo "  tags         build a tags file (useful for Emacs and other editors)"
+	@echo "  list-targets list all targets in the Makefile"
+
+# Display a full list of Makefile targets
+.PHONY: list-targets
+list-targets:
+	@grep -E '^[A-Za-z][-A-Za-z0-9]+:' Makefile | awk -F : '{print $$1}'
+
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
 		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
@@ -1872,39 +1896,72 @@ Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
 
 Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
+
+# Regenerate various files from Python/bytecodes.c
+# Pass CASESFLAG=-l to insert #line directives in the output
+
 .PHONY: regen-cases
-regen-cases:
-	# Regenerate various files from Python/bytecodes.c
-	# Pass CASESFLAG=-l to insert #line directives in the output
+regen-cases: \
+        regen-opcode-ids regen-opcode-targets regen-uop-ids regen-opcode-metadata-py \
+		regen-generated-cases regen-executor-cases regen-optimizer-cases \
+		regen-opcode-metadata regen-uop-metadata
+
+.PHONY: regen-opcode-ids
+regen-opcode-ids:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_id_generator.py \
 	    -o $(srcdir)/Include/opcode_ids.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
+
+.PHONY: regen-opcode-targets
+regen-opcode-targets:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/target_generator.py \
 	    -o $(srcdir)/Python/opcode_targets.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
+
+.PHONY: regen-uop-ids
+regen-uop-ids:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_id_generator.py \
 	    -o $(srcdir)/Include/internal/pycore_uop_ids.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_ids.h $(srcdir)/Include/internal/pycore_uop_ids.h.new
+
+.PHONY: regen-opcode-metadata-py
+regen-opcode-metadata-py:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/py_metadata_generator.py \
 	    -o $(srcdir)/Lib/_opcode_metadata.py.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
+
+.PHONY: regen-generated-cases
+regen-generated-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier1_generator.py \
 	    -o $(srcdir)/Python/generated_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+
+.PHONY: regen-executor-cases
+regen-executor-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
 	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+
+.PHONY: regen-optimizer-cases
+regen-optimizer-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/optimizer_generator.py \
 	    -o $(srcdir)/Python/optimizer_cases.c.h.new \
 	    $(srcdir)/Python/optimizer_bytecodes.c \
 	    $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/optimizer_cases.c.h $(srcdir)/Python/optimizer_cases.c.h.new
+
+.PHONY: regen-opcode-metadata
+regen-opcode-metadata:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/opcode_metadata_generator.py \
 	    -o $(srcdir)/Include/internal/pycore_opcode_metadata.h.new $(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
+
+.PHONY: regen-uop-metadata
+regen-uop-metadata:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/uop_metadata_generator.py -o \
 	    $(srcdir)/Include/internal/pycore_uop_metadata.h.new $(srcdir)/Python/bytecodes.c
-	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_ids.h $(srcdir)/Include/internal/pycore_uop_ids.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_uop_metadata.h $(srcdir)/Include/internal/pycore_uop_metadata.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/optimizer_cases.c.h $(srcdir)/Python/optimizer_cases.c.h.new
-	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
+
 
 Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
 

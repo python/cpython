@@ -352,6 +352,8 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
         if (oparg & 16) {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
         }
@@ -361,22 +363,32 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
+        (void)left;
+        (void)right;
         OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
+        (void)left;
+        (void)right;
         OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
     }
 
     op(_COMPARE_OP_STR, (left, right -- res)) {
+        (void)left;
+        (void)right;
         OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
     }
 
     op(_IS_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
         OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
     }
 
     op(_CONTAINS_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
         OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
     }
 
@@ -434,6 +446,14 @@ dummy_func(void) {
                     this_instr->opcode = _NOP;
                 }
             }
+        }
+    }
+
+    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        (void)owner;
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
+        if (oparg & 1) {
+            OUT_OF_SPACE_IF_NULL(self_or_null = sym_new_unknown(ctx));
         }
     }
 
@@ -500,7 +520,6 @@ dummy_func(void) {
         OUT_OF_SPACE_IF_NULL(func = sym_new_not_null(ctx));
         OUT_OF_SPACE_IF_NULL(self = sym_new_not_null(ctx));
     }
-
 
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         if (!sym_set_type(callable, &PyFunction_Type)) {
