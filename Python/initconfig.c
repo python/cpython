@@ -174,7 +174,6 @@ static const char usage_envvars[] =
 "                  interpreter displays tracebacks. (-X no_debug_ranges)\n"
 "PYTHONNOUSERSITE: disable user site directory (-s)\n"
 "PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
-"PYTHONPERFSUPPORT: support the Linux \"perf\" profiler (-X perf)\n"
 "PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
 "                  (-X pycache_prefix)\n"
