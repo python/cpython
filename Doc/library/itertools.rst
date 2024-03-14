@@ -785,8 +785,8 @@ well as with the built-in itertools such as ``map()``, ``filter()``,
 
 A secondary purpose of the recipes is to serve as an incubator.  The
 ``accumulate()``, ``compress()``, and ``pairwise()`` itertools started out as
-recipes.  Currently, the ``sliding_window()`` and ``iter_index()`` recipes
-are being tested to see whether they prove their worth.
+recipes.  Currently, the ``sliding_window()``, ``iter_index()``, and ``sieve()``
+recipes are being tested to see whether they prove their worth.
 
 Substantially all of these recipes and many, many others can be installed from
 the `more-itertools project <https://pypi.org/project/more-itertools/>`_ found
@@ -795,12 +795,12 @@ on the Python Package Index::
     python -m pip install more-itertools
 
 Many of the recipes offer the same high performance as the underlying toolset.
-Superior memory performance is kept by processing elements one at a time
-rather than bringing the whole iterable into memory all at once. Code volume is
-kept small by linking the tools together in a functional style which helps
-eliminate temporary variables.  High speed is retained by preferring
-"vectorized" building blocks over the use of for-loops and :term:`generator`\s
-which incur interpreter overhead.
+Superior memory performance is kept by processing elements one at a time rather
+than bringing the whole iterable into memory all at once. Code volume is kept
+small by linking the tools together in a `functional style
+<https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf>`_.  High speed
+is retained by preferring "vectorized" building blocks over the use of for-loops
+and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
@@ -873,6 +873,14 @@ which incur interpreter overhead.
        "Returns True if all the elements are equal to each other."
        return len(take(2, groupby(iterable, key))) <= 1
 
+   def unique_justseen(iterable, key=None):
+       "List unique elements, preserving order. Remember only the element just seen."
+       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
+       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
+       if key is None:
+           return map(operator.itemgetter(0), groupby(iterable))
+       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+
    def unique_everseen(iterable, key=None):
        "List unique elements, preserving order. Remember all elements ever seen."
        # unique_everseen('AAAABBBCCDAABBB') --> A B C D
@@ -889,13 +897,54 @@ which incur interpreter overhead.
                    seen.add(k)
                    yield element
 
-   def unique_justseen(iterable, key=None):
-       "List unique elements, preserving order. Remember only the element just seen."
-       # unique_justseen('AAAABBBCCDAABBB') --> A B C D A B
-       # unique_justseen('ABBcCAD', str.casefold) --> A B c A D
-       if key is None:
-           return map(operator.itemgetter(0), groupby(iterable))
-       return map(next, map(operator.itemgetter(1), groupby(iterable, key)))
+   def sliding_window(iterable, n):
+       "Collect data into overlapping fixed-length chunks or blocks."
+       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
+       it = iter(iterable)
+       window = collections.deque(islice(it, n-1), maxlen=n)
+       for x in it:
+           window.append(x)
+           yield tuple(window)
+
+   def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
+       "Collect data into non-overlapping fixed-length chunks or blocks."
+       # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
+       # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
+       # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
+       iterators = [iter(iterable)] * n
+       match incomplete:
+           case 'fill':
+               return zip_longest(*iterators, fillvalue=fillvalue)
+           case 'strict':
+               return zip(*iterators, strict=True)
+           case 'ignore':
+               return zip(*iterators)
+           case _:
+               raise ValueError('Expected fill, strict, or ignore')
+
+   def roundrobin(*iterables):
+       "Visit input iterables in a cycle until each is exhausted."
+       # roundrobin('ABC', 'D', 'EF') --> A D E B F C
+       # Algorithm credited to George Sakkis
+       iterators = map(iter, iterables)
+       for num_active in range(len(iterables), 0, -1):
+           iterators = cycle(islice(iterators, num_active))
+           yield from map(next, iterators)
+
+   def partition(predicate, iterable):
+       """Partition entries into false entries and true entries.
+
+       If *predicate* is slow, consider wrapping it with functools.lru_cache().
+       """
+       # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
+       t1, t2 = tee(iterable)
+       return filterfalse(predicate, t1), filter(predicate, t2)
+
+   def subslices(seq):
+       "Return all contiguous non-empty subslices of a sequence."
+       # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
+       slices = starmap(slice, combinations(range(len(seq) + 1), 2))
+       return map(operator.getitem, repeat(seq), slices)
 
    def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
@@ -917,61 +966,6 @@ which incur interpreter overhead.
                    i += 1
            except ValueError:
                pass
-
-   def sliding_window(iterable, n):
-       "Collect data into overlapping fixed-length chunks or blocks."
-       # sliding_window('ABCDEFG', 4) --> ABCD BCDE CDEF DEFG
-       it = iter(iterable)
-       window = collections.deque(islice(it, n-1), maxlen=n)
-       for x in it:
-           window.append(x)
-           yield tuple(window)
-
-   def grouper(iterable, n, *, incomplete='fill', fillvalue=None):
-       "Collect data into non-overlapping fixed-length chunks or blocks."
-       # grouper('ABCDEFG', 3, fillvalue='x') --> ABC DEF Gxx
-       # grouper('ABCDEFG', 3, incomplete='strict') --> ABC DEF ValueError
-       # grouper('ABCDEFG', 3, incomplete='ignore') --> ABC DEF
-       args = [iter(iterable)] * n
-       match incomplete:
-           case 'fill':
-               return zip_longest(*args, fillvalue=fillvalue)
-           case 'strict':
-               return zip(*args, strict=True)
-           case 'ignore':
-               return zip(*args)
-           case _:
-               raise ValueError('Expected fill, strict, or ignore')
-
-   def roundrobin(*iterables):
-       "Visit input iterables in a cycle until each is exhausted."
-       # roundrobin('ABC', 'D', 'EF') --> A D E B F C
-       # Recipe credited to George Sakkis
-       num_active = len(iterables)
-       nexts = cycle(iter(it).__next__ for it in iterables)
-       while num_active:
-           try:
-               for next in nexts:
-                   yield next()
-           except StopIteration:
-               # Remove the iterator we just exhausted from the cycle.
-               num_active -= 1
-               nexts = cycle(islice(nexts, num_active))
-
-   def partition(predicate, iterable):
-       """Partition entries into false entries and true entries.
-
-       If *predicate* is slow, consider wrapping it with functools.lru_cache().
-       """
-       # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
-       t1, t2 = tee(iterable)
-       return filterfalse(predicate, t1), filter(predicate, t2)
-
-   def subslices(seq):
-       "Return all contiguous non-empty subslices of a sequence."
-       # subslices('ABCD') --> A AB ABC ABCD B BC BCD C CD D
-       slices = starmap(slice, combinations(range(len(seq) + 1), 2))
-       return map(operator.getitem, repeat(seq), slices)
 
    def iter_except(func, exception, first=None):
        """ Call a function repeatedly until an exception is raised.
@@ -997,10 +991,10 @@ The following recipes have a more mathematical flavor:
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-   def sum_of_squares(it):
+   def sum_of_squares(iterable):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) --> 1400
-       return math.sumprod(*tee(it))
+       return math.sumprod(*tee(iterable))
 
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
@@ -1053,8 +1047,8 @@ The following recipes have a more mathematical flavor:
 
        Computes with better numeric stability than Horner's method.
        """
-       # Evaluate x³ -4x² -17x + 60 at x = 2.5
-       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
+       # Evaluate x³ -4x² -17x + 60 at x = 5
+       # polynomial_eval([1, -4, -17, 60], x=5) --> 0
        n = len(coefficients)
        if not n:
            return type(x)(0)
@@ -1317,10 +1311,10 @@ The following recipes have a more mathematical flavor:
 
     >>> from fractions import Fraction
     >>> from decimal import Decimal
-    >>> polynomial_eval([1, -4, -17, 60], x=2)
-    18
-    >>> x = 2; x**3 - 4*x**2 -17*x + 60
-    18
+    >>> polynomial_eval([1, -4, -17, 60], x=5)
+    0
+    >>> x = 5; x**3 - 4*x**2 -17*x + 60
+    0
     >>> polynomial_eval([1, -4, -17, 60], x=2.5)
     8.125
     >>> x = 2.5; x**3 - 4*x**2 -17*x + 60
@@ -1570,6 +1564,9 @@ The following recipes have a more mathematical flavor:
 
     >>> list(roundrobin('abc', 'd', 'ef'))
     ['a', 'd', 'e', 'b', 'f', 'c']
+    >>> ranges = [range(5, 1000), range(4, 3000), range(0), range(3, 2000), range(2, 5000), range(1, 3500)]
+    >>> collections.Counter(roundrobin(ranges)) == collections.Counter(ranges)
+    True
 
     >>> def is_odd(x):
     ...     return x % 2 == 1
