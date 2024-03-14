@@ -276,6 +276,15 @@ def clear_caches():
         pass
     else:
         inspect._shadowed_dict_from_mro_tuple.cache_clear()
+        inspect._filesbymodname.clear()
+        inspect.modulesbyfile.clear()
+
+    try:
+        importlib_metadata = sys.modules['importlib.metadata']
+    except KeyError:
+        pass
+    else:
+        importlib_metadata.FastPath.__new__.cache_clear()
 
 
 def get_build_info():
