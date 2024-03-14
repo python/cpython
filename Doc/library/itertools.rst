@@ -1568,7 +1568,7 @@ The following recipes have a more mathematical flavor:
     >>> ranges = [range(5, 1000), range(4, 3000), range(0), range(3, 2000), range(2, 5000), range(1, 3500)]
     >>> collections.Counter(roundrobin(ranges)) == collections.Counter(ranges)
     True
-    >>> # Verify that the input is consumed lazily
+    >>> # Verify that the inputs are consumed lazily
     >>> input_iterators = list(map(iter, ['abcd', 'ef', '', 'ghijk', 'l', 'mnopqr']))
     >>> output_iterator = roundrobin(*input_iterators)
     >>> ''.join(islice(output_iterator, 10))
