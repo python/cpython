@@ -61,11 +61,7 @@ Notes:
       Please migrate to ``'w'`` typecode.
 
 (2)
-   Int data types (signed or unsigned) can be 16 or 32 bits depending on the platform. The
-   same way that long data types can be 32 or 64 bits depending on the platform. On most
-   machines that run GNU C Library, an int is a 32-bit quantity. On most machines, long
-   int is also 32-bit, the same size as int. And lastly, on most machines, long long int
-   are 64-bit quantities. View more at: https://www.gnu.org/software/libc/manual/html_node/Range-of-Type.html
+   As of 2024, 'h', 'i', 'l', and 'q' are usually 2, 4, 4 on Windows else 8, and 8 bytes.
 
 
 The actual representation of values is determined by the machine architecture
