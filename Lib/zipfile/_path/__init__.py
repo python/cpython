@@ -5,8 +5,9 @@ import itertools
 import contextlib
 import pathlib
 import re
+import sys
 
-from .glob import translate
+from .glob import Translator
 
 
 __all__ = ['Path']
@@ -147,6 +148,16 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
         source.__class__ = cls
         return source
 
+    @classmethod
+    def inject(cls, zf: zipfile.ZipFile) -> zipfile.ZipFile:
+        """
+        Given a writable zip file zf, inject directory entries for
+        any directories implied by the presence of children.
+        """
+        for name in cls._implied_dirs(zf.namelist()):
+            zf.writestr(name, b"")
+        return zf
+
 
 class FastLookup(CompleteDirs):
     """
@@ -168,8 +179,10 @@ class FastLookup(CompleteDirs):
 
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
-    # stacklevel=3 so that the caller of the caller see any warning.
-    return io.text_encoding(encoding, 3), args, kwargs
+    # compute stack level so that the caller of the caller sees any warning.
+    is_pypy = sys.implementation.name == 'pypy'
+    stack_level = 3 + is_pypy
+    return io.text_encoding(encoding, stack_level), args, kwargs
 
 
 class Path:
@@ -194,13 +207,13 @@ class Path:
 
     Path accepts the zipfile object itself or a filename
 
-    >>> root = Path(zf)
+    >>> path = Path(zf)
 
     From there, several path operations are available.
 
     Directory iteration (including the zip file itself):
 
-    >>> a, b = root.iterdir()
+    >>> a, b = path.iterdir()
     >>> a
     Path('mem/abcde.zip', 'a.txt')
     >>> b
@@ -238,16 +251,38 @@ class Path:
     'mem/abcde.zip/b/c.txt'
 
     At the root, ``name``, ``filename``, and ``parent``
-    resolve to the zipfile. Note these attributes are not
-    valid and will raise a ``ValueError`` if the zipfile
-    has no filename.
+    resolve to the zipfile.
 
-    >>> root.name
+    >>> str(path)
+    'mem/abcde.zip/'
+    >>> path.name
     'abcde.zip'
-    >>> str(root.filename).replace(os.sep, posixpath.sep)
-    'mem/abcde.zip'
-    >>> str(root.parent)
+    >>> path.filename == pathlib.Path('mem/abcde.zip')
+    True
+    >>> str(path.parent)
     'mem'
+
+    If the zipfile has no filename, such attribtues are not
+    valid and accessing them will raise an Exception.
+
+    >>> zf.filename = None
+    >>> path.name
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    >>> path.filename
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    >>> path.parent
+    Traceback (most recent call last):
+    ...
+    TypeError: ...
+
+    # workaround python/cpython#106763
+    >>> pass
     """
 
     __repr = "{self.__class__.__name__}({self.root.filename!r}, {self.at!r})"
@@ -364,8 +399,10 @@ class Path:
             raise ValueError(f"Unacceptable pattern: {pattern!r}")
 
         prefix = re.escape(self.at)
-        matches = re.compile(prefix + translate(pattern)).fullmatch
-        return map(self._next, filter(matches, self.root.namelist()))
+        tr = Translator(seps='/')
+        matches = re.compile(prefix + tr.translate(pattern)).fullmatch
+        names = (data.filename for data in self.root.filelist)
+        return map(self._next, filter(matches, names))
 
     def rglob(self, pattern):
         return self.glob(f'**/{pattern}')
