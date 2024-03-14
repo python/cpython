@@ -536,9 +536,11 @@ loops that truncate the stream.
 
         def pairwise(iterable):
             # pairwise('ABCDEFG') → AB BC CD DE EF FG
-            a, b = tee(iterable)
-            next(b, None)
-            return zip(a, b)
+            iterator = iter(iterable)
+            a = next(iterator, None)
+            for b in iterator:
+                yield a, b
+                a = b
 
    .. versionadded:: 3.10
 
