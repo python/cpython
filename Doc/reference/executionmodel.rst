@@ -152,8 +152,7 @@ a global statement, the free variable is treated as a global.
 The :keyword:`nonlocal` statement causes corresponding names to refer
 to previously bound variables in the nearest enclosing function scope.
 :exc:`SyntaxError` is raised at compile time if the given name does not
-exist in any enclosing function scope, or if the nearest enclosing scope
-is the global (module) scope. :ref:`Type parameters <type-params>`
+exist in any enclosing function scope. :ref:`Type parameters <type-params>`
 cannot be rebound with the :keyword:`!nonlocal` statement.
 
 .. index:: pair: module; __main__
