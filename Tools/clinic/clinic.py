@@ -884,6 +884,7 @@ class CLanguage(Language):
                 displayname = parameters[0].get_displayname(0)
                 parsearg = converters[0].parse_arg(argname, displayname, limited_capi=limited_capi)
                 if parsearg is None:
+                    converters[0].use_converter()
                     parsearg = """
                         if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
                             goto exit;
@@ -1016,6 +1017,9 @@ class CLanguage(Language):
                 if has_optional:
                     parser_code.append("skip_optional:")
             else:
+                for parameter in parameters:
+                    parameter.converter.use_converter()
+
                 if limited_capi:
                     fastcall = False
                 if fastcall:
@@ -1184,6 +1188,9 @@ class CLanguage(Language):
                 if add_label:
                     parser_code.append("%s:" % add_label)
             else:
+                for parameter in parameters:
+                    parameter.converter.use_converter()
+
                 declarations = declare_parser(f, clinic=clinic,
                                               hasformat=True,
                                               limited_capi=limited_capi)
@@ -3155,8 +3162,13 @@ class CConverter(metaclass=CConverterAutoRegister):
             fmt = fmt.replace('{bad_argument2}', bad_argument2)
         return fmt.format(argname=argname, paramname=self.parser_name, **kwargs)
 
+    def use_converter(self) -> None:
+        """Method called when self.converter is used to parse an argument."""
+        pass
+
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'O&':
+            self.use_converter()
             return self.format_code("""
                 if (!{converter}({argname}, &{paramname})) {{{{
                     goto exit;
@@ -3435,6 +3447,9 @@ class unsigned_short_converter(CConverter):
             self.format_unit = 'H'
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
+
+    def use_converter(self) -> None:
+        if self.converter == '_PyLong_UnsignedShort_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedShort_Converter()')
 
@@ -3519,6 +3534,9 @@ class unsigned_int_converter(CConverter):
             self.format_unit = 'I'
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
+
+    def use_converter(self) -> None:
+        if self.converter == '_PyLong_UnsignedInt_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedInt_Converter()')
 
@@ -3577,6 +3595,9 @@ class unsigned_long_converter(CConverter):
             self.format_unit = 'k'
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
+
+    def use_converter(self) -> None:
+        if self.converter == '_PyLong_UnsignedLong_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedLong_Converter()')
 
@@ -3630,6 +3651,9 @@ class unsigned_long_long_converter(CConverter):
             self.format_unit = 'K'
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
+
+    def use_converter(self) -> None:
+        if self.converter == '_PyLong_UnsignedLongLong_Converter':
             self.add_include('pycore_long.h',
                              '_PyLong_UnsignedLongLong_Converter()')
 
@@ -3664,13 +3688,15 @@ class Py_ssize_t_converter(CConverter):
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
-            self.add_include('pycore_abstract.h', '_PyNumber_Index()')
         elif accept == {int, NoneType}:
             self.converter = '_Py_convert_optional_to_ssize_t'
-            self.add_include('pycore_abstract.h',
-                             '_Py_convert_optional_to_ssize_t()')
         else:
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
+
+    def use_converter(self) -> None:
+        if self.converter == '_Py_convert_optional_to_ssize_t':
+            self.add_include('pycore_abstract.h',
+                             '_Py_convert_optional_to_ssize_t()')
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'n':
@@ -3678,6 +3704,7 @@ class Py_ssize_t_converter(CConverter):
                 PyNumber_Index = 'PyNumber_Index'
             else:
                 PyNumber_Index = '_PyNumber_Index'
+                self.add_include('pycore_abstract.h', '_PyNumber_Index()')
             return self.format_code("""
                 {{{{
                     Py_ssize_t ival = -1;
@@ -3771,7 +3798,7 @@ class size_t_converter(CConverter):
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
+    def use_converter(self) -> None:
         self.add_include('pycore_long.h',
                          '_PyLong_Size_t_Converter()')
 
@@ -3800,6 +3827,10 @@ class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
 
+    def use_converter(self) -> None:
+        self.add_include('pycore_fileutils.h',
+                         '_PyLong_FileDescriptor_Converter()')
+
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if limited_capi:
             return self.format_code("""
@@ -3810,8 +3841,6 @@ class fildes_converter(CConverter):
                 """,
                 argname=argname)
         else:
-            self.add_include('pycore_fileutils.h',
-                             '_PyLong_FileDescriptor_Converter()')
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
