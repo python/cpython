@@ -3832,16 +3832,13 @@ class fildes_converter(CConverter):
                          '_PyLong_FileDescriptor_Converter()')
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
-        if limited_capi:
-            return self.format_code("""
-                {paramname} = PyObject_AsFileDescriptor({argname});
-                if ({paramname} < 0) {{{{
-                    goto exit;
-                }}}}
-                """,
-                argname=argname)
-        else:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return self.format_code("""
+            {paramname} = PyObject_AsFileDescriptor({argname});
+            if ({paramname} < 0) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
 
 
 class float_converter(CConverter):
