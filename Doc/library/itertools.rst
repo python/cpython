@@ -871,6 +871,7 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
    def all_equal(iterable, key=None):
        "Returns True if all the elements are equal to each other."
+       # all_equal('4٤໔４৪', key=int) --> True
        return len(take(2, groupby(iterable, key))) <= 1
 
    def unique_justseen(iterable, key=None):
