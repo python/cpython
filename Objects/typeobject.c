@@ -1164,10 +1164,9 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_module(PyTypeObject *type, void *context)
+type_module(PyTypeObject *type)
 {
     PyObject *mod;
-
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyObject *dict = lookup_tp_dict(type);
         if (PyDict_GetItemRef(dict, &_Py_ID(__module__), &mod) == 0) {
@@ -1187,6 +1186,12 @@ type_module(PyTypeObject *type, void *context)
         }
     }
     return mod;
+}
+
+static PyObject *
+type_get_module(PyTypeObject *type, void *context)
+{
+    return type_module(type);
 }
 
 static int
@@ -1214,7 +1219,7 @@ PyType_GetFullyQualifiedName(PyTypeObject *type)
         return NULL;
     }
 
-    PyObject *module = type_module(type, NULL);
+    PyObject *module = type_module(type);
     if (module == NULL) {
         Py_DECREF(qualname);
         return NULL;
@@ -1722,7 +1727,7 @@ static PyGetSetDef type_getsets[] = {
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__mro__", (getter)type_get_mro, NULL, NULL},
-    {"__module__", (getter)type_module, (setter)type_set_module, NULL},
+    {"__module__", (getter)type_get_module, (setter)type_set_module, NULL},
     {"__abstractmethods__", (getter)type_abstractmethods,
      (setter)type_set_abstractmethods, NULL},
     {"__dict__",  (getter)type_dict,  NULL, NULL},
@@ -1743,7 +1748,7 @@ type_repr(PyObject *self)
         return PyUnicode_FromFormat("<class at %p>", type);
     }
 
-    PyObject *mod = type_module(type, NULL);
+    PyObject *mod = type_module(type);
     if (mod == NULL) {
         PyErr_Clear();
     }
@@ -4734,9 +4739,9 @@ PyType_GetQualName(PyTypeObject *type)
 }
 
 PyObject *
-_PyType_GetModuleName(PyTypeObject *type)
+PyType_GetModuleName(PyTypeObject *type)
 {
-    return type_module(type, NULL);
+    return type_module(type);
 }
 
 void *
@@ -5850,7 +5855,7 @@ object_repr(PyObject *self)
     PyObject *mod, *name, *rtn;
 
     type = Py_TYPE(self);
-    mod = type_module(type, NULL);
+    mod = type_module(type);
     if (mod == NULL)
         PyErr_Clear();
     else if (!PyUnicode_Check(mod)) {
