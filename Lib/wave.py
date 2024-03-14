@@ -77,7 +77,7 @@ import struct
 import sys
 
 
-__all__ = ["open", "Error", "Wave_read", "Wave_write"]
+__all__ = ["open", "Error", "Wave_read", "Wave_write", "wave_params"]
 
 class Error(Exception):
     pass
@@ -89,8 +89,9 @@ KSDATAFORMAT_SUBTYPE_PCM = b'\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x0
 
 _array_fmts = None, 'b', 'h', None, 'i'
 
-_wave_params = namedtuple('_wave_params',
-                     'nchannels sampwidth framerate nframes comptype compname')
+wave_params = namedtuple('wave_params',
+                    'nchannels sampwidth framerate nframes comptype compname')
+_wave_params = wave_params  # alias to keep compatibility
 
 
 def _byteswap(data, width):
@@ -337,9 +338,9 @@ class Wave_read:
         return self._compname
 
     def getparams(self):
-        return _wave_params(self.getnchannels(), self.getsampwidth(),
-                       self.getframerate(), self.getnframes(),
-                       self.getcomptype(), self.getcompname())
+        return wave_params(self.getnchannels(), self.getsampwidth(),
+                      self.getframerate(), self.getnframes(),
+                      self.getcomptype(), self.getcompname())
 
     def getmarkers(self):
         import warnings
@@ -548,7 +549,7 @@ class Wave_write:
     def getparams(self):
         if not self._nchannels or not self._sampwidth or not self._framerate:
             raise Error('not all parameters set')
-        return _wave_params(self._nchannels, self._sampwidth, self._framerate,
+        return wave_params(self._nchannels, self._sampwidth, self._framerate,
               self._nframes, self._comptype, self._compname)
 
     def setmark(self, id, pos, name):
