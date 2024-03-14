@@ -94,41 +94,6 @@ class LoaderTests:
             loader = self.LoaderClass('pkg', path)
             self.assertTrue(loader.is_package('pkg'))
 
-    @unittest.skipUnless(is_apple_mobile, "Only required on Apple mobile")
-    def test_file_origin(self):
-        # Apple Mobile requires that binary extension modules are moved from
-        # their "normal" location to the Frameworks folder. Many third-party
-        # packages assume that __file__ will return somewhere in the
-        # PYTHONPATH; this won't be true on Apple mobile, so the
-        # AppleFrameworkLoader rewrites __file__ to point at the original path.
-        # However, the standard library puts all it's modules in lib-dynload,
-        # so we have to fake the setup to validate the path-rewriting logic.
-        #
-        # Build a loader that has found the extension with a PYTHONPATH
-        # reflecting the location of the pure-python tests.
-        loader = self.machinery.AppleFrameworkLoader(
-            util.EXTENSIONS.name,
-            util.EXTENSIONS.file_path,
-            [
-                "/non/existent/path",
-                os.path.dirname(__file__),
-            ]
-        )
-
-        # Make sure we have a clean import cache
-        try:
-            del sys.modules[util.EXTENSIONS.name]
-        except KeyError:
-            pass
-
-        # Load the module, and check the filename reports as the
-        # "fake" original name, not the extension's actual file path.
-        module = loader.load_module(util.EXTENSIONS.name)
-        assert module.__file__ == os.path.join(
-            os.path.dirname(__file__),
-            os.path.split(util.EXTENSIONS.file_path)[-1]
-        )
-
 
 (Frozen_LoaderTests,
  Source_LoaderTests
@@ -142,6 +107,8 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
         if not self.machinery.EXTENSION_SUFFIXES:
             raise unittest.SkipTest("Requires dynamic loading support.")
 
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
         if is_apple_mobile:
             self.LoaderClass = self.machinery.AppleFrameworkLoader
         else:
@@ -228,6 +195,8 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         if not self.machinery.EXTENSION_SUFFIXES:
             raise unittest.SkipTest("Requires dynamic loading support.")
 
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
         if is_apple_mobile:
             self.LoaderClass = self.machinery.AppleFrameworkLoader
         else:

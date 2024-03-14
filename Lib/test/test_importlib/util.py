@@ -31,22 +31,13 @@ EXTENSIONS.file_path = None
 EXTENSIONS.name = '_testsinglephase'
 
 def _extension_details():
-    global EXTENSIONS
-    # On Apple mobile, extension modules can only exist in the Frameworks
-    # folder, so don't bother checking the rest of the system path.
-    if is_apple_mobile:
-        paths = [
-            os.path.join(
-                os.path.split(sys.executable)[0],
-                "Frameworks",
-                EXTENSIONS.name + ".framework"
-            )
-        ]
-    else:
-        paths = sys.path
-
-    for path in paths:
+    for path in sys.path:
         for ext in machinery.EXTENSION_SUFFIXES:
+            # Apple mobile platforms mechanically load .so files,
+            # but the findable files are labelled .fwork
+            if is_apple_mobile:
+                ext = ext.replace(".so", ".fwork")
+
             filename = EXTENSIONS.name + ext
             file_path = os.path.join(path, filename)
             if os.path.exists(file_path):

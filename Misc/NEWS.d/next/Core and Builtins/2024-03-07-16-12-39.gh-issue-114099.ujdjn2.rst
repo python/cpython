@@ -1,2 +1,2 @@
-Added a Finder and Loader to discover extension modules in an iOS-style
-Frameworks folder.
+Added a Loader that can discover extension modules in an iOS-style Frameworks
+folder.

@@ -28,10 +28,6 @@
 #define LEAD_UNDERSCORE ""
 #endif
 
-#ifdef __APPLE__
-#  include "TargetConditionals.h"
-#endif /* __APPLE__ */
-
 /* The .so extension module ABI tag, supplied by the Makefile via
    Makefile.pre.in and configure.  This is used to discriminate between
    incompatible .so files so that extensions for different Python builds can
@@ -42,18 +38,12 @@ const char *_PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
     ".dll",
 #else  /* !__CYGWIN__ */
-// TARGET_OS_IPHONE covers any non-macOS Apple platform.
-#  if defined(__APPLE__) && TARGET_OS_IPHONE
-#    define SHLIB_SUFFIX ".dylib"
-#  else
-#    define SHLIB_SUFFIX ".so"
-#  endif
-    "." SOABI SHLIB_SUFFIX,
-#  ifdef ALT_SOABI
-    "." ALT_SOABI SHLIB_SUFFIX,
-#  endif
-    ".abi" PYTHON_ABI_STRING SHLIB_SUFFIX,
-    SHLIB_SUFFIX,
+    "." SOABI ".so",
+#ifdef ALT_SOABI
+    "." ALT_SOABI ".so",
+#endif
+    ".abi" PYTHON_ABI_STRING ".so",
+    ".so",
 #endif  /* __CYGWIN__ */
     NULL,
 };

@@ -4,7 +4,6 @@ from test.test_importlib import abc, util
 machinery = util.import_importlib('importlib.machinery')
 
 import unittest
-import os
 import sys
 
 
@@ -22,24 +21,28 @@ class FinderTests(abc.FinderTests):
 
     def find_spec(self, fullname):
         if is_apple_mobile:
-            # Apple extensions must be distributed as frameworks. This requires
-            # a specialist finder.
-            frameworks_folder = os.path.join(
-                os.path.split(sys.executable)[0], "Frameworks"
-            )
-            importer = self.machinery.AppleFrameworkFinder(frameworks_folder)
-
-            return importer.find_spec(fullname, None)
+            # Apple mobile platforms require a specialist loader that uses
+            # .fwork files as placeholders for the true `.so` files.
+            loaders = [
+                (
+                    self.machinery.AppleFrameworkLoader,
+                    [
+                        ext.replace(".so", ".fwork")
+                        for ext in self.machinery.EXTENSION_SUFFIXES
+                    ]
+                )
+            ]
         else:
-            importer = self.machinery.FileFinder(
-                util.EXTENSIONS.path,
+            loaders = [
                 (
                     self.machinery.ExtensionFileLoader,
                     self.machinery.EXTENSION_SUFFIXES
                 )
-            )
+            ]
 
-            return importer.find_spec(fullname)
+        importer = self.machinery.FileFinder(util.EXTENSIONS.path, *loaders)
+
+        return importer.find_spec(fullname)
 
     def test_module(self):
         self.assertTrue(self.find_spec(util.EXTENSIONS.name))

@@ -5,7 +5,11 @@ import json
 import importlib.util
 from importlib._bootstrap_external import _get_sourcefile
 from importlib.machinery import (
-    AppleFrameworkLoader, BuiltinImporter, ExtensionFileLoader, FrozenImporter, SourceFileLoader,
+    AppleFrameworkLoader,
+    BuiltinImporter,
+    ExtensionFileLoader,
+    FrozenImporter,
+    SourceFileLoader,
 )
 import marshal
 import os
@@ -92,6 +96,8 @@ def require_builtin(module, *, skip=False):
     assert module.__spec__.origin == 'built-in', module.__spec__
 
 def require_extension(module, *, skip=False):
+    # Apple extensions must be distributed as frameworks. This requires
+    # a specialist loader.
     if is_apple_mobile:
         _require_loader(module, AppleFrameworkLoader, skip)
     else:
@@ -364,7 +370,7 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(cm.exception.path, _testcapi.__file__)
             self.assertRegex(
                 str(cm.exception),
-                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|dylib|pyd)\)"
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|fwork|pyd)\)"
             )
         else:
             self.assertEqual(
@@ -1694,8 +1700,10 @@ class SubinterpImportTests(unittest.TestCase):
         return (r, w)
 
     def create_extension_loader(self, modname, filename):
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
         if is_apple_mobile:
-            return AppleFrameworkLoader(modname, filename, None)
+            return AppleFrameworkLoader(modname, filename)
         else:
             return ExtensionFileLoader(modname, filename)
 
@@ -1707,12 +1715,19 @@ class SubinterpImportTests(unittest.TestCase):
                 _imp._override_multi_interp_extensions_check({check_override})
                 '''
         if filename:
+            # Apple extensions must be distributed as frameworks. This requires
+            # a specialist loader.
+            if is_apple_mobile:
+                loader = "AppleFrameworkLoader"
+            else:
+                loader = "ExtensionFileLoader"
+
             return textwrap.dedent(f'''
                 from importlib.util import spec_from_loader, module_from_spec
-                from importlib.machinery import ExtensionFileLoader
+                from importlib.machinery import {loader}
                 import os, sys
                 {override_text}
-                loader = ExtensionFileLoader({name!r}, {filename!r})
+                loader = {loader}({name!r}, {filename!r})
                 spec = spec_from_loader({name!r}, loader)
                 try:
                     module = module_from_spec(spec)
@@ -2044,9 +2059,11 @@ class SinglephaseInitTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         spec = importlib.util.find_spec(cls.NAME)
-        from importlib.machinery import AppleFrameworkLoader, ExtensionFileLoader
         cls.FILE = spec.origin
         cls.LOADER = type(spec.loader)
+
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
         if is_apple_mobile:
             assert cls.LOADER is AppleFrameworkLoader
         else:
@@ -2091,7 +2108,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # This is essentially copied from the old imp module.
         from importlib._bootstrap import _load
         if is_apple_mobile:
-            loader = self.LOADER(name, path, None)
+            loader = self.LOADER(name, path)
         else:
             loader = self.LOADER(name, path)
 

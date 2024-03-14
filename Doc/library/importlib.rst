@@ -1241,71 +1241,56 @@ find and load modules.
     and how the module's :attr:`__file__` is populated.
 
 
-.. class:: AppleFrameworkLoader(fullname, dylib_path, parent_paths=None)
+.. class:: AppleFrameworkLoader(name, path)
 
    A specialization of :class:`importlib.machinery.ExtensionFileLoader` that
    is able to load extension modules in Framework format.
 
    For compatibility with the iOS App Store, *all* binary modules in an iOS app
-   must be ``.dylib objects``, contained in a framework with appropriate
+   must be dynamic libraries, contained in a framework with appropriate
    metadata, stored in the ``Frameworks`` folder of the packaged app. There can
    be only a single binary per framework, and there can be no executable binary
    material outside the Frameworks folder.
 
    If you're trying to run ``from foo.bar import _whiz``, and ``_whiz`` is
-   implemented with the binary module ``foo/bar/_whiz.abi3.dylib`` (or any
-   other ABI .dylib extension), this loader will look for
-   ``{dirname(sys.executable)}/Frameworks/foo.bar._whiz.framework/_whiz.abi3.dylib``
-   (forming the framework name from the full name of the module).
+   implemented with the binary module ``foo/bar/_whiz.abi3.so`` (or any other
+   ABI extension), this module *must* be distributed as
+   ``{dirname(sys.executable)}/Frameworks/foo.bar._whiz.framework/foo.bar._whiz``
+   (creating the framework name from the full import path of the module), with
+   an ``Info.plist`` file in the ``.framework`` file identifying the binary.
 
-   However, this loader will re-write the ``__file__`` attribute of the
-   ``_whiz`` module will report as the original location inside the ``foo/bar``
-   subdirectory. This so that code that depends on walking directory trees will
-   continue to work as expected based on the *original* file location.
+   To accomodate this requirement, when running on iOS, this loader will be
+   registered against the ``.fwork`` file extension. A ``.fwork`` file is an
+   placeholder that flags that an extension module with the corresponding name
+   and path can be loaded from the ``Frameworks`` folder. The ``.fwork`` file
+   contains the path of the actual binary, relative to the app bundle. The
+   ``foo.bar._whiz`` module in the previous example would generate a
+   ``foo/bar/_whiz.abi3.fwork`` marker file, containing the path
+   ``Frameworks/foo.bar._whiz/foo.bar._whiz``. The spec created from loading
+   this module will have an origin referencing the ``.fwork`` file; when the
+   module is created, it will load the location referenced by the content of
+   the ``.fwork`` file.
 
-   The *fullname* argument specifies the name of the module the loader is to
-   support. The *dylib_path* argument is the path to the framework's ``.dylib``
-   file. The ``parent_paths`` is the path or paths that was searched to find
-   the extension module.
+   The Xcode project building the app is responsible for converting any ``.so``
+   files from wherever they exist in the ``PYTHONPATH`` into frameworks in the
+   ``Frameworks`` folder (including stripping extensions from the module file,
+   the addition of framework metadata, and signing the resulting framework),
+   and creating the ``.fwork`` file in place of the ``.so`` file to flag that
+   framework loading is required. This will usually be done with a build step
+   in the Xcode project; see the iOS documentation for details on how to
+   construct this build step.
 
    .. versionadded:: 3.13
 
    .. availability:: iOS.
 
-   .. attribute:: fullname
+   .. attribute:: name
 
       Name of the module the loader supports.
 
-   .. attribute:: dylib_path
+   .. attribute:: path
 
-      Path to the ``.dylib`` file in the framework.
-
-   .. attribute:: parent_paths
-
-      The parent paths that were originally searched to find the module.
-
-.. class:: AppleFrameworkFinder(framework_path)
-
-   An extension module finder which is able to load extension modules packaged
-   as frameworks in an iOS app.
-
-   See the documentation for :class:`AppleFrameworkLoader` for details on the
-   requirements of binary extension modules on iOS.
-
-   The *framework_path* argument is the Frameworks directory for the app.
-
-   .. versionadded:: 3.13
-
-   .. availability:: iOS.
-
-   .. attribute:: framework_path
-
-      The path the finder will search for frameworks.
-
-   .. method:: find_spec(fullname, paths, target=None)
-
-      Attempt to find the spec to handle ``fullname``, imported from one
-      of the filesystem locations described by ``paths``.
+      Path to the ``.fwork`` file for the extension module.
 
 
 :mod:`importlib.util` -- Utility code for importers

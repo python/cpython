@@ -1715,52 +1715,40 @@ class AppleFrameworkLoader(ExtensionFileLoader):
     """A loader for modules that have been packaged as frameworks for
     compatibility with Apple's iOS App Store policies.
     """
+
     def create_module(self, spec):
-        mod = super().create_module(spec)
-        if spec.loader_state.origfile is not None:
-            mod.__file__ = spec.loader_state.origfile
-        return mod
+        # If the ModuleSpec has been created by the FileFinder, it will have
+        # been created with an origin pointing to the .fwork file. We need to
+        # dereference this to the "true origin" - the actual binary file
+        # location in the Frameworks folder
+        if spec.origin.endswith(".fwork"):
+            with _io.FileIO(spec.origin, 'r') as file:
+                framework_binary = file.read().decode().strip()
+            bundle_path = _path_split(sys.executable)[0]
+            true_origin = _path_join(bundle_path, framework_binary)
+        else:
+            true_origin = spec.origin
 
+        # The implementation of the importer needs to operate on the actual
+        # binary. Temporarily switch the origin of the spec to the true origin;
+        # once the module has been loaded, switch the origin back so that
+        # the .fwork location isn't lost.
+        origin = spec.origin
+        spec.origin = true_origin
+        module = _bootstrap._call_with_frames_removed(_imp.create_dynamic, spec)
+        spec.origin = origin
 
-class AppleFrameworkFinder:
-    """A finder for modules that have been packaged as Apple Frameworks
-    for compatibility with Apple's App Store policies.
+        _bootstrap._verbose_message(
+            "Apple framework extension module {!r} loaded from {!r} (true origin {!r})",
+            spec.name,
+            self.path,
+            true_origin,
+        )
 
-    See AppleFrameworkLoader for details.
-    """
-    def __init__(self, frameworks_path):
-        self.frameworks_path = frameworks_path
+        # Ensure that the __file__ points at the .fwork location
+        module.__file__ = origin
 
-    def find_spec(self, fullname, paths, target=None):
-        name = fullname.rpartition(".")[-1]
-
-        for extension in EXTENSION_SUFFIXES:
-            dylib_file = _path_join(
-                self.frameworks_path,
-                f"{fullname}.framework",
-                f"{name}{extension}",
-            )
-            _bootstrap._verbose_message("Looking for Apple Framework dylib {}", dylib_file)
-
-            dylib_exists = _path_isfile(dylib_file)
-            if dylib_exists:
-                origfile = None
-                if paths:
-                    for parent_path in paths:
-                        if _path_isdir(parent_path):
-                            origfile = _path_join(
-                                parent_path,
-                                _path_split(self.path)[-1],
-                            )
-                            break
-                loader = AppleFrameworkLoader(fullname, dylib_file)
-                spec = _bootstrap.spec_from_loader(fullname, loader)
-                spec.loader_state = type(sys.implementation)(
-                    origfile=origfile,
-                )
-                return spec
-
-        return None
+        return module
 
 # Import setup ###############################################################
 
@@ -1794,10 +1782,17 @@ def _get_supported_file_loaders():
 
     Each item is a tuple (loader, suffixes).
     """
-    extensions = ExtensionFileLoader, _imp.extension_suffixes()
+    if sys.platform in {"ios", "tvos", "watchos"}:
+        extension_loaders = [(AppleFrameworkLoader, [
+            suffix.replace(".so", ".fwork")
+            for suffix in _imp.extension_suffixes()
+        ])]
+    else:
+        extension_loaders = []
+    extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
     source = SourceFileLoader, SOURCE_SUFFIXES
     bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES
-    return [extensions, source, bytecode]
+    return extension_loaders + [source, bytecode]
 
 
 def _set_bootstrap_module(_bootstrap_module):
@@ -1811,7 +1806,3 @@ def _install(_bootstrap_module):
     supported_loaders = _get_supported_file_loaders()
     sys.path_hooks.extend([FileFinder.path_hook(*supported_loaders)])
     sys.meta_path.append(PathFinder)
-    if sys.platform in {"ios", "tvos", "watchos"}:
-        frameworks_folder = _path_join(_path_split(sys.executable)[0], "Frameworks")
-        _bootstrap._verbose_message("Adding Apple Framework dylib finder at {}", frameworks_folder)
-        sys.meta_path.append(AppleFrameworkFinder(frameworks_folder))
