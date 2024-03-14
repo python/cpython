@@ -190,7 +190,7 @@ loops that truncate the stream.
 
    Roughly equivalent to::
 
-      def batched(iterable, n, *, strict=False):
+      def batched(iterable, n):
           # batched('ABCDEFG', 3) → ABC DEF G
           if n < 1:
               raise ValueError('n must be at least one')
@@ -994,7 +994,7 @@ The following recipes have a more mathematical flavor:
    def reshape(matrix, cols):
        "Reshape a 2-D matrix to have a given number of columns."
        # reshape([(0, 1), (2, 3), (4, 5)], 3) →  (0, 1, 2), (3, 4, 5)
-       return batched(chain.from_iterable(matrix), cols, strict=True)
+       return batched(chain.from_iterable(matrix), cols)
 
    def transpose(matrix):
        "Swap the rows and columns of a 2-D matrix."
