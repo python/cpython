@@ -3800,18 +3800,19 @@ class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
 
-    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
-        self.add_include('pycore_fileutils.h',
-                         '_PyLong_FileDescriptor_Converter()')
-
-    def _parse_arg(self, argname: str, displayname: str) -> str | None:
-        return self.format_code("""
-            {paramname} = PyObject_AsFileDescriptor({argname});
-            if ({paramname} == -1) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        if limited_capi:
+            return self.format_code("""
+                {paramname} = PyObject_AsFileDescriptor({argname});
+                if ({paramname} < 0) {{{{
+                    goto exit;
+                }}}}
+                """,
+                argname=argname)
+        else:
+            self.add_include('pycore_fileutils.h',
+                             '_PyLong_FileDescriptor_Converter()')
+            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 class float_converter(CConverter):
