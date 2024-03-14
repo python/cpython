@@ -334,7 +334,7 @@ optimize_to_bool(
     return 0;
 }
 
-static bool
+static void
 eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 {
     REPLACE_OP(this_instr, _POP_TOP, 0, 0);
@@ -342,7 +342,6 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
         REPLACE_OP((this_instr+1), _EXIT_TRACE, 0, 0);
         this_instr[1].target = this_instr->target;
     }
-    return exit;
 }
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
