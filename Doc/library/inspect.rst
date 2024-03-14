@@ -55,6 +55,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |           | __module__        | name of module in which   |
 |           |                   | this class was defined    |
 +-----------+-------------------+---------------------------+
+|           | __type_params__   | :pep:`695` type           |
+|           |                   | parameters of generic     |
+|           |                   | classes                   |
++-----------+-------------------+---------------------------+
 | method    | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -102,6 +106,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+|           | __type_params__   | :pep:`695` type           |
+|           |                   | parameters of generic     |
+|           |                   | functions                 |
 +-----------+-------------------+---------------------------+
 |           | __module__        | name of module in which   |
 |           |                   | this function was defined |
