@@ -2694,6 +2694,11 @@
 
         /* _CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
+        case _CHECK_PERIODIC: {
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             PyObject *null;
             PyObject *callable;
@@ -2953,9 +2958,47 @@
             break;
         }
 
-        /* _CALL_STR_1 is not a viable micro-op for tier 2 because it has error handling and eval-breaker check */
+        case _CALL_STR_1: {
+            PyObject *arg;
+            PyObject *null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            assert(oparg == 1);
+            if (null != NULL) JUMP_TO_JUMP_TARGET;
+            if (callable != (PyObject *)&PyUnicode_Type) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            res = PyObject_Str(arg);
+            Py_DECREF(arg);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
+            break;
+        }
 
-        /* _CALL_TUPLE_1 is not a viable micro-op for tier 2 because it has error handling and eval-breaker check */
+        case _CALL_TUPLE_1: {
+            PyObject *arg;
+            PyObject *null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            arg = stack_pointer[-1];
+            null = stack_pointer[-2];
+            callable = stack_pointer[-3];
+            assert(oparg == 1);
+            if (null != NULL) JUMP_TO_JUMP_TARGET;
+            if (callable != (PyObject *)&PyTuple_Type) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            res = PySequence_Tuple(arg);
+            Py_DECREF(arg);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-3] = res;
+            stack_pointer += -2;
+            break;
+        }
 
         /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
@@ -2973,13 +3016,108 @@
             break;
         }
 
-        /* _CALL_BUILTIN_CLASS is not a viable micro-op for tier 2 because it has error handling and eval-breaker check */
+        case _CALL_BUILTIN_CLASS: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            if (!PyType_Check(callable)) JUMP_TO_JUMP_TARGET;
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            if (tp->tp_vectorcall == NULL) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(tp);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         /* _CALL_BUILTIN_O is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        /* _CALL_BUILTIN_FAST is not a viable micro-op for tier 2 because it has error handling and eval-breaker check */
+        case _CALL_BUILTIN_FAST: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* Builtin METH_FASTCALL functions, without keywords */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            if (!PyCFunction_CheckExact(callable)) JUMP_TO_JUMP_TARGET;
+            if (PyCFunction_GET_FLAGS(callable) != METH_FASTCALL) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            /* res = func(self, args, nargs) */
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
+                PyCFunction_GET_SELF(callable),
+                args,
+                total_args);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
-        /* _CALL_BUILTIN_FAST_WITH_KEYWORDS is not a viable micro-op for tier 2 because it has error handling and eval-breaker check */
+        case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            if (!PyCFunction_CheckExact(callable)) JUMP_TO_JUMP_TARGET;
+            if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            /* res = func(self, args, nargs, kwnames) */
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))
+            PyCFunction_GET_FUNCTION(callable);
+            res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         /* _CALL_LEN is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
@@ -2987,11 +3125,83 @@
 
         /* _CALL_METHOD_DESCRIPTOR_O is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        /* _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS is not a viable micro-op for tier 2 because it has error handling and eval-breaker check */
+        case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET;
+            PyMethodDef *meth = method->d_method;
+            if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) JUMP_TO_JUMP_TARGET;
+            PyTypeObject *d_type = method->d_common.d_type;
+            PyObject *self = args[0];
+            if (!Py_IS_TYPE(self, d_type)) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            int nargs = total_args - 1;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            res = cfunc(self, args + 1, nargs, NULL);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         /* _CALL_METHOD_DESCRIPTOR_NOARGS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        /* _CALL_METHOD_DESCRIPTOR_FAST is not a viable micro-op for tier 2 because it has error handling and eval-breaker check */
+        case _CALL_METHOD_DESCRIPTOR_FAST: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            /* Builtin METH_FASTCALL methods, without keywords */
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET;
+            PyMethodDef *meth = method->d_method;
+            if (meth->ml_flags != METH_FASTCALL) JUMP_TO_JUMP_TARGET;
+            PyObject *self = args[0];
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            int nargs = total_args - 1;
+            res = cfunc(self, args + 1, nargs);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Clear the stack of the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 because it is instrumented */
 

@@ -3116,10 +3116,13 @@ dummy_func(
                 Py_DECREF(args[i]);
             }
             ERROR_IF(res == NULL, error);
+        }
+
+        op(_CHECK_PERIODIC, (--)) {
             CHECK_EVAL_BREAKER();
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL;
+        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL + _CHECK_PERIODIC;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             DEOPT_IF(null != NULL);
@@ -3254,7 +3257,7 @@ dummy_func(
             Py_DECREF(arg);
         }
 
-        inst(CALL_STR_1, (unused/1, unused/2, callable, null, arg -- res)) {
+        op(_CALL_STR_1, (callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type);
@@ -3262,10 +3265,15 @@ dummy_func(
             res = PyObject_Str(arg);
             Py_DECREF(arg);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_TUPLE_1, (unused/1, unused/2, callable, null, arg -- res)) {
+        macro(CALL_STR_1) =
+            unused/1 +
+            unused/2 +
+            _CALL_STR_1 +
+            _CHECK_PERIODIC;
+
+        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type);
@@ -3273,8 +3281,13 @@ dummy_func(
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_TUPLE_1) =
+            unused/1 +
+            unused/2 +
+            _CALL_TUPLE_1 +
+            _CHECK_PERIODIC;
 
         inst(CALL_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, callable, null, args[oparg] -- unused)) {
             /* This instruction does the following:
@@ -3336,7 +3349,7 @@ dummy_func(
             }
         }
 
-        inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3353,10 +3366,15 @@ dummy_func(
             }
             Py_DECREF(tp);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_BUILTIN_CLASS) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_CLASS +
+            _CHECK_PERIODIC;
+
+        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_O functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3381,10 +3399,15 @@ dummy_func(
             Py_DECREF(arg);
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_BUILTIN_O) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_O +
+            _CHECK_PERIODIC;
+
+        op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3408,15 +3431,15 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-                /* Not deopting because this doesn't mean our optimization was
-                   wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
-                   'invalid'). In those cases an exception is set, so we must
-                   handle it.
-                */
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_BUILTIN_FAST) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_FAST +
+            _CHECK_PERIODIC;
+
+        op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3439,8 +3462,13 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_BUILTIN_FAST_WITH_KEYWORDS) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_FAST_WITH_KEYWORDS +
+            _CHECK_PERIODIC;
 
         inst(CALL_LEN, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* len(o) */
@@ -3512,7 +3540,7 @@ dummy_func(
             DISPATCH();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3540,10 +3568,15 @@ dummy_func(
             Py_DECREF(arg);
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_METHOD_DESCRIPTOR_O) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_O +
+            _CHECK_PERIODIC;
+
+        op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3569,10 +3602,15 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
+            _CHECK_PERIODIC;
+
+        op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3599,10 +3637,15 @@ dummy_func(
             Py_DECREF(self);
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_NOARGS +
+            _CHECK_PERIODIC;
+
+        op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3627,8 +3670,13 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_METHOD_DESCRIPTOR_FAST) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_FAST +
+            _CHECK_PERIODIC;
 
         inst(INSTRUMENTED_CALL_KW, ( -- )) {
             int is_meth = PEEK(oparg + 2) != NULL;
