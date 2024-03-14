@@ -318,10 +318,10 @@ class ProactorTests(WindowsEventsTestCase):
             self.loop.run_forever()
             if time.time() >= end_time:
                 break
-        
+
         stop.set()
         thr.join()
-        
+
 
 class WinPolicyTests(WindowsEventsTestCase):
 
