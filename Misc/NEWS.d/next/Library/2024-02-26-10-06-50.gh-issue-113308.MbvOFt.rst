@@ -1,0 +1,4 @@
+Remove some internal protected parts from :mod:`uuid`:
+``_has_uuid_generate_time_safe``, ``_netbios_getnode``,
+``_ipconfig_getnode``, and ``_load_system_functions``.
+They were unused.
