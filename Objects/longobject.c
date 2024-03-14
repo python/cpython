@@ -770,6 +770,22 @@ _PyLong_Sign(PyObject *vv)
     return _PyLong_NonCompactSign(v);
 }
 
+int
+PyLong_Sign(PyObject *vv, int *sign)
+{
+    if (vv == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (!PyLong_Check(vv)) {
+        PyErr_SetString(PyExc_TypeError, "an integer is required");
+        return -1;
+    }
+
+    *sign = _PyLong_Sign(vv);
+    return 0;
+}
+
 static int
 bit_length_digit(digit x)
 {

@@ -41,9 +41,10 @@ PyAPI_FUNC(PyObject*) PyLong_FromUnsignedNativeBytes(const void* buffer,
 PyAPI_FUNC(int) PyUnstable_Long_IsCompact(const PyLongObject* op);
 PyAPI_FUNC(Py_ssize_t) PyUnstable_Long_CompactValue(const PyLongObject* op);
 
-// _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
-// v must not be NULL, and must be a normalized long.
-// There are no error cases.
+/* PyLong_Sign.  Retrieve the sign of the integer value (0, -1 or +1) in a
+   variable sign.  Return 0 on success, else -1 with an exception set. */
+PyAPI_FUNC(int) PyLong_Sign(PyObject *v, int *sign);
+
 PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
 
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
