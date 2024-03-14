@@ -58,7 +58,7 @@ class Properties:
         )
 
     @property
-    def infallible(self):
+    def infallible(self)->bool:
         return not self.pop_error and not self.no_pop_error
 
 
