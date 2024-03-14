@@ -173,8 +173,8 @@ Options (and corresponding environment variables):\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option\n\
---check-hash-based-pycs arg: control how Python invalidates hash-based .pyc\n\
-         files; arg is always|default|never\n\
+--check-hash-based-pycs always|default|never:\n\
+         control how Python invalidates hash-based .pyc files\n\
 --help-env: print help about Python environment variables and exit\n\
 --help-xoptions: print help about implementation-specific -X options and exit\n\
 --help-all: print complete help information and exit\n\
@@ -203,7 +203,7 @@ The following implementation-specific options are available:\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT.\n\
 "
 #ifdef Py_DEBUG
-"-X presite=MOD: import this module before site.py is run; also PYTHON_PRESITE\n"
+"-X presite=MOD: import this module before site is imported; also PYTHON_PRESITE\n"
 #endif
 "\
 -X pycache_prefix=PATH: write .pyc files to a parallel tree instead of to the\n\
@@ -274,7 +274,7 @@ static const char usage_envvars[] =
 "PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
 "PYTHONPERFSUPPORT: support the Linux \"perf\" profiler (-X perf)\n"
 #ifdef Py_DEBUG
-"PYTHON_PRESITE: import this module before site.py is run (-X presite)\n"
+"PYTHON_PRESITE: import this module before site is imported (-X presite)\n"
 #endif
 "PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
