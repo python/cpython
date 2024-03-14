@@ -609,6 +609,40 @@ class CAPITest(unittest.TestCase):
         check_format('xyz',
                      b'%V', None, b'xyz')
 
+        # test %T
+        check_format('type: str',
+                     b'type: %T', py_object("abc"))
+        check_format(f'type: st',
+                     b'type: %.2T', py_object("abc"))
+        check_format(f'type:        str',
+                     b'type: %10T', py_object("abc"))
+
+        class LocalType:
+            pass
+        obj = LocalType()
+        fullname = f'{__name__}.{LocalType.__qualname__}'
+        check_format(f'type: {fullname}',
+                     b'type: %T', py_object(obj))
+        fullname_alt = f'{__name__}:{LocalType.__qualname__}'
+        check_format(f'type: {fullname_alt}',
+                     b'type: %T#', py_object(obj))
+
+        # test %N
+        check_format('type: str',
+                     b'type: %N', py_object(str))
+        check_format(f'type: st',
+                     b'type: %.2N', py_object(str))
+        check_format(f'type:        str',
+                     b'type: %10N', py_object(str))
+
+        check_format(f'type: {fullname}',
+                     b'type: %N', py_object(type(obj)))
+        check_format(f'type: {fullname_alt}',
+                     b'type: %N#', py_object(type(obj)))
+        with self.assertRaisesRegex(TypeError, "%N argument must be a type"):
+            check_format('type: str',
+                         b'type: %N', py_object("abc"))
+
         # test %ls
         check_format('abc', b'%ls', c_wchar_p('abc'))
         check_format('\u4eba\u6c11', b'%ls', c_wchar_p('\u4eba\u6c11'))

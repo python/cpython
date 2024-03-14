@@ -2791,6 +2791,64 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
         break;
     }
 
+    case 'T':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyTypeObject *type = (PyTypeObject *)Py_NewRef(Py_TYPE(obj));
+
+        PyObject *type_name;
+        if (f[1] == '#') {
+            type_name = _PyType_GetFullyQualifiedName(type, ':');
+            f++;
+        }
+        else {
+            type_name = PyType_GetFullyQualifiedName(type);
+        }
+        Py_DECREF(type);
+        if (!type_name) {
+            return NULL;
+        }
+
+        if (unicode_fromformat_write_str(writer, type_name,
+                                         width, precision, flags) == -1) {
+            Py_DECREF(type_name);
+            return NULL;
+        }
+        Py_DECREF(type_name);
+        break;
+    }
+
+    case 'N':
+    {
+        PyObject *type_raw = va_arg(*vargs, PyObject *);
+        assert(type_raw != NULL);
+
+        if (!PyType_Check(type_raw)) {
+            PyErr_SetString(PyExc_TypeError, "%N argument must be a type");
+            return NULL;
+        }
+        PyTypeObject *type = (PyTypeObject*)type_raw;
+
+        PyObject *type_name;
+        if (f[1] == '#') {
+            type_name = _PyType_GetFullyQualifiedName(type, ':');
+            f++;
+        }
+        else {
+            type_name = PyType_GetFullyQualifiedName(type);
+        }
+        if (!type_name) {
+            return NULL;
+        }
+        if (unicode_fromformat_write_str(writer, type_name,
+                                         width, precision, flags) == -1) {
+            Py_DECREF(type_name);
+            return NULL;
+        }
+        Py_DECREF(type_name);
+        break;
+    }
+
     default:
     invalid_format:
         PyErr_Format(PyExc_SystemError, "invalid format string: %s", p);
