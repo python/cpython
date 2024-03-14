@@ -310,15 +310,18 @@ static const char usage_envvars[] =
 "                  interpreter displays tracebacks. (-X no_debug_ranges)\n"
 "PYTHONNOUSERSITE: disable user site directory (-s)\n"
 "PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
+"PYTHONPERFSUPPORT: support the Linux \"perf\" profiler (-X perf)\n"
 #ifdef Py_DEBUG
 "PYTHON_PRESITE=pkg.mod: import this module before site.py is run (-X presite)\n"
 #endif
+"PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
 "                  (-X pycache_prefix)\n"
 "PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
 #ifdef Py_STATS
 "PYTHONSTATS     : turns on statistics gathering (-X pystats)\n"
 #endif
+"PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
 "PYTHONUTF8      : if set to 1, enable the UTF-8 mode (-X utf8)\n"
 "PYTHONVERBOSE   : trace import statements (-v)\n"
