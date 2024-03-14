@@ -426,13 +426,12 @@ class CConverter(metaclass=CConverterAutoRegister):
         if limited_capi:
             if expected_literal:
                 return (f'PyErr_Format(PyExc_TypeError, '
-                        f'"{{{{name}}}}() {displayname} must be {expected}, not %.50s", '
-                        f'{{argname}} == Py_None ? "None" : Py_TYPE({{argname}})->tp_name);')
+                        f'"{{{{name}}}}() {displayname} must be {expected}, not %T", '
+                        f'{{argname}});')
             else:
                 return (f'PyErr_Format(PyExc_TypeError, '
-                        f'"{{{{name}}}}() {displayname} must be %.50s, not %.50s", '
-                        f'"{expected}", '
-                        f'{{argname}} == Py_None ? "None" : Py_TYPE({{argname}})->tp_name);')
+                        f'"{{{{name}}}}() {displayname} must be %s, not %T", '
+                        f'"{expected}", {{argname}});')
         else:
             if expected_literal:
                 expected = f'"{expected}"'
