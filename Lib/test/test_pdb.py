@@ -2933,7 +2933,27 @@ def bœr():
         """)
 
         stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
+        self.assertNotIn("SyntaxError", stdout)
         self.assertIn("a+8=9", stdout)
+
+    def test_pdbrc_empty_line(self):
+        """Test that empty lines in .pdbrc are ignored."""
+
+        script = textwrap.dedent("""
+            a = 1
+            b = 2
+            c = 3
+        """)
+
+        # The empty lines need to have the same indentation as the other lines
+        pdbrc = textwrap.dedent("""
+            n
+
+        """)
+
+        stdout, stderr = self.run_pdb_script(script, 'q\n', pdbrc=pdbrc, remove_home=True)
+        self.assertIn("b = 2", stdout)
+        self.assertNotIn("c = 3", stdout)
 
     def test_pdbrc_alias(self):
         script = textwrap.dedent("""
