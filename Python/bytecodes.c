@@ -1662,12 +1662,8 @@ dummy_func(
         }
 
         inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
-            if (!PyTuple_CheckExact(keys) ||
-                PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "bad BUILD_CONST_KEY_MAP keys argument");
-                GOTO_ERROR(error);  // Pop the keys and values.
-            }
+            assert(PyTuple_CheckExact(keys));
+            assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
@@ -4169,19 +4165,9 @@ dummy_func(
             ERROR_IF(1, error);
         }
 
-        tier2 op(_ERROR_1, (value --)) {
-            ERROR_IF(1, error);
-        }
-
-        tier2 op(_ERROR_2, (value, value1 --)) {
-            ERROR_IF(1, error);
-        }
-
-        tier2 op(_ERROR_3, (value, value1, value2 --)) {
-            ERROR_IF(1, error);
-        }
-
-        tier2 op(_ERROR_4, (value, value1, value2, val --)) {
+        tier2 op(_ERROR_N, (values[oparg] --)) {
+            (void)values;
+            SYNC_SP();
             ERROR_IF(1, error);
         }
 

@@ -334,7 +334,7 @@ optimize_to_bool(
     return 0;
 }
 
-static void
+static bool
 eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 {
     REPLACE_OP(this_instr, _POP_TOP, 0, 0);
@@ -342,6 +342,7 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
         REPLACE_OP((this_instr+1), _EXIT_TRACE, 0, 0);
         this_instr[1].target = this_instr->target;
     }
+    return exit;
 }
 
 /* 1 for success, 0 for not ready, cannot error at the moment. */
@@ -368,9 +369,9 @@ optimize_uops(
     ctx->curr_frame_depth++;
     ctx->frame = frame;
 
-    for (_PyUOpInstruction *this_instr = trace;
-         this_instr < trace + trace_len && !op_is_end(this_instr->opcode);
-         this_instr++) {
+    _PyUOpInstruction *this_instr = NULL;
+    for (int i = 0; i < trace_len; i++) {
+        this_instr = &trace[i];
 
         int oparg = this_instr->oparg;
         uint32_t opcode = this_instr->opcode;
@@ -392,7 +393,10 @@ optimize_uops(
         ctx->frame->stack_pointer = stack_pointer;
         assert(STACK_LEVEL() >= 0);
     }
-
+    if (this_instr != trace + trace_len) {
+        assert (this_instr < trace + trace_len && this_instr > trace);
+        trace_len = this_instr - trace + 1;
+    }
     _Py_uop_abstractcontext_fini(ctx);
     return trace_len;
 
@@ -417,7 +421,7 @@ hit_bottom:
 }
 
 
-static void
+static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
     /* Remove _SET_IP and _CHECK_VALIDITY where possible.
@@ -426,7 +430,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
      * instruction could have escaped. */
     int last_set_ip = -1;
     bool may_have_escaped = true;
-    for (int pc = 0; pc < buffer_size; pc++) {
+    for (int pc = 0; ; pc++) {
+        assert(pc < buffer_size && "No terminating uop");
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _SET_IP:
@@ -472,7 +477,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
-                return;
+                return pc + 1;
             default:
             {
                 bool needs_ip = false;
@@ -556,11 +561,8 @@ _Py_uop_analyze_and_optimize(
     OPT_STAT_INC(optimizer_attempts);
 
     int err = remove_globals(frame, buffer, length, dependencies);
-    if (err == 0) {
-        goto not_ready;
-    }
-    if (err < 0) {
-        goto error;
+    if (err <= 0) {
+        return err;
     }
 
     peephole_opt(frame, buffer, length);
@@ -569,17 +571,13 @@ _Py_uop_analyze_and_optimize(
         (PyCodeObject *)frame->f_executable, buffer,
         length, curr_stacklen, dependencies);
 
-    if (err == 0) {
-        goto not_ready;
+    if (length <= 0) {
+        return length;
     }
-    assert(err == 1);
 
-    remove_unneeded_uops(buffer, length);
+    length = remove_unneeded_uops(buffer, length);
+    assert(length > 0);
 
     OPT_STAT_INC(optimizer_successes);
     return length;
-not_ready:
-    return 0;
-error:
-    return -1;
 }

@@ -1067,7 +1067,7 @@ error_tier_two:
     }
 #endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    if (next_uop[-1].format == UOP_FORMAT_DEOPT) {
+    if (next_uop[-1].format == UOP_FORMAT_JUMP) {
         uint16_t target = uop_get_error_target(&next_uop[-1]);
         next_uop = current_executor->trace + target;
         goto tier2_dispatch;
@@ -1081,8 +1081,8 @@ error_tier_two:
 
 // Jump here from DEOPT_IF()
 deoptimize:
-    if (next_uop[-1].format == UOP_FORMAT_DEOPT) {
-        uint16_t target = uop_get_deopt_target(&next_uop[-1]);
+    if (next_uop[-1].format == UOP_FORMAT_JUMP) {
+        uint16_t target = uop_get_jump_target(&next_uop[-1]);
         next_uop = current_executor->trace + target;
         goto tier2_dispatch;
     }
@@ -1104,8 +1104,8 @@ deoptimize:
 
 // Jump here from EXIT_IF()
 side_exit:
-    if (next_uop[-1].format == UOP_FORMAT_DEOPT) {
-        uint16_t target = uop_get_deopt_target(&next_uop[-1]);
+    if (next_uop[-1].format == UOP_FORMAT_JUMP) {
+        uint16_t target = uop_get_jump_target(&next_uop[-1]);
         next_uop = current_executor->trace + target;
         goto tier2_dispatch;
     }

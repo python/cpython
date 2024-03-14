@@ -24,7 +24,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 because it is instrumented */
 
         case _LOAD_FAST_CHECK: {
             PyObject *value;
@@ -701,7 +701,7 @@
             break;
         }
 
-        /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 */
+        /* _BINARY_SUBSCR_GETITEM is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _LIST_APPEND: {
             PyObject *v;
@@ -855,9 +855,9 @@
             break;
         }
 
-        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_RETURN_VALUE is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 because it is instrumented */
 
         case _GET_AITER: {
             PyObject *obj;
@@ -967,11 +967,11 @@
             break;
         }
 
-        /* _SEND is not a viable micro-op for tier 2 */
+        /* _SEND is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        /* _SEND_GEN is not a viable micro-op for tier 2 */
+        /* _SEND_GEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 because it is instrumented */
 
         case _POP_EXCEPT: {
             PyObject *exc_value;
@@ -1226,39 +1226,7 @@
             break;
         }
 
-        case _LOAD_NAME: {
-            PyObject *v;
-            oparg = CURRENT_OPARG();
-            PyObject *mod_or_class_dict = LOCALS();
-            if (mod_or_class_dict == NULL) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "no locals found");
-                if (true) JUMP_TO_ERROR;
-            }
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                GOTO_ERROR(error);
-            }
-            if (v == NULL) {
-                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    GOTO_ERROR(error);
-                }
-                if (v == NULL) {
-                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        GOTO_ERROR(error);
-                    }
-                    if (v == NULL) {
-                        _PyEval_FormatExcCheckArg(
-                            tstate, PyExc_NameError,
-                            NAME_ERROR_MSG, name);
-                        GOTO_ERROR(error);
-                    }
-                }
-            }
-            stack_pointer[0] = v;
-            stack_pointer += 1;
-            break;
-        }
+        /* _LOAD_NAME is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _LOAD_GLOBAL: {
             PyObject *res;
@@ -1539,29 +1507,7 @@
             break;
         }
 
-        case _BUILD_SET: {
-            PyObject **values;
-            PyObject *set;
-            oparg = CURRENT_OPARG();
-            values = &stack_pointer[-oparg];
-            set = PySet_New(NULL);
-            if (set == NULL)
-            GOTO_ERROR(error);
-            int err = 0;
-            for (int i = 0; i < oparg; i++) {
-                PyObject *item = values[i];
-                if (err == 0)
-                err = PySet_Add(set, item);
-                Py_DECREF(item);
-            }
-            if (err != 0) {
-                Py_DECREF(set);
-                if (true) JUMP_TO_ERROR;
-            }
-            stack_pointer[-oparg] = set;
-            stack_pointer += 1 - oparg;
-            break;
-        }
+        /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _BUILD_MAP: {
             PyObject **values;
@@ -1612,12 +1558,8 @@
             oparg = CURRENT_OPARG();
             keys = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg];
-            if (!PyTuple_CheckExact(keys) ||
-                PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "bad BUILD_CONST_KEY_MAP keys argument");
-                GOTO_ERROR(error);  // Pop the keys and values.
-            }
+            assert(PyTuple_CheckExact(keys));
+            assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
             map = _PyDict_FromItems(
                                     &PyTuple_GET_ITEM(keys, 0), 1,
                                     values, 1, oparg);
@@ -1685,7 +1627,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 because it is instrumented */
 
         case _LOAD_SUPER_ATTR_ATTR: {
             PyObject *self;
@@ -2014,9 +1956,9 @@
 
         /* _LOAD_ATTR_CLASS is split on (oparg & 1) */
 
-        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 */
+        /* _LOAD_ATTR_PROPERTY is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 */
+        /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _GUARD_DORV_VALUES: {
             PyObject *owner;
@@ -2049,7 +1991,7 @@
             break;
         }
 
-        /* _STORE_ATTR_WITH_HINT is not a viable micro-op for tier 2 */
+        /* _STORE_ATTR_WITH_HINT is not a viable micro-op for tier 2 because it has unused cache entries */
 
         case _STORE_ATTR_SLOT: {
             PyObject *owner;
@@ -2277,9 +2219,9 @@
             break;
         }
 
-        /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
+        /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 because it is replaced */
 
-        /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
+        /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is replaced */
 
         case _IS_NONE: {
             PyObject *value;
@@ -2419,7 +2361,7 @@
             break;
         }
 
-        /* _FOR_ITER is not a viable micro-op for tier 2 */
+        /* _FOR_ITER is not a viable micro-op for tier 2 because it is replaced */
 
         case _FOR_ITER_TIER_TWO: {
             PyObject *iter;
@@ -2446,7 +2388,7 @@
             break;
         }
 
-        /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_FOR_ITER is not a viable micro-op for tier 2 because it is instrumented */
 
         case _ITER_CHECK_LIST: {
             PyObject *iter;
@@ -2455,7 +2397,7 @@
             break;
         }
 
-        /* _ITER_JUMP_LIST is not a viable micro-op for tier 2 */
+        /* _ITER_JUMP_LIST is not a viable micro-op for tier 2 because it is replaced */
 
         case _GUARD_NOT_EXHAUSTED_LIST: {
             PyObject *iter;
@@ -2490,7 +2432,7 @@
             break;
         }
 
-        /* _ITER_JUMP_TUPLE is not a viable micro-op for tier 2 */
+        /* _ITER_JUMP_TUPLE is not a viable micro-op for tier 2 because it is replaced */
 
         case _GUARD_NOT_EXHAUSTED_TUPLE: {
             PyObject *iter;
@@ -2526,7 +2468,7 @@
             break;
         }
 
-        /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 */
+        /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 because it is replaced */
 
         case _GUARD_NOT_EXHAUSTED_RANGE: {
             PyObject *iter;
@@ -2554,90 +2496,11 @@
             break;
         }
 
-        /* _FOR_ITER_GEN is not a viable micro-op for tier 2 */
+        /* _FOR_ITER_GEN is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        case _BEFORE_ASYNC_WITH: {
-            PyObject *mgr;
-            PyObject *exit;
-            PyObject *res;
-            mgr = stack_pointer[-1];
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                GOTO_ERROR(error);
-            }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "asynchronous context manager protocol "
-                                  "(missed __aexit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                GOTO_ERROR(error);
-            }
-            Py_DECREF(mgr);
-            res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                if (true) JUMP_TO_ERROR;
-            }
-            stack_pointer[-1] = exit;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            break;
-        }
+        /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        case _BEFORE_WITH: {
-            PyObject *mgr;
-            PyObject *exit;
-            PyObject *res;
-            mgr = stack_pointer[-1];
-            /* pop the context manager, push its __exit__ and the
-             * value returned from calling its __enter__
-             */
-            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
-            if (enter == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                GOTO_ERROR(error);
-            }
-            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
-            if (exit == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  "'%.200s' object does not support the "
-                                  "context manager protocol "
-                                  "(missed __exit__ method)",
-                                  Py_TYPE(mgr)->tp_name);
-                }
-                Py_DECREF(enter);
-                GOTO_ERROR(error);
-            }
-            Py_DECREF(mgr);
-            res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
-            if (res == NULL) {
-                Py_DECREF(exit);
-                if (true) JUMP_TO_ERROR;
-            }
-            stack_pointer[-1] = exit;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            break;
-        }
+        /* _BEFORE_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _WITH_EXCEPT_START: {
             PyObject *val;
@@ -2815,9 +2678,9 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_CALL is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL is not a viable micro-op for tier 2 */
+        /* _CALL is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             PyObject *null;
@@ -3056,7 +2919,7 @@
             break;
         }
 
-        /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 */
+        /* _CALL_PY_WITH_DEFAULTS is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _CALL_TYPE_1: {
             PyObject *arg;
@@ -3122,7 +2985,7 @@
             break;
         }
 
-        /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
+        /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _EXIT_INIT_CHECK: {
             PyObject *should_be_none;
@@ -3169,43 +3032,7 @@
             break;
         }
 
-        case _CALL_BUILTIN_O: {
-            PyObject **args;
-            PyObject *self_or_null;
-            PyObject *callable;
-            PyObject *res;
-            oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            /* Builtin METH_O functions */
-            int total_args = oparg;
-            if (self_or_null != NULL) {
-                args--;
-                total_args++;
-            }
-            if (total_args != 1) DEOPTIMIZE;
-            if (!PyCFunction_CheckExact(callable)) DEOPTIMIZE;
-            if (PyCFunction_GET_FLAGS(callable) != METH_O) DEOPTIMIZE;
-            STAT_INC(CALL, hit);
-            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                GOTO_ERROR(error);
-            }
-            PyObject *arg = args[0];
-            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
-            _Py_LeaveRecursiveCallTstate(tstate);
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(arg);
-            Py_DECREF(callable);
-            if (res == NULL) JUMP_TO_ERROR;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
-            break;
-        }
+        /* _CALL_BUILTIN_O is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _CALL_BUILTIN_FAST: {
             PyObject **args;
@@ -3285,117 +3112,11 @@
             break;
         }
 
-        case _CALL_LEN: {
-            PyObject **args;
-            PyObject *self_or_null;
-            PyObject *callable;
-            PyObject *res;
-            oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            /* len(o) */
-            int total_args = oparg;
-            if (self_or_null != NULL) {
-                args--;
-                total_args++;
-            }
-            if (total_args != 1) DEOPTIMIZE;
-            PyInterpreterState *interp = tstate->interp;
-            if (callable != interp->callable_cache.len) DEOPTIMIZE;
-            STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
-            Py_ssize_t len_i = PyObject_Length(arg);
-            if (len_i < 0) {
-                GOTO_ERROR(error);
-            }
-            res = PyLong_FromSsize_t(len_i);
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(callable);
-            Py_DECREF(arg);
-            if (res == NULL) JUMP_TO_ERROR;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            break;
-        }
+        /* _CALL_LEN is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        case _CALL_ISINSTANCE: {
-            PyObject **args;
-            PyObject *self_or_null;
-            PyObject *callable;
-            PyObject *res;
-            oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            /* isinstance(o, o2) */
-            int total_args = oparg;
-            if (self_or_null != NULL) {
-                args--;
-                total_args++;
-            }
-            if (total_args != 2) DEOPTIMIZE;
-            PyInterpreterState *interp = tstate->interp;
-            if (callable != interp->callable_cache.isinstance) DEOPTIMIZE;
-            STAT_INC(CALL, hit);
-            PyObject *cls = args[1];
-            PyObject *inst = args[0];
-            int retval = PyObject_IsInstance(inst, cls);
-            if (retval < 0) {
-                GOTO_ERROR(error);
-            }
-            res = PyBool_FromLong(retval);
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(inst);
-            Py_DECREF(cls);
-            Py_DECREF(callable);
-            if (res == NULL) JUMP_TO_ERROR;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            break;
-        }
+        /* _CALL_ISINSTANCE is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
-        case _CALL_METHOD_DESCRIPTOR_O: {
-            PyObject **args;
-            PyObject *self_or_null;
-            PyObject *callable;
-            PyObject *res;
-            oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            int total_args = oparg;
-            if (self_or_null != NULL) {
-                args--;
-                total_args++;
-            }
-            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            if (total_args != 2) DEOPTIMIZE;
-            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) DEOPTIMIZE;
-            PyMethodDef *meth = method->d_method;
-            if (meth->ml_flags != METH_O) DEOPTIMIZE;
-            PyObject *arg = args[1];
-            PyObject *self = args[0];
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) DEOPTIMIZE;
-            STAT_INC(CALL, hit);
-            PyCFunction cfunc = meth->ml_meth;
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                GOTO_ERROR(error);
-            }
-            res = _PyCFunction_TrampolineCall(cfunc, self, arg);
-            _Py_LeaveRecursiveCallTstate(tstate);
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(self);
-            Py_DECREF(arg);
-            Py_DECREF(callable);
-            if (res == NULL) JUMP_TO_ERROR;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
-            break;
-        }
+        /* _CALL_METHOD_DESCRIPTOR_O is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             PyObject **args;
@@ -3436,46 +3157,7 @@
             break;
         }
 
-        case _CALL_METHOD_DESCRIPTOR_NOARGS: {
-            PyObject **args;
-            PyObject *self_or_null;
-            PyObject *callable;
-            PyObject *res;
-            oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
-            callable = stack_pointer[-2 - oparg];
-            assert(oparg == 0 || oparg == 1);
-            int total_args = oparg;
-            if (self_or_null != NULL) {
-                args--;
-                total_args++;
-            }
-            if (total_args != 1) DEOPTIMIZE;
-            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
-            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) DEOPTIMIZE;
-            PyMethodDef *meth = method->d_method;
-            PyObject *self = args[0];
-            if (!Py_IS_TYPE(self, method->d_common.d_type)) DEOPTIMIZE;
-            if (meth->ml_flags != METH_NOARGS) DEOPTIMIZE;
-            STAT_INC(CALL, hit);
-            PyCFunction cfunc = meth->ml_meth;
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                GOTO_ERROR(error);
-            }
-            res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
-            _Py_LeaveRecursiveCallTstate(tstate);
-            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(self);
-            Py_DECREF(callable);
-            if (res == NULL) JUMP_TO_ERROR;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
-            break;
-        }
+        /* _CALL_METHOD_DESCRIPTOR_NOARGS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
             PyObject **args;
@@ -3516,13 +3198,13 @@
             break;
         }
 
-        /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL_KW is not a viable micro-op for tier 2 */
+        /* _CALL_KW is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
-        /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 */
+        /* _CALL_FUNCTION_EX is not a viable micro-op for tier 2 because it uses the 'this_instr' variable */
 
         case _MAKE_FUNCTION: {
             PyObject *codeobj;
@@ -3684,19 +3366,19 @@
             break;
         }
 
-        /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_INSTRUCTION is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_JUMP_FORWARD is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_JUMP_BACKWARD is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_POP_JUMP_IF_NONE is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_POP_JUMP_IF_NONE is not a viable micro-op for tier 2 because it is instrumented */
 
-        /* _INSTRUMENTED_POP_JUMP_IF_NOT_NONE is not a viable micro-op for tier 2 */
+        /* _INSTRUMENTED_POP_JUMP_IF_NOT_NONE is not a viable micro-op for tier 2 because it is instrumented */
 
         case _GUARD_IS_TRUE_POP: {
             PyObject *flag;
@@ -3913,47 +3595,13 @@
             break;
         }
 
-        case _ERROR_1: {
-            PyObject *value;
-            value = stack_pointer[-1];
+        case _ERROR_N: {
+            PyObject **values;
+            oparg = CURRENT_OPARG();
+            values = &stack_pointer[-oparg];
+            (void)values;
+            stack_pointer += -oparg;
             if (1) JUMP_TO_ERROR;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _ERROR_2: {
-            PyObject *value1;
-            PyObject *value;
-            value1 = stack_pointer[-1];
-            value = stack_pointer[-2];
-            if (1) JUMP_TO_ERROR;
-            stack_pointer += -2;
-            break;
-        }
-
-        case _ERROR_3: {
-            PyObject *value2;
-            PyObject *value1;
-            PyObject *value;
-            value2 = stack_pointer[-1];
-            value1 = stack_pointer[-2];
-            value = stack_pointer[-3];
-            if (1) JUMP_TO_ERROR;
-            stack_pointer += -3;
-            break;
-        }
-
-        case _ERROR_4: {
-            PyObject *val;
-            PyObject *value2;
-            PyObject *value1;
-            PyObject *value;
-            val = stack_pointer[-1];
-            value2 = stack_pointer[-2];
-            value1 = stack_pointer[-3];
-            value = stack_pointer[-4];
-            if (1) JUMP_TO_ERROR;
-            stack_pointer += -4;
             break;
         }
 

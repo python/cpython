@@ -32,7 +32,8 @@ typedef struct {
 
 #define UOP_FORMAT_TARGET 0
 #define UOP_FORMAT_EXIT 1
-#define UOP_FORMAT_DEOPT 2
+#define UOP_FORMAT_JUMP 2
+#define UOP_FORMAT_UNUSED 3
 
 typedef struct {
     uint16_t opcode:14;
@@ -43,7 +44,7 @@ typedef struct {
         struct {
             union {
                 uint16_t exit_index;
-                uint16_t deopt_target;
+                uint16_t jump_target;
             };
             uint16_t error_target;
         };
@@ -63,10 +64,10 @@ static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
     return inst->exit_index;
 }
 
-static inline uint16_t uop_get_deopt_target(const _PyUOpInstruction *inst)
+static inline uint16_t uop_get_jump_target(const _PyUOpInstruction *inst)
 {
-    assert(inst->format == UOP_FORMAT_DEOPT);
-    return inst->deopt_target;
+    assert(inst->format == UOP_FORMAT_JUMP);
+    return inst->jump_target;
 }
 
 static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)

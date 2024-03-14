@@ -213,6 +213,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EXIT_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
+    if p.no_pop_error:
+        flags.append("HAS_NO_POP_ERROR_FLAG")
     if p.escapes:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:

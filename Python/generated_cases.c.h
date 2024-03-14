@@ -605,12 +605,8 @@
             PyObject *map;
             keys = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg];
-            if (!PyTuple_CheckExact(keys) ||
-                PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
-                _PyErr_SetString(tstate, PyExc_SystemError,
-                                 "bad BUILD_CONST_KEY_MAP keys argument");
-                GOTO_ERROR(error);  // Pop the keys and values.
-            }
+            assert(PyTuple_CheckExact(keys));
+            assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
             map = _PyDict_FromItems(
                                     &PyTuple_GET_ITEM(keys, 0), 1,
                                     values, 1, oparg);

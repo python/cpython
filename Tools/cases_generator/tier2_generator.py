@@ -188,8 +188,9 @@ def generate_tier2(
             continue
         if uop.is_super():
             continue
-        if not uop.is_viable():
-            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 */\n\n")
+        why_not_viable = uop.why_not_viable()
+        if why_not_viable is not None:
+            out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n")
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
