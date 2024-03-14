@@ -173,4 +173,37 @@ my_double_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bb9f6b8c5d9e6a79 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(get_file_descriptor__doc__,
+"get_file_descriptor($module, file, /)\n"
+"--\n"
+"\n"
+"Get a file descriptor.");
+
+#define GET_FILE_DESCRIPTOR_METHODDEF    \
+    {"get_file_descriptor", (PyCFunction)get_file_descriptor, METH_O, get_file_descriptor__doc__},
+
+static int
+get_file_descriptor_impl(PyObject *module, int fd);
+
+static PyObject *
+get_file_descriptor(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    int _return_value;
+
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
+        goto exit;
+    }
+    _return_value = get_file_descriptor_impl(module, fd);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=03fd7811c056dc74 input=a9049054013a1b77]*/

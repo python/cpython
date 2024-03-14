@@ -80,7 +80,7 @@
 
         case _END_SEND: {
             _Py_UopsSymbol *value;
-            value = sym_new_unknown(ctx);
+            value = sym_new_not_null(ctx);
             if (value == NULL) goto out_of_space;
             stack_pointer[-2] = value;
             stack_pointer += -1;
@@ -89,7 +89,7 @@
 
         case _UNARY_NEGATIVE: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-1] = res;
             break;
@@ -97,7 +97,7 @@
 
         case _UNARY_NOT: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-1] = res;
             break;
@@ -205,7 +205,7 @@
 
         case _REPLACE_WITH_TRUE: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-1] = res;
             break;
@@ -213,7 +213,7 @@
 
         case _UNARY_INVERT: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-1] = res;
             break;
@@ -482,7 +482,7 @@
 
         case _BINARY_SUBSCR: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -491,7 +491,7 @@
 
         case _BINARY_SLICE: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -505,7 +505,7 @@
 
         case _BINARY_SUBSCR_LIST_INT: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -514,7 +514,7 @@
 
         case _BINARY_SUBSCR_STR_INT: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -523,7 +523,7 @@
 
         case _BINARY_SUBSCR_TUPLE_INT: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -532,7 +532,7 @@
 
         case _BINARY_SUBSCR_DICT: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -573,7 +573,7 @@
 
         case _CALL_INTRINSIC_1: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-1] = res;
             break;
@@ -581,7 +581,7 @@
 
         case _CALL_INTRINSIC_2: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -608,7 +608,7 @@
 
         case _GET_AITER: {
             _Py_UopsSymbol *iter;
-            iter = sym_new_unknown(ctx);
+            iter = sym_new_not_null(ctx);
             if (iter == NULL) goto out_of_space;
             stack_pointer[-1] = iter;
             break;
@@ -616,7 +616,7 @@
 
         case _GET_ANEXT: {
             _Py_UopsSymbol *awaitable;
-            awaitable = sym_new_unknown(ctx);
+            awaitable = sym_new_not_null(ctx);
             if (awaitable == NULL) goto out_of_space;
             stack_pointer[0] = awaitable;
             stack_pointer += 1;
@@ -625,7 +625,7 @@
 
         case _GET_AWAITABLE: {
             _Py_UopsSymbol *iter;
-            iter = sym_new_unknown(ctx);
+            iter = sym_new_not_null(ctx);
             if (iter == NULL) goto out_of_space;
             stack_pointer[-1] = iter;
             break;
@@ -644,7 +644,7 @@
 
         case _LOAD_ASSERTION_ERROR: {
             _Py_UopsSymbol *value;
-            value = sym_new_unknown(ctx);
+            value = sym_new_not_null(ctx);
             if (value == NULL) goto out_of_space;
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -653,7 +653,7 @@
 
         case _LOAD_BUILD_CLASS: {
             _Py_UopsSymbol *bc;
-            bc = sym_new_unknown(ctx);
+            bc = sym_new_not_null(ctx);
             if (bc == NULL) goto out_of_space;
             stack_pointer[0] = bc;
             stack_pointer += 1;
@@ -686,9 +686,9 @@
         case _UNPACK_SEQUENCE_TWO_TUPLE: {
             _Py_UopsSymbol *val1;
             _Py_UopsSymbol *val0;
-            val1 = sym_new_unknown(ctx);
+            val1 = sym_new_not_null(ctx);
             if (val1 == NULL) goto out_of_space;
-            val0 = sym_new_unknown(ctx);
+            val0 = sym_new_not_null(ctx);
             if (val0 == NULL) goto out_of_space;
             stack_pointer[-1] = val1;
             stack_pointer[0] = val0;
@@ -700,7 +700,7 @@
             _Py_UopsSymbol **values;
             values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
-                values[_i] = sym_new_unknown(ctx);
+                values[_i] = sym_new_not_null(ctx);
                 if (values[_i] == NULL) goto out_of_space;
             }
             stack_pointer += -1 + oparg;
@@ -711,7 +711,7 @@
             _Py_UopsSymbol **values;
             values = &stack_pointer[-1];
             for (int _i = oparg; --_i >= 0;) {
-                values[_i] = sym_new_unknown(ctx);
+                values[_i] = sym_new_not_null(ctx);
                 if (values[_i] == NULL) goto out_of_space;
             }
             stack_pointer += -1 + oparg;
@@ -754,7 +754,7 @@
 
         case _LOAD_LOCALS: {
             _Py_UopsSymbol *locals;
-            locals = sym_new_unknown(ctx);
+            locals = sym_new_not_null(ctx);
             if (locals == NULL) goto out_of_space;
             stack_pointer[0] = locals;
             stack_pointer += 1;
@@ -763,7 +763,7 @@
 
         case _LOAD_FROM_DICT_OR_GLOBALS: {
             _Py_UopsSymbol *v;
-            v = sym_new_unknown(ctx);
+            v = sym_new_not_null(ctx);
             if (v == NULL) goto out_of_space;
             stack_pointer[-1] = v;
             break;
@@ -774,7 +774,7 @@
         case _LOAD_GLOBAL: {
             _Py_UopsSymbol *res;
             _Py_UopsSymbol *null = NULL;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             null = sym_new_null(ctx);
             if (null == NULL) goto out_of_space;
@@ -795,7 +795,7 @@
         case _LOAD_GLOBAL_MODULE: {
             _Py_UopsSymbol *res;
             _Py_UopsSymbol *null = NULL;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             null = sym_new_null(ctx);
             if (null == NULL) goto out_of_space;
@@ -808,7 +808,7 @@
         case _LOAD_GLOBAL_BUILTINS: {
             _Py_UopsSymbol *res;
             _Py_UopsSymbol *null = NULL;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             null = sym_new_null(ctx);
             if (null == NULL) goto out_of_space;
@@ -832,7 +832,7 @@
 
         case _LOAD_FROM_DICT_OR_DEREF: {
             _Py_UopsSymbol *value;
-            value = sym_new_unknown(ctx);
+            value = sym_new_not_null(ctx);
             if (value == NULL) goto out_of_space;
             stack_pointer[-1] = value;
             break;
@@ -840,7 +840,7 @@
 
         case _LOAD_DEREF: {
             _Py_UopsSymbol *value;
-            value = sym_new_unknown(ctx);
+            value = sym_new_not_null(ctx);
             if (value == NULL) goto out_of_space;
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -858,7 +858,7 @@
 
         case _BUILD_STRING: {
             _Py_UopsSymbol *str;
-            str = sym_new_unknown(ctx);
+            str = sym_new_not_null(ctx);
             if (str == NULL) goto out_of_space;
             stack_pointer[-oparg] = str;
             stack_pointer += 1 - oparg;
@@ -867,7 +867,7 @@
 
         case _BUILD_TUPLE: {
             _Py_UopsSymbol *tup;
-            tup = sym_new_unknown(ctx);
+            tup = sym_new_not_null(ctx);
             if (tup == NULL) goto out_of_space;
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
@@ -876,7 +876,7 @@
 
         case _BUILD_LIST: {
             _Py_UopsSymbol *list;
-            list = sym_new_unknown(ctx);
+            list = sym_new_not_null(ctx);
             if (list == NULL) goto out_of_space;
             stack_pointer[-oparg] = list;
             stack_pointer += 1 - oparg;
@@ -897,7 +897,7 @@
 
         case _BUILD_MAP: {
             _Py_UopsSymbol *map;
-            map = sym_new_unknown(ctx);
+            map = sym_new_not_null(ctx);
             if (map == NULL) goto out_of_space;
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
@@ -910,7 +910,7 @@
 
         case _BUILD_CONST_KEY_MAP: {
             _Py_UopsSymbol *map;
-            map = sym_new_unknown(ctx);
+            map = sym_new_not_null(ctx);
             if (map == NULL) goto out_of_space;
             stack_pointer[-1 - oparg] = map;
             stack_pointer += -oparg;
@@ -936,7 +936,7 @@
 
         case _LOAD_SUPER_ATTR_ATTR: {
             _Py_UopsSymbol *attr;
-            attr = sym_new_unknown(ctx);
+            attr = sym_new_not_null(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-3] = attr;
             stack_pointer += -2;
@@ -946,9 +946,9 @@
         case _LOAD_SUPER_ATTR_METHOD: {
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self_or_null;
-            attr = sym_new_unknown(ctx);
+            attr = sym_new_not_null(ctx);
             if (attr == NULL) goto out_of_space;
-            self_or_null = sym_new_unknown(ctx);
+            self_or_null = sym_new_not_null(ctx);
             if (self_or_null == NULL) goto out_of_space;
             stack_pointer[-3] = attr;
             stack_pointer[-2] = self_or_null;
@@ -957,12 +957,15 @@
         }
 
         case _LOAD_ATTR: {
+            _Py_UopsSymbol *owner;
             _Py_UopsSymbol *attr;
             _Py_UopsSymbol *self_or_null = NULL;
-            attr = sym_new_unknown(ctx);
-            if (attr == NULL) goto out_of_space;
-            self_or_null = sym_new_unknown(ctx);
-            if (self_or_null == NULL) goto out_of_space;
+            owner = stack_pointer[-1];
+            (void)owner;
+            OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
+            if (oparg & 1) {
+                OUT_OF_SPACE_IF_NULL(self_or_null = sym_new_unknown(ctx));
+            }
             stack_pointer[-1] = attr;
             if (oparg & 1) stack_pointer[0] = self_or_null;
             stack_pointer += (oparg & 1);
@@ -1208,7 +1211,7 @@
 
         case _CONTAINS_OP_SET: {
             _Py_UopsSymbol *b;
-            b = sym_new_unknown(ctx);
+            b = sym_new_not_null(ctx);
             if (b == NULL) goto out_of_space;
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -1217,7 +1220,7 @@
 
         case _CONTAINS_OP_DICT: {
             _Py_UopsSymbol *b;
-            b = sym_new_unknown(ctx);
+            b = sym_new_not_null(ctx);
             if (b == NULL) goto out_of_space;
             stack_pointer[-2] = b;
             stack_pointer += -1;
@@ -1227,9 +1230,9 @@
         case _CHECK_EG_MATCH: {
             _Py_UopsSymbol *rest;
             _Py_UopsSymbol *match;
-            rest = sym_new_unknown(ctx);
+            rest = sym_new_not_null(ctx);
             if (rest == NULL) goto out_of_space;
-            match = sym_new_unknown(ctx);
+            match = sym_new_not_null(ctx);
             if (match == NULL) goto out_of_space;
             stack_pointer[-2] = rest;
             stack_pointer[-1] = match;
@@ -1238,7 +1241,7 @@
 
         case _CHECK_EXC_MATCH: {
             _Py_UopsSymbol *b;
-            b = sym_new_unknown(ctx);
+            b = sym_new_not_null(ctx);
             if (b == NULL) goto out_of_space;
             stack_pointer[-1] = b;
             break;
@@ -1250,7 +1253,7 @@
 
         case _IS_NONE: {
             _Py_UopsSymbol *b;
-            b = sym_new_unknown(ctx);
+            b = sym_new_not_null(ctx);
             if (b == NULL) goto out_of_space;
             stack_pointer[-1] = b;
             break;
@@ -1258,7 +1261,7 @@
 
         case _GET_LEN: {
             _Py_UopsSymbol *len_o;
-            len_o = sym_new_unknown(ctx);
+            len_o = sym_new_not_null(ctx);
             if (len_o == NULL) goto out_of_space;
             stack_pointer[0] = len_o;
             stack_pointer += 1;
@@ -1267,7 +1270,7 @@
 
         case _MATCH_CLASS: {
             _Py_UopsSymbol *attrs;
-            attrs = sym_new_unknown(ctx);
+            attrs = sym_new_not_null(ctx);
             if (attrs == NULL) goto out_of_space;
             stack_pointer[-3] = attrs;
             stack_pointer += -2;
@@ -1276,7 +1279,7 @@
 
         case _MATCH_MAPPING: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1285,7 +1288,7 @@
 
         case _MATCH_SEQUENCE: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1294,7 +1297,7 @@
 
         case _MATCH_KEYS: {
             _Py_UopsSymbol *values_or_none;
-            values_or_none = sym_new_unknown(ctx);
+            values_or_none = sym_new_not_null(ctx);
             if (values_or_none == NULL) goto out_of_space;
             stack_pointer[0] = values_or_none;
             stack_pointer += 1;
@@ -1303,7 +1306,7 @@
 
         case _GET_ITER: {
             _Py_UopsSymbol *iter;
-            iter = sym_new_unknown(ctx);
+            iter = sym_new_not_null(ctx);
             if (iter == NULL) goto out_of_space;
             stack_pointer[-1] = iter;
             break;
@@ -1311,7 +1314,7 @@
 
         case _GET_YIELD_FROM_ITER: {
             _Py_UopsSymbol *iter;
-            iter = sym_new_unknown(ctx);
+            iter = sym_new_not_null(ctx);
             if (iter == NULL) goto out_of_space;
             stack_pointer[-1] = iter;
             break;
@@ -1321,7 +1324,7 @@
 
         case _FOR_ITER_TIER_TWO: {
             _Py_UopsSymbol *next;
-            next = sym_new_unknown(ctx);
+            next = sym_new_not_null(ctx);
             if (next == NULL) goto out_of_space;
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1342,7 +1345,7 @@
 
         case _ITER_NEXT_LIST: {
             _Py_UopsSymbol *next;
-            next = sym_new_unknown(ctx);
+            next = sym_new_not_null(ctx);
             if (next == NULL) goto out_of_space;
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1361,7 +1364,7 @@
 
         case _ITER_NEXT_TUPLE: {
             _Py_UopsSymbol *next;
-            next = sym_new_unknown(ctx);
+            next = sym_new_not_null(ctx);
             if (next == NULL) goto out_of_space;
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1397,7 +1400,7 @@
 
         case _WITH_EXCEPT_START: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -1407,9 +1410,9 @@
         case _PUSH_EXC_INFO: {
             _Py_UopsSymbol *prev_exc;
             _Py_UopsSymbol *new_exc;
-            prev_exc = sym_new_unknown(ctx);
+            prev_exc = sym_new_not_null(ctx);
             if (prev_exc == NULL) goto out_of_space;
-            new_exc = sym_new_unknown(ctx);
+            new_exc = sym_new_not_null(ctx);
             if (new_exc == NULL) goto out_of_space;
             stack_pointer[-1] = prev_exc;
             stack_pointer[0] = new_exc;
@@ -1457,7 +1460,7 @@
 
         case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
             _Py_UopsSymbol *attr;
-            attr = sym_new_unknown(ctx);
+            attr = sym_new_not_null(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
             break;
@@ -1465,7 +1468,7 @@
 
         case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
             _Py_UopsSymbol *attr;
-            attr = sym_new_unknown(ctx);
+            attr = sym_new_not_null(ctx);
             if (attr == NULL) goto out_of_space;
             stack_pointer[-1] = attr;
             break;
@@ -1596,7 +1599,7 @@
 
         case _CALL_TYPE_1: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-3] = res;
             stack_pointer += -2;
@@ -1644,7 +1647,7 @@
 
         case _MAKE_FUNCTION: {
             _Py_UopsSymbol *func;
-            func = sym_new_unknown(ctx);
+            func = sym_new_not_null(ctx);
             if (func == NULL) goto out_of_space;
             stack_pointer[-1] = func;
             break;
@@ -1652,7 +1655,7 @@
 
         case _SET_FUNCTION_ATTRIBUTE: {
             _Py_UopsSymbol *func;
-            func = sym_new_unknown(ctx);
+            func = sym_new_not_null(ctx);
             if (func == NULL) goto out_of_space;
             stack_pointer[-2] = func;
             stack_pointer += -1;
@@ -1661,7 +1664,7 @@
 
         case _BUILD_SLICE: {
             _Py_UopsSymbol *slice;
-            slice = sym_new_unknown(ctx);
+            slice = sym_new_not_null(ctx);
             if (slice == NULL) goto out_of_space;
             stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
             stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
@@ -1670,7 +1673,7 @@
 
         case _CONVERT_VALUE: {
             _Py_UopsSymbol *result;
-            result = sym_new_unknown(ctx);
+            result = sym_new_not_null(ctx);
             if (result == NULL) goto out_of_space;
             stack_pointer[-1] = result;
             break;
@@ -1678,7 +1681,7 @@
 
         case _FORMAT_SIMPLE: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-1] = res;
             break;
@@ -1686,7 +1689,7 @@
 
         case _FORMAT_WITH_SPEC: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1706,7 +1709,7 @@
 
         case _BINARY_OP: {
             _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
             if (res == NULL) goto out_of_space;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1833,7 +1836,7 @@
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             _Py_UopsSymbol *value;
-            value = sym_new_unknown(ctx);
+            value = sym_new_not_null(ctx);
             if (value == NULL) goto out_of_space;
             stack_pointer[-1] = value;
             break;
