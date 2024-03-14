@@ -2819,6 +2819,11 @@
 
         /* _CALL is not a viable micro-op for tier 2 */
 
+        case _CHECK_PERIODIC: {
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             PyObject *null;
             PyObject *callable;
@@ -3096,7 +3101,6 @@
             if (res == NULL) goto pop_3_error_tier_two;
             stack_pointer[-3] = res;
             stack_pointer += -2;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3118,7 +3122,6 @@
             if (res == NULL) goto pop_3_error_tier_two;
             stack_pointer[-3] = res;
             stack_pointer += -2;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3165,7 +3168,6 @@
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3203,7 +3205,6 @@
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3238,14 +3239,8 @@
             }
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
-            /* Not deopting because this doesn't mean our optimization was
-               wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
-               'invalid'). In those cases an exception is set, so we must
-               handle it.
-             */
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3281,7 +3276,6 @@
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3393,7 +3387,6 @@
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3432,7 +3425,6 @@
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3473,7 +3465,6 @@
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3512,7 +3503,6 @@
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
