@@ -141,9 +141,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         return 1;
     }
     PyObject *globals = frame->f_globals;
-    assert(PyFunction_Check(((PyFunctionObject *)frame->f_funcobj)));
-    assert(((PyFunctionObject *)frame->f_funcobj)->func_builtins == builtins);
-    assert(((PyFunctionObject *)frame->f_funcobj)->func_globals == globals);
+    PyFunctionObject *function = (PyFunctionObject *)frame->f_funcobj;
+    assert(PyFunction_Check(function));
+    assert(function->func_builtins == builtins);
+    assert(function->func_globals == globals);
+    uint32_t function_version = _PyFunction_GetVersionForCurrentState(function);
     /* In order to treat globals as constants, we need to
      * know that the globals dict is the one we expected, and
      * that it hasn't changed
@@ -154,10 +156,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
     /* These values represent stacks of booleans (one bool per bit).
      * Pushing a frame shifts left, popping a frame shifts right. */
-    uint32_t builtins_checked = 0;
+    uint32_t function_checked = 0;
     uint32_t builtins_watched = 0;
-    uint32_t globals_checked = 0;
     uint32_t globals_watched = 0;
+    uint32_t prechecked_function_version = 0;
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
         interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
     }
@@ -176,13 +178,13 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
                     builtins_watched |= 1;
                 }
-                if (builtins_checked & 1) {
+                if (function_checked & 1) {
                     buffer[pc].opcode = NOP;
                 }
                 else {
-                    buffer[pc].opcode = _CHECK_BUILTINS;
-                    buffer[pc].operand = (uintptr_t)builtins;
-                    builtins_checked |= 1;
+                    buffer[pc].opcode = _CHECK_FUNCTION;
+                    buffer[pc].operand = function_version;
+                    function_checked |= 1;
                 }
                 break;
             case _GUARD_GLOBALS_VERSION:
@@ -198,36 +200,40 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     _Py_BloomFilter_Add(dependencies, globals);
                     globals_watched |= 1;
                 }
-                if (globals_checked & 1) {
+                if (function_checked & 1) {
                     buffer[pc].opcode = NOP;
                 }
                 else {
-                    buffer[pc].opcode = _CHECK_GLOBALS;
-                    buffer[pc].operand = (uintptr_t)globals;
-                    globals_checked |= 1;
+                    buffer[pc].opcode = _CHECK_FUNCTION;
+                    buffer[pc].operand = function_version;
+                    function_checked |= 1;
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
-                if (globals_checked & builtins_checked & globals_watched & builtins_watched & 1) {
+                if (function_checked & globals_watched & builtins_watched & 1) {
                     convert_global_to_const(inst, builtins);
                 }
                 break;
             case _LOAD_GLOBAL_MODULE:
-                if (globals_checked & globals_watched & 1) {
+                if (function_checked & globals_watched & 1) {
                     convert_global_to_const(inst, globals);
                 }
                 break;
             case _PUSH_FRAME:
             {
-                globals_checked <<= 1;
-                globals_watched <<= 1;
-                builtins_checked <<= 1;
                 builtins_watched <<= 1;
+                globals_watched <<= 1;
+                function_checked <<= 1;
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
                 if (func == NULL) {
                     return 1;
                 }
                 assert(PyFunction_Check(func));
+                function_version = func->func_version;
+                if (prechecked_function_version == function_version) {
+                    function_checked |= 1;
+                }
+                prechecked_function_version = 0;
                 globals = func->func_globals;
                 builtins = func->func_builtins;
                 if (builtins != interp->builtins) {
@@ -237,16 +243,19 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
             }
             case _POP_FRAME:
             {
-                globals_checked >>= 1;
-                globals_watched >>= 1;
-                builtins_checked >>= 1;
                 builtins_watched >>= 1;
+                globals_watched >>= 1;
+                function_checked >>= 1;
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
                 assert(PyFunction_Check(func));
+                function_version = func->func_version;
                 globals = func->func_globals;
                 builtins = func->func_builtins;
                 break;
             }
+            case _CHECK_FUNCTION_EXACT_ARGS:
+                prechecked_function_version = (uint32_t)buffer[pc].operand;
+                break;
             default:
                 if (op_is_end(opcode)) {
                     return 1;
@@ -421,7 +430,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _SET_IP:
-                buffer[pc].opcode = NOP;
+                buffer[pc].opcode = _NOP;
                 last_set_ip = pc;
                 break;
             case _CHECK_VALIDITY:
@@ -429,7 +438,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = false;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 break;
             case _CHECK_VALIDITY_AND_SET_IP:
@@ -438,7 +447,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _CHECK_VALIDITY;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 last_set_ip = pc;
                 break;
@@ -454,7 +463,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     last->opcode == _COPY
                 ) {
                     last->opcode = _NOP;
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 if (last->opcode == _REPLACE_WITH_TRUE) {
                     last->opcode = _NOP;

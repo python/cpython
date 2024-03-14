@@ -66,8 +66,9 @@ from libclinic import ClinicError
 #
 
 
-# match '#define Py_LIMITED_API'
-LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
+# Match '#define Py_LIMITED_API'.
+# Match '#  define Py_LIMITED_API 0x030d0000' (without the version).
+LIMITED_CAPI_REGEX = re.compile(r'# *define +Py_LIMITED_API')
 
 
 class Sentinels(enum.Enum):
@@ -3867,19 +3868,28 @@ class float_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'f':
-            return self.format_code("""
-                if (PyFloat_CheckExact({argname})) {{{{
-                    {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
-                }}}}
-                else
-                {{{{
+            if not limited_capi:
+                return self.format_code("""
+                    if (PyFloat_CheckExact({argname})) {{{{
+                        {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
+                    }}}}
+                    else
+                    {{{{
+                        {paramname} = (float) PyFloat_AsDouble({argname});
+                        if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                    """,
+                    argname=argname)
+            else:
+                return self.format_code("""
                     {paramname} = (float) PyFloat_AsDouble({argname});
                     if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
-                }}}}
-                """,
-                argname=argname)
+                    """,
+                    argname=argname)
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 class double_converter(CConverter):
@@ -3890,19 +3900,28 @@ class double_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'd':
-            return self.format_code("""
-                if (PyFloat_CheckExact({argname})) {{{{
-                    {paramname} = PyFloat_AS_DOUBLE({argname});
-                }}}}
-                else
-                {{{{
+            if not limited_capi:
+                return self.format_code("""
+                    if (PyFloat_CheckExact({argname})) {{{{
+                        {paramname} = PyFloat_AS_DOUBLE({argname});
+                    }}}}
+                    else
+                    {{{{
+                        {paramname} = PyFloat_AsDouble({argname});
+                        if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                    """,
+                    argname=argname)
+            else:
+                return self.format_code("""
                     {paramname} = PyFloat_AsDouble({argname});
                     if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
-                }}}}
-                """,
-                argname=argname)
+                    """,
+                    argname=argname)
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 

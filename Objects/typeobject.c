@@ -1236,20 +1236,22 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
     }
     else {
         abstract = 0;
-        res = PyDict_DelItem(dict, &_Py_ID(__abstractmethods__));
-        if (res && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        res = PyDict_Pop(dict, &_Py_ID(__abstractmethods__), NULL);
+        if (res == 0) {
             PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__abstractmethods__));
             return -1;
         }
     }
-    if (res == 0) {
-        PyType_Modified(type);
-        if (abstract)
-            type->tp_flags |= Py_TPFLAGS_IS_ABSTRACT;
-        else
-            type->tp_flags &= ~Py_TPFLAGS_IS_ABSTRACT;
+    if (res < 0) {
+        return -1;
     }
-    return res;
+
+    PyType_Modified(type);
+    if (abstract)
+        type->tp_flags |= Py_TPFLAGS_IS_ABSTRACT;
+    else
+        type->tp_flags &= ~Py_TPFLAGS_IS_ABSTRACT;
+    return 0;
 }
 
 static PyObject *
@@ -1606,16 +1608,18 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
         result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
     } else {
         /* delete */
-        result = PyDict_DelItem(dict, &_Py_ID(__annotations__));
-        if (result < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
+        result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
+        if (result == 0) {
             PyErr_SetString(PyExc_AttributeError, "__annotations__");
+            return -1;
         }
     }
-
-    if (result == 0) {
-        PyType_Modified(type);
+    if (result < 0) {
+        return -1;
     }
-    return result;
+
+    PyType_Modified(type);
+    return 0;
 }
 
 static PyObject *
