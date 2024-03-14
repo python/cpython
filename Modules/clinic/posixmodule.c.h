@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
-#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -481,7 +480,8 @@ os_fchdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_fchdir_impl(module, fd);
@@ -1024,7 +1024,8 @@ os_fsync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_fsync_impl(module, fd);
@@ -1107,7 +1108,8 @@ os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_fdatasync_impl(module, fd);
@@ -4531,7 +4533,8 @@ os_grantpt(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_grantpt_impl(module, fd);
@@ -4567,7 +4570,8 @@ os_unlockpt(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_unlockpt_impl(module, fd);
@@ -4604,7 +4608,8 @@ os_ptsname(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_ptsname_impl(module, fd);
@@ -4664,7 +4669,8 @@ os_login_tty(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_login_tty_impl(module, fd);
@@ -5881,7 +5887,8 @@ os_setns(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -6322,7 +6329,8 @@ os_timerfd_settime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -6435,7 +6443,8 @@ os_timerfd_settime_ns(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -6495,7 +6504,8 @@ os_timerfd_gettime(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_timerfd_gettime_impl(module, fd);
@@ -6529,7 +6539,8 @@ os_timerfd_gettime_ns(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int fd;
 
-    if (!_PyLong_FileDescriptor_Converter(arg, &fd)) {
+    fd = PyObject_AsFileDescriptor(arg);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_timerfd_gettime_ns_impl(module, fd);
@@ -9691,7 +9702,8 @@ os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("fpathconf", nargs, 2, 2)) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!conv_path_confname(args[1], &name)) {
@@ -10834,7 +10846,8 @@ os_eventfd_read(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     return_value = os_eventfd_read_impl(module, fd);
@@ -10896,7 +10909,8 @@ os_eventfd_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
         goto exit;
     }
     if (!_PyLong_UnsignedLongLong_Converter(args[1], &value)) {
@@ -12588,4 +12602,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=2965306970f31c5d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=511f0788a6b90db0 input=a9049054013a1b77]*/
