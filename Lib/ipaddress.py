@@ -1086,7 +1086,11 @@ class _BaseNetwork(_IPAddressBase):
         """
         return any(self.network_address in priv_network and
                    self.broadcast_address in priv_network
-                   for priv_network in self._constants._private_networks)
+                   for priv_network in self._constants._private_networks) and all(
+                    self.network_address not in network and
+                    self.broadcast_address not in network
+                    for network in self._constants._private_networks_exceptions
+                )
 
     @property
     def is_global(self):
