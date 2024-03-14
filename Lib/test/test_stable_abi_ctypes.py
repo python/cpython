@@ -706,6 +706,7 @@ SYMBOL_NAMES = (
     "PyType_GenericAlloc",
     "PyType_GenericNew",
     "PyType_GetFlags",
+    "PyType_GetFullyQualifiedName",
     "PyType_GetModule",
     "PyType_GetModuleState",
     "PyType_GetName",

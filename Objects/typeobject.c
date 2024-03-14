@@ -1201,6 +1201,41 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
 
+
+PyObject *
+PyType_GetFullyQualifiedName(PyTypeObject *type)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        return PyUnicode_FromString(type->tp_name);
+    }
+
+    PyObject *qualname = type_qualname(type, NULL);
+    if (qualname == NULL) {
+        return NULL;
+    }
+
+    PyObject *module = type_module(type, NULL);
+    if (module == NULL) {
+        Py_DECREF(qualname);
+        return NULL;
+    }
+
+    PyObject *result;
+    if (PyUnicode_Check(module)
+        && !_PyUnicode_Equal(module, &_Py_ID(builtins))
+        && !_PyUnicode_Equal(module, &_Py_ID(__main__)))
+    {
+        result = PyUnicode_FromFormat("%U.%U", module, qualname);
+    }
+    else {
+        result = Py_NewRef(qualname);
+    }
+    Py_DECREF(module);
+    Py_DECREF(qualname);
+    return result;
+}
+
+
 static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
 {
@@ -1708,28 +1743,31 @@ type_repr(PyObject *self)
         return PyUnicode_FromFormat("<class at %p>", type);
     }
 
-    PyObject *mod, *name, *rtn;
-
-    mod = type_module(type, NULL);
-    if (mod == NULL)
+    PyObject *mod = type_module(type, NULL);
+    if (mod == NULL) {
         PyErr_Clear();
-    else if (!PyUnicode_Check(mod)) {
-        Py_SETREF(mod, NULL);
     }
-    name = type_qualname(type, NULL);
+    else if (!PyUnicode_Check(mod)) {
+        Py_CLEAR(mod);
+    }
+
+    PyObject *name = type_qualname(type, NULL);
     if (name == NULL) {
         Py_XDECREF(mod);
         return NULL;
     }
 
-    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins)))
-        rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
-    else
-        rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
-
+    PyObject *result;
+    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins))) {
+        result = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
+    }
+    else {
+        result = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
+    }
     Py_XDECREF(mod);
     Py_DECREF(name);
-    return rtn;
+
+    return result;
 }
 
 static PyObject *
