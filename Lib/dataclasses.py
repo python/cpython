@@ -1073,7 +1073,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # Create __eq__ method.  There's no need for a __ne__ method,
         # since python will call __eq__ and negate it.
         cmp_fields = (field for field in field_list if field.compare)
-        terms = [f'self.{field.name}==other.{field.name}' for field in cmp_fields]
+        terms = [f'(self.{field.name},)==(other.{field.name},)' for field in cmp_fields]
         field_comparisons = ' and '.join(terms) or 'True'
         body =  [f'if other.__class__ is self.__class__:',
                  f' return {field_comparisons}',
