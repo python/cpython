@@ -8,6 +8,9 @@ on:
         required: false
         type: boolean
         default: false
+      os-matrix:
+        required: false
+        type: string
 
 jobs:
   build_macos:
@@ -22,10 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [
-          "macos-14",  # M1
-          "macos-13",  # Intel
-        ]
+        os: ${{fromJson(inputs.os-matrix)}}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
