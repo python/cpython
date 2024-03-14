@@ -1348,8 +1348,10 @@ class _TestLock(BaseTestCase):
     def test_lock(self):
         lock = self.Lock()
         self.assertEqual(lock.acquire(), True)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.acquire(False), False)
         self.assertEqual(lock.release(), None)
+        self.assertFalse(lock.locked())
         self.assertRaises((ValueError, threading.ThreadError), lock.release)
 
     def test_rlock(self):
