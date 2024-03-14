@@ -807,8 +807,8 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
         result = new_weakref(ob, callback);
         if (result != NULL) {
             if (callback == NULL) {
-                if (ref == NULL)
-                    insert_head(result, list);
+                assert(ref == NULL);
+                insert_head(result, list);
             }
             else {
                 PyWeakReference *prev;
