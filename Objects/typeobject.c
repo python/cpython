@@ -1208,7 +1208,7 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
 
 
 PyObject *
-PyType_GetFullyQualifiedName(PyTypeObject *type)
+_PyType_GetFullyQualifiedName(PyTypeObject *type, char sep)
 {
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         return PyUnicode_FromString(type->tp_name);
@@ -1230,7 +1230,7 @@ PyType_GetFullyQualifiedName(PyTypeObject *type)
         && !_PyUnicode_Equal(module, &_Py_ID(builtins))
         && !_PyUnicode_Equal(module, &_Py_ID(__main__)))
     {
-        result = PyUnicode_FromFormat("%U.%U", module, qualname);
+        result = PyUnicode_FromFormat("%U%c%U", module, sep, qualname);
     }
     else {
         result = Py_NewRef(qualname);
@@ -1238,6 +1238,12 @@ PyType_GetFullyQualifiedName(PyTypeObject *type)
     Py_DECREF(module);
     Py_DECREF(qualname);
     return result;
+}
+
+PyObject *
+PyType_GetFullyQualifiedName(PyTypeObject *type)
+{
+    return _PyType_GetFullyQualifiedName(type, '.');
 }
 
 
