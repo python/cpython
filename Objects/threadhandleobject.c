@@ -24,6 +24,8 @@
 // their turn to execute or an earlier operation completes successfully. Once a
 // join has completed successfully all future joins complete immediately.
 struct _PyThread_handle_data {
+    struct llist_node fork_node;  // linked list node (see _pythread_runtime_state)
+
     // The `ident` and `handle` fields are immutable once the object is visible
     // to threads other than its creator, thus they do not need to be accessed
     // atomically.
@@ -44,6 +46,8 @@ struct _PyThread_handle_data {
 };
 
 
+static void track_thread_handle_for_fork(struct _PyThread_handle_data *);
+
 static struct _PyThread_handle_data *
 new_thread_handle_data(void)
 {
@@ -62,13 +66,17 @@ new_thread_handle_data(void)
         .thread_is_exiting = event,
         .state = THREAD_HANDLE_INVALID,
     };
-    // XXX Add _PyRuntime.threads.handles here.
+
+    track_thread_handle_for_fork(data);
+
     return data;
 }
 
 static inline int get_thread_handle_state(struct _PyThread_handle_data *);
 static inline void set_thread_handle_state(
         struct _PyThread_handle_data *, _PyThreadHandleState);
+static void untrack_thread_handle_for_fork(struct _PyThread_handle_data *);
+
 
 static void
 free_thread_handle_data(struct _PyThread_handle_data *data)
@@ -83,6 +91,7 @@ free_thread_handle_data(struct _PyThread_handle_data *data)
             set_thread_handle_state(data, THREAD_HANDLE_DETACHED);
         }
     }
+    untrack_thread_handle_for_fork(data);
     _PyEventRc_Decref(data->thread_is_exiting);
     PyMem_RawFree(data);
 }
@@ -187,13 +196,10 @@ _PyThread_GetExitingEvent(struct _PyThread_handle_data *data)
 
 typedef struct {
     PyObject_HEAD
-    struct llist_node fork_node;  // linked list node (see _pythread_runtime_state)
 
     struct _PyThread_handle_data *data;
 } thandleobject;
 
-
-static void track_thread_handle_for_fork(thandleobject *);
 
 PyObject *
 _PyThreadHandle_NewObject(void)
@@ -207,8 +213,6 @@ _PyThreadHandle_NewObject(void)
         Py_DECREF(self);
         return NULL;
     }
-
-    track_thread_handle_for_fork(self);
 
     return (PyObject *)self;
 }
@@ -250,14 +254,9 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 
 /* The _ThreadHandle class */
 
-static void untrack_thread_handle_for_fork(thandleobject *);
-
 static void
 ThreadHandle_dealloc(thandleobject *self)
 {
-    // Remove ourself from the global list of handles
-    untrack_thread_handle_for_fork(self);
-
     // It's safe to access state non-atomically:
     //   1. This is the destructor; nothing else holds a reference.
     //   2. The refcount going to zero is a "synchronizes-with" event;
@@ -294,19 +293,19 @@ PyTypeObject _PyThreadHandle_Type = {
 // XXX Track the handles instead of the objects.
 
 static void
-track_thread_handle_for_fork(thandleobject *hobj)
+track_thread_handle_for_fork(struct _PyThread_handle_data *data)
 {
     HEAD_LOCK(&_PyRuntime);
-    llist_insert_tail(&_PyRuntime.threads.handles, &hobj->fork_node);
+    llist_insert_tail(&_PyRuntime.threads.handles, &data->fork_node);
     HEAD_UNLOCK(&_PyRuntime);
 }
 
 static void
-untrack_thread_handle_for_fork(thandleobject *hobj)
+untrack_thread_handle_for_fork(struct _PyThread_handle_data *data)
 {
     HEAD_LOCK(&_PyRuntime);
-    if (hobj->fork_node.next != NULL) {
-        llist_remove(&hobj->fork_node);
+    if (data->fork_node.next != NULL) {
+        llist_remove(&data->fork_node);
     }
     HEAD_UNLOCK(&_PyRuntime);
 }
@@ -317,16 +316,15 @@ clear_tracked_thread_handles(struct _pythread_runtime_state *state,
 {
     struct llist_node *node;
     llist_for_each_safe(node, &state->handles) {
-        thandleobject *hobj = llist_data(node, thandleobject, fork_node);
-        if (hobj->data != NULL) {
-            if (hobj->data->ident == current) {
-                continue;
-            }
-
-            // Disallow calls to join() as they could crash. We are the only
-            // thread; it's safe to set this without an atomic.
-            hobj->data->state = THREAD_HANDLE_INVALID;
+        struct _PyThread_handle_data *data = llist_data(
+            node, struct _PyThread_handle_data, fork_node);
+        if (data->ident == current) {
+            continue;
         }
+
+        // Disallow calls to join() as they could crash. We are the only
+        // thread; it's safe to set this without an atomic.
+        data->state = THREAD_HANDLE_INVALID;
         llist_remove(node);
     }
 }
