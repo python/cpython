@@ -180,6 +180,13 @@ class Uop:
             return "has unused cache entries"
         if self.properties.pop_error and self.properties.no_pop_error:
             return "has both popping and not-popping errors"
+        if self.properties.eval_breaker:
+            if self.properties.pop_error or self.properties.no_pop_error:
+                return "has error handling and eval-breaker check"
+            if self.properties.side_exit:
+                return "exits and eval-breaker check"
+            if self.properties.deopts:
+                return "deopts and eval-breaker check"
         return None
 
     def is_viable(self) -> bool:
@@ -343,7 +350,7 @@ def has_pop_error(op: parser.InstDef) -> bool:
 
 def has_no_pop_error(op: parser.InstDef) -> bool:
     return (
-        variable_used(op, "GOTO_ERROR")
+        variable_used(op, "NO_POP_ERROR")
         or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
         or variable_used(op, "resume_with_error")

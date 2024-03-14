@@ -1603,23 +1603,9 @@
             break;
         }
 
-        case _CALL_STR_1: {
-            _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            break;
-        }
+        /* _CALL_STR_1 is not a viable micro-op for tier 2 */
 
-        case _CALL_TUPLE_1: {
-            _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-3] = res;
-            stack_pointer += -2;
-            break;
-        }
+        /* _CALL_TUPLE_1 is not a viable micro-op for tier 2 */
 
         /* _CALL_ALLOC_AND_ENTER_INIT is not a viable micro-op for tier 2 */
 
@@ -1628,34 +1614,13 @@
             break;
         }
 
-        case _CALL_BUILTIN_CLASS: {
-            _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            break;
-        }
+        /* _CALL_BUILTIN_CLASS is not a viable micro-op for tier 2 */
 
         /* _CALL_BUILTIN_O is not a viable micro-op for tier 2 */
 
-        case _CALL_BUILTIN_FAST: {
-            _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            break;
-        }
+        /* _CALL_BUILTIN_FAST is not a viable micro-op for tier 2 */
 
-        case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            break;
-        }
+        /* _CALL_BUILTIN_FAST_WITH_KEYWORDS is not a viable micro-op for tier 2 */
 
         /* _CALL_LEN is not a viable micro-op for tier 2 */
 
@@ -1663,25 +1628,11 @@
 
         /* _CALL_METHOD_DESCRIPTOR_O is not a viable micro-op for tier 2 */
 
-        case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            break;
-        }
+        /* _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS is not a viable micro-op for tier 2 */
 
         /* _CALL_METHOD_DESCRIPTOR_NOARGS is not a viable micro-op for tier 2 */
 
-        case _CALL_METHOD_DESCRIPTOR_FAST: {
-            _Py_UopsSymbol *res;
-            res = sym_new_unknown(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-2 - oparg] = res;
-            stack_pointer += -1 - oparg;
-            break;
-        }
+        /* _CALL_METHOD_DESCRIPTOR_FAST is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_CALL_KW is not a viable micro-op for tier 2 */
 

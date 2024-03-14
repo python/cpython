@@ -99,6 +99,20 @@ def replace_error(
     out.emit(close)
 
 
+def replace_no_pop_error(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    stack: Stack,
+    inst: Instruction | None,
+) -> None:
+    next(tkn_iter)  # LPAREN
+    next(tkn_iter)  # RPAREN
+    next(tkn_iter)  # Semi colon
+    out.emit_at("goto error;", tkn)
+
+
 def replace_decrefs(
     out: CWriter,
     tkn: Token,
@@ -160,6 +174,7 @@ REPLACEMENT_FUNCTIONS = {
     "EXIT_IF": replace_deopt,
     "DEOPT_IF": replace_deopt,
     "ERROR_IF": replace_error,
+    "NO_POP_ERROR": replace_no_pop_error,
     "DECREF_INPUTS": replace_decrefs,
     "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
     "SYNC_SP": replace_sync_sp,
