@@ -1,22 +1,25 @@
 /* fcntl module */
 
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
+// Need limited C API version 3.13 for PyLong_AsInt()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
 
+#include <errno.h>                // EINTR
+#include <fcntl.h>                // fcntl()
+#include <string.h>               // memcpy()
+#include <sys/ioctl.h>            // ioctl()
 #ifdef HAVE_SYS_FILE_H
-#include <sys/file.h>
+#  include <sys/file.h>           // flock()
 #endif
 #ifdef HAVE_LINUX_FS_H
-#include <linux/fs.h>
+#  include <linux/fs.h>
 #endif
-
-#include <sys/ioctl.h>
-#include <fcntl.h>
 #ifdef HAVE_STROPTS_H
-#include <stropts.h>
+#  include <stropts.h>            // I_FLUSHBAND
 #endif
 
 /*[clinic input]
