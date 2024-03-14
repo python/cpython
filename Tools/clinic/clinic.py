@@ -44,14 +44,13 @@ from typing import (
     Protocol,
     TypeVar,
     cast,
-    overload,
 )
 
 
 # Local imports.
 import libclinic
 import libclinic.cpp
-from libclinic import ClinicError
+from libclinic import ClinicError, fail, warn
 
 
 # TODO:
@@ -66,8 +65,9 @@ from libclinic import ClinicError
 #
 
 
-# match '#define Py_LIMITED_API'
-LIMITED_CAPI_REGEX = re.compile(r'#define +Py_LIMITED_API')
+# Match '#define Py_LIMITED_API'.
+# Match '#  define Py_LIMITED_API 0x030d0000' (without the version).
+LIMITED_CAPI_REGEX = re.compile(r'# *define +Py_LIMITED_API')
 
 
 class Sentinels(enum.Enum):
@@ -91,51 +91,6 @@ class Null:
 NULL = Null()
 
 TemplateDict = dict[str, str]
-
-
-@overload
-def warn_or_fail(
-    *args: object,
-    fail: Literal[True],
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> NoReturn: ...
-
-@overload
-def warn_or_fail(
-    *args: object,
-    fail: Literal[False] = False,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> None: ...
-
-def warn_or_fail(
-    *args: object,
-    fail: bool = False,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> None:
-    joined = " ".join([str(a) for a in args])
-    error = ClinicError(joined, filename=filename, lineno=line_number)
-    if fail:
-        raise error
-    else:
-        print(error.report(warn_only=True))
-
-
-def warn(
-    *args: object,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> None:
-    return warn_or_fail(*args, filename=filename, line_number=line_number, fail=False)
-
-def fail(
-    *args: object,
-    filename: str | None = None,
-    line_number: int | None = None,
-) -> NoReturn:
-    warn_or_fail(*args, filename=filename, line_number=line_number, fail=True)
 
 
 class CRenderData:
@@ -3845,18 +3800,19 @@ class fildes_converter(CConverter):
     type = 'int'
     converter = '_PyLong_FileDescriptor_Converter'
 
-    def converter_init(self, *, accept: TypeSet = {int, NoneType}) -> None:
-        self.add_include('pycore_fileutils.h',
-                         '_PyLong_FileDescriptor_Converter()')
-
-    def _parse_arg(self, argname: str, displayname: str) -> str | None:
-        return self.format_code("""
-            {paramname} = PyObject_AsFileDescriptor({argname});
-            if ({paramname} == -1) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        if limited_capi:
+            return self.format_code("""
+                {paramname} = PyObject_AsFileDescriptor({argname});
+                if ({paramname} < 0) {{{{
+                    goto exit;
+                }}}}
+                """,
+                argname=argname)
+        else:
+            self.add_include('pycore_fileutils.h',
+                             '_PyLong_FileDescriptor_Converter()')
+            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 class float_converter(CConverter):
@@ -3867,19 +3823,28 @@ class float_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'f':
-            return self.format_code("""
-                if (PyFloat_CheckExact({argname})) {{{{
-                    {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
-                }}}}
-                else
-                {{{{
+            if not limited_capi:
+                return self.format_code("""
+                    if (PyFloat_CheckExact({argname})) {{{{
+                        {paramname} = (float) (PyFloat_AS_DOUBLE({argname}));
+                    }}}}
+                    else
+                    {{{{
+                        {paramname} = (float) PyFloat_AsDouble({argname});
+                        if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                    """,
+                    argname=argname)
+            else:
+                return self.format_code("""
                     {paramname} = (float) PyFloat_AsDouble({argname});
                     if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
-                }}}}
-                """,
-                argname=argname)
+                    """,
+                    argname=argname)
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 class double_converter(CConverter):
@@ -3890,19 +3855,28 @@ class double_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'd':
-            return self.format_code("""
-                if (PyFloat_CheckExact({argname})) {{{{
-                    {paramname} = PyFloat_AS_DOUBLE({argname});
-                }}}}
-                else
-                {{{{
+            if not limited_capi:
+                return self.format_code("""
+                    if (PyFloat_CheckExact({argname})) {{{{
+                        {paramname} = PyFloat_AS_DOUBLE({argname});
+                    }}}}
+                    else
+                    {{{{
+                        {paramname} = PyFloat_AsDouble({argname});
+                        if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                    """,
+                    argname=argname)
+            else:
+                return self.format_code("""
                     {paramname} = PyFloat_AsDouble({argname});
                     if ({paramname} == -1.0 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
-                }}}}
-                """,
-                argname=argname)
+                    """,
+                    argname=argname)
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 

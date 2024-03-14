@@ -40,11 +40,11 @@ from test.support.script_helper import assert_python_ok, assert_python_failure, 
 from test.support import has_subprocess_support, SuppressCrashReport
 from test import support
 
-from . import inspect_fodder as mod
-from . import inspect_fodder2 as mod2
-from . import inspect_stock_annotations
-from . import inspect_stringized_annotations
-from . import inspect_stringized_annotations_2
+from test.test_inspect import inspect_fodder as mod
+from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_stock_annotations
+from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_stringized_annotations_2
 
 
 # Functions tested in this suite:
@@ -991,7 +991,11 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls196, 194, 201)
         self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
+    @support.requires_docstrings
     def test_class_inside_conditional(self):
+        # We skip this test when docstrings are not present,
+        # because docstrings are one of the main factors of
+        # finding the correct class in the source code.
         self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
 
     def test_multiple_children_classes(self):
@@ -5284,6 +5288,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         with self.assertRaises(ValueError):
             inspect.signature(func)
 
+    @support.requires_docstrings
     def test_base_class_have_text_signature(self):
         # see issue 43118
         from test.typinganndata.ann_module7 import BufferedReader
