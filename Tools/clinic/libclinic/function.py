@@ -6,8 +6,10 @@ import functools
 import inspect
 from typing import Final, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from clinic import Clinic, CReturnConverter, self_converter
     from libclinic.converter import CConverter
+    from libclinic.misc_converters import self_converter
+    from libclinic.return_converter import CReturnConverter
+    from clinic import Clinic
 
 from libclinic import VersionTuple, unspecified
 
