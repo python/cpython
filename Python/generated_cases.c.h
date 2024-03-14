@@ -4433,9 +4433,7 @@
             }
             assert(PyTuple_CheckExact(callargs));
             EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
-            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX &&
-                !PyFunction_Check(func) && !PyMethod_Check(func)
-            ) {
+            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
                 PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
                     PyTuple_GET_ITEM(callargs, 0) : Py_None;
                 int err = _Py_call_instrumentation_2args(
@@ -4443,17 +4441,19 @@
                     frame, next_instr-1, func, arg);
                 if (err) goto error;
                 result = PyObject_Call(func, callargs, kwargs);
-                if (result == NULL) {
-                    _Py_call_instrumentation_exc2(
-                        tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, next_instr-1, func, arg);
-                }
-                else {
-                    int err = _Py_call_instrumentation_2args(
-                        tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, next_instr-1, func, arg);
-                    if (err < 0) {
-                        Py_CLEAR(result);
+                if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                    if (result == NULL) {
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, next_instr-1, func, arg);
+                    }
+                    else {
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, next_instr-1, func, arg);
+                        if (err < 0) {
+                            Py_CLEAR(result);
+                        }
                     }
                 }
             }
