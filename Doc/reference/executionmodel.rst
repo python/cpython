@@ -140,7 +140,7 @@ global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the names are not found there, the
 builtins namespace is searched.  A new variable is created in the global
-namespace if the name is also not found in builtins namespace.  The
+namespace if the name is also not found in the builtins namespace.  The
 :keyword:`!global` statement must precede all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
