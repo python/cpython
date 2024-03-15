@@ -6,6 +6,7 @@ from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
 from test.support import threading_helper
+from test.support import Py_GIL_DISABLED
 
 import gc
 import sys
@@ -1058,6 +1059,7 @@ class GCTests(unittest.TestCase):
         callback.assert_not_called()
         gc.enable()
 
+    @unittest.skipIf(Py_GIL_DISABLED, "Free threading does not support incremental GC")
     def test_incremental_gc_handles_fast_cycle_creation(self):
 
         class LinkedList:
@@ -1106,6 +1108,7 @@ class GCTests(unittest.TestCase):
                 del olds[:]
         if not enabled:
             gc.disable()
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
