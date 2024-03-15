@@ -542,8 +542,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         escapes=makes_escaping_api_call(op),
         pop_error=pop_error,
         no_pop_error=no_pop_error,
-        # FIX ME!!!
-        deopts=deopts_if or exits_if,
+        deopts=deopts_if,
         side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),

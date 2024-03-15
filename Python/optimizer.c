@@ -610,9 +610,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 continue;
             }
             else {
-                if (OPCODE_HAS_DEOPT(opcode)) {
+                if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
                     opcode = _PyOpcode_Deopt[opcode];
                 }
+                assert(!OPCODE_HAS_EXIT(opcode));
                 assert(!OPCODE_HAS_DEOPT(opcode));
             }
         }

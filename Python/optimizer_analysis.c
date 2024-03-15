@@ -394,7 +394,7 @@ optimize_uops(
     }
     if (this_instr != trace + trace_len) {
         assert (this_instr < trace + trace_len && this_instr > trace);
-        trace_len = this_instr - trace + 1;
+        trace_len = (int)(this_instr - trace + 1);
     }
     _Py_uop_abstractcontext_fini(ctx);
     return trace_len;
