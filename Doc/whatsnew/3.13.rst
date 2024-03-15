@@ -1731,6 +1731,11 @@ New Features
   more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
+* Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions
+  to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
+  :term:`strong reference` to the constant zero.
+  (Contributed by Victor Stinner in :gh:`115754`.)
+
 
 Porting to Python 3.13
 ----------------------
