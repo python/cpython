@@ -1745,9 +1745,10 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_events(0, 0)
 
     def test_call_function_ex(self):
-        def f(a, b):
+        def f(a=1, b=2):
             return a + b
         args = (1, 2)
+        empty_args = []
 
         call_data = []
         sys.monitoring.use_tool_id(0, "test")
@@ -1756,5 +1757,7 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.register_callback(0, E.CALL, lambda code, offset, callable, arg0: call_data.append((callable, arg0)))
         sys.monitoring.set_events(0, E.CALL)
         f(*args)
+        f(*empty_args)
         sys.monitoring.set_events(0, 0)
         self.assertEqual(call_data[0], (f, 1))
+        self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))
