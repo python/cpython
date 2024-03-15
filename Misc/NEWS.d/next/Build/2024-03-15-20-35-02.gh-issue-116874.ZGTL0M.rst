@@ -1,0 +1,1 @@
+Fix building _decimal module on ppc64le
