@@ -33,6 +33,10 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     self->wr_next = NULL;
     self->wr_callback = Py_XNewRef(callback);
     self->vectorcall = weakref_vectorcall;
+#ifdef Py_GIL_DISABLED
+    _PyObject_SetMaybeWeakref(ob);
+    _PyObject_SetMaybeWeakref((PyObject *)self);
+#endif
 }
 
 static PyWeakReference *
@@ -792,22 +796,32 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
         return NULL;
     }
     list = GET_WEAKREFS_LISTPTR(ob);
+    /* NB: For free-threaded builds its critical that no code inside the
+     * critical section can release it. We need to recompute ref/proxy after
+     * any code that may release the critical section.
+     */
+    Py_BEGIN_CRITICAL_SECTION(ob);
     get_basic_refs(*list, &ref, &proxy);
     if (callback == Py_None)
         callback = NULL;
     if (callback == NULL)
         /* return existing weak reference if it exists */
         result = ref;
+#ifdef Py_GIL_DISABLED
+    /* Incref will fail if the existing weakref is being destroyed */
+    if (result == NULL ||
+        !_Py_TryIncref((PyObject **)&result, (PyObject *)result)) {
+#else
     if (result != NULL)
         Py_INCREF(result);
     else {
+#endif
         /* We do not need to recompute ref/proxy; new_weakref() cannot
            trigger GC.
         */
         result = new_weakref(ob, callback);
         if (result != NULL) {
             if (callback == NULL) {
-                assert(ref == NULL);
                 insert_head(result, list);
             }
             else {
@@ -821,6 +835,7 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
             }
         }
     }
+    Py_END_CRITICAL_SECTION();
     return (PyObject *) result;
 }
 
