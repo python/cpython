@@ -459,10 +459,7 @@ class Stats:
                 "The number of times a potential trace is identified.  Specifically, this "
                 "occurs in the JUMP BACKWARD instruction when the counter reaches a "
                 "threshold.",
-            ): (
-                attempts,
-                None,
-            ),
+            ): (attempts, None),
             Doc(
                 "Traces created", "The number of traces that were successfully created."
             ): (created, attempts),
@@ -521,10 +518,7 @@ class Stats:
             Doc(
                 "Optimizer attempts",
                 "The number of times the trace optimizer (_Py_uop_analyze_and_optimize) was run."
-            ): (
-                attempts,
-                None,
-            ),
+            ): (attempts, None),
             Doc(
                 "Optimizer successes", "The number of traces that were successfully optimized."
             ): (successes, attempts),
