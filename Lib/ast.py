@@ -129,8 +129,8 @@ def dump(
     include_attributes can be set to true.  If indent is a non-negative
     integer or string, then the tree will be pretty-printed with that indent
     level. None (the default) selects the single line representation.
-    If show_empty is False, then empty lists, fields that are None,
-    and empty strings will be ommitted from the output for better readability.
+    If show_empty is False, then empty lists and fields that are None
+    will be ommitted from the output for better readability.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -156,7 +156,7 @@ def dump(
                     continue
                 if (
                     not show_empty
-                    and value in empty_values
+                    and (value is None or value == [])
                     and not isinstance(node, Constant)
                 ):
                     # Special case: `Constant(value=None)`
@@ -191,7 +191,6 @@ def dump(
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
     if indent is not None and not isinstance(indent, str):
         indent = ' ' * indent
-    empty_values = (None, [])
     return _format(node)[0]
 
 
