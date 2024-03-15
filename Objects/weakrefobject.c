@@ -1069,10 +1069,12 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
     static_builtin_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
+    Py_BEGIN_CRITICAL_SECTION(type);
     while (*list != NULL) {
         /* Note that clear_weakref() pops the first ref off the type's
            weaklist before clearing its wr_object and wr_callback.
            That is how we're able to loop over the list. */
         clear_weakref((PyWeakReference *)*list);
     }
+    Py_END_CRITICAL_SECTION();
 }
