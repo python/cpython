@@ -10,6 +10,7 @@ import io
 import tempfile
 from test import support
 from test.support import os_helper
+from test.support import refleak_helper
 from test.support import socket_helper
 import unittest
 import textwrap
@@ -701,8 +702,7 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self.assertEqual(self._box._factory, factory)
         for subdir in '', 'tmp', 'new', 'cur':
             path = os.path.join(self._path, subdir)
-            mode = os.stat(path)[stat.ST_MODE]
-            self.assertTrue(stat.S_ISDIR(mode), "Not a directory: '%s'" % path)
+            self.assertTrue(os.path.isdir(path), f"Not a directory: {path!r}")
 
     def test_list_folders(self):
         # List folders
@@ -2443,6 +2443,9 @@ class MiscTestCase(unittest.TestCase):
 
 def tearDownModule():
     support.reap_children()
+    # reap_children may have re-populated caches:
+    if refleak_helper.hunting_for_refleaks():
+        sys._clear_internal_caches()
 
 
 if __name__ == '__main__':

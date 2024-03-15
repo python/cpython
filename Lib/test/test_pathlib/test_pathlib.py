@@ -15,7 +15,7 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import is_emscripten, is_wasi
-from test.support import set_recursion_limit
+from test.support import infinite_recursion
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
@@ -796,7 +796,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
-    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
+    @os_helper.skip_unless_hardlink
     def test_hardlink_to(self):
         P = self.cls(self.base)
         target = P / 'fileA'
@@ -1199,7 +1199,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
-        with set_recursion_limit(recursion_limit):
+        with infinite_recursion(recursion_limit):
             list(base.walk())
             list(base.walk(top_down=False))
 
@@ -1239,7 +1239,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
-        with set_recursion_limit(recursion_limit):
+        with infinite_recursion(recursion_limit):
             list(base.glob('**/'))
 
     def test_glob_pathlike(self):
@@ -1249,6 +1249,19 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         expect = {p / "dirB/fileB", p / "dirC/fileC"}
         self.assertEqual(expect, set(p.glob(P(pattern))))
         self.assertEqual(expect, set(p.glob(FakePath(pattern))))
+
+    @needs_symlinks
+    def test_glob_dot(self):
+        P = self.cls
+        with os_helper.change_cwd(P(self.base, "dirC")):
+            self.assertEqual(
+                set(P('.').glob('*')), {P("fileC"), P("novel.txt"), P("dirD")})
+            self.assertEqual(
+                set(P('.').glob('**')), {P("fileC"), P("novel.txt"), P("dirD"), P("dirD/fileD"), P(".")})
+            self.assertEqual(
+                set(P('.').glob('**/*')), {P("fileC"), P("novel.txt"), P("dirD"), P("dirD/fileD")})
+            self.assertEqual(
+                set(P('.').glob('**/*/*')), {P("dirD/fileD")})
 
     def test_rglob_pathlike(self):
         P = self.cls
