@@ -2945,7 +2945,6 @@ def bœr():
             c = 3
         """)
 
-        # The empty lines need to have the same indentation as the other lines
         pdbrc = textwrap.dedent("""
             n
 
