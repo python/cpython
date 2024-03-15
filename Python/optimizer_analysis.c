@@ -35,6 +35,7 @@
 
 #ifdef Py_DEBUG
     extern const char *_PyUOpName(int index);
+    extern void _PyUOpPrint(const _PyUOpInstruction *uop);
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
@@ -377,10 +378,16 @@ optimize_uops(
 
         _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
-        DPRINTF(3, "Abstract interpreting %s:%d ",
-                _PyUOpName(opcode),
-                oparg);
+#ifdef Py_DEBUG
+        if (get_lltrace() >= 3) {
+            printf("%4d abs: ", (int)(this_instr - trace));
+            _PyUOpPrint(this_instr);
+            printf(" ");
+        }
+#endif
+
         switch (opcode) {
+
 #include "optimizer_cases.c.h"
 
             default:
