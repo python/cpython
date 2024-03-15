@@ -1644,7 +1644,14 @@
             break;
         }
 
-        /* _CALL_BUILTIN_O is not a viable micro-op for tier 2 */
+        case _CALL_BUILTIN_O: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            if (res == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         case _CALL_BUILTIN_FAST: {
             _Py_UopsSymbol *res;
@@ -1664,11 +1671,32 @@
             break;
         }
 
-        /* _CALL_LEN is not a viable micro-op for tier 2 */
+        case _CALL_LEN: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            if (res == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
-        /* _CALL_ISINSTANCE is not a viable micro-op for tier 2 */
+        case _CALL_ISINSTANCE: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            if (res == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
-        /* _CALL_METHOD_DESCRIPTOR_O is not a viable micro-op for tier 2 */
+        case _CALL_METHOD_DESCRIPTOR_O: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            if (res == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             _Py_UopsSymbol *res;
@@ -1679,7 +1707,14 @@
             break;
         }
 
-        /* _CALL_METHOD_DESCRIPTOR_NOARGS is not a viable micro-op for tier 2 */
+        case _CALL_METHOD_DESCRIPTOR_NOARGS: {
+            _Py_UopsSymbol *res;
+            res = sym_new_not_null(ctx);
+            if (res == NULL) goto out_of_space;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
             _Py_UopsSymbol *res;

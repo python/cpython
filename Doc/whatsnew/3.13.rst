@@ -1469,7 +1469,7 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``resource``, ``winsound``,
+* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``, ``winsound``,
   ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
   ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
@@ -1662,6 +1662,16 @@ New Features
   qualified name. Equivalent to ``f"{type.__module__}.{type.__qualname__}"``,
   or ``type.__qualname__`` if ``type.__module__`` is not a string or is equal
   to ``"builtins"``.
+  (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`PyType_GetModuleName` function to get the type's module name.
+  Equivalent to getting the ``type.__module__`` attribute.
+  (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
+
+* Add support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats to
+  :c:func:`PyUnicode_FromFormat`: format the fully qualified name of an object
+  type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
+  more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
 
 

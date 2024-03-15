@@ -3046,7 +3046,40 @@
             break;
         }
 
-        /* _CALL_BUILTIN_O is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _CALL_BUILTIN_O: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* Builtin METH_O functions */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            if (total_args != 1) JUMP_TO_JUMP_TARGET;
+            if (!PyCFunction_CheckExact(callable)) JUMP_TO_JUMP_TARGET;
+            if (PyCFunction_GET_FLAGS(callable) != METH_O) JUMP_TO_JUMP_TARGET;
+            // CPython promises to check all non-vectorcall function calls.
+            if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            PyObject *arg = args[0];
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(arg);
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         case _CALL_BUILTIN_FAST: {
             PyObject **args;
@@ -3119,11 +3152,118 @@
             break;
         }
 
-        /* _CALL_LEN is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _CALL_LEN: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* len(o) */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            if (total_args != 1) JUMP_TO_JUMP_TARGET;
+            PyInterpreterState *interp = tstate->interp;
+            if (callable != interp->callable_cache.len) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            PyObject *arg = args[0];
+            Py_ssize_t len_i = PyObject_Length(arg);
+            if (len_i < 0) {
+                JUMP_TO_ERROR;
+            }
+            res = PyLong_FromSsize_t(len_i);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            if (res == NULL) {
+                GOTO_ERROR(error);
+            }
+            Py_DECREF(callable);
+            Py_DECREF(arg);
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
-        /* _CALL_ISINSTANCE is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _CALL_ISINSTANCE: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* isinstance(o, o2) */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            if (total_args != 2) JUMP_TO_JUMP_TARGET;
+            PyInterpreterState *interp = tstate->interp;
+            if (callable != interp->callable_cache.isinstance) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            PyObject *cls = args[1];
+            PyObject *inst = args[0];
+            int retval = PyObject_IsInstance(inst, cls);
+            if (retval < 0) {
+                JUMP_TO_ERROR;
+            }
+            res = PyBool_FromLong(retval);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            if (res == NULL) {
+                GOTO_ERROR(error);
+            }
+            Py_DECREF(inst);
+            Py_DECREF(cls);
+            Py_DECREF(callable);
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
-        /* _CALL_METHOD_DESCRIPTOR_O is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _CALL_METHOD_DESCRIPTOR_O: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            if (total_args != 2) JUMP_TO_JUMP_TARGET;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET;
+            PyMethodDef *meth = method->d_method;
+            if (meth->ml_flags != METH_O) JUMP_TO_JUMP_TARGET;
+            // CPython promises to check all non-vectorcall function calls.
+            if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET;
+            PyObject *arg = args[1];
+            PyObject *self = args[0];
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = meth->ml_meth;
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            res = _PyCFunction_TrampolineCall(cfunc, self, arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(self);
+            Py_DECREF(arg);
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             PyObject **args;
@@ -3163,7 +3303,43 @@
             break;
         }
 
-        /* _CALL_METHOD_DESCRIPTOR_NOARGS is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
+        case _CALL_METHOD_DESCRIPTOR_NOARGS: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            assert(oparg == 0 || oparg == 1);
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            if (total_args != 1) JUMP_TO_JUMP_TARGET;
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET;
+            PyMethodDef *meth = method->d_method;
+            PyObject *self = args[0];
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET;
+            if (meth->ml_flags != METH_NOARGS) JUMP_TO_JUMP_TARGET;
+            // CPython promises to check all non-vectorcall function calls.
+            if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET;
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = meth->ml_meth;
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(self);
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
+            break;
+        }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
             PyObject **args;

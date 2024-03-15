@@ -623,6 +623,14 @@ get_type_fullyqualname(PyObject *self, PyObject *type)
 
 
 static PyObject *
+get_type_module_name(PyObject *self, PyObject *type)
+{
+    assert(PyType_Check(type));
+    return PyType_GetModuleName((PyTypeObject *)type);
+}
+
+
+static PyObject *
 test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     /* Test for PyType_GetDict */
@@ -3268,6 +3276,7 @@ static PyMethodDef TestMethods[] = {
     {"get_type_name",            get_type_name,                  METH_O},
     {"get_type_qualname",        get_type_qualname,              METH_O},
     {"get_type_fullyqualname",   get_type_fullyqualname,         METH_O},
+    {"get_type_module_name",     get_type_module_name,           METH_O},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
 #ifndef MS_WINDOWS
