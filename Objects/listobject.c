@@ -1309,7 +1309,7 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     PyObject *keyvalue[2];
-    while (PyDict_Next((PyObject *)dict, &pos, &keyvalue[0], &keyvalue[1])) {
+    while (_PyDict_Next((PyObject *)dict, &pos, &keyvalue[0], &keyvalue[1], NULL)) {
         PyObject *obj = keyvalue[which_item];
         Py_INCREF(obj);
         *dest = obj;
@@ -1347,13 +1347,13 @@ _list_extend(PyListObject *self, PyObject *iterable)
         res = list_extend_set(self, (PySetObject *)iterable);
         Py_END_CRITICAL_SECTION2();
     }
-    else if (PyDictKeys_Check(iterable)) {
+    else if (Py_IS_TYPE(iterable, &PyDictKeys_Type)) {
         PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
         Py_BEGIN_CRITICAL_SECTION2(self, dict);
         res = list_extend_dict(self, dict, 0 /*keys*/);
         Py_END_CRITICAL_SECTION2();
     }
-    else if (PyDictValues_Check(iterable)) {
+    else if (Py_IS_TYPE(iterable, &PyDictValues_Type)) {
         PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
         Py_BEGIN_CRITICAL_SECTION2(self, dict);
         res = list_extend_dict(self, dict, 1 /*values*/);
