@@ -391,11 +391,12 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     }
     code_size += stencil_groups[_FATAL_ERROR].code.body_size;
     data_size += stencil_groups[_FATAL_ERROR].data.body_size;
-    // Round up to the nearest page (code and data need separate pages):
+    // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
     size_t padding = page_size - ((code_size + data_size) & (page_size - 1));
-    unsigned char *memory = jit_alloc(code_size + data_size + padding);
+    size_t total_size = code_size + data_size + padding;
+    unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
     }
@@ -439,12 +440,12 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     data += group->data.body_size;
     assert(code == memory + code_size);
     assert(data == memory + code_size + data_size);
-    if (mark_executable(memory, code_size + data_size + padding)) {
-        jit_free(memory, code_size + data_size + padding);
+    if (mark_executable(memory, total_size)) {
+        jit_free(memory, total_size);
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_size = code_size + data_size + padding;
+    executor->jit_size = total_size;
     return 0;
 }
 
