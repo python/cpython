@@ -1988,13 +1988,30 @@ def parse_file(
     libclinic.write_file(output, cooked)
 
 
+def create_python_parser_namespace():
+    ns = dict(
+        CConverter=CConverter,
+        CReturnConverter=CReturnConverter,
+        buffer=buffer,
+        robuffer=robuffer,
+        rwbuffer=rwbuffer,
+        unspecified=unspecified,
+    )
+    for name, converter in converters.items():
+        ns[f'{name}_converter'] = converter
+    for name, converter in return_converters.items():
+        ns[f'{name}_return_converter'] = converter
+    return ns
+
+
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
-        pass
+        self.namespace = create_python_parser_namespace()
 
     def parse(self, block: Block) -> None:
+        ns = dict(self.namespace)
         with contextlib.redirect_stdout(io.StringIO()) as s:
-            exec(block.input)
+            exec(block.input, ns)
             block.output = s.getvalue()
 
 
@@ -4984,25 +5001,22 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error(
                 "can't specify --converters and a filename at the same time"
             )
-        converters: list[tuple[str, str]] = []
-        return_converters: list[tuple[str, str]] = []
-        ignored = set("""
-            add_c_converter
-            add_c_return_converter
-            add_default_legacy_c_converter
-            add_legacy_c_converter
-            """.strip().split())
-        module = globals()
-        for name in module:
-            for suffix, ids in (
-                ("_return_converter", return_converters),
-                ("_converter", converters),
-            ):
-                if name in ignored:
-                    continue
-                if name.endswith(suffix):
-                    ids.append((name, name.removesuffix(suffix)))
-                    break
+        converter_list: list[tuple[str, str]] = []
+        return_converter_list: list[tuple[str, str]] = []
+
+        for name, converter in converters.items():
+            converter_list.append((
+                f'{name}_converter',
+                name,
+                converter,
+            ))
+        for name, converter in return_converters.items():
+            return_converter_list.append((
+                f'{name}_return_converter',
+                name,
+                converter
+            ))
+
         print()
 
         print("Legacy converters:")
@@ -5012,15 +5026,14 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
         print()
 
         for title, attribute, ids in (
-            ("Converters", 'converter_init', converters),
-            ("Return converters", 'return_converter_init', return_converters),
+            ("Converters", 'converter_init', converter_list),
+            ("Return converters", 'return_converter_init', return_converter_list),
         ):
             print(title + ":")
             longest = -1
-            for name, short_name in ids:
+            for name, short_name, converter in ids:
                 longest = max(longest, len(short_name))
-            for name, short_name in sorted(ids, key=lambda x: x[1].lower()):
-                cls = module[name]
+            for name, short_name, cls in sorted(ids, key=lambda x: x[1].lower()):
                 callable = getattr(cls, attribute, None)
                 if not callable:
                     continue
