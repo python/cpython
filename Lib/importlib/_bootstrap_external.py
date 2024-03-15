@@ -1450,6 +1450,9 @@ class PathFinder:
         # https://bugs.python.org/issue45703
         _NamespacePath._epoch += 1
 
+        from importlib.metadata import MetadataPathFinder
+        MetadataPathFinder.invalidate_caches()
+
     @staticmethod
     def _path_hooks(path):
         """Search sys.path_hooks for a finder for 'path'."""
