@@ -1,0 +1,2 @@
+Do not check for rollover using the formatted logging record size in
+RotatingFileHandler, to avoid formatting it twice.
