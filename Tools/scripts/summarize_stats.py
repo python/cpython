@@ -517,13 +517,15 @@ class Stats:
         return {
             Doc(
                 "Optimizer attempts",
-                "The number of times the trace optimizer (_Py_uop_analyze_and_optimize) was run."
+                "The number of times the trace optimizer (_Py_uop_analyze_and_optimize) was run.",
             ): (attempts, None),
             Doc(
-                "Optimizer successes", "The number of traces that were successfully optimized."
+                "Optimizer successes",
+                "The number of traces that were successfully optimized.",
             ): (successes, attempts),
             Doc(
-                "Optimizer no memory", "The number of optimizations that failed due to no memory."
+                "Optimizer no memory",
+                "The number of optimizations that failed due to no memory.",
             ): (no_memory, attempts),
         }
 
@@ -1137,11 +1139,7 @@ def optimization_section() -> Section:
         optimizer_stats = stats.get_optimizer_stats()
 
         return [
-            (
-                label,
-                Count(value),
-                Ratio(value, den)
-            )
+            (label, Count(value), Ratio(value, den))
             for label, (value, den) in optimizer_stats.items()
         ]
 
