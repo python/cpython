@@ -552,6 +552,15 @@ sys
   This function is not guaranteed to exist in all implementations of Python.
   (Contributed by Serhiy Storchaka in :gh:`78573`.)
 
+time
+----
+
+* On Windows, :func:`time.monotonic()` now uses the
+  ``QueryPerformanceCounter()`` clock to have a resolution better than 1 us,
+  instead of the ``GetTickCount64()`` clock which has a resolution of 15.6 ms.
+  (Contributed by Victor Stinner in :gh:`88494`.)
+
+
 tkinter
 -------
 
@@ -1460,8 +1469,8 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``errno``, ``md5``, ``resource``, ``winsound``, ``_ctypes_test``,
-  ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
+* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``, ``winsound``,
+  ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
   ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
@@ -1648,6 +1657,22 @@ New Features
   :c:func:`PyLong_FromUnsignedNativeBytes` functions to simplify converting
   between native integer types and Python :class:`int` objects.
   (Contributed by Steve Dower in :gh:`111140`.)
+
+* Add :c:func:`PyType_GetFullyQualifiedName` function to get the type's fully
+  qualified name. Equivalent to ``f"{type.__module__}.{type.__qualname__}"``,
+  or ``type.__qualname__`` if ``type.__module__`` is not a string or is equal
+  to ``"builtins"``.
+  (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`PyType_GetModuleName` function to get the type's module name.
+  Equivalent to getting the ``type.__module__`` attribute.
+  (Contributed by Eric Snow and Victor Stinner in :gh:`111696`.)
+
+* Add support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats to
+  :c:func:`PyUnicode_FromFormat`: format the fully qualified name of an object
+  type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
+  more information.
+  (Contributed by Victor Stinner in :gh:`111696`.)
 
 
 Porting to Python 3.13
