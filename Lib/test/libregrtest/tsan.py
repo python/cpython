@@ -9,6 +9,7 @@ TSAN_TESTS = [
     'test_imaplib',
     'test_importlib',
     'test_io',
+    'test_logging',
     'test_ssl',
     'test_syslog',
     'test_thread',
