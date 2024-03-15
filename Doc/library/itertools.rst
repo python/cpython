@@ -1417,7 +1417,7 @@ The following recipes have a more mathematical flavor:
     [1, 4]
 
     >>> # Verify faithfulness to type specific index() method behaviors.
-    >>> # For example, bytes and str perform subsequence searches
+    >>> # For example, bytes and str perform continuous-subsequence searches
     >>> # that do not match the general behavior specified
     >>> # in collections.abc.Sequence.index().
     >>> seq = 'abracadabra'
