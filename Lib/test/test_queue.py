@@ -327,7 +327,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         # Wait for the barrier to be complete.
         barrier_start.wait()
 
-        for i in range(i, n):
+        for i in range(i_when_exec_shutdown//2, n):
             try:
                 q.put((i, "YDLO"))
             except self.queue.ShutDown:
@@ -336,7 +336,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
             # Trigger queue shutdown.
             if i == i_when_exec_shutdown:
-                # Only once thread do it.
+                # Only one thread should call shutdown().
                 if not event_shutdown.is_set():
                     event_shutdown.set()
                     results.append(True)
@@ -370,7 +370,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
     def _shutdown_all_methods_in_many_threads(self, immediate):
         # Run a 'multi-producers/consumers queue' use case,
         # with enough items into the queue.
-        # When shutdown, all running threads will be concerned.
+        # When shutdown, all running threads will be joined.
         q = self.type2test()
         ps = []
         res_puts = []
@@ -382,11 +382,11 @@ class BaseQueueTestMixin(BlockingTestMixin):
         nb_msgs = 1024*64
         nb_msgs_w = nb_msgs // write_threads
         when_exec_shutdown = nb_msgs_w // 2
-        # Use of a `threading.Barrier`` to ensure that
-        # all `_write_msg_threads`put their part of items into the queue
-        # all `_read_msg_thread` get at least one itme from the queue,
-        # and keep on running until shutdown.
-        # The `_join_thread` is started only when shutdown is emmediate.
+        # Use of a Barrier to ensure that
+        # - all write threads put all their items into the queue,
+        # - all read thread get at least one item from the queue,
+        #   and keep on running until shutdown.
+        # The join thread is started only when shutdown is immediate.
         nparties = write_threads + read_threads
         if immediate:
             nparties += join_threads
@@ -410,7 +410,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
             thread.join()
 
         self.assertTrue(True in res_puts)
-        self.assertLessEqual(res_gets.count(True), read_threads)
+        self.assertEqual(res_gets.count(True), read_threads)
         if immediate:
             self.assertListEqual(res_shutdown, [True])
             self.assertTrue(q.empty())
