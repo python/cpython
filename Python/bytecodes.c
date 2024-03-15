@@ -129,6 +129,8 @@ dummy_func(
     PyObject *top;
     PyObject *type;
     PyObject *typevars;
+    PyObject *val0;
+    PyObject *val1;
     int values_or_none;
 
     switch (opcode) {
@@ -1223,13 +1225,13 @@ dummy_func(
 
         macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE;
 
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- values[oparg])) {
+        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- val1, val0)) {
+            assert(oparg == 2);
             DEOPT_IF(!PyTuple_CheckExact(seq));
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2);
-            assert(oparg == 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            values[0] = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
-            values[1] = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            val0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
+            val1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
             DECREF_INPUTS();
         }
 
@@ -2347,7 +2349,6 @@ dummy_func(
             // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
             // Double-check that the opcode isn't instrumented or something:
             if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
-                OPT_STAT_INC(attempts);
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                 while (oparg > 255) {
@@ -3107,10 +3108,13 @@ dummy_func(
                 Py_DECREF(args[i]);
             }
             ERROR_IF(res == NULL, error);
+        }
+
+        op(_CHECK_PERIODIC, (--)) {
             CHECK_EVAL_BREAKER();
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL;
+        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _CALL + _CHECK_PERIODIC;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             DEOPT_IF(null != NULL);
@@ -3236,42 +3240,46 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
-            PyObject *obj = args[0];
             DEOPT_IF(callable != (PyObject *)&PyType_Type);
             STAT_INC(CALL, hit);
-            res = Py_NewRef(Py_TYPE(obj));
-            Py_DECREF(obj);
-            Py_DECREF(&PyType_Type);  // I.e., callable
+            res = Py_NewRef(Py_TYPE(arg));
+            Py_DECREF(arg);
         }
 
-        inst(CALL_STR_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        op(_CALL_STR_1, (callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PyObject_Str(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyUnicode_Type);  // I.e., callable
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_TUPLE_1, (unused/1, unused/2, callable, null, args[oparg] -- res)) {
+        macro(CALL_STR_1) =
+            unused/1 +
+            unused/2 +
+            _CALL_STR_1 +
+            _CHECK_PERIODIC;
+
+        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
-            PyObject *arg = args[0];
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
-            Py_DECREF(&PyTuple_Type);  // I.e., tuple
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_TUPLE_1) =
+            unused/1 +
+            unused/2 +
+            _CALL_TUPLE_1 +
+            _CHECK_PERIODIC;
 
         inst(CALL_ALLOC_AND_ENTER_INIT, (unused/1, unused/2, callable, null, args[oparg] -- unused)) {
             /* This instruction does the following:
@@ -3333,7 +3341,7 @@ dummy_func(
             }
         }
 
-        inst(CALL_BUILTIN_CLASS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL_BUILTIN_CLASS, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3350,10 +3358,15 @@ dummy_func(
             }
             Py_DECREF(tp);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_BUILTIN_CLASS) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_CLASS +
+            _CHECK_PERIODIC;
+
+        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_O functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3378,10 +3391,15 @@ dummy_func(
             Py_DECREF(arg);
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_BUILTIN_O) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_O +
+            _CHECK_PERIODIC;
+
+        op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3405,15 +3423,15 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-                /* Not deopting because this doesn't mean our optimization was
-                   wrong. `res` can be NULL for valid reasons. Eg. getattr(x,
-                   'invalid'). In those cases an exception is set, so we must
-                   handle it.
-                */
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_BUILTIN_FAST_WITH_KEYWORDS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_BUILTIN_FAST) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_FAST +
+            _CHECK_PERIODIC;
+
+        op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3436,8 +3454,13 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_BUILTIN_FAST_WITH_KEYWORDS) =
+            unused/1 +
+            unused/2 +
+            _CALL_BUILTIN_FAST_WITH_KEYWORDS +
+            _CHECK_PERIODIC;
 
         inst(CALL_LEN, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             /* len(o) */
@@ -3490,14 +3513,14 @@ dummy_func(
         }
 
         // This is secretly a super-instruction
-        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, args[oparg] -- unused)) {
+        tier1 inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- unused)) {
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
             assert(self != NULL);
             DEOPT_IF(!PyList_Check(self));
             STAT_INC(CALL, hit);
-            if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
+            if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
             Py_DECREF(self);
@@ -3509,7 +3532,7 @@ dummy_func(
             DISPATCH();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_O, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3537,10 +3560,15 @@ dummy_func(
             Py_DECREF(arg);
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_METHOD_DESCRIPTOR_O) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_O +
+            _CHECK_PERIODIC;
+
+        op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3566,10 +3594,15 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_NOARGS, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
+            _CHECK_PERIODIC;
+
+        op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3596,10 +3629,15 @@ dummy_func(
             Py_DECREF(self);
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
 
-        inst(CALL_METHOD_DESCRIPTOR_FAST, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        macro(CALL_METHOD_DESCRIPTOR_NOARGS) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_NOARGS +
+            _CHECK_PERIODIC;
+
+        op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3624,8 +3662,13 @@ dummy_func(
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
-            CHECK_EVAL_BREAKER();
         }
+
+        macro(CALL_METHOD_DESCRIPTOR_FAST) =
+            unused/1 +
+            unused/2 +
+            _CALL_METHOD_DESCRIPTOR_FAST +
+            _CHECK_PERIODIC;
 
         inst(INSTRUMENTED_CALL_KW, ( -- )) {
             int is_meth = PEEK(oparg + 2) != NULL;
@@ -3733,9 +3776,7 @@ dummy_func(
             }
             assert(PyTuple_CheckExact(callargs));
             EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
-            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX &&
-                !PyFunction_Check(func) && !PyMethod_Check(func)
-            ) {
+            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
                 PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
                     PyTuple_GET_ITEM(callargs, 0) : Py_None;
                 int err = _Py_call_instrumentation_2args(
@@ -3743,17 +3784,20 @@ dummy_func(
                     frame, this_instr, func, arg);
                 if (err) GOTO_ERROR(error);
                 result = PyObject_Call(func, callargs, kwargs);
-                if (result == NULL) {
-                    _Py_call_instrumentation_exc2(
-                        tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, this_instr, func, arg);
-                }
-                else {
-                    int err = _Py_call_instrumentation_2args(
-                        tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, this_instr, func, arg);
-                    if (err < 0) {
-                        Py_CLEAR(result);
+
+                if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                    if (result == NULL) {
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, this_instr, func, arg);
+                    }
+                    else {
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, this_instr, func, arg);
+                        if (err < 0) {
+                            Py_CLEAR(result);
+                        }
                     }
                 }
             }

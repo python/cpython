@@ -3431,17 +3431,13 @@ class TestSpecial(unittest.TestCase):
             Flag(7)
 
     def test_empty_names(self):
-        for nothing, e_type in (
-                ('', None),
-                ('', int),
-                ([], None),
-                ([], int),
-                ({}, None),
-                ({}, int),
-            ):
-            empty_enum = Enum('empty_enum', nothing, type=e_type)
-            self.assertEqual(len(empty_enum), 0)
-            self.assertRaises(TypeError, 'has no members', empty_enum, 0)
+        for nothing in '', [], {}:
+            for e_type in None, int:
+                empty_enum = Enum('empty_enum', nothing, type=e_type)
+                self.assertEqual(len(empty_enum), 0)
+                self.assertRaisesRegex(TypeError, 'has no members', empty_enum, 0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
 
 
 class TestOrder(unittest.TestCase):
@@ -4067,6 +4063,8 @@ class OldTestIntFlag(unittest.TestCase):
 
     @reraise_if_not_enum(NoName)
     def test_global_enum_str(self):
+        self.assertEqual(repr(NoName.ONE), 'test_enum.ONE')
+        self.assertEqual(repr(NoName(0)), 'test_enum.NoName(0)')
         self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
         self.assertEqual(str(NoName(0)), 'NoName(0)')
 
