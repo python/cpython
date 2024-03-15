@@ -963,7 +963,7 @@ def kde(data, h, kernel='normal'):
             supported = sample[i : j]
             return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
 
-    pdf.__doc__ = f'PDF estimate with {kernel=!r} and {h=!r}'
+    pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
 
     return pdf
 
