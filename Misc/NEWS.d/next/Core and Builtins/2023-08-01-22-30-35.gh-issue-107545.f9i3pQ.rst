@@ -1,0 +1,1 @@
+Improve error message when :meth:`setsockopt` raises an error other than a :exc:`TypeError`.
