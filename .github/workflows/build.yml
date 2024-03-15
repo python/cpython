@@ -493,9 +493,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+        sudo apt install -y clang
     - name: TSAN Option Setup
-      run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+      run: |
+        echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+        echo "CC=$(which clang)" >> $GITHUB_ENV
+        echo "CXX=$(which clang++)" >> $GITHUB_ENV
     - name: Configure CPython
       run: ./configure --with-thread-sanitizer --without-pymalloc --disable-ipv6
     - name: Build CPython
@@ -514,9 +519,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Dependencies
-      run: sudo ./.github/workflows/posix-deps-apt.sh
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+        sudo apt install -y clang
     - name: TSAN Option Setup
-      run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+      run: |
+        echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+        echo "CC=$(which clang)" >> $GITHUB_ENV
+        echo "CXX=$(which clang++)" >> $GITHUB_ENV
     - name: Configure CPython
       run: ./configure --disable-gil --with-thread-sanitizer --disable-ipv6
     - name: Build CPython
