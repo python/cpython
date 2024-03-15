@@ -1058,6 +1058,54 @@ class GCTests(unittest.TestCase):
         callback.assert_not_called()
         gc.enable()
 
+    def test_incremental_gc_handles_fast_cycle_creation(self):
+
+        class LinkedList:
+
+            #Use slots to reduce number of implicit objects
+            __slots__ = "next", "prev", "surprise"
+
+            def __init__(self, next=None, prev=None):
+                self.next = next
+                if next is not None:
+                    next.prev = self
+                self.prev = prev
+                if prev is not None:
+                    prev.next = self
+
+        def make_ll(depth):
+            head = LinkedList()
+            for i in range(depth):
+                head = LinkedList(head, head.prev)
+            return head
+
+        head = make_ll(10000)
+        count = 10000
+
+        # We expect the counts to go negative eventually
+        # as there will some objects we aren't counting,
+        # e.g. the gc stats dicts. The test merely checks
+        # that the counts don't grow.
+
+        enabled = gc.isenabled()
+        gc.enable()
+        olds = []
+        for i in range(1000):
+            newhead = make_ll(200)
+            count += 200
+            newhead.surprise = head
+            olds.append(newhead)
+            if len(olds) == 50:
+                stats = gc.get_stats()
+                young = stats[0]
+                incremental = stats[1]
+                old = stats[2]
+                collected = young['collected'] + incremental['collected'] + old['collected']
+                live = count - collected
+                self.assertLess(live, 25000)
+                del olds[:]
+        if not enabled:
+            gc.disable()
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
