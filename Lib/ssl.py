@@ -759,8 +759,6 @@ def _create_unverified_context(protocol=None, *, cert_reqs=CERT_NONE,
     context.check_hostname = check_hostname
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
-    if check_hostname:
-        context.check_hostname = True
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")
