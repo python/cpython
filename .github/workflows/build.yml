@@ -497,7 +497,7 @@ jobs:
     - name: TSAN Option Setup
       run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
     - name: Configure CPython
-      run: ./configure --with-thread-sanitizer --without-pymalloc --with-pydebug --disable-ipv6
+      run: ./configure --with-thread-sanitizer --without-pymalloc --disable-ipv6
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -518,7 +518,7 @@ jobs:
     - name: TSAN Option Setup
       run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
     - name: Configure CPython
-      run: ./configure --disable-gil --with-thread-sanitizer --with-pydebug --disable-ipv6
+      run: ./configure --disable-gil --with-thread-sanitizer --disable-ipv6
     - name: Build CPython
       run: make -j4
     - name: Display build info
