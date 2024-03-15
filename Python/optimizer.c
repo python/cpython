@@ -716,12 +716,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
                         }
-                        ADD_TO_TRACE(uop, oparg, operand, target);
+
                         if (uop == _POP_FRAME) {
-                            TRACE_STACK_POP();
                             /* Set the operand to the function object returned to,
                              * to assist optimization passes */
-                            trace[trace_length-1].operand = (uintptr_t)func;
+                            ADD_TO_TRACE(uop, oparg, (uintptr_t)func, target);
+                            TRACE_STACK_POP();
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -730,6 +730,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 2 * INSTR_IP(instr, code));
                             goto top;
                         }
+
                         if (uop == _PUSH_FRAME) {
                             assert(i + 1 == nuops);
                             int func_version_offset =
@@ -738,7 +739,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 + 1;
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
                             PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version);
-                            DPRINTF(2, "Function object: %p\n", func);
+                            DPRINTF(2, "Function: version=%x; object=%p\n", (int)func_version, new_func);
                             if (new_func != NULL) {
                                 PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(new_func);
                                 if (new_code == code) {
@@ -748,6 +749,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
                                     OPT_STAT_INC(recursive_call);
+                                    ADD_TO_TRACE(uop, oparg, 0, target);
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
@@ -756,6 +758,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     // Perhaps it may happen again, so don't bother tracing.
                                     // TODO: Reason about this -- is it better to bail or not?
                                     DPRINTF(2, "Bailing because co_version != func_version\n");
+                                    ADD_TO_TRACE(uop, oparg, 0, target);
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
@@ -765,7 +768,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 _Py_BloomFilter_Add(dependencies, new_code);
                                 /* Set the operand to the callee's code object,
                                 * to assist optimization passes */
-                                trace[trace_length-1].operand = (uintptr_t)new_func;
+                                ADD_TO_TRACE(uop, oparg, (uintptr_t)new_func, target);
                                 code = new_code;
                                 func = new_func;
                                 instr = _PyCode_CODE(code);
@@ -777,9 +780,14 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     2 * INSTR_IP(instr, code));
                                 goto top;
                             }
+                            DPRINTF(2, "Bail, new_func == NULL\n");
+                            ADD_TO_TRACE(uop, oparg, operand, target);
                             ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                             goto done;
                         }
+
+                        // All other instructions
+                        ADD_TO_TRACE(uop, oparg, operand, target);
                     }
                     break;
                 }
