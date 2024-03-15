@@ -496,6 +496,8 @@ jobs:
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         sudo apt install -y clang
+        # Reduce ASLR to avoid TSAN crashing
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: TSAN Option Setup
       run: |
         echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
@@ -522,6 +524,8 @@ jobs:
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         sudo apt install -y clang
+        # Reduce ASLR to avoid TSAN crashing
+        sudo sysctl -w vm.mmap_rnd_bits=28
     - name: TSAN Option Setup
       run: |
         echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
