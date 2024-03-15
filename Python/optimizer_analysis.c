@@ -384,7 +384,7 @@ optimize_uops(
 #include "optimizer_cases.c.h"
 
             default:
-                DPRINTF(1, "Unknown opcode in abstract interpreter\n");
+                DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
         }
         assert(ctx->frame != NULL);
@@ -397,11 +397,13 @@ optimize_uops(
     return 1;
 
 out_of_space:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Out of space in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
 
 error:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Encountered error in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
@@ -411,6 +413,7 @@ hit_bottom:
     // This means that the abstract interpreter has hit unreachable code.
     // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but it's
     // simpler to just admit failure and not create the executor.
+    DPRINTF(3, "\n");
     DPRINTF(1, "Hit bottom in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
