@@ -3175,7 +3175,7 @@ class Checkbutton(Widget):
             _checkbutton_count += 1
             # To avoid collisions with ttk.Checkbutton, use the different
             # name template.
-            cnf['name'] = f'!{name}_{_checkbutton_count}'
+            cnf['name'] = f'!{name}-{_checkbutton_count}'
         super()._setup(master, cnf)
 
     def deselect(self):
