@@ -2261,8 +2261,8 @@ thread__make_thread_handle(PyObject *module, PyObject *identobj)
 PyDoc_STRVAR(thread__make_thread_handle_doc,
 "_make_thread_handle(ident)\n\
 \n\
-Internal only. Make a thread handle for threads not spawned by the threading\n\
-module.");
+Internal only. Make a thread handle for threads not spawned\n\
+by the _thread or threading module.");
 
 static PyObject *
 thread__get_main_thread_ident(PyObject *module, PyObject *Py_UNUSED(ignored))
