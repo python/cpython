@@ -1,0 +1,2 @@
+Make several math functions support custom error messages. ``math.sqrt()``
+and ``math.log()`` now provide more helpful error messages.
