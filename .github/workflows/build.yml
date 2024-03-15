@@ -504,7 +504,7 @@ jobs:
         echo "CC=$(which clang)" >> $GITHUB_ENV
         echo "CXX=$(which clang++)" >> $GITHUB_ENV
     - name: Configure CPython
-      run: ./configure --with-thread-sanitizer --without-pymalloc
+      run: ./configure --with-thread-sanitizer --without-pymalloc --with-pydebug
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -532,7 +532,7 @@ jobs:
         echo "CC=$(which clang)" >> $GITHUB_ENV
         echo "CXX=$(which clang++)" >> $GITHUB_ENV
     - name: Configure CPython
-      run: ./configure --disable-gil --with-thread-sanitizer
+      run: ./configure --disable-gil --with-thread-sanitizer --with-pydebug
     - name: Build CPython
       run: make -j4
     - name: Display build info
