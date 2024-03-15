@@ -287,6 +287,52 @@ parse_weakref_init_args(const char *funcname, PyObject *args, PyObject *kwargs,
     return PyArg_UnpackTuple(args, funcname, 1, 2, obp, callbackp);
 }
 
+static PyWeakReference *
+new_weakref_lock_held(PyTypeObject *type, PyObject *ob, PyObject *callback)
+{
+    PyWeakReference *ref, *proxy;
+    PyWeakReference **list = GET_WEAKREFS_LISTPTR(ob);
+    get_basic_refs(*list, &ref, &proxy);
+    if (callback == NULL && type == &_PyWeakref_RefType) {
+#ifdef Py_GIL_DISABLED
+        if (ref != NULL &&
+            _Py_TryIncref((PyObject**)&ref, (PyObject*)ref)) {
+            /* We can re-use an existing reference. */
+            return ref;
+        }
+#else
+        if (ref != NULL) {
+            /* We can re-use an existing reference. */
+            return Py_NewRef(ref);
+        }
+#endif
+    }
+    /* We have to create a new reference. */
+    /* Note: the tp_alloc() can trigger cyclic GC, so the weakref
+       list on ob can be mutated.  This means that the ref and
+       proxy pointers we got back earlier may have been collected,
+       so we need to compute these values again before we use
+       them. */
+    PyWeakReference *self = (PyWeakReference *) (type->tp_alloc(type, 0));
+    if (self != NULL) {
+        init_weakref(self, ob, callback);
+        if (callback == NULL && type == &_PyWeakref_RefType) {
+            insert_head(self, list);
+        }
+        else {
+            PyWeakReference *prev;
+
+            get_basic_refs(*list, &ref, &proxy);
+            prev = (proxy == NULL) ? ref : proxy;
+            if (prev == NULL)
+                insert_head(self, list);
+            else
+                insert_after(self, prev);
+        }
+    }
+    return self;
+}
+
 static PyObject *
 weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -294,8 +340,6 @@ weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *ob, *callback = NULL;
 
     if (parse_weakref_init_args("__new__", args, kwargs, &ob, &callback)) {
-        PyWeakReference *ref, *proxy;
-        PyWeakReference **list;
 
         if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(ob))) {
             PyErr_Format(PyExc_TypeError,
@@ -305,37 +349,9 @@ weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         }
         if (callback == Py_None)
             callback = NULL;
-        list = GET_WEAKREFS_LISTPTR(ob);
-        get_basic_refs(*list, &ref, &proxy);
-        if (callback == NULL && type == &_PyWeakref_RefType) {
-            if (ref != NULL) {
-                /* We can re-use an existing reference. */
-                return Py_NewRef(ref);
-            }
-        }
-        /* We have to create a new reference. */
-        /* Note: the tp_alloc() can trigger cyclic GC, so the weakref
-           list on ob can be mutated.  This means that the ref and
-           proxy pointers we got back earlier may have been collected,
-           so we need to compute these values again before we use
-           them. */
-        self = (PyWeakReference *) (type->tp_alloc(type, 0));
-        if (self != NULL) {
-            init_weakref(self, ob, callback);
-            if (callback == NULL && type == &_PyWeakref_RefType) {
-                insert_head(self, list);
-            }
-            else {
-                PyWeakReference *prev;
-
-                get_basic_refs(*list, &ref, &proxy);
-                prev = (proxy == NULL) ? ref : proxy;
-                if (prev == NULL)
-                    insert_head(self, list);
-                else
-                    insert_after(self, prev);
-            }
-        }
+        Py_BEGIN_CRITICAL_SECTION(ob);
+        self = new_weakref_lock_held(type, ob, callback);
+        Py_END_CRITICAL_SECTION();
     }
     return (PyObject *)self;
 }
