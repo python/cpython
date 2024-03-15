@@ -1367,47 +1367,42 @@ always available.
 
 .. data:: platform
 
-   This string contains a platform identifier that can be used to append
-   platform-specific components to :data:`sys.path`, for instance.
+   A string containing a platform identifier. Known values are:
 
-   For Unix systems, except on Linux and AIX, this is the lowercased OS name as
-   returned by ``uname -s`` with the first part of the version as returned by
+   ================ ===========================
+   System           ``platform`` value
+   ================ ===========================
+   AIX              ``'aix'``
+   Android          ``'android'``
+   Emscripten       ``'emscripten'``
+   iOS              ``'ios'``
+   Linux            ``'linux'``
+   macOS            ``'darwin'``
+   Windows          ``'win32'``
+   Windows/Cygwin   ``'cygwin'``
+   WASI             ``'wasi'``
+   ================ ===========================
+
+   On Unix systems not listed in the table, the value is the lowercased OS name
+   as returned by ``uname -s``, with the first part of the version as returned by
    ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
    when Python was built*.  Unless you want to test for a specific system
    version, it is therefore recommended to use the following idiom::
 
       if sys.platform.startswith('freebsd'):
           # FreeBSD-specific code here...
-      elif sys.platform.startswith('linux'):
-          # Linux-specific code here...
-      elif sys.platform.startswith('aix'):
-          # AIX-specific code here...
-
-   For other systems, the values are:
-
-   ================ ===========================
-   System           ``platform`` value
-   ================ ===========================
-   AIX              ``'aix'``
-   Emscripten       ``'emscripten'``
-   Linux            ``'linux'``
-   WASI             ``'wasi'``
-   Windows          ``'win32'``
-   Windows/Cygwin   ``'cygwin'``
-   macOS            ``'darwin'``
-   ================ ===========================
 
    .. versionchanged:: 3.3
       On Linux, :data:`sys.platform` doesn't contain the major version anymore.
-      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
-      older Python versions include the version number, it is recommended to
-      always use the ``startswith`` idiom presented above.
+      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.
 
    .. versionchanged:: 3.8
       On AIX, :data:`sys.platform` doesn't contain the major version anymore.
-      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
-      older Python versions include the version number, it is recommended to
-      always use the ``startswith`` idiom presented above.
+      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.
+
+   .. versionchanged:: 3.13
+      On Android, :data:`sys.platform` now returns ``'android'`` rather than
+      ``'linux'``.
 
    .. seealso::
 

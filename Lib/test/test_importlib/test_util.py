@@ -577,7 +577,7 @@ class PEP3147Tests:
         with util.temporary_pycache_prefix(pycache_prefix):
             self.assertEqual(
                 self.util.cache_from_source(path, optimization=''),
-                expect)
+                os.path.normpath(expect))
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')

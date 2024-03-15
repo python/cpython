@@ -243,7 +243,7 @@ class Generator:
                 # existing message.
                 msg = deepcopy(msg)
                 del msg['content-transfer-encoding']
-                msg.set_payload(payload, charset)
+                msg.set_payload(msg._payload, charset)
                 payload = msg.get_payload()
                 self._munge_cte = (msg['content-transfer-encoding'],
                                    msg['content-type'])

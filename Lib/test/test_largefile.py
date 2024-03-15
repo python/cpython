@@ -2,7 +2,6 @@
 """
 
 import os
-import stat
 import sys
 import unittest
 import socket
@@ -29,7 +28,7 @@ class LargeFileTest:
             mode = 'w+b'
 
         with self.open(TESTFN, mode) as f:
-            current_size = os.fstat(f.fileno())[stat.ST_SIZE]
+            current_size = os.fstat(f.fileno()).st_size
             if current_size == size+1:
                 return
 
@@ -40,13 +39,13 @@ class LargeFileTest:
             f.seek(size)
             f.write(b'a')
             f.flush()
-            self.assertEqual(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
+            self.assertEqual(os.fstat(f.fileno()).st_size, size+1)
 
     @classmethod
     def tearDownClass(cls):
         with cls.open(TESTFN, 'wb'):
             pass
-        if not os.stat(TESTFN)[stat.ST_SIZE] == 0:
+        if not os.stat(TESTFN).st_size == 0:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
         unlink(TESTFN2)
@@ -67,7 +66,7 @@ class TestFileMethods(LargeFileTest):
             self.assertEqual(f.tell(), size + 1)
 
     def test_osstat(self):
-        self.assertEqual(os.stat(TESTFN)[stat.ST_SIZE], size+1)
+        self.assertEqual(os.stat(TESTFN).st_size, size+1)
 
     def test_seek_read(self):
         with self.open(TESTFN, 'rb') as f:

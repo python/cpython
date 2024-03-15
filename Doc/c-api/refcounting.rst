@@ -23,11 +23,11 @@ of Python objects.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
-   .. versionchanged:: 3.11
-      The parameter type is no longer :c:expr:`const PyObject*`.
-
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
+
+   .. versionchanged:: 3.11
+      The parameter type is no longer :c:expr:`const PyObject*`.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)

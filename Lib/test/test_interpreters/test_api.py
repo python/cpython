@@ -1,4 +1,5 @@
 import os
+import pickle
 import threading
 from textwrap import dedent
 import unittest
@@ -260,6 +261,12 @@ class InterpreterObjectTests(TestBase):
         interp2 = interpreters.create()
         self.assertEqual(interp1, interp1)
         self.assertNotEqual(interp1, interp2)
+
+    def test_pickle(self):
+        interp = interpreters.create()
+        data = pickle.dumps(interp)
+        unpickled = pickle.loads(data)
+        self.assertEqual(unpickled, interp)
 
 
 class TestInterpreterIsRunning(TestBase):

@@ -3,8 +3,6 @@
 #include "parts.h"
 #include "util.h"
 
-static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
-
 static PyObject *
 codec_incrementalencoder(PyObject *self, PyObject *args)
 {
@@ -2098,8 +2096,6 @@ static PyMethodDef TestMethods[] = {
 
 int
 _PyTestCapi_Init_Unicode(PyObject *m) {
-    _testcapimodule = PyModule_GetDef(m);
-
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
     }

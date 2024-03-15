@@ -1,1 +1,0 @@
-Add kernel density estimation to the statistics module.

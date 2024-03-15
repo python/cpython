@@ -604,7 +604,7 @@ in an editor window.
 The editing features described in previous subsections work when entering
 code interactively.  IDLE's Shell window also responds to the following:
 
-* :kbd:`C-c` attemps to interrupt statement execution (but may fail).
+* :kbd:`C-c` attempts to interrupt statement execution (but may fail).
 
 * :kbd:`C-d` closes Shell if typed at a ``>>>`` prompt.
 

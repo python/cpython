@@ -1,0 +1,1 @@
+Skip building test modules that must be built as shared under WASI.

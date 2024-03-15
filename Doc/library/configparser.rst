@@ -978,6 +978,10 @@ ConfigParser Objects
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
+   .. versionchanged:: 3.13
+      Raise a :exc:`MultilineContinuationError` when *allow_no_value* is
+      ``True``, and a key without a value is continued with an indented line.
+
    .. method:: defaults()
 
       Return a dictionary containing the instance-wide defaults.
@@ -1348,6 +1352,13 @@ Exceptions
    .. versionchanged:: 3.12
       The ``filename`` attribute and :meth:`!__init__` constructor argument were
       removed.  They have been available using the name ``source`` since 3.2.
+
+.. exception:: MultilineContinuationError
+
+   Exception raised when a key without a corresponding value is continued with
+   an indented line.
+
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 

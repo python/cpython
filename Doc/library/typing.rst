@@ -954,7 +954,6 @@ using ``[]``.
    be used for this concept instead. Type checkers should treat the two
    equivalently.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
 .. data:: Self
@@ -1234,6 +1233,10 @@ These can be used as types in annotations. They all support subscription using
 
    .. versionadded:: 3.5.3
 
+   .. versionchanged:: 3.13
+
+      :data:`ClassVar` can now be nested in :data:`Final` and vice versa.
+
 .. data:: Final
 
    Special typing construct to indicate final names to type checkers.
@@ -1257,6 +1260,10 @@ These can be used as types in annotations. They all support subscription using
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.13
+
+      :data:`Final` can now be nested in :data:`ClassVar` and vice versa.
+
 .. data:: Required
 
    Special typing construct to mark a :class:`TypedDict` key as required.
@@ -1274,6 +1281,26 @@ These can be used as types in annotations. They all support subscription using
    See :class:`TypedDict` and :pep:`655` for more details.
 
    .. versionadded:: 3.11
+
+.. data:: ReadOnly
+
+   A special typing construct to mark an item of a :class:`TypedDict` as read-only.
+
+   For example::
+
+      class Movie(TypedDict):
+         title: ReadOnly[str]
+         year: int
+
+      def mutate_movie(m: Movie) -> None:
+         m["year"] = 1992  # allowed
+         m["title"] = "The Matrix"  # typechecker error
+
+   There is no runtime checking for this property.
+
+   See :class:`TypedDict` and :pep:`705` for more details.
+
+   .. versionadded:: 3.13
 
 .. data:: Annotated
 
@@ -2455,6 +2482,22 @@ types.
          ``__required_keys__`` and ``__optional_keys__`` rely on may not work
          properly, and the values of the attributes may be incorrect.
 
+   Support for :data:`ReadOnly` is reflected in the following attributes::
+
+   .. attribute:: __readonly_keys__
+
+      A :class:`frozenset` containing the names of all read-only keys. Keys
+      are read-only if they carry the :data:`ReadOnly` qualifier.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: __mutable_keys__
+
+      A :class:`frozenset` containing the names of all mutable keys. Keys
+      are mutable if they do not carry the :data:`ReadOnly` qualifier.
+
+      .. versionadded:: 3.13
+
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
@@ -2468,6 +2511,9 @@ types.
 
    .. versionchanged:: 3.13
       Removed support for the keyword-argument method of creating ``TypedDict``\ s.
+
+   .. versionchanged:: 3.13
+      Support for the :data:`ReadOnly` qualifier was added.
 
    .. deprecated-removed:: 3.13 3.15
       When using the functional syntax to create a TypedDict class, failing to
@@ -3292,7 +3338,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.ChainMap`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3303,7 +3348,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.Counter`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3314,7 +3358,6 @@ Aliases to types in :mod:`collections`
 
    Deprecated alias to :class:`collections.deque`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
    .. deprecated:: 3.9
@@ -3389,7 +3432,7 @@ Aliases to container ABCs in :mod:`collections.abc`
 
    Deprecated alias to :class:`collections.abc.Collection`.
 
-   .. versionadded:: 3.6.0
+   .. versionadded:: 3.6
 
    .. deprecated:: 3.9
       :class:`collections.abc.Collection` now supports subscripting (``[]``).
@@ -3681,7 +3724,6 @@ Aliases to :mod:`contextlib` ABCs
    Deprecated alias to :class:`contextlib.AbstractContextManager`.
 
    .. versionadded:: 3.5.4
-   .. versionadded:: 3.6.0
 
    .. deprecated:: 3.9
       :class:`contextlib.AbstractContextManager`
@@ -3692,7 +3734,6 @@ Aliases to :mod:`contextlib` ABCs
 
    Deprecated alias to :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.2
 
    .. deprecated:: 3.9

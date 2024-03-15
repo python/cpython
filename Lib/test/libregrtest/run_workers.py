@@ -209,7 +209,7 @@ class WorkerThread(threading.Thread):
             self._popen = None
 
     def create_stdout(self, stack: contextlib.ExitStack) -> TextIO:
-        """Create stdout temporay file (file descriptor)."""
+        """Create stdout temporary file (file descriptor)."""
 
         if MS_WINDOWS:
             # gh-95027: When stdout is not a TTY, Python uses the ANSI code

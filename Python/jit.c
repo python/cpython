@@ -185,6 +185,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
         //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64.cpp
         //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
         //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
+        // - aarch64-pc-windows-msvc:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
         // - aarch64-unknown-linux-gnu:
         //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp
         // - i686-pc-windows-msvc:
@@ -252,6 +254,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 assert((int64_t)value < (1LL << 31));
                 *loc32 = (uint32_t)value;
                 continue;
+            case HoleKind_IMAGE_REL_ARM64_BRANCH26:
             case HoleKind_R_AARCH64_CALL26:
             case HoleKind_R_AARCH64_JUMP26:
                 // 28-bit relative branch.
@@ -293,6 +296,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 set_bits(loc32, 5, value, 48, 16);
                 continue;
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGE21:
+            case HoleKind_IMAGE_REL_ARM64_PAGEBASE_REL21:
             case HoleKind_R_AARCH64_ADR_GOT_PAGE:
                 // 21-bit count of pages between this page and an absolute address's
                 // page... I know, I know, it's weird. Pairs nicely with
@@ -302,6 +306,7 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 const Hole *next_hole = &stencil->holes[i + 1];
                 if (i + 1 < stencil->holes_size &&
                     (next_hole->kind == HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12 ||
+                     next_hole->kind == HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L ||
                      next_hole->kind == HoleKind_R_AARCH64_LD64_GOT_LO12_NC) &&
                     next_hole->offset == hole->offset + 4 &&
                     next_hole->symbol == hole->symbol &&
@@ -354,6 +359,8 @@ patch(unsigned char *base, const Stencil *stencil, uint64_t *patches)
                 continue;
             case HoleKind_ARM64_RELOC_GOT_LOAD_PAGEOFF12:
             case HoleKind_ARM64_RELOC_PAGEOFF12:
+            case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12A:
+            case HoleKind_IMAGE_REL_ARM64_PAGEOFFSET_12L:
             case HoleKind_R_AARCH64_LD64_GOT_LO12_NC:
                 // 12-bit low part of an absolute address. Pairs nicely with
                 // ARM64_RELOC_GOT_LOAD_PAGE21 (above).

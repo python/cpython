@@ -347,7 +347,7 @@ StreamWriter
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
-   .. coroutinemethod:: start_tls(sslcontext, \*, server_hostname=None, \
+   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
                           ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
 
       Upgrade an existing stream-based connection to TLS.

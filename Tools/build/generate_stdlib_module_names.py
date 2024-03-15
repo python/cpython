@@ -32,6 +32,7 @@ IGNORE = {
     '_testconsole',
     '_testimportmultiple',
     '_testinternalcapi',
+    '_testlimitedcapi',
     '_testmultiphase',
     '_testsinglephase',
     '_testexternalinspection',

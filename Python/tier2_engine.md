@@ -52,7 +52,7 @@ The JIT compiler converts superblocks into machine code executors.
 These have identical behavior to interpreted executors, except that
 they consume more memory for the generated machine code and are a lot faster.
 
-## Transfering control
+## Transferring control
 
 There are three types of control transfer that we need to consider:
 * Tier 1 to tier 2
@@ -104,7 +104,7 @@ reference to the previous executor in the thread state's
 #### The interpreter
 
 The tier 2 interpreter has a variable `current_executor` which
-points to the currently live executor. When transfering from executor
+points to the currently live executor. When transferring from executor
 `A` to executor `B` we do the following:
 (Initially `current_executor` points to `A`, and the refcount of
 `A` is elevated by one)
@@ -122,7 +122,7 @@ increment the refcount of `B` and set `current_executor` to point to `B`.
 
 #### In the JIT
 
-Transfering control from one executor to another is done via tailcalls.
+Transferring control from one executor to another is done via tailcalls.
 
 The compiled executor should do the same, except that there is no local
 variable `current_executor`.

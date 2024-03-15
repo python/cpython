@@ -206,6 +206,8 @@ jobs:
     uses: ./.github/workflows/reusable-macos.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
+      # macos-14 is M1, macos-13 is Intel
+      os-matrix: '["macos-14", "macos-13"]'
 
   build_macos_free_threading:
     name: 'macOS (free-threading)'
@@ -215,6 +217,8 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
       free-threading: true
+      # macos-14 is M1
+      os-matrix: '["macos-14"]'
 
   build_ubuntu:
     name: 'Ubuntu'
@@ -300,6 +304,14 @@ jobs:
       run: make pythoninfo
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
+
+  build_wasi:
+    name: 'WASI'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-wasi.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
 
   test_hypothesis:
     name: "Hypothesis tests on Ubuntu"
@@ -525,6 +537,7 @@ jobs:
     - build_ubuntu
     - build_ubuntu_free_threading
     - build_ubuntu_ssltests
+    - build_wasi
     - build_windows
     - build_windows_free_threading
     - test_hypothesis
@@ -558,6 +571,7 @@ jobs:
             build_ubuntu,
             build_ubuntu_free_threading,
             build_ubuntu_ssltests,
+            build_wasi,
             build_windows,
             build_windows_free_threading,
             build_asan,

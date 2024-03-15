@@ -4,6 +4,7 @@
 #include "cpython/optimizer.h"
 #include "pycore_code.h"
 #include "pycore_frame.h"
+#include "pycore_long.h"
 #include "pycore_optimizer.h"
 
 #include <stdbool.h>
@@ -231,6 +232,15 @@ _Py_uop_sym_new_null(_Py_UOpsContext *ctx)
 }
 
 bool
+_Py_uop_sym_has_type(_Py_UopsSymbol *sym)
+{
+    if (_Py_uop_sym_is_bottom(sym)) {
+        return false;
+    }
+    return sym->typ != NULL;
+}
+
+bool
 _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
 {
     assert(typ != NULL && PyType_Check(typ));
@@ -238,6 +248,40 @@ _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ)
         return false;
     }
     return sym->typ == typ;
+}
+
+int
+_Py_uop_sym_truthiness(_Py_UopsSymbol *sym)
+{
+    /* There are some non-constant values for
+     * which `bool(val)` always evaluates to
+     * True or False, such as tuples with known
+     * length, but unknown contents, or bound-methods.
+     * This function will need updating
+     * should we support those values.
+     */
+    if (_Py_uop_sym_is_bottom(sym)) {
+        return -1;
+    }
+    if (!_Py_uop_sym_is_const(sym)) {
+        return -1;
+    }
+    PyObject *value = _Py_uop_sym_get_const(sym);
+    if (value == Py_None) {
+        return 0;
+    }
+    /* Only handle a few known safe types */
+    PyTypeObject *tp = Py_TYPE(value);
+    if (tp == &PyLong_Type) {
+        return !_PyLong_IsZero((PyLongObject *)value);
+    }
+    if (tp == &PyUnicode_Type) {
+        return value != &_Py_STR(empty);
+    }
+    if (tp == &PyBool_Type) {
+        return value == Py_True;
+    }
+    return -1;
 }
 
 // 0 on success, -1 on error.
@@ -413,6 +457,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         goto fail;
     }
     _Py_uop_sym_set_const(sym, val_42);
+    TEST_PREDICATE(_Py_uop_sym_truthiness(sym) == 1, "bool(42) is not True");
     TEST_PREDICATE(!_Py_uop_sym_is_null(sym), "42 is NULL");
     TEST_PREDICATE(_Py_uop_sym_is_not_null(sym), "42 isn't not NULL");
     TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyLong_Type), "42 isn't an int");
@@ -435,6 +480,14 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_sym_set_const(sym, val_42);
     _Py_uop_sym_set_const(sym, val_43);  // Should make it bottom
     TEST_PREDICATE(_Py_uop_sym_is_bottom(sym), "(42 and 43) isn't bottom");
+
+
+    sym = _Py_uop_sym_new_const(ctx, Py_None);
+    TEST_PREDICATE(_Py_uop_sym_truthiness(sym) == 0, "bool(None) is not False");
+    sym = _Py_uop_sym_new_const(ctx, Py_False);
+    TEST_PREDICATE(_Py_uop_sym_truthiness(sym) == 0, "bool(False) is not False");
+    sym = _Py_uop_sym_new_const(ctx, PyLong_FromLong(0));
+    TEST_PREDICATE(_Py_uop_sym_truthiness(sym) == 0, "bool(0) is not False");
 
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);

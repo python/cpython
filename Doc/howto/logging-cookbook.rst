@@ -3418,9 +3418,10 @@ The worker thread is implemented using Qt's ``QThread`` class rather than the
 :mod:`threading` module, as there are circumstances where one has to use
 ``QThread``, which offers better integration with other ``Qt`` components.
 
-The code should work with recent releases of either ``PySide2`` or ``PyQt5``.
-You should be able to adapt the approach to earlier versions of Qt. Please
-refer to the comments in the code snippet for more detailed information.
+The code should work with recent releases of either ``PySide6``, ``PyQt6``,
+``PySide2`` or ``PyQt5``. You should be able to adapt the approach to earlier
+versions of Qt. Please refer to the comments in the code snippet for more
+detailed information.
 
 .. code-block:: python3
 
@@ -3430,16 +3431,25 @@ refer to the comments in the code snippet for more detailed information.
     import sys
     import time
 
-    # Deal with minor differences between PySide2 and PyQt5
+    # Deal with minor differences between different Qt packages
     try:
-        from PySide2 import QtCore, QtGui, QtWidgets
+        from PySide6 import QtCore, QtGui, QtWidgets
         Signal = QtCore.Signal
         Slot = QtCore.Slot
     except ImportError:
-        from PyQt5 import QtCore, QtGui, QtWidgets
-        Signal = QtCore.pyqtSignal
-        Slot = QtCore.pyqtSlot
-
+        try:
+            from PyQt6 import QtCore, QtGui, QtWidgets
+            Signal = QtCore.pyqtSignal
+            Slot = QtCore.pyqtSlot
+        except ImportError:
+            try:
+                from PySide2 import QtCore, QtGui, QtWidgets
+                Signal = QtCore.Signal
+                Slot = QtCore.Slot
+            except ImportError:
+                from PyQt5 import QtCore, QtGui, QtWidgets
+                Signal = QtCore.pyqtSignal
+                Slot = QtCore.pyqtSlot
 
     logger = logging.getLogger(__name__)
 
@@ -3511,8 +3521,14 @@ refer to the comments in the code snippet for more detailed information.
             while not QtCore.QThread.currentThread().isInterruptionRequested():
                 delay = 0.5 + random.random() * 2
                 time.sleep(delay)
-                level = random.choice(LEVELS)
-                logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+                try:
+                    if random.random() < 0.1:
+                        raise ValueError('Exception raised: %d' % i)
+                    else:
+                        level = random.choice(LEVELS)
+                        logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+                except ValueError as e:
+                    logger.exception('Failed: %s', e, extra=extra)
                 i += 1
 
     #
@@ -3539,7 +3555,10 @@ refer to the comments in the code snippet for more detailed information.
             self.textedit = te = QtWidgets.QPlainTextEdit(self)
             # Set whatever the default monospace font is for the platform
             f = QtGui.QFont('nosuchfont')
-            f.setStyleHint(f.Monospace)
+            if hasattr(f, 'Monospace'):
+                f.setStyleHint(f.Monospace)
+            else:
+                f.setStyleHint(f.StyleHint.Monospace)  # for Qt6
             te.setFont(f)
             te.setReadOnly(True)
             PB = QtWidgets.QPushButton
@@ -3626,7 +3645,11 @@ refer to the comments in the code snippet for more detailed information.
         app = QtWidgets.QApplication(sys.argv)
         example = Window(app)
         example.show()
-        sys.exit(app.exec_())
+        if hasattr(app, 'exec'):
+            rc = app.exec()
+        else:
+            rc = app.exec_()
+        sys.exit(rc)
 
     if __name__=='__main__':
         main()

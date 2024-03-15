@@ -931,7 +931,6 @@ class Thread:
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
         self._tstate_lock = None
-        self._join_lock = None
         self._handle = None
         self._started = Event()
         self._is_stopped = False
@@ -956,14 +955,11 @@ class Thread:
             if self._tstate_lock is not None:
                 self._tstate_lock._at_fork_reinit()
                 self._tstate_lock.acquire()
-            if self._join_lock is not None:
-                self._join_lock._at_fork_reinit()
         else:
             # This thread isn't alive after fork: it doesn't have a tstate
             # anymore.
             self._is_stopped = True
             self._tstate_lock = None
-            self._join_lock = None
             self._handle = None
 
     def __repr__(self):
@@ -995,8 +991,6 @@ class Thread:
 
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
-
-        self._join_lock = _allocate_lock()
 
         with _active_limbo_lock:
             _limbo[self] = self
@@ -1167,17 +1161,9 @@ class Thread:
             self._join_os_thread()
 
     def _join_os_thread(self):
-        join_lock = self._join_lock
-        if join_lock is None:
-            return
-        with join_lock:
-            # Calling join() multiple times would raise an exception
-            # in one of the callers.
-            if self._handle is not None:
-                self._handle.join()
-                self._handle = None
-                # No need to keep this around
-                self._join_lock = None
+        # self._handle may be cleared post-fork
+        if self._handle is not None:
+            self._handle.join()
 
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
@@ -1477,6 +1463,10 @@ class _MainThread(Thread):
             self._set_native_id()
         with _active_limbo_lock:
             _active[self._ident] = self
+
+    def _join_os_thread(self):
+        # No ThreadHandle for main thread
+        pass
 
 
 # Helper thread-local instance to detect when a _DummyThread

@@ -1,3 +1,5 @@
+import platform
+import re
 import unittest
 import sys
 import os
@@ -516,12 +518,9 @@ class TestSysConfig(unittest.TestCase):
         vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
-    @unittest.skipUnless(sys.platform == 'linux' and
-                         hasattr(sys.implementation, '_multiarch'),
-                         'multiarch-specific test')
-    def test_triplet_in_ext_suffix(self):
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
+    def test_linux_ext_suffix(self):
         ctypes = import_module('ctypes')
-        import platform, re
         machine = platform.machine()
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         if re.match('(aarch64|arm|mips|ppc|powerpc|s390|sparc)', machine):
@@ -533,6 +532,19 @@ class TestSysConfig(unittest.TestCase):
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
             self.assertTrue(suffix.endswith(expected_suffixes),
                             f'unexpected suffix {suffix!r}')
+
+    @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
+    def test_android_ext_suffix(self):
+        machine = platform.machine()
+        suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        expected_triplet = {
+            "x86_64": "x86_64-linux-android",
+            "i686": "i686-linux-android",
+            "aarch64": "aarch64-linux-android",
+            "armv7l": "arm-linux-androideabi",
+        }[machine]
+        self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
+                        f"{machine=}, {suffix=}")
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):

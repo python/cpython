@@ -20,6 +20,11 @@ extern "C" {
 #define FORCE_SWITCHING
 
 struct _gil_runtime_state {
+#ifdef Py_GIL_DISABLED
+    /* Whether or not this GIL is being used. Can change from 0 to 1 at runtime
+       if, for example, a module that requires the GIL is loaded. */
+    int enabled;
+#endif
     /* microseconds (the Python API uses seconds, though) */
     unsigned long interval;
     /* Last PyThreadState holding / having held the GIL. This helps us

@@ -468,7 +468,7 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
-elif hasattr(_sys, "getandroidapilevel"):
+elif _sys.platform == "android":
     pythonapi = PyDLL("libpython%d.%d.so" % _sys.version_info[:2])
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])

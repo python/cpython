@@ -2,6 +2,8 @@ from typing import Final
 
 from .errors import (
     ClinicError,
+    warn,
+    fail,
 )
 from .formatting import (
     SIG_END_MARKER,
@@ -26,12 +28,18 @@ from .utils import (
     compute_checksum,
     create_regex,
     write_file,
+    VersionTuple,
+    Sentinels,
+    unspecified,
+    unknown,
 )
 
 
 __all__ = [
     # Error handling
     "ClinicError",
+    "warn",
+    "fail",
 
     # Formatting helpers
     "SIG_END_MARKER",
@@ -56,6 +64,10 @@ __all__ = [
     "compute_checksum",
     "create_regex",
     "write_file",
+    "VersionTuple",
+    "Sentinels",
+    "unspecified",
+    "unknown",
 ]
 
 

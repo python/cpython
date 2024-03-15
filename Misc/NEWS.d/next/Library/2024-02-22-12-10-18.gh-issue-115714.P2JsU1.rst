@@ -1,4 +1,0 @@
-On WASI, the :mod:`time` module no longer get process time using ``times()``
-or ``CLOCK_PROCESS_CPUTIME_ID``, system API is that is unreliable and is
-likely to be removed from WASI. The affected clock functions fall back to
-calling ``clock()``.

@@ -283,8 +283,10 @@ def main():
                         # The 8388608 value comes from `ulimit -s` under Linux
                         # which equates to 8291 KiB.
                         "--wasm max-wasm-stack=8388608 "
-                        # Enable thread support.
-                        "--wasm threads=y --wasi threads=y "
+                        # Use WASI 0.2 primitives.
+                        "--wasi preview2 "
+                        # Enable thread support; causes use of preview1.
+                        #"--wasm threads=y --wasi threads=y "
                         # Map the checkout to / to load the stdlib from /Lib.
                         "--dir {HOST_DIR}::{GUEST_DIR} "
                         # Set PYTHONPATH to the sysconfig data.

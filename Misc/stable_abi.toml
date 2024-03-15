@@ -2496,3 +2496,7 @@
 [typedef.PyCFunctionFastWithKeywords]
     added = '3.13'
     # "abi-only" since 3.10.  (Same story as PyCFunctionFast.)
+[function.PyType_GetFullyQualifiedName]
+    added = '3.13'
+[function.PyType_GetModuleName]
+    added = '3.13'

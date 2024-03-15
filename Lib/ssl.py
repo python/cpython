@@ -704,6 +704,16 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     else:
         raise ValueError(purpose)
 
+    # `VERIFY_X509_PARTIAL_CHAIN` makes OpenSSL's chain building behave more
+    # like RFC 3280 and 5280, which specify that chain building stops with the
+    # first trust anchor, even if that anchor is not self-signed.
+    #
+    # `VERIFY_X509_STRICT` makes OpenSSL more conservative about the
+    # certificates it accepts, including "disabling workarounds for
+    # some broken certificates."
+    context.verify_flags |= (_ssl.VERIFY_X509_PARTIAL_CHAIN |
+                             _ssl.VERIFY_X509_STRICT)
+
     if cafile or capath or cadata:
         context.load_verify_locations(cafile, capath, cadata)
     elif context.verify_mode != CERT_NONE:

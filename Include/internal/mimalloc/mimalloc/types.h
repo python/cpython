@@ -311,6 +311,7 @@ typedef struct mi_page_s {
   uint32_t              slice_offset;      // distance from the actual page data slice (0 if a page)
   uint8_t               is_committed : 1;  // `true` if the page virtual memory is committed
   uint8_t               is_zero_init : 1;  // `true` if the page was initially zero initialized
+  uint8_t               use_qsbr : 1;      // delay page freeing using qsbr
   uint8_t               tag : 4;           // tag from the owning heap
   uint8_t               debug_offset;      // number of bytes to preserve when filling freed or uninitialized memory
 
@@ -336,8 +337,13 @@ typedef struct mi_page_s {
   struct mi_page_s*     next;              // next page owned by this thread with the same `block_size`
   struct mi_page_s*     prev;              // previous page owned by this thread with the same `block_size`
 
+#ifdef Py_GIL_DISABLED
+  struct llist_node     qsbr_node;
+  uint64_t              qsbr_goal;
+#endif
+
   // 64-bit 9 words, 32-bit 12 words, (+2 for secure)
-  #if MI_INTPTR_SIZE==8
+  #if MI_INTPTR_SIZE==8 && !defined(Py_GIL_DISABLED)
   uintptr_t padding[1];
   #endif
 } mi_page_t;
@@ -555,6 +561,7 @@ struct mi_heap_s {
   bool                  no_reclaim;                          // `true` if this heap should not reclaim abandoned pages
   uint8_t               tag;                                 // custom identifier for this heap
   uint8_t               debug_offset;                        // number of bytes to preserve when filling freed or uninitialized memory
+  bool                  page_use_qsbr;                       // should freeing pages be delayed using QSBR
 };
 
 

@@ -154,10 +154,13 @@ class TaskGroup:
         Similar to `asyncio.create_task`.
         """
         if not self._entered:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
         if self._exiting and not self._tasks:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is finished")
         if self._aborting:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
             task = self._loop.create_task(coro, name=name)
