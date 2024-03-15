@@ -160,7 +160,7 @@ static int
 init_cold_exit_executor(_PyExecutorObject *executor, int oparg);
 
 static int cold_exits_initialized = 0;
-static _PyExecutorObject COLD_EXITS[UOP_MAX_TRACE_LENGTH] = { 0 };
+static _PyExecutorObject COLD_EXITS[UOP_MAX_TRACE_LENGTH/4] = { 0 };
 
 static const _PyBloomFilter EMPTY_FILTER = { 0 };
 
@@ -172,7 +172,7 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     }
     else if (cold_exits_initialized == 0) {
         cold_exits_initialized = 1;
-        for (int i = 0; i < UOP_MAX_TRACE_LENGTH; i++) {
+        for (int i = 0; i < UOP_MAX_TRACE_LENGTH/4; i++) {
             if (init_cold_exit_executor(&COLD_EXITS[i], i)) {
                 return NULL;
             }
@@ -571,8 +571,10 @@ translate_bytecode_to_trace(
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
         target = INSTR_IP(instr, code);
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
+        RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
         ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
+        // Need space for _DEOPT
+        max_length--;
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -618,7 +620,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
             }
         }
 
-        if (OPCODE_HAS_DEOPT(opcode) || OPCODE_HAS_EXIT(opcode)) {
+        if (OPCODE_HAS_EXIT(opcode)) {
             // Make space for exit code
             max_length--;
         }
@@ -1052,6 +1054,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         return NULL;
     }
     /* Initialize exits */
+    assert(exit_count < UOP_MAX_TRACE_LENGTH/4);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
         executor->exits[i].temperature = 0;
@@ -1176,7 +1179,7 @@ uop_optimize(
         assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
     }
     length = prepare_for_execution(buffer, length);
-    // assert(length <= UOP_MAX_TRACE_LENGTH);
+    assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
     if (executor == NULL) {
         return -1;
