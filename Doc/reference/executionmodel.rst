@@ -133,7 +133,7 @@ determined by scanning the entire text of the block for name binding operations.
 See :ref:`the FAQ entry on UnboundLocalError <faq-unboundlocalerror>`
 for examples.
 
-The :keyword:`!global` statement must precede all uses of the listed names.
+The :keyword:`global` statement must precede all uses of the listed names.
 If the global statement occurs within a block, all uses of the names
 specified in the statement refer to the bindings of those names in the top-level
 namespace.  Names are resolved in the top-level namespace by searching the
