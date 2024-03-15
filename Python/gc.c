@@ -1243,6 +1243,24 @@ gc_list_set_space(PyGC_Head *list, uintptr_t space)
     return size;
 }
 
+/* Making progress in the incremental collector
+ * In order to eventually collect all cycles
+ * the incremental collector must progress through the old
+ * space faster than objects are added to the old space.
+ *
+ * Each young or incremental collection adds a numebr of
+ * objects, S (for survivors) to the old space, and
+ * incremental collectors scan I objects from the old space.
+ * I > S must be true. We also want I > S * N to be where
+ * N > 1. Higher values of N mean that the old space is
+ * scanned more rapidly.
+ * The default incremental threshold of 10 translates to
+ * N == 1.4 (1 + 4/threshold)
+ */
+
+/* Multiply by 4 so that the default incremental threshold of 10
+ * scans objects at 20% the rate of object creation */
+#define SCAN_RATE_MULTIPLIER 2
 
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
@@ -1251,12 +1269,6 @@ add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
     gcstate->generation_stats[gen].uncollectable += stats->uncollectable;
     gcstate->generation_stats[gen].collections += 1;
 }
-
-
-/* Multiply by 4 so that the default incremental threshold of 10
- * scans objects at 40% the rate that the young gen tenures them. */
-#define SCAN_RATE_MULTIPLIER 4
-
 
 static void
 gc_collect_young(PyThreadState *tstate,
@@ -1315,6 +1327,7 @@ IS_IN_VISITED(PyGC_Head *gc, int visited_space)
 struct container_and_flag {
     PyGC_Head *container;
     int visited_space;
+    uintptr_t size;
 };
 
 /* A traversal callback for adding to container) */
@@ -1325,13 +1338,13 @@ visit_add_to_container(PyObject *op, void *arg)
     struct container_and_flag *cf = (struct container_and_flag *)arg;
     int visited = cf->visited_space;
     assert(visited == get_gc_state()->visited_space);
-    if (_PyObject_IS_GC(op)) {
+    if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         if (_PyObject_GC_IS_TRACKED(op) &&
             gc_old_space(gc) != visited) {
-            assert(!_Py_IsImmortal(op));
             gc_flip_old_space(gc);
             gc_list_move(gc, cf->container);
+            cf->size++;
         }
     }
     return 0;
@@ -1344,8 +1357,8 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
     struct container_and_flag arg = {
         .container = container,
         .visited_space = gcstate->visited_space,
+        .size = 0
     };
-    uintptr_t size = 0;
     assert(GC_NEXT(gc) == container);
     while (gc != container) {
         /* Survivors will be moved to visited space, so they should
@@ -1363,9 +1376,8 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
                         visit_add_to_container,
                         &arg);
         gc = GC_NEXT(gc);
-        size++;
     }
-    return size;
+    return arg.size;
 }
 
 /* Do bookkeeping for a completed GC cycle */
@@ -1388,45 +1400,39 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     PyGC_Head *visited = &gcstate->old[gcstate->visited_space].head;
     PyGC_Head increment;
     gc_list_init(&increment);
-    Py_ssize_t region_size = 0;
+    Py_ssize_t scale_factor = gcstate->old[0].threshold;
+    if (scale_factor < 1) {
+        scale_factor = 1;
+    }
+    Py_ssize_t increment_size = 0;
     gc_list_merge(&gcstate->young.head, &increment);
     gcstate->young.count = 0;
     if (gcstate->visited_space) {
         /* objects in visited space have bit set, so we set it here */
-        region_size = gc_list_set_space(&increment, 1);
+        gc_list_set_space(&increment, 1);
     }
-    else {
-        PyGC_Head *gc;
-        for (gc = GC_NEXT(&increment); gc != &increment; gc = GC_NEXT(gc)) {
-#ifdef GC_DEBUG
-            assert(gc_old_space(gc) == 0);
-#endif
-            region_size++;
-        }
-    }
-    while (region_size < gcstate->work_to_do) {
+    while (increment_size < gcstate->work_to_do) {
         if (gc_list_is_empty(not_visited)) {
             break;
         }
         PyGC_Head *gc = _PyGCHead_NEXT(not_visited);
         gc_list_move(gc, &increment);
+        increment_size++;
         gc_set_old_space(gc, gcstate->visited_space);
-        region_size += expand_region_transitively_reachable(&increment, gc, gcstate);
+        increment_size += expand_region_transitively_reachable(&increment, gc, gcstate);
     }
-    assert(region_size == gc_list_size(&increment));
     GC_STAT_ADD(1, objects_queued, region_size);
     PyGC_Head survivors;
     gc_list_init(&survivors);
     gc_collect_region(tstate, &increment, &survivors, UNTRACK_TUPLES, stats);
+    Py_ssize_t survivor_count = gc_list_size(&survivors);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    Py_ssize_t survivor_count = gc_list_size(&survivors);
-    Py_ssize_t scale_factor = gcstate->old[0].threshold;
-    if (scale_factor < 1) {
-        scale_factor = 1;
-    }
     gcstate->work_to_do += survivor_count + survivor_count * SCAN_RATE_MULTIPLIER / scale_factor;
-    gcstate->work_to_do -= region_size;
+    gcstate->work_to_do -= increment_size;
+    if (gcstate->work_to_do < 0) {
+        gcstate->work_to_do = 0;
+    }
     validate_old(gcstate);
     add_stats(gcstate, 1, stats);
     if (gc_list_is_empty(not_visited)) {
