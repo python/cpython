@@ -1113,7 +1113,7 @@ side_exit:
         _PyUOpPrint(&next_uop[-1]);
         printf(", exit %u, temp %d, target %d -> %s]\n",
                exit_index, exit->temperature, exit->target,
-               _PyOpcode_OpName[frame->instr_ptr->op.code]);
+               _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
     }
 #endif
     Py_INCREF(exit->executor);
