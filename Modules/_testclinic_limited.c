@@ -4,11 +4,10 @@
 #undef Py_BUILD_CORE_MODULE
 #undef Py_BUILD_CORE_BUILTIN
 
+// For now, AC only supports the limited C API version 3.13
 #include "pyconfig.h"   // Py_GIL_DISABLED
-
 #ifndef Py_GIL_DISABLED
-// For now, only limited C API 3.13 is supported
-#define Py_LIMITED_API 0x030d0000
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 /* Always enable assertions */
@@ -106,12 +105,30 @@ my_double_sum_impl(PyObject *module, double x, double y)
 }
 
 
+/*[clinic input]
+get_file_descriptor -> int
+
+    file as fd: fildes
+    /
+
+Get a file descriptor.
+[clinic start generated code]*/
+
+static int
+get_file_descriptor_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=80051ebad54db8a8 input=82e2a1418848cd5b]*/
+{
+    return fd;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     MY_INT_FUNC_METHODDEF
     MY_INT_SUM_METHODDEF
     MY_FLOAT_SUM_METHODDEF
     MY_DOUBLE_SUM_METHODDEF
+    GET_FILE_DESCRIPTOR_METHODDEF
     {NULL, NULL}
 };
 

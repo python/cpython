@@ -1164,10 +1164,9 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_module(PyTypeObject *type, void *context)
+type_module(PyTypeObject *type)
 {
     PyObject *mod;
-
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyObject *dict = lookup_tp_dict(type);
         if (PyDict_GetItemRef(dict, &_Py_ID(__module__), &mod) == 0) {
@@ -1189,6 +1188,12 @@ type_module(PyTypeObject *type, void *context)
     return mod;
 }
 
+static PyObject *
+type_get_module(PyTypeObject *type, void *context)
+{
+    return type_module(type);
+}
+
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -1200,6 +1205,47 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     PyObject *dict = lookup_tp_dict(type);
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
+
+
+PyObject *
+_PyType_GetFullyQualifiedName(PyTypeObject *type, char sep)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        return PyUnicode_FromString(type->tp_name);
+    }
+
+    PyObject *qualname = type_qualname(type, NULL);
+    if (qualname == NULL) {
+        return NULL;
+    }
+
+    PyObject *module = type_module(type);
+    if (module == NULL) {
+        Py_DECREF(qualname);
+        return NULL;
+    }
+
+    PyObject *result;
+    if (PyUnicode_Check(module)
+        && !_PyUnicode_Equal(module, &_Py_ID(builtins))
+        && !_PyUnicode_Equal(module, &_Py_ID(__main__)))
+    {
+        result = PyUnicode_FromFormat("%U%c%U", module, sep, qualname);
+    }
+    else {
+        result = Py_NewRef(qualname);
+    }
+    Py_DECREF(module);
+    Py_DECREF(qualname);
+    return result;
+}
+
+PyObject *
+PyType_GetFullyQualifiedName(PyTypeObject *type)
+{
+    return _PyType_GetFullyQualifiedName(type, '.');
+}
+
 
 static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
@@ -1687,7 +1733,7 @@ static PyGetSetDef type_getsets[] = {
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__mro__", (getter)type_get_mro, NULL, NULL},
-    {"__module__", (getter)type_module, (setter)type_set_module, NULL},
+    {"__module__", (getter)type_get_module, (setter)type_set_module, NULL},
     {"__abstractmethods__", (getter)type_abstractmethods,
      (setter)type_set_abstractmethods, NULL},
     {"__dict__",  (getter)type_dict,  NULL, NULL},
@@ -1708,28 +1754,31 @@ type_repr(PyObject *self)
         return PyUnicode_FromFormat("<class at %p>", type);
     }
 
-    PyObject *mod, *name, *rtn;
-
-    mod = type_module(type, NULL);
-    if (mod == NULL)
+    PyObject *mod = type_module(type);
+    if (mod == NULL) {
         PyErr_Clear();
-    else if (!PyUnicode_Check(mod)) {
-        Py_SETREF(mod, NULL);
     }
-    name = type_qualname(type, NULL);
+    else if (!PyUnicode_Check(mod)) {
+        Py_CLEAR(mod);
+    }
+
+    PyObject *name = type_qualname(type, NULL);
     if (name == NULL) {
         Py_XDECREF(mod);
         return NULL;
     }
 
-    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins)))
-        rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
-    else
-        rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
-
+    PyObject *result;
+    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins))) {
+        result = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
+    }
+    else {
+        result = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
+    }
     Py_XDECREF(mod);
     Py_DECREF(name);
-    return rtn;
+
+    return result;
 }
 
 static PyObject *
@@ -4696,9 +4745,9 @@ PyType_GetQualName(PyTypeObject *type)
 }
 
 PyObject *
-_PyType_GetModuleName(PyTypeObject *type)
+PyType_GetModuleName(PyTypeObject *type)
 {
-    return type_module(type, NULL);
+    return type_module(type);
 }
 
 void *
@@ -5812,7 +5861,7 @@ object_repr(PyObject *self)
     PyObject *mod, *name, *rtn;
 
     type = Py_TYPE(self);
-    mod = type_module(type, NULL);
+    mod = type_module(type);
     if (mod == NULL)
         PyErr_Clear();
     else if (!PyUnicode_Check(mod)) {

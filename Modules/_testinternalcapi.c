@@ -28,7 +28,6 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_typeobject.h"    // _PyType_GetModuleName()
 
 #include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
@@ -1632,13 +1631,6 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 
 
 static PyObject *
-get_type_module_name(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return _PyType_GetModuleName((PyTypeObject *)type);
-}
-
-static PyObject *
 get_rare_event_counters(PyObject *self, PyObject *type)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -1741,7 +1733,6 @@ static PyMethodDef module_functions[] = {
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
-    {"get_type_module_name",    get_type_module_name,            METH_O},
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
 #ifdef Py_GIL_DISABLED
