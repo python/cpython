@@ -484,6 +484,27 @@ jobs:
     - name: Tests
       run: xvfb-run make test
 
+  build_tsan:
+    name: 'Thread sanitizer'
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: TSAN Option Setup
+      run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+    - name: Configure CPython
+      run: ./configure --with-thread-sanitizer --without-pymalloc
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: ./python -m test --tsan -j4
+
   build_tsan_free_threading:
     name: 'Thread sanitizer (free-threading)'
     runs-on: ubuntu-20.04
@@ -494,14 +515,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
-    - name: Set up GCC-10 for TSAN
-      uses: egor-tensin/setup-gcc@v1
-      with:
-        version: 10
     - name: TSAN Option Setup
       run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
     - name: Configure CPython
-      run: ./configure --disable-gil --with-thread-sanitizer --disable-ipv6
+      run: ./configure --disable-gil --with-thread-sanitizer
     - name: Build CPython
       run: make -j4
     - name: Display build info
@@ -567,6 +584,7 @@ jobs:
     - build_windows_free_threading
     - test_hypothesis
     - build_asan
+    - build_tsan
     - build_tsan_free_threading
     - cifuzz
 
@@ -601,6 +619,7 @@ jobs:
             build_windows,
             build_windows_free_threading,
             build_asan,
+            build_tsan,
             build_tsan_free_threading,
             '
             || ''
