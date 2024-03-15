@@ -939,6 +939,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     assert(next_exit == -1);
     assert(dest == executor->trace);
     dest->opcode = _START_EXECUTOR;
+    dest->oparg = 0;
+    dest->target = 0;
     dest->operand = (uintptr_t)executor;
     _Py_ExecutorInit(executor, dependencies);
 #ifdef Py_DEBUG
