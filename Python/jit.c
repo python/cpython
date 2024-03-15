@@ -389,6 +389,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         code_size += group->code.body_size;
         data_size += group->data.body_size;
     }
+    code_size += stencil_groups[_FATAL_ERROR].code.body_size;
+    data_size += stencil_groups[_FATAL_ERROR].data.body_size;
     // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
@@ -423,6 +425,20 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         code += group->code.body_size;
         data += group->data.body_size;
     }
+    // Protect against accidental buffer overrun into data:
+    const StencilGroup *group = &stencil_groups[_FATAL_ERROR];
+    uint64_t patches[] = GET_PATCHES();
+    patches[HoleValue_CODE] = (uint64_t)code;
+    patches[HoleValue_CONTINUE] = (uint64_t)code;
+    patches[HoleValue_DATA] = (uint64_t)data;
+    patches[HoleValue_EXECUTOR] = (uint64_t)executor;
+    patches[HoleValue_TOP] = (uint64_t)code;
+    patches[HoleValue_ZERO] = 0;
+    emit(group, patches);
+    code += group->code.body_size;
+    data += group->data.body_size;
+    assert(code == memory + code_size);
+    assert(data == memory + code_size + data_size);
     if (mark_executable(memory, code_size + data_size + padding)) {
         jit_free(memory, code_size + data_size + padding);
         return -1;
