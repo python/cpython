@@ -1,1 +1,1 @@
-awaiting review
+AF_RDS support for getsockopt
