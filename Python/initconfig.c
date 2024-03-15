@@ -161,7 +161,7 @@ Options (and corresponding environment variables):\n\
 -P     : don't prepend a potentially unsafe path to sys.path; also\n\
          PYTHONSAFEPATH\n\
 -q     : don't print version and copyright messages on interactive startup\n\
--s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE\n\
+-s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE=x\n\
 -S     : don't imply 'import site' on initialization\n\
 -u     : force the stdout and stderr streams to be unbuffered;\n\
          this option has no effect on stdin; also PYTHONUNBUFFERED=x\n\
@@ -200,7 +200,7 @@ The following implementation-specific options are available:\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
--X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT.\n\
+-X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
 "
 #ifdef Py_DEBUG
 "-X presite=MOD: import this module before site is imported; also PYTHON_PRESITE\n"
@@ -216,9 +216,9 @@ The following implementation-specific options are available:\n\
 -X showrefcount: output the total reference count and number of used\n\
          memory blocks when the program finishes or after each statement in\n\
          the interactive interpreter; only works on debug builds\n\
--X tracemalloc: trace Python memory allocations; -X tracemalloc=N sets a\n\
-         traceback limit of N frames (1 by default); also PYTHONTRACEMALLOC=N\n\
--X utf8: enable UTF-8 mode; -X utf8=0 disables UTF-8 mode; also PYTHONUTF8=x\n\
+-X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
+         of N frames (1 by default); also PYTHONTRACEMALLOC=N\n\
+-X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None';\n\
          also PYTHONWARNDEFAULTENCODING\
 ";
