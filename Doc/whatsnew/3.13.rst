@@ -91,10 +91,6 @@ Interpreter improvements:
 New Features
 ============
 
-* The cyclic garbage collector is now incremental.
-  This means that maximum pause times are reduced,
-  by an order of magnitude or more for larger heaps.
-
 Improved Error Messages
 -----------------------
 
@@ -359,6 +355,7 @@ fractions
 
 gc
 --
+
 * The cyclic garbage collector is now incremental, which changes the meanings
   of the results of :meth:`gc.get_threshold` and :meth:`gc.get_threshold` as
   well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
@@ -375,10 +372,8 @@ gc
   young generation and the aging and collecting spaces of the old generation.
 
 In summary, code that attempted to manipulate the behavior of the cycle GC may
-not work as well as intended, but it is very unlikely to harmful.
+not work exactly as intended, but it is very unlikely to harmful.
 All other code will work just fine.
-Uses should avoid calling :meth:`gc.collect` unless their workload is episodic,
-but that has always been the case to some extent.
 
 glob
 ----

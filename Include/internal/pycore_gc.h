@@ -116,7 +116,6 @@ static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
 /* Bit 0 is set if the object belongs to old space 1 */
 #define _PyGC_NEXT_MASK_OLD_SPACE_1    1
 
-/* The (N-2) most significant bits contain the real address. */
 #define _PyGC_PREV_SHIFT           2
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
