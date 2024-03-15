@@ -1,2 +1,0 @@
-:func:`functools.partial`s of :func:`repr` has been improved to include the
-:term:`module` name. Patched by Furkan Onder and Anilyka Barry.

@@ -21,6 +21,7 @@ layout:
 | dk_log2_size        |
 | dk_log2_index_bytes |
 | dk_kind             |
+| dk_version          |
 | dk_usable           |
 | dk_nentries         |
 +---------------------+
@@ -55,7 +56,7 @@ The DictObject can be in one of two forms.
 Either:
   A combined table:
     ma_values == NULL, dk_refcnt == 1.
-    Values are stored in the me_value field of the PyDictKeysObject.
+    Values are stored in the me_value field of the PyDictKeyEntry.
 Or:
   A split table:
     ma_values != NULL, dk_refcnt >= 1
@@ -182,9 +183,6 @@ set_values(PyDictObject *mp, PyDictValues *values)
     _Py_atomic_store_ptr_release(&mp->ma_values, values);
 }
 
-// Defined until we get QSBR
-#define _PyMem_FreeQsbr PyMem_Free
-
 #define LOCK_KEYS(keys) PyMutex_LockFlags(&keys->dk_mutex, _Py_LOCK_DONT_DETACH)
 #define UNLOCK_KEYS(keys) PyMutex_Unlock(&keys->dk_mutex)
 
@@ -249,6 +247,14 @@ load_keys_nentries(PyDictObject *mp)
 
 
 #endif
+
+#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_key, key)
+#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, value)
+#define STORE_SPLIT_VALUE(mp, idx, value) FT_ATOMIC_STORE_PTR_RELEASE(mp->ma_values->values[idx], value)
+#define STORE_HASH(ep, hash) FT_ATOMIC_STORE_SSIZE_RELAXED(ep->me_hash, hash)
+#define STORE_KEYS_USABLE(keys, usable) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_usable, usable)
+#define STORE_KEYS_NENTRIES(keys, nentries) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_nentries, nentries)
+#define STORE_USED(mp, used) FT_ATOMIC_STORE_SSIZE_RELAXED(mp->ma_used, used)
 
 #define PERTURB_SHIFT 5
 
@@ -797,7 +803,7 @@ free_keys_object(PyDictKeysObject *keys, bool use_qsbr)
 {
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeQsbr(keys);
+        _PyMem_FreeDelayed(keys);
         return;
     }
 #endif
@@ -837,7 +843,7 @@ free_values(PyDictValues *values, bool use_qsbr)
     int prefix_size = DICT_VALUES_SIZE(values);
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        _PyMem_FreeQsbr(((char *)values)-prefix_size);
+        _PyMem_FreeDelayed(((char *)values)-prefix_size);
         return;
     }
 #endif
@@ -1229,10 +1235,10 @@ start:
     return ix;
 }
 
+#ifdef Py_GIL_DISABLED
 static inline void
 ensure_shared_on_read(PyDictObject *mp)
 {
-#ifdef Py_GIL_DISABLED
     if (!_Py_IsOwnedByCurrentThread((PyObject *)mp) && !IS_DICT_SHARED(mp)) {
         // The first time we access a dict from a non-owning thread we mark it
         // as shared. This ensures that a concurrent resize operation will
@@ -1244,8 +1250,8 @@ ensure_shared_on_read(PyDictObject *mp)
         }
         Py_END_CRITICAL_SECTION();
     }
-#endif
 }
+#endif
 
 static inline void
 ensure_shared_on_resize(PyDictObject *mp)
@@ -1589,19 +1595,11 @@ insertion_resize(PyInterpreterState *interp, PyDictObject *mp, int unicode)
 }
 
 static Py_ssize_t
-insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name)
+insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name, Py_hash_t hash)
 {
     assert(PyUnicode_CheckExact(name));
     ASSERT_KEYS_LOCKED(keys);
 
-    Py_hash_t hash = unicode_get_hash(name);
-    if (hash == -1) {
-        hash = PyUnicode_Type.tp_hash(name);
-        if (hash == -1) {
-            PyErr_Clear();
-            return DKIX_EMPTY;
-        }
-    }
     Py_ssize_t ix = unicodekeys_lookup_unicode(keys, name, hash);
     if (ix == DKIX_EMPTY) {
         if (keys->dk_usable <= 0) {
@@ -1621,7 +1619,6 @@ insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name)
     return ix;
 }
 
-
 static inline int
 insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
                      Py_hash_t hash, PyObject *key, PyObject *value)
@@ -1639,18 +1636,18 @@ insert_combined_dict(PyInterpreterState *interp, PyDictObject *mp,
     if (DK_IS_UNICODE(mp->ma_keys)) {
         PyDictUnicodeEntry *ep;
         ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
-        ep->me_key = key;
-        ep->me_value = value;
+        STORE_KEY(ep, key);
+        STORE_VALUE(ep, value);
     }
     else {
         PyDictKeyEntry *ep;
         ep = &DK_ENTRIES(mp->ma_keys)[mp->ma_keys->dk_nentries];
-        ep->me_key = key;
-        ep->me_hash = hash;
-        ep->me_value = value;
+        STORE_KEY(ep, key);
+        STORE_VALUE(ep, value);
+        STORE_HASH(ep, hash);
     }
-    mp->ma_keys->dk_usable--;
-    mp->ma_keys->dk_nentries++;
+    STORE_KEYS_USABLE(mp->ma_keys, mp->ma_keys->dk_usable - 1);
+    STORE_KEYS_NENTRIES(mp->ma_keys, mp->ma_keys->dk_nentries + 1);
     assert(mp->ma_keys->dk_usable >= 0);
     return 0;
 }
@@ -1682,7 +1679,7 @@ insert_split_dict(PyInterpreterState *interp, PyDictObject *mp,
     Py_ssize_t index = keys->dk_nentries;
     _PyDictValues_AddToInsertionOrder(mp->ma_values, index);
     assert (mp->ma_values->values[index] == NULL);
-    mp->ma_values->values[index] = value;
+    STORE_SPLIT_VALUE(mp, index, value);
 
     split_keys_entry_added(keys);
     assert(keys->dk_usable >= 0);
@@ -2013,8 +2010,8 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         }
     }
 
-    mp->ma_keys->dk_usable -= numentries;
-    mp->ma_keys->dk_nentries = numentries;
+    STORE_KEYS_USABLE(mp->ma_keys, mp->ma_keys->dk_usable - numentries);
+    STORE_KEYS_NENTRIES(mp->ma_keys, numentries);
     ASSERT_CONSISTENT(mp);
     return 0;
 }
@@ -2507,15 +2504,15 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
         if (DK_IS_UNICODE(mp->ma_keys)) {
             PyDictUnicodeEntry *ep = &DK_UNICODE_ENTRIES(mp->ma_keys)[ix];
             old_key = ep->me_key;
-            ep->me_key = NULL;
-            ep->me_value = NULL;
+            STORE_KEY(ep, NULL);
+            STORE_VALUE(ep, NULL);
         }
         else {
             PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[ix];
             old_key = ep->me_key;
-            ep->me_key = NULL;
-            ep->me_value = NULL;
-            ep->me_hash = 0;
+            STORE_KEY(ep, NULL);
+            STORE_VALUE(ep, NULL);
+            STORE_HASH(ep, 0);
         }
         Py_DECREF(old_key);
     }
@@ -4393,8 +4390,8 @@ dict_popitem_impl(PyDictObject *self)
     PyTuple_SET_ITEM(res, 0, key);
     PyTuple_SET_ITEM(res, 1, value);
     /* We can't dk_usable++ since there is DKIX_DUMMY in indices */
-    self->ma_keys->dk_nentries = i;
-    self->ma_used--;
+    STORE_KEYS_NENTRIES(self->ma_keys, i);
+    STORE_USED(self, self->ma_used - 1);
     self->ma_version_tag = new_version;
     ASSERT_CONSISTENT(self);
     return res;
@@ -5029,7 +5026,7 @@ dictiter_iternextkey(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, &value, NULL) == 0) {
+    if (dictiter_iternext_threadsafe(d, self, &value, NULL) < 0) {
         value = NULL;
     }
 #else
@@ -5152,7 +5149,7 @@ dictiter_iternextvalue(PyObject *self)
 
     PyObject *value;
 #ifdef Py_GIL_DISABLED
-    if (!dictiter_iternext_threadsafe(d, self, NULL, &value) == 0) {
+    if (dictiter_iternext_threadsafe(d, self, NULL, &value) < 0) {
         value = NULL;
     }
 #else
@@ -6685,8 +6682,25 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     Py_ssize_t ix = DKIX_EMPTY;
     if (PyUnicode_CheckExact(name)) {
-        LOCK_KEYS(keys);
-        ix = insert_into_splitdictkeys(keys, name);
+        Py_hash_t hash = unicode_get_hash(name);
+        if (hash == -1) {
+            hash = PyUnicode_Type.tp_hash(name);
+            assert(hash != -1);
+        }
+
+#ifdef Py_GIL_DISABLED
+        // Try a thread-safe lookup to see if the index is already allocated
+        ix = unicodekeys_lookup_unicode_threadsafe(keys, name, hash);
+        if (ix == DKIX_EMPTY || ix == DKIX_KEY_CHANGED) {
+            // Lock keys and do insert
+            LOCK_KEYS(keys);
+            ix = insert_into_splitdictkeys(keys, name, hash);
+            UNLOCK_KEYS(keys);
+        }
+#else
+        ix = insert_into_splitdictkeys(keys, name, hash);
+#endif
+
 #ifdef Py_STATS
         if (ix == DKIX_EMPTY) {
             if (PyUnicode_CheckExact(name)) {
@@ -6702,7 +6716,6 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
             }
         }
 #endif
-        UNLOCK_KEYS(keys);
     }
     if (ix == DKIX_EMPTY) {
         PyObject *dict = make_dict_from_instance_attributes(
