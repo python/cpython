@@ -543,7 +543,7 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(cookie.name, '"spam"')
         self.assertEqual(lwp_cookie_str(cookie), (
             r'"spam"; path="/foo/"; domain="www.acme.com"; '
-            'path_spec; discard; version=0'))
+            'path_spec; discard; samesite=Lax; version=0'))
         old_str = repr(c)
         c.save(ignore_expires=True, ignore_discard=True)
         try:
@@ -701,7 +701,7 @@ class CookieTests(unittest.TestCase):
                          None, False, "www.python.org",
                          True, False, "/",
                          False, False, "1444312383.018307",
-                         False, None, None,
+                         False, None, None, 'Lax',
                          {})
         self.assertEqual(cookie.expires, 1444312383)
 
