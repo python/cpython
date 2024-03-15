@@ -269,7 +269,8 @@ is to use implicit string concatenation ``';'';'`` or ``";"";"``.
 
 If a file :file:`.pdbrc` exists in the user's home directory or in the current
 directory, it is read with ``'utf-8'`` encoding and executed as if it had been
-typed at the debugger prompt.  This is particularly useful for aliases.  If both
+typed at the debugger prompt, with the exception that empty lines and lines
+starting with ``#`` are ignored.  This is particularly useful for aliases.  If both
 files exist, the one in the home directory is read first and aliases defined there
 can be overridden by the local file.
 

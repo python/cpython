@@ -297,7 +297,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.curframe_locals = self.curframe.f_locals
 
         if self.rcLines:
-            self.cmdqueue = self.rcLines
+            self.cmdqueue = [
+                line for line in self.rcLines
+                if line.strip() and not line.strip().startswith("#")
+            ]
             self.rcLines = []
 
     # Override Bdb methods
