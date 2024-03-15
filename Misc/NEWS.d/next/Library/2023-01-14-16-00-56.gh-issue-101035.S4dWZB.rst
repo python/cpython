@@ -1,0 +1,2 @@
+Check if the timestamp from :func:`os.fstat()` is valid for :func:`datetime.datetime.fromtimestamp()`.
+If the timestamp is not valid, use ``0`` instead to avoid :exc:`OSError`.

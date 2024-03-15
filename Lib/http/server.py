@@ -735,6 +735,14 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         try:
             fs = os.fstat(f.fileno())
+            # On Windows, _PyTime_gmtime() only allows timestamps larger or
+            # equal to -43200 (1969-12-31 12:00:00). But os.fstat() will
+            # happily return stat_result with st_mtime less then -43200. See
+            # issue #101035. For files with st_mtime less then -43200, clients
+            # might as well get the "updated" version.
+            mtime = fs.st_mtime
+            if sys.platform == 'win32' and mtime < -43200:
+                mtime = 0
             # Use browser cache if possible
             if ("If-Modified-Since" in self.headers
                     and "If-None-Match" not in self.headers):
@@ -753,7 +761,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     if ims.tzinfo is datetime.timezone.utc:
                         # compare to UTC datetime of last modification
                         last_modif = datetime.datetime.fromtimestamp(
-                            fs.st_mtime, datetime.timezone.utc)
+                            mtime, datetime.timezone.utc)
                         # remove microseconds, like in If-Modified-Since
                         last_modif = last_modif.replace(microsecond=0)
 
@@ -767,7 +775,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", ctype)
             self.send_header("Content-Length", str(fs[6]))
             self.send_header("Last-Modified",
-                self.date_time_string(fs.st_mtime))
+                self.date_time_string(mtime))
             self.end_headers()
             return f
         except:
