@@ -170,7 +170,7 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -279,12 +279,19 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~object.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
          the exact value is unimportant you may use :class:`auto` instances and an
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
+
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
 
    .. attribute:: Enum._name_
 
@@ -350,7 +357,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init__(self, \*args, \**kwds)
+   .. method:: Enum.__init__(self, *args, **kwds)
 
       By default, does nothing.  If multiple values are given in the member
       assignment, those values become separate arguments to ``__init__``; e.g.
@@ -361,7 +368,7 @@ Data Types
 
       ``Weekday.__init__()`` would be called as ``Weekday.__init__(self, 1, 'Mon')``
 
-   .. method:: Enum.__init_subclass__(cls, \**kwds)
+   .. method:: Enum.__init_subclass__(cls, **kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.
@@ -388,7 +395,7 @@ Data Types
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
 
-   .. method:: Enum.__new__(cls, \*args, \**kwds)
+   .. method:: Enum.__new__(cls, *args, **kwds)
 
       By default, doesn't exist.  If specified, either in the enum class
       definition or in a mixin class (such as ``int``), all values given

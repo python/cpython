@@ -472,7 +472,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(hi)
         STRUCT_FOR_ID(hook)
         STRUCT_FOR_ID(hour)
-        STRUCT_FOR_ID(id)
         STRUCT_FOR_ID(ident)
         STRUCT_FOR_ID(identity_hint)
         STRUCT_FOR_ID(ignore)

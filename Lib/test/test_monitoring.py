@@ -9,7 +9,8 @@ import textwrap
 import types
 import unittest
 import asyncio
-from test.support import requires_specialization
+from test import support
+from test.support import requires_specialization, script_helper
 
 PAIR = (0,1)
 
@@ -1806,6 +1807,21 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
         sys.monitoring.set_events(0, E.LINE | E.INSTRUCTION)
         sys.monitoring.set_events(0, 0)
 
+    def test_call_function_ex(self):
+        def f(a, b):
+            return a + b
+        args = (1, 2)
+
+        call_data = []
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.CALL, lambda code, offset, callable, arg0: call_data.append((callable, arg0)))
+        sys.monitoring.set_events(0, E.CALL)
+        f(*args)
+        sys.monitoring.set_events(0, 0)
+        self.assertEqual(call_data[0], (f, 1))
+
 
 class TestOptimizer(MonitoringTestBase, unittest.TestCase):
 
@@ -1858,3 +1874,12 @@ class TestTier2Optimizer(CheckEvents):
             sys.monitoring.register_callback(TEST_TOOL, E.LINE, None)
             sys.monitoring.set_events(TEST_TOOL, 0)
         self.assertGreater(len(events), 250)
+
+class TestMonitoringAtShutdown(unittest.TestCase):
+
+    def test_monitoring_live_at_shutdown(self):
+        # gh-115832: An object destructor running during the final GC of
+        # interpreter shutdown triggered an infinite loop in the
+        # instrumentation code.
+        script = support.findfile("_test_monitoring_shutdown.py")
+        script_helper.run_test_script(script)
