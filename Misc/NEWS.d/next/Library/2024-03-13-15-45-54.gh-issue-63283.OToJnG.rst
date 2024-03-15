@@ -1,0 +1,2 @@
+In :mod:`encodings.idna`, any capitalization of the the ACE prefix
+(``xn--``) is now acceptable. Patch by Pepijn de Vos and Zackery Spytz.

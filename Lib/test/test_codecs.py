@@ -1547,6 +1547,13 @@ class IDNACodecTest(unittest.TestCase):
         self.assertEqual(str(b"python.org.", "idna"), "python.org.")
         self.assertEqual(str(b"xn--pythn-mua.org", "idna"), "pyth\xf6n.org")
         self.assertEqual(str(b"xn--pythn-mua.org.", "idna"), "pyth\xf6n.org.")
+        self.assertEqual(str(b"XN--pythn-mua.org.", "idna"), "pyth\xf6n.org.")
+        self.assertEqual(str(b"xN--pythn-mua.org.", "idna"), "pyth\xf6n.org.")
+        self.assertEqual(str(b"Xn--pythn-mua.org.", "idna"), "pyth\xf6n.org.")
+        self.assertEqual(str(b"bugs.xn--pythn-mua.org.", "idna"),
+                         "bugs.pyth\xf6n.org.")
+        self.assertEqual(str(b"bugs.XN--pythn-mua.org.", "idna"),
+                         "bugs.pyth\xf6n.org.")
 
     def test_builtin_encode(self):
         self.assertEqual("python.org".encode("idna"), b"python.org")
