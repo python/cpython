@@ -2232,7 +2232,7 @@ thread_shutdown(PyObject *self, PyObject *args)
 PyDoc_STRVAR(shutdown_doc,
 "_shutdown()\n\
 \n\
-Waits for all non-daemon threads (other than the calling thread) to stop.");
+Wait for all non-daemon threads (other than the calling thread) to stop.");
 
 static PyObject *
 thread__make_thread_handle(PyObject *module, PyObject *identobj)
