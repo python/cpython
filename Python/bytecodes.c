@@ -3376,14 +3376,12 @@ dummy_func(
             DEOPT_IF(total_args != 1);
             DEOPT_IF(!PyCFunction_CheckExact(callable));
             DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_O);
+            // CPython promises to check all non-vectorcall function calls.
+            DEOPT_IF(tstate->c_recursion_remaining <= 0);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                GOTO_ERROR(error);
-            }
             PyObject *arg = args[0];
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3480,10 +3478,11 @@ dummy_func(
             }
             res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
+            if (res == NULL) {
+                GOTO_ERROR(error);
+            }
             Py_DECREF(callable);
             Py_DECREF(arg);
-            ERROR_IF(res == NULL, error);
         }
 
         inst(CALL_ISINSTANCE, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
@@ -3505,11 +3504,12 @@ dummy_func(
             }
             res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-
+            if (res == NULL) {
+                GOTO_ERROR(error);
+            }
             Py_DECREF(inst);
             Py_DECREF(cls);
             Py_DECREF(callable);
-            ERROR_IF(res == NULL, error);
         }
 
         // This is secretly a super-instruction
@@ -3543,16 +3543,14 @@ dummy_func(
             DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             DEOPT_IF(meth->ml_flags != METH_O);
+            // CPython promises to check all non-vectorcall function calls.
+            DEOPT_IF(tstate->c_recursion_remaining <= 0);
             PyObject *arg = args[1];
             PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                GOTO_ERROR(error);
-            }
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
             res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3616,13 +3614,11 @@ dummy_func(
             PyObject *self = args[0];
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             DEOPT_IF(meth->ml_flags != METH_NOARGS);
+            // CPython promises to check all non-vectorcall function calls.
+            DEOPT_IF(tstate->c_recursion_remaining <= 0);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
-            // This is slower but CPython promises to check all non-vectorcall
-            // function calls.
-            if (_Py_EnterRecursiveCallTstate(tstate, " while calling a Python object")) {
-                GOTO_ERROR(error);
-            }
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
             res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
