@@ -494,6 +494,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Set up GCC-11 for ASAN
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: 11
     - name: TSAN Option Setup
       run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
     - name: Configure CPython
@@ -515,6 +519,10 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install Dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Set up GCC-11 for ASAN
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: 11
     - name: TSAN Option Setup
       run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
     - name: Configure CPython
