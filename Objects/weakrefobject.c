@@ -801,24 +801,14 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
     if (result != NULL)
         Py_INCREF(result);
     else {
-        /* Note: new_weakref() can trigger cyclic GC, so the weakref
-           list on ob can be mutated.  This means that the ref and
-           proxy pointers we got back earlier may have been collected,
-           so we need to compute these values again before we use
-           them. */
+        /* We do not need to recompute ref/proxy; new_weakref() cannot
+           trigger GC.
+        */
         result = new_weakref(ob, callback);
         if (result != NULL) {
-            get_basic_refs(*list, &ref, &proxy);
             if (callback == NULL) {
-                if (ref == NULL)
-                    insert_head(result, list);
-                else {
-                    /* Someone else added a ref without a callback
-                       during GC.  Return that one instead of this one
-                       to avoid violating the invariants of the list
-                       of weakrefs for ob. */
-                    Py_SETREF(result, (PyWeakReference*)Py_NewRef(ref));
-                }
+                assert(ref == NULL);
+                insert_head(result, list);
             }
             else {
                 PyWeakReference *prev;
