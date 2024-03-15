@@ -1988,7 +1988,7 @@ def parse_file(
     libclinic.write_file(output, cooked)
 
 
-def create_python_parser_namespace():
+def create_python_parser_namespace() -> dict[str, Any]:
     ns = dict(
         CConverter=CConverter,
         CReturnConverter=CReturnConverter,
@@ -1999,8 +1999,8 @@ def create_python_parser_namespace():
     )
     for name, converter in converters.items():
         ns[f'{name}_converter'] = converter
-    for name, converter in return_converters.items():
-        ns[f'{name}_return_converter'] = converter
+    for name, return_converter in return_converters.items():
+        ns[f'{name}_return_converter'] = return_converter
     return ns
 
 
@@ -5001,8 +5001,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error(
                 "can't specify --converters and a filename at the same time"
             )
-        converter_list: list[tuple[str, str]] = []
-        return_converter_list: list[tuple[str, str]] = []
+        converter_list: list[tuple[str, str, Any]] = []
+        return_converter_list: list[tuple[str, str, Any]] = []
 
         for name, converter in converters.items():
             converter_list.append((
@@ -5010,11 +5010,11 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                 name,
                 converter,
             ))
-        for name, converter in return_converters.items():
+        for name, return_converter in return_converters.items():
             return_converter_list.append((
                 f'{name}_return_converter',
                 name,
-                converter
+                return_converter
             ))
 
         print()
