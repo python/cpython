@@ -2,6 +2,10 @@
 #  error "this header file must not be included directly"
 #endif
 
+#ifdef Py_GIL_DISABLED
+typedef struct _PyWeakRefUnlinker _PyWeakRefUnlinker;
+#endif
+
 /* PyWeakReference is the base struct for the Python ReferenceType, ProxyType,
  * and CallableProxyType.
  */
@@ -21,6 +25,13 @@ struct _PyWeakReference {
      * if the hash code isn't known yet.
      */
     Py_hash_t hash;
+
+#ifdef Py_GIL_DISABLED
+    /* A pointer to an object that is used to coordinating concurrent attempts
+     * at unlinking the weakref.
+     */
+    _PyWeakRefUnlinker *unlinker;
+#endif
 
     /* If wr_object is weakly referenced, wr_object has a doubly-linked NULL-
      * terminated list of weak references to it.  These are the list pointers.
