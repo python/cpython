@@ -1146,7 +1146,7 @@ def optimization_section() -> Section:
             (
                 label,
                 Count(value),
-                Ratio(value, den, percentage=label != "Uops executed"),
+                Ratio(value, den)
             )
             for label, (value, den) in optimizer_stats.items()
         ]
