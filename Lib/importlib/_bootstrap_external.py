@@ -1715,38 +1715,39 @@ class AppleFrameworkLoader(ExtensionFileLoader):
     """A loader for modules that have been packaged as frameworks for
     compatibility with Apple's iOS App Store policies.
     """
-
     def create_module(self, spec):
         # If the ModuleSpec has been created by the FileFinder, it will have
         # been created with an origin pointing to the .fwork file. We need to
-        # dereference this to the "true origin" - the actual binary file
-        # location in the Frameworks folder
+        # redirect this to the location in the Frameworks folder, using the
+        # content of the .fwork file.
         if spec.origin.endswith(".fwork"):
             with _io.FileIO(spec.origin, 'r') as file:
                 framework_binary = file.read().decode().strip()
             bundle_path = _path_split(sys.executable)[0]
-            true_origin = _path_join(bundle_path, framework_binary)
-        else:
-            true_origin = spec.origin
+            spec.origin = _path_join(bundle_path, framework_binary)
 
-        # The implementation of the importer needs to operate on the actual
-        # binary. Temporarily switch the origin of the spec to the true origin;
-        # once the module has been loaded, switch the origin back so that
-        # the .fwork location isn't lost.
-        origin = spec.origin
-        spec.origin = true_origin
+        # If the loader is created based on the spec for a loaded module, the
+        # path will be pointing at the Framework location. If this occurs,
+        # get the original .fwork location to use as the module's __file__.
+        if self.path.endswith(".fwork"):
+            path = self.path
+        else:
+            with _io.FileIO(self.path + ".origin", 'r') as file:
+                origin = file.read().decode().strip()
+                bundle_path = _path_split(sys.executable)[0]
+                path = _path_join(bundle_path, origin)
+
         module = _bootstrap._call_with_frames_removed(_imp.create_dynamic, spec)
-        spec.origin = origin
 
         _bootstrap._verbose_message(
-            "Apple framework extension module {!r} loaded from {!r} (true origin {!r})",
+            "Apple framework extension module {!r} loaded from {!r} (path {!r})",
             spec.name,
-            self.path,
-            true_origin,
+            spec.origin,
+            path,
         )
 
         # Ensure that the __file__ points at the .fwork location
-        module.__file__ = origin
+        module.__file__ = path
 
         return module
 

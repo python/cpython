@@ -144,7 +144,8 @@ if _testsinglephase is not None:
         # it to its nominal state.
         sys.modules.pop('_testsinglephase', None)
         _orig._clear_globals()
-        _testinternalcapi.clear_extension('_testsinglephase', _orig.__file__)
+        origin = _orig.__spec__.origin
+        _testinternalcapi.clear_extension('_testsinglephase', origin)
         import _testsinglephase
 
 
@@ -2059,15 +2060,25 @@ class SinglephaseInitTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         spec = importlib.util.find_spec(cls.NAME)
-        cls.FILE = spec.origin
         cls.LOADER = type(spec.loader)
 
         # Apple extensions must be distributed as frameworks. This requires
-        # a specialist loader.
+        # a specialist loader, and we need to differentiate between the
+        # spec.origin and the original file location.
         if is_apple_mobile:
             assert cls.LOADER is AppleFrameworkLoader
+
+            cls.ORIGIN = spec.origin
+            with open(spec.origin + ".origin", "r") as f:
+                cls.FILE = os.path.join(
+                    os.path.dirname(sys.executable),
+                    f.read().strip()
+                )
         else:
             assert cls.LOADER is ExtensionFileLoader
+
+            cls.ORIGIN = spec.origin
+            cls.FILE = spec.origin
 
         # Start fresh.
         cls.clean_up()
@@ -2083,14 +2094,15 @@ class SinglephaseInitTests(unittest.TestCase):
     @classmethod
     def clean_up(cls):
         name = cls.NAME
-        filename = cls.FILE
         if name in sys.modules:
             if hasattr(sys.modules[name], '_clear_globals'):
-                assert sys.modules[name].__file__ == filename
+                assert sys.modules[name].__file__ == cls.FILE, \
+                    f"{sys.modules[name].__file__} != {cls.FILE}"
+
                 sys.modules[name]._clear_globals()
             del sys.modules[name]
         # Clear all internally cached data for the extension.
-        _testinternalcapi.clear_extension(name, filename)
+        _testinternalcapi.clear_extension(name, cls.ORIGIN)
 
     #########################
     # helpers
@@ -2098,7 +2110,7 @@ class SinglephaseInitTests(unittest.TestCase):
     def add_module_cleanup(self, name):
         def clean_up():
             # Clear all internally cached data for the extension.
-            _testinternalcapi.clear_extension(name, self.FILE)
+            _testinternalcapi.clear_extension(name, self.ORIGIN)
         self.addCleanup(clean_up)
 
     def _load_dynamic(self, name, path):
@@ -2107,10 +2119,7 @@ class SinglephaseInitTests(unittest.TestCase):
         """
         # This is essentially copied from the old imp module.
         from importlib._bootstrap import _load
-        if is_apple_mobile:
-            loader = self.LOADER(name, path)
-        else:
-            loader = self.LOADER(name, path)
+        loader = self.LOADER(name, path)
 
         # Issue bpo-24748: Skip the sys.modules check in _load_module_shim;
         # always load new extension.
@@ -2124,7 +2133,7 @@ class SinglephaseInitTests(unittest.TestCase):
         except AttributeError:
             already_loaded = self.already_loaded = {}
         assert name not in already_loaded
-        mod = self._load_dynamic(name, self.FILE)
+        mod = self._load_dynamic(name, self.ORIGIN)
         self.assertNotIn(mod, already_loaded.values())
         already_loaded[name] = mod
         return types.SimpleNamespace(
@@ -2136,7 +2145,7 @@ class SinglephaseInitTests(unittest.TestCase):
     def re_load(self, name, mod):
         assert sys.modules[name] is mod
         assert mod.__dict__ == mod.__dict__
-        reloaded = self._load_dynamic(name, self.FILE)
+        reloaded = self._load_dynamic(name, self.ORIGIN)
         return types.SimpleNamespace(
             name=name,
             module=reloaded,
@@ -2162,7 +2171,7 @@ class SinglephaseInitTests(unittest.TestCase):
                 name = {self.NAME!r}
                 if name in sys.modules:
                     sys.modules.pop(name)._clear_globals()
-                _testinternalcapi.clear_extension(name, {self.FILE!r})
+                _testinternalcapi.clear_extension(name, {self.ORIGIN!r})
                 '''))
             _interpreters.destroy(interpid)
         self.addCleanup(clean_up)
@@ -2179,7 +2188,7 @@ class SinglephaseInitTests(unittest.TestCase):
             postcleanup = f'''
                 {import_}
                 mod._clear_globals()
-                _testinternalcapi.clear_extension(name, {self.FILE!r})
+                _testinternalcapi.clear_extension(name, {self.ORIGIN!r})
                 '''
 
         try:
@@ -2217,7 +2226,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # mod.__name__  might not match, but the spec will.
         self.assertEqual(mod.__spec__.name, loaded.name)
         self.assertEqual(mod.__file__, self.FILE)
-        self.assertEqual(mod.__spec__.origin, self.FILE)
+        self.assertEqual(mod.__spec__.origin, self.ORIGIN)
         if not isolated:
             self.assertTrue(issubclass(mod.error, Exception))
         self.assertEqual(mod.int_const, 1969)
@@ -2611,7 +2620,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # First, load in the main interpreter but then completely clear it.
         loaded_main = self.load(self.NAME)
         loaded_main.module._clear_globals()
-        _testinternalcapi.clear_extension(self.NAME, self.FILE)
+        _testinternalcapi.clear_extension(self.NAME, self.ORIGIN)
 
         # At this point:
         #  * alive in 0 interpreters

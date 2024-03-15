@@ -1252,33 +1252,44 @@ find and load modules.
    be only a single binary per framework, and there can be no executable binary
    material outside the Frameworks folder.
 
-   If you're trying to run ``from foo.bar import _whiz``, and ``_whiz`` is
-   implemented with the binary module ``foo/bar/_whiz.abi3.so`` (or any other
-   ABI extension), this module *must* be distributed as
-   ``{dirname(sys.executable)}/Frameworks/foo.bar._whiz.framework/foo.bar._whiz``
-   (creating the framework name from the full import path of the module), with
-   an ``Info.plist`` file in the ``.framework`` file identifying the binary.
+   To accomodate this requirement, when running on iOS, extension module
+   binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
+   individual standalone frameworks. To discover those frameworks, this loader
+   is be registered against the ``.fwork`` file extension, with a ``.fwork``
+   file acting as a placeholder in the original location of the binary on
+   ``sys.path``. The ``.fwork`` file contains the path of the actual binary in
+   the ``Frameworks`` folder, relative to the app bundle. To allow for
+   resolving a framework-packaged binary back to the original location, the
+   framework is expected to contain a ``.origin`` file that contains the
+   location of the ``.fwork`` file, relative to the app bundle.
 
-   To accomodate this requirement, when running on iOS, this loader will be
-   registered against the ``.fwork`` file extension. A ``.fwork`` file is an
-   placeholder that flags that an extension module with the corresponding name
-   and path can be loaded from the ``Frameworks`` folder. The ``.fwork`` file
-   contains the path of the actual binary, relative to the app bundle. The
-   ``foo.bar._whiz`` module in the previous example would generate a
-   ``foo/bar/_whiz.abi3.fwork`` marker file, containing the path
-   ``Frameworks/foo.bar._whiz/foo.bar._whiz``. The spec created from loading
-   this module will have an origin referencing the ``.fwork`` file; when the
-   module is created, it will load the location referenced by the content of
-   the ``.fwork`` file.
+   For example, consider the case of an import ``from foo.bar import _whiz``,
+   where ``_whiz`` is implemented with the binary module
+   ``sources/foo/bar/_whiz.abi3.so``, with ``sources`` being the location
+   registered on ``sys.path``, relative to the application bundle. This module
+   *must* be distributed as
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz`` (creating the framework
+   name from the full import path of the module), with an ``Info.plist`` file
+   in the ``.framework`` directory identifying the binary as a framework. The
+   ``foo.bar._whiz`` module would be represented in the original location with
+   a ``sources/foo/bar/_whiz.abi3.fwork`` marker file, containing the path
+   ``Frameworks/foo.bar._whiz/foo.bar._whiz``. The framework would also contain
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz.origin``, containing the
+   path to the ``.fwork`` file.
+
+   When a module is loaded with this loader, the ``__file__`` for the module
+   will report as the location of the ``.fwork`` file. This allows code to use
+   the ``__file__`` of a  module as an anchor for file system traveral.
+   However, the spec origin will reference the location of the *actual* binary
+   in the ``.framework`` folder.
 
    The Xcode project building the app is responsible for converting any ``.so``
    files from wherever they exist in the ``PYTHONPATH`` into frameworks in the
    ``Frameworks`` folder (including stripping extensions from the module file,
    the addition of framework metadata, and signing the resulting framework),
-   and creating the ``.fwork`` file in place of the ``.so`` file to flag that
-   framework loading is required. This will usually be done with a build step
-   in the Xcode project; see the iOS documentation for details on how to
-   construct this build step.
+   and creating the ``.fwork`` and ``.origin`` files. This will usually be done
+   with a build step in the Xcode project; see the iOS documentation for
+   details on how to construct this build step.
 
    .. versionadded:: 3.13
 
