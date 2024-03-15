@@ -484,6 +484,31 @@ jobs:
     - name: Tests
       run: xvfb-run make test
 
+  build_tsan_free_threading:
+    name: 'Thread sanitizer (free-threading)'
+    runs-on: ubuntu-20.04
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Set up GCC-10 for TSAN
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: 10
+    - name: TSAN Option Setup
+      run: echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+    - name: Configure CPython
+      run: ./configure --disable-gil --with-thread-sanitizer --disable-ipv6
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: ./python -m test --tsan -j4
+
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
     name: CIFuzz
@@ -542,6 +567,7 @@ jobs:
     - build_windows_free_threading
     - test_hypothesis
     - build_asan
+    - build_tsan_free_threading
     - cifuzz
 
     runs-on: ubuntu-latest
@@ -575,6 +601,7 @@ jobs:
             build_windows,
             build_windows_free_threading,
             build_asan,
+            build_tsan_free_threading,
             '
             || ''
           }}
