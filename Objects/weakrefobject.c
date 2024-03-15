@@ -154,7 +154,7 @@ weakref_vectorcall(PyObject *self, PyObject *const *args,
 }
 
 static Py_hash_t
-weakref_hash(PyWeakReference *self)
+weakref_hash_lock_held(PyWeakReference *self)
 {
     if (self->hash != -1)
         return self->hash;
@@ -168,6 +168,15 @@ weakref_hash(PyWeakReference *self)
     return self->hash;
 }
 
+static Py_hash_t
+weakref_hash(PyWeakReference *self)
+{
+    Py_hash_t hash;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    hash = weakref_hash_lock_held(self);
+    Py_END_CRITICAL_SECTION();
+    return hash;
+}
 
 static PyObject *
 weakref_repr(PyObject *self)
