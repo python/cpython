@@ -7023,7 +7023,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     if (mp->ma_values == NULL || mp->ma_values != _PyObject_InlineValues(obj)) {
-        return -1;
+        return 0;
     }
     assert(mp->ma_values->embedded);
     assert(mp->ma_values->valid);
