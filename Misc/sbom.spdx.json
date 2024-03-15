@@ -1406,11 +1406,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "4b80e25ac49b7e1ea0d1e84967ee32a3d111fc4c"
+          "checksumValue": "a16dfd5d53933b52bcd62c7995b6f08502bdd313"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ea0b9c6b296c13aed6ecaa50b463e39a9c1bdc059b84f50507fd8247b2e660f9"
+          "checksumValue": "00af8f53d39cc8a1c9425897fa33a653a014b3720495822f4f29c877718084a4"
         }
       ],
       "fileName": "Modules/_decimal/libmpdec/mpdecimal.h"
