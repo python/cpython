@@ -104,6 +104,7 @@ import socketserver
 import sys
 import time
 import urllib.parse
+import tempfile
 
 from http import HTTPStatus
 
@@ -1224,25 +1225,84 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                                  env = env
                                  )
             if self.command.lower() == "post" and nbytes > 0:
-                data = self.rfile.read(nbytes)
+                to_read = nbytes
             else:
+                to_read = 0
+            chunk_size = 1 * 1024 * 1024
+
+            # Receive client POST form in chunks, if the size is more than one chunk, use a temp file to store it.
+            tmpdir = tempfile.gettempdir()
+            tmpfile = os.path.join(tmpdir, f'{self.__class__.__name__}_{tempfile.gettempprefix()}_{p.pid}.tmp')
+
+            # log with frequency limit
+            last_report = 0
+            def timed_log(content, interval = 0.5):
+                nonlocal last_report
+                thistime = time.time()
+                if thistime - last_report >= interval:
+                    self.log_message(content)
+                    last_report = thistime
+
+            # Receive chunks
+            data = None
+            if nbytes <= chunk_size:
+                usetmpfile = False
+                while to_read:
+                    if data is None:
+                        data = self.rfile.read(to_read)
+                    else:
+                        data += self.rfile.read(to_read)
+                        timed_log(f'Received {len(data)} bytes of {nbytes} bytes data')
+                    to_read = nbytes - len(data)
+                if data is not None:
+                    self.log_message(f'Received {len(data)} bytes of {nbytes} bytes data')
+            else:
+                usetmpfile = True
+                self.log_message(f'Using temp file {tmpfile}')
+                with open(tmpfile, 'wb') as f:
+                    while to_read:
+                        data = self.rfile.read(to_read)
+                        f.write(data)
+                        if len(data):
+                            timed_log(f'Received {nbytes - to_read} bytes of {nbytes} bytes data')
+                        to_read -= len(data)
+                self.log_message(f'Received {nbytes - to_read} bytes of {nbytes} bytes data')
                 data = None
-            # throw away additional data [see bug #427345]
-            while select.select([self.rfile._sock], [], [], 0)[0]:
-                if not self.rfile._sock.recv(1):
-                    break
+
+            if nbytes > 0 and to_read == 0:
+                # throw away additional data [see bug #427345]
+                while select.select([self.rfile._sock], [], [], 0)[0]:
+                    if not self.rfile._sock.recv(1):
+                        break
+
+            # After received all POST form, transfer it to the CGI process
+            if usetmpfile:
+                with open(tmpfile, 'rb') as f:
+                    while True:
+                        data = f.read(chunk_size)
+                        if not data:
+                            data = None
+                            break
+                        try:
+                            p.stdin.write(data)
+                        except BrokenPipeError:
+                            break
+                os.remove(tmpfile)
+                self.log_message(f'Deleted {tmpfile}')
+
             stdout, stderr = p.communicate(data)
             self.wfile.write(stdout)
             if stderr:
                 self.log_error('%s', stderr)
-            p.stderr.close()
-            p.stdout.close()
             status = p.returncode
-            if status:
-                self.log_error("CGI script exit status %#x", status)
-            else:
-                self.log_message("CGI script exited OK")
-
+            if status is not None:
+                if status:
+                    self.log_error("CGI script exit status %#x", status)
+                else:
+                    self.log_message("CGI script exited OK")
+                p.stdout.close()
+                p.stderr.close()
+                
 
 def _get_best_family(*address):
     infos = socket.getaddrinfo(
