@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_dict.h"          // _PyDictViewObject
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_freelist, _PyListIterObject
@@ -1296,6 +1297,30 @@ list_extend_set(PyListObject *self, PySetObject *other)
 }
 
 static int
+list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
+{
+    // which_item: 0 for keys and 1 for values
+    Py_ssize_t m = Py_SIZE(self);
+    Py_ssize_t n = PyDict_GET_SIZE(dict);
+    if (list_resize(self, m + n) < 0) {
+        return -1;
+    }
+
+    PyObject **dest = self->ob_item + m;
+    Py_ssize_t pos = 0;
+    PyObject *keyvalue[2];
+    while (_PyDict_Next((PyObject *)dict, &pos, &keyvalue[0], &keyvalue[1], NULL)) {
+        PyObject *obj = keyvalue[which_item];
+        Py_INCREF(obj);
+        *dest = obj;
+        dest++;
+    }
+
+    Py_SET_SIZE(self, m + n);
+    return 0;
+}
+
+static int
 _list_extend(PyListObject *self, PyObject *iterable)
 {
     // Special case:
@@ -1320,6 +1345,18 @@ _list_extend(PyListObject *self, PyObject *iterable)
     else if (PyAnySet_CheckExact(iterable)) {
         Py_BEGIN_CRITICAL_SECTION2(self, iterable);
         res = list_extend_set(self, (PySetObject *)iterable);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (Py_IS_TYPE(iterable, &PyDictKeys_Type)) {
+        PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
+        Py_BEGIN_CRITICAL_SECTION2(self, dict);
+        res = list_extend_dict(self, dict, 0 /*keys*/);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (Py_IS_TYPE(iterable, &PyDictValues_Type)) {
+        PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
+        Py_BEGIN_CRITICAL_SECTION2(self, dict);
+        res = list_extend_dict(self, dict, 1 /*values*/);
         Py_END_CRITICAL_SECTION2();
     }
     else {
