@@ -270,6 +270,13 @@ asyncio
   the buffer size.
   (Contributed by Jamie Phan in :gh:`115199`.)
 
+* :func:`asyncio.as_completed` now returns an object that is both an
+  :term:`asynchronous iterator` and a plain :term:`iterator` of awaitables.
+  The awaitables yielded by asynchronous iteration include original task or
+  future objects that were passed in, making it easier to associate results
+  with the tasks being completed.
+  (Contributed by Justin Arthur in :gh:`77714`.)
+
 base64
 ---
 

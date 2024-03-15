@@ -867,19 +867,50 @@ Waiting Primitives
 
 .. function:: as_completed(aws, *, timeout=None)
 
-   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
-   iterable concurrently.  Return an iterator of coroutines.
-   Each coroutine returned can be awaited to get the earliest next
-   result from the iterable of the remaining awaitables.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws* iterable
+   concurrently. The returned object can be iterated to obtain the results
+   of the awaitables as they finish.
 
-   Raises :exc:`TimeoutError` if the timeout occurs before
-   all Futures are done.
+   The object returned by ``as_completed()`` can be iterated as an
+   :term:`asynchronous iterator` or a plain :term:`iterator`. When asynchronous
+   iteration is used, the originally-supplied awaitables are yielded if they
+   are tasks or futures. This makes it easy to correlate previously-scheduled
+   tasks with their results. Example::
 
-   Example::
+       ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+       ipv6_connect = create_task(open_connection("::1", 80))
+       tasks = [ipv4_connect, ipv6_connect]
 
-       for coro in as_completed(aws):
-           earliest_result = await coro
-           # ...
+       async for earliest_connect in as_completed(tasks):
+           # earliest_connect is done. The result can be obtained by
+           # awaiting it or calling earliest_connect.result()
+           reader, writer = await earliest_connect
+
+           if earliest_connect is ipv6_connect:
+               print("IPv6 connection established.")
+           else:
+               print("IPv4 connection established.")
+
+   During asynchronous iteration, implicitly-created tasks will be yielded for
+   supplied awaitables that aren't tasks or futures.
+
+   When used as a plain iterator, each iteration yields a new coroutine that
+   returns the result or raises the exception of the next completed awaitable.
+   This pattern is compatible with Python versions older than 3.13::
+
+       ipv4_connect = create_task(open_connection("127.0.0.1", 80))
+       ipv6_connect = create_task(open_connection("::1", 80))
+       tasks = [ipv4_connect, ipv6_connect]
+
+       for next_connect in as_completed(tasks):
+           # next_connect is not one of the original task objects. It must be
+           # awaited to obtain the result value or raise the exception of the
+           # awaitable that finishes next.
+           reader, writer = await next_connect
+
+   A :exc:`TimeoutError` is raised if the timeout occurs before all awaitables
+   are done. This is raised by the ``async for`` loop during asynchronous
+   iteration or by the coroutines yielded during plain iteration.
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
@@ -890,6 +921,10 @@ Waiting Primitives
 
    .. versionchanged:: 3.12
       Added support for generators yielding tasks.
+
+   .. versionchanged:: 3.13
+      The result can now be used as either an :term:`asynchronous iterator`
+      or as a plain :term:`iterator` (previously it was only a plain iterator).
 
 
 Running in Threads

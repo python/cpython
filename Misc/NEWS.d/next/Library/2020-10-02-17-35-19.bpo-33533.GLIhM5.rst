@@ -1,0 +1,5 @@
+:func:`asyncio.as_completed` now returns an object that is both an asynchronous
+iterator and plain iterator. The new asynchronous iteration pattern allows for
+easier correlation between prior tasks and their completed results. This is
+a closer match to :func:`concurrent.futures.as_completed`'s iteration pattern.
+Patch by Justin Arthur.
