@@ -396,7 +396,6 @@ class Server(object):
                     raise TypeError(
                         "Method_to_typeid {0!r}: type {1!s}, not dict".format(
                             method_to_typeid, type(method_to_typeid)))
-                exposed = list(exposed) + list(method_to_typeid)
 
             ident = '%x' % id(obj)  # convert to string because xmlrpclib
                                     # only has 32 bit signed integers
@@ -729,7 +728,7 @@ class BaseManager(object):
                 token, exp = self._create(typeid, *args, **kwds)
                 proxy = proxytype(
                     token, self._serializer, manager=self,
-                    authkey=self._authkey, exposed=exp
+                    registry=cls._registry, authkey=self._authkey, exposed=exp
                     )
                 conn = self._Client(token.address, authkey=self._authkey)
                 dispatch(conn, None, 'decref', (token.id,))
@@ -758,7 +757,7 @@ class BaseProxy(object):
     _address_to_local = {}
     _mutex = util.ForkAwareThreadLock()
 
-    def __init__(self, token, serializer, manager=None,
+    def __init__(self, token, serializer, manager=None, registry=None,
                  authkey=None, exposed=None, incref=True, manager_owned=False):
         with BaseProxy._mutex:
             tls_idset = BaseProxy._address_to_local.get(token.address, None)
@@ -778,6 +777,7 @@ class BaseProxy(object):
         self._token = token
         self._id = self._token.id
         self._manager = manager
+        self._registry = registry
         self._serializer = serializer
         self._Client = listener_client[serializer][1]
 
@@ -827,11 +827,11 @@ class BaseProxy(object):
             return result
         elif kind == '#PROXY':
             exposed, token = result
-            proxytype = self._manager._registry[token.typeid][-1]
+            proxytype = self._registry[token.typeid][-1]
             token.address = self._token.address
             proxy = proxytype(
                 token, self._serializer, manager=self._manager,
-                authkey=self._authkey, exposed=exposed
+                registry=self._registry, authkey=self._authkey, exposed=exposed
                 )
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
@@ -901,7 +901,7 @@ class BaseProxy(object):
             util.info('incref failed: %s' % e)
 
     def __reduce__(self):
-        kwds = {}
+        kwds = {'registry': self._registry}
         if get_spawning_popen() is not None:
             kwds['authkey'] = self._authkey
 
@@ -976,7 +976,7 @@ def MakeProxyType(name, exposed, _cache={}):
     return ProxyType
 
 
-def AutoProxy(token, serializer, manager=None, authkey=None,
+def AutoProxy(token, serializer, manager=None, authkey=None, registry=None,
               exposed=None, incref=True, manager_owned=False):
     '''
     Return an auto-proxy for `token`
@@ -996,8 +996,9 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
         authkey = process.current_process().authkey
 
     ProxyType = MakeProxyType('AutoProxy[%s]' % token.typeid, exposed)
-    proxy = ProxyType(token, serializer, manager=manager, authkey=authkey,
-                      incref=incref, manager_owned=manager_owned)
+    proxy = ProxyType(token, serializer, manager=manager, registry=registry,
+                      authkey=authkey, incref=incref,
+                      manager_owned=manager_owned)
     proxy._isauto = True
     return proxy
 

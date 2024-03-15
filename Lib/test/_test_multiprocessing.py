@@ -2990,13 +2990,31 @@ class IteratorProxy(BaseProxy):
     def __next__(self):
         return self._callmethod('__next__')
 
+class Parent(object):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def make_child(self):
+        return Parent()
+
+class ParentProxy(BaseProxy):
+    _exposed_ = ('make_child',)
+
+    def make_child(self):
+        return self._callmethod('make_child')
+
 class MyManager(BaseManager):
     pass
 
 MyManager.register('Foo', callable=FooBar)
 MyManager.register('Bar', callable=FooBar, exposed=('f', '_h'))
 MyManager.register('baz', callable=baz, proxytype=IteratorProxy)
-
+MyManager.register('Parent',
+                   callable=Parent, proxytype=ParentProxy,
+                   method_to_typeid={'make_child': 'Parent'})
+MyManager.register('AutoParent',
+                   callable=Parent,
+                   method_to_typeid={'make_child': 'AutoParent'})
 
 class _TestMyManager(BaseTestCase):
 
@@ -3029,10 +3047,34 @@ class _TestMyManager(BaseTestCase):
             self.common(manager)
         self.assertEqual(manager._process.exitcode, 0)
 
+    def test_proxy_can_access_registry_in_separate_process(self):
+        # Given
+        with MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT) as manager:
+            # When
+            parent = manager.Parent()
+            exitcode = self._create_child_in_separate_process(parent)
+
+        # Then
+        self.assertEqual(0, exitcode)
+
+    def test_autoproxy_can_access_registry_in_separate_process(self):
+        # Given
+        with MyManager(shutdown_timeout=SHUTDOWN_TIMEOUT) as manager:
+            # When
+            parent = manager.AutoParent()
+            exitcode = self._create_child_in_separate_process(parent)
+
+        # Then
+        self.assertEqual(0, exitcode)
+
     def common(self, manager):
         foo = manager.Foo()
         bar = manager.Bar()
         baz = manager.baz()
+        child = manager.Parent().make_child()
+        auto_child = manager.AutoParent().make_child()
+        auto_child_type = multiprocessing.managers.\
+            MakeProxyType("AutoProxy[AutoParent]", exposed=("make_child", ))
 
         foo_methods = [name for name in ('f', 'g', '_h') if hasattr(foo, name)]
         bar_methods = [name for name in ('f', 'g', '_h') if hasattr(bar, name)]
@@ -3051,7 +3093,20 @@ class _TestMyManager(BaseTestCase):
         self.assertEqual(bar._callmethod('_h'), '_h()')
 
         self.assertEqual(list(baz), [i*i for i in range(10)])
+        self.assertEqual(ParentProxy, type(child))
+        self.assertEqual(auto_child_type, type(auto_child))
 
+    def _create_child_in_separate_process(self, parent):
+        process = self.Process(target=self._child_generator,
+                               args=(parent, ), daemon=True)
+        process.start()
+        process.join(timeout=SHUTDOWN_TIMEOUT)
+
+        return process.exitcode
+
+    @classmethod
+    def _child_generator(cls, parent):
+        parent.make_child()
 
 #
 # Test of connecting to a remote server and using xmlrpclib for serialization
