@@ -1,0 +1,2 @@
+Fix the ``platform._sys_version()`` method when ``__DATE__`` is undefined at
+buildtime by changing undefined date-string from ``xx/xx/xx`` to ``xxx xx xxx``.
