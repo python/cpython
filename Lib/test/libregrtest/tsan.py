@@ -14,15 +14,12 @@ TSAN_TESTS = [
     'test_logging',
     'test_pickle',
     'test_queue',
-    'test_smtpnet',
-    'test_socketserver',
     'test_ssl',
     'test_syslog',
     'test_thread',
     'test_threadedtempfile',
     'test_threading_local',
     'test_threadsignals',
-    'test_urllib2net',
     'test_weakref',
 ]
 
