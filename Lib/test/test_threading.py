@@ -47,12 +47,9 @@ def skip_unless_reliable_fork(test):
         return unittest.skip("due to known OS bug related to thread+fork")(test)
     if support.HAVE_ASAN_FORK_BUG:
         return unittest.skip("libasan has a pthread_create() dead lock related to thread+fork")(test)
+    if support.check_sanitizer(thread=True):
+        return unittest.skip("TSAN doesn't support threads after fork")
     return test
-
-
-skip_if_tsan_fork = unittest.skipIf(
-    support.check_sanitizer(thread=True),
-    "TSAN doesn't support threads after fork")
 
 
 def requires_subinterpreters(meth):
@@ -428,6 +425,10 @@ class ThreadTests(BaseTestCase):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
         # very late on python exit: on deallocation of a running thread for
         # example.
+        if support.check_sanitizer(thread=True):
+            # the thread running `time.sleep(100)` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
         import_module("ctypes")
 
         rc, out, err = assert_python_failure("-c", """if 1:
@@ -460,6 +461,11 @@ class ThreadTests(BaseTestCase):
     def test_finalize_with_trace(self):
         # Issue1733757
         # Avoid a deadlock when sys.settrace steps into threading._shutdown
+        if support.check_sanitizer(thread=True):
+            # the thread running `time.sleep(2)` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
+
         assert_python_ok("-c", """if 1:
             import sys, threading
 
@@ -639,7 +645,6 @@ class ThreadTests(BaseTestCase):
         self.assertTrue(t.daemon)
 
     @skip_unless_reliable_fork
-    @skip_if_tsan_fork
     def test_dummy_thread_after_fork(self):
         # Issue #14308: a dummy thread in the active list doesn't mess up
         # the after-fork mechanism.
@@ -709,7 +714,6 @@ class ThreadTests(BaseTestCase):
 
     @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
-    @skip_if_tsan_fork
     def test_main_thread_after_fork(self):
         code = """if 1:
             import os, threading
@@ -1278,7 +1282,6 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @skip_unless_reliable_fork
-    @skip_if_tsan_fork
     def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
         # In the forked process, the main Thread object must be marked as stopped.
@@ -1311,6 +1314,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.
+        if support.check_sanitizer(thread=True):
+            # some of the threads running `random_io` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
+
         script = """if True:
             import os
             import random
