@@ -827,8 +827,8 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    ``(host, port)``) and returns the socket object.
 
    *family* should be either :data:`AF_INET` or :data:`AF_INET6`.
-   *backlog* is the queue size passed to :meth:`socket.listen`; if not specified
-   , a default reasonable value is chosen.
+   *backlog* is the queue size passed to :meth:`socket.listen`; if not
+   specified, a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
    If *dualstack_ipv6* is true and the platform supports it the socket will
@@ -963,15 +963,15 @@ The :mod:`socket` module also offers various network-related services:
       for IPv6 multicast addresses, string representing an address will not
       contain ``%scope_id`` part.
 
-.. function:: getfqdn([name])
+.. function:: getfqdn(name='')
 
-   Return a fully qualified domain name for *name*. If *name* is omitted or empty,
-   it is interpreted as the local host.  To find the fully qualified name, the
+   Return a fully qualified domain name for *name*.
+   To find the fully qualified name, the
    hostname returned by :func:`gethostbyaddr` is checked, followed by aliases for the
    host, if available.  The first name which includes a period is selected.  In
    case no fully qualified domain name is available and *name* was provided,
-   it is returned unchanged.  If *name* was empty or equal to ``'0.0.0.0'``,
-   the hostname from :func:`gethostname` is returned.
+   it is returned unchanged. If *name* is omitted, or equal to ``'0.0.0.0'``,
+   ``'::'``, or ``''``, the hostname from :func:`gethostname` is returned.
 
 
 .. function:: gethostbyname(hostname)
