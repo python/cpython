@@ -1,0 +1,3 @@
+Change automatically generated :class:`tkinter.Checkbutton` widget names to
+avoid collisions with automatically generated
+:class:`tkinter.ttk.Checkbutton` widget names within the same parent widget.
