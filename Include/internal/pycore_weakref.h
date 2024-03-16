@@ -71,6 +71,8 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
     return ret;
 }
 
+// NB: In free-threaded builds the referenced object must be live for the
+// duration of the call.
 extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
 
 extern void _PyWeakref_ClearRef(PyWeakReference *self);
@@ -79,4 +81,3 @@ extern void _PyWeakref_ClearRef(PyWeakReference *self);
 }
 #endif
 #endif /* !Py_INTERNAL_WEAKREF_H */
-

@@ -108,11 +108,15 @@ Py_ssize_t
 _PyWeakref_GetWeakrefCount(PyWeakReference *head)
 {
     Py_ssize_t count = 0;
-
+    if (head == NULL) {
+        return 0;
+    }
+    Py_BEGIN_CRITICAL_SECTION(head->wr_object);
     while (head != NULL) {
         ++count;
         head = head->wr_next;
     }
+    Py_END_CRITICAL_SECTION();
     return count;
 }
 
