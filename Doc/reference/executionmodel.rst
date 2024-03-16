@@ -136,7 +136,7 @@ for examples.
 If the :keyword:`global` statement occurs within a block, all uses of the names
 specified in the statement refer to the bindings of those names in the top-level
 namespace.  Names are resolved in the top-level namespace by searching the
-global namespace, the namespace of the module containing the code block,
+global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the names are not found there, the
 builtins namespace is searched next.  If the names are also not found in the
