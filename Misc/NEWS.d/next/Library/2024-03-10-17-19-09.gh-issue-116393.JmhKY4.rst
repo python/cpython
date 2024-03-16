@@ -1,0 +1,1 @@
+:func:`glob.translate` "**" can match empty path parts when recursive=True
