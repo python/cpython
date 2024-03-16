@@ -2,20 +2,34 @@
 # chosen because they use threads and run in a reasonable amount of time.
 
 TSAN_TESTS = [
+    'test_asyncio',
+    'test_capi',
     'test_code',
+    'test_compileall',
+    'test_concurrent_futures',
     'test_enum',
     'test_functools',
+    'test_fork1',
     'test_httpservers',
     'test_imaplib',
     'test_importlib',
     'test_io',
     'test_logging',
+    'test_multiprocessing_forkserver',
+    'test_multiprocessing_spawn',
+    'test_pickle',
+    'test_queue',
+    'test_smtpnet',
+    'test_socketserver',
     'test_ssl',
     'test_syslog',
     'test_thread',
     'test_threadedtempfile',
+    'test_threading',
     'test_threading_local',
     'test_threadsignals',
+    'test_urlib2net',
+    'test_weakref',
 ]
 
 
