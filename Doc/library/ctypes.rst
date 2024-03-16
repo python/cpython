@@ -93,7 +93,6 @@ Accessing functions from loaded dlls
 
 Functions are accessed as attributes of dll objects::
 
-   >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
    >>> print(windll.kernel32.GetModuleHandleA)  # doctest: +WINDOWS
