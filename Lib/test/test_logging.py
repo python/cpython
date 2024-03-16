@@ -80,6 +80,9 @@ except ImportError:
 skip_if_asan_fork = unittest.skipIf(
     support.HAVE_ASAN_FORK_BUG,
     "libasan has a pthread_create() dead lock related to thread+fork")
+skip_if_tsan_fork = unittest.skipIf(
+    support.check_sanitizer(thread=True),
+    "TSAN doesn't support threads after fork")
 
 
 class BaseTest(unittest.TestCase):
@@ -731,6 +734,7 @@ class HandlerTest(BaseTest):
     @support.requires_fork()
     @threading_helper.requires_working_threading()
     @skip_if_asan_fork
+    @skip_if_tsan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
