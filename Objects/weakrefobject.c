@@ -220,6 +220,23 @@ clear_weakref(PyWeakReference *self)
 }
 
 static void
+clear_weakref_only(PyWeakReference *self)
+{
+    _PyWeakRefUnlinker *unlinker = self->unlinker;
+    _PyWeakRefUnlinker_Incref(unlinker);
+
+    if (_PyWeakRefUnlinker_Start(unlinker)) {
+        unlink_weakref(self);
+        _PyWeakRefUnlinker_Finish(unlinker);
+    }
+    else {
+        _PyWeakRefUnlinker_Wait(unlinker);
+    }
+
+    _PyWeakRefUnlinker_Decref(unlinker);
+}
+
+static void
 gc_clear_weakref(PyWeakReference *self)
 {
     gc_unlink_weakref(self);
@@ -1323,4 +1340,26 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
         clear_weakref((PyWeakReference *)*list);
     }
     Py_END_CRITICAL_SECTION();
+}
+
+void
+_PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
+{
+    /* Modeled after GET_WEAKREFS_LISTPTR().
+
+       This is never triggered for static types so we can avoid the
+       (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR(). */
+    PyWeakReference **list =                                            \
+            _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(obj);
+#ifdef Py_GIL_DISABLED
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    while (*list != NULL) {
+        clear_weakref_only((PyWeakReference *)*list);
+    }
+    Py_END_CRITICAL_SECTION();
+#else
+    while (*list) {
+        _PyWeakref_ClearRef(*list);
+    }
+#endif
 }

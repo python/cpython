@@ -75,6 +75,10 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
 // duration of the call.
 extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
 
+// Clear all the weak references to obj but leave their callbacks uncalled and
+// intact.
+extern void _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj);
+
 extern void _PyWeakref_ClearRef(PyWeakReference *self);
 
 #ifdef __cplusplus
