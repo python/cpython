@@ -334,7 +334,10 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                         daysToWait = self.dayOfWeek - day
                     else:
                         daysToWait = 6 - day + self.dayOfWeek + 1
-                    result += daysToWait * (60 * 60 * 24)
+                    result += daysToWait * _MIDNIGHT
+                result += self.interval - _MIDNIGHT * 7
+            else:
+                result += self.interval - _MIDNIGHT
             if not self.utc:
                 dstNow = t[-1]
                 dstAtRollover = time.localtime(result)[-1]
