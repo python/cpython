@@ -16,7 +16,7 @@ import can be suppressed using the interpreter's :option:`-S` option.
 .. index:: triple: module; search; path
 
 Importing this module will append site-specific paths to the module search path
-and add a few builtins, unless :option:`-S` was used.  In that case, this module
+and add :ref:`a few builtins <site-consts>`, unless :option:`-S` was used.  In that case, this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
 additions, call the :func:`main` function.
