@@ -192,9 +192,9 @@ The following implementation-specific options are available:\n\
 -X dev : enable Python Development Mode; also PYTHONDEVMODE\n\
 -X faulthandler: dump the Python traceback on fatal errors;\n\
          also PYTHONFAULTHANDLER\n\
--X frozen_modules=[on|off]: whether to use frozen modules\n\
-         The default is \"on\" for installed Python and \"off\" for a local build.\n\
-         Also PYTHON_FROZEN_MODULES.\n\
+-X frozen_modules=[on|off]: whether to use frozen modules; the default is \"on\"\n\
+         for installed Python and \"off\" for a local build;\n\
+         also PYTHON_FROZEN_MODULES\n\
 -X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
@@ -259,15 +259,15 @@ static const char usage_envvars[] =
 "PYTHONDEVMODE   : enable Python Development Mode (-X dev)\n"
 "PYTHONDONTWRITEBYTECODE: don't write .pyc files (-B)\n"
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors (-X faulthandler)\n"
-"PYTHON_FROZEN_MODULES: whether to use frozen modules\n"
-"                  The default is \"on\" for installed Python and \"off\" for\n"
-"                  a local build (-X frozen_modules)\n"
+"PYTHON_FROZEN_MODULES: whether to use frozen modules; the default is \"on\"\n"
+"                  for installed Python and \"off\" for a local build\n"
+"                  (-X frozen_modules)\n"
 #ifdef Py_GIL_DISABLED
 "PYTHON_GIL      : when set to 0, disables the GIL (-X gil)\n"
 #endif
 "PYTHONINSPECT   : inspect interactively after running script (-i)\n"
 "PYTHONINTMAXSTRDIGITS: limit the size of int<->str conversions;\n"
-"                  0 disables the limit (-X int_max_str_digits=number)\n"
+"                  0 disables the limit (-X int_max_str_digits=N)\n"
 "PYTHONNODEBUGRANGES: don't include extra location information in code objects\n"
 "                  (-X no_debug_ranges)\n"
 "PYTHONNOUSERSITE: disable user site directory (-s)\n"
