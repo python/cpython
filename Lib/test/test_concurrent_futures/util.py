@@ -85,6 +85,8 @@ class ProcessPoolForkMixin(ExecutorMixin):
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        if support.check_sanitizer(thread=True):
+            self.skipTest("TSAN doesn't support threads after fork")
         return super().get_context()
 
 
@@ -111,6 +113,8 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        if support.check_sanitizer(thread=True):
+            self.skipTest("TSAN doesn't support threads after fork")
         return super().get_context()
 
 
