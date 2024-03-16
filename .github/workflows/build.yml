@@ -484,6 +484,24 @@ jobs:
     - name: Tests
       run: xvfb-run make test
 
+  build_tsan:
+    name: 'Thread sanitizer'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-tsan.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: ./configure --config-cache --with-thread-sanitizer --with-pydebug
+
+  build_tsan_free_threading:
+    name: 'Thread sanitizer (free-threading)'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-tsan.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: ./configure --config-cache --disable-gil --with-thread-sanitizer --with-pydebug
+
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
     name: CIFuzz
@@ -542,6 +560,8 @@ jobs:
     - build_windows_free_threading
     - test_hypothesis
     - build_asan
+    - build_tsan
+    - build_tsan_free_threading
     - cifuzz
 
     runs-on: ubuntu-latest
@@ -575,6 +595,8 @@ jobs:
             build_windows,
             build_windows_free_threading,
             build_asan,
+            build_tsan,
+            build_tsan_free_threading,
             '
             || ''
           }}
