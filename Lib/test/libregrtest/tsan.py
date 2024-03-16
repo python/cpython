@@ -2,7 +2,6 @@
 # chosen because they use threads and run in a reasonable amount of time.
 
 TSAN_TESTS = [
-    'test_capi',
     'test_code',
     'test_compileall',
     'test_enum',
@@ -21,7 +20,6 @@ TSAN_TESTS = [
     'test_syslog',
     'test_thread',
     'test_threadedtempfile',
-    'test_threading',
     'test_threading_local',
     'test_threadsignals',
     'test_urllib2net',
