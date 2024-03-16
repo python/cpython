@@ -15,6 +15,7 @@ TSAN_TESTS = [
     'test_syslog',
     'test_thread',
     'test_threadedtempfile',
+    'test_threading',
     'test_threading_local',
     'test_threadsignals',
     'test_weakref',
