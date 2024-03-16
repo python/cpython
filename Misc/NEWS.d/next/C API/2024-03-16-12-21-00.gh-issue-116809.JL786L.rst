@@ -1,0 +1,2 @@
+Restore removed private ``_PyErr_ChainExceptions1()`` function. Patch by
+Victor Stinner.
