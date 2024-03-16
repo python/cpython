@@ -490,42 +490,14 @@ jobs:
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    steps:
-    - uses: actions/checkout@v4
-    - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
-    - name: Install Dependencies
-      run: |
-        sudo ./.github/workflows/posix-deps-apt.sh
-        sudo apt install -y clang
-        # Reduce ASLR to avoid TSAN crashing
-        sudo sysctl -w vm.mmap_rnd_bits=28
-    - name: TSAN Option Setup
-      run: |
-        echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
-        echo "CC=clang" >> $GITHUB_ENV
-        echo "CXX=clang++" >> $GITHUB_ENV
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
-    - name: Configure CPython
-      run: ./configure --config-cache --with-thread-sanitizer --with-pydebug
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: Tests
-      run: ./python -m test --tsan -j4
+    uses: ./.github/workflows/reusable-tsan.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: |
+        ../cpython-ro-srcdir/configure \
+          --config-cache \
+          --with-thread-sanitizer \
+          --with-pydebug
 
   build_tsan_free_threading:
     name: 'Thread sanitizer (free-threading)'
@@ -533,42 +505,15 @@ jobs:
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    steps:
-    - uses: actions/checkout@v4
-    - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
-    - name: Restore config.cache
-      uses: actions/cache@v4
-      with:
-        path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
-    - name: Install Dependencies
-      run: |
-        sudo ./.github/workflows/posix-deps-apt.sh
-        sudo apt install -y clang
-        # Reduce ASLR to avoid TSAN crashing
-        sudo sysctl -w vm.mmap_rnd_bits=28
-    - name: TSAN Option Setup
-      run: |
-        echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
-        echo "CC=clang" >> $GITHUB_ENV
-        echo "CXX=clang++" >> $GITHUB_ENV
-    - name: Add ccache to PATH
-      run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
-    - name: Configure ccache action
-      uses: hendrikmuhs/ccache-action@v1.2
-      with:
-        save: ${{ github.event_name == 'push' }}
-        max-size: "200M"
-    - name: Configure CPython
-      run: ./configure --config-cache --disable-gil --with-thread-sanitizer --with-pydebug
-    - name: Build CPython
-      run: make -j4
-    - name: Display build info
-      run: make pythoninfo
-    - name: Tests
-      run: ./python -m test --tsan -j4
+    uses: ./.github/workflows/reusable-tsan.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: |
+        ../cpython-ro-srcdir/configure \
+          --config-cache \
+          --disable-gil  \
+          --with-thread-sanitizer \
+          --with-pydebug4
 
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
