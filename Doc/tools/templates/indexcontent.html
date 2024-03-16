@@ -11,23 +11,23 @@
   <table class="contentstable" align="center"><tr>
     <td width="50%">
       <p class="biglink"><a class="biglink" href="{{ pathto("whatsnew/" + version) }}">{% trans %}What's new in Python {{ version }}?{% endtrans %}</a><br/>
-         <span class="linkdescr"> {% trans whatsnew_index=pathto("whatsnew/index") %}or <a href="{{ whatsnew_index }}">All "What's new" documents since Python 2.0</a>{% endtrans %}</span></p>
+         <span class="linkdescr"> {% trans whatsnew_index=pathto("whatsnew/index") %}Or <a href="{{ whatsnew_index }}">all "What's new" documents since Python 2.0</a>{% endtrans %}</span></p>
       <p class="biglink"><a class="biglink" href="{{ pathto("tutorial/index") }}">{% trans %}Tutorial{% endtrans %}</a><br/>
-         <span class="linkdescr">{% trans %}A tour of Python's syntax and features (start here){% endtrans %}</span></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("library/index") }}">{% trans %}Library Reference{% endtrans %}</a><br/>
-         <span class="linkdescr">{% trans %}Standard Library and builtins{% endtrans %}</span></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("reference/index") }}">{% trans %}Language Reference{% endtrans %}</a><br/>
+         <span class="linkdescr">{% trans %}Start here: a tour of Python's syntax and features{% endtrans %}</span></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("library/index") }}">{% trans %}Library reference{% endtrans %}</a><br/>
+         <span class="linkdescr">{% trans %}Standard library and builtins{% endtrans %}</span></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("reference/index") }}">{% trans %}Language reference{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}Syntax and language elements{% endtrans %}</span></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("using/index") }}">{% trans %}Python Setup and Usage{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("using/index") }}">{% trans %}Python setup and usage{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}How to install, configure, and use Python{% endtrans %}</span></p>
       <p class="biglink"><a class="biglink" href="{{ pathto("howto/index") }}">{% trans %}Python HOWTOs{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}In-depth topic manuals{% endtrans %}</span></p>
     </td><td width="50%">
-      <p class="biglink"><a class="biglink" href="{{ pathto("installing/index") }}">{% trans %}Installing Python Modules{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("installing/index") }}">{% trans %}Installing Python modules{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}Third-party modules and PyPI.org{% endtrans %}</span></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("distributing/index") }}">{% trans %}Distributing Python Modules{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("distributing/index") }}">{% trans %}Distributing Python modules{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}Publishing modules for use by other people{% endtrans %}</span></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("extending/index") }}">{% trans %}Extending and Embedding{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("extending/index") }}">{% trans %}Extending and embedding{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}For C/C++ programmers{% endtrans %}</span></p>
       <p class="biglink"><a class="biglink" href="{{ pathto("c-api/index") }}">{% trans %}Python's C API{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}C API reference{% endtrans %}</span></p>
@@ -39,16 +39,16 @@
   <p><strong>{% trans %}Indices, glossary, and search:{% endtrans %}</strong></p>
   <table class="contentstable" align="center"><tr>
     <td width="50%">
-      <p class="biglink"><a class="biglink" href="{{ pathto("py-modindex") }}">{% trans %}Global Module Index{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("py-modindex") }}">{% trans %}Global module index{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}All modules and libraries{% endtrans %}</span></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("genindex") }}">{% trans %}General Index{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("genindex") }}">{% trans %}General index{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}All functions, classes, and terms{% endtrans %}</span></p>
       <p class="biglink"><a class="biglink" href="{{ pathto("glossary") }}">{% trans %}Glossary{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}Terms explained{% endtrans %}</span></p>
     </td><td width="50%">
-      <p class="biglink"><a class="biglink" href="{{ pathto("search") }}">{% trans %}Search Page{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("search") }}">{% trans %}Search page{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}Search this documentation{% endtrans %}</span></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("contents") }}">{% trans %}Complete Table of Contents{% endtrans %}</a><br/>
+      <p class="biglink"><a class="biglink" href="{{ pathto("contents") }}">{% trans %}Complete table of contents{% endtrans %}</a><br/>
          <span class="linkdescr">{% trans %}Lists all sections and subsections{% endtrans %}</span></p>
     </td></tr>
   </table>
@@ -56,13 +56,13 @@
   <p><strong>{% trans %}Project information:{% endtrans %}</strong></p>
   <table class="contentstable" align="center"><tr>
     <td width="50%">
-      <p class="biglink"><a class="biglink" href="{{ pathto("bugs") }}">{% trans %}Reporting Issues{% endtrans %}</a></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("bugs") }}">{% trans %}Reporting issues{% endtrans %}</a></p>
       <p class="biglink"><a class="biglink" href="https://devguide.python.org/docquality/#helping-with-documentation">{% trans %}Contributing to Docs{% endtrans %}</a></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("about") }}">{% trans %}About the Documentation{% endtrans %}</a></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("about") }}">{% trans %}About the documentation{% endtrans %}</a></p>
     </td><td width="50%">
-      <p class="biglink"><a class="biglink" href="{{ pathto("license") }}">{% trans %}History and License of Python{% endtrans %}</a></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("license") }}">{% trans %}License and history of Python{% endtrans %}</a></p>
       <p class="biglink"><a class="biglink" href="{{ pathto("copyright") }}">{% trans %}Copyright{% endtrans %}</a></p>
-      <p class="biglink"><a class="biglink" href="{{ pathto("download") }}">{% trans %}Download the Documentation{% endtrans %}</a></p>
+      <p class="biglink"><a class="biglink" href="{{ pathto("download") }}">{% trans %}Download the documentation{% endtrans %}</a></p>
     </td></tr>
   </table>
 {% endblock %}
