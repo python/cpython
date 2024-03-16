@@ -189,21 +189,21 @@ static const char usage_xoptions[] = "\
 The following implementation-specific options are available:\n\
 -X cpu_count=N: override the return value of os.cpu_count();\n\
          -X cpu_count=default cancels overriding; also PYTHON_CPU_COUNT\n\
--X dev : enable Python development mode; also PYTHONDEVMODE\n\
+-X dev : enable Python Development Mode; also PYTHONDEVMODE\n\
 -X faulthandler: dump the Python traceback on fatal errors;\n\
          also PYTHONFAULTHANDLER\n\
--X frozen_modules=[on|off]: whether or not frozen modules should be used.\n\
+-X frozen_modules=[on|off]: whether to use frozen modules\n\
          The default is \"on\" for installed Python and \"off\" for a local build.\n\
          Also PYTHON_FROZEN_MODULES.\n\
 -X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
--X int_max_str_digits=number: limit the size of int<->str conversions;\n\
+-X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
 "
 #ifdef Py_DEBUG
-"-X presite=MOD: import this module before site is imported; also PYTHON_PRESITE\n"
+"-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
 #endif
 "\
 -X pycache_prefix=PATH: write .pyc files to a parallel tree instead of to the\n\
@@ -217,7 +217,7 @@ The following implementation-specific options are available:\n\
          memory blocks when the program finishes or after each statement in\n\
          the interactive interpreter; only works on debug builds\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n\
-         of N frames (1 by default); also PYTHONTRACEMALLOC=N\n\
+         of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
 -X warn_default_encoding: enable opt-in EncodingWarning for 'encoding=None';\n\
          also PYTHONWARNDEFAULTENCODING\
@@ -256,12 +256,12 @@ static const char usage_envvars[] =
 "These variables have equivalent command-line options (see --help for details):\n"
 "PYTHON_CPU_COUNT: override the return value of os.cpu_count() (-X cpu_count)\n"
 "PYTHONDEBUG     : enable parser debug mode (-d)\n"
-"PYTHONDEVMODE   : enable the Python development mode (-X dev)\n"
+"PYTHONDEVMODE   : enable Python Development Mode (-X dev)\n"
 "PYTHONDONTWRITEBYTECODE: don't write .pyc files (-B)\n"
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors (-X faulthandler)\n"
-"PYTHON_FROZEN_MODULES: whether or not frozen modules should be used.\n"
+"PYTHON_FROZEN_MODULES: whether to use frozen modules\n"
 "                  The default is \"on\" for installed Python and \"off\" for\n"
-"                  a local build. (-X frozen_modules)\n"
+"                  a local build (-X frozen_modules)\n"
 #ifdef Py_GIL_DISABLED
 "PYTHON_GIL      : when set to 0, disables the GIL (-X gil)\n"
 #endif
@@ -274,7 +274,7 @@ static const char usage_envvars[] =
 "PYTHONOPTIMIZE  : enable level 1 optimizations (-O)\n"
 "PYTHONPERFSUPPORT: support the Linux \"perf\" profiler (-X perf)\n"
 #ifdef Py_DEBUG
-"PYTHON_PRESITE: import this module before site is imported (-X presite)\n"
+"PYTHON_PRESITE: import this module before site (-X presite)\n"
 #endif
 "PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
