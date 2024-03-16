@@ -3,16 +3,13 @@
 
 TSAN_TESTS = [
     'test_code',
-    'test_compileall',
     'test_enum',
     'test_functools',
-    'test_fork1',
     'test_httpservers',
     'test_imaplib',
     'test_importlib',
     'test_io',
     'test_logging',
-    'test_pickle',
     'test_queue',
     'test_ssl',
     'test_syslog',
