@@ -1,0 +1,4 @@
+Accepting objects with false values (like ``0`` and ``[]``) except empty
+strings and byte-like objects and ``None`` in :mod:`urllib.parse` functions
+:func:`urllib.parse.parse_qsl` and :func:`urllib.parse.parse_qs` is now
+deprecated.
