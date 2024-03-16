@@ -486,8 +486,6 @@ jobs:
 
   build_tsan:
     name: 'Thread sanitizer'
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-tsan.yml
@@ -501,8 +499,6 @@ jobs:
 
   build_tsan_free_threading:
     name: 'Thread sanitizer (free-threading)'
-    runs-on: ubuntu-22.04
-    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-tsan.yml
