@@ -3074,11 +3074,16 @@ class Checkbutton(Widget):
         Widget.__init__(self, master, 'checkbutton', cnf, kw)
 
     def _setup(self, master, cnf):
+        # Because Checkbutton defaults to a variable with the same name as
+        # the widget, Checkbutton default names must be globally unique,
+        # not just unique within the parent widget.
         if not cnf.get('name'):
             global _checkbutton_count
             name = self.__class__.__name__.lower()
             _checkbutton_count += 1
-            cnf['name'] = f'!{name}{_checkbutton_count}'
+            # To avoid collisions with ttk.Checkbutton, use the different
+            # name template.
+            cnf['name'] = f'!{name}-{_checkbutton_count}'
         super()._setup(master, cnf)
 
     def deselect(self):
