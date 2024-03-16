@@ -47,12 +47,9 @@ def skip_unless_reliable_fork(test):
         return unittest.skip("due to known OS bug related to thread+fork")(test)
     if support.HAVE_ASAN_FORK_BUG:
         return unittest.skip("libasan has a pthread_create() dead lock related to thread+fork")(test)
+    if support.check_sanitizer(thread=True):
+        return unittest.skip("TSAN doesn't support threads after fork")
     return test
-
-
-skip_if_tsan_fork = unittest.skipIf(
-    support.check_sanitizer(thread=True),
-    "TSAN doesn't support threads after fork")
 
 
 def requires_subinterpreters(meth):
@@ -411,7 +408,7 @@ class ThreadTests(BaseTestCase):
 
     def test_limbo_cleanup(self):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
-        def fail_new_thread(*args):
+        def fail_new_thread(*args, **kwargs):
             raise threading.ThreadError()
         _start_joinable_thread = threading._start_joinable_thread
         threading._start_joinable_thread = fail_new_thread
@@ -428,6 +425,10 @@ class ThreadTests(BaseTestCase):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
         # very late on python exit: on deallocation of a running thread for
         # example.
+        if support.check_sanitizer(thread=True):
+            # the thread running `time.sleep(100)` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
         import_module("ctypes")
 
         rc, out, err = assert_python_failure("-c", """if 1:
@@ -460,6 +461,11 @@ class ThreadTests(BaseTestCase):
     def test_finalize_with_trace(self):
         # Issue1733757
         # Avoid a deadlock when sys.settrace steps into threading._shutdown
+        if support.check_sanitizer(thread=True):
+            # the thread running `time.sleep(2)` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
+
         assert_python_ok("-c", """if 1:
             import sys, threading
 
@@ -639,7 +645,6 @@ class ThreadTests(BaseTestCase):
         self.assertTrue(t.daemon)
 
     @skip_unless_reliable_fork
-    @skip_if_tsan_fork
     def test_dummy_thread_after_fork(self):
         # Issue #14308: a dummy thread in the active list doesn't mess up
         # the after-fork mechanism.
@@ -709,7 +714,6 @@ class ThreadTests(BaseTestCase):
 
     @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
-    @skip_if_tsan_fork
     def test_main_thread_after_fork(self):
         code = """if 1:
             import os, threading
@@ -908,41 +912,6 @@ class ThreadTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err, b"")
 
-    def test_tstate_lock(self):
-        # Test an implementation detail of Thread objects.
-        started = _thread.allocate_lock()
-        finish = _thread.allocate_lock()
-        started.acquire()
-        finish.acquire()
-        def f():
-            started.release()
-            finish.acquire()
-            time.sleep(0.01)
-        # The tstate lock is None until the thread is started
-        t = threading.Thread(target=f)
-        self.assertIs(t._tstate_lock, None)
-        t.start()
-        started.acquire()
-        self.assertTrue(t.is_alive())
-        # The tstate lock can't be acquired when the thread is running
-        # (or suspended).
-        tstate_lock = t._tstate_lock
-        self.assertFalse(tstate_lock.acquire(timeout=0), False)
-        finish.release()
-        # When the thread ends, the state_lock can be successfully
-        # acquired.
-        self.assertTrue(tstate_lock.acquire(timeout=support.SHORT_TIMEOUT), False)
-        # But is_alive() is still True:  we hold _tstate_lock now, which
-        # prevents is_alive() from knowing the thread's end-of-life C code
-        # is done.
-        self.assertTrue(t.is_alive())
-        # Let is_alive() find out the C code is done.
-        tstate_lock.release()
-        self.assertFalse(t.is_alive())
-        # And verify the thread disposed of _tstate_lock.
-        self.assertIsNone(t._tstate_lock)
-        t.join()
-
     def test_repr_stopped(self):
         # Verify that "stopped" shows up in repr(Thread) appropriately.
         started = _thread.allocate_lock()
@@ -1108,30 +1077,6 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(threading.getprofile(), old_profile)
         self.assertEqual(sys.getprofile(), old_profile)
 
-    @cpython_only
-    def test_shutdown_locks(self):
-        for daemon in (False, True):
-            with self.subTest(daemon=daemon):
-                event = threading.Event()
-                thread = threading.Thread(target=event.wait, daemon=daemon)
-
-                # Thread.start() must add lock to _shutdown_locks,
-                # but only for non-daemon thread
-                thread.start()
-                tstate_lock = thread._tstate_lock
-                if not daemon:
-                    self.assertIn(tstate_lock, threading._shutdown_locks)
-                else:
-                    self.assertNotIn(tstate_lock, threading._shutdown_locks)
-
-                # unblock the thread and join it
-                event.set()
-                thread.join()
-
-                # Thread._stop() must remove tstate_lock from _shutdown_locks.
-                # Daemon threads must never add it to _shutdown_locks.
-                self.assertNotIn(tstate_lock, threading._shutdown_locks)
-
     def test_locals_at_exit(self):
         # bpo-19466: thread locals must not be deleted before destructors
         # are called
@@ -1278,7 +1223,6 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @skip_unless_reliable_fork
-    @skip_if_tsan_fork
     def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
         # In the forked process, the main Thread object must be marked as stopped.
@@ -1311,6 +1255,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.
+        if support.check_sanitizer(thread=True):
+            # some of the threads running `random_io` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
+
         script = """if True:
             import os
             import random
