@@ -513,7 +513,7 @@ jobs:
           --config-cache \
           --disable-gil  \
           --with-thread-sanitizer \
-          --with-pydebug4
+          --with-pydebug
 
   # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
   cifuzz:
