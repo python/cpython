@@ -1321,6 +1321,35 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
 }
 
 static int
+list_extend_dictitems(PyListObject *self, PyDictObject *dict)
+{
+    Py_ssize_t m = Py_SIZE(self);
+    Py_ssize_t n = PyDict_GET_SIZE(dict);
+    if (list_resize(self, m + n) < 0) {
+        return -1;
+    }
+
+    // TODO: Don't start a garbage collection cycle when creating tuples
+    PyObject **dest = self->ob_item + m;
+    Py_ssize_t pos = 0;
+    Py_ssize_t i = 0;
+    PyObject *key, *value;
+    while (_PyDict_Next((PyObject *)dict, &pos, &key, &value, NULL)) {
+        PyObject *item = PyTuple_Pack(2, key, value);
+        if (item == NULL) {
+            Py_SET_SIZE(self, m + i);
+            return -1;
+        }
+        FT_ATOMIC_STORE_PTR_RELAXED(*dest, item);
+        dest++;
+        i++;
+    }
+
+    Py_SET_SIZE(self, m + n);
+    return 0;
+}
+
+static int
 _list_extend(PyListObject *self, PyObject *iterable)
 {
     // Special case:
@@ -1357,6 +1386,12 @@ _list_extend(PyListObject *self, PyObject *iterable)
         PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
         Py_BEGIN_CRITICAL_SECTION2(self, dict);
         res = list_extend_dict(self, dict, 1 /*values*/);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (Py_IS_TYPE(iterable, &PyDictItems_Type)) {
+        PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
+        Py_BEGIN_CRITICAL_SECTION2(self, dict);
+        res = list_extend_dictitems(self, dict);
         Py_END_CRITICAL_SECTION2();
     }
     else {
