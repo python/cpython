@@ -10,6 +10,7 @@ TSAN_TESTS = [
     'test_importlib',
     'test_io',
     'test_logging',
+    'test_queue',
     'test_ssl',
     'test_syslog',
     'test_thread',
@@ -17,6 +18,7 @@ TSAN_TESTS = [
     'test_threading',
     'test_threading_local',
     'test_threadsignals',
+    'test_weakref',
 ]
 
 
