@@ -50,6 +50,12 @@ def skip_unless_reliable_fork(test):
     return test
 
 
+def skip_for_tsan(test):
+    if support.check_sanitizer(thread=True):
+        return test.skip("TSAN doesn't support threads after fork")
+    return test
+
+
 def requires_subinterpreters(meth):
     """Decorator to skip a test if subinterpreters are not supported."""
     return unittest.skipIf(interpreters is None,
@@ -634,6 +640,7 @@ class ThreadTests(BaseTestCase):
         self.assertTrue(t.daemon)
 
     @skip_unless_reliable_fork
+    @skip_for_tsan
     def test_dummy_thread_after_fork(self):
         # Issue #14308: a dummy thread in the active list doesn't mess up
         # the after-fork mechanism.
@@ -703,6 +710,7 @@ class ThreadTests(BaseTestCase):
 
     @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
+    @skip_for_tsan
     def test_main_thread_after_fork(self):
         code = """if 1:
             import os, threading
@@ -1271,6 +1279,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
         self._run_and_join(script)
 
     @skip_unless_reliable_fork
+    @skip_for_tsan
     def test_3_join_in_forked_from_thread(self):
         # Like the test above, but fork() was called from a worker thread
         # In the forked process, the main Thread object must be marked as stopped.
