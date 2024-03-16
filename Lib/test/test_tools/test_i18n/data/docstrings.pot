@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2023-05-10 16:10+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: docstrings.py:2
+#, docstring
+msgid ""
+"multiline\n"
+"module docstring"
+msgstr ""
+
+#: docstrings.py:9 docstrings.py:74
+#, docstring
+msgid "foo"
+msgstr ""
+
+#: docstrings.py:16
+#, docstring
+msgid "docstring with some blank lines in front"
+msgstr ""
+
+#: docstrings.py:21
+#, docstring
+msgid ""
+"multiline\n"
+"docstring with some more content"
+msgstr ""
+
+#: docstrings.py:27
+#, docstring
+msgid "outer docstring"
+msgstr ""
+
+#: docstrings.py:29
+#, docstring
+msgid "nested docstring"
+msgstr ""
+
+#: docstrings.py:33
+#, docstring
+msgid "some docstring"
+msgstr ""
+
+#: docstrings.py:39
+#, docstring
+msgid ""
+"A very long docstring which should be correctly wrapped into multiple lines\n"
+"in the output po file according to the maximum line width setting."
+msgstr ""
+
+#: docstrings.py:46
+#, docstring
+msgid "Raw docstrings are ok"
+msgstr ""
+
+#: docstrings.py:50
+#, docstring
+msgid "Unicode docstrings are ok"
+msgstr ""
+
+#: docstrings.py:66
+#, docstring
+msgid "\"Some non-ascii dosctring: ěščř αβγδ"
+msgstr ""
+
+#: docstrings.py:78
+#, docstring
+msgid "outer class docstring"
+msgstr ""
+
+#: docstrings.py:80
+#, docstring
+msgid "inner class docstring"
+msgstr ""
+
+#: docstrings.py:83 docstrings.py:86
+#, docstring
+msgid "method docstring"
+msgstr ""
+
+#: docstrings.py:90
+#, docstring
+msgid "Async function docstring"
+msgstr ""
+
+#: docstrings.py:92
+#, docstring
+msgid "async function nested docstring"
+msgstr ""
+

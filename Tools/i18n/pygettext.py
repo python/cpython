@@ -1,11 +1,10 @@
 #! /usr/bin/env python3
-# -*- coding: iso-8859-1 -*-
 # Originally written by Barry Warsaw <barry@python.org>
 #
 # Minimally patched to make it even more xgettext compatible
 # by Peter Funk <pf@artcom-gmbh.de>
 #
-# 2002-11-22 Jürgen Hermann <jh@web.de>
+# 2002-11-22 JÃ¼rgen Hermann <jh@web.de>
 # Added checks that _() only contains string literals, and
 # command line args are resolved to module lists, i.e. you
 # can now pass a filename, a module or package name, or a
@@ -72,6 +71,10 @@ Options:
     -d name
     --default-domain=name
         Rename the default output file from messages.pot to name.pot.
+
+    --charset=charset
+        Character set used to read the input files and to write the
+        output file (default "utf-8").
 
     -E
     --escape
@@ -155,23 +158,23 @@ Options:
 If `inputfile' is -, standard input is read.
 """)
 
-import os
+import ast
+import getopt
+import glob
 import importlib.machinery
 import importlib.util
+import os
 import sys
-import glob
 import time
-import getopt
-import ast
-import token
-import tokenize
+from ast import (AsyncFunctionDef, ClassDef, FunctionDef, Module, NodeVisitor,
+                 unparse)
+from collections import defaultdict
+from dataclasses import dataclass
 
 __version__ = '1.5'
 
 default_keywords = ['_']
 DEFAULTKEYWORDS = ', '.join(default_keywords)
-
-EMPTYSTRING = ''
 
 
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
@@ -207,7 +210,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "HÃ¶he"' would not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -227,17 +230,9 @@ def make_escapes(pass_nonascii):
 def escape_ascii(s, encoding):
     return ''.join(escapes[ord(c)] if ord(c) < 128 else c for c in s)
 
+
 def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
-
-
-def is_literal_string(s):
-    return s[0] in '\'"' or (s[0] in 'rRuU' and s[1] in '\'"')
-
-
-def safe_eval(s):
-    # unwrap quotes, safely
-    return eval(s, {'__builtins__':{}}, {})
 
 
 def normalize(s, encoding):
@@ -306,211 +301,133 @@ def getFilesForName(name):
     return []
 
 
-class TokenEater:
-    def __init__(self, options):
-        self.__options = options
-        self.__messages = {}
-        self.__state = self.__waiting
-        self.__data = []
-        self.__lineno = -1
-        self.__freshmodule = 1
-        self.__curfile = None
-        self.__enclosurecount = 0
+@dataclass
+class Message:
+    filename: str
+    lineno: int
+    msgid: str
+    is_docstring: bool = False
 
-    def __call__(self, ttype, tstring, stup, etup, line):
-        # dispatch
-##        import token
-##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
-##              file=sys.stderr)
-        self.__state(ttype, tstring, stup[0])
 
-    def __waiting(self, ttype, tstring, lineno):
-        opts = self.__options
-        # Do docstring extractions, if enabled
-        if opts.docstrings and not opts.nodocstrings.get(self.__curfile):
-            # module docstring?
-            if self.__freshmodule:
-                if ttype == tokenize.STRING and is_literal_string(tstring):
-                    self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
-                    self.__freshmodule = 0
-                    return
-                if ttype in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
-                    return
-                self.__freshmodule = 0
-            # class or func/method docstring?
-            if ttype == tokenize.NAME and tstring in ('class', 'def'):
-                self.__state = self.__suiteseen
-                return
-        if ttype == tokenize.NAME and tstring in opts.keywords:
-            self.__state = self.__keywordseen
+def get_funcname(node):
+    if isinstance(node.func, ast.Name):
+        return node.func.id
+    elif isinstance(node.func, ast.Attribute):
+        return node.func.attr
+    else:
+        return None
+
+
+class GettextVisitor(NodeVisitor):
+    def __init__(self, options, filename=None):
+        super().__init__()
+        self.options = options
+        self.filename = filename
+        self.messages = defaultdict(list)
+
+    def _is_string_const(self, node):
+        return isinstance(node, ast.Constant) and isinstance(node.value, str)
+
+    def _extract_docstring(self, node):
+        if not self.options.docstrings or self.options.nodocstrings.get(self.filename):
             return
-        if ttype == tokenize.STRING:
-            maybe_fstring = ast.parse(tstring, mode='eval').body
-            if not isinstance(maybe_fstring, ast.JoinedStr):
-                return
-            for value in filter(lambda node: isinstance(node, ast.FormattedValue),
-                                maybe_fstring.values):
-                for call in filter(lambda node: isinstance(node, ast.Call),
-                                   ast.walk(value)):
-                    func = call.func
-                    if isinstance(func, ast.Name):
-                        func_name = func.id
-                    elif isinstance(func, ast.Attribute):
-                        func_name = func.attr
+
+        if not node.body:
+            return
+
+        expr = node.body[0]
+        if isinstance(expr, ast.Expr) and self._is_string_const(expr.value):
+            if docstring := ast.get_docstring(node):
+                message = Message(self.filename, expr.lineno, docstring, is_docstring=True)
+                self.messages[docstring].append(message)
+
+    def _extract_message(self, node):
+        funcname = get_funcname(node)
+        if funcname not in self.options.keywords:
+            return
+
+        filename = self.filename
+        lineno = node.lineno
+
+        if len(node.args) != 1:
+            print(f'*** {filename}:{lineno}: Seen unexpected amount of '
+                  f'positional arguments in gettext call: {unparse(node)}',
+                  file=sys.stderr)
+            return
+
+        if node.keywords:
+            print(f'*** {filename}:{lineno}: Seen unexpected keyword arguments '
+                  f'in gettext call: {unparse(node)}', file=sys.stderr)
+            return
+
+        arg = node.args[0]
+        if not self._is_string_const(arg):
+            print(f'*** {filename}:{lineno}: Seen unexpected argument type '
+                  f'in gettext call: {unparse(node)}', file=sys.stderr)
+            return
+
+        msgid = arg.value
+        if msgid == '':
+            print(f'*** {filename}:{lineno}: Empty msgid. It is reserved by GNU gettext: '
+                  'gettext("") returns the header entry with '
+                  'meta information, not the empty string.',
+                  file=sys.stderr)
+            return
+
+        message = Message(filename, lineno, msgid)
+        self.messages[msgid].append(message)
+
+    def visit(self, node):
+        if type(node) in {Module, FunctionDef, AsyncFunctionDef, ClassDef}:
+            self._extract_docstring(node)
+        super().visit(node)
+
+    def visit_Call(self, node):
+        self._extract_message(node)
+        self.generic_visit(node)
+
+
+def format_pot_file(all_messages, options, encoding):
+    timestamp = time.strftime('%Y-%m-%d %H:%M%z')
+    output = pot_header % {'time': timestamp, 'version': __version__,
+                           'charset': encoding,
+                           'encoding': '8bit'}
+    inverted = defaultdict(dict)
+
+    for msgid, messages in all_messages.items():
+        occurrences = set((msg.filename, msg.lineno) for msg in messages)
+        occurrences = tuple(sorted(occurrences))
+        inverted[occurrences][msgid] = messages
+
+    sorted_occurrences = sorted(list(inverted.keys()))
+
+    for occurrences in sorted_occurrences:
+        messages_dict = inverted[occurrences]
+        for msgid, messages in messages_dict.items():
+            if options.writelocations:
+                locline = '#:'
+                for (filename, lineno) in occurrences:
+                    s = f' {filename}:{lineno}'
+                    if len(locline) + len(s) <= options.width:
+                        locline = locline + s
                     else:
-                        continue
+                        output += locline + '\n'
+                        locline = '#:' + s
+                if len(locline) > 2:
+                    output += locline + '\n'
 
-                    if func_name not in opts.keywords:
-                        continue
-                    if len(call.args) != 1:
-                        print(_(
-                            '*** %(file)s:%(lineno)s: Seen unexpected amount of'
-                            ' positional arguments in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    if call.keywords:
-                        print(_(
-                            '*** %(file)s:%(lineno)s: Seen unexpected keyword arguments'
-                            ' in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    arg = call.args[0]
-                    if not isinstance(arg, ast.Constant):
-                        print(_(
-                            '*** %(file)s:%(lineno)s: Seen unexpected argument type'
-                            ' in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    if isinstance(arg.value, str):
-                        self.__addentry(arg.value, lineno)
+            # If the entry was gleaned out of a docstring, then add a
+            # comment stating so. This is to aid translators who may wish
+            # to skip translating some unimportant docstrings.
+            is_docstring = all(msg.is_docstring for msg in messages)
+            if is_docstring:
+                output += '#, docstring\n'
 
-    def __suiteseen(self, ttype, tstring, lineno):
-        # skip over any enclosure pairs until we see the colon
-        if ttype == tokenize.OP:
-            if tstring == ':' and self.__enclosurecount == 0:
-                # we see a colon and we're not in an enclosure: end of def
-                self.__state = self.__suitedocstring
-            elif tstring in '([{':
-                self.__enclosurecount += 1
-            elif tstring in ')]}':
-                self.__enclosurecount -= 1
+            output += f'msgid {normalize(msgid, encoding)}\n'
+            output += 'msgstr ""\n'
+            output += '\n'
 
-    def __suitedocstring(self, ttype, tstring, lineno):
-        # ignore any intervening noise
-        if ttype == tokenize.STRING and is_literal_string(tstring):
-            self.__addentry(safe_eval(tstring), lineno, isdocstring=1)
-            self.__state = self.__waiting
-        elif ttype not in (tokenize.NEWLINE, tokenize.INDENT,
-                           tokenize.COMMENT):
-            # there was no class docstring
-            self.__state = self.__waiting
-
-    def __keywordseen(self, ttype, tstring, lineno):
-        if ttype == tokenize.OP and tstring == '(':
-            self.__data = []
-            self.__lineno = lineno
-            self.__state = self.__openseen
-        else:
-            self.__state = self.__waiting
-
-    def __openseen(self, ttype, tstring, lineno):
-        if ttype == tokenize.OP and tstring == ')':
-            # We've seen the last of the translatable strings.  Record the
-            # line number of the first line of the strings and update the list
-            # of messages seen.  Reset state for the next batch.  If there
-            # were no strings inside _(), then just ignore this entry.
-            if self.__data:
-                self.__addentry(EMPTYSTRING.join(self.__data))
-            self.__state = self.__waiting
-        elif ttype == tokenize.STRING and is_literal_string(tstring):
-            self.__data.append(safe_eval(tstring))
-        elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
-                           token.NEWLINE, tokenize.NL]:
-            # warn if we see anything else than STRING or whitespace
-            print(_(
-                '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
-                ) % {
-                'token': tstring,
-                'file': self.__curfile,
-                'lineno': self.__lineno
-                }, file=sys.stderr)
-            self.__state = self.__waiting
-
-    def __addentry(self, msg, lineno=None, isdocstring=0):
-        if lineno is None:
-            lineno = self.__lineno
-        if not msg in self.__options.toexclude:
-            entry = (self.__curfile, lineno)
-            self.__messages.setdefault(msg, {})[entry] = isdocstring
-
-    def set_filename(self, filename):
-        self.__curfile = filename
-        self.__freshmodule = 1
-
-    def write(self, fp):
-        options = self.__options
-        timestamp = time.strftime('%Y-%m-%d %H:%M%z')
-        encoding = fp.encoding if fp.encoding else 'UTF-8'
-        print(pot_header % {'time': timestamp, 'version': __version__,
-                            'charset': encoding,
-                            'encoding': '8bit'}, file=fp)
-        # Sort the entries.  First sort each particular entry's keys, then
-        # sort all the entries by their first item.
-        reverse = {}
-        for k, v in self.__messages.items():
-            keys = sorted(v.keys())
-            reverse.setdefault(tuple(keys), []).append((k, v))
-        rkeys = sorted(reverse.keys())
-        for rkey in rkeys:
-            rentries = reverse[rkey]
-            rentries.sort()
-            for k, v in rentries:
-                # If the entry was gleaned out of a docstring, then add a
-                # comment stating so.  This is to aid translators who may wish
-                # to skip translating some unimportant docstrings.
-                isdocstring = any(v.values())
-                # k is the message string, v is a dictionary-set of (filename,
-                # lineno) tuples.  We want to sort the entries in v first by
-                # file name and then by line number.
-                v = sorted(v.keys())
-                if not options.writelocations:
-                    pass
-                # location comments are different b/w Solaris and GNU:
-                elif options.locationstyle == options.SOLARIS:
-                    for filename, lineno in v:
-                        d = {'filename': filename, 'lineno': lineno}
-                        print(_(
-                            '# File: %(filename)s, line: %(lineno)d') % d, file=fp)
-                elif options.locationstyle == options.GNU:
-                    # fit as many locations on one line, as long as the
-                    # resulting line length doesn't exceed 'options.width'
-                    locline = '#:'
-                    for filename, lineno in v:
-                        d = {'filename': filename, 'lineno': lineno}
-                        s = _(' %(filename)s:%(lineno)d') % d
-                        if len(locline) + len(s) <= options.width:
-                            locline = locline + s
-                        else:
-                            print(locline, file=fp)
-                            locline = "#:" + s
-                    if len(locline) > 2:
-                        print(locline, file=fp)
-                if isdocstring:
-                    print('#, docstring', file=fp)
-                print('msgid', normalize(k, encoding), file=fp)
-                print('msgstr ""\n', file=fp)
+    return output
 
 
 def main():
@@ -519,7 +436,7 @@ def main():
         opts, args = getopt.getopt(
             sys.argv[1:],
             'ad:DEhk:Kno:p:S:Vvw:x:X:',
-            ['extract-all', 'default-domain=', 'escape', 'help',
+            ['extract-all', 'default-domain=', 'charset=', 'escape', 'help',
              'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
@@ -535,6 +452,7 @@ def main():
         SOLARIS = 2
         # defaults
         extractall = 0 # FIXME: currently this option has no effect at all.
+        charset = 'utf-8'
         escape = 0
         keywords = []
         outpath = ''
@@ -560,6 +478,8 @@ def main():
             options.extractall = 1
         elif opt in ('-d', '--default-domain'):
             options.outfile = arg + '.pot'
+        elif opt in ('--charset',):
+            options.charset = arg
         elif opt in ('-E', '--escape'):
             options.escape = 1
         elif opt in ('-D', '--docstrings'):
@@ -631,7 +551,7 @@ def main():
     args = expanded
 
     # slurp through all the files
-    eater = TokenEater(options)
+    visitor = GettextVisitor(options)
     for filename in args:
         if filename == '-':
             if options.verbose:
@@ -641,18 +561,11 @@ def main():
         else:
             if options.verbose:
                 print(_('Working on %s') % filename)
-            fp = open(filename, 'rb')
+            fp = open(filename, encoding=options.charset)
             closep = 1
         try:
-            eater.set_filename(filename)
-            try:
-                tokens = tokenize.tokenize(fp.readline)
-                for _token in tokens:
-                    eater(*_token)
-            except tokenize.TokenError as e:
-                print('%s: %s, line %d, column %d' % (
-                    e.args[0], filename, e.args[1][0], e.args[1][1]),
-                    file=sys.stderr)
+            visitor.filename = filename
+            visitor.visit(ast.parse(fp.read()))
         finally:
             if closep:
                 fp.close()
@@ -664,10 +577,10 @@ def main():
     else:
         if options.outpath:
             options.outfile = os.path.join(options.outpath, options.outfile)
-        fp = open(options.outfile, 'w')
+        fp = open(options.outfile, 'w', encoding=options.charset)
         closep = 1
     try:
-        eater.write(fp)
+        fp.write(format_pot_file(visitor.messages, options, options.charset))
     finally:
         if closep:
             fp.close()
