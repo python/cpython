@@ -1102,6 +1102,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIs(self.cls(self.base, 'mysock\udfff').is_socket(), False)
         self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
 
+    @unittest.skipIf(os.name != 'posix', 'test requires a POSIX-compatible system')
     def test_is_char_device_true(self):
         # Under Unix, /dev/null should generally be a char device.
         P = self.cls('/dev/null')
@@ -1575,7 +1576,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             P('c:/').group()
 
 
-@unittest.skipIf(os.name == 'nt', 'test requires a POSIX-compatible system')
+@unittest.skipIf(os.name != 'posix', 'test requires a POSIX-compatible system')
 class PosixPathTest(PathTest, PurePosixPathTest):
     cls = pathlib.PosixPath
 
