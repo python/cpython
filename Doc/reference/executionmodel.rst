@@ -141,7 +141,7 @@ and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the names are not found there, the
 builtins namespace is searched next.  If the names are also not found in the
 builtins namespace, new variables are created in the global namespace.
-The :keyword:`global` statement must precede all uses of the listed names.
+The global statement must precede all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
 in the same block.  If the nearest enclosing scope for a free variable contains
