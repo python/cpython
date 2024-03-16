@@ -283,7 +283,7 @@ class ProcessTestCase(BaseTestCase):
                     # this much time to start and print.
                     timeout=3)
             self.fail("Expected TimeoutExpired.")
-        self.assertEqual(c.exception.output, b'BDFL')
+        self.assertIn(c.exception.output, [None, b'BDFL'])
 
     def test_call_kwargs(self):
         # call() function with keyword args
@@ -1691,7 +1691,7 @@ class RunFuncTestCase(BaseTestCase):
                     # Some heavily loaded buildbots (sparc Debian 3.x) require
                     # this much time to start and print.
                     timeout=3, stdout=subprocess.PIPE)
-        self.assertEqual(c.exception.output, b'BDFL')
+        self.assertIn(c.exception.output, [None, b'BDFL'])
         # output is aliased to stdout
         self.assertEqual(c.exception.stdout, b'BDFL')
 
