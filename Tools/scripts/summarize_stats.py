@@ -459,10 +459,7 @@ class Stats:
                 "The number of times a potential trace is identified.  Specifically, this "
                 "occurs in the JUMP BACKWARD instruction when the counter reaches a "
                 "threshold.",
-            ): (
-                attempts,
-                None,
-            ),
+            ): (attempts, None),
             Doc(
                 "Traces created", "The number of traces that were successfully created."
             ): (created, attempts),
@@ -510,6 +507,26 @@ class Stats:
                 uops,
                 executed,
             ),
+        }
+
+    def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
+        attempts = self._data["Optimization optimizer attempts"]
+        successes = self._data["Optimization optimizer successes"]
+        no_memory = self._data["Optimization optimizer failure no memory"]
+
+        return {
+            Doc(
+                "Optimizer attempts",
+                "The number of times the trace optimizer (_Py_uop_analyze_and_optimize) was run.",
+            ): (attempts, None),
+            Doc(
+                "Optimizer successes",
+                "The number of traces that were successfully optimized.",
+            ): (successes, attempts),
+            Doc(
+                "Optimizer no memory",
+                "The number of optimizations that failed due to no memory.",
+            ): (no_memory, attempts),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -1118,6 +1135,14 @@ def optimization_section() -> Section:
             for label, (value, den) in optimization_stats.items()
         ]
 
+    def calc_optimizer_table(stats: Stats) -> Rows:
+        optimizer_stats = stats.get_optimizer_stats()
+
+        return [
+            (label, Count(value), Ratio(value, den))
+            for label, (value, den) in optimizer_stats.items()
+        ]
+
     def calc_histogram_table(key: str, den: str) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
             histogram = stats.get_histogram(key)
@@ -1159,6 +1184,7 @@ def optimization_section() -> Section:
             return
 
         yield Table(("", "Count:", "Ratio:"), calc_optimization_table, JoinMode.CHANGE)
+        yield Table(("", "Count:", "Ratio:"), calc_optimizer_table, JoinMode.CHANGE)
         for name, den in [
             ("Trace length", "Optimization traces created"),
             ("Optimized trace length", "Optimization traces created"),
