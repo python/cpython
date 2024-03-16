@@ -101,11 +101,41 @@ _weakref_getweakrefs_impl(PyObject *module, PyObject *object)
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t num_added = 0;
+    Py_BEGIN_CRITICAL_SECTION(object);
+    PyWeakReference *current = *list;
+    // Weakrefs may be added or removed since the count was computed.
+    while (num_added < count && current != NULL) {
+        if (_Py_TryIncref((PyObject**) &current, (PyObject *) current)) {
+            PyList_SET_ITEM(result, num_added, current);
+            num_added++;
+        }
+        current = current->wr_next;
+    }
+    Py_END_CRITICAL_SECTION();
+    // Don't return an incomplete list
+    if (num_added != count) {
+        PyObject *new_list = PyList_New(num_added);
+        if (new_list == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        for (Py_ssize_t i = 0; i < num_added; i++) {
+            PyObject *obj = PyList_GET_ITEM(result, i);
+            PyList_SET_ITEM(new_list, i, obj);
+            PyList_SET_ITEM(result, i, NULL);
+        }
+        Py_DECREF(result);
+        result = new_list;
+    }
+#else
     PyWeakReference *current = *list;
     for (Py_ssize_t i = 0; i < count; ++i) {
         PyList_SET_ITEM(result, i, Py_NewRef(current));
         current = current->wr_next;
     }
+#endif
     return result;
 }
 
