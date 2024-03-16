@@ -201,13 +201,13 @@ class ProcessPoolExecutorTest(ExecutorTest):
         # QueueFeederThread.
         orig_start_new_thread = threading._start_joinable_thread
         nthread = 0
-        def mock_start_new_thread(func, *args):
+        def mock_start_new_thread(func, *args, **kwargs):
             nonlocal nthread
             if nthread >= 1:
                 raise RuntimeError("can't create new thread at "
                                    "interpreter shutdown")
             nthread += 1
-            return orig_start_new_thread(func, *args)
+            return orig_start_new_thread(func, *args, **kwargs)
 
         with support.swap_attr(threading, '_start_joinable_thread',
                                mock_start_new_thread):

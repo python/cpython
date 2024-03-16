@@ -408,7 +408,7 @@ class ThreadTests(BaseTestCase):
 
     def test_limbo_cleanup(self):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
-        def fail_new_thread(*args):
+        def fail_new_thread(*args, **kwargs):
             raise threading.ThreadError()
         _start_joinable_thread = threading._start_joinable_thread
         threading._start_joinable_thread = fail_new_thread
@@ -912,41 +912,6 @@ class ThreadTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err, b"")
 
-    def test_tstate_lock(self):
-        # Test an implementation detail of Thread objects.
-        started = _thread.allocate_lock()
-        finish = _thread.allocate_lock()
-        started.acquire()
-        finish.acquire()
-        def f():
-            started.release()
-            finish.acquire()
-            time.sleep(0.01)
-        # The tstate lock is None until the thread is started
-        t = threading.Thread(target=f)
-        self.assertIs(t._tstate_lock, None)
-        t.start()
-        started.acquire()
-        self.assertTrue(t.is_alive())
-        # The tstate lock can't be acquired when the thread is running
-        # (or suspended).
-        tstate_lock = t._tstate_lock
-        self.assertFalse(tstate_lock.acquire(timeout=0), False)
-        finish.release()
-        # When the thread ends, the state_lock can be successfully
-        # acquired.
-        self.assertTrue(tstate_lock.acquire(timeout=support.SHORT_TIMEOUT), False)
-        # But is_alive() is still True:  we hold _tstate_lock now, which
-        # prevents is_alive() from knowing the thread's end-of-life C code
-        # is done.
-        self.assertTrue(t.is_alive())
-        # Let is_alive() find out the C code is done.
-        tstate_lock.release()
-        self.assertFalse(t.is_alive())
-        # And verify the thread disposed of _tstate_lock.
-        self.assertIsNone(t._tstate_lock)
-        t.join()
-
     def test_repr_stopped(self):
         # Verify that "stopped" shows up in repr(Thread) appropriately.
         started = _thread.allocate_lock()
@@ -1111,30 +1076,6 @@ class ThreadTests(BaseTestCase):
 
         self.assertEqual(threading.getprofile(), old_profile)
         self.assertEqual(sys.getprofile(), old_profile)
-
-    @cpython_only
-    def test_shutdown_locks(self):
-        for daemon in (False, True):
-            with self.subTest(daemon=daemon):
-                event = threading.Event()
-                thread = threading.Thread(target=event.wait, daemon=daemon)
-
-                # Thread.start() must add lock to _shutdown_locks,
-                # but only for non-daemon thread
-                thread.start()
-                tstate_lock = thread._tstate_lock
-                if not daemon:
-                    self.assertIn(tstate_lock, threading._shutdown_locks)
-                else:
-                    self.assertNotIn(tstate_lock, threading._shutdown_locks)
-
-                # unblock the thread and join it
-                event.set()
-                thread.join()
-
-                # Thread._stop() must remove tstate_lock from _shutdown_locks.
-                # Daemon threads must never add it to _shutdown_locks.
-                self.assertNotIn(tstate_lock, threading._shutdown_locks)
 
     def test_locals_at_exit(self):
         # bpo-19466: thread locals must not be deleted before destructors
