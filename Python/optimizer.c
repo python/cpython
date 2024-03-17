@@ -739,7 +739,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 + 1;
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
                             PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version);
-                            DPRINTF(2, "Function: version=%x; object=%p\n", (int)func_version, new_func);
+                            DPRINTF(2, "Function: version=%#x; object=%p\n", (int)func_version, new_func);
                             if (new_func != NULL) {
                                 PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(new_func);
                                 if (new_code == code) {
@@ -767,7 +767,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 TRACE_STACK_PUSH();
                                 _Py_BloomFilter_Add(dependencies, new_code);
                                 /* Set the operand to the callee's code object,
-                                * to assist optimization passes */
+                                 * to assist optimization passes */
                                 ADD_TO_TRACE(uop, oparg, (uintptr_t)new_func, target);
                                 code = new_code;
                                 func = new_func;
