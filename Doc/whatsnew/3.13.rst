@@ -1479,7 +1479,8 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``, ``winsound``,
+* The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
+  ``termios``, ``winsound``,
   ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
   ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
