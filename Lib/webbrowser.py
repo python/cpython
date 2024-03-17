@@ -143,7 +143,7 @@ def _synthesize(browser, *, preferred=False):
 
 # General parent classes
 
-class BaseBrowser(object):
+class BaseBrowser:
     """Parent class for all browsers. Do not use directly."""
 
     args = ['%s']
