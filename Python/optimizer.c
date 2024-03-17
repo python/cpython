@@ -718,10 +718,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                         }
 
                         if (uop == _POP_FRAME) {
+                            TRACE_STACK_POP();
                             /* Set the operand to the function object returned to,
                              * to assist optimization passes */
                             ADD_TO_TRACE(uop, oparg, (uintptr_t)func, target);
-                            TRACE_STACK_POP();
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
