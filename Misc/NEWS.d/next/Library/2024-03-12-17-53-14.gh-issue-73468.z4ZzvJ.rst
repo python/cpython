@@ -1,0 +1,2 @@
+Added new :func:`math.fma` function, wrapping C99's ``fma()`` operation:
+fused multiply-add function. Patch by Mark Dickinson and Victor Stinner.
