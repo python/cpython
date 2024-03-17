@@ -1,12 +1,14 @@
-import webbrowser
-import unittest
 import os
-import sys
+import re
+import shlex
 import subprocess
-from unittest import mock
+import sys
+import unittest
+import webbrowser
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from unittest import mock
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test webserver requires subprocess")
@@ -93,6 +95,15 @@ class ChromeCommandTest(CommandTestMixin, unittest.TestCase):
         self._test('open_new_tab',
                    options=[],
                    arguments=[URL])
+
+    def test_open_bad_new_parameter(self):
+        with self.assertRaisesRegex(webbrowser.Error,
+                                    re.escape("Bad 'new' parameter to open(); "
+                                              "expected 0, 1, or 2, got 999")):
+            self._test('open',
+                       options=[],
+                       arguments=[URL],
+                       kw=dict(new=999))
 
 
 class EdgeCommandTest(CommandTestMixin, unittest.TestCase):
@@ -343,5 +354,61 @@ class ImportTest(unittest.TestCase):
             self.assertEqual(webbrowser.get().name, sys.executable)
 
 
-if __name__=='__main__':
+class CliTest(unittest.TestCase):
+    def test_parse_args(self):
+        for command, url, new_window, new_tab in [
+            # No optional arguments
+            ("https://example.com", "https://example.com", False, False),
+            # Each optional argument
+            ("https://example.com -n", "https://example.com", True, False),
+            ("-n https://example.com", "https://example.com", True, False),
+            ("https://example.com -t", "https://example.com", False, True),
+            ("-t https://example.com", "https://example.com", False, True),
+            # Long form
+            ("https://example.com --new-window", "https://example.com", True, False),
+            ("--new-window https://example.com", "https://example.com", True, False),
+            ("https://example.com --new-tab", "https://example.com", False, True),
+            ("--new-tab https://example.com", "https://example.com", False, True),
+        ]:
+            args = webbrowser.parse_args(shlex.split(command))
+
+            self.assertEqual(args.url, url)
+            self.assertEqual(args.new_window, new_window)
+            self.assertEqual(args.new_tab, new_tab)
+
+    def test_parse_args_error(self):
+        for command in [
+            # Arguments must not both be given
+            "https://example.com -n -t",
+            "https://example.com --new-window --new-tab",
+            "https://example.com -n --new-tab",
+            "https://example.com --new-window -t",
+        ]:
+            with self.assertRaises(SystemExit):
+                webbrowser.parse_args(shlex.split(command))
+
+    def test_main(self):
+        for command, expected_url, expected_new_win in [
+            # No optional arguments
+            ("https://example.com", "https://example.com", 0),
+            # Each optional argument
+            ("https://example.com -n", "https://example.com", 1),
+            ("-n https://example.com", "https://example.com", 1),
+            ("https://example.com -t", "https://example.com", 2),
+            ("-t https://example.com", "https://example.com", 2),
+            # Long form
+            ("https://example.com --new-window", "https://example.com", 1),
+            ("--new-window https://example.com", "https://example.com", 1),
+            ("https://example.com --new-tab", "https://example.com", 2),
+            ("--new-tab https://example.com", "https://example.com", 2),
+        ]:
+            with (
+                mock.patch("webbrowser.open", return_value=None) as mock_open,
+                mock.patch("builtins.print", return_value=None),
+            ):
+                webbrowser.main(shlex.split(command))
+                mock_open.assert_called_once_with(expected_url, expected_new_win)
+
+
+if __name__ == '__main__':
     unittest.main()
