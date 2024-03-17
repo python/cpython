@@ -387,6 +387,26 @@ These filters support one option, ``start_offset``. This specifies the address
 that should be mapped to the beginning of the input data. The default is 0.
 
 
+Information about the version of the lzma library in use is available through
+the following constants:
+
+
+.. data:: LZMA_VERSION
+
+   The version string of the lzma library that was used for building the module.
+   This may be different from the lzma library actually used at runtime, which
+   is available as :const:`LZMA_RUNTIME_VERSION`.
+
+   .. versionadded:: 3.13
+
+
+.. data:: LZMA_RUNTIME_VERSION
+
+   The version string of the lzma library actually loaded by the interpreter.
+
+   .. versionadded:: 3.13
+
+
 Examples
 --------
 

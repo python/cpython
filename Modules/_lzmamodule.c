@@ -1605,6 +1605,15 @@ lzma_exec(PyObject *module)
         return -1;
     }
 
+    if (PyModule_Add(module, "LZMA_VERSION",
+                     PyUnicode_FromString(LZMA_VERSION_STRING)) < 0) {
+        return -1;
+    }
+    if (PyModule_Add(module, "LZMA_RUNTIME_VERSION",
+                     PyUnicode_FromString(lzma_version_string())) < 0) {
+        return -1;
+    }
+
     return 0;
 }
 
