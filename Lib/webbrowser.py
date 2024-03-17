@@ -609,32 +609,23 @@ if sys.platform == 'darwin':
 
 
 def main():
-    import getopt
-    usage = """Usage: %s [-n | -t | -h] url
-    -n: open new window
-    -t: open new tab
-    -h, --help: show help""" % sys.argv[0]
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ntdh', ['help'])
-    except getopt.error as msg:
-        print(msg, file=sys.stderr)
-        print(usage, file=sys.stderr)
-        sys.exit(1)
-    new_win = 0
-    for o, a in opts:
-        if o == '-n':
-            new_win = 1
-        elif o == '-t':
-            new_win = 2
-        elif o == '-h' or o == '--help':
-            print(usage, file=sys.stderr)
-            sys.exit()
-    if len(args) != 1:
-        print(usage, file=sys.stderr)
-        sys.exit(1)
+    import argparse
+    parser = argparse.ArgumentParser(description="Open URL in a web browser.")
+    parser.add_argument("url", help="URL to open")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-n", "--new-window", action="store_true",
+                       help="open new window")
+    group.add_argument("-t", "--new-tab", action="store_true",
+                       help="open new tab")
+    args = parser.parse_args()
 
-    url = args[0]
-    open(url, new_win)
+    new_win = 0
+    if args.new_window:
+        new_win = 1
+    elif args.new_tab:
+        new_win = 2
+
+    open(args.url, new_win)
 
     print("\a")
 
