@@ -1472,12 +1472,16 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         obj = exc_value.obj
         try:
             d = dir(obj)
+            if wrong_name[:1] != '_':
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
             d = dir(mod)
+            if wrong_name[:1] != '_':
+                d = [x for x in d if x[:1] != '_']
         except Exception:
             return None
     else:
