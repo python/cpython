@@ -10,6 +10,7 @@ from test.support import import_helper
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
+from test.support import is_wasi
 import unittest
 import warnings
 imp = warnings_helper.import_deprecated('imp')
@@ -23,6 +24,8 @@ def requires_load_dynamic(meth):
     """Decorator to skip a test if not running under CPython or lacking
     imp.load_dynamic()."""
     meth = support.cpython_only(meth)
+    if is_wasi:
+        return unittest.skipIf(True, 'Not supoorted in WASI')(meth)
     return unittest.skipIf(getattr(imp, 'load_dynamic', None) is None,
                            'imp.load_dynamic() required')(meth)
 
