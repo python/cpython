@@ -256,8 +256,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     """Translate a pathname with shell wildcards to a regular expression.
 
     If `recursive` is true, the pattern segment '**' will match any number of
-    path segments; if '**' appears outside its own segment, ValueError will be
-    raised.
+    path segments.
 
     If `include_hidden` is true, wildcards can match path segments beginning
     with a dot ('.').
@@ -291,22 +290,18 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     for idx, part in enumerate(parts):
         if part == '*':
             results.append(one_segment if idx < last_part_idx else one_last_segment)
-            continue
-        if recursive:
-            if part == '**':
-                if idx < last_part_idx:
-                    if parts[idx + 1] != '**':
-                        results.append(any_segments)
-                else:
-                    results.append(any_last_segments)
-                continue
-            elif '**' in part:
-                raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        if part:
-            if not include_hidden and part[0] in '*?':
-                results.append(r'(?!\.)')
-            results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
-        if idx < last_part_idx:
-            results.append(any_sep)
+        elif recursive and part == '**':
+            if idx < last_part_idx:
+                if parts[idx + 1] != '**':
+                    results.append(any_segments)
+            else:
+                results.append(any_last_segments)
+        else:
+            if part:
+                if not include_hidden and part[0] in '*?':
+                    results.append(r'(?!\.)')
+                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+            if idx < last_part_idx:
+                results.append(any_sep)
     res = ''.join(results)
     return fr'(?s:{res})\Z'

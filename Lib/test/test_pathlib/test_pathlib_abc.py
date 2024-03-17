@@ -512,8 +512,6 @@ class DummyPurePathTest(unittest.TestCase):
         self.assertFalse(P('a/b/c.py').full_match('**/a/b/c./**'))
         self.assertFalse(P('a/b/c.py').full_match('/a/b/c.py/**'))
         self.assertFalse(P('a/b/c.py').full_match('/**/a/b/c.py'))
-        self.assertRaises(ValueError, P('a').full_match, '**a/b/c')
-        self.assertRaises(ValueError, P('a').full_match, 'a/b/c**')
         # Case-sensitive flag
         self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
         self.assertTrue(P('A.py').full_match('a.PY', case_sensitive=False))

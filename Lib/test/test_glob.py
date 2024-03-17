@@ -452,9 +452,9 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('?'), r'(?s:[^/])\Z')
         self.assertEqual(fn('**'), r'(?s:.*)\Z')
         self.assertEqual(fn('**/**'), r'(?s:.*)\Z')
-        self.assertRaises(ValueError, fn, '***')
-        self.assertRaises(ValueError, fn, 'a**')
-        self.assertRaises(ValueError, fn, '**b')
+        self.assertEqual(fn('***'), r'(?s:[^/]*)\Z')
+        self.assertEqual(fn('a**'), r'(?s:a[^/]*)\Z')
+        self.assertEqual(fn('**b'), r'(?s:[^/]*b)\Z')
         self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/[^/]*\.[^/]*/.*)\Z')
 
     def test_translate_seps(self):
