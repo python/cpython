@@ -26,6 +26,12 @@ class Test(unittest.TestCase):
                 self.assertTrue(_SimpleCData.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(_SimpleCData.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
+    def test_swapped_type_creation(self):
+        cls = PyCSimpleType.__new__(PyCSimpleType, '', (), {'_type_': 'i'})
+        PyCSimpleType.__init__(cls)
+        self.assertEqual(cls.__ctype_le__.__dict__.get('_type_'), 'i')
+        self.assertEqual(cls.__ctype_be__.__dict__.get('_type_'), 'i')
+
     def test_compare(self):
         self.assertEqual(MyInt(3), MyInt(3))
         self.assertNotEqual(MyInt(42), MyInt(43))

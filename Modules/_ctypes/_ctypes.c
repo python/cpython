@@ -1847,6 +1847,42 @@ static PyMethodDef c_void_p_method = { "from_param", c_void_p_from_param, METH_O
 static PyMethodDef c_char_p_method = { "from_param", c_char_p_from_param, METH_O };
 static PyMethodDef c_wchar_p_method = { "from_param", c_wchar_p_from_param, METH_O };
 
+// Complete arguments passed to PyCSimpleType_init() and CreateSwappedType()
+static PyObject *
+CreateSwappedType_ready(PyObject *self, PyObject *args)
+{
+    PyObject *dict;
+    if (!PyTuple_CheckExact(args) || PyTuple_GET_SIZE(args) < 3) {
+        dict = PyDict_New();
+    }
+    else {
+        dict = PyDict_Copy(PyTuple_GET_ITEM(args, 2));
+    }
+    if (!dict) {
+        return NULL;
+    }
+    if (PyDict_Update(dict, ((PyTypeObject *)self)->tp_dict) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    if (PyDict_DelItem(dict, &_Py_ID(__dict__))) {
+        PyErr_Clear();
+    }
+    if (PyDict_DelItem(dict, &_Py_ID(__weakref__))) {
+        PyErr_Clear();
+    }
+
+    PyObject *safe_args = PyTuple_New(3);
+    if (!safe_args) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(safe_args, 0, PyType_GetName((PyTypeObject *)self));
+    PyTuple_SET_ITEM(safe_args, 1, Py_NewRef(((PyTypeObject *)self)->tp_bases));
+    PyTuple_SET_ITEM(safe_args, 2, dict);
+    return safe_args;
+}
+
 static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject *kwds,
                                    PyObject *proto, struct fielddesc *fmt)
 {
@@ -2088,8 +2124,13 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         && fmt->setfunc_swapped
         && fmt->getfunc_swapped)
     {
-        PyObject *swapped = CreateSwappedType(type, args, kwds,
+        PyObject *safe_args = CreateSwappedType_ready(self, args);
+        if (!safe_args) {
+            return -1;
+        }
+        PyObject *swapped = CreateSwappedType(type, safe_args, kwds,
                                               proto, fmt);
+        Py_DECREF(safe_args);
         StgDictObject *sw_dict;
         if (swapped == NULL) {
             return -1;
