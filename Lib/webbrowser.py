@@ -274,8 +274,8 @@ class UnixBrowser(BaseBrowser):
             else:
                 action = self.remote_action_newtab
         else:
-            raise Error("Bad 'new' parameter to open(); " +
-                        "expected 0, 1, or 2, got %s" % new)
+            raise Error("Bad 'new' parameter to open(); "
+                        f"expected 0, 1, or 2, got {new}")
 
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
@@ -589,15 +589,16 @@ if sys.platform == 'darwin':
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            url = url.replace('"', '%22')
             if self.name == 'default':
-                script = 'open location "%s"' % url.replace('"', '%22')  # opens in default browser
+                script = f'open location "{url}"'  # opens in default browser
             else:
                 script = f'''
-                   tell application "%s"
+                   tell application "{self.name}"
                        activate
-                       open location "%s"
+                       open location "{url}"
                    end
-                   ''' % (self.name, url.replace('"', '%22'))
+                   '''
 
             osapipe = os.popen("osascript", "w")
             if osapipe is None:
