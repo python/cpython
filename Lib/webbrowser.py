@@ -204,7 +204,7 @@ class BackgroundBrowser(GenericBrowser):
             else:
                 p = subprocess.Popen(cmdline, close_fds=True,
                                      start_new_session=True)
-            return (p.poll() is None)
+            return p.poll() is None
         except OSError:
             return False
 
@@ -396,7 +396,7 @@ class Konqueror(BaseBrowser):
         except OSError:
             return False
         else:
-            return (p.poll() is None)
+            return p.poll() is None
 
 
 class Edge(UnixBrowser):
