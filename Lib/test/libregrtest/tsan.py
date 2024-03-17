@@ -2,6 +2,7 @@
 # chosen because they use threads and run in a reasonable amount of time.
 
 TSAN_TESTS = [
+    'test_capi',
     'test_code',
     'test_enum',
     'test_functools',
@@ -11,6 +12,9 @@ TSAN_TESTS = [
     'test_io',
     'test_logging',
     'test_queue',
+    'test_signal',
+    'test_socket',
+    'test_sqlite3',
     'test_ssl',
     'test_syslog',
     'test_thread',
