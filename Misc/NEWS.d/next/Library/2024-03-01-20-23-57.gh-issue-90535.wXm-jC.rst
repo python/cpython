@@ -1,0 +1,3 @@
+Fix support of *interval* values > 1 in
+:class:`logging.TimedRotatingFileHandler` for ``when='MIDNIGHT'`` and
+``when='Wx'``.

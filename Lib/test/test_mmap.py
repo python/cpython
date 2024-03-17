@@ -837,7 +837,7 @@ class MmapTests(unittest.TestCase):
         mm.write(b'python')
         result = mm.flush()
         self.assertIsNone(result)
-        if sys.platform.startswith('linux'):
+        if sys.platform.startswith(('linux', 'android')):
             # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
