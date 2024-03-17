@@ -10851,23 +10851,22 @@ with_ubsan="no"
 fi
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
-printf %s "checking for --with-thread-sanitizer... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
+$as_echo_n "checking for --with-thread-sanitizer... " >&6; }
 
 # Check whether --with-thread_sanitizer was given.
-if test ${with_thread_sanitizer+y}
-then :
+if test "${with_thread_sanitizer+set}" = set; then :
   withval=$with_thread_sanitizer;
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
-printf "%s\n" "$withval" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
 LDFLAGS="-fsanitize=thread $LDFLAGS"
 with_tsan="yes"
 
-else $as_nop
+else
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 with_tsan="no"
 
 fi
