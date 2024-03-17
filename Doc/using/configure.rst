@@ -396,13 +396,6 @@ Debug options
 
    .. versionadded:: 3.6
 
-.. option:: --with-thread-sanitizer
-
-   Enable ThreadSanitizer data race detector, ``tsan``
-   (default is no).
-
-   .. versionadded:: 3.13
-
 
 Linker options
 --------------
