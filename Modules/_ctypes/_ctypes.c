@@ -1948,10 +1948,9 @@ PyCSimpleType_paramfunc(CDataObject *self)
     return parg;
 }
 
-static PyObject *
-PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+static int
+PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *result;
     StgDictObject *stgdict;
     PyObject *proto;
     const char *proto_str;
@@ -1959,22 +1958,15 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyMethodDef *ml;
     struct fielddesc *fmt;
 
-    /* create the new instance (which is a class,
-       since we are a metatype!) */
-    result = (PyTypeObject *)PyType_Type.tp_new(type, args, kwds);
-    if (result == NULL)
-        return NULL;
-
-    if (PyObject_GetOptionalAttr((PyObject *)result, &_Py_ID(_type_), &proto) < 0) {
-        return NULL;
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(_type_), &proto) < 0) {
+        return -1;
     }
     if (!proto) {
         PyErr_SetString(PyExc_AttributeError,
                         "class must define a '_type_' attribute");
   error:
         Py_XDECREF(proto);
-        Py_DECREF(result);
-        return NULL;
+        return -1;
     }
     if (PyUnicode_Check(proto)) {
         proto_str = PyUnicode_AsUTF8AndSize(proto, &proto_len);
@@ -2023,15 +2015,14 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->format = _ctypes_alloc_format_string_for_type(proto_str[0], 0);
 #endif
     if (stgdict->format == NULL) {
-        Py_DECREF(result);
         Py_DECREF(proto);
         Py_DECREF((PyObject *)stgdict);
-        return NULL;
+        return -1;
     }
 
     stgdict->paramfunc = PyCSimpleType_paramfunc;
 /*
-    if (result->tp_base != st->Simple_Type) {
+    if (self->tp_base != st->Simple_Type) {
         stgdict->setfunc = NULL;
         stgdict->getfunc = NULL;
     }
@@ -2041,17 +2032,16 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     stgdict->proto = proto;
 
     /* replace the class dict by our updated spam dict */
-    if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict)) {
-        Py_DECREF(result);
+    if (-1 == PyDict_Update((PyObject *)stgdict, ((PyTypeObject *)self)->tp_dict)) {
         Py_DECREF((PyObject *)stgdict);
-        return NULL;
+        return -1;
     }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(((PyTypeObject *)self)->tp_dict, (PyObject *)stgdict);
 
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
      */
-    if (result->tp_base == st->Simple_Type) {
+    if (((PyTypeObject *)self)->tp_base == st->Simple_Type) {
         switch (*proto_str) {
         case 'z': /* c_char_p */
             ml = &c_char_p_method;
@@ -2079,22 +2069,21 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (ml) {
             PyObject *meth;
             int x;
-            meth = PyDescr_NewClassMethod(result, ml);
+            meth = PyDescr_NewClassMethod((PyTypeObject*)self, ml);
             if (!meth) {
-                Py_DECREF(result);
-                return NULL;
+                return -1;
             }
-            x = PyDict_SetItemString(result->tp_dict,
+            x = PyDict_SetItemString(((PyTypeObject*)self)->tp_dict,
                                      ml->ml_name,
                                      meth);
             Py_DECREF(meth);
             if (x == -1) {
-                Py_DECREF(result);
-                return NULL;
+                return -1;
             }
         }
     }
 
+    PyTypeObject *type = Py_TYPE(self);
     if (type == st->PyCSimpleType_Type
         && fmt->setfunc_swapped
         && fmt->getfunc_swapped)
@@ -2103,33 +2092,31 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                                               proto, fmt);
         StgDictObject *sw_dict;
         if (swapped == NULL) {
-            Py_DECREF(result);
-            return NULL;
+            return -1;
         }
         sw_dict = PyType_stgdict(swapped);
 #ifdef WORDS_BIGENDIAN
-        PyObject_SetAttrString((PyObject *)result, "__ctype_le__", swapped);
-        PyObject_SetAttrString((PyObject *)result, "__ctype_be__", (PyObject *)result);
-        PyObject_SetAttrString(swapped, "__ctype_be__", (PyObject *)result);
+        PyObject_SetAttrString(self, "__ctype_le__", swapped);
+        PyObject_SetAttrString(self, "__ctype_be__", self);
+        PyObject_SetAttrString(swapped, "__ctype_be__", self);
         PyObject_SetAttrString(swapped, "__ctype_le__", swapped);
         /* We are creating the type for the OTHER endian */
         sw_dict->format = _ctypes_alloc_format_string("<", stgdict->format+1);
 #else
-        PyObject_SetAttrString((PyObject *)result, "__ctype_be__", swapped);
-        PyObject_SetAttrString((PyObject *)result, "__ctype_le__", (PyObject *)result);
-        PyObject_SetAttrString(swapped, "__ctype_le__", (PyObject *)result);
+        PyObject_SetAttrString(self, "__ctype_be__", swapped);
+        PyObject_SetAttrString(self, "__ctype_le__", self);
+        PyObject_SetAttrString(swapped, "__ctype_le__", self);
         PyObject_SetAttrString(swapped, "__ctype_be__", swapped);
         /* We are creating the type for the OTHER endian */
         sw_dict->format = _ctypes_alloc_format_string(">", stgdict->format+1);
 #endif
         Py_DECREF(swapped);
         if (PyErr_Occurred()) {
-            Py_DECREF(result);
-            return NULL;
+            return -1;
         }
     };
 
-    return (PyObject *)result;
+    return 0;
 }
 
 /*
@@ -2218,7 +2205,7 @@ static PyMethodDef PyCSimpleType_methods[] = {
 static PyType_Slot pycsimple_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the PyCSimpleType Objects")},
     {Py_tp_methods, PyCSimpleType_methods},
-    {Py_tp_new, PyCSimpleType_new},
+    {Py_tp_init, PyCSimpleType_init},
     {Py_tp_traverse, CDataType_traverse},
     {Py_tp_clear, CDataType_clear},
 
