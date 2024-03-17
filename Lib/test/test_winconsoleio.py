@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import unittest
+import warnings
 from test.support import os_helper, requires_resource
 
 if sys.platform != 'win32':
@@ -67,6 +68,18 @@ class WindowsConsoleIOTests(unittest.TestCase):
             self.assertEqual(2, f.fileno())
             f.close()
             f.close()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            try:
+                with self.assertRaises(RuntimeWarning):
+                    f = ConIO(False)
+                with self.assertRaises(RuntimeWarning):
+                    f = ConIO(True, mode='w')
+            except ValueError:
+                # cannot open console because it's not a real console
+                pass
+
 
     def test_open_name(self):
         self.assertRaises(ValueError, ConIO, sys.executable)
