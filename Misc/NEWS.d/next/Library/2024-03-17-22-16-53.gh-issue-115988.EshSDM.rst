@@ -1,0 +1,2 @@
+The lzma module adds build and runtime version info and supports new BCJ
+filters: ARM64 and RISC-V.
