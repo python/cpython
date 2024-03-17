@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Quisieras salir conmigo?</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+        }
+
+        .flowers {
+            margin-top: 20px;
+        }
+
+        .flower {
+            width: 50px;
+            height: 50px;
+            background-color: #ff69b4;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .flower::before, .flower::after {
+            content: '';
+            width: 25px;
+            height: 50px;
+            background-color: #ff69b4;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .flower::before {
+            left: -25px;
+            top: 0;
+        }
+
+        .flower::after {
+            left: 25px;
+            top: 0;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background-color: #fffb00;
+            animation: sparkle 1s linear infinite;
+        }
+
+        @keyframes sparkle {
+            0% {opacity: 1; transform: translateY(0);}
+            100% {opacity: 0; transform: translateY(-100px);}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>¿Quisieras salir conmigo?</h1>
+        <div class="flowers">
+            <div class="flower"></div>
+            <div class="flower"></div>
+            <div class="flower"></div>
+            <div class="flower"></div>
+            <div class="flower"></div>
+            <div class="flower"></div>
+        </div>
+        <div class="sparkles"></div>
+    </div>
+</body>
+</html>
