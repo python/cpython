@@ -1708,7 +1708,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
 
-    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+    @skip_if_sanitizer(memory=True, address=True, thread=True,
+                       reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedReaderTest.test_constructor(self)
@@ -2075,7 +2076,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
     tp = io.BufferedWriter
 
-    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+    @skip_if_sanitizer(memory=True, address=True, thread=True,
+                       reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedWriterTest.test_constructor(self)
@@ -2596,7 +2598,8 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
 
-    @skip_if_sanitizer(memory=True, address=True, reason= "sanitizer defaults to crashing "
+    @skip_if_sanitizer(memory=True, address=True, thread=True,
+                       reason="sanitizer defaults to crashing "
                        "instead of returning NULL for malloc failure.")
     def test_constructor(self):
         BufferedRandomTest.test_constructor(self)
