@@ -101,11 +101,11 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
       subclass of the ABC.  (This class method is called from the
       :meth:`~class.__subclasscheck__` method of the ABC.)
 
-      This method should return ``True``, ``False`` or ``NotImplemented``.  If
+      This method should return ``True``, ``False`` or :data:`NotImplemented`.  If
       it returns ``True``, the *subclass* is considered a subclass of this ABC.
       If it returns ``False``, the *subclass* is not considered a subclass of
       this ABC, even if it would normally be one.  If it returns
-      ``NotImplemented``, the subclass check is continued with the usual
+      :data:`!NotImplemented`, the subclass check is continued with the usual
       mechanism.
 
       .. XXX explain the "usual mechanism"

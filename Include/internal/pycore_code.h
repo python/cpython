@@ -121,6 +121,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
+typedef struct {
+    uint16_t counter;
+} _PyContainsOpCache;
+
+#define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
+
 // Borrowed references to common callables:
 struct callable_cache {
     PyObject *isinstance;
@@ -245,7 +251,12 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
+#ifdef Py_GIL_DISABLED
+// gh-115999 tracks progress on addressing this.
+#define ENABLE_SPECIALIZATION 0
+#else
 #define ENABLE_SPECIALIZATION 1
+#endif
 
 /* Specialization functions */
 
@@ -272,6 +283,7 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);

@@ -98,7 +98,7 @@ def ToASCII(label):  # type: (str) -> bytes
             raise UnicodeEncodeError("idna", label, 0, len(label), "label too long")
 
     # Step 5: Check ACE prefix
-    if label.startswith(sace_prefix):
+    if label.lower().startswith(sace_prefix):
         raise UnicodeEncodeError(
             "idna", label, 0, len(sace_prefix), "Label starts with ACE prefix")
 
@@ -148,7 +148,7 @@ def ToUnicode(label):
                                      "Invalid character in IDN label")
     # Step 3: Check for ACE prefix
     assert isinstance(label, bytes)
-    if not label.startswith(ace_prefix):
+    if not label.lower().startswith(ace_prefix):
         return str(label, "ascii")
 
     # Step 4: Remove ACE prefix
@@ -241,7 +241,7 @@ class Codec(codecs.Codec):
             # XXX obviously wrong, see #3232
             input = bytes(input)
 
-        if ace_prefix not in input:
+        if ace_prefix not in input.lower():
             # Fast path
             try:
                 return input.decode('ascii'), len(input)

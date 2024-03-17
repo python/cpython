@@ -546,6 +546,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
         uint32_t oparg = instr->op.arg;
         uint32_t extended = 0;
 
+        DPRINTF(3, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
+
         if (opcode == ENTER_EXECUTOR) {
             assert(oparg < 256);
             _PyExecutorObject *executor = code->co_executors->executors[oparg];
@@ -593,21 +595,25 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                 int counter = instr[1].cache;
                 int bitcount = _Py_popcount32(counter);
                 int jump_likely = bitcount > 8;
+                /* If bitcount is 8 (half the jumps were taken), adjust confidence by 50%.
+                   If it's 16 or 0 (all or none were taken), adjust by 10%
+                   (since the future is still somewhat uncertain).
+                   For values in between, adjust proportionally. */
                 if (jump_likely) {
-                    confidence = confidence * bitcount / 16;
+                    confidence = confidence * (bitcount + 2) / 20;
                 }
                 else {
-                    confidence = confidence * (16 - bitcount) / 16;
+                    confidence = confidence * (18 - bitcount) / 20;
                 }
+                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
+                DPRINTF(2, "%d: %s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
+                        target, _PyOpcode_OpName[opcode], oparg,
+                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 if (confidence < CONFIDENCE_CUTOFF) {
-                    DPRINTF(2, "Confidence too low (%d)\n", confidence);
+                    DPRINTF(2, "Confidence too low (%d < %d)\n", confidence, CONFIDENCE_CUTOFF);
                     OPT_STAT_INC(low_confidence);
                     goto done;
                 }
-                uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-                DPRINTF(2, "%s(%d): counter=%x, bitcount=%d, likely=%d, confidence=%d, uopcode=%s\n",
-                        _PyOpcode_OpName[opcode], oparg,
-                        counter, bitcount, jump_likely, confidence, _PyUOpName(uopcode));
                 _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                 _Py_CODEUNIT *target_instr = next_instr + oparg;
                 if (jump_likely) {
@@ -893,7 +899,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     uint32_t used[(UOP_MAX_TRACE_LENGTH + 31)/32] = { 0 };
     int exit_count;
     int length = compute_used(buffer, used, &exit_count);
-    _PyExecutorObject *executor = allocate_executor(exit_count, length+1);
+    length += 1;  // For _START_EXECUTOR
+    _PyExecutorObject *executor = allocate_executor(exit_count, length);
     if (executor == NULL) {
         return NULL;
     }
@@ -903,7 +910,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
         executor->exits[i].temperature = 0;
     }
     int next_exit = exit_count-1;
-    _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
+    _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length-1];
     /* Scan backwards, so that we see the destinations of jumps before the jumps themselves. */
     for (int i = UOP_MAX_TRACE_LENGTH-1; i >= 0; i--) {
         if (!BIT_IS_SET(used, i)) {
@@ -951,7 +958,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
-    if (_PyJIT_Compile(executor, executor->trace, length+1)) {
+    if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
         return NULL;
     }
@@ -996,14 +1003,15 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    OPT_STAT_INC(attempts);
     int err = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies);
     if (err <= 0) {
         // Error or nothing translated
         return err;
     }
     OPT_STAT_INC(traces_created);
-    char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
-    if (uop_optimize == NULL || *uop_optimize > '0') {
+    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
         err = _Py_uop_analyze_and_optimize(frame, buffer,
                                            UOP_MAX_TRACE_LENGTH,
                                            curr_stackentries, &dependencies);
@@ -1026,6 +1034,7 @@ uop_optimize(
             break;
         }
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
+        assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
     }
     _PyExecutorObject *executor = make_executor_from_uops(buffer, &dependencies);
     if (executor == NULL) {
@@ -1342,7 +1351,7 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
  * May cause other executors to be invalidated as well
  */
 void
-_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
+_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is_invalidation)
 {
     _PyBloomFilter obj_filter;
     _Py_BloomFilter_Init(&obj_filter);
@@ -1354,6 +1363,9 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
         _PyExecutorObject *next = exec->vm_data.links.next;
         if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
             _Py_ExecutorClear(exec);
+            if (is_invalidation) {
+                OPT_STAT_INC(executors_invalidated);
+            }
         }
         exec = next;
     }
@@ -1361,7 +1373,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
 
 /* Invalidate all executors */
 void
-_Py_Executors_InvalidateAll(PyInterpreterState *interp)
+_Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
 {
     while (interp->executor_list_head) {
         _PyExecutorObject *executor = interp->executor_list_head;
@@ -1371,6 +1383,9 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp)
         }
         else {
             _Py_ExecutorClear(executor);
+        }
+        if (is_invalidation) {
+            OPT_STAT_INC(executors_invalidated);
         }
     }
 }
