@@ -766,7 +766,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
                                 _Py_BloomFilter_Add(dependencies, new_code);
-                                /* Set the operand to the callee's code object,
+                                /* Set the operand to the callee's function object,
                                  * to assist optimization passes */
                                 ADD_TO_TRACE(uop, oparg, (uintptr_t)new_func, target);
                                 code = new_code;
