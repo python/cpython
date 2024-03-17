@@ -350,7 +350,16 @@ options. Valid filter IDs are as follows:
   * :const:`!FILTER_POWERPC`
   * :const:`!FILTER_SPARC`
   * :const:`!FILTER_ARM64`
+
+    Only works if lzma runtime library version is 5.4.0 or later.
+
+    .. versionadded:: 3.13
+
   * :const:`!FILTER_RISCV`
+
+    Only works if lzma runtime library version is 5.6.0 or later.
+
+    .. versionadded:: 3.13
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
