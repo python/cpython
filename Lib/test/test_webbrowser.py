@@ -201,7 +201,7 @@ class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
 
     def test_open(self):
         self._test('open', options=['-remote'],
-                           arguments=['openURL({})'.format(URL)])
+                   arguments=['openURL({})'.format(URL)])
 
     def test_open_with_autoraise_false(self):
         self._test('open',
@@ -270,7 +270,6 @@ class BrowserRegistrationTest(unittest.TestCase):
 
     def test_register_preferred(self):
         self._check_registration(preferred=True)
-
 
     @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
     def test_no_xdg_settings_on_macOS(self):
