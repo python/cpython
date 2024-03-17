@@ -310,7 +310,7 @@ class Epiphany(UnixBrowser):
 
 
 class Chrome(UnixBrowser):
-    "Launcher class for Google Chrome browser."
+    """Launcher class for Google Chrome browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -323,7 +323,7 @@ Chromium = Chrome
 
 
 class Opera(UnixBrowser):
-    "Launcher class for Opera browser."
+    """Launcher class for Opera browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
@@ -333,7 +333,7 @@ class Opera(UnixBrowser):
 
 
 class Elinks(UnixBrowser):
-    "Launcher class for Elinks browsers."
+    """Launcher class for Elinks browsers."""
 
     remote_args = ['-remote', 'openURL(%s%action)']
     remote_action = ""
@@ -400,7 +400,7 @@ class Konqueror(BaseBrowser):
 
 
 class Edge(UnixBrowser):
-    "Launcher class for Microsoft Edge browser."
+    """Launcher class for Microsoft Edge browser."""
 
     remote_args = ['%action', '%s']
     remote_action = ""
