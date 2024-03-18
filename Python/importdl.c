@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_import.h"
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"
 #include "pycore_runtime.h"
 
@@ -14,7 +15,7 @@
 */
 #ifdef HAVE_DYNAMIC_LOADING
 
-#include "importdl.h"
+#include "pycore_importdl.h"
 
 #ifdef MS_WINDOWS
 extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
@@ -166,7 +167,7 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 
     /* Package context is needed for single-phase init */
     oldcontext = _PyImport_SwapPackageContext(newcontext);
-    m = _PyImport_InitFunc_TrampolineCall(p0);
+    m = p0();
     _PyImport_SwapPackageContext(oldcontext);
 
     if (m == NULL) {

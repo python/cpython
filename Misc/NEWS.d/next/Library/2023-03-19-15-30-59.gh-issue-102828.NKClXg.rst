@@ -1,3 +1,0 @@
-Add the ``onexc`` arg to :func:`shutil.rmtree`, which is like ``onerror``
-but expects an exception instance rather than an exc_info tuple. Deprecate
-``onerror``.

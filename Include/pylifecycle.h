@@ -34,18 +34,12 @@ PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
 PyAPI_FUNC(int) Py_BytesMain(int argc, char **argv);
 
 /* In pathconfig.c */
-Py_DEPRECATED(3.11) PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
-
-Py_DEPRECATED(3.11) PyAPI_FUNC(void) Py_SetPythonHome(const wchar_t *);
-PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
-
-PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
-
-PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
-PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
-PyAPI_FUNC(wchar_t *) Py_GetPath(void);
-Py_DEPRECATED(3.11) PyAPI_FUNC(void) Py_SetPath(const wchar_t *);
+Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
+Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
+Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetProgramFullPath(void);
+Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPrefix(void);
+Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetExecPrefix(void);
+Py_DEPRECATED(3.13) PyAPI_FUNC(wchar_t *) Py_GetPath(void);
 #ifdef MS_WINDOWS
 int _Py_CheckPython3(void);
 #endif
@@ -64,6 +58,10 @@ PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_DATA(const unsigned long) Py_Version;
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(int) Py_IsFinalizing(void);
 #endif
 
 #ifndef Py_LIMITED_API

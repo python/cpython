@@ -1,1 +1,0 @@
-Added deprecation warning to *isdst* parameter of :func:`email.utils.localtime`.

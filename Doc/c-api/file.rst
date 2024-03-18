@@ -5,7 +5,7 @@
 File Objects
 ------------
 
-.. index:: object: file
+.. index:: pair: object; file
 
 These APIs are a minimal emulation of the Python 2 C API for built-in file
 objects, which used to rely on the buffered I/O (:c:expr:`FILE*`) support
@@ -65,8 +65,14 @@ the :mod:`io` APIs instead.
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
    through the provided handler.
 
-   The handler is a function of type :c:expr:`PyObject *(\*)(PyObject *path,
-   void *userData)`, where *path* is guaranteed to be :c:type:`PyUnicodeObject`.
+   The *handler* is a function of type:
+
+   .. c:namespace:: NULL
+   .. c:type:: PyObject * (*Py_OpenCodeHookFunction)(PyObject *, void *)
+
+      Equivalent of :c:expr:`PyObject *(\*)(PyObject *path,
+      void *userData)`, where *path* is guaranteed to be
+      :c:type:`PyUnicodeObject`.
 
    The *userData* pointer is passed into the hook function. Since hook
    functions may be called from different runtimes, this pointer should not
@@ -90,10 +96,10 @@ the :mod:`io` APIs instead.
 
 .. c:function:: int PyFile_WriteObject(PyObject *obj, PyObject *p, int flags)
 
-   .. index:: single: Py_PRINT_RAW
+   .. index:: single: Py_PRINT_RAW (C macro)
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
-   :const:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
+   :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written
    instead of the :func:`repr`.  Return ``0`` on success or ``-1`` on failure; the
    appropriate exception will be set.
 
