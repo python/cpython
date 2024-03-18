@@ -64,8 +64,8 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
     """Helper for reporting Python subprocess run results"""
     def fail(self, cmd_line):
         """Provide helpful details about failed subcommand runs"""
-        # Limit to 80 lines to ASCII characters
-        maxlen = 80 * 100
+        # Limit to 300 lines of ASCII characters
+        maxlen = 300 * 100
         out, err = self.out, self.err
         if len(out) > maxlen:
             out = b'(... truncated stdout ...)' + out[-maxlen:]
