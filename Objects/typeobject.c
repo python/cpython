@@ -373,12 +373,23 @@ lookup_tp_mro(PyTypeObject *self)
 PyObject *
 _PyType_GetMRO(PyTypeObject *self)
 {
-    PyObject *mro;
+#ifdef Py_GIL_DISABLED
+    PyObject *mro = _Py_atomic_load_ptr_relaxed(&self->tp_mro);
+    if (mro == NULL) {
+        return NULL;
+    }
+    if (_Py_TryIncref(&self->tp_mro, mro)) {
+        return mro;
+    }
+
     BEGIN_TYPE_LOCK();
     mro = lookup_tp_mro(self);
-    Py_INCREF(mro);
+    Py_XINCREF(mro);
     END_TYPE_LOCK()
     return mro;
+#else
+    return Py_XNewRef(lookup_tp_mro(self));
+#endif
 }
 
 static inline void
@@ -911,7 +922,7 @@ PyType_Modified(PyTypeObject *type)
 }
 
 static int
-is_subtype_unlocked(PyTypeObject *a, PyTypeObject *b);
+is_subtype_with_mro(PyObject *a_mro, PyTypeObject *a, PyTypeObject *b);
 
 static void
 type_mro_modified(PyTypeObject *type, PyObject *bases) {
@@ -957,7 +968,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
         PyTypeObject *cls = _PyType_CAST(b);
 
-        if (!is_subtype_unlocked(type, cls)) {
+        if (!is_subtype_with_mro(lookup_tp_mro(type), type, cls)) {
             goto clear;
         }
     }
@@ -1164,10 +1175,9 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_module(PyTypeObject *type, void *context)
+type_module(PyTypeObject *type)
 {
     PyObject *mod;
-
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyObject *dict = lookup_tp_dict(type);
         if (PyDict_GetItemRef(dict, &_Py_ID(__module__), &mod) == 0) {
@@ -1189,6 +1199,12 @@ type_module(PyTypeObject *type, void *context)
     return mod;
 }
 
+static PyObject *
+type_get_module(PyTypeObject *type, void *context)
+{
+    return type_module(type);
+}
+
 static int
 type_set_module(PyTypeObject *type, PyObject *value, void *context)
 {
@@ -1200,6 +1216,47 @@ type_set_module(PyTypeObject *type, PyObject *value, void *context)
     PyObject *dict = lookup_tp_dict(type);
     return PyDict_SetItem(dict, &_Py_ID(__module__), value);
 }
+
+
+PyObject *
+_PyType_GetFullyQualifiedName(PyTypeObject *type, char sep)
+{
+    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+        return PyUnicode_FromString(type->tp_name);
+    }
+
+    PyObject *qualname = type_qualname(type, NULL);
+    if (qualname == NULL) {
+        return NULL;
+    }
+
+    PyObject *module = type_module(type);
+    if (module == NULL) {
+        Py_DECREF(qualname);
+        return NULL;
+    }
+
+    PyObject *result;
+    if (PyUnicode_Check(module)
+        && !_PyUnicode_Equal(module, &_Py_ID(builtins))
+        && !_PyUnicode_Equal(module, &_Py_ID(__main__)))
+    {
+        result = PyUnicode_FromFormat("%U%c%U", module, sep, qualname);
+    }
+    else {
+        result = Py_NewRef(qualname);
+    }
+    Py_DECREF(module);
+    Py_DECREF(qualname);
+    return result;
+}
+
+PyObject *
+PyType_GetFullyQualifiedName(PyTypeObject *type)
+{
+    return _PyType_GetFullyQualifiedName(type, '.');
+}
+
 
 static PyObject *
 type_abstractmethods(PyTypeObject *type, void *context)
@@ -1396,7 +1453,7 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, void *context)
         }
         PyTypeObject *base = (PyTypeObject*)ob;
 
-        if (is_subtype_unlocked(base, type) ||
+        if (is_subtype_with_mro(lookup_tp_mro(base), base, type) ||
             /* In case of reentering here again through a custom mro()
                the above check is not enough since it relies on
                base->tp_mro which would gonna be updated inside
@@ -1687,7 +1744,7 @@ static PyGetSetDef type_getsets[] = {
     {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
     {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
     {"__mro__", (getter)type_get_mro, NULL, NULL},
-    {"__module__", (getter)type_module, (setter)type_set_module, NULL},
+    {"__module__", (getter)type_get_module, (setter)type_set_module, NULL},
     {"__abstractmethods__", (getter)type_abstractmethods,
      (setter)type_set_abstractmethods, NULL},
     {"__dict__",  (getter)type_dict,  NULL, NULL},
@@ -1708,28 +1765,31 @@ type_repr(PyObject *self)
         return PyUnicode_FromFormat("<class at %p>", type);
     }
 
-    PyObject *mod, *name, *rtn;
-
-    mod = type_module(type, NULL);
-    if (mod == NULL)
+    PyObject *mod = type_module(type);
+    if (mod == NULL) {
         PyErr_Clear();
-    else if (!PyUnicode_Check(mod)) {
-        Py_SETREF(mod, NULL);
     }
-    name = type_qualname(type, NULL);
+    else if (!PyUnicode_Check(mod)) {
+        Py_CLEAR(mod);
+    }
+
+    PyObject *name = type_qualname(type, NULL);
     if (name == NULL) {
         Py_XDECREF(mod);
         return NULL;
     }
 
-    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins)))
-        rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
-    else
-        rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
-
+    PyObject *result;
+    if (mod != NULL && !_PyUnicode_Equal(mod, &_Py_ID(builtins))) {
+        result = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
+    }
+    else {
+        result = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
+    }
     Py_XDECREF(mod);
     Py_DECREF(name);
-    return rtn;
+
+    return result;
 }
 
 static PyObject *
@@ -2254,37 +2314,41 @@ type_is_subtype_base_chain(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
-is_subtype_unlocked(PyTypeObject *a, PyTypeObject *b)
+is_subtype_with_mro(PyObject *a_mro, PyTypeObject *a, PyTypeObject *b)
 {
-    PyObject *mro;
-
-    ASSERT_TYPE_LOCK_HELD();
-    mro = lookup_tp_mro(a);
-    if (mro != NULL) {
+    int res;
+    if (a_mro != NULL) {
         /* Deal with multiple inheritance without recursion
            by walking the MRO tuple */
         Py_ssize_t i, n;
-        assert(PyTuple_Check(mro));
-        n = PyTuple_GET_SIZE(mro);
+        assert(PyTuple_Check(a_mro));
+        n = PyTuple_GET_SIZE(a_mro);
+        res = 0;
         for (i = 0; i < n; i++) {
-            if (PyTuple_GET_ITEM(mro, i) == (PyObject *)b)
-                return 1;
+            if (PyTuple_GET_ITEM(a_mro, i) == (PyObject *)b) {
+                res = 1;
+                break;
+            }
         }
-        return 0;
     }
-    else
+    else {
         /* a is not completely initialized yet; follow tp_base */
-        return type_is_subtype_base_chain(a, b);
+        res = type_is_subtype_base_chain(a, b);
+    }
+    return res;
 }
 
 int
 PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
-    int res;
-    BEGIN_TYPE_LOCK();
-    res = is_subtype_unlocked(a, b);
-    END_TYPE_LOCK()
+#ifdef Py_GIL_DISABLED
+    PyObject *mro = _PyType_GetMRO(a);
+    int res = is_subtype_with_mro(mro, a, b);
+    Py_XDECREF(mro);
     return res;
+#else
+    return is_subtype_with_mro(lookup_tp_mro(a), a, b);
+#endif
 }
 
 /* Routines to do a method lookup in the type without looking in the
@@ -2777,7 +2841,7 @@ mro_check(PyTypeObject *type, PyObject *mro)
         }
         PyTypeObject *base = (PyTypeObject*)obj;
 
-        if (!is_subtype_unlocked(solid, solid_base(base))) {
+        if (!is_subtype_with_mro(lookup_tp_mro(solid), solid, solid_base(base))) {
             PyErr_Format(
                 PyExc_TypeError,
                 "mro() returned base with unsuitable layout ('%.500s')",
@@ -4696,9 +4760,9 @@ PyType_GetQualName(PyTypeObject *type)
 }
 
 PyObject *
-_PyType_GetModuleName(PyTypeObject *type)
+PyType_GetModuleName(PyTypeObject *type)
 {
-    return type_module(type, NULL);
+    return type_module(type);
 }
 
 void *
@@ -5812,7 +5876,7 @@ object_repr(PyObject *self)
     PyObject *mod, *name, *rtn;
 
     type = Py_TYPE(self);
-    mod = type_module(type, NULL);
+    mod = type_module(type);
     if (mod == NULL)
         PyErr_Clear();
     else if (!PyUnicode_Check(mod)) {
@@ -7033,28 +7097,29 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 #undef COPYVAL
 
     /* Setup fast subclass flags */
-    if (is_subtype_unlocked(base, (PyTypeObject*)PyExc_BaseException)) {
+    PyObject *mro = lookup_tp_mro(base);
+    if (is_subtype_with_mro(mro, base, (PyTypeObject*)PyExc_BaseException)) {
         type->tp_flags |= Py_TPFLAGS_BASE_EXC_SUBCLASS;
     }
-    else if (is_subtype_unlocked(base, &PyType_Type)) {
+    else if (is_subtype_with_mro(mro, base, &PyType_Type)) {
         type->tp_flags |= Py_TPFLAGS_TYPE_SUBCLASS;
     }
-    else if (is_subtype_unlocked(base, &PyLong_Type)) {
+    else if (is_subtype_with_mro(mro, base, &PyLong_Type)) {
         type->tp_flags |= Py_TPFLAGS_LONG_SUBCLASS;
     }
-    else if (is_subtype_unlocked(base, &PyBytes_Type)) {
+    else if (is_subtype_with_mro(mro, base, &PyBytes_Type)) {
         type->tp_flags |= Py_TPFLAGS_BYTES_SUBCLASS;
     }
-    else if (is_subtype_unlocked(base, &PyUnicode_Type)) {
+    else if (is_subtype_with_mro(mro, base, &PyUnicode_Type)) {
         type->tp_flags |= Py_TPFLAGS_UNICODE_SUBCLASS;
     }
-    else if (is_subtype_unlocked(base, &PyTuple_Type)) {
+    else if (is_subtype_with_mro(mro, base, &PyTuple_Type)) {
         type->tp_flags |= Py_TPFLAGS_TUPLE_SUBCLASS;
     }
-    else if (is_subtype_unlocked(base, &PyList_Type)) {
+    else if (is_subtype_with_mro(mro, base, &PyList_Type)) {
         type->tp_flags |= Py_TPFLAGS_LIST_SUBCLASS;
     }
-    else if (is_subtype_unlocked(base, &PyDict_Type)) {
+    else if (is_subtype_with_mro(mro, base, &PyDict_Type)) {
         type->tp_flags |= Py_TPFLAGS_DICT_SUBCLASS;
     }
 
@@ -10155,7 +10220,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
             d = (PyWrapperDescrObject *)descr;
             if ((specific == NULL || specific == d->d_wrapped) &&
                 d->d_base->wrapper == p->wrapper &&
-                is_subtype_unlocked(type, PyDescr_TYPE(d)))
+                is_subtype_with_mro(lookup_tp_mro(type), type, PyDescr_TYPE(d)))
             {
                 specific = d->d_wrapped;
             }

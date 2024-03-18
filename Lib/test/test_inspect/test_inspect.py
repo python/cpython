@@ -35,16 +35,16 @@ except ImportError:
 from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
-from test.support.os_helper import TESTFN
+from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support, SuppressCrashReport
 from test import support
 
-from . import inspect_fodder as mod
-from . import inspect_fodder2 as mod2
-from . import inspect_stock_annotations
-from . import inspect_stringized_annotations
-from . import inspect_stringized_annotations_2
+from test.test_inspect import inspect_fodder as mod
+from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_stock_annotations
+from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_stringized_annotations_2
 
 
 # Functions tested in this suite:
@@ -730,6 +730,18 @@ class TestRetrievingSourceCode(GetSourceBase):
         finally:
             del linecache.cache[co.co_filename]
 
+    def test_getsource_empty_file(self):
+        with temp_cwd() as cwd:
+            with open('empty_file.py', 'w'):
+                pass
+            sys.path.insert(0, cwd)
+            try:
+                import empty_file
+                self.assertEqual(inspect.getsource(empty_file), '\n')
+                self.assertEqual(inspect.getsourcelines(empty_file), (['\n'], 0))
+            finally:
+                sys.path.remove(cwd)
+
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
 
@@ -991,7 +1003,11 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls196, 194, 201)
         self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
+    @support.requires_docstrings
     def test_class_inside_conditional(self):
+        # We skip this test when docstrings are not present,
+        # because docstrings are one of the main factors of
+        # finding the correct class in the source code.
         self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
 
     def test_multiple_children_classes(self):
@@ -5284,6 +5300,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         with self.assertRaises(ValueError):
             inspect.signature(func)
 
+    @support.requires_docstrings
     def test_base_class_have_text_signature(self):
         # see issue 43118
         from test.typinganndata.ann_module7 import BufferedReader
