@@ -89,6 +89,7 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    object's ``tp_hash`` slot.
    Its result only depends on the object's identity.
 
-   In CPython, it is equivalent to :c:func:`Py_HashPointer`.
+   .. impl-detail::
+      In CPython, it is equivalent to :c:func:`Py_HashPointer`.
 
    .. versionadded:: 3.13
