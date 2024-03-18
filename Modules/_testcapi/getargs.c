@@ -179,7 +179,7 @@ test_w_code_invalid(PyObject *, PyObject *)
         return NULL;
     }
 
-    for (n = 0;formats_3[n];++n) {
+    for (n = 0; formats_3[n]; ++n) {
         if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_3[n],
                                         (char**) keywords,
                                         &tmp, &tmp, &tmp)) {
@@ -203,7 +203,7 @@ test_w_code_invalid(PyObject *, PyObject *)
         return NULL;
     }
 
-    for (n = 0;formats_4[n];++n) {
+    for (n = 0; formats_4[n]; ++n) {
         if (PyArg_ParseTupleAndKeywords(args, kwargs, formats_4[n],
                                         (char**) keywords,
                                         &tmp, &tmp, &tmp, &tmp)) {
