@@ -1687,13 +1687,13 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     if (! ok)
         ++ok;
     /* Regular insertion sort has average- and worst-case O(n**2) cost
-       for both average and worst cases for both # of comparisons and number
-       of bytes moved. But its branches are highly predictable, and it loves
-       sorted input (O(n) compares and data movementl. This is significant in
-       cases like sortperf.py's %sort, where an out-of-order element near the
-       start of a run is moved into place slowly but then the remaining
-       elements up to length minrun are generally at worst one slot away from
-       their correct position (so only need 1 or 2 commpares to resolve).
+       for both # of comparisons and number of bytes moved. But its branches
+       are highly predictable, and it loves sorted input (O(n) compares and
+       data movementl. This is significant in cases like sortperf.py's %sort,
+       where an out-of-order element near the start of a run is moved into
+       place slowly but then the remaining elements up to length minrun are
+       generally at worst one slot away from their correct position (so only
+       need 1 or 2 commpares to resolve).
 
        Binary insertion sort has worst, average, and best case O(n log n)
        cost for # of comparisons, but worst and average case O(n**2) cost
@@ -2587,10 +2587,10 @@ merge_force_collapse(MergeState *ms)
 /* Compute a good value for the minimum run length; natural runs shorter
  * than this are boosted artificially via binary insertion.
  *
- * If n < 64, return n (it's too small to bother with fancy stuff).
- * Else if n is an exact power of 2, return 32.
- * Else return an int k, 32 <= k <= 64, such that n/k is close to, but
- * strictly less than, an exact power of 2.
+ * If n < MAX_MINRUN return n (it's too small to bother with fancy stuff).
+ * Else if n is an exact power of 2, return MAX_MINRUN / 2.
+ * Else return an int k, MAX_MINRUN / 2 <= k <= MAX_MINRUN, such that n/k is
+ * close to, but strictly less than, an exact power of 2.
  *
  * See listsort.txt for more info.
  */
