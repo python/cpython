@@ -472,7 +472,7 @@ new_weakref_lock_held(PyTypeObject *type, PyObject *ob, PyObject *callback)
 #else
         if (ref != NULL) {
             /* We can re-use an existing reference. */
-            return Py_NewRef(ref);
+            return (PyWeakReference *) Py_NewRef(ref);
         }
 #endif
     }
