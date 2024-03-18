@@ -1683,12 +1683,12 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     Py_ssize_t M;
 
     assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
-    /* assert s[:ok] is sorted */
+    /* assert a[:ok] is sorted */
     if (! ok)
         ++ok;
     /* Regular insertion sort has average- and worst-case O(n**2) cost
        for both # of comparisons and number of bytes moved. But its branches
-       are highly predictable, and it loves sorted input (O(n) compares and
+       are highly predictable, and it loves sorted input (n-1 compares and no
        data movementl. This is significant in cases like sortperf.py's %sort,
        where an out-of-order element near the start of a run is moved into
        place slowly but then the remaining elements up to length minrun are
@@ -1736,9 +1736,9 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
         R = ok;
         pivot = a[ok];
         /* Slice invariants. vacuously true at the start:
-         * 0:L  <= pivot
-         * L:R     unknown
-         * R:ok  > pivot
+         * all a[0:L]  <= pivot
+         * all a[L:R]     unknown
+         * all a[R:ok]  > pivot
          */
         assert(L < R);
         do {
