@@ -143,7 +143,7 @@ getargs_w_star(PyObject *self, PyObject *args)
 
 /* Test the old w and w# codes that no longer work */
 static PyObject *
-test_w_code_invalid(PyObject *self)
+test_w_code_invalid(PyObject *, PyObject *)
 {
     static const char * const keywords[] = {"a", "b", "c", "d", NULL};
     char *formats_3[] = {"O|w#$O",
@@ -167,7 +167,13 @@ test_w_code_invalid(PyObject *self)
         return NULL;
     }
 
-    if (!(kwargs = PyDict_New()) || PyDict_SetItemString(kwargs, "c", Py_None)) {
+    kwargs = PyDict_New();
+    if (!kwargs) {
+        Py_DECREF(args);
+        return NULL;
+    }
+
+    if (PyDict_SetItemString(kwargs, "c", Py_None)) {
         Py_DECREF(args);
         Py_XDECREF(kwargs);
         return NULL;
@@ -178,8 +184,11 @@ test_w_code_invalid(PyObject *self)
                                         (char**) keywords,
                                         &tmp, &tmp, &tmp)) {
             Py_DECREF(args);
-            return raiseTestError("test_w_code_invalid_suffix",
-                                  formats_3[n]);
+            Py_DECREF(kwargs);
+            PyErr_Format(PyExc_AssertionError,
+                         "test_w_code_invalid_suffix: %s",
+                         formats_3[n]);
+            return NULL;
         }
         else {
             PyErr_Clear();
@@ -199,8 +208,11 @@ test_w_code_invalid(PyObject *self)
                                         (char**) keywords,
                                         &tmp, &tmp, &tmp, &tmp)) {
             Py_DECREF(args);
-            return raiseTestError("test_w_code_invalid_suffix",
-                                  formats_4[n]);
+            Py_DECREF(kwargs);
+            PyErr_Format(PyExc_AssertionError,
+                         "test_w_code_invalid_suffix: %s",
+                         formats_4[n]);
+            return NULL;
         }
         else {
             PyErr_Clear();
@@ -764,6 +776,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords,       METH_VARARGS},
     {"gh_99240_clear_args",     gh_99240_clear_args,             METH_VARARGS},
+    {"test_w_code_invalid",     test_w_code_invalid,             METH_NOARGS},
     {NULL},
 };
 
