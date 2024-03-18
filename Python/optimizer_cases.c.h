@@ -588,7 +588,7 @@
             break;
         }
 
-        case _POP_FRAME: {
+        case _RETURN_VALUE: {
             _Py_UopsSymbol *retval;
             _Py_UopsSymbol *res;
             retval = stack_pointer[-1];
@@ -636,6 +636,10 @@
         /* _SEND_GEN is not a viable micro-op for tier 2 */
 
         /* _INSTRUMENTED_YIELD_VALUE is not a viable micro-op for tier 2 */
+
+        case _YIELD_VALUE: {
+            break;
+        }
 
         case _POP_EXCEPT: {
             stack_pointer += -1;

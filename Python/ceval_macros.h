@@ -86,6 +86,18 @@
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
 
+#if LLTRACE
+#define LLTRACE_RESUME_FRAME() \
+do { \
+    lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS()); \
+    if (lltrace < 0) { \
+        goto exit_unwind; \
+    } \
+} while (0)
+#else
+#define LLTRACE_RESUME_FRAME() ((void)0)
+#endif
+
 #ifdef Py_GIL_DISABLED
 #define QSBR_QUIESCENT_STATE(tstate) _Py_qsbr_quiescent_state(((_PyThreadStateImpl *)tstate)->qsbr)
 #else

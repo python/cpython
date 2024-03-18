@@ -1000,12 +1000,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
-                #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-                #endif
+                LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
         }
@@ -1789,12 +1784,7 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP(0);
-                #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-                #endif
+                LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
         }
@@ -4983,7 +4973,7 @@
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
             }
-            // _POP_FRAME
+            // _RETURN_VALUE
             retval = value;
             {
                 #if TIER_ONE
@@ -4999,12 +4989,7 @@
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP(frame->return_offset);
-                #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-                #endif
+                LLTRACE_RESUME_FRAME();
             }
             DISPATCH();
         }
@@ -5057,12 +5042,7 @@
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
-            #if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-            #endif
+            LLTRACE_RESUME_FRAME();
             DISPATCH();
         }
 
@@ -6022,7 +6002,7 @@
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(frame != &entry_frame);
-            frame->instr_ptr = next_instr;
+            frame->instr_ptr++;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
@@ -6038,6 +6018,8 @@
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            goto resume_frame;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LLTRACE_RESUME_FRAME();
+            DISPATCH();
         }
 #undef TIER_ONE

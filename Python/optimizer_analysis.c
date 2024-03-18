@@ -241,7 +241,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             }
-            case _POP_FRAME:
+            case _RETURN_VALUE:
             {
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
@@ -522,7 +522,7 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
                 break;
             }
             case _PUSH_FRAME:
-            case _POP_FRAME:
+            case _RETURN_VALUE:
             {
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
                 if (func == NULL) {

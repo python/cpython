@@ -796,7 +796,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        op(_POP_FRAME, (retval --)) {
+        op(_RETURN_VALUE, (retval --)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -811,16 +811,11 @@ dummy_func(
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
-#if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-#endif
+            LLTRACE_RESUME_FRAME();
         }
 
         macro(RETURN_VALUE) =
-            _POP_FRAME;
+            _RETURN_VALUE;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
             int err = _Py_call_instrumentation_arg(
@@ -843,7 +838,7 @@ dummy_func(
 
         macro(RETURN_CONST) =
             LOAD_CONST +
-            _POP_FRAME;
+            _RETURN_VALUE;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
@@ -1068,12 +1063,12 @@ dummy_func(
             goto resume_frame;
         }
 
-        tier1 inst(YIELD_VALUE, (retval -- unused)) {
+        inst(YIELD_VALUE, (retval -- unused)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
             assert(frame != &entry_frame);
-            frame->instr_ptr = next_instr;
+            frame->instr_ptr++;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             assert(FRAME_SUSPENDED_YIELD_FROM == FRAME_SUSPENDED + 1);
             assert(oparg == 0 || oparg == 1);
@@ -1089,7 +1084,8 @@ dummy_func(
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            goto resume_frame;
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            LLTRACE_RESUME_FRAME();
         }
 
         inst(POP_EXCEPT, (exc_value -- )) {
@@ -3176,12 +3172,7 @@ dummy_func(
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP(0);
-#if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-#endif
+            LLTRACE_RESUME_FRAME();
         }
 
         macro(CALL_BOUND_METHOD_EXACT_ARGS) =
