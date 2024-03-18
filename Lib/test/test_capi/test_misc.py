@@ -1100,21 +1100,76 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
-    def test_get_type_module_name(self):
+    def test_get_type_name(self):
+        class MyType:
+            pass
+
+        from _testcapi import (
+            get_type_name, get_type_qualname,
+            get_type_fullyqualname, get_type_module_name)
+
         from collections import OrderedDict
         ht = _testcapi.get_heaptype_for_name()
-        for cls, expected in {
-            int: 'builtins',
-            OrderedDict: 'collections',
-            ht: '_testcapi',
-        }.items():
-            with self.subTest(repr(cls)):
-                modname = _testinternalcapi.get_type_module_name(cls)
-                self.assertEqual(modname, expected)
+        for cls, fullname, modname, qualname, name in (
+            (int,
+             'int',
+             'builtins',
+             'int',
+             'int'),
+            (OrderedDict,
+             'collections.OrderedDict',
+             'collections',
+             'OrderedDict',
+             'OrderedDict'),
+            (ht,
+             '_testcapi.HeapTypeNameType',
+             '_testcapi',
+             'HeapTypeNameType',
+             'HeapTypeNameType'),
+            (MyType,
+             f'{__name__}.CAPITest.test_get_type_name.<locals>.MyType',
+             __name__,
+             'CAPITest.test_get_type_name.<locals>.MyType',
+             'MyType'),
+        ):
+            with self.subTest(cls=repr(cls)):
+                self.assertEqual(get_type_fullyqualname(cls), fullname)
+                self.assertEqual(get_type_module_name(cls), modname)
+                self.assertEqual(get_type_qualname(cls), qualname)
+                self.assertEqual(get_type_name(cls), name)
 
+        # override __module__
         ht.__module__ = 'test_module'
-        modname = _testinternalcapi.get_type_module_name(ht)
-        self.assertEqual(modname, 'test_module')
+        self.assertEqual(get_type_fullyqualname(ht), 'test_module.HeapTypeNameType')
+        self.assertEqual(get_type_module_name(ht), 'test_module')
+        self.assertEqual(get_type_qualname(ht), 'HeapTypeNameType')
+        self.assertEqual(get_type_name(ht), 'HeapTypeNameType')
+
+        # override __name__ and __qualname__
+        MyType.__name__ = 'my_name'
+        MyType.__qualname__ = 'my_qualname'
+        self.assertEqual(get_type_fullyqualname(MyType), f'{__name__}.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), __name__)
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
+
+        # override also __module__
+        MyType.__module__ = 'my_module'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_module.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), 'my_module')
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
+
+        # PyType_GetFullyQualifiedName() ignores the module if it's "builtins"
+        # or "__main__" of it is not a string
+        MyType.__module__ = 'builtins'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = '__main__'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = 123
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
