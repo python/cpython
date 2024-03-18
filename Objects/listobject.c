@@ -1661,15 +1661,14 @@ struct s_MergeState {
     int (*tuple_elem_compare)(PyObject *, PyObject *, MergeState *);
 };
 
-/* binarysort is the best method for sorting small arrays: it does
-   few compares, but can do data movement quadratic in the number of
-   elements.
-   [lo.keys, hi) is a contiguous slice of a list of keys, and is sorted via
-   binary insertion.  This sort is stable.
-   On entry, must have lo.keys <= start <= hi, and that
-   [lo.keys, start) is already sorted (pass start == lo.keys if you don't
-   know!).
-   If islt() complains return -1, else 0.
+/* binarysort is the best method for sorting small arrays: it does few
+   compares, but can do data movement quadratic in the number of elements.
+   ss->keys is viewed as an array of n kays, a[:n]. a[:ok] is already sorted.
+   Pass ok = 0 (or 1) if you don't know.
+   It's sorted in-place, by a stable binary insertion sort. If ss->values
+   isn't NULL, it's permuted in lockstap with ss->keys.
+   On entry, must have n >= 1, and 0 <= ok <= n <= MAX_MINRUN.
+   Return -1 if comparison raises an exception, else 0.
    Even in case of error, the output slice will be some permutation of
    the input (nothing is lost or duplicated).
 */
@@ -1684,12 +1683,12 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     Py_ssize_t L, M, R;
 
     assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
-     /* assert s[:ok) is sorted */
+    /* assert s[:ok) is sorted */
 
     if (! ok)
         ++ok;
     for (; ok < n; ++ok) {
-s        /* set L to where a[ok] belongs */
+        /* set L to where a[ok] belongs */
         L = 0;
         R = ok;
         pivot = a[ok];
