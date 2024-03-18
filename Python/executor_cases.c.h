@@ -2869,15 +2869,6 @@
             if (func->func_version != func_version) goto deoptimize;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             if (code->co_argcount != oparg + (self_or_null != NULL)) goto deoptimize;
-            break;
-        }
-
-        case _CHECK_STACK_SPACE: {
-            PyObject *callable;
-            oparg = CURRENT_OPARG();
-            callable = stack_pointer[-2 - oparg];
-            PyFunctionObject *func = (PyFunctionObject *)callable;
-            PyCodeObject *code = (PyCodeObject *)func->func_code;
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) goto deoptimize;
             if (tstate->py_recursion_remaining <= 1) goto deoptimize;
             break;

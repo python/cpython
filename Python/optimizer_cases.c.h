@@ -1582,10 +1582,6 @@
             break;
         }
 
-        case _CHECK_STACK_SPACE: {
-            break;
-        }
-
         case _INIT_CALL_PY_EXACT_ARGS: {
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *self_or_null;

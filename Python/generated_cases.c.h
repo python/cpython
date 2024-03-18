@@ -956,17 +956,11 @@
                 DEOPT_IF(func->func_version != func_version, CALL);
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
-            }
-            // _CHECK_STACK_SPACE
-            {
-                PyFunctionObject *func = (PyFunctionObject *)callable;
-                PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
                 DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             }
             // _INIT_CALL_PY_EXACT_ARGS
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
             {
                 int has_self = (self_or_null != NULL);
                 STAT_INC(CALL, hit);
@@ -1745,17 +1739,11 @@
                 DEOPT_IF(func->func_version != func_version, CALL);
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(code->co_argcount != oparg + (self_or_null != NULL), CALL);
-            }
-            // _CHECK_STACK_SPACE
-            {
-                PyFunctionObject *func = (PyFunctionObject *)callable;
-                PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
                 DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             }
             // _INIT_CALL_PY_EXACT_ARGS
             args = &stack_pointer[-oparg];
-            self_or_null = stack_pointer[-1 - oparg];
             {
                 int has_self = (self_or_null != NULL);
                 STAT_INC(CALL, hit);
