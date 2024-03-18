@@ -236,14 +236,14 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
 static PyObject *
 get_once_registry(PyInterpreterState *interp)
 {
-    PyObject *registry;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(interp);
 
     WarningsState *st = warnings_get_state(interp);
     if (st == NULL) {
         return NULL;
     }
 
-    registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
+    PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -258,9 +258,7 @@ get_once_registry(PyInterpreterState *interp)
         Py_DECREF(registry);
         return NULL;
     }
-    Py_BEGIN_CRITICAL_SECTION(registry);
     Py_SETREF(st->once_registry, registry);
-    Py_END_CRITICAL_SECTION();
     return registry;
 }
 
@@ -268,14 +266,14 @@ get_once_registry(PyInterpreterState *interp)
 static PyObject *
 get_default_action(PyInterpreterState *interp)
 {
-    PyObject *default_action;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(interp);
 
     WarningsState *st = warnings_get_state(interp);
     if (st == NULL) {
         return NULL;
     }
 
-    default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
+    PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -291,9 +289,7 @@ get_default_action(PyInterpreterState *interp)
         Py_DECREF(default_action);
         return NULL;
     }
-    Py_BEGIN_CRITICAL_SECTION(default_action);
     Py_SETREF(st->default_action, default_action);
-    Py_END_CRITICAL_SECTION();
     return default_action;
 }
 
@@ -304,23 +300,20 @@ get_filter(PyInterpreterState *interp, PyObject *category,
            PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
 {
-    PyObject *action;
-    Py_ssize_t i;
-    PyObject *warnings_filters;
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(interp);
+
     WarningsState *st = warnings_get_state(interp);
     if (st == NULL) {
         return NULL;
     }
 
-    warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
     }
     else {
-        Py_BEGIN_CRITICAL_SECTION(warnings_filters);
         Py_SETREF(st->filters, warnings_filters);
-        Py_END_CRITICAL_SECTION();
     }
 
     PyObject *filters = st->filters;
@@ -331,7 +324,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     }
 
     /* WarningsState.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
@@ -391,7 +384,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         Py_DECREF(tmp_item);
     }
 
-    action = get_default_action(interp);
+    PyObject *action = get_default_action(interp);
     if (action != NULL) {
         *item = Py_NewRef(Py_None);
         return action;
@@ -1007,8 +1000,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
+    Py_BEGIN_CRITICAL_SECTION(tstate->interp);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
+    Py_END_CRITICAL_SECTION();
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1156,8 +1151,10 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
             return NULL;
         }
     }
+    Py_BEGIN_CRITICAL_SECTION(tstate->interp);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
+    Py_END_CRITICAL_SECTION();
     Py_XDECREF(source_line);
     return returned;
 }
@@ -1363,8 +1360,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
+            Py_BEGIN_CRITICAL_SECTION(tstate->interp);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
+            Py_END_CRITICAL_SECTION();
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
