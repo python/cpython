@@ -4,7 +4,6 @@
 import os.path
 import shutil
 import subprocess
-import sysconfig
 import unittest
 from test import support
 
@@ -18,9 +17,8 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 @unittest.skipIf(support.MS_WINDOWS, 'test fails on Windows')
 # Building and running an extension in clang sanitizing mode is not
 # straightforward
-@unittest.skipIf(
-    '-fsanitize' in (sysconfig.get_config_var('PY_CFLAGS') or ''),
-    'test does not work with analyzing builds')
+@support.skip_if_sanitizer('test does not work with analyzing builds',
+                           address=True, memory=True, ub=True, thread=True)
 # the test uses venv+pip: skip if it's not available
 @support.requires_venv_with_pip()
 @support.requires_subprocess()
