@@ -415,9 +415,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    co->co_version = interp->next_func_version;
-    if (interp->next_func_version != 0) {
-        interp->next_func_version++;
+    co->co_version = interp->func_state.next_version;
+    if (interp->func_state.next_version != 0) {
+        interp->func_state.next_version++;
     }
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
