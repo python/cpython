@@ -449,6 +449,14 @@ dummy_func(void) {
         }
     }
 
+    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        (void)owner;
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
+        if (oparg & 1) {
+            OUT_OF_SPACE_IF_NULL(self_or_null = sym_new_unknown(ctx));
+        }
+    }
+
     op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
         (void)index;
         OUT_OF_SPACE_IF_NULL(null = sym_new_null(ctx));
@@ -513,7 +521,6 @@ dummy_func(void) {
         OUT_OF_SPACE_IF_NULL(self = sym_new_not_null(ctx));
     }
 
-
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         if (!sym_set_type(callable, &PyFunction_Type)) {
             goto hit_bottom;
@@ -537,6 +544,7 @@ dummy_func(void) {
         (void)callable;
 
         PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
+        DPRINTF(3, "func: %p ", func);
         if (func == NULL) {
             goto error;
         }

@@ -28,7 +28,6 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_typeobject.h"    // _PyType_GetModuleName()
 
 #include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
@@ -1288,8 +1287,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* This test would fail if run with the address sanitizer */
-#ifdef _Py_ADDRESS_SANITIZER
+    /* ASan or TSan would report an use-after-free error */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
@@ -1632,13 +1631,6 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 
 
 static PyObject *
-get_type_module_name(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return _PyType_GetModuleName((PyTypeObject *)type);
-}
-
-static PyObject *
 get_rare_event_counters(PyObject *self, PyObject *type)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -1741,7 +1733,6 @@ static PyMethodDef module_functions[] = {
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
-    {"get_type_module_name",    get_type_module_name,            METH_O},
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
 #ifdef Py_GIL_DISABLED

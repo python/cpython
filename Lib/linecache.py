@@ -137,7 +137,9 @@ def updatecache(filename, module_globals=None):
             lines = fp.readlines()
     except (OSError, UnicodeDecodeError, SyntaxError):
         return []
-    if lines and not lines[-1].endswith('\n'):
+    if not lines:
+        lines = ['\n']
+    elif not lines[-1].endswith('\n'):
         lines[-1] += '\n'
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
