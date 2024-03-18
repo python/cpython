@@ -1680,13 +1680,59 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     PyObject ** const v = ss->values;
     const bool has_values = v != NULL;
     PyObject *pivot;
-    Py_ssize_t L, M, R;
+    Py_ssize_t M;
 
     assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
     /* assert s[:ok] is sorted */
-
     if (! ok)
         ++ok;
+    /* Regular insertion sort has average- and worst-case O(n**2) cost
+       for both average and worst cases for both # of comparisons and number
+       of bytes moved. But its branches are highly predictable, and it loves
+       sorted input (O(n) compares and data movementl. This is significant in
+       cases like sortperf.py's %sort, where an out-of-order element near the
+       start of a run is moved into place slowly but then the remaining
+       elements up to length minrun are generally at worst one slot away from
+       their correct position (so only need 1 or 2 commpares to resolve).
+
+       Binary insertion sort has worst, average, and best case O(n log n)
+       cost for # of comparisons, but worst and average case O(n**2) cost
+       for data movement. The more expensive comparisons, the more important
+       the comparison advantage. But its branches are less predictable the
+       more "randomish" the data, and that's so significant its worst case
+       in real life is random input rather than reverse-ordered (which does
+       about twice the data movement than random input does). */
+#if 1 // ordinary insertion sort
+    PyObject * vpivot = NULL;
+    for (; ok < n; ++ok) {
+        pivot = a[ok];
+        if (has_values)
+            vpivot = v[ok];
+        for (M = ok - 1; M >= 0; --M) {
+            k = ISLT(pivot, a[M]);
+            if (k < 0) {
+                a[M + 1] = pivot;
+                if (has_values)
+                    v[M + 1] = vpivot;
+                goto fail;
+            }
+            else if (k) {
+                a[M + 1] = a[M];
+                if (has_values) {
+                    v[M + 1] = v[M];
+                    v[M] = vpivot;
+                }
+            }
+            else
+                break;
+        }
+        a[M + 1] = pivot;
+        if (has_values)
+            v[M + 1] = vpivot;
+    }
+    return 0;
+#else // binary insertion sort
+    Py_ssize_t L, R;
     for (; ok < n; ++ok) {
         /* set L to where a[ok] belongs */
         L = 0;
@@ -1702,10 +1748,19 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             /* don't do silly ;-) things to prevent overflow when finding
                the midpoint; L and R are very far from filling a Py_ssize_t */
             M = (L + R) >> 1;
+#if 0
             IFLT(pivot, a[M])
                 R = M;
             else
                 L = M + 1;
+#else // try to get compiler to generate conditional move instructions
+            k = ISLT(pivot, a[M]);
+            if (k < 0)
+                goto fail;
+            Py_ssize_t Mp1 = M + 1;
+            R = k ? M : R;
+            L = k ? L : Mp1;
+#endif
         } while (L < R);
         assert(L == R);
         /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
@@ -1722,6 +1777,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             v[L] = pivot;
         }
     }
+#endif
     return 0;
 
  fail:
