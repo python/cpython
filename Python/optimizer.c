@@ -471,7 +471,7 @@ BRANCH_TO_GUARD[4][2] = {
 // Reserve space for N uops, plus 3 for _SET_IP, _CHECK_VALIDITY and _EXIT_TRACE
 #define RESERVE(needed) RESERVE_RAW((needed) + 3, _PyUOpName(opcode))
 
-// Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
+// Trace stack operations (used by _PUSH_FRAME, _RETURN_VALUE)
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
@@ -658,10 +658,11 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                     // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
                     RESERVE(nuops);
-                    if (expansion->uops[nuops-1].uop == _POP_FRAME) {
+                    int16_t last_uop = expansion->uops[nuops-1].uop;
+                    if (last_uop == _RETURN_VALUE || last_uop == _YIELD_VALUE) {
                         // Check for trace stack underflow now:
                         // We can't bail e.g. in the middle of
-                        // LOAD_CONST + _POP_FRAME.
+                        // LOAD_CONST + _RETURN_VALUE.
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
                             OPT_STAT_INC(trace_stack_underflow);
@@ -717,7 +718,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 Py_FatalError("garbled expansion");
                         }
                         ADD_TO_TRACE(uop, oparg, operand, target);
-                        if (uop == _POP_FRAME) {
+                        if (uop == _RETURN_VALUE) {
                             TRACE_STACK_POP();
                             /* Set the operand to the function object returned to,
                              * to assist optimization passes */
