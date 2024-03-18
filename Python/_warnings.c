@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -257,7 +258,9 @@ get_once_registry(PyInterpreterState *interp)
         Py_DECREF(registry);
         return NULL;
     }
+    Py_BEGIN_CRITICAL_SECTION(registry);
     Py_SETREF(st->once_registry, registry);
+    Py_END_CRITICAL_SECTION();
     return registry;
 }
 
@@ -288,7 +291,9 @@ get_default_action(PyInterpreterState *interp)
         Py_DECREF(default_action);
         return NULL;
     }
+    Py_BEGIN_CRITICAL_SECTION(default_action);
     Py_SETREF(st->default_action, default_action);
+    Py_END_CRITICAL_SECTION();
     return default_action;
 }
 
@@ -313,7 +318,9 @@ get_filter(PyInterpreterState *interp, PyObject *category,
             return NULL;
     }
     else {
+        Py_BEGIN_CRITICAL_SECTION(warnings_filters);
         Py_SETREF(st->filters, warnings_filters);
+        Py_END_CRITICAL_SECTION();
     }
 
     PyObject *filters = st->filters;
