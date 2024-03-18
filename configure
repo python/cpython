@@ -27318,8 +27318,7 @@ SRCDIRS="\
   Parser/lexer \
   Programs \
   Python \
-  Python/frozen_modules \
-  Python/deepfreeze"
+  Python/frozen_modules"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 printf %s "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do
