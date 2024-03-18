@@ -155,7 +155,15 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     return fr'(?s:{res})\Z'
 
 
+@functools.lru_cache(maxsize=32768)
 def _compile_pattern(pattern, recursive, include_hidden):
+    if include_hidden:
+        if recursive:
+            if pattern == '**':
+                return None
+        else:
+            if pattern == '*':
+                return None
     regex = translate(pattern, recursive=recursive,
                       include_hidden=include_hidden, seps=os.path.sep)
     return re.compile(regex, flags=_pattern_flags).match
@@ -163,7 +171,7 @@ def _compile_pattern(pattern, recursive, include_hidden):
 
 def _split_pathname(pathname):
     """Split the given path into a pair (anchor, parts), where *anchor* is the
-    path drive and root (if any), and *parts* is a tuple of path components.
+    path drive and root (if any), and *parts* is a reversed list of path parts.
     """
     parts = []
     split = os.path.split
@@ -172,8 +180,7 @@ def _split_pathname(pathname):
         parts.append(part)
         pathname = dirname
         dirname, part = split(pathname)
-    parts.reverse()
-    return dirname, tuple(parts)
+    return dirname, parts
 
 
 def _add_trailing_slash(pathname):
@@ -201,33 +208,32 @@ def _open_dir(path, rel_path, dir_fd):
         return fd, fd, True
 
 
-@functools.lru_cache(maxsize=1024)
 def _selector(parts, recursive, include_hidden):
     """Returns a function that selects from a given path, walking and
     filtering according to the glob-style pattern parts in *parts*.
     """
     if not parts:
         return _select_exists
-    part = parts[0]
-    if recursive and part == '**':
+    elif recursive and parts[-1] == '**':
         selector = _recursive_selector
-    elif magic_check.search(part) is not None:
+    elif magic_check.search(parts[-1]) is not None:
         selector = _wildcard_selector
     else:
         selector = _literal_selector
-    return selector(part, parts[1:], recursive, include_hidden)
+    return selector(parts, recursive, include_hidden)
 
 
-def _literal_selector(part, parts, recursive, include_hidden):
+def _literal_selector(parts, recursive, include_hidden):
     """Returns a function that selects a literal descendant of a given path.
     """
+    part = parts.pop()
     is_special = part in _special_parts
-    while parts and magic_check.search(next_part := parts[0]) is None:
+    while parts and magic_check.search(parts[-1]) is None:
         # Consume next non-wildcard component (speeds up joining).
+        next_part = parts.pop()
         if next_part not in _special_parts:
             is_special = False
         part += os.path.sep + next_part
-        parts = parts[1:]
 
     select_next = _selector(parts, recursive, include_hidden)
 
@@ -238,14 +244,11 @@ def _literal_selector(part, parts, recursive, include_hidden):
     return select_literal
 
 
-def _wildcard_selector(part, parts, recursive, include_hidden):
+def _wildcard_selector(parts, recursive, include_hidden):
     """Returns a function that selects direct children of a given path,
     filtering by pattern.
     """
-    if include_hidden and part == '*':
-        match = None  # Skip generating a pattern that would match all inputs.
-    else:
-        match = _compile_pattern(part, recursive, include_hidden)
+    match = _compile_pattern(parts.pop(), False, include_hidden)
 
     if parts:
         select_next = _selector(parts, recursive, include_hidden)
@@ -295,22 +298,18 @@ def _wildcard_selector(part, parts, recursive, include_hidden):
     return select_wildcard
 
 
-def _recursive_selector(part, parts, recursive, include_hidden):
+def _recursive_selector(parts, recursive, include_hidden):
     """Returns a function that selects a given path and all its children,
     recursively, filtering by pattern.
     """
-    while parts and parts[0] == '**':
-        parts = parts[1:]
-    while parts and (next_part := parts[0]) not in _special_parts:
+    part = parts.pop()
+    while parts and parts[-1] == '**':
+        parts.pop()
+    while parts and parts[-1] not in _special_parts:
         # Consume next non-special component (used to build regex).
-        part += os.path.sep + next_part
-        parts = parts[1:]
+        part += os.path.sep + parts.pop()
 
-    if include_hidden and part == '**':
-        match = None  # Skip generating a pattern that would match all inputs.
-    else:
-        match = _compile_pattern(part, recursive, include_hidden)
-
+    match = _compile_pattern(part, True, include_hidden)
     dir_only = bool(parts)
     select_next = _selector(parts, recursive, include_hidden)
 
@@ -381,10 +380,11 @@ def _select_exists(path, rel_path, dir_fd, exists):
 def _legacy_glob(selector, dirname, pattern):
     """Implements the undocumented glob0() and glob1() functions.
     """
-    root = _add_trailing_slash(dirname)
-    root_slicer = operator.itemgetter(slice(len(root), None))
-    select = selector(pattern, (), False, False)
-    paths = select(dirname, dirname, None, False)
+    parts = [pattern]
+    select = selector(parts, recursive=False, include_hidden=False)
+    root_dir = _add_trailing_slash(dirname)
+    root_slicer = operator.itemgetter(slice(len(root_dir), None))
+    paths = select(dirname, dirname, dir_fd=None, exists=False)
     paths = map(root_slicer, paths)
     return list(paths)
 
