@@ -141,6 +141,29 @@ getargs_w_star(PyObject *self, PyObject *args)
     return result;
 }
 
+static PyObject *
+getargs_w_star_opt(PyObject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    Py_buffer buf2;
+    int number = 1;
+
+    if (!PyArg_ParseTuple(args, "w*|w*i:getargs_w_star",
+                          &buffer, &buf2, &number)) {
+        return NULL;
+    }
+
+    if (2 <= buffer.len) {
+        char *str = buffer.buf;
+        str[0] = '[';
+        str[buffer.len-1] = ']';
+    }
+
+    PyObject *result = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyBuffer_Release(&buffer);
+    return result;
+}
+
 /* Test the old w and w# codes that no longer work */
 static PyObject *
 test_w_code_invalid(PyObject *, PyObject *)
@@ -777,6 +800,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
+    {"getargs_w_star_opt",      getargs_w_star_opt,              METH_VARARGS},
     {"getargs_empty",           _PyCFunction_CAST(getargs_empty), METH_VARARGS|METH_KEYWORDS},
     {"getargs_y",               getargs_y,                       METH_VARARGS},
     {"getargs_y_hash",          getargs_y_hash,                  METH_VARARGS},
