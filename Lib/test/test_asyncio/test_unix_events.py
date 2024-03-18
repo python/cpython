@@ -760,6 +760,20 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.loop.assert_reader(5, tr._read_ready)
 
     @mock.patch('os.read')
+    def test_is_reading(self, m_read):
+        tr = self.read_pipe_transport()
+        tr._paused = False
+        tr._closing = False
+        self.assertTrue(tr.is_reading())
+        tr._paused = True
+        self.assertFalse(tr.is_reading())
+        tr._paused = False
+        tr._closing = True
+        self.assertFalse(tr.is_reading())
+        tr._closing = False
+        self.assertTrue(tr.is_reading())
+
+    @mock.patch('os.read')
     def test_close(self, m_read):
         tr = self.read_pipe_transport()
         tr._close = mock.Mock()

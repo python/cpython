@@ -589,6 +589,9 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
 
+    def is_reading(self):
+        return not self._paused and not self._closing
+
     def set_protocol(self, protocol):
         self._protocol = protocol
 
