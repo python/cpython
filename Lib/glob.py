@@ -69,15 +69,23 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         # Relative pattern.
         if root_dir is None:
             root_dir = os.path.curdir
-        root_dir = _add_trailing_slash(root_dir)
-        root_slicer = operator.itemgetter(slice(len(root_dir), None))
-        paths = select(root_dir, root_dir, dir_fd, False)
-        paths = map(root_slicer, paths)
+        paths = _relative_glob(select, root_dir, dir_fd)
         paths = itertools.dropwhile(operator.not_, paths)
     if is_bytes:
         paths = map(os.fsencode, paths)
     return paths
 
+# Following functions are not public but can be used by third-party code.
+
+def glob0(dirname, pattern):
+    select = _literal_selector([pattern], False, False)
+    paths = _relative_glob(select, dirname, None)
+    return list(paths)
+
+def glob1(dirname, pattern):
+    select = _wildcard_selector([pattern], False, False)
+    paths = _relative_glob(select, dirname, None)
+    return list(paths)
 
 magic_check = re.compile('([*?[])')
 magic_check_bytes = re.compile(b'([*?[])')
@@ -206,6 +214,17 @@ def _open_dir(path, rel_path, dir_fd):
     else:
         fd = os.open(rel_path, _dir_open_flags, dir_fd=dir_fd)
         return fd, fd, True
+
+
+def _relative_glob(select, dirname, dir_fd):
+    """Globs using a select function from the given dirname. The dirname
+    prefix is removed from results.
+    """
+    dirname = _add_trailing_slash(dirname)
+    slicer = operator.itemgetter(slice(len(dirname), None))
+    paths = select(dirname, dirname, dir_fd, False)
+    paths = map(slicer, paths)
+    return paths
 
 
 def _selector(parts, recursive, include_hidden):
@@ -376,18 +395,3 @@ def _select_exists(path, rel_path, dir_fd, exists):
         except OSError:
             pass
 
-
-def _legacy_glob(selector, dirname, pattern):
-    """Implements the undocumented glob0() and glob1() functions.
-    """
-    parts = [pattern]
-    select = selector(parts, recursive=False, include_hidden=False)
-    root_dir = _add_trailing_slash(dirname)
-    root_slicer = operator.itemgetter(slice(len(root_dir), None))
-    paths = select(dirname, dirname, dir_fd=None, exists=False)
-    paths = map(root_slicer, paths)
-    return list(paths)
-
-
-glob0 = functools.partial(_legacy_glob, _literal_selector)
-glob1 = functools.partial(_legacy_glob, _wildcard_selector)
