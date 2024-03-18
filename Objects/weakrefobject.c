@@ -90,7 +90,7 @@ new_weakref(PyObject *ob, PyObject *callback)
 #ifdef Py_GIL_DISABLED
 
 static void
-unlink_weakref_lock_held(PyWeakReference *self)
+unlink_and_clear_object_lock_held(PyWeakReference *self)
 {
     if (self->wr_object != Py_None) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
@@ -119,22 +119,17 @@ clear_callback_lock_held(PyWeakReference *self)
     }
 }
 
-static void
-gc_unlink_weakref(PyWeakReference *self)
-{
-    unlink_weakref_lock_held(self);
-}
-
 static int
 do_clear_weakref(PyWeakReference *self)
 {
     Py_BEGIN_CRITICAL_SECTION2(self->wr_object, self);
-    unlink_weakref_lock_held(self);
+    unlink_and_clear_object_lock_held(self);
     clear_callback_lock_held(self);
     Py_END_CRITICAL_SECTION2();
     return 0;
 }
 
+// Atomically clear the weakref
 static void
 clear_weakref(PyWeakReference *self)
 {
@@ -144,28 +139,30 @@ clear_weakref(PyWeakReference *self)
     _PyOnceFlagRC_Decref(once);
 }
 
+// Clear the weakref while the world is stopped
 static void
 gc_clear_weakref(PyWeakReference *self)
 {
-    unlink_weakref_lock_held(self);
+    unlink_and_clear_object_lock_held(self);
     clear_callback_lock_held(self);
 }
 
 static int
-do_clear_weakref_only(PyWeakReference *self)
+do_clear_weakref_and_leave_callback(PyWeakReference *self)
 {
     Py_BEGIN_CRITICAL_SECTION2(self->wr_object, self);
-    unlink_weakref_lock_held(self);
+    unlink_and_clear_object_lock_held(self);
     Py_END_CRITICAL_SECTION2();
     return 0;
 }
 
+// Atomically clear the weakref, but leave the callback intact
 static void
-clear_weakref_only(PyWeakReference *self)
+clear_weakref_and_leave_callback(PyWeakReference *self)
 {
     _PyOnceFlagRC *once = self->clear_once;
     _PyOnceFlagRC_Incref(once);
-    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref_only, self);
+    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref_and_leave_callback, self);
     _PyOnceFlagRC_Decref(once);
 }
 
@@ -179,13 +176,14 @@ do_clear_weakref_and_take_callback(ClearArgs *args)
 {
     PyWeakReference *weakref = args->weakref;
     Py_BEGIN_CRITICAL_SECTION2(weakref->wr_object, weakref);
-    unlink_weakref_lock_held(weakref);
+    unlink_and_clear_object_lock_held(weakref);
     args->callback = weakref->wr_callback;
     weakref->wr_callback = NULL;
     Py_END_CRITICAL_SECTION2();
     return 0;
 }
 
+// Clear the weakref and return the a strong reference to the callback, if any
 static PyObject *
 clear_weakref_and_take_callback(PyWeakReference *self)
 {
@@ -258,7 +256,7 @@ _PyWeakref_ClearRef(PyWeakReference *self)
     callback = self->wr_callback;
     self->wr_callback = NULL;
 #ifdef Py_GIL_DISABLED
-    gc_unlink_weakref(self);
+    unlink_and_clear_object_lock_held(self);
 #else
     clear_weakref(self);
 #endif
@@ -1291,7 +1289,7 @@ _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
 #ifdef Py_GIL_DISABLED
     Py_BEGIN_CRITICAL_SECTION(obj);
     while (*list != NULL) {
-        clear_weakref_only((PyWeakReference *)*list);
+        clear_weakref_and_leave_callback((PyWeakReference *)*list);
     }
     Py_END_CRITICAL_SECTION();
 #else
