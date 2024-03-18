@@ -159,7 +159,7 @@ static PyMethodDef test_methods[] = {
 };
 
 int
-_PyTestCapi_Init_List(PyObject *m)
+_PyTestLimitedCAPI_Init_List(PyObject *m)
 {
     if (PyModule_AddFunctions(m, test_methods) < 0) {
         return -1;
