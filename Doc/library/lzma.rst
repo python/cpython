@@ -104,7 +104,7 @@ Reading and writing compressed files
    and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
-   The following method is also provided:
+   The following method and attributes are also provided:
 
    .. method:: peek(size=-1)
 
@@ -116,6 +116,20 @@ Reading and writing compressed files
          the :class:`LZMAFile`, it may change the position of the underlying
          file object (e.g. if the :class:`LZMAFile` was constructed by passing a
          file object for *filename*).
+
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: name
+
+      The lzma file name.  Equivalent to the :attr:`~io.FileIO.name`
+      attribute of the underlying :term:`file object`.
+
+      .. versionadded:: 3.13
+
 
    .. versionchanged:: 3.4
       Added support for the ``"x"`` and ``"xb"`` modes.

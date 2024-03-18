@@ -131,6 +131,13 @@ The module defines the following items:
 
       .. versionadded:: 3.2
 
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionchanged:: 3.13
+         In previous versions it was an integer ``1`` or ``2``.
+
    .. attribute:: mtime
 
       When decompressing, the value of the last modification time field in
@@ -171,13 +178,13 @@ The module defines the following items:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionchanged:: 3.12
-      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
-      attribute instead.
-
    .. deprecated:: 3.9
       Opening :class:`GzipFile` for writing without specifying the *mode*
       argument is deprecated.
+
+   .. versionchanged:: 3.12
+      Remove the ``filename`` attribute, use the :attr:`~GzipFile.name`
+      attribute instead.
 
 
 .. function:: compress(data, compresslevel=9, *, mtime=None)
