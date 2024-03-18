@@ -25,7 +25,9 @@
 int _PyTestCapi_Init_ByteArray(PyObject *module);
 int _PyTestCapi_Init_Bytes(PyObject *module);
 int _PyTestCapi_Init_HeaptypeRelative(PyObject *module);
+int _PyTestCapi_Init_List(PyObject *module);
 int _PyTestCapi_Init_PyOS(PyObject *module);
+int _PyTestCapi_Init_Set(PyObject *module);
 int _PyTestCapi_Init_Sys(PyObject *module);
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);
 
