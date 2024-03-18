@@ -1026,7 +1026,7 @@ assigned to prior to its nonlocal declaration in the scope.
 
 **Programmer's note:** :keyword:`nonlocal` is a directive to the parser
 and applies only to code parsed along with it.  See the note for the
-`!global` statement.
+`global` statement.
 
 
 .. _type:
