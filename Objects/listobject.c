@@ -1595,6 +1595,15 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
 /* Avoid malloc for small temp arrays. */
 #define MERGESTATE_TEMP_SIZE 256
 
+/* The largest value of minrun. This must be a power of 2, and >= 1, so that
+ * the compute_minrun() algorithm guarantees to return a result no larger than
+ * this,
+ */
+#define MAX_MINRUN 64
+#if ((MAX_MINRUN) < 1) || ((MAX_MINRUN) & ((MAX_MINRUN) - 1))
+#error "MAX_MINRUN must be a power of 2, and >= 1"
+#endif
+
 /* One MergeState exists on the stack per invocation of mergesort.  It's just
  * a convenient way to pass state around among the helper functions.
  */
@@ -1665,53 +1674,53 @@ struct s_MergeState {
    the input (nothing is lost or duplicated).
 */
 static int
-binarysort(MergeState *ms, sortslice lo, PyObject **hi, PyObject **start)
+binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
 {
-    Py_ssize_t k;
-    PyObject **l, **p, **r;
+    Py_ssize_t k; /* for IFLT macro expansion */
+    PyObject ** const a = ss->keys;
+    PyObject ** const v = ss->values;
+    const bool has_values = v != NULL;
     PyObject *pivot;
+    Py_ssize_t L, M, R;
 
-    assert(lo.keys <= start && start <= hi);
-    /* assert [lo.keys, start) is sorted */
-    if (lo.keys == start)
-        ++start;
-    for (; start < hi; ++start) {
-        /* set l to where *start belongs */
-        l = lo.keys;
-        r = start;
-        pivot = *r;
-        /* Invariants:
-         * pivot >= all in [lo.keys, l).
-         * pivot  < all in [r, start).
-         * These are vacuously true at the start.
+    assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
+     /* assert s[:ok) is sorted */
+
+    if (! ok)
+        ++ok;
+    for (; ok < n; ++ok) {
+s        /* set L to where a[ok] belongs */
+        L = 0;
+        R = ok;
+        pivot = a[ok];
+        /* Slice invariants. vacuously true at the start:
+         * 0:L  <= pivot
+         * L:R     unknown
+         * R:ok  > pivot
          */
-        assert(l < r);
+        assert(L < R);
         do {
-            p = l + ((r - l) >> 1);
-            IFLT(pivot, *p)
-                r = p;
+            /* don't do silly ;-) things to prevent overflow when finding
+               the midpoint; L and R are very far from filling a Py_ssize_t */
+            M = (L + R) >> 1;
+            IFLT(pivot, a[M])
+                R = M;
             else
-                l = p+1;
-        } while (l < r);
-        assert(l == r);
-        /* The invariants still hold, so pivot >= all in [lo.keys, l) and
-           pivot < all in [l, start), so pivot belongs at l.  Note
-           that if there are elements equal to pivot, l points to the
-           first slot after them -- that's why this sort is stable.
-           Slide over to make room.
-           Caution: using memmove is much slower under MSVC 5;
-           we're not usually moving many slots. */
-        for (p = start; p > l; --p)
-            *p = *(p-1);
-        *l = pivot;
-        if (lo.values != NULL) {
-            Py_ssize_t offset = lo.values - lo.keys;
-            p = start + offset;
-            pivot = *p;
-            l += offset;
-            for ( ; p > l; --p)
-                *p = *(p-1);
-            *l = pivot;
+                L = M + 1;
+        } while (L < R);
+        assert(L == R);
+        /* a[:L] holds all elements from a[:ok[ <= pivot now, so pivot belongs
+           at index L. Slide a[L:ok] to the right a slot to make room for it.
+           Caution: using memmove is much slower under MSVC 5; we're not
+           usually moving many slots. */
+        for (M = ok; M > L; --M)
+            a[M] = a[M - 1];
+        a[L] = pivot;
+        if (has_values) {
+            pivot = v[ok];
+            for (M = ok; M > L; --M)
+                v[M] = v[M - 1];
+            v[L] = pivot;
         }
     }
     return 0;
@@ -2539,7 +2548,7 @@ merge_compute_minrun(Py_ssize_t n)
     Py_ssize_t r = 0;           /* becomes 1 if any 1 bits are shifted off */
 
     assert(n >= 0);
-    while (n >= 64) {
+    while (n >= MAX_MINRUN) {
         r |= n & 1;
         n >>= 1;
     }
@@ -2923,7 +2932,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
                               nremaining : minrun;
-            if (binarysort(&ms, lo, lo.keys + force, lo.keys + n) < 0)
+            if (binarysort(&ms, &lo, force, n) < 0)
                 goto fail;
             n = force;
         }
