@@ -3194,7 +3194,7 @@ list_remove_impl(PyListObject *self, PyObject *value)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
     return NULL;
 }
 
