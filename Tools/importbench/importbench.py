@@ -6,7 +6,7 @@ thus has no external changes made to import-related attributes in sys.
 """
 from test.test_importlib import util
 import decimal
-import imp
+from importlib.util import cache_from_source
 import importlib
 import importlib.machinery
 import json
@@ -15,6 +15,7 @@ import py_compile
 import sys
 import tabnanny
 import timeit
+import types
 
 
 def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
@@ -40,7 +41,7 @@ def bench(name, cleanup=lambda: None, *, seconds=1, repeat=3):
 def from_cache(seconds, repeat):
     """sys.modules"""
     name = '<benchmark import>'
-    module = imp.new_module(name)
+    module = types.ModuleType(name)
     module.__file__ = '<test>'
     module.__package__ = ''
     with util.uncache(name):
@@ -65,7 +66,7 @@ def source_wo_bytecode(seconds, repeat):
         name = '__importlib_test_benchmark__'
         # Clears out sys.modules and puts an entry at the front of sys.path.
         with util.create_modules(name) as mapping:
-            assert not os.path.exists(imp.cache_from_source(mapping[name]))
+            assert not os.path.exists(cache_from_source(mapping[name]))
             sys.meta_path.append(importlib.machinery.PathFinder)
             loader = (importlib.machinery.SourceFileLoader,
                       importlib.machinery.SOURCE_SUFFIXES)
@@ -80,7 +81,7 @@ def _wo_bytecode(module):
     name = module.__name__
     def benchmark_wo_bytecode(seconds, repeat):
         """Source w/o bytecode: {}"""
-        bytecode_path = imp.cache_from_source(module.__file__)
+        bytecode_path = cache_from_source(module.__file__)
         if os.path.exists(bytecode_path):
             os.unlink(bytecode_path)
         sys.dont_write_bytecode = True
@@ -108,9 +109,9 @@ def source_writing_bytecode(seconds, repeat):
         sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         def cleanup():
             sys.modules.pop(name)
-            os.unlink(imp.cache_from_source(mapping[name]))
+            os.unlink(cache_from_source(mapping[name]))
         for result in bench(name, cleanup, repeat=repeat, seconds=seconds):
-            assert not os.path.exists(imp.cache_from_source(mapping[name]))
+            assert not os.path.exists(cache_from_source(mapping[name]))
             yield result
 
 
@@ -121,7 +122,7 @@ def _writing_bytecode(module):
         assert not sys.dont_write_bytecode
         def cleanup():
             sys.modules.pop(name)
-            os.unlink(imp.cache_from_source(module.__file__))
+            os.unlink(cache_from_source(module.__file__))
         yield from bench(name, cleanup, repeat=repeat, seconds=seconds)
 
     writing_bytecode_benchmark.__doc__ = (
@@ -141,7 +142,7 @@ def source_using_bytecode(seconds, repeat):
                   importlib.machinery.SOURCE_SUFFIXES)
         sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         py_compile.compile(mapping[name])
-        assert os.path.exists(imp.cache_from_source(mapping[name]))
+        assert os.path.exists(cache_from_source(mapping[name]))
         yield from bench(name, lambda: sys.modules.pop(name), repeat=repeat,
                          seconds=seconds)
 
@@ -164,8 +165,8 @@ decimal_using_bytecode = _using_bytecode(decimal)
 
 def main(import_, options):
     if options.source_file:
-        with options.source_file:
-            prev_results = json.load(options.source_file)
+        with open(options.source_file, 'r', encoding='utf-8') as source_file:
+            prev_results = json.load(source_file)
     else:
         prev_results = {}
     __builtins__.__import__ = import_
@@ -183,8 +184,8 @@ def main(import_, options):
                 benchmarks = [b]
                 break
         else:
-            print('Unknown benchmark: {!r}'.format(options.benchmark,
-                  file=sys.stderr))
+            print('Unknown benchmark: {!r}'.format(options.benchmark),
+                  file=sys.stderr)
             sys.exit(1)
     seconds = 1
     seconds_plural = 's' if seconds > 1 else ''
@@ -217,8 +218,8 @@ def main(import_, options):
                                               new_result/old_result)
             print(benchmark_name, ':', result)
     if options.dest_file:
-        with options.dest_file:
-            json.dump(new_results, options.dest_file, indent=2)
+        with open(options.dest_file, 'w', encoding='utf-8') as dest_file:
+            json.dump(new_results, dest_file, indent=2)
 
 
 if __name__ == '__main__':
@@ -228,11 +229,9 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--builtin', dest='builtin', action='store_true',
                         default=False, help="use the built-in __import__")
     parser.add_argument('-r', '--read', dest='source_file',
-                        type=argparse.FileType('r'),
                         help='file to read benchmark data from to compare '
                              'against')
     parser.add_argument('-w', '--write', dest='dest_file',
-                        type=argparse.FileType('w'),
                         help='file to write benchmark data to')
     parser.add_argument('--benchmark', dest='benchmark',
                         help='specific benchmark to run')

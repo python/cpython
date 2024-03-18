@@ -11,6 +11,9 @@
         <SuppressICEs>ICE43</SuppressICEs>
     </PropertyGroup>
     <Import Project="..\msi.props" />
+    <PropertyGroup Condition="exists('$(BuildPath)vcruntime140_1.dll')">
+        <DefineConstants>$(DefineConstants);Include_Vcruntime140_1_dll=1</DefineConstants>
+    </PropertyGroup>
     <ItemGroup>
         <Compile Include="exe.wxs" />
         <Compile Include="exe_files.wxs" />
@@ -21,25 +24,6 @@
         <WxlTemplate Include="*.wxl_template" />
     </ItemGroup>
     
-    <Target Name="_GenerateLicense" AfterTargets="PrepareForBuild">
-        <ItemGroup>
-            <LicenseFiles Include="$(PySourcePath)LICENSE;
-                                   crtlicense.txt;
-                                   $(bz2Dir)LICENSE;
-                                   $(opensslOutDir)LICENSE;
-                                   $(tcltkDir)tcllicense.terms;
-                                   $(tcltkDir)tklicense.terms;
-                                   $(tcltkDir)tixlicense.terms" />
-            <_LicenseFiles Include="@(LicenseFiles)">
-                <Content>$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
-            </_LicenseFiles>
-        </ItemGroup>
-        
-        <WriteLinesToFile File="$(BuildPath)LICENSE"
-                          Overwrite="true"
-                          Lines="@(_LicenseFiles->'%(Content)')" />
-    </Target>
-    
     <Target Name="_CopyMiscNews" AfterTargets="PrepareForBuild" Condition="Exists('$(PySourcePath)Misc\NEWS')">
         <Copy SourceFiles="$(PySourcePath)Misc\NEWS" DestinationFiles="$(BuildPath)NEWS.txt" />
     </Target>
@@ -48,18 +32,9 @@
         <Exec Command="$(Blurb) merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
     </Target>
     
-    <Target Name="_MergeMiscNewsWithPython" AfterTargets="PrepareForBuild" Condition="$(Blurb) == '' and !Exists('$(PySourcePath)Misc\NEWS')">
-        <ItemGroup>
-            <HostPython Include="$(ExternalsDir)python*\tools\python.exe" />
-            <HostPython Include="@(HostPython)" Condition="Exists(%(FullPath))" />
-            <HostPython Include="py" Condition="@(HostPython) == ''" />
-        </ItemGroup>
-        <PropertyGroup>
-            <HostPython>@(HostPython)</HostPython>
-            <HostPython Condition="$(HostPython.Contains(';'))">$(HostPython.Remove($(HostPython.IndexOf(';'))))</HostPython>
-        </PropertyGroup>
-        <Exec Command="&quot;$(HostPython)&quot; -m pip install -U blurb" WorkingDirectory="$(PCbuild)" />
-        <Exec Command="&quot;$(HostPython)&quot; -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
+    <Target Name="_MergeMiscNewsWithPython" AfterTargets="PrepareForBuild" Condition="$(Blurb) == '' and !Exists('$(PySourcePath)Misc\NEWS')" DependsOnTargets="FindPythonForBuild">
+        <Exec Command="$(PythonForBuild) -m pip install -U blurb" WorkingDirectory="$(PCbuild)" />
+        <Exec Command="$(PythonForBuild) -m blurb merge -f &quot;$(BuildPath)NEWS.txt&quot;" WorkingDirectory="$(PCbuild)" />
     </Target>
     
     <Import Project="..\msi.targets" />

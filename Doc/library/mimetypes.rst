@@ -30,8 +30,10 @@ the information :func:`init` sets up.
 
    .. index:: pair: MIME; headers
 
-   Guess the type of a file based on its filename or URL, given by *url*.  The
-   return value is a tuple ``(type, encoding)`` where *type* is ``None`` if the
+   Guess the type of a file based on its filename, path or URL, given by *url*.
+   URL can be a string or a :term:`path-like object`.
+
+   The return value is a tuple ``(type, encoding)`` where *type* is ``None`` if the
    type can't be guessed (missing or unknown suffix) or a string of the form
    ``'type/subtype'``, usable for a MIME :mailheader:`content-type` header.
 
@@ -48,6 +50,9 @@ the information :func:`init` sets up.
    When *strict* is ``True`` (the default), only the IANA types are supported; when
    *strict* is ``False``, some additional non-standard but commonly used MIME types
    are also recognized.
+
+   .. versionchanged:: 3.8
+      Added support for url being a :term:`path-like object`.
 
 
 .. function:: guess_all_extensions(type, strict=True)
@@ -87,6 +92,10 @@ behavior of the module.
 
    Specifying an empty list for *files* will prevent the system defaults from
    being applied: only the well-known values will be present from a built-in list.
+
+   If *files* is ``None`` the internal data structure is completely rebuilt to its
+   initial default value. This is a stable operation and will produce the same results
+   when called multiple times.
 
    .. versionchanged:: 3.2
       Previously, Windows registry settings were ignored.
@@ -255,7 +264,9 @@ than one MIME-type database; it provides an interface similar to the one of the
 
    .. method:: MimeTypes.read_windows_registry(strict=True)
 
-      Load MIME type information from the Windows registry.  Availability: Windows.
+      Load MIME type information from the Windows registry.
+
+      .. availability:: Windows.
 
       If *strict* is ``True``, information will be added to the list of standard
       types, else to the list of non-standard types.

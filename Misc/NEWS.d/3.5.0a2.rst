@@ -15,7 +15,7 @@ previous exception.
 .. nonce: Ks6_2x
 .. section: Library
 
-New os.scandir() function, part of the PEP 471: "os.scandir() function -- a
+New os.scandir() function, part of the :pep:`471`: "os.scandir() function -- a
 better and faster directory iterator". Patch written by Ben Hoyt.
 
 ..
@@ -112,9 +112,8 @@ Lawrence.
 .. section: Library
 
 Corrected pure python implementation of timedelta division.
-
 Eliminated OverflowError from ``timedelta * float`` for some floats;
-Corrected rounding in timedlta true division.
+Corrected rounding in timedelta true division.
 
 ..
 
@@ -393,7 +392,7 @@ attribute.
 .. nonce: qBauCy
 .. section: Windows
 
-Implement PEP 486 - Make the Python Launcher aware of virtual environments.
+Implement :pep:`486` - Make the Python Launcher aware of virtual environments.
 Patch by Paul Moore.
 
 ..

@@ -3,7 +3,6 @@
 from idlelib import rpc
 import unittest
 
-import marshal
 
 
 class CodePicklerTest(unittest.TestCase):

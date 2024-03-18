@@ -112,17 +112,17 @@ The module also offers three general purpose functions based on heaps.
 
    Return a list with the *n* largest elements from the dataset defined by
    *iterable*.  *key*, if provided, specifies a function of one argument that is
-   used to extract a comparison key from each element in the iterable:
-   ``key=str.lower`` Equivalent to:  ``sorted(iterable, key=key,
-   reverse=True)[:n]``
+   used to extract a comparison key from each element in *iterable* (for example,
+   ``key=str.lower``).  Equivalent to:  ``sorted(iterable, key=key,
+   reverse=True)[:n]``.
 
 
 .. function:: nsmallest(n, iterable, key=None)
 
    Return a list with the *n* smallest elements from the dataset defined by
    *iterable*.  *key*, if provided, specifies a function of one argument that is
-   used to extract a comparison key from each element in the iterable:
-   ``key=str.lower`` Equivalent to:  ``sorted(iterable, key=key)[:n]``
+   used to extract a comparison key from each element in *iterable* (for example,
+   ``key=str.lower``).  Equivalent to:  ``sorted(iterable, key=key)[:n]``.
 
 
 The latter two functions perform best for smaller values of *n*.  For larger
@@ -270,7 +270,7 @@ winner.  The simplest algorithmic way to remove it and find the "next" winner is
 to move some loser (let's say cell 30 in the diagram above) into the 0 position,
 and then percolate this new 0 down the tree, exchanging values, until the
 invariant is re-established. This is clearly logarithmic on the total number of
-items in the tree. By iterating over all items, you get an O(n log n) sort.
+items in the tree. By iterating over all items, you get an *O*\ (*n* log *n*) sort.
 
 A nice feature of this sort is that you can efficiently insert new items while
 the sort is going on, provided that the inserted items are not "better" than the

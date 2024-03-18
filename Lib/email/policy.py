@@ -3,6 +3,7 @@ code that adds all the email6 features.
 """
 
 import re
+import sys
 from email._policybase import Policy, Compat32, compat32, _extend_docstrings
 from email.utils import _has_surrogates
 from email.headerregistry import HeaderRegistry as HeaderRegistry
@@ -203,14 +204,21 @@ class EmailPolicy(Policy):
     def _fold(self, name, value, refold_binary=False):
         if hasattr(value, 'name'):
             return value.fold(policy=self)
-        maxlen = self.max_line_length if self.max_line_length else float('inf')
+        maxlen = self.max_line_length if self.max_line_length else sys.maxsize
         lines = value.splitlines()
         refold = (self.refold_source == 'all' or
                   self.refold_source == 'long' and
                     (lines and len(lines[0])+len(name)+2 > maxlen or
                      any(len(x) > maxlen for x in lines[1:])))
-        if refold or refold_binary and _has_surrogates(value):
+
+        if not refold:
+            if not self.utf8:
+                refold = not value.isascii()
+            elif refold_binary:
+                refold = _has_surrogates(value)
+        if refold:
             return self.header_factory(name, ''.join(lines)).fold(policy=self)
+
         return name + ': ' + self.linesep.join(lines) + self.linesep
 
 

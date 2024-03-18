@@ -4,7 +4,7 @@ import posixpath
 
 __all__ = [
     'FileWrapper', 'guess_scheme', 'application_uri', 'request_uri',
-    'shift_path_info', 'setup_testing_defaults',
+    'shift_path_info', 'setup_testing_defaults', 'is_hop_by_hop',
 ]
 
 
@@ -16,12 +16,6 @@ class FileWrapper:
         self.blksize = blksize
         if hasattr(filelike,'close'):
             self.close = filelike.close
-
-    def __getitem__(self,key):
-        data = self.filelike.read(self.blksize)
-        if data:
-            return data
-        raise IndexError
 
     def __iter__(self):
         return self
@@ -155,9 +149,9 @@ def setup_testing_defaults(environ):
 
 
 _hoppish = {
-    'connection':1, 'keep-alive':1, 'proxy-authenticate':1,
-    'proxy-authorization':1, 'te':1, 'trailers':1, 'transfer-encoding':1,
-    'upgrade':1
+    'connection', 'keep-alive', 'proxy-authenticate',
+    'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
+    'upgrade'
 }.__contains__
 
 def is_hop_by_hop(header_name):

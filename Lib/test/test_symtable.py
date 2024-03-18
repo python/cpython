@@ -4,12 +4,17 @@ Test the API of the symtable module.
 import symtable
 import unittest
 
+from test import support
+from test.support import os_helper
 
 
 TEST_CODE = """
 import sys
 
 glob = 42
+some_var = 12
+some_non_assigned_global_var = 11
+some_assigned_global_var = 11
 
 class Mine:
     instance_var = 24
@@ -18,11 +23,18 @@ class Mine:
 
 def spam(a, b, *var, **kw):
     global bar
+    global some_assigned_global_var
+    some_assigned_global_var = 12
     bar = 47
+    some_var = 10
     x = 23
     glob
     def internal():
         return x
+    def other_internal():
+        nonlocal some_var
+        some_var = 3
+        return some_var
     return internal
 
 def foo():
@@ -30,6 +42,15 @@ def foo():
 
 def namespace_test(): pass
 def namespace_test(): pass
+
+type Alias = int
+type GenericAlias[T] = list[T]
+
+def generic_spam[T](a):
+    pass
+
+class GenericMine[T: int]:
+    pass
 """
 
 
@@ -47,7 +68,16 @@ class SymtableTest(unittest.TestCase):
     a_method = find_block(Mine, "a_method")
     spam = find_block(top, "spam")
     internal = find_block(spam, "internal")
+    other_internal = find_block(spam, "other_internal")
     foo = find_block(top, "foo")
+    Alias = find_block(top, "Alias")
+    GenericAlias = find_block(top, "GenericAlias")
+    GenericAlias_inner = find_block(GenericAlias, "GenericAlias")
+    generic_spam = find_block(top, "generic_spam")
+    generic_spam_inner = find_block(generic_spam, "generic_spam")
+    GenericMine = find_block(top, "GenericMine")
+    GenericMine_inner = find_block(GenericMine, "GenericMine")
+    T = find_block(GenericMine, "T")
 
     def test_type(self):
         self.assertEqual(self.top.get_type(), "module")
@@ -55,10 +85,30 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.a_method.get_type(), "function")
         self.assertEqual(self.spam.get_type(), "function")
         self.assertEqual(self.internal.get_type(), "function")
+        self.assertEqual(self.foo.get_type(), "function")
+        self.assertEqual(self.Alias.get_type(), "type alias")
+        self.assertEqual(self.GenericAlias.get_type(), "type parameter")
+        self.assertEqual(self.GenericAlias_inner.get_type(), "type alias")
+        self.assertEqual(self.generic_spam.get_type(), "type parameter")
+        self.assertEqual(self.generic_spam_inner.get_type(), "function")
+        self.assertEqual(self.GenericMine.get_type(), "type parameter")
+        self.assertEqual(self.GenericMine_inner.get_type(), "class")
+        self.assertEqual(self.T.get_type(), "TypeVar bound")
+
+    def test_id(self):
+        self.assertGreater(self.top.get_id(), 0)
+        self.assertGreater(self.Mine.get_id(), 0)
+        self.assertGreater(self.a_method.get_id(), 0)
+        self.assertGreater(self.spam.get_id(), 0)
+        self.assertGreater(self.internal.get_id(), 0)
+        self.assertGreater(self.foo.get_id(), 0)
+        self.assertGreater(self.Alias.get_id(), 0)
+        self.assertGreater(self.GenericAlias.get_id(), 0)
+        self.assertGreater(self.generic_spam.get_id(), 0)
+        self.assertGreater(self.GenericMine.get_id(), 0)
 
     def test_optimized(self):
         self.assertFalse(self.top.is_optimized())
-        self.assertFalse(self.top.has_exec())
 
         self.assertTrue(self.spam.is_optimized())
 
@@ -75,14 +125,14 @@ class SymtableTest(unittest.TestCase):
 
     def test_lineno(self):
         self.assertEqual(self.top.get_lineno(), 0)
-        self.assertEqual(self.spam.get_lineno(), 11)
+        self.assertEqual(self.spam.get_lineno(), 14)
 
     def test_function_info(self):
         func = self.spam
         self.assertEqual(sorted(func.get_parameters()), ["a", "b", "kw", "var"])
-        expected = ["a", "b", "internal", "kw", "var", "x"]
+        expected = ['a', 'b', 'internal', 'kw', 'other_internal', 'some_var', 'var', 'x']
         self.assertEqual(sorted(func.get_locals()), expected)
-        self.assertEqual(sorted(func.get_globals()), ["bar", "glob"])
+        self.assertEqual(sorted(func.get_globals()), ["bar", "glob", "some_assigned_global_var"])
         self.assertEqual(self.internal.get_frees(), ("x",))
 
     def test_globals(self):
@@ -92,10 +142,26 @@ class SymtableTest(unittest.TestCase):
         self.assertTrue(self.spam.lookup("bar").is_declared_global())
         self.assertFalse(self.internal.lookup("x").is_global())
         self.assertFalse(self.Mine.lookup("instance_var").is_global())
+        self.assertTrue(self.spam.lookup("bar").is_global())
+        # Module-scope globals are both global and local
+        self.assertTrue(self.top.lookup("some_non_assigned_global_var").is_global())
+        self.assertTrue(self.top.lookup("some_assigned_global_var").is_global())
+
+    def test_nonlocal(self):
+        self.assertFalse(self.spam.lookup("some_var").is_nonlocal())
+        self.assertTrue(self.other_internal.lookup("some_var").is_nonlocal())
+        expected = ("some_var",)
+        self.assertEqual(self.other_internal.get_nonlocals(), expected)
 
     def test_local(self):
         self.assertTrue(self.spam.lookup("x").is_local())
-        self.assertFalse(self.internal.lookup("x").is_local())
+        self.assertFalse(self.spam.lookup("bar").is_local())
+        # Module-scope globals are both global and local
+        self.assertTrue(self.top.lookup("some_non_assigned_global_var").is_local())
+        self.assertTrue(self.top.lookup("some_assigned_global_var").is_local())
+
+    def test_free(self):
+        self.assertTrue(self.internal.lookup("x").is_free())
 
     def test_referenced(self):
         self.assertTrue(self.internal.lookup("x").is_referenced())
@@ -126,6 +192,10 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(len(ns_test.get_namespaces()), 2)
         self.assertRaises(ValueError, ns_test.get_namespace)
 
+        ns_test_2 = self.top.lookup("glob")
+        self.assertEqual(len(ns_test_2.get_namespaces()), 0)
+        self.assertRaises(ValueError, ns_test_2.get_namespace)
+
     def test_assigned(self):
         self.assertTrue(self.spam.lookup("x").is_assigned())
         self.assertTrue(self.spam.lookup("bar").is_assigned())
@@ -143,6 +213,20 @@ class SymtableTest(unittest.TestCase):
         st4 = st3.get_children()[0]
         self.assertTrue(st4.lookup('x').is_local())
         self.assertFalse(st4.lookup('x').is_annotated())
+
+        # Test that annotations in the global scope are valid after the
+        # variable is declared as nonlocal.
+        st5 = symtable.symtable('global x\nx: int', 'test', 'exec')
+        self.assertTrue(st5.lookup("x").is_global())
+
+        # Test that annotations for nonlocals are valid after the
+        # variable is declared as nonlocal.
+        st6 = symtable.symtable('def g():\n'
+                                '    x = 2\n'
+                                '    def f():\n'
+                                '        nonlocal x\n'
+                                '    x: int',
+                                'test', 'exec')
 
     def test_imported(self):
         self.assertTrue(self.top.lookup("sys").is_imported())
@@ -169,12 +253,11 @@ class SymtableTest(unittest.TestCase):
             else:
                 self.fail("no SyntaxError for %r" % (brokencode,))
         checkfilename("def f(x): foo)(", 14)  # parse-time
-        checkfilename("def f(x): global x", 10)  # symtable-build-time
+        checkfilename("def f(x): global x", 11)  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
-        with self.assertWarns(DeprecationWarning), \
-             self.assertRaises(TypeError):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", bytearray(b"spam"), "exec")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", memoryview(b"spam"), "exec")
         with self.assertRaises(TypeError):
             symtable.symtable("pass", list(b"spam"), "exec")
@@ -187,6 +270,74 @@ class SymtableTest(unittest.TestCase):
 
     def test_exec(self):
         symbols = symtable.symtable("def f(x): return x", "?", "exec")
+
+    def test_bytes(self):
+        top = symtable.symtable(TEST_CODE.encode('utf8'), "?", "exec")
+        self.assertIsNotNone(find_block(top, "Mine"))
+
+        code = b'# -*- coding: iso8859-15 -*-\nclass \xb4: pass\n'
+
+        top = symtable.symtable(code, "?", "exec")
+        self.assertIsNotNone(find_block(top, "\u017d"))
+
+    def test_symtable_repr(self):
+        self.assertEqual(str(self.top), "<SymbolTable for module ?>")
+        self.assertEqual(str(self.spam), "<Function SymbolTable for spam in ?>")
+
+    def test_symbol_repr(self):
+        self.assertEqual(repr(self.spam.lookup("glob")),
+                         "<symbol 'glob': GLOBAL_IMPLICIT, USE>")
+        self.assertEqual(repr(self.spam.lookup("bar")),
+                         "<symbol 'bar': GLOBAL_EXPLICIT, DEF_GLOBAL|DEF_LOCAL>")
+        self.assertEqual(repr(self.spam.lookup("a")),
+                         "<symbol 'a': LOCAL, DEF_PARAM>")
+        self.assertEqual(repr(self.spam.lookup("internal")),
+                         "<symbol 'internal': LOCAL, USE|DEF_LOCAL>")
+        self.assertEqual(repr(self.spam.lookup("other_internal")),
+                         "<symbol 'other_internal': LOCAL, DEF_LOCAL>")
+        self.assertEqual(repr(self.internal.lookup("x")),
+                         "<symbol 'x': FREE, USE>")
+        self.assertEqual(repr(self.other_internal.lookup("some_var")),
+                         "<symbol 'some_var': FREE, USE|DEF_NONLOCAL|DEF_LOCAL>")
+
+    def test_symtable_entry_repr(self):
+        expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
+        self.assertEqual(repr(self.top._table), expected)
+
+
+class CommandLineTest(unittest.TestCase):
+    maxDiff = None
+
+    def test_file(self):
+        filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, filename)
+        with open(filename, 'w') as f:
+            f.write(TEST_CODE)
+        with support.captured_stdout() as stdout:
+            symtable.main([filename])
+        out = stdout.getvalue()
+        self.assertIn('\n\n', out)
+        self.assertNotIn('\n\n\n', out)
+        lines = out.splitlines()
+        self.assertIn(f"symbol table for module from file {filename!r}:", lines)
+        self.assertIn("    local symbol 'glob': def_local", lines)
+        self.assertIn("        global_implicit symbol 'glob': use", lines)
+        self.assertIn("    local symbol 'spam': def_local", lines)
+        self.assertIn("    symbol table for function 'spam':", lines)
+
+    def test_stdin(self):
+        with support.captured_stdin() as stdin:
+            stdin.write(TEST_CODE)
+            stdin.seek(0)
+            with support.captured_stdout() as stdout:
+                symtable.main([])
+            out = stdout.getvalue()
+            stdin.seek(0)
+            with support.captured_stdout() as stdout:
+                symtable.main(['-'])
+            self.assertEqual(stdout.getvalue(), out)
+        lines = out.splitlines()
+        self.assertIn("symbol table for module from file '<stdin>':", lines)
 
 
 if __name__ == '__main__':

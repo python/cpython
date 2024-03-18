@@ -1,6 +1,6 @@
 # Check every path through every method of UserDict
 
-from test import mapping_tests
+from test import mapping_tests, support
 import unittest
 import collections
 
@@ -30,8 +30,8 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertEqual(collections.UserDict(one=1, two=2), d2)
         # item sequence constructor
         self.assertEqual(collections.UserDict([('one',1), ('two',2)]), d2)
-        with self.assertWarnsRegex(DeprecationWarning, "'dict'"):
-            self.assertEqual(collections.UserDict(dict=[('one',1), ('two',2)]), d2)
+        self.assertEqual(collections.UserDict(dict=[('one',1), ('two',2)]),
+                         {'dict': [('one', 1), ('two', 2)]})
         # both together
         self.assertEqual(collections.UserDict([('one',1), ('two',2)], two=3, three=5), d3)
 
@@ -149,9 +149,8 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
                          [('dict', 42)])
         self.assertEqual(list(collections.UserDict({}, dict=None).items()),
                          [('dict', None)])
-        with self.assertWarnsRegex(DeprecationWarning, "'dict'"):
-            self.assertEqual(list(collections.UserDict(dict={'a': 42}).items()),
-                             [('a', 42)])
+        self.assertEqual(list(collections.UserDict(dict={'a': 42}).items()),
+                         [('dict', {'a': 42})])
         self.assertRaises(TypeError, collections.UserDict, 42)
         self.assertRaises(TypeError, collections.UserDict, (), ())
         self.assertRaises(TypeError, collections.UserDict.__init__)
@@ -214,6 +213,11 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         else:
             self.fail("g[42] didn't raise KeyError")
 
+    # Decorate existing test with recursion limit, because
+    # the test is for C structure, but `UserDict` is a Python structure.
+    test_repr_deep = support.infinite_recursion(25)(
+        mapping_tests.TestHashMappingProtocol.test_repr_deep,
+    )
 
 
 if __name__ == "__main__":
