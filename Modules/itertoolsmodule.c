@@ -810,10 +810,9 @@ teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
 }
 
 static void
-teedataobject_safe_decref(PyObject *obj, PyTypeObject *tdo_type)
+teedataobject_safe_decref(PyObject *obj)
 {
-    while (obj && Py_IS_TYPE(obj, tdo_type) &&
-           Py_REFCNT(obj) == 1) {
+    while (obj && Py_REFCNT(obj) == 1) {
         PyObject *nextlink = ((teedataobject *)obj)->nextlink;
         ((teedataobject *)obj)->nextlink = NULL;
         Py_SETREF(obj, nextlink);
@@ -832,8 +831,7 @@ teedataobject_clear(teedataobject *tdo)
         Py_CLEAR(tdo->values[i]);
     tmp = tdo->nextlink;
     tdo->nextlink = NULL;
-    itertools_state *state = get_module_state_by_cls(Py_TYPE(tdo));
-    teedataobject_safe_decref(tmp, state->teedataobject_type);
+    teedataobject_safe_decref(tmp);
     return 0;
 }
 
