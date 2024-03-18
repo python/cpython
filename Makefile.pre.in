@@ -2330,6 +2330,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/support/interpreters \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cext \
 		test/test_concurrent_futures \
 		test/test_cppext \
 		test/test_ctypes \
