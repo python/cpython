@@ -363,11 +363,11 @@ since it is impossible to detect the termination of alien threads.
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
 
+   .. versionchanged:: 3.3
+      Added the *daemon* parameter.
+
    .. versionchanged:: 3.10
       Use the *target* name if *name* argument is omitted.
-
-   .. versionchanged:: 3.3
-      Added the *daemon* argument.
 
    .. method:: start()
 
@@ -534,9 +534,10 @@ All methods are executed atomically.
    lock, subsequent attempts to acquire it block, until it is released; any
    thread may release it.
 
-   Note that ``Lock`` is actually a factory function which returns an instance
-   of the most efficient version of the concrete Lock class that is supported
-   by the platform.
+   .. versionchanged:: 3.13
+      ``Lock`` is now a class. In earlier Pythons, ``Lock`` was a factory
+      function which returned an instance of the underlying private lock
+      type.
 
 
    .. method:: acquire(blocking=True, timeout=-1)
@@ -986,18 +987,15 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: wait(timeout=None)
 
-      Block until the internal flag is true.  If the internal flag is true on
-      entry, return immediately.  Otherwise, block until another thread calls
-      :meth:`.set` to set the flag to true, or until the optional timeout occurs.
+      Block as long as the internal flag is false and the timeout, if given,
+      has not expired. The return value represents the
+      reason that this blocking method returned; ``True`` if returning because
+      the internal flag is set to true, or ``False`` if a timeout is given and
+      the the internal flag did not become true within the given wait time.
 
       When the timeout argument is present and not ``None``, it should be a
-      floating point number specifying a timeout for the operation in seconds
-      (or fractions thereof).
-
-      This method returns ``True`` if and only if the internal flag has been set to
-      true, either before the wait call or after the wait starts, so it will
-      always return ``True`` except if a timeout is given and the operation
-      times out.
+      floating point number specifying a timeout for the operation in seconds,
+      or fractions thereof.
 
       .. versionchanged:: 3.1
          Previously, the method always returned ``None``.

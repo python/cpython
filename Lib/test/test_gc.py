@@ -1,11 +1,11 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess)
+                          cpython_only, requires_subprocess, Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
-from test.support import threading_helper
+from test.support import threading_helper, gc_threshold
 
 import gc
 import sys
@@ -363,6 +363,7 @@ class GCTests(unittest.TestCase):
     # To minimize variations, though, we first store the get_count() results
     # and check them at the end.
     @refcount_test
+    @unittest.skipIf(Py_GIL_DISABLED, 'needs precise allocation counts')
     def test_get_count(self):
         gc.collect()
         a, b, c = gc.get_count()
@@ -819,6 +820,15 @@ class GCTests(unittest.TestCase):
         l = []
         l.append(l)
         self.assertTrue(
+                any(l is element for element in gc.get_objects())
+        )
+
+    @unittest.skipIf(Py_GIL_DISABLED, 'need generational GC')
+    def test_get_objects_generations(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=0))
         )
         self.assertFalse(
@@ -1225,7 +1235,7 @@ class GCCallbackTests(unittest.TestCase):
         p.stderr.close()
         # Verify that stderr has a useful error message:
         self.assertRegex(stderr,
-            br'gcmodule\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+            br'gc.*\.c:[0-9]+: .*: Assertion "gc_get_refs\(.+\) .*" failed.')
         self.assertRegex(stderr,
             br'refcount is too small')
         # "address : 0x7fb5062efc18"
@@ -1320,6 +1330,7 @@ class GCTogglingTests(unittest.TestCase):
             # with an empty __dict__.
             self.assertEqual(x, None)
 
+    @gc_threshold(1000, 0, 0)
     def test_bug1055820d(self):
         # Corresponds to temp2d.py in the bug report.  This is very much like
         # test_bug1055820c, but uses a __del__ method instead of a weakref
@@ -1386,6 +1397,32 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
+
+    @gc_threshold(1000, 0, 0)
+    def test_indirect_calls_with_gc_disabled(self):
+        junk = []
+        i = 0
+        detector = GC_Detector()
+        while not detector.gc_happened:
+            i += 1
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
+            junk.append([])  # this will eventually trigger gc
+
+        try:
+            gc.disable()
+            junk = []
+            i = 0
+            detector = GC_Detector()
+            while not detector.gc_happened:
+                i += 1
+                if i > 10000:
+                    break
+                junk.append([])  # this may eventually trigger gc (if it is enabled)
+
+            self.assertEqual(i, 10001)
+        finally:
+            gc.enable()
 
 
 class PythonFinalizationTests(unittest.TestCase):

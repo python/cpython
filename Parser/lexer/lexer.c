@@ -129,7 +129,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
 
     if (hash_detected) {
         Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
-        char *result = (char *)PyObject_Malloc((input_length + 1) * sizeof(char));
+        char *result = (char *)PyMem_Malloc((input_length + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
@@ -154,7 +154,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
 
         result[j] = '\0';  // Null-terminate the result string
         res = PyUnicode_DecodeUTF8(result, j, NULL);
-        PyObject_Free(result);
+        PyMem_Free(result);
     } else {
         res = PyUnicode_DecodeUTF8(
             tok_mode->last_expr_buffer,
@@ -1355,9 +1355,13 @@ f_string_middle:
             tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                _PyTokenizer_syntaxerror(tok,
                                     "unterminated triple-quoted f-string literal"
-                                    " (detected at line %d)", start));
+                                    " (detected at line %d)", start);
+                if (c != '\n') {
+                    tok->done = E_EOFS;
+                }
+                return MAKE_TOKEN(ERRORTOKEN);
             }
             else {
                 return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,

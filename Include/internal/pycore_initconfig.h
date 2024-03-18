@@ -153,6 +153,18 @@ typedef enum {
     _PyConfig_INIT_ISOLATED = 3
 } _PyConfigInitEnum;
 
+typedef enum {
+    /* For now, this means the GIL is enabled.
+
+       gh-116329: This will eventually change to "the GIL is disabled but can
+       be reenabled by loading an incompatible extension module." */
+    _PyConfig_GIL_DEFAULT = -1,
+
+    /* The GIL has been forced off or on, and will not be affected by module loading. */
+    _PyConfig_GIL_DISABLE = 0,
+    _PyConfig_GIL_ENABLE = 1,
+} _PyConfigGILEnum;
+
 // Export for '_testembed' program
 PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 

@@ -1,8 +1,16 @@
 import contextlib
 import os
-import threading
+import os.path
+import subprocess
+import sys
+import tempfile
 from textwrap import dedent
+import threading
+import types
 import unittest
+
+from test import support
+from test.support import os_helper
 
 from test.support import interpreters
 
@@ -29,10 +37,12 @@ def clean_up_interpreters():
             pass  # already destroyed
 
 
-def _run_output(interp, request, channels=None):
+def _run_output(interp, request, init=None):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interp.exec_sync(script, channels=channels)
+        if init:
+            interp.prepare_main(init)
+        interp.exec(script)
         return rpipe.read()
 
 
@@ -40,7 +50,7 @@ def _run_output(interp, request, channels=None):
 def _running(interp):
     r, w = os.pipe()
     def run():
-        interp.exec_sync(dedent(f"""
+        interp.exec(dedent(f"""
             # wait for "signal"
             with open({r}) as rpipe:
                 rpipe.read()
@@ -68,6 +78,83 @@ class TestBase(unittest.TestCase):
         self.addCleanup(lambda: ensure_closed(r))
         self.addCleanup(lambda: ensure_closed(w))
         return r, w
+
+    def temp_dir(self):
+        tempdir = tempfile.mkdtemp()
+        tempdir = os.path.realpath(tempdir)
+        self.addCleanup(lambda: os_helper.rmtree(tempdir))
+        return tempdir
+
+    @contextlib.contextmanager
+    def captured_thread_exception(self):
+        ctx = types.SimpleNamespace(caught=None)
+        def excepthook(args):
+            ctx.caught = args
+        orig_excepthook = threading.excepthook
+        threading.excepthook = excepthook
+        try:
+            yield ctx
+        finally:
+            threading.excepthook = orig_excepthook
+
+    def make_script(self, filename, dirname=None, text=None):
+        if text:
+            text = dedent(text)
+        if dirname is None:
+            dirname = self.temp_dir()
+        filename = os.path.join(dirname, filename)
+
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(text or '')
+        return filename
+
+    def make_module(self, name, pathentry=None, text=None):
+        if text:
+            text = dedent(text)
+        if pathentry is None:
+            pathentry = self.temp_dir()
+        else:
+            os.makedirs(pathentry, exist_ok=True)
+        *subnames, basename = name.split('.')
+
+        dirname = pathentry
+        for subname in subnames:
+            dirname = os.path.join(dirname, subname)
+            if os.path.isdir(dirname):
+                pass
+            elif os.path.exists(dirname):
+                raise Exception(dirname)
+            else:
+                os.mkdir(dirname)
+            initfile = os.path.join(dirname, '__init__.py')
+            if not os.path.exists(initfile):
+                with open(initfile, 'w'):
+                    pass
+        filename = os.path.join(dirname, basename + '.py')
+
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(text or '')
+        return filename
+
+    @support.requires_subprocess()
+    def run_python(self, *argv):
+        proc = subprocess.run(
+            [sys.executable, *argv],
+            capture_output=True,
+            text=True,
+        )
+        return proc.returncode, proc.stdout, proc.stderr
+
+    def assert_python_ok(self, *argv):
+        exitcode, stdout, stderr = self.run_python(*argv)
+        self.assertNotEqual(exitcode, 1)
+        return stdout, stderr
+
+    def assert_python_failure(self, *argv):
+        exitcode, stdout, stderr = self.run_python(*argv)
+        self.assertNotEqual(exitcode, 0)
+        return stdout, stderr
 
     def tearDown(self):
         clean_up_interpreters()

@@ -87,6 +87,8 @@ def write_uop(
                 out.emit(
                     f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
                 )
+                if inst.family is None:
+                    out.emit(f"(void){cache.name};\n")
             offset += cache.size
         emit_tokens(out, uop, stack, inst)
         if uop.properties.stores_sp:
@@ -131,8 +133,10 @@ def generate_tier1(
         needs_this = uses_this(inst)
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
+        unused_guard = "(void)this_instr;\n" if inst.family is None else ""
         if needs_this and not inst.is_target:
             out.emit(f"_Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;\n")
+            out.emit(unused_guard)
         else:
             out.emit(f"frame->instr_ptr = next_instr;\n")
         out.emit(f"next_instr += {inst.size};\n")
@@ -141,6 +145,7 @@ def generate_tier1(
             out.emit(f"PREDICTED({name});\n")
             if needs_this:
                 out.emit(f"_Py_CODEUNIT *this_instr = next_instr - {inst.size};\n")
+                out.emit(unused_guard)
         if inst.family is not None:
             out.emit(
                 f"static_assert({inst.family.size} == {inst.size-1}"
@@ -151,7 +156,8 @@ def generate_tier1(
         stack = Stack()
         for part in inst.parts:
             # Only emit braces if more than one uop
-            offset = write_uop(part, out, offset, stack, inst, len(inst.parts) > 1)
+            insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
+            offset = write_uop(part, out, offset, stack, inst, insert_braces)
         out.start_line()
         if not inst.parts[-1].properties.always_exits:
             stack.flush(out)
@@ -180,6 +186,15 @@ arg_parser.add_argument(
 arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
+
+
+def generate_tier1_from_files(
+    filenames: list[str], outfilename: str, lines: bool
+) -> None:
+    data = analyze_files(filenames)
+    with open(outfilename, "w") as outfile:
+        generate_tier1(filenames, data, outfile, lines)
+
 
 if __name__ == "__main__":
     args = arg_parser.parse_args()

@@ -9,6 +9,7 @@ import unittest
 import warnings
 import importlib.util
 import importlib
+from test.support import MISSING_C_DOCSTRINGS
 
 
 class LoaderTests:
@@ -16,7 +17,7 @@ class LoaderTests:
     """Test ExtensionFileLoader."""
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
         if util.EXTENSIONS.name in sys.builtin_module_names:
             raise unittest.SkipTest(
@@ -98,7 +99,7 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
     # Test loading extension modules without multi-phase initialization.
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
         self.name = '_testsinglephase'
         if self.name in sys.builtin_module_names:
@@ -179,7 +180,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     # Test loading extension modules with multi-phase initialization (PEP 489).
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
         self.name = '_testmultiphase'
         if self.name in sys.builtin_module_names:
@@ -373,7 +374,8 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             with self.subTest(name):
                 module = self.load_module_by_name(name)
                 self.assertEqual(module.__name__, name)
-                self.assertEqual(module.__doc__, "Module named in %s" % lang)
+                if not MISSING_C_DOCSTRINGS:
+                    self.assertEqual(module.__doc__, "Module named in %s" % lang)
 
 
 (Frozen_MultiPhaseExtensionModuleTests,

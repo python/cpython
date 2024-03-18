@@ -93,7 +93,6 @@ Accessing functions from loaded dlls
 
 Functions are accessed as attributes of dll objects::
 
-   >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
    >>> print(windll.kernel32.GetModuleHandleA)  # doctest: +WINDOWS
@@ -200,7 +199,7 @@ calls).
 Python objects that can directly be used as parameters in these function calls.
 ``None`` is passed as a C ``NULL`` pointer, bytes objects and strings are passed
 as pointer to the memory block that contains their data (:c:expr:`char *` or
-:c:expr:`wchar_t *`).  Python integers are passed as the platforms default C
+:c:expr:`wchar_t *`).  Python integers are passed as the platform's default C
 :c:expr:`int` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
@@ -670,6 +669,10 @@ compiler does it. It is possible to override this behavior by specifying a
 :attr:`~Structure._pack_` class attribute in the subclass definition.
 This must be set to a positive integer and specifies the maximum alignment for the fields.
 This is what ``#pragma pack(n)`` also does in MSVC.
+It is also possible to set a minimum alignment for how the subclass itself is packed in the
+same way ``#pragma align(n)`` works in MSVC.
+This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -1113,10 +1116,6 @@ api::
    >>> print(hex(version.value))
    0x30c00a0
 
-If the interpreter would have been started with :option:`-O`, the sample would
-have printed ``c_long(1)``, or ``c_long(2)`` if :option:`-OO` would have been
-specified.
-
 An extended example which also demonstrates the use of pointers accesses the
 :c:data:`PyImport_FrozenModules` pointer exported by Python.
 
@@ -1441,7 +1440,7 @@ function exported by these libraries, and reacquired afterwards.
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
 an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platforms :c:func:`!dlopen` or
+parameter, otherwise the underlying platform's :c:func:`!dlopen` or
 :c:func:`!LoadLibrary` function is used to load the library into
 the process, and to get a handle to it.
 
@@ -1452,7 +1451,7 @@ configurable.
 
 The *use_errno* parameter, when set to true, enables a ctypes mechanism that
 allows accessing the system :data:`errno` error number in a safe way.
-:mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
+:mod:`ctypes` maintains a thread-local copy of the system's :data:`errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
 :data:`errno` value before the function call is swapped with the ctypes private
 copy, the same happens immediately after the function call.
@@ -2533,6 +2532,12 @@ fields, or any other data types containing pointer type fields.
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
       Setting this attribute to 0 is the same as not setting it at all.
 
+
+   .. attribute:: _align_
+
+      An optional small integer that allows overriding the alignment of
+      the structure when being packed or unpacked to/from memory.
+      Setting this attribute to 0 is the same as not setting it at all.
 
    .. attribute:: _anonymous_
 

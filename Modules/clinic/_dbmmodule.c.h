@@ -37,7 +37,7 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls);
 static PyObject *
 _dbm_dbm_keys(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
         return NULL;
     }
@@ -149,7 +149,7 @@ _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls);
 static PyObject *
 _dbm_dbm_clear(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
         return NULL;
     }
@@ -218,4 +218,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96fdd4bd7bd256c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=743ce0cea116747e input=a9049054013a1b77]*/

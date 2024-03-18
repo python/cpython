@@ -78,6 +78,10 @@
 [feature_macro.Py_REF_DEBUG]
     doc = 'when Python is compiled in debug mode (with Py_REF_DEBUG)'
     windows = 'maybe'
+[feature_macro.Py_TRACE_REFS]
+    # nb. This mode is not compatible with Stable ABI/Limited API.
+    doc = 'when Python is compiled with Py_TRACE_REFS'
+    windows = 'maybe'
 
 
 # Mentioned in PEP 384:
@@ -2481,3 +2485,18 @@
 [function._Py_SetRefcnt]
     added = '3.13'
     abi_only = true
+[data.PyExc_IncompleteInputError]
+    added = '3.13'
+[function.PyList_GetItemRef]
+    added = '3.13'
+[typedef.PyCFunctionFast]
+    added = '3.13'
+    # "abi-only" since 3.10.  (Callback type names aren't used in C code,
+    # but this function signature was expected with METH_FASTCALL.)
+[typedef.PyCFunctionFastWithKeywords]
+    added = '3.13'
+    # "abi-only" since 3.10.  (Same story as PyCFunctionFast.)
+[function.PyType_GetFullyQualifiedName]
+    added = '3.13'
+[function.PyType_GetModuleName]
+    added = '3.13'

@@ -113,6 +113,9 @@ Restrictions
   differs across Unix versions and requires knowledge about the database
   implementation used.
 
+* On macOS :mod:`dbm.ndbm` can silently corrupt the database file on updates,
+  which can cause hard crashes when trying to read from the database.
+
 
 .. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
 

@@ -597,12 +597,27 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
         PyErr_SetString(PyExc_TypeError, "invalid exception object");
         return NULL;
     }
-    if (Py_IS_TYPE(exc_val, (PyTypeObject *)PyExc_StopIteration)) {
+    if (PyErr_GivenExceptionMatches(exc_val, PyExc_StopIteration)) {
+        const char *msg = "StopIteration interacts badly with "
+                          "generators and cannot be raised into a "
+                          "Future";
+        PyObject *message = PyUnicode_FromString(msg);
+        if (message == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        PyObject *err = PyObject_CallOneArg(PyExc_RuntimeError, message);
+        Py_DECREF(message);
+        if (err == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        assert(PyExceptionInstance_Check(err));
+
+        PyException_SetCause(err, Py_NewRef(exc_val));
+        PyException_SetContext(err, Py_NewRef(exc_val));
         Py_DECREF(exc_val);
-        PyErr_SetString(PyExc_TypeError,
-                        "StopIteration interacts badly with generators "
-                        "and cannot be raised into a Future");
-        return NULL;
+        exc_val = err;
     }
 
     assert(!fut->fut_exception);
@@ -2030,12 +2045,22 @@ static PyObject *
 swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *prev_task;
+
+    if (task == Py_None) {
+        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
+            return NULL;
+        }
+        if (prev_task == NULL) {
+            Py_RETURN_NONE;
+        }
+        return prev_task;
+    }
+
     Py_hash_t hash;
     hash = PyObject_Hash(loop);
     if (hash == -1) {
         return NULL;
     }
-
     prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
     if (prev_task == NULL) {
         if (PyErr_Occurred()) {
@@ -2044,22 +2069,12 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         prev_task = Py_None;
     }
     Py_INCREF(prev_task);
-
-    if (task == Py_None) {
-        if (_PyDict_DelItem_KnownHash(state->current_tasks, loop, hash) == -1) {
-            goto error;
-        }
-    } else {
-        if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-            goto error;
-        }
+    if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
+        Py_DECREF(prev_task);
+        return NULL;
     }
 
     return prev_task;
-
-error:
-    Py_DECREF(prev_task);
-    return NULL;
 }
 
 /* ----- Task */
@@ -2754,7 +2769,6 @@ gen_status_from_result(PyObject **result)
 static PyObject *
 task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
-    int res;
     int clear_exc = 0;
     PyObject *result = NULL;
     PyObject *coro;
@@ -2771,20 +2785,7 @@ task_step_impl(asyncio_state *state, TaskObj *task, PyObject *exc)
     if (task->task_must_cancel) {
         assert(exc != Py_None);
 
-        if (exc) {
-            /* Check if exc is a CancelledError */
-            res = PyObject_IsInstance(exc, state->asyncio_CancelledError);
-            if (res == -1) {
-                /* An error occurred, abort */
-                goto fail;
-            }
-            if (res == 0) {
-                /* exc is not CancelledError; reset it to NULL */
-                exc = NULL;
-            }
-        }
-
-        if (!exc) {
+        if (!exc || !PyErr_GivenExceptionMatches(exc, state->asyncio_CancelledError)) {
             /* exc was not a CancelledError */
             exc = create_cancelled_error(state, (FutureObj*)task);
 

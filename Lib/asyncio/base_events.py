@@ -16,6 +16,7 @@ to modify the meaning of the API call itself.
 import collections
 import collections.abc
 import concurrent.futures
+import errno
 import functools
 import heapq
 import itertools
@@ -44,6 +45,7 @@ from . import protocols
 from . import sslproto
 from . import staggered
 from . import tasks
+from . import timeouts
 from . import transports
 from . import trsock
 from .log import logger
@@ -597,23 +599,24 @@ class BaseEventLoop(events.AbstractEventLoop):
         thread = threading.Thread(target=self._do_shutdown, args=(future,))
         thread.start()
         try:
-            await future
-        finally:
-            thread.join(timeout)
-
-        if thread.is_alive():
+            async with timeouts.timeout(timeout):
+                await future
+        except TimeoutError:
             warnings.warn("The executor did not finishing joining "
-                             f"its threads within {timeout} seconds.",
-                             RuntimeWarning, stacklevel=2)
+                          f"its threads within {timeout} seconds.",
+                          RuntimeWarning, stacklevel=2)
             self._default_executor.shutdown(wait=False)
+        else:
+            thread.join()
 
     def _do_shutdown(self, future):
         try:
             self._default_executor.shutdown(wait=True)
             if not self.is_closed():
-                self.call_soon_threadsafe(future.set_result, None)
+                self.call_soon_threadsafe(futures._set_result_unless_cancelled,
+                                          future, None)
         except Exception as ex:
-            if not self.is_closed():
+            if not self.is_closed() and not future.cancelled():
                 self.call_soon_threadsafe(future.set_exception, ex)
 
     def _check_running(self):
@@ -1339,9 +1342,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
-            if sock.type != socket.SOCK_DGRAM:
+            if sock.type == socket.SOCK_STREAM:
                 raise ValueError(
-                    f'A UDP Socket was expected, got {sock!r}')
+                    f'A datagram socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
                     family or proto or flags or
                     reuse_port or allow_broadcast):
@@ -1496,6 +1499,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             ssl=None,
             reuse_address=None,
             reuse_port=None,
+            keep_alive=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
             start_serving=True):
@@ -1569,6 +1573,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                             socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
                     if reuse_port:
                         _set_reuseport(sock)
+                    if keep_alive:
+                        sock.setsockopt(
+                            socket.SOL_SOCKET, socket.SO_KEEPALIVE, True)
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
                     # listen on both address families.
@@ -1581,9 +1588,22 @@ class BaseEventLoop(events.AbstractEventLoop):
                     try:
                         sock.bind(sa)
                     except OSError as err:
-                        raise OSError(err.errno, 'error while attempting '
-                                      'to bind on address %r: %s'
-                                      % (sa, err.strerror.lower())) from None
+                        msg = ('error while attempting '
+                               'to bind on address %r: %s'
+                               % (sa, err.strerror.lower()))
+                        if err.errno == errno.EADDRNOTAVAIL:
+                            # Assume the family is not enabled (bpo-30945)
+                            sockets.pop()
+                            sock.close()
+                            if self._debug:
+                                logger.warning(msg)
+                            continue
+                        raise OSError(err.errno, msg) from None
+
+                if not sockets:
+                    raise OSError('could not bind on any address out of %r'
+                                  % ([info[4] for info in infos],))
+
                 completed = True
             finally:
                 if not completed:

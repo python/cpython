@@ -14,8 +14,8 @@ know about when using Python on Microsoft Windows.
 
 Unlike most Unix systems and services, Windows does not include a system
 supported installation of Python. To make Python available, the CPython team
-has compiled Windows installers (MSI packages) with every `release
-<https://www.python.org/download/releases/>`_ for many years. These installers
+has compiled Windows installers with every `release
+<https://www.python.org/downloads/>`_ for many years. These installers
 are primarily intended to add a per-user installation of Python, with the
 core interpreter and library being used by a single user. The installer is also
 able to install for all users of a single machine, and a separate ZIP file is
@@ -307,6 +307,46 @@ settings and replace any that have been removed or modified.
 "Uninstall" will remove Python entirely, with the exception of the
 :ref:`launcher`, which has its own entry in Programs and Features.
 
+.. _install-freethreaded-windows:
+
+Installing Free-threaded Binaries
+---------------------------------
+
+.. versionadded:: 3.13 (Experimental)
+
+.. note::
+
+   Everything described in this section is considered experimental,
+   and should be expected to change in future releases.
+
+To install pre-built binaries with free-threading enabled (see :pep:`703`), you
+should select "Customize installation". The second page of options includes the
+"Download free-threaded binaries" checkbox.
+
+.. image:: win_install_freethreaded.png
+
+Selecting this option will download and install additional binaries to the same
+location as the main Python install. The main executable is called
+``python3.13t.exe``, and other binaries either receive a ``t`` suffix or a full
+ABI suffix. Python source files and bundled third-party dependencies are shared
+with the main install.
+
+The free-threaded version is registered as a regular Python install with the
+tag ``3.13t`` (with a ``-32`` or ``-arm64`` suffix as normal for those
+platforms). This allows tools to discover it, and for the :ref:`launcher` to
+support ``py.exe -3.13t``. Note that the launcher will interpret ``py.exe -3``
+(or a ``python3`` shebang) as "the latest 3.x install", which will prefer the
+free-threaded binaries over the regular ones, while ``py.exe -3.13`` will not.
+If you use the short style of option, you may prefer to not install the
+free-threaded binaries at this time.
+
+To specify the install option at the command line, use
+``Include_freethreaded=1``. See :ref:`install-layout-option` for instructions on
+pre-emptively downloading the additional binaries for offline install. The
+options to include debug symbols and binaries also apply to the free-threaded
+builds.
+
+Free-threaded binaries are also available :ref:`on nuget.org <windows-nuget>`.
 
 .. _windows-store:
 
@@ -450,9 +490,29 @@ automatically use the headers and import libraries in your build.
 
 The package information pages on nuget.org are
 `www.nuget.org/packages/python <https://www.nuget.org/packages/python>`_
-for the 64-bit version and `www.nuget.org/packages/pythonx86
-<https://www.nuget.org/packages/pythonx86>`_ for the 32-bit version.
+for the 64-bit version, `www.nuget.org/packages/pythonx86
+<https://www.nuget.org/packages/pythonx86>`_ for the 32-bit version, and
+`www.nuget.org/packages/pythonarm64
+<https://www.nuget.org/packages/pythonarm64>`_ for the ARM64 version
 
+Free-threaded packages
+----------------------
+
+.. versionadded:: 3.13 (Experimental)
+
+.. note::
+
+   Everything described in this section is considered experimental,
+   and should be expected to change in future releases.
+
+Packages containing free-threaded binaries are named
+`python-freethreaded <https://www.nuget.org/packages/python-freethreaded>`_
+for the 64-bit version, `pythonx86-freethreaded
+<https://www.nuget.org/packages/pythonx86-freethreaded>`_ for the 32-bit
+version, and `pythonarm64-freethreaded
+<https://www.nuget.org/packages/pythonarm64-freethreaded>`_ for the ARM64
+version. These packages contain both the ``python3.13t.exe`` and
+``python.exe`` entry points, both of which run free threaded.
 
 .. _windows-embeddable:
 

@@ -6,7 +6,7 @@ import _xxsubinterpreters as _interpreters
 
 # aliases:
 from _xxsubinterpreters import (
-    InterpreterError, InterpreterNotFoundError,
+    InterpreterError, InterpreterNotFoundError, NotShareableError,
     is_shareable,
 )
 
@@ -14,7 +14,8 @@ from _xxsubinterpreters import (
 __all__ = [
     'get_current', 'get_main', 'create', 'list_all', 'is_shareable',
     'Interpreter',
-    'InterpreterError', 'InterpreterNotFoundError', 'ExecFailure',
+    'InterpreterError', 'InterpreterNotFoundError', 'ExecutionFailed',
+    'NotShareableError',
     'create_queue', 'Queue', 'QueueEmpty', 'QueueFull',
 ]
 
@@ -34,17 +35,40 @@ def __getattr__(name):
         raise AttributeError(name)
 
 
-class ExecFailure(RuntimeError):
+_EXEC_FAILURE_STR = """
+{superstr}
+
+Uncaught in the interpreter:
+
+{formatted}
+""".strip()
+
+class ExecutionFailed(RuntimeError):
+    """An unhandled exception happened during execution.
+
+    This is raised from Interpreter.exec() and Interpreter.call().
+    """
 
     def __init__(self, excinfo):
         msg = excinfo.formatted
         if not msg:
-            if excinfo.type and snapshot.msg:
-                msg = f'{snapshot.type.__name__}: {snapshot.msg}'
+            if excinfo.type and excinfo.msg:
+                msg = f'{excinfo.type.__name__}: {excinfo.msg}'
             else:
-                msg = snapshot.type.__name__ or snapshot.msg
+                msg = excinfo.type.__name__ or excinfo.msg
         super().__init__(msg)
-        self.snapshot = excinfo
+        self.excinfo = excinfo
+
+    def __str__(self):
+        try:
+            formatted = self.excinfo.errdisplay
+        except Exception:
+            return super().__str__()
+        else:
+            return _EXEC_FAILURE_STR.format(
+                superstr=super().__str__(),
+                formatted=formatted,
+            )
 
 
 def create():
@@ -105,6 +129,14 @@ class Interpreter:
     def __del__(self):
         self._decref()
 
+    # for pickling:
+    def __getnewargs__(self):
+        return (self._id,)
+
+    # for pickling:
+    def __getstate__(self):
+        return None
+
     def _decref(self):
         if not self._ownsref:
             return
@@ -130,7 +162,15 @@ class Interpreter:
         """
         return _interpreters.destroy(self._id)
 
-    def exec_sync(self, code, /, channels=None):
+    def prepare_main(self, ns=None, /, **kwargs):
+        """Bind the given values into the interpreter's __main__.
+
+        The values must be shareable.
+        """
+        ns = dict(ns, **kwargs) if ns is not None else kwargs
+        _interpreters.set___main___attrs(self._id, ns)
+
+    def exec(self, code, /):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
@@ -139,22 +179,46 @@ class Interpreter:
 
         There is no return value.
 
-        If the code raises an unhandled exception then an ExecFailure
-        is raised, which summarizes the unhandled exception.  The actual
-        exception is discarded because objects cannot be shared between
-        interpreters.
+        If the code raises an unhandled exception then an ExecutionFailed
+        exception is raised, which summarizes the unhandled exception.
+        The actual exception is discarded because objects cannot be
+        shared between interpreters.
 
         This blocks the current Python thread until done.  During
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        excinfo = _interpreters.exec(self._id, code, channels)
+        excinfo = _interpreters.exec(self._id, code)
         if excinfo is not None:
-            raise ExecFailure(excinfo)
+            raise ExecutionFailed(excinfo)
 
-    def run(self, code, /, channels=None):
+    def call(self, callable, /):
+        """Call the object in the interpreter with given args/kwargs.
+
+        Only functions that take no arguments and have no closure
+        are supported.
+
+        The return value is discarded.
+
+        If the callable raises an exception then the error display
+        (including full traceback) is send back between the interpreters
+        and an ExecutionFailed exception is raised, much like what
+        happens with Interpreter.exec().
+        """
+        # XXX Support args and kwargs.
+        # XXX Support arbitrary callables.
+        # XXX Support returning the return value (e.g. via pickle).
+        excinfo = _interpreters.call(self._id, callable)
+        if excinfo is not None:
+            raise ExecutionFailed(excinfo)
+
+    def call_in_thread(self, callable, /):
+        """Return a new thread that calls the object in the interpreter.
+
+        The return value and any raised exception are discarded.
+        """
         def task():
-            self.exec_sync(code, channels=channels)
+            self.call(callable)
         t = threading.Thread(target=task)
         t.start()
         return t

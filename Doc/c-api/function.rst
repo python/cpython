@@ -35,7 +35,7 @@ There are a few functions specific to Python functions.
    must be a dictionary with the global variables accessible to the function.
 
    The function's docstring and name are retrieved from the code object.
-   :func:`~function.__module__`
+   :attr:`~function.__module__`
    is retrieved from *globals*. The argument defaults, annotations and closure are
    set to ``NULL``. :attr:`~function.__qualname__` is set to the same value as
    the code object's :attr:`~codeobject.co_qualname` field.
