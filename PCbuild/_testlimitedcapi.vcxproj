@@ -97,7 +97,9 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\bytearray.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\bytes.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\list.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
   </ItemGroup>
