@@ -191,6 +191,11 @@ test_w_code_invalid(PyObject *, PyObject *)
             return NULL;
         }
         else {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(args);
+                Py_DECREF(kwargs);
+                return NULL;
+            }
             PyErr_Clear();
         }
     }
@@ -215,6 +220,11 @@ test_w_code_invalid(PyObject *, PyObject *)
             return NULL;
         }
         else {
+            if (!PyErr_ExceptionMatches(PyExc_SystemError)) {
+                Py_DECREF(args);
+                Py_DECREF(kwargs);
+                return NULL;
+            }
             PyErr_Clear();
         }
     }
