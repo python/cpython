@@ -891,6 +891,23 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             self.check_forkserver_death(signal.SIGKILL)
 
+    def test_process_pickling(self):
+        if self.TYPE == 'threads':
+            self.skipTest(f'test not appropriate for {self.TYPE}')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                proc = self.Process()
+                proc.start()
+                # Calling set_spawning_popen with a value other than None
+                # allows pickling the authentication keys of processes
+                # (.authkey), which is prevented by default in
+                # AuthenticationString for security reasons.
+                multiprocessing.context.set_spawning_popen(0)
+                serialized_proc = pickle.dumps(proc, protocol=proto)
+                multiprocessing.context.set_spawning_popen(None)
+                deserialized_proc = pickle.loads(serialized_proc)
+                self.assertIsInstance(deserialized_proc, self.Process)
+
 
 #
 #
@@ -3027,7 +3044,26 @@ class _TestMyManager(BaseTestCase):
         manager.start()
         with manager:
             self.common(manager)
-        self.assertEqual(manager._process.exitcode, 0)
+        # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
+        # to the manager process if it takes longer than 1 second to stop,
+        # which happens on slow buildbots.
+        self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
+
+    def test_mymanager_pickling(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                manager = MyManager()
+                manager.start()
+                # Calling set_spawning_popen with a value other than None
+                # allows pickling the authentication keys of processes
+                # (.authkey), which is prevented by default in
+                # AuthenticationString for security reasons.
+                multiprocessing.context.set_spawning_popen(0)
+                serialized_manager = pickle.dumps(manager, protocol=proto)
+                multiprocessing.context.set_spawning_popen(None)
+                deserialized_manager = pickle.loads(serialized_manager)
+                self.assertIsInstance(deserialized_manager, MyManager)
+                manager.shutdown()
 
     def common(self, manager):
         foo = manager.Foo()
