@@ -1,1 +1,0 @@
-Make json.loads faster for long strings. (Patch by Marco Paolini)

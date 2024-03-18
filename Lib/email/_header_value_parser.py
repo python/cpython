@@ -781,7 +781,7 @@ class MimeParameters(TokenList):
                     else:
                         try:
                             value = value.decode(charset, 'surrogateescape')
-                        except LookupError:
+                        except (LookupError, UnicodeEncodeError):
                             # XXX: there should really be a custom defect for
                             # unknown character set to make it easy to find,
                             # because otherwise unknown charset is a silent
@@ -850,8 +850,13 @@ class MsgID(TokenList):
         # message-id tokens may not be folded.
         return str(self) + policy.linesep
 
+
 class MessageID(MsgID):
     token_type = 'message-id'
+
+
+class InvalidMessageID(MessageID):
+    token_type = 'invalid-message-id'
 
 
 class Header(TokenList):
@@ -935,11 +940,16 @@ class EWWhiteSpaceTerminal(WhiteSpaceTerminal):
         return ''
 
 
+class _InvalidEwError(errors.HeaderParseError):
+    """Invalid encoded word found while parsing headers."""
+
+
 # XXX these need to become classes and used as instances so
 # that a program can't change them in a parse tree and screw
 # up other parse trees.  Maybe should have  tests for that, too.
 DOT = ValueTerminal('.', 'dot')
 ListSeparator = ValueTerminal(',', 'list-separator')
+ListSeparator.as_ew_allowed = False
 RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 #
@@ -1039,7 +1049,10 @@ def get_encoded_word(value):
         raise errors.HeaderParseError(
             "expected encoded word but found {}".format(value))
     remstr = ''.join(remainder)
-    if len(remstr) > 1 and remstr[0] in hexdigits and remstr[1] in hexdigits:
+    if (len(remstr) > 1 and
+        remstr[0] in hexdigits and
+        remstr[1] in hexdigits and
+        tok.count('?') < 2):
         # The ? after the CTE was followed by an encoded word escape (=XX).
         rest, *remainder = remstr.split('?=', 1)
         tok = tok + '?=' + rest
@@ -1050,8 +1063,8 @@ def get_encoded_word(value):
     value = ''.join(remainder)
     try:
         text, charset, lang, defects = _ew.decode('=?' + tok + '?=')
-    except ValueError:
-        raise errors.HeaderParseError(
+    except (ValueError, KeyError):
+        raise _InvalidEwError(
             "encoded word format invalid: '{}'".format(ew.cte))
     ew.charset = charset
     ew.lang = lang
@@ -1101,9 +1114,12 @@ def get_unstructured(value):
             token, value = get_fws(value)
             unstructured.append(token)
             continue
+        valid_ew = True
         if value.startswith('=?'):
             try:
                 token, value = get_encoded_word(value)
+            except _InvalidEwError:
+                valid_ew = False
             except errors.HeaderParseError:
                 # XXX: Need to figure out how to register defects when
                 # appropriate here.
@@ -1125,7 +1141,10 @@ def get_unstructured(value):
         # Split in the middle of an atom if there is a rfc2047 encoded word
         # which does not have WSP on both sides. The defect will be registered
         # the next time through the loop.
-        if rfc2047_matcher.search(tok):
+        # This needs to only be performed when the encoded word is valid;
+        # otherwise, performing it on an invalid encoded word can cause
+        # the parser to go in an infinite loop.
+        if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
         vtext = ValueTerminal(tok, 'vtext')
         _validate_xtext(vtext)
@@ -1200,12 +1219,21 @@ def get_bare_quoted_string(value):
         if value[0] in WSP:
             token, value = get_fws(value)
         elif value[:2] == '=?':
+            valid_ew = False
             try:
                 token, value = get_encoded_word(value)
                 bare_quoted_string.defects.append(errors.InvalidHeaderDefect(
                     "encoded word inside quoted string"))
+                valid_ew = True
             except errors.HeaderParseError:
                 token, value = get_qcontent(value)
+            # Collapse the whitespace between two encoded words that occur in a
+            # bare-quoted-string.
+            if valid_ew and len(bare_quoted_string) > 1:
+                if (bare_quoted_string[-1].token_type == 'fws' and
+                        bare_quoted_string[-2].token_type == 'encoded-word'):
+                    bare_quoted_string[-1] = EWWhiteSpaceTerminal(
+                        bare_quoted_string[-1], 'fws')
         else:
             token, value = get_qcontent(value)
         bare_quoted_string.append(token)
@@ -1960,7 +1988,7 @@ def get_address_list(value):
         try:
             token, value = get_address(value)
             address_list.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -1995,7 +2023,7 @@ def get_address_list(value):
             address_list.defects.append(errors.InvalidHeaderDefect(
                 "invalid address in address-list"))
         if value:  # Must be a , at this point.
-            address_list.append(ValueTerminal(',', 'list-separator'))
+            address_list.append(ListSeparator)
             value = value[1:]
     return address_list, value
 
@@ -2029,7 +2057,7 @@ def get_msg_id(value):
        no-fold-literal = "[" *dtext "]"
     """
     msg_id = MsgID()
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         msg_id.append(token)
     if not value or value[0] != '<':
@@ -2069,7 +2097,7 @@ def get_msg_id(value):
     except errors.HeaderParseError:
         try:
             token, value = get_no_fold_literal(value)
-        except errors.HeaderParseError as e:
+        except errors.HeaderParseError:
             try:
                 token, value = get_domain(value)
                 msg_id.defects.append(errors.ObsoleteHeaderDefect(
@@ -2097,10 +2125,18 @@ def parse_message_id(value):
     message_id = MessageID()
     try:
         token, value = get_msg_id(value)
-    except errors.HeaderParseError:
-        message_id.defects.append(errors.InvalidHeaderDefect(
-            "Expected msg-id but found {!r}".format(value)))
-    message_id.append(token)
+        message_id.append(token)
+    except errors.HeaderParseError as ex:
+        token = get_unstructured(value)
+        message_id = InvalidMessageID(token)
+        message_id.defects.append(
+            errors.InvalidHeaderDefect("Invalid msg-id: {!r}".format(ex)))
+    else:
+        # Value after parsing a valid msg_id should be None.
+        if value:
+            message_id.defects.append(errors.InvalidHeaderDefect(
+                "Unexpected {!r}".format(value)))
+
     return message_id
 
 #
@@ -2344,7 +2380,7 @@ def get_section(value):
         digits += value[0]
         value = value[1:]
     if digits[0] == '0' and digits != '0':
-        section.defects.append(errors.InvalidHeaderError(
+        section.defects.append(errors.InvalidHeaderDefect(
                 "section number has an invalid leading 0"))
     section.number = int(digits)
     section.append(ValueTerminal(digits, 'digits'))
@@ -2408,7 +2444,6 @@ def get_parameter(value):
         raise errors.HeaderParseError("Parameter not followed by '='")
     param.append(ValueTerminal('=', 'parameter-separator'))
     value = value[1:]
-    leader = None
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         param.append(token)
@@ -2533,7 +2568,7 @@ def parse_mime_parameters(value):
         try:
             token, value = get_parameter(value)
             mime_parameters.append(token)
-        except errors.HeaderParseError as err:
+        except errors.HeaderParseError:
             leader = None
             if value[0] in CFWS_LEADER:
                 leader, value = get_cfws(value)
@@ -2591,7 +2626,6 @@ def parse_content_type_header(value):
     don't do that.
     """
     ctype = ContentType()
-    recover = False
     if not value:
         ctype.defects.append(errors.HeaderMissingRequiredValue(
             "Missing content type specification"))
@@ -2733,6 +2767,7 @@ def _refold_parse_tree(parse_tree, *, policy):
     encoding = 'utf-8' if policy.utf8 else 'us-ascii'
     lines = ['']
     last_ew = None
+    last_charset = None
     wrap_as_ew_blocked = 0
     want_encoding = False
     end_ew_not_allowed = Terminal('', 'wrap_as_ew_blocked')
@@ -2743,6 +2778,9 @@ def _refold_parse_tree(parse_tree, *, policy):
             wrap_as_ew_blocked -= 1
             continue
         tstr = str(part)
+        if part.token_type == 'ptext' and set(tstr) & SPECIALS:
+            # Encode if tstr contains special characters.
+            want_encoding = True
         try:
             tstr.encode(encoding)
             charset = encoding
@@ -2784,8 +2822,14 @@ def _refold_parse_tree(parse_tree, *, policy):
             else:
                 # It's a terminal, wrap it as an encoded word, possibly
                 # combining it with previously encoded words if allowed.
+                if (last_ew is not None and
+                    charset != last_charset and
+                    (last_charset == 'unknown-8bit' or
+                     last_charset == 'utf-8' and charset != 'us-ascii')):
+                    last_ew = None
                 last_ew = _fold_as_ew(tstr, lines, maxlen, last_ew,
                                       part.ew_combine_allowed, charset)
+                last_charset = charset
             want_encoding = False
             continue
         if len(tstr) <= maxlen - len(lines[-1]):

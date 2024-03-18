@@ -1,2 +1,0 @@
-The slot ``tp_vectorcall_offset`` is inherited unconditionally to support
-``super().__call__()`` when the base class uses vectorcall.

@@ -1,2 +1,0 @@
-Fixed non-deterministic behavior related to mimetypes extension mapping and
-module reinitialization.

@@ -23,7 +23,7 @@ Python statement names, the current local variables, and the available
 module names.  For dotted expressions such as ``string.a``, it will evaluate
 the expression up to the final ``'.'`` and then suggest completions from
 the attributes of the resulting object.  Note that this may execute
-application-defined code if an object with a :meth:`__getattr__` method
+application-defined code if an object with a :meth:`~object.__getattr__` method
 is part of the expression.  The default configuration also saves your
 history into a file named :file:`.python_history` in your user directory.
 The history will be available again during the next interactive interpreter
@@ -51,4 +51,4 @@ bpython_.
 
 .. _GNU Readline: https://tiswww.case.edu/php/chet/readline/rltop.html
 .. _IPython: https://ipython.org/
-.. _bpython: https://www.bpython-interpreter.org/
+.. _bpython: https://bpython-interpreter.org/

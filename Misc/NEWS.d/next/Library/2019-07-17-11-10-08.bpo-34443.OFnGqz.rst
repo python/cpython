@@ -1,2 +1,0 @@
-Exceptions from :mod:`enum` now use the ``__qualname`` of the enum class in
-the exception message instead of the ``__name__``.

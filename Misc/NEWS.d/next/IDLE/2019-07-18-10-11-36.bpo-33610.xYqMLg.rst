@@ -1,1 +1,0 @@
-Fix code context not showing the correct context when first toggled on.

@@ -89,6 +89,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_encoded_word('=?abc?=')
 
+    def test_get_encoded_word_invalid_cte(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_encoded_word('=?utf-8?X?somevalue?=')
+
     def test_get_encoded_word_valid_ew(self):
         self._test_get_x(parser.get_encoded_word,
                          '=?us-ascii?q?this_is_a_test?=  bird',
@@ -381,6 +385,30 @@ class TestParser(TestParserMixin, TestEmailBase):
             'somevaluenowhitespace',
             'somevaluenowhitespace',
             [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_without_trailing_whitespace_hang_case(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?somevalue?=aa',
+            'somevalueaa',
+            'somevalueaa',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_invalid_ew2(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            [],
+            '')
+
+    def test_get_unstructured_invalid_ew_cte(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?X?=somevalue?=',
+            '=?utf-8?X?=somevalue?=',
+            '=?utf-8?X?=somevalue?=',
+            [],
             '')
 
     # get_qp_ctext
@@ -2555,6 +2583,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_msg_id
 
+    def test_get_msg_id_empty(self):
+        # bpo-38708: Test that HeaderParseError is raised and not IndexError.
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id('')
+
     def test_get_msg_id_valid(self):
         msg_id = self._test_get_x(
             parser.get_msg_id,
@@ -2610,6 +2643,46 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_get_msg_id_invalid_expected_msg_id_not_found(self):
+        text = "935-XPB-567:0:45327:9:90305:17843586-40@example.com"
+        msg_id = parser.parse_message_id(text)
+        self.assertDefectsEqual(
+            msg_id.all_defects,
+            [errors.InvalidHeaderDefect])
+
+    def test_parse_invalid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_id.token_type, 'invalid-message-id')
+
+    def test_parse_valid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+
+    def test_parse_message_id_with_remaining(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<validmessageid@example>thensomething",
+            "<validmessageid@example>",
+            "<validmessageid@example>",
+            [errors.InvalidHeaderDefect],
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+        self.assertEqual(str(message_id.all_defects[0]),
+                         "Unexpected 'thensomething'")
+
     def test_get_msg_id_no_angle_start(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_msg_id("msgwithnoankle")
@@ -2624,6 +2697,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ""
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
+
 
 
 @parameterize
@@ -2841,6 +2915,45 @@ class TestFolding(TestEmailBase):
                         "mich.  And that's\n"
                    " all I'm sayin.\n")
 
+    def test_unicode_after_unknown_not_combined(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=A4?=\xa4"),
+                   "=?unknown-8bit?q?=A4?==?utf-8?q?=C2=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=A4?=\xa4"),
+                   prefix + "=?unknown-8bit?q?=A4?=\n =?utf-8?q?=C2=A4?=\n")
+
+    def test_ascii_after_unknown_not_combined(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=A4?=abc"),
+                   "=?unknown-8bit?q?=A4?=abc\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=A4?=abc"),
+                   prefix + "=?unknown-8bit?q?=A4?=\n =?utf-8?q?abc?=\n")
+
+    def test_unknown_after_unicode_not_combined(self):
+        self._test(parser.get_unstructured("\xa4"
+                                           "=?unknown-8bit?q?=A4?="),
+                   "=?utf-8?q?=C2=A4?==?unknown-8bit?q?=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "\xa4=?unknown-8bit?q?=A4?="),
+                   prefix + "=?utf-8?q?=C2=A4?=\n =?unknown-8bit?q?=A4?=\n")
+
+    def test_unknown_after_ascii_not_combined(self):
+        self._test(parser.get_unstructured("abc"
+                                           "=?unknown-8bit?q?=A4?="),
+                   "abc=?unknown-8bit?q?=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "abcd=?unknown-8bit?q?=A4?="),
+                   prefix + "abcd\n =?unknown-8bit?q?=A4?=\n")
+
+    def test_unknown_after_unknown(self):
+        self._test(parser.get_unstructured("=?unknown-8bit?q?=C2?="
+                                           "=?unknown-8bit?q?=A4?="),
+                   "=?unknown-8bit?q?=C2=A4?=\n")
+        prefix = "0123456789 "*5
+        self._test(parser.get_unstructured(prefix + "=?unknown-8bit?q?=C2?="
+                                           "=?unknown-8bit?q?=A4?="),
+                   prefix + "=?unknown-8bit?q?=C2?=\n =?unknown-8bit?q?=A4?=\n")
+
     # XXX Need test of an encoded word so long that it needs to be wrapped
 
     def test_simple_address(self):
@@ -2871,6 +2984,11 @@ class TestFolding(TestEmailBase):
                 '"beißt" beißt <biter@example.com>')[0],
             '=?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>,\n'
                 ' =?utf-8?q?bei=C3=9Ft_bei=C3=9Ft?= <biter@example.com>\n')
+
+    def test_address_list_with_list_separator_after_fold(self):
+        to = '0123456789' * 8 + '@foo, ä <foo@bar>'
+        self._test(parser.get_address_list(to)[0],
+                   '0123456789' * 8 + '@foo,\n =?utf-8?q?=C3=A4?= <foo@bar>\n')
 
     # XXX Need tests with comments on various sides of a unicode token,
     # and with unicode tokens in the comments.  Spaces inside the quotes

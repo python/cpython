@@ -16,7 +16,7 @@ to values.  For 'main' and 'extensions', user values override
 default values.  For 'highlight' and 'keys', user sections augment the
 default sections (and must, therefore, have distinct names).
 
-Throughout this module there is an emphasis on returning useable defaults
+Throughout this module there is an emphasis on returning usable defaults
 when a problem occurs in returning a requested configuration value back to
 idle. This is to allow IDLE to continue to function in spite of errors in
 the retrieval of config information. When a default is returned instead of
@@ -130,7 +130,7 @@ class IdleUserConfParser(IdleConfParser):
         to disk. Otherwise, remove the file from disk if it exists.
         """
         fname = self.file
-        if fname:
+        if fname and fname[0] != '#':
             if not self.IsEmpty():
                 try:
                     cfgFile = open(fname, 'w')
@@ -158,6 +158,8 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+        # self.blink_off_time = <first editor text>['insertofftime']
+        # See https:/bugs.python.org/issue4630, msg356516.
 
         if not _utest:
             self.CreateConfigHandlers()
@@ -166,12 +168,12 @@ class IdleConf:
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
         idledir = os.path.dirname(__file__)
-        self.userdir = userdir = self.GetUserCfgDir()
+        self.userdir = userdir = '' if idlelib.testing else self.GetUserCfgDir()
         for cfg_type in self.config_types:
             self.defaultCfg[cfg_type] = IdleConfParser(
                 os.path.join(idledir, f'config-{cfg_type}.def'))
             self.userCfg[cfg_type] = IdleUserConfParser(
-                os.path.join(userdir, f'config-{cfg_type}.cfg'))
+                os.path.join(userdir or '#', f'config-{cfg_type}.cfg'))
 
     def GetUserCfgDir(self):
         """Return a filesystem directory for storing user config files.
@@ -182,12 +184,13 @@ class IdleConf:
         userDir = os.path.expanduser('~')
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
-                warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
-                        userDir + ',\n but the path does not exist.')
-                try:
-                    print(warn, file=sys.stderr)
-                except OSError:
-                    pass
+                if not idlelib.testing:
+                    warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
+                            userDir + ',\n but the path does not exist.')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 userDir = '~'
         if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
@@ -197,10 +200,13 @@ class IdleConf:
             try:
                 os.mkdir(userDir)
             except OSError:
-                warn = ('\n Warning: unable to create user config directory\n' +
-                        userDir + '\n Check path and permissions.\n Exiting!\n')
                 if not idlelib.testing:
-                    print(warn, file=sys.stderr)
+                    warn = ('\n Warning: unable to create user config directory\n' +
+                            userDir + '\n Check path and permissions.\n Exiting!\n')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
@@ -572,7 +578,7 @@ class IdleConf:
         """
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
-# TODO make keyBindins a file or class attribute used for test above
+# TODO make keyBindings a file or class attribute used for test above
 # and copied in function below.
 
     former_extension_events = {  #  Those with user-configurable keys.
@@ -591,7 +597,9 @@ class IdleConf:
         problem getting any core binding there will be an 'ultimate last
         resort fallback' to the CUA-ish bindings defined here.
         """
+        # TODO: = dict(sorted([(v-event, keys), ...]))?
         keyBindings={
+            # vitual-event: list of key events.
             '<<copy>>': ['<Control-c>', '<Control-C>'],
             '<<cut>>': ['<Control-x>', '<Control-X>'],
             '<<paste>>': ['<Control-v>', '<Control-V>'],
@@ -874,7 +882,7 @@ def _dump():  # htest # (not really, but ignore in coverage)
     line, crc = 0, 0
 
     def sprint(obj):
-        global line, crc
+        nonlocal line, crc
         txt = str(obj)
         line += 1
         crc = crc32(txt.encode(encoding='utf-8'), crc)
@@ -883,7 +891,7 @@ def _dump():  # htest # (not really, but ignore in coverage)
 
     def dumpCfg(cfg):
         print('\n', cfg, '\n')  # Cfg has variable '0xnnnnnnnn' address.
-        for key in sorted(cfg.keys()):
+        for key in sorted(cfg):
             sections = cfg[key].sections()
             sprint(key)
             sprint(sections)
@@ -898,8 +906,11 @@ def _dump():  # htest # (not really, but ignore in coverage)
     dumpCfg(idleConf.userCfg)
     print('\nlines = ', line, ', crc = ', crc, sep='')
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_config', verbosity=2, exit=False)
 
-    # Run revised _dump() as htest?
+    _dump()
+    # Run revised _dump() (700+ lines) as htest?  More sorting.
+    # Perhaps as window with tabs for textviews, making it config viewer.

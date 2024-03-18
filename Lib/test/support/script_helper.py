@@ -8,14 +8,15 @@ import os
 import os.path
 import subprocess
 import py_compile
-import zipfile
 
 from importlib.util import source_from_cache
-from test.support import make_legacy_pyc, strip_python_stderr
+from test import support
+from test.support.import_helper import make_legacy_pyc
 
 
 # Cached result of the expensive test performed in the function below.
 __cached_interp_requires_environment = None
+
 
 def interpreter_requires_environment():
     """
@@ -40,6 +41,10 @@ def interpreter_requires_environment():
         if 'PYTHONHOME' in os.environ:
             __cached_interp_requires_environment = True
             return True
+        # cannot run subprocess, assume we don't need it
+        if not support.has_subprocess_support:
+            __cached_interp_requires_environment = False
+            return False
 
         # Try running an interpreter with -E to see if it works or not.
         try:
@@ -58,8 +63,8 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
     """Helper for reporting Python subprocess run results"""
     def fail(self, cmd_line):
         """Provide helpful details about failed subcommand runs"""
-        # Limit to 80 lines to ASCII characters
-        maxlen = 80 * 100
+        # Limit to 300 lines of ASCII characters
+        maxlen = 300 * 100
         out, err = self.out, self.err
         if len(out) > maxlen:
             out = b'(... truncated stdout ...)' + out[-maxlen:]
@@ -85,14 +90,30 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
 
 
 # Executing the interpreter in a subprocess
+@support.requires_subprocess()
 def run_python_until_end(*args, **env_vars):
+    """Used to implement assert_python_*.
+
+    *args are the command line flags to pass to the python interpreter.
+    **env_vars keyword arguments are environment variables to set on the process.
+
+    If __run_using_command= is supplied, it must be a list of
+    command line arguments to prepend to the command line used.
+    Useful when you want to run another command that should launch the
+    python interpreter via its own arguments. ["/bin/echo", "--"] for
+    example could print the unquoted python command line instead of
+    run it.
+    """
     env_required = interpreter_requires_environment()
+    run_using_command = env_vars.pop('__run_using_command', None)
     cwd = env_vars.pop('__cwd', None)
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
     else:
         isolated = not env_vars and not env_required
     cmd_line = [sys.executable, '-X', 'faulthandler']
+    if run_using_command:
+        cmd_line = run_using_command + cmd_line
     if isolated:
         # isolated mode: ignore Python environment variables, ignore user
         # site-packages, and don't add the current directory to sys.path
@@ -134,14 +155,16 @@ def run_python_until_end(*args, **env_vars):
             proc.kill()
             subprocess._cleanup()
     rc = proc.returncode
-    err = strip_python_stderr(err)
     return _PythonRunResult(rc, out, err), cmd_line
 
+
+@support.requires_subprocess()
 def _assert_python(expected_success, /, *args, **env_vars):
     res, cmd_line = run_python_until_end(*args, **env_vars)
     if (res.rc and expected_success) or (not res.rc and not expected_success):
         res.fail(cmd_line)
     return res
+
 
 def assert_python_ok(*args, **env_vars):
     """
@@ -156,6 +179,7 @@ def assert_python_ok(*args, **env_vars):
     """
     return _assert_python(True, *args, **env_vars)
 
+
 def assert_python_failure(*args, **env_vars):
     """
     Assert that running the interpreter with `args` and optional environment
@@ -166,6 +190,8 @@ def assert_python_failure(*args, **env_vars):
     """
     return _assert_python(False, *args, **env_vars)
 
+
+@support.requires_subprocess()
 def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     """Run a Python subprocess with the given arguments.
 
@@ -188,6 +214,7 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
                             stdout=stdout, stderr=stderr,
                             **kw)
 
+
 def kill_python(p):
     """Run the given Popen process until completion and return stdout."""
     p.stdin.close()
@@ -198,6 +225,7 @@ def kill_python(p):
     p.wait()
     subprocess._cleanup()
     return data
+
 
 def make_script(script_dir, script_basename, source, omit_suffix=False):
     script_filename = script_basename
@@ -210,7 +238,9 @@ def make_script(script_dir, script_basename, source, omit_suffix=False):
     importlib.invalidate_caches()
     return script_name
 
+
 def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
+    import zipfile
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
     with zipfile.ZipFile(zip_name, 'w') as zip_file:
@@ -229,12 +259,15 @@ def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
     #        zip_file.printdir()
     return zip_name, os.path.join(zip_name, name_in_zip)
 
+
 def make_pkg(pkg_dir, init_source=''):
     os.mkdir(pkg_dir)
     make_script(pkg_dir, '__init__', init_source)
 
+
 def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
                  source, depth=1, compiled=False):
+    import zipfile
     unlink = []
     init_name = make_script(zip_dir, '__init__', '')
     unlink.append(init_name)
@@ -261,3 +294,25 @@ def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     #        print 'Contents of %r:' % zip_name
     #        zip_file.printdir()
     return zip_name, os.path.join(zip_name, script_name_in_zip)
+
+
+@support.requires_subprocess()
+def run_test_script(script):
+    # use -u to try to get the full output if the test hangs or crash
+    if support.verbose:
+        def title(text):
+            return f"===== {text} ======"
+
+        name = f"script {os.path.basename(script)}"
+        print()
+        print(title(name), flush=True)
+        # In verbose mode, the child process inherit stdout and stdout,
+        # to see output in realtime and reduce the risk of losing output.
+        args = [sys.executable, "-E", "-X", "faulthandler", "-u", script, "-v"]
+        proc = subprocess.run(args)
+        print(title(f"{name} completed: exit code {proc.returncode}"),
+              flush=True)
+        if proc.returncode:
+            raise AssertionError(f"{name} failed")
+    else:
+        assert_python_ok("-u", script, "-v")

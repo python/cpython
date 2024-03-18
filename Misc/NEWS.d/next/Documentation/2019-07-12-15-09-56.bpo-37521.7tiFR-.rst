@@ -1,5 +1,0 @@
-Fix `importlib` examples to insert any newly created modules via
-importlib.util.module_from_spec() immediately into sys.modules instead of
-after calling loader.exec_module().
-
-Thanks to Benjamin Mintz for finding the bug.

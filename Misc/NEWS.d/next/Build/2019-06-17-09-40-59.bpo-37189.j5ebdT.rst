@@ -1,3 +1,0 @@
-Many ``PyRun_XXX()`` functions like :c:func:`PyRun_String` were no longer
-exported in ``libpython38.dll`` by mistake. Export them again to fix the ABI
-compatibility.
