@@ -8,6 +8,9 @@ on:
         required: false
         type: boolean
         default: false
+      os-matrix:
+        required: false
+        type: string
 
 jobs:
   build_macos:
@@ -17,14 +20,12 @@ jobs:
       HOMEBREW_NO_ANALYTICS: 1
       HOMEBREW_NO_AUTO_UPDATE: 1
       HOMEBREW_NO_INSTALL_CLEANUP: 1
+      HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
     strategy:
       fail-fast: false
       matrix:
-        os: [
-          "macos-14",  # M1
-          "macos-13",  # Intel
-        ]
+        os: ${{fromJson(inputs.os-matrix)}}
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4

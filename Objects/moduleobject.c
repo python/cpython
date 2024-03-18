@@ -1004,9 +1004,13 @@ module_set_annotations(PyModuleObject *m, PyObject *value, void *Py_UNUSED(ignor
     }
     else {
         /* delete */
-        ret = PyDict_DelItem(dict, &_Py_ID(__annotations__));
-        if (ret < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_SetString(PyExc_AttributeError, "__annotations__");
+        ret = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
+        if (ret == 0) {
+            PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__annotations__));
+            ret = -1;
+        }
+        else if (ret > 0) {
+            ret = 0;
         }
     }
 

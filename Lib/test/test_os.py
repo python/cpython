@@ -34,7 +34,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
-from test.support import set_recursion_limit
+from test.support import infinite_recursion
 from test.support import warnings_helper
 from platform import win32_is_iot
 
@@ -1298,6 +1298,7 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
+    is_fwalk = False
 
     # Wrapper to hide minor differences between os.walk and os.fwalk
     # to tests both functions with the same code base
@@ -1332,14 +1333,14 @@ class WalkTests(unittest.TestCase):
         self.sub11_path = join(self.sub1_path, "SUB11")
         sub2_path = join(self.walk_path, "SUB2")
         sub21_path = join(sub2_path, "SUB21")
-        tmp1_path = join(self.walk_path, "tmp1")
+        self.tmp1_path = join(self.walk_path, "tmp1")
         tmp2_path = join(self.sub1_path, "tmp2")
         tmp3_path = join(sub2_path, "tmp3")
         tmp5_path = join(sub21_path, "tmp3")
         self.link_path = join(sub2_path, "link")
         t2_path = join(os_helper.TESTFN, "TEST2")
         tmp4_path = join(os_helper.TESTFN, "TEST2", "tmp4")
-        broken_link_path = join(sub2_path, "broken_link")
+        self.broken_link_path = join(sub2_path, "broken_link")
         broken_link2_path = join(sub2_path, "broken_link2")
         broken_link3_path = join(sub2_path, "broken_link3")
 
@@ -1349,13 +1350,13 @@ class WalkTests(unittest.TestCase):
         os.makedirs(sub21_path)
         os.makedirs(t2_path)
 
-        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
+        for path in self.tmp1_path, tmp2_path, tmp3_path, tmp4_path, tmp5_path:
             with open(path, "x", encoding='utf-8') as f:
                 f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
 
         if os_helper.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
-            os.symlink('broken', broken_link_path, True)
+            os.symlink('broken', self.broken_link_path, True)
             os.symlink(join('tmp3', 'broken'), broken_link2_path, True)
             os.symlink(join('SUB21', 'tmp5'), broken_link3_path, True)
             self.sub2_tree = (sub2_path, ["SUB21", "link"],
@@ -1451,6 +1452,11 @@ class WalkTests(unittest.TestCase):
         else:
             self.fail("Didn't follow symlink with followlinks=True")
 
+        walk_it = self.walk(self.broken_link_path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
     def test_walk_bad_dir(self):
         # Walk top-down.
         errors = []
@@ -1471,6 +1477,73 @@ class WalkTests(unittest.TestCase):
                     self.assertIn(os.path.join(root, dir2), roots)
         finally:
             os.rename(path1new, path1)
+
+    def test_walk_bad_dir2(self):
+        walk_it = self.walk('nonexisting')
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk('nonexisting', follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(FileNotFoundError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(self.tmp1_path)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(self.tmp1_path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_walk_named_pipe(self):
+        path = os_helper.TESTFN + '-pipe'
+        os.mkfifo(path)
+        self.addCleanup(os.unlink, path)
+
+        walk_it = self.walk(path)
+        self.assertRaises(StopIteration, next, walk_it)
+
+        walk_it = self.walk(path, follow_symlinks=True)
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_walk_named_pipe2(self):
+        path = os_helper.TESTFN + '-dir'
+        os.mkdir(path)
+        self.addCleanup(shutil.rmtree, path)
+        os.mkfifo(os.path.join(path, 'mypipe'))
+
+        errors = []
+        walk_it = self.walk(path, onerror=errors.append)
+        next(walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+        self.assertEqual(errors, [])
+
+        errors = []
+        walk_it = self.walk(path, onerror=errors.append)
+        root, dirs, files = next(walk_it)
+        self.assertEqual(root, path)
+        self.assertEqual(dirs, [])
+        self.assertEqual(files, ['mypipe'])
+        dirs.extend(files)
+        files.clear()
+        if self.is_fwalk:
+            self.assertRaises(NotADirectoryError, next, walk_it)
+        self.assertRaises(StopIteration, next, walk_it)
+        if self.is_fwalk:
+            self.assertEqual(errors, [])
+        else:
+            self.assertEqual(len(errors), 1, errors)
+            self.assertIsInstance(errors[0], NotADirectoryError)
 
     def test_walk_many_open_files(self):
         depth = 30
@@ -1496,7 +1569,7 @@ class WalkTests(unittest.TestCase):
     def test_walk_above_recursion_limit(self):
         depth = 50
         os.makedirs(os.path.join(self.walk_path, *(['d'] * depth)))
-        with set_recursion_limit(depth - 5):
+        with infinite_recursion(depth - 5):
             all = list(self.walk(self.walk_path))
 
         sub2_path = self.sub2_tree[0]
@@ -1537,6 +1610,7 @@ class WalkTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
+    is_fwalk = True
 
     def walk(self, top, **kwargs):
         for root, dirs, files, root_fd in self.fwalk(top, **kwargs):
@@ -1591,6 +1665,9 @@ class FwalkTests(WalkTests):
 
     @unittest.skipIf(
         support.is_emscripten, "Cannot dup stdout on Emscripten"
+    )
+    @unittest.skipIf(
+        support.is_android, "dup return value is unpredictable on Android"
     )
     def test_fd_leak(self):
         # Since we're opening a lot of FDs, we must be careful to avoid leaks:
@@ -2492,8 +2569,10 @@ class Pep383Tests(unittest.TestCase):
         # test listdir without arguments
         current_directory = os.getcwd()
         try:
-            os.chdir(os.sep)
-            self.assertEqual(set(os.listdir()), set(os.listdir(os.sep)))
+            # The root directory is not readable on Android, so use a directory
+            # we created ourselves.
+            os.chdir(self.dir)
+            self.assertEqual(set(os.listdir()), expected)
         finally:
             os.chdir(current_directory)
 
@@ -3528,9 +3607,8 @@ class ProgramPriorityTests(unittest.TestCase):
 class TestSendfile(unittest.IsolatedAsyncioTestCase):
 
     DATA = b"12345abcde" * 16 * 1024  # 160 KiB
-    SUPPORT_HEADERS_TRAILERS = not sys.platform.startswith("linux") and \
-                               not sys.platform.startswith("solaris") and \
-                               not sys.platform.startswith("sunos")
+    SUPPORT_HEADERS_TRAILERS = (
+        not sys.platform.startswith(("linux", "android", "solaris", "sunos")))
     requires_headers_trailers = unittest.skipUnless(SUPPORT_HEADERS_TRAILERS,
             'requires headers and trailers support')
     requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
@@ -4838,7 +4916,7 @@ class TestScandir(unittest.TestCase):
                                os.name == 'nt')
 
     def test_attributes(self):
-        link = hasattr(os, 'link')
+        link = os_helper.can_hardlink()
         symlink = os_helper.can_symlink()
 
         dirname = os.path.join(self.path, "dir")
@@ -5251,7 +5329,7 @@ class ForkTests(unittest.TestCase):
         else:
             assert_python_ok("-c", code, PYTHONMALLOC="malloc_debug")
 
-    @unittest.skipUnless(sys.platform in ("linux", "darwin"),
+    @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
                          "Only Linux and macOS detect this today.")
     def test_fork_warns_when_non_python_thread_exists(self):
         code = """if 1:

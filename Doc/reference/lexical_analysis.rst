@@ -514,7 +514,6 @@ is not supported.
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
    of ``'br'``.
 
-.. versionadded:: 3.3
    Support for the unicode legacy literal (``u'value'``) was reintroduced
    to simplify the maintenance of dual Python 2.x and 3.x codebases.
    See :pep:`414` for more information.
@@ -734,7 +733,7 @@ for the contents of the string is:
                :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
    conversion: "s" | "r" | "a"
-   format_spec: (`literal_char` | NULL | `replacement_field`)*
+   format_spec: (`literal_char` | `replacement_field`)*
    literal_char: <any code point except "{", "}" or NULL>
 
 The parts of the string outside curly braces are treated literally,
