@@ -1720,7 +1720,6 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
                 a[M + 1] = a[M];
                 if (has_values) {
                     v[M + 1] = v[M];
-                    v[M] = vpivot;
                 }
             }
             else
