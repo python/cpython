@@ -811,7 +811,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             PyObject *exc = _PyFrame_StackPop(f->f_frame);
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
-            Py_XSETREF(tstate->exc_info->exc_value, exc);
+            Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
             PyObject *v = _PyFrame_StackPop(f->f_frame);
@@ -926,6 +926,7 @@ frame_tp_clear(PyFrameObject *f)
         Py_CLEAR(locals[i]);
     }
     f->f_frame->stacktop = 0;
+    Py_CLEAR(f->f_frame->f_locals);
     return 0;
 }
 

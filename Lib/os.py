@@ -131,6 +131,7 @@ if _exists("_have_functions"):
     _set = set()
     _add("HAVE_FCHDIR",     "chdir")
     _add("HAVE_FCHMOD",     "chmod")
+    _add("MS_WINDOWS",      "chmod")
     _add("HAVE_FCHOWN",     "chown")
     _add("HAVE_FDOPENDIR",  "listdir")
     _add("HAVE_FDOPENDIR",  "scandir")
@@ -474,7 +475,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # lstat()/open()/fstat() trick.
         if not follow_symlinks:
             orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
-        topfd = open(top, O_RDONLY, dir_fd=dir_fd)
+        topfd = open(top, O_RDONLY | O_NONBLOCK, dir_fd=dir_fd)
         try:
             if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
                                     path.samestat(orig_st, stat(topfd)))):
@@ -523,7 +524,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
                         assert entries is not None
                         name, entry = name
                         orig_st = entry.stat(follow_symlinks=False)
-                dirfd = open(name, O_RDONLY, dir_fd=topfd)
+                dirfd = open(name, O_RDONLY | O_NONBLOCK, dir_fd=topfd)
             except OSError as err:
                 if onerror is not None:
                     onerror(err)

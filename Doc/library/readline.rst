@@ -5,7 +5,7 @@
    :platform: Unix
    :synopsis: GNU readline support for Python.
 
-.. sectionauthor:: Skip Montanaro <skip@pobox.com>
+.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
@@ -217,6 +217,8 @@ Startup hooks
    readline starts reading input characters.  This function only exists
    if Python was compiled for a version of the library that supports it.
 
+
+.. _readline-completion:
 
 Completion
 ----------

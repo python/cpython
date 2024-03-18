@@ -1,5 +1,9 @@
 """Event loop and event loop policy."""
 
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 __all__ = (
     'AbstractEventLoopPolicy',
     'AbstractEventLoop', 'AbstractServer',
@@ -50,7 +54,8 @@ class Handle:
             info.append('cancelled')
         if self._callback is not None:
             info.append(format_helpers._format_callback_source(
-                self._callback, self._args))
+                self._callback, self._args,
+                debug=self._loop.get_debug()))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append(f'created at {frame[0]}:{frame[1]}')
@@ -86,7 +91,8 @@ class Handle:
             raise
         except BaseException as exc:
             cb = format_helpers._format_callback_source(
-                self._callback, self._args)
+                self._callback, self._args,
+                debug=self._loop.get_debug())
             msg = f'Exception in callback {cb}'
             context = {
                 'message': msg,
@@ -167,6 +173,14 @@ class AbstractServer:
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
+        raise NotImplementedError
+
+    def close_clients(self):
+        """Close all active connections."""
+        raise NotImplementedError
+
+    def abort_clients(self):
+        """Close all active connections immediately."""
         raise NotImplementedError
 
     def get_loop(self):

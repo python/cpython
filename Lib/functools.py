@@ -303,13 +303,13 @@ class partial:
 
     @recursive_repr()
     def __repr__(self):
-        qualname = type(self).__qualname__
+        cls = type(self)
+        qualname = cls.__qualname__
+        module = cls.__module__
         args = [repr(self.func)]
         args.extend(repr(x) for x in self.args)
         args.extend(f"{k}={v!r}" for (k, v) in self.keywords.items())
-        if type(self).__module__ == "functools":
-            return f"functools.{qualname}({', '.join(args)})"
-        return f"{qualname}({', '.join(args)})"
+        return f"{module}.{qualname}({', '.join(args)})"
 
     def __reduce__(self):
         return type(self), (self.func,), (self.func, self.args,
@@ -388,7 +388,7 @@ class partialmethod(object):
             keywords = {**self.keywords, **keywords}
             return self.func(cls_or_self, *self.args, *args, **keywords)
         _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method._partialmethod = self
+        _method.__partialmethod__ = self
         return _method
 
     def __get__(self, obj, cls=None):
@@ -422,6 +422,17 @@ class partialmethod(object):
 def _unwrap_partial(func):
     while isinstance(func, partial):
         func = func.func
+    return func
+
+def _unwrap_partialmethod(func):
+    prev = None
+    while func is not prev:
+        prev = func
+        while isinstance(getattr(func, "__partialmethod__", None), partialmethod):
+            func = func.__partialmethod__
+        while isinstance(func, partialmethod):
+            func = getattr(func, 'func')
+        func = _unwrap_partial(func)
     return func
 
 ################################################################################
@@ -907,7 +918,6 @@ def singledispatch(func):
         if not args:
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-
         return dispatch(args[0].__class__)(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
@@ -957,7 +967,11 @@ class singledispatchmethod:
                 return _method
 
         dispatch = self.dispatcher.dispatch
+        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
         def _method(*args, **kwargs):
+            if not args:
+                raise TypeError(f'{funcname} requires at least '
+                                '1 positional argument')
             return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__

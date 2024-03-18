@@ -1,22 +1,25 @@
 /* fcntl module */
 
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
+// Need limited C API version 3.13 for PyLong_AsInt()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
 
+#include <errno.h>                // EINTR
+#include <fcntl.h>                // fcntl()
+#include <string.h>               // memcpy()
+#include <sys/ioctl.h>            // ioctl()
 #ifdef HAVE_SYS_FILE_H
-#include <sys/file.h>
+#  include <sys/file.h>           // flock()
 #endif
 #ifdef HAVE_LINUX_FS_H
-#include <linux/fs.h>
+#  include <linux/fs.h>
 #endif
-
-#include <sys/ioctl.h>
-#include <fcntl.h>
 #ifdef HAVE_STROPTS_H
-#include <stropts.h>
+#  include <stropts.h>            // I_FLUSHBAND
 #endif
 
 /*[clinic input]
@@ -583,6 +586,30 @@ all_ins(PyObject* m)
 #ifdef FICLONERANGE
     if (PyModule_AddIntMacro(m, FICLONERANGE)) return -1;
 #endif
+#ifdef F_GETOWN_EX
+    // since Linux 2.6.32
+    if (PyModule_AddIntMacro(m, F_GETOWN_EX)) return -1;
+    if (PyModule_AddIntMacro(m, F_SETOWN_EX)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_TID)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_PID)) return -1;
+    if (PyModule_AddIntMacro(m, F_OWNER_PGRP)) return -1;
+#endif
+#ifdef F_GET_RW_HINT
+    // since Linux 4.13
+    if (PyModule_AddIntMacro(m, F_GET_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_SET_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_GET_FILE_RW_HINT)) return -1;
+    if (PyModule_AddIntMacro(m, F_SET_FILE_RW_HINT)) return -1;
+#ifndef RWH_WRITE_LIFE_NOT_SET  // typo in Linux < 5.5
+# define RWH_WRITE_LIFE_NOT_SET RWF_WRITE_LIFE_NOT_SET
+#endif
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NOT_SET)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_NONE)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_SHORT)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_MEDIUM)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_LONG)) return -1;
+    if (PyModule_AddIntMacro(m, RWH_WRITE_LIFE_EXTREME)) return -1;
+#endif
 
 /* OS X specifics */
 #ifdef F_FULLFSYNC
@@ -598,6 +625,32 @@ all_ins(PyObject* m)
 #endif
 #ifdef F_DUP2FD_CLOEXEC
     if (PyModule_AddIntMacro(m, F_DUP2FD_CLOEXEC)) return -1;
+#endif
+#ifdef F_READAHEAD
+    if (PyModule_AddIntMacro(m, F_READAHEAD)) return -1;
+#endif
+#ifdef F_RDAHEAD
+    if (PyModule_AddIntMacro(m, F_RDAHEAD)) return -1;
+#endif
+#ifdef F_ISUNIONSTACK
+    if (PyModule_AddIntMacro(m, F_ISUNIONSTACK)) return -1;
+#endif
+#ifdef F_KINFO
+    if (PyModule_AddIntMacro(m, F_KINFO)) return -1;
+#endif
+
+/* NetBSD specifics */
+#ifdef F_CLOSEM
+    if (PyModule_AddIntMacro(m, F_CLOSEM)) return -1;
+#endif
+#ifdef F_MAXFD
+    if (PyModule_AddIntMacro(m, F_MAXFD)) return -1;
+#endif
+#ifdef F_GETNOSIGPIPE
+    if (PyModule_AddIntMacro(m, F_GETNOSIGPIPE)) return -1;
+#endif
+#ifdef F_SETNOSIGPIPE
+    if (PyModule_AddIntMacro(m, F_SETNOSIGPIPE)) return -1;
 #endif
 
 /* For F_{GET|SET}FL */
@@ -673,6 +726,9 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, F_SEAL_SHRINK)) return -1;
     if (PyModule_AddIntMacro(m, F_SEAL_GROW)) return -1;
     if (PyModule_AddIntMacro(m, F_SEAL_WRITE)) return -1;
+#ifdef F_SEAL_FUTURE_WRITE
+    if (PyModule_AddIntMacro(m, F_SEAL_FUTURE_WRITE)) return -1;
+#endif
 #endif
     return 0;
 }

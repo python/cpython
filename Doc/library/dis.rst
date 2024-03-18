@@ -342,17 +342,18 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_lines`` method
-   of the code object *code* to find the offsets which are starts of
+   This generator function uses the :meth:`~codeobject.co_lines` method
+   of the :ref:`code object <code-objects>` *code* to find the offsets which
+   are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
 
    .. versionchanged:: 3.10
-      The :pep:`626` ``co_lines`` method is used instead of the
+      The :pep:`626` :meth:`~codeobject.co_lines` method is used instead of the
       :attr:`~codeobject.co_firstlineno` and :attr:`~codeobject.co_lnotab`
-      attributes of the code object.
+      attributes of the :ref:`code object <code-objects>`.
 
    .. versionchanged:: 3.13
       Line numbers can be ``None`` for bytecode that does not map to source lines.
@@ -545,8 +546,8 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: END_FOR
 
-   Removes the top two values from the stack.
-   Equivalent to ``POP_TOP``; ``POP_TOP``.
+   Removes the top-of-stack item.
+   Equivalent to ``POP_TOP``.
    Used to clean up at the end of loops, hence the name.
 
    .. versionadded:: 3.12
@@ -575,7 +576,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
    Swap the top of the stack with the i-th element::
 
-      STACK[-i], STACK[-1] = stack[-1], STACK[-i]
+      STACK[-i], STACK[-1] = STACK[-1], STACK[-i]
 
    .. versionadded:: 3.11
 
@@ -1214,9 +1215,10 @@ iterations of the loop.
    ``super(cls, self).method()``, ``super(cls, self).attr``).
 
    It pops three values from the stack (from top of stack down):
-   - ``self``: the first argument to the current method
-   -  ``cls``: the class within which the current method was defined
-   -  the global ``super``
+
+   * ``self``: the first argument to the current method
+   * ``cls``: the class within which the current method was defined
+   * the global ``super``
 
    With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
    except that ``namei`` is shifted left by 2 bits instead of 1.
@@ -1604,7 +1606,7 @@ iterations of the loop.
 
       value = STACK.pop()
       result = func(value)
-      STACK.push(result)
+      STACK.append(result)
 
    * ``oparg == 1``: call :func:`str` on *value*
    * ``oparg == 2``: call :func:`repr` on *value*
@@ -1621,7 +1623,7 @@ iterations of the loop.
 
       value = STACK.pop()
       result = value.__format__("")
-      STACK.push(result)
+      STACK.append(result)
 
    Used for implementing formatted literal strings (f-strings).
 
@@ -1634,7 +1636,7 @@ iterations of the loop.
       spec = STACK.pop()
       value = STACK.pop()
       result = value.__format__(spec)
-      STACK.push(result)
+      STACK.append(result)
 
    Used for implementing formatted literal strings (f-strings).
 
@@ -1781,7 +1783,7 @@ iterations of the loop.
       arg2 = STACK.pop()
       arg1 = STACK.pop()
       result = intrinsic2(arg1, arg2)
-      STACK.push(result)
+      STACK.append(result)
 
    The operand determines which intrinsic function is called:
 

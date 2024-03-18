@@ -53,6 +53,15 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
     if (interp->active_func_watchers) {
         notify_func_watchers(interp, event, func, new_value);
     }
+    switch (event) {
+        case PyFunction_EVENT_MODIFY_CODE:
+        case PyFunction_EVENT_MODIFY_DEFAULTS:
+        case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+            RARE_EVENT_INTERP_INC(interp, func_modification);
+            break;
+        default:
+            break;
+    }
 }
 
 int
@@ -227,8 +236,9 @@ How does a function's `func_version` field get initialized?
 - A new version is allocated by `_PyFunction_GetVersionForCurrentState`
   when the specializer needs a version and the version is 0.
 
-The latter allocates versions using a counter in the interpreter state;
-when the counter wraps around to 0, no more versions are allocated.
+The latter allocates versions using a counter in the interpreter state,
+`interp->func_state.next_version`.
+When the counter wraps around to 0, no more versions are allocated.
 There is one other special case: functions with a non-standard
 `vectorcall` field are not given a version.
 
@@ -238,8 +248,7 @@ Code object versions
 --------------------
 
 So where to code objects get their `co_version`?
-There is a per-interpreter counter, `next_func_version`.
-This is initialized to 1 when the interpreter is created.
+They share the same counter, `interp->func_state.next_version`.
 
 Code objects get a new `co_version` allocated from this counter upon
 creation. Since code objects are nominally immutable, `co_version` can
@@ -809,14 +818,17 @@ function.__new__ as func_new
         a tuple that specifies the default argument values
     closure: object = None
         a tuple that supplies the bindings for free variables
+    kwdefaults: object = None
+        a dictionary that specifies the default keyword argument values
 
 Create a function object.
 [clinic start generated code]*/
 
 static PyObject *
 func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
-              PyObject *name, PyObject *defaults, PyObject *closure)
-/*[clinic end generated code: output=99c6d9da3a24e3be input=93611752fc2daf11]*/
+              PyObject *name, PyObject *defaults, PyObject *closure,
+              PyObject *kwdefaults)
+/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
 {
     PyFunctionObject *newfunc;
     Py_ssize_t nclosure;
@@ -842,6 +854,11 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
                 "arg 5 (closure) must be None or tuple");
             return NULL;
         }
+    }
+    if (kwdefaults != Py_None && !PyDict_Check(kwdefaults)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "arg 6 (kwdefaults) must be None or dict");
+        return NULL;
     }
 
     /* check that the closure is well-formed */
@@ -878,6 +895,9 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     }
     if (closure != Py_None) {
         newfunc->func_closure = Py_NewRef(closure);
+    }
+    if (kwdefaults != Py_None) {
+        newfunc->func_kwdefaults = Py_NewRef(kwdefaults);
     }
 
     return (PyObject *)newfunc;

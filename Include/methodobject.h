@@ -17,14 +17,21 @@ PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 #define PyCFunction_Check(op) PyObject_TypeCheck((op), &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
-typedef PyObject *(*_PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
+typedef PyObject *(*PyCFunctionFast) (PyObject *, PyObject *const *, Py_ssize_t);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
-typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
-                                                   PyObject *const *, Py_ssize_t,
-                                                   PyObject *);
+typedef PyObject *(*PyCFunctionFastWithKeywords) (PyObject *,
+                                                  PyObject *const *, Py_ssize_t,
+                                                  PyObject *);
 typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
                                size_t, PyObject *);
+
+// For backwards compatibility. `METH_FASTCALL` was added to the stable API in
+// 3.10 alongside `_PyCFunctionFastWithKeywords` and `_PyCFunctionFast`.
+// Note that the underscore-prefixed names were documented in public docs;
+// people may be using them.
+typedef PyCFunctionFast _PyCFunctionFast;
+typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 
 // Cast an function to the PyCFunction type to use it with PyMethodDef.
 //

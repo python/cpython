@@ -5,18 +5,19 @@
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
 #include "pycore_semaphore.h"
+#include "pycore_time.h"          // _PyTime_MonotonicUnchecked()
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>        // SwitchToThread()
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
-#include <sched.h>          // sched_yield()
+#  include <sched.h>          // sched_yield()
 #endif
 
 // If a thread waits on a lock for longer than TIME_TO_BE_FAIR_NS (1 ms), then
 // the unlocking thread directly hands off ownership of the lock. This avoids
 // starvation.
-static const _PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
+static const PyTime_t TIME_TO_BE_FAIR_NS = 1000*1000;
 
 // Spin for a bit before parking the thread. This is only enabled for
 // `--disable-gil` builds because it is unlikely to be helpful if the GIL is
@@ -30,7 +31,7 @@ static const int MAX_SPIN_COUNT = 0;
 struct mutex_entry {
     // The time after which the unlocking thread should hand off lock ownership
     // directly to the waiting thread. Written by the waiting thread.
-    _PyTime_t time_to_be_fair;
+    PyTime_t time_to_be_fair;
 
     // Set to 1 if the lock was handed off. Written by the unlocking thread.
     int handed_off;
@@ -53,7 +54,7 @@ _PyMutex_LockSlow(PyMutex *m)
 }
 
 PyLockStatus
-_PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
+_PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
 {
     uint8_t v = _Py_atomic_load_uint8_relaxed(&m->v);
     if ((v & _Py_LOCKED) == 0) {
@@ -65,8 +66,8 @@ _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
         return PY_LOCK_FAILURE;
     }
 
-    _PyTime_t now = _PyTime_GetMonotonicClock();
-    _PyTime_t endtime = 0;
+    PyTime_t now = _PyTime_MonotonicUnchecked();
+    PyTime_t endtime = 0;
     if (timeout > 0) {
         endtime = _PyTime_Add(now, timeout);
     }
@@ -142,7 +143,7 @@ mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
 {
     uint8_t v = 0;
     if (entry) {
-        _PyTime_t now = _PyTime_GetMonotonicClock();
+        PyTime_t now = _PyTime_MonotonicUnchecked();
         int should_be_fair = now > entry->time_to_be_fair;
 
         entry->handed_off = should_be_fair;
@@ -248,6 +249,13 @@ _PyRawMutex_UnlockSlow(_PyRawMutex *m)
     }
 }
 
+int
+_PyEvent_IsSet(PyEvent *evt)
+{
+    uint8_t v = _Py_atomic_load_uint8(&evt->v);
+    return v == _Py_LOCKED;
+}
+
 void
 _PyEvent_Notify(PyEvent *evt)
 {
@@ -274,7 +282,7 @@ PyEvent_Wait(PyEvent *evt)
 }
 
 int
-PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns)
+PyEvent_WaitTimed(PyEvent *evt, PyTime_t timeout_ns)
 {
     for (;;) {
         uint8_t v = _Py_atomic_load_uint8(&evt->v);
@@ -352,4 +360,181 @@ _PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
         _PyParkingLot_Park(&flag->v, &v, sizeof(v), -1, NULL, 1);
         v = _Py_atomic_load_uint8(&flag->v);
     }
+}
+
+#define _Py_WRITE_LOCKED 1
+#define _PyRWMutex_READER_SHIFT 2
+#define _Py_RWMUTEX_MAX_READERS (UINTPTR_MAX >> _PyRWMutex_READER_SHIFT)
+
+static uintptr_t
+rwmutex_set_parked_and_wait(_PyRWMutex *rwmutex, uintptr_t bits)
+{
+    // Set _Py_HAS_PARKED and wait until we are woken up.
+    if ((bits & _Py_HAS_PARKED) == 0) {
+        uintptr_t newval = bits | _Py_HAS_PARKED;
+        if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
+                                                 &bits, newval)) {
+            return bits;
+        }
+        bits = newval;
+    }
+
+    _PyParkingLot_Park(&rwmutex->bits, &bits, sizeof(bits), -1, NULL, 1);
+    return _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
+}
+
+// The number of readers holding the lock
+static uintptr_t
+rwmutex_reader_count(uintptr_t bits)
+{
+    return bits >> _PyRWMutex_READER_SHIFT;
+}
+
+void
+_PyRWMutex_RLock(_PyRWMutex *rwmutex)
+{
+    uintptr_t bits = _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
+    for (;;) {
+        if ((bits & _Py_WRITE_LOCKED)) {
+            // A writer already holds the lock.
+            bits = rwmutex_set_parked_and_wait(rwmutex, bits);
+            continue;
+        }
+        else if ((bits & _Py_HAS_PARKED)) {
+            // Reader(s) hold the lock (or just gave up the lock), but there is
+            // at least one waiting writer. We can't grab the lock because we
+            // don't want to starve the writer. Instead, we park ourselves and
+            // wait for the writer to eventually wake us up.
+            bits = rwmutex_set_parked_and_wait(rwmutex, bits);
+            continue;
+        }
+        else {
+            // The lock is unlocked or read-locked. Try to grab it.
+            assert(rwmutex_reader_count(bits) < _Py_RWMUTEX_MAX_READERS);
+            uintptr_t newval = bits + (1 << _PyRWMutex_READER_SHIFT);
+            if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
+                                                     &bits, newval)) {
+                continue;
+            }
+            return;
+        }
+    }
+}
+
+void
+_PyRWMutex_RUnlock(_PyRWMutex *rwmutex)
+{
+    uintptr_t bits = _Py_atomic_add_uintptr(&rwmutex->bits, -(1 << _PyRWMutex_READER_SHIFT));
+    assert(rwmutex_reader_count(bits) > 0 && "lock was not read-locked");
+    bits -= (1 << _PyRWMutex_READER_SHIFT);
+
+    if (rwmutex_reader_count(bits) == 0 && (bits & _Py_HAS_PARKED)) {
+        _PyParkingLot_UnparkAll(&rwmutex->bits);
+        return;
+    }
+}
+
+void
+_PyRWMutex_Lock(_PyRWMutex *rwmutex)
+{
+    uintptr_t bits = _Py_atomic_load_uintptr_relaxed(&rwmutex->bits);
+    for (;;) {
+        // If there are no active readers and it's not already write-locked,
+        // then we can grab the lock.
+        if ((bits & ~_Py_HAS_PARKED) == 0) {
+            if (!_Py_atomic_compare_exchange_uintptr(&rwmutex->bits,
+                                                     &bits,
+                                                     bits | _Py_WRITE_LOCKED)) {
+                continue;
+            }
+            return;
+        }
+
+        // Otherwise, we have to wait.
+        bits = rwmutex_set_parked_and_wait(rwmutex, bits);
+    }
+}
+
+void
+_PyRWMutex_Unlock(_PyRWMutex *rwmutex)
+{
+    uintptr_t old_bits = _Py_atomic_exchange_uintptr(&rwmutex->bits, 0);
+
+    assert((old_bits & _Py_WRITE_LOCKED) && "lock was not write-locked");
+    assert(rwmutex_reader_count(old_bits) == 0 && "lock was read-locked");
+
+    if ((old_bits & _Py_HAS_PARKED) != 0) {
+        _PyParkingLot_UnparkAll(&rwmutex->bits);
+    }
+}
+
+#define SEQLOCK_IS_UPDATING(sequence) (sequence & 0x01)
+
+void _PySeqLock_LockWrite(_PySeqLock *seqlock)
+{
+    // lock the entry by setting by moving to an odd sequence number
+    uint32_t prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
+    while (1) {
+        if (SEQLOCK_IS_UPDATING(prev)) {
+            // Someone else is currently updating the cache
+            _Py_yield();
+            prev = _Py_atomic_load_uint32_relaxed(&seqlock->sequence);
+        }
+        else if (_Py_atomic_compare_exchange_uint32(&seqlock->sequence, &prev, prev + 1)) {
+            // We've locked the cache
+            break;
+        }
+        else {
+            _Py_yield();
+        }
+    }
+}
+
+void _PySeqLock_AbandonWrite(_PySeqLock *seqlock)
+{
+    uint32_t new_seq = seqlock->sequence - 1;
+    assert(!SEQLOCK_IS_UPDATING(new_seq));
+    _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
+}
+
+void _PySeqLock_UnlockWrite(_PySeqLock *seqlock)
+{
+    uint32_t new_seq = seqlock->sequence + 1;
+    assert(!SEQLOCK_IS_UPDATING(new_seq));
+    _Py_atomic_store_uint32(&seqlock->sequence, new_seq);
+}
+
+uint32_t _PySeqLock_BeginRead(_PySeqLock *seqlock)
+{
+    uint32_t sequence = _Py_atomic_load_uint32_acquire(&seqlock->sequence);
+    while (SEQLOCK_IS_UPDATING(sequence)) {
+        _Py_yield();
+        sequence = _Py_atomic_load_uint32_acquire(&seqlock->sequence);
+    }
+
+    return sequence;
+}
+
+uint32_t _PySeqLock_EndRead(_PySeqLock *seqlock, uint32_t previous)
+{
+    // Synchronize again and validate that the entry hasn't been updated
+    // while we were readying the values.
+     if (_Py_atomic_load_uint32_acquire(&seqlock->sequence) == previous) {
+        return 1;
+     }
+
+     _Py_yield();
+     return 0;
+}
+
+uint32_t _PySeqLock_AfterFork(_PySeqLock *seqlock)
+{
+    // Synchronize again and validate that the entry hasn't been updated
+    // while we were readying the values.
+     if (SEQLOCK_IS_UPDATING(seqlock->sequence)) {
+        seqlock->sequence = 0;
+        return 1;
+     }
+
+     return 0;
 }
