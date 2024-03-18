@@ -471,6 +471,15 @@ jobs:
     - name: Tests
       run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
 
+  build_tsan:
+    name: 'Thread sanitizer'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-tsan.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: ./configure --config-cache --with-thread-sanitizer --with-pydebug
+
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
     if: always()
@@ -485,6 +494,7 @@ jobs:
     - build_windows
     - test_hypothesis
     - build_asan
+    - build_tsan
 
     runs-on: ubuntu-latest
 
@@ -513,6 +523,7 @@ jobs:
             build_ubuntu_ssltests,
             build_windows,
             build_asan,
+            build_tsan,
             '
             || ''
           }}
