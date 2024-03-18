@@ -9,10 +9,11 @@ import textwrap
 import types
 import unittest
 import asyncio
-import _testcapi
 
-from test import support
+import test.support
 from test.support import requires_specialization, script_helper
+
+_testcapi = test.support.import_helper.import_module("_testcapi")
 
 PAIR = (0,1)
 
@@ -1883,7 +1884,7 @@ class TestMonitoringAtShutdown(unittest.TestCase):
         # gh-115832: An object destructor running during the final GC of
         # interpreter shutdown triggered an infinite loop in the
         # instrumentation code.
-        script = support.findfile("_test_monitoring_shutdown.py")
+        script = test.support.findfile("_test_monitoring_shutdown.py")
         script_helper.run_test_script(script)
 
 
@@ -1892,7 +1893,9 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
     def setUp(self):
         super(TestCApiEventGeneration, self).setUp()
 
-        self.codelike = _testcapi.CodeLike(2)
+        capi = _testcapi
+
+        self.codelike = capi.CodeLike(2)
 
         def cb(name, args):
             self.results.append((name,) + args)
@@ -1902,7 +1905,6 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         self.cb3 = lambda codelike, *args : cb('cb3', args)
 
         events = sys.monitoring.events
-        capi = _testcapi
         self.cases = [
             # (Event, function, *args)
             (events.PY_START, capi.fire_event_py_start),
@@ -1983,7 +1985,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         events = sys.monitoring.events
         capi = _testcapi
 
-        cl = _testcapi.CodeLike(2)
+        cl = capi.CodeLike(2)
         capi.enter_scope_py_start_py_return(cl)    # events = [PY_START, PY_RETURN]
 
         sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_START, self.cb1)
