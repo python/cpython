@@ -6,7 +6,6 @@ On Windows, and in cross-compilation cases, it is executed
 by Python 3.10, and 3.11 features are not available.
 """
 import argparse
-import ast
 import builtins
 import collections
 import contextlib
@@ -17,13 +16,13 @@ import types
 from typing import Dict, FrozenSet, TextIO, Tuple
 
 import umarshal
-from generate_global_objects import get_identifiers_and_strings
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 verbose = False
-identifiers, strings = get_identifiers_and_strings()
 
-# This must be kept in sync with opcode.py
-RESUME = 151
+# This must be kept in sync with Tools/cases_generator/analyzer.py
+RESUME = 149
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -114,12 +113,27 @@ class Printer:
         self.hits, self.misses = 0, 0
         self.finis: list[str] = []
         self.inits: list[str] = []
+        self.identifiers, self.strings = self.get_identifiers_and_strings()
         self.write('#include "Python.h"')
+        self.write('#include "internal/pycore_object.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_frame.h"')
         self.write('#include "internal/pycore_long.h"')
         self.write("")
+
+    def get_identifiers_and_strings(self) -> tuple[set[str], dict[str, str]]:
+        filename = os.path.join(ROOT, "Include", "internal", "pycore_global_strings.h")
+        with open(filename) as fp:
+            lines = fp.readlines()
+        identifiers: set[str] = set()
+        strings: dict[str, str] = {}
+        for line in lines:
+            if m := re.search(r"STRUCT_FOR_ID\((\w+)\)", line):
+                identifiers.add(m.group(1))
+            if m := re.search(r'STRUCT_FOR_STR\((\w+), "(.*?)"\)', line):
+                strings[m.group(2)] = m.group(1)
+        return identifiers, strings
 
     @contextlib.contextmanager
     def indent(self) -> None:
@@ -141,14 +155,10 @@ class Printer:
         self.write("}" + suffix)
 
     def object_head(self, typename: str) -> None:
-        with self.block(".ob_base =", ","):
-            self.write(f".ob_refcnt = _Py_IMMORTAL_REFCNT,")
-            self.write(f".ob_type = &{typename},")
+        self.write(f".ob_base = _PyObject_HEAD_INIT(&{typename}),")
 
     def object_var_head(self, typename: str, size: int) -> None:
-        with self.block(".ob_base =", ","):
-            self.object_head(typename)
-            self.write(f".ob_size = {size},")
+        self.write(f".ob_base = _PyVarObject_HEAD_INIT(&{typename}, {size}),")
 
     def field(self, obj: object, name: str) -> None:
         self.write(f".{name} = {getattr(obj, name)},")
@@ -171,9 +181,9 @@ class Printer:
         return f"& {name}.ob_base.ob_base"
 
     def generate_unicode(self, name: str, s: str) -> str:
-        if s in strings:
-            return f"&_Py_STR({strings[s]})"
-        if s in identifiers:
+        if s in self.strings:
+            return f"&_Py_STR({self.strings[s]})"
+        if s in self.identifiers:
             return f"&_Py_ID({s})"
         if len(s) == 1:
             c = ord(s)
@@ -284,10 +294,12 @@ class Printer:
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
-            for i, op in enumerate(code.co_code[::2]):
+            first_traceable = 0
+            for op in code.co_code[::2]:
                 if op == RESUME:
-                    self.write(f"._co_firsttraceable = {i},")
                     break
+                first_traceable += 1
+            self.write(f"._co_firsttraceable = {first_traceable},")
         name_as_code = f"(PyCodeObject *)&{name}"
         self.finis.append(f"_PyStaticCode_Fini({name_as_code});")
         self.inits.append(f"_PyStaticCode_Init({name_as_code})")
@@ -441,12 +453,10 @@ def is_frozen_header(source: str) -> bool:
 
 
 def decode_frozen_data(source: str) -> types.CodeType:
-    lines = source.splitlines()
-    while lines and re.match(FROZEN_DATA_LINE, lines[0]) is None:
-        del lines[0]
-    while lines and re.match(FROZEN_DATA_LINE, lines[-1]) is None:
-        del lines[-1]
-    values: Tuple[int, ...] = ast.literal_eval("".join(lines).strip())
+    values: list[int] = []
+    for line in source.splitlines():
+        if re.match(FROZEN_DATA_LINE, line):
+            values.extend([int(x) for x in line.split(",") if x.strip()])
     data = bytes(values)
     return umarshal.loads(data)
 
@@ -478,7 +488,10 @@ def generate(args: list[str], output: TextIO) -> None:
 parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c", default="deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
-parser.add_argument('args', nargs="+", help="Input file and module name (required) in file:modname format")
+group = parser.add_mutually_exclusive_group(required=True)
+group.add_argument("-f", "--file", help="read rule lines from a file")
+group.add_argument('args', nargs="*", default=(),
+                   help="Input file and module name (required) in file:modname format")
 
 @contextlib.contextmanager
 def report_time(label: str):
@@ -496,9 +509,18 @@ def main() -> None:
     args = parser.parse_args()
     verbose = args.verbose
     output = args.output
+
+    if args.file:
+        if verbose:
+            print(f"Reading targets from {args.file}")
+        with open(args.file, "rt", encoding="utf-8-sig") as fin:
+            rules = [x.strip() for x in fin]
+    else:
+        rules = args.args
+
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
-            generate(args.args, file)
+            generate(rules, file)
     if verbose:
         print(f"Wrote {os.path.getsize(output)} bytes to {output}")
 

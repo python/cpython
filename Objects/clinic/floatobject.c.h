@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
@@ -322,4 +318,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=355c3f5102034a41 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c79743c8551c30d9 input=a9049054013a1b77]*/

@@ -30,12 +30,31 @@ When used from within a virtual environment, common installation tools such as
 `pip`_ will install Python packages into a virtual environment
 without needing to be told to do so explicitly.
 
+A virtual environment is (amongst other things):
+
+* Used to contain a specific Python interpreter and software libraries and
+  binaries which are needed to support a project (library or application). These
+  are by default isolated from software in other virtual environments and Python
+  interpreters and libraries installed in the operating system.
+
+* Contained in a directory, conventionally either named ``venv`` or ``.venv`` in
+  the project directory, or under a container directory for lots of virtual
+  environments, such as ``~/.virtualenvs``.
+
+* Not checked into source control systems such as Git.
+
+* Considered as disposable -- it should be simple to delete and recreate it from
+  scratch. You don't place any project code in the environment
+
+* Not considered as movable or copyable -- you just recreate the same
+  environment in the target location.
+
 See :pep:`405` for more background on Python virtual environments.
 
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments>`__
 
 .. include:: ../includes/wasm-notavail.rst
 
@@ -143,7 +162,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
                       symlinks=False, upgrade=False, with_pip=False, \
-                      prompt=None, upgrade_deps=False)
+                      prompt=None, upgrade_deps=False, \
+                      *, scm_ignore_files=frozenset())
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -172,14 +192,23 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``upgrade_deps`` -- Update the base venv modules to the latest on PyPI
 
+    * ``scm_ignore_files`` -- Create ignore files based for the specified source
+      control managers (SCM) in the iterable. Support is defined by having a
+      method named ``create_{scm}_ignore_file``. The only value supported by
+      default is ``"git"`` via :meth:`create_git_ignore_file`.
+
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
 
-    .. versionadded:: 3.6
+    .. versionchanged:: 3.6
        Added the ``prompt`` parameter
 
-    .. versionadded:: 3.9
+    .. versionchanged:: 3.9
        Added the ``upgrade_deps`` parameter
+
+    .. versionchanged:: 3.13
+       Added the ``scm_ignore_files`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
     provided :class:`EnvBuilder` class as a base class.
@@ -257,14 +286,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
           the virtual environment.
 
 
-        .. versionchanged:: 3.12
-           The attribute ``lib_path`` was added to the context, and the context
-           object was documented.
-
         .. versionchanged:: 3.11
            The *venv*
            :ref:`sysconfig installation scheme <installation_paths>`
            is used to construct the paths of the created directories.
+
+        .. versionchanged:: 3.12
+           The attribute ``lib_path`` was added to the context, and the context
+           object was documented.
 
     .. method:: create_configuration(context)
 
@@ -339,11 +368,18 @@ creation according to their needs, the :class:`EnvBuilder` class.
         The directories are allowed to exist (for when an existing environment
         is being upgraded).
 
+    .. method:: create_git_ignore_file(context)
+
+       Creates a ``.gitignore`` file within the virtual environment that causes
+       the entire directory to be ignored by the ``git`` source control manager.
+
+       .. versionadded:: 3.13
+
 There is also a module-level convenience function:
 
 .. function:: create(env_dir, system_site_packages=False, clear=False, \
                      symlinks=False, with_pip=False, prompt=None, \
-                     upgrade_deps=False)
+                     upgrade_deps=False, *, scm_ignore_files=frozenset())
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
@@ -358,6 +394,9 @@ There is also a module-level convenience function:
 
     .. versionchanged:: 3.9
        Added the ``upgrade_deps`` parameter
+
+    .. versionchanged:: 3.13
+       Added the ``scm_ignore_files`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------

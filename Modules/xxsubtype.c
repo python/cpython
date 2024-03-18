@@ -1,5 +1,7 @@
 #include "Python.h"
+
 #include <stddef.h>               // offsetof()
+#include <time.h>                 // clock()
 
 
 PyDoc_STRVAR(xxsubtype__doc__,

@@ -1,7 +1,12 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
 #include "internal/pycore_code.h"
+#include "internal/pycore_compile.h"
 #include "internal/pycore_intrinsics.h"
 
 /*[clinic input]
@@ -74,7 +79,7 @@ static int
 _opcode_is_valid_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b0d918ea1d073f65 input=fe23e0aa194ddae0]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode);
+    return _PyCompile_OpcodeIsValid(opcode);
 }
 
 /*[clinic input]
@@ -90,8 +95,8 @@ static int
 _opcode_has_arg_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=7a062d3b2dcc0815 input=93d878ba6361db5f]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasArg(opcode);
+    return _PyCompile_OpcodeIsValid(opcode) &&
+           _PyCompile_OpcodeHasArg(opcode);
 }
 
 /*[clinic input]
@@ -107,8 +112,8 @@ static int
 _opcode_has_const_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=c646d5027c634120 input=a6999e4cf13f9410]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasConst(opcode);
+    return _PyCompile_OpcodeIsValid(opcode) &&
+           _PyCompile_OpcodeHasConst(opcode);
 }
 
 /*[clinic input]
@@ -124,8 +129,8 @@ static int
 _opcode_has_name_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b49a83555c2fa517 input=448aa5e4bcc947ba]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasName(opcode);
+    return _PyCompile_OpcodeIsValid(opcode) &&
+           _PyCompile_OpcodeHasName(opcode);
 }
 
 /*[clinic input]
@@ -141,8 +146,8 @@ static int
 _opcode_has_jump_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=e9c583c669f1c46a input=35f711274357a0c3]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasJump(opcode);
+    return _PyCompile_OpcodeIsValid(opcode) &&
+           _PyCompile_OpcodeHasJump(opcode);
 
 }
 
@@ -164,8 +169,8 @@ static int
 _opcode_has_free_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=d81ae4d79af0ee26 input=117dcd5c19c1139b]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasFree(opcode);
+    return _PyCompile_OpcodeIsValid(opcode) &&
+           _PyCompile_OpcodeHasFree(opcode);
 
 }
 
@@ -182,8 +187,8 @@ static int
 _opcode_has_local_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=da5a8616b7a5097b input=9a798ee24aaef49d]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasLocal(opcode);
+    return _PyCompile_OpcodeIsValid(opcode) &&
+           _PyCompile_OpcodeHasLocal(opcode);
 }
 
 /*[clinic input]
@@ -199,8 +204,8 @@ static int
 _opcode_has_exc_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=41b68dff0ec82a52 input=db0e4bdb9bf13fa5]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasExc(opcode);
+    return _PyCompile_OpcodeIsValid(opcode) &&
+           _PyCompile_OpcodeHasExc(opcode);
 }
 
 /*[clinic input]
@@ -223,6 +228,74 @@ _opcode_get_specialization_stats_impl(PyObject *module)
 
 /*[clinic input]
 
+_opcode.get_nb_ops
+
+Return array of symbols of binary ops.
+
+Indexed by the BINARY_OP oparg value.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_nb_ops_impl(PyObject *module)
+/*[clinic end generated code: output=d997d306cc15426f input=9462fc544c823176]*/
+{
+    PyObject *list = PyList_New(NB_OPARG_LAST + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+#define ADD_NB_OP(NUM, STR) \
+    do { \
+        PyObject *pair = Py_BuildValue("ss", #NUM, STR); \
+        if (pair == NULL) { \
+            Py_DECREF(list); \
+            return NULL; \
+        } \
+        PyList_SET_ITEM(list, (NUM), pair); \
+    } while(0);
+
+    ADD_NB_OP(NB_ADD, "+");
+    ADD_NB_OP(NB_AND, "&");
+    ADD_NB_OP(NB_FLOOR_DIVIDE, "//");
+    ADD_NB_OP(NB_LSHIFT, "<<");
+    ADD_NB_OP(NB_MATRIX_MULTIPLY, "@");
+    ADD_NB_OP(NB_MULTIPLY, "*");
+    ADD_NB_OP(NB_REMAINDER, "%");
+    ADD_NB_OP(NB_OR, "|");
+    ADD_NB_OP(NB_POWER, "**");
+    ADD_NB_OP(NB_RSHIFT, ">>");
+    ADD_NB_OP(NB_SUBTRACT, "-");
+    ADD_NB_OP(NB_TRUE_DIVIDE, "/");
+    ADD_NB_OP(NB_XOR, "^");
+    ADD_NB_OP(NB_INPLACE_ADD, "+=");
+    ADD_NB_OP(NB_INPLACE_AND, "&=");
+    ADD_NB_OP(NB_INPLACE_FLOOR_DIVIDE, "//=");
+    ADD_NB_OP(NB_INPLACE_LSHIFT, "<<=");
+    ADD_NB_OP(NB_INPLACE_MATRIX_MULTIPLY, "@=");
+    ADD_NB_OP(NB_INPLACE_MULTIPLY, "*=");
+    ADD_NB_OP(NB_INPLACE_REMAINDER, "%=");
+    ADD_NB_OP(NB_INPLACE_OR, "|=");
+    ADD_NB_OP(NB_INPLACE_POWER, "**=");
+    ADD_NB_OP(NB_INPLACE_RSHIFT, ">>=");
+    ADD_NB_OP(NB_INPLACE_SUBTRACT, "-=");
+    ADD_NB_OP(NB_INPLACE_TRUE_DIVIDE, "/=");
+    ADD_NB_OP(NB_INPLACE_XOR, "^=");
+
+#undef ADD_NB_OP
+
+    for(int i = 0; i <= NB_OPARG_LAST; i++) {
+        if (PyList_GET_ITEM(list, i) == NULL) {
+            Py_DECREF(list);
+            PyErr_Format(PyExc_ValueError,
+                         "Missing initialization for NB_OP %d",
+                         i);
+            return NULL;
+        }
+    }
+    return list;
+}
+
+/*[clinic input]
+
 _opcode.get_intrinsic1_descs
 
 Return a list of names of the unary intrinsics.
@@ -237,7 +310,7 @@ _opcode_get_intrinsic1_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_1; i++) {
-        PyObject *name = _PyUnstable_GetUnaryIntrinsicName(i);
+        PyObject *name = _PyCompile_GetUnaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -264,7 +337,7 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_2; i++) {
-        PyObject *name = _PyUnstable_GetBinaryIntrinsicName(i);
+        PyObject *name = _PyCompile_GetBinaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -287,6 +360,7 @@ opcode_functions[] =  {
     _OPCODE_HAS_LOCAL_METHODDEF
     _OPCODE_HAS_EXC_METHODDEF
     _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF
+    _OPCODE_GET_NB_OPS_METHODDEF
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
     {NULL, NULL, 0, NULL}

@@ -1,2 +1,0 @@
-Fix bugs in :mod:`sys` where exceptions could end up being overwritten
-because of deferred error handling.

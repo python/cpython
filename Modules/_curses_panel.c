@@ -10,6 +10,11 @@ static const char PyCursesVersion[] = "2.1";
 
 /* Includes */
 
+// clinic/_curses_panel.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include "py_curses.h"
