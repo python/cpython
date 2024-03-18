@@ -74,7 +74,6 @@ class WindowsConsoleIOTests(unittest.TestCase):
             f.close()
             f.close()
 
-
     def test_open_name(self):
         self.assertRaises(ValueError, ConIO, sys.executable)
 
