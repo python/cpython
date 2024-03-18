@@ -291,19 +291,7 @@ _PyFunction_LookupByVersion(uint32_t version)
 uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
-    if (func->func_version != 0) {
-        return func->func_version;
-    }
-    if (func->vectorcall != _PyFunction_Vectorcall) {
-        return 0;
-    }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->func_state.next_version == 0) {
-        return 0;
-    }
-    uint32_t v = interp->func_state.next_version++;
-    _PyFunction_SetVersion(func, v);
-    return v;
+    return func->func_version;
 }
 
 PyObject *
@@ -507,7 +495,6 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
-    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
     return 0;
 }
@@ -731,7 +718,6 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_annotations, Py_XNewRef(value));
     return 0;
 }
