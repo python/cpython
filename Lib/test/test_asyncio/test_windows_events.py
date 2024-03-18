@@ -300,7 +300,8 @@ class ProactorTests(WindowsEventsTestCase):
         return "done"
 
     def test_loop_restart(self):
-        # We're fishing for the "RuntimeError: <_overlapped.Overlapped object at XXX> still has pending operation at deallocation, the process may crash" error
+        # We're fishing for the "RuntimeError: <_overlapped.Overlapped object at XXX>
+        # still has pending operation at deallocation, the process may crash" error
         stop = threading.Event()
         def threadMain():
             while not stop.is_set():
