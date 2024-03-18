@@ -1171,13 +1171,8 @@ PyObject_ClearWeakRefs(PyObject *object)
        at the head of the list. There may be two of each - one live and one in
        the process of being destroyed.
     */
-    for (;;) {
-        if (*list != NULL && (*list)->wr_callback == NULL) {
-            clear_weakref(*list);
-        }
-        else {
-            break;
-        }
+    while (*list != NULL && (*list)->wr_callback == NULL) {
+        clear_weakref(*list);
     }
 
     /* Deal with non-canonical (subtypes or refs with callbacks) references. */
