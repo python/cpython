@@ -1683,7 +1683,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     Py_ssize_t L, M, R;
 
     assert(0 <= ok && ok <= n && 1 <= n && n <= MAX_MINRUN);
-    /* assert s[:ok) is sorted */
+    /* assert s[:ok] is sorted */
 
     if (! ok)
         ++ok;
@@ -1708,7 +1708,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
                 L = M + 1;
         } while (L < R);
         assert(L == R);
-        /* a[:L] holds all elements from a[:ok[ <= pivot now, so pivot belongs
+        /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
            at index L. Slide a[L:ok] to the right a slot to make room for it.
            Caution: using memmove is much slower under MSVC 5; we're not
            usually moving many slots. */
