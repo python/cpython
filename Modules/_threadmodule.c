@@ -589,12 +589,21 @@ PyThreadHandleObject_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)PyThreadHandleObject_new(type);
 }
 
+static int
+PyThreadHandleObject_traverse(PyThreadHandleObject *self, visitproc visit,
+                              void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
 static void
 PyThreadHandleObject_dealloc(PyThreadHandleObject *self)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    PyTypeObject *tp = Py_TYPE(self);
     ThreadHandle_decref(self->handle);
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -673,6 +682,7 @@ static PyType_Slot ThreadHandle_Type_slots[] = {
     {Py_tp_dealloc, (destructor)PyThreadHandleObject_dealloc},
     {Py_tp_repr, (reprfunc)PyThreadHandleObject_repr},
     {Py_tp_getset, ThreadHandle_getsetlist},
+    {Py_tp_traverse, PyThreadHandleObject_traverse},
     {Py_tp_methods, ThreadHandle_methods},
     {Py_tp_new, PyThreadHandleObject_tp_new},
     {0, 0}
@@ -682,7 +692,7 @@ static PyType_Spec ThreadHandle_Type_spec = {
     "_thread._ThreadHandle",
     sizeof(PyThreadHandleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     ThreadHandle_Type_slots,
 };
 
