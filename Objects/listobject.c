@@ -1718,9 +1718,8 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             }
             else if (k) {
                 a[M + 1] = a[M];
-                if (has_values) {
+                if (has_values)
                     v[M + 1] = v[M];
-                }
             }
             else
                 break;
