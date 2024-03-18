@@ -632,11 +632,6 @@
     <ClCompile Include="..\Python\traceback.c" />
     <ClCompile Include="..\Python\tracemalloc.c" />
   </ItemGroup>
-  <ItemGroup>
-    <!-- BEGIN deepfreeze -->
-    <ClCompile Include="$(GeneratedFrozenModulesDir)deepfreeze.c" />
-    <!-- END deepfreeze -->
-  </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClCompile Include="..\Modules\zlibmodule.c" />
     <ClCompile Include="$(zlibDir)\adler32.c" />

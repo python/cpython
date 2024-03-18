@@ -476,25 +476,6 @@
     <Message Text="Updated files: @(_Updated->'%(Filename)%(Extension)',', ')"
              Condition="'@(_Updated)' != ''" Importance="high" />
   </Target>
-  <Target Name="_RebuildDeepFrozen"
-          AfterTargets="_RebuildFrozen"
-          DependsOnTargets="FindPythonForBuild"
-          Condition="$(Configuration) != 'PGUpdate'">
-    <PropertyGroup>
-      <FreezeMappingsFile>
-        <!-- BEGIN freeze mapping file -->
-$(IntDir)\deepfreeze_mappings.txt
-        <!-- END freeze mapping file -->
-      </FreezeMappingsFile>
-    </PropertyGroup>
-    <WriteLinesToFile
-      File="$(FreezeMappingsFile)"
-      Overwrite="true"
-      Lines="@(FrozenModule->'%(FullPath):%(FrozenId)')" />
-    <!-- BEGIN deepfreeze rule -->
-    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" -f "$(IntDir)\deepfreeze_mappings.txt" -o "$(GeneratedFrozenModulesDir)deepfreeze.c"' />
-    <!-- END deepfreeze rule -->
-  </Target>
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
