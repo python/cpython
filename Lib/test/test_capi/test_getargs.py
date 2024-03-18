@@ -1112,10 +1112,9 @@ class SkipitemTest(unittest.TestCase):
             c = chr(i)
 
             # skip parentheses, the error reporting is inconsistent about them
-            # skip 'e', it's always a two-character code
+            # skip 'e' and 'w', they're always two-character codes
             # skip '|' and '$', they don't represent arguments anyway
-            # skip 'w' because it is invalid without a suffix.
-            if c in 'w()e|$':
+            if c in '()ew|$':
                 continue
 
             # test the format unit when not skipped
