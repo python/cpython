@@ -4709,6 +4709,15 @@ _PyType_FromMetaclass_impl(
         }
     }
 
+    if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC)
+        || type->tp_traverse == NULL)
+    {
+        if (PyErr_WarnFormat(PyExc_RuntimeError, 1,
+                "heap type %N should implement tp_traverse and visit their type",
+                type)) {
+            goto finally;
+        }
+    }
     assert(_PyType_CheckConsistency(type));
 
  finally:
