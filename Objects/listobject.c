@@ -1730,7 +1730,6 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
         if (has_values)
             v[M + 1] = vpivot;
     }
-    return 0;
 #else // binary insertion sort
     Py_ssize_t L, R;
     for (; ok < n; ++ok) {
