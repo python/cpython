@@ -5,7 +5,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
-#ifdef Py_GIL_DISABLED
 /*
  * Thread-safety for free-threaded builds
  * ======================================
@@ -29,76 +28,6 @@
  *   modified.
  *
  */
-
-typedef enum {
-    WR_UNLINK_NOT_STARTED,
-    WR_UNLINK_STARTED,
-    WR_UNLINK_DONE,
-} _PyWeakRefUnlinkState;
-
-/*
- * _PyWeakRefUnlinker is used to coordinate concurrent attempts at unlinking
- * weakrefs.
- *
- * XXX - More docs??
- * XXX - Can this be a OnceFlag?
- */
-typedef struct _PyWeakRefUnlinker {
-    /* Holds a value from _PyWeakRefUnlinkState */
-    int state;
-    PyEvent done;
-    Py_ssize_t refcount;
-} _PyWeakRefUnlinker;
-
-static _PyWeakRefUnlinker *
-_PyWeakRefUnlinker_New(void)
-{
-    _PyWeakRefUnlinker *self = (_PyWeakRefUnlinker *)PyMem_RawCalloc(1, sizeof(_PyWeakRefUnlinker));
-    if (self == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    self->state = WR_UNLINK_NOT_STARTED;
-    self->done = (PyEvent){0};
-    self->refcount = 1;
-    return self;
-}
-
-static void
-_PyWeakRefUnlinker_Incref(_PyWeakRefUnlinker *self)
-{
-    _Py_atomic_add_ssize(&self->refcount, 1);
-}
-
-static void
-_PyWeakRefUnlinker_Decref(_PyWeakRefUnlinker *self)
-{
-    if (_Py_atomic_add_ssize(&self->refcount, -1) == 1) {
-        PyMem_RawFree(self);
-    }
-}
-
-static int
-_PyWeakRefUnlinker_Start(_PyWeakRefUnlinker *self)
-{
-    int expected = WR_UNLINK_NOT_STARTED;
-    return _Py_atomic_compare_exchange_int(&self->state, &expected, WR_UNLINK_STARTED);
-}
-
-static void
-_PyWeakRefUnlinker_Wait(_PyWeakRefUnlinker *self)
-{
-    PyEvent_Wait(&self->done);
-}
-
-static void
-_PyWeakRefUnlinker_Finish(_PyWeakRefUnlinker *self)
-{
-    _Py_atomic_exchange_int(&self->state, WR_UNLINK_DONE);
-    _PyEvent_Notify(&self->done);
-}
-#endif  // Py_GIL_DISABLED
-
 
 #define GET_WEAKREFS_LISTPTR(o) \
         ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
@@ -132,8 +61,8 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     self->wr_callback = Py_XNewRef(callback);
     self->vectorcall = weakref_vectorcall;
 #ifdef Py_GIL_DISABLED
-    self->unlinker = _PyWeakRefUnlinker_New();
-    if (self->unlinker == NULL) {
+    self->clear_once = _PyOnceFlagRC_New();
+    if (self->clear_once == NULL) {
         Py_XDECREF(self->wr_callback);
         return -1;
     }
@@ -181,69 +110,94 @@ unlink_weakref_lock_held(PyWeakReference *self)
 }
 
 static void
-gc_unlink_weakref(PyWeakReference *self)
+clear_callback_lock_held(PyWeakReference *self)
 {
-    unlink_weakref_lock_held(self);
-    _PyWeakRefUnlinker_Finish(self->unlinker);
+    if (self->wr_callback != NULL) {
+        PyObject *callback = self->wr_callback;
+        self->wr_callback = NULL;
+        Py_DECREF(callback);
+    }
 }
 
 static void
-unlink_weakref(PyWeakReference *self)
+gc_unlink_weakref(PyWeakReference *self)
+{
+    unlink_weakref_lock_held(self);
+}
+
+static int
+do_clear_weakref(PyWeakReference *self)
 {
     Py_BEGIN_CRITICAL_SECTION2(self->wr_object, self);
     unlink_weakref_lock_held(self);
+    clear_callback_lock_held(self);
     Py_END_CRITICAL_SECTION2();
+    return 0;
 }
 
 static void
 clear_weakref(PyWeakReference *self)
 {
-    _PyWeakRefUnlinker *unlinker = self->unlinker;
-    _PyWeakRefUnlinker_Incref(unlinker);
-
-    if (_PyWeakRefUnlinker_Start(unlinker)) {
-        unlink_weakref(self);
-        Py_BEGIN_CRITICAL_SECTION(self);
-        if (self->wr_callback != NULL) {
-            PyObject *callback = self->wr_callback;
-            self->wr_callback = NULL;
-            Py_DECREF(callback);
-        }
-        Py_END_CRITICAL_SECTION();
-        _PyWeakRefUnlinker_Finish(unlinker);
-    }
-    else {
-        _PyWeakRefUnlinker_Wait(unlinker);
-    }
-
-    _PyWeakRefUnlinker_Decref(unlinker);
-}
-
-static void
-clear_weakref_only(PyWeakReference *self)
-{
-    _PyWeakRefUnlinker *unlinker = self->unlinker;
-    _PyWeakRefUnlinker_Incref(unlinker);
-
-    if (_PyWeakRefUnlinker_Start(unlinker)) {
-        unlink_weakref(self);
-        _PyWeakRefUnlinker_Finish(unlinker);
-    }
-    else {
-        _PyWeakRefUnlinker_Wait(unlinker);
-    }
-
-    _PyWeakRefUnlinker_Decref(unlinker);
+    _PyOnceFlagRC *once = self->clear_once;
+    _PyOnceFlagRC_Incref(once);
+    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref, self);
+    _PyOnceFlagRC_Decref(once);
 }
 
 static void
 gc_clear_weakref(PyWeakReference *self)
 {
-    gc_unlink_weakref(self);
-    if (self->wr_callback != NULL) {
-        Py_DECREF(self->wr_callback);
-        self->wr_callback = NULL;
-    }
+    unlink_weakref_lock_held(self);
+    clear_callback_lock_held(self);
+}
+
+static int
+do_clear_weakref_only(PyWeakReference *self)
+{
+    Py_BEGIN_CRITICAL_SECTION2(self->wr_object, self);
+    unlink_weakref_lock_held(self);
+    Py_END_CRITICAL_SECTION2();
+    return 0;
+}
+
+static void
+clear_weakref_only(PyWeakReference *self)
+{
+    _PyOnceFlagRC *once = self->clear_once;
+    _PyOnceFlagRC_Incref(once);
+    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref_only, self);
+    _PyOnceFlagRC_Decref(once);
+}
+
+typedef struct {
+    PyWeakReference *weakref;
+    PyObject *callback;
+} ClearArgs;
+
+static int
+do_clear_weakref_and_take_callback(ClearArgs *args)
+{
+    PyWeakReference *weakref = args->weakref;
+    Py_BEGIN_CRITICAL_SECTION2(weakref->wr_object, weakref);
+    unlink_weakref_lock_held(weakref);
+    args->callback = weakref->wr_callback;
+    weakref->wr_callback = NULL;
+    Py_END_CRITICAL_SECTION2();
+    return 0;
+}
+
+static PyObject *
+clear_weakref_and_take_callback(PyWeakReference *self)
+{
+    ClearArgs args = {
+        .weakref = self,
+        .callback = NULL,
+    };
+    _PyOnceFlagRC *once = self->clear_once;
+    _PyOnceFlagRC_Incref(once);
+    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref_and_take_callback, &args);
+    _PyOnceFlagRC_Decref(once);
+    return args.callback;
 }
 
 #else
@@ -317,7 +271,7 @@ weakref_dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
     clear_weakref((PyWeakReference *) self);
 #ifdef Py_GIL_DISABLED
-    _PyWeakRefUnlinker_Decref(((PyWeakReference*)self)->unlinker);
+    _PyOnceFlagRC_Decref(((PyWeakReference*)self)->clear_once);
 #endif
     Py_TYPE(self)->tp_free(self);
 }
@@ -1186,7 +1140,6 @@ handle_callback(PyWeakReference *ref, PyObject *callback)
         Py_DECREF(cbresult);
 }
 
-
 /* This function is called by the tp_dealloc handler to clear weak references.
  *
  * This iterates through the weak references for 'object' and calls callbacks
@@ -1207,7 +1160,11 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
     list = GET_WEAKREFS_LISTPTR(object);
 #ifdef Py_GIL_DISABLED
-    /* Protect the linked-list and the head pointer in object */
+    /* Protect the linked-list and the head pointer in object.
+
+       At this point no new weakrefs to object can be created, so we should be
+       safe to iterate until the list is empty.
+     */
     Py_BEGIN_CRITICAL_SECTION(object);
 
     /* Remove the callback-less basic and proxy references, which always appear
@@ -1223,34 +1180,19 @@ PyObject_ClearWeakRefs(PyObject *object)
         }
     }
 
-    /* Deal with non-canonical (subtypes or refs with callbacks) references.
-       At this point no new weakrefs to this object can be created, so we
-       should be safe to iterate until the list is empty.
-     */
+    /* Deal with non-canonical (subtypes or refs with callbacks) references. */
     PyObject *exc = PyErr_GetRaisedException();
     while (*list != NULL) {
-        PyWeakReference *current = *list;
-        _PyWeakRefUnlinker *unlinker = current->unlinker;
-        _PyWeakRefUnlinker_Incref(unlinker);
-        if (_PyWeakRefUnlinker_Start(unlinker)) {
-            PyObject *callback;
-            Py_BEGIN_CRITICAL_SECTION(current);
-            callback = current->wr_callback;
-            current->wr_callback = NULL;
-            Py_END_CRITICAL_SECTION();
-            unlink_weakref(current);
-            _PyWeakRefUnlinker_Finish(unlinker);
+        PyWeakReference *cur = *list;
+        int live = _Py_TryIncref((PyObject **) &cur, (PyObject *) cur);
+        PyObject *callback = clear_weakref_and_take_callback(cur);
+        if (live) {
             if (callback != NULL) {
-                if (_Py_TryIncref((PyObject **) &current, (PyObject *) current)) {
-                    handle_callback(current, callback);
-                    Py_DECREF(current);
-                }
+                handle_callback(cur, callback);
                 Py_DECREF(callback);
             }
-        } else {
-            _PyWeakRefUnlinker_Wait(unlinker);
+            Py_DECREF(cur);
         }
-        _PyWeakRefUnlinker_Decref(unlinker);
     }
     assert(!PyErr_Occurred());
     PyErr_SetRaisedException(exc);

@@ -3,7 +3,7 @@
 #endif
 
 #ifdef Py_GIL_DISABLED
-typedef struct _PyWeakRefUnlinker _PyWeakRefUnlinker;
+struct _PyOnceFlagRC;
 #endif
 
 /* PyWeakReference is the base struct for the Python ReferenceType, ProxyType,
@@ -27,10 +27,10 @@ struct _PyWeakReference {
     Py_hash_t hash;
 
 #ifdef Py_GIL_DISABLED
-    /* A pointer to an object that is used to coordinating concurrent attempts
-     * at unlinking the weakref.
+    /* Used in free-threaded builds to ensure that a weakref is only cleared
+     * once.
      */
-    _PyWeakRefUnlinker *unlinker;
+    struct _PyOnceFlagRC *clear_once;
 #endif
 
     /* If wr_object is weakly referenced, wr_object has a doubly-linked NULL-
