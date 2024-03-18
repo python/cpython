@@ -17,3 +17,5 @@ The new behavior:
 * There are exceptions within ``2001::/23`` (otherwise considered private): ``2001:1::1/128``,
   ``2001:1::2/128``, ``2001:3::/32``, ``2001:4:112::/48``, ``2001:20::/28``, ``2001:30::/28``.
   The exceptions are not considered private.
+* The shared address space (``100.64.0.0/10``) is not treated in any special way anymore,
+  previously it was considered both not private and not global. It is considered private now.
