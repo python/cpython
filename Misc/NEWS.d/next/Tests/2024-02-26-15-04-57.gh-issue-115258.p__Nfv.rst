@@ -1,2 +1,0 @@
-Fix a hang in ``test_queue.GenericQueueTest.test_shutdown_[immediate_]all_methods_in_many_threads``.
-This unit test is dedicated to the new ``shutdown`` feature in the threading queue.
