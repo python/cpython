@@ -1,1 +1,0 @@
-Fix building ctypes module with -DWIN32_LEAN_AND_MEAN defined
