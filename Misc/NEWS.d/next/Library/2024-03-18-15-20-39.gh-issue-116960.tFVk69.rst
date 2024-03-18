@@ -1,0 +1,1 @@
+When JSON Decoder encounters a trailing comma (and thus a missing next property), its error message is now less misleading.
