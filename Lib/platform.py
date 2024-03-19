@@ -994,8 +994,8 @@ def uname():
         system = 'Windows'
         release = 'Vista'
 
-    # Normalize responses on Apple mobile platforms
-    if sys.platform in {'ios', 'tvos'}:
+    # Normalize responses on iOS
+    if sys.platform == 'ios':
         system, release, machine, _ = ios_ver()
 
     vals = system, node, release, version, machine

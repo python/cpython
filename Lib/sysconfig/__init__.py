@@ -644,7 +644,7 @@ def get_platform():
         if m:
             release = m.group()
     elif osname[:6] == "darwin":
-        if sys.platform in {"ios", "tvos", "watchos"}:
+        if sys.platform == "ios":
             import _ios_support
             _, release, _, _ = _ios_support.get_platform_ios()
             osname = sys.platform
