@@ -115,6 +115,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
+            .pending_mainthread = { \
+                .max = NPENDINGCALLSARRAY, \
+                .maxloop = NPENDINGCALLSARRAY, \
+            }, \
         }, \
         .gilstate = { \
             .check_enabled = 1, \
@@ -165,6 +169,10 @@ extern PyTypeObject _PyExc_MemoryError;
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+            .pending = { \
+                .max = MAXPENDINGCALLS, \
+                .maxloop = MAXPENDINGCALLSLOOP, \
+            }, \
         }, \
         .gc = { \
             .enabled = 1, \

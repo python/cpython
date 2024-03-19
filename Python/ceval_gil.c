@@ -84,15 +84,15 @@ update_eval_breaker_for_thread(PyInterpreterState *interp, PyThreadState *tstate
     return;
 #endif
 
-    int32_t calls_to_do = _Py_atomic_load_int32_relaxed(
-        &interp->ceval.pending.calls_to_do);
-    if (calls_to_do) {
+    int32_t npending = _Py_atomic_load_int32_relaxed(
+        &interp->ceval.pending.npending);
+    if (npending) {
         _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
     }
     else if (_Py_IsMainThread()) {
-        calls_to_do = _Py_atomic_load_int32_relaxed(
-            &_PyRuntime.ceval.pending_mainthread.calls_to_do);
-        if (calls_to_do) {
+        npending = _Py_atomic_load_int32_relaxed(
+            &_PyRuntime.ceval.pending_mainthread.npending);
+        if (npending) {
             _Py_set_eval_breaker_bit(tstate, _PY_CALLS_TO_DO_BIT);
         }
     }
@@ -661,34 +661,58 @@ static int
 _push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
-    int i = pending->last;
-    int j = (i + 1) % NPENDINGCALLS;
-    if (j == pending->first) {
-        return -1; /* Queue full */
+    // XXX Drop the limit?
+    if (pending->max >= 0) {
+        if (pending->npending == pending->max) {
+            return -1; /* Queue full */
+        }
+        assert(pending->npending < pending->max);
     }
-    pending->calls[i].func = func;
-    pending->calls[i].arg = arg;
-    pending->calls[i].flags = flags;
-    pending->last = j;
-    assert(pending->calls_to_do < NPENDINGCALLS);
-    pending->calls_to_do++;
-    return 0;
-}
 
-static int
-_next_pending_call(struct _pending_calls *pending,
-                   int (**func)(void *), void **arg, int *flags)
-{
-    int i = pending->first;
-    if (i == pending->last) {
-        /* Queue empty */
-        assert(pending->calls[i].func == NULL);
-        return -1;
+    // Allocate for the pending call.
+    struct _pending_call *call;
+    if (pending->npending == 0) {
+        assert(pending->_next == pending->_first);
+        assert(pending->head == NULL);
+        assert(pending->tail == NULL);
+        call = &pending->_preallocated[0];
+        pending->_first = 0;
+        pending->_next = 1;
+        call->from_array = 1;
     }
-    *func = pending->calls[i].func;
-    *arg = pending->calls[i].arg;
-    *flags = pending->calls[i].flags;
-    return i;
+    else if (pending->npending < NPENDINGCALLSARRAY) {
+        int i = pending->_next;
+        int next = (i + 1) % NPENDINGCALLSARRAY;
+        assert(i != pending->_first);
+        call = &pending->_preallocated[i];
+        pending->_next = next;
+        call->from_array = 1;
+    }
+    else {
+        call = PyMem_RawMalloc(sizeof(struct _pending_call));
+        if (call == NULL) {
+            return -1;
+        }
+        call->from_array = 0;
+    }
+
+    // Initialize the data.
+    call->func = func;
+    call->arg = arg;
+    call->flags = flags;
+    call->next = NULL;
+
+    // Add the call to the list.
+    if (pending->head == NULL) {
+        pending->head = call;
+    }
+    else {
+        pending->tail->next = call;
+    }
+    pending->tail = call;
+    pending->npending++;
+
+    return 0;
 }
 
 /* Pop one item off the queue while holding the lock. */
@@ -696,12 +720,35 @@ static void
 _pop_pending_call(struct _pending_calls *pending,
                   int (**func)(void *), void **arg, int *flags)
 {
-    int i = _next_pending_call(pending, func, arg, flags);
-    if (i >= 0) {
-        pending->calls[i] = (struct _pending_call){0};
-        pending->first = (i + 1) % NPENDINGCALLS;
-        assert(pending->calls_to_do > 0);
-        pending->calls_to_do--;
+    struct _pending_call *call = pending->head;
+    if (call == NULL) {
+        /* Queue empty */
+        assert(pending->npending == 0);
+        assert(pending->_first == pending->_next);
+        return;
+    }
+    assert(pending->npending > 0);
+
+    // Remove the next one from the list.
+    pending->head = call->next;
+    if (pending->tail == call) {
+        pending->tail = NULL;
+    }
+    pending->npending--;
+
+    // Copy its data.
+    *func = call->func;
+    *arg = call->arg;
+    *flags = call->flags;
+
+    // Deallocate the list entry.
+    if (call->from_array) {
+        int i = pending->_first;
+        pending->_preallocated[i] = (struct _pending_call){0};
+        pending->_first = (i + 1) % NPENDINGCALLSARRAY;
+    }
+    else {
+        PyMem_RawFree(call);
     }
 }
 
@@ -788,8 +835,9 @@ handle_signals(PyThreadState *tstate)
 static int
 _make_pending_calls(struct _pending_calls *pending)
 {
+    assert(pending->max > 0);  // XXX Drop this.
     /* perform a bounded number of calls, in case of recursion */
-    for (int i=0; i<NPENDINGCALLS; i++) {
+    for (int i=0; i<pending->maxloop; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
         int flags = 0;
@@ -801,6 +849,7 @@ _make_pending_calls(struct _pending_calls *pending)
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
+            // There are no pending calls left.
             break;
         }
         int res = func(arg);
@@ -808,6 +857,7 @@ _make_pending_calls(struct _pending_calls *pending)
             PyMem_RawFree(arg);
         }
         if (res != 0) {
+            assert(PyErr_Occurred());
             return -1;
         }
     }
@@ -871,6 +921,10 @@ make_pending_calls(PyThreadState *tstate)
         signal_pending_calls(tstate, interp);
         return -1;
     }
+    if (pending->npending > 0) {
+        /* We hit pending->maxloop. */
+        signal_pending_calls(tstate, interp);
+    }
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
         if (_make_pending_calls(pending_main) != 0) {
@@ -878,6 +932,10 @@ make_pending_calls(PyThreadState *tstate)
             /* There might not be more calls to make, but we play it safe. */
             signal_pending_calls(tstate, interp);
             return -1;
+        }
+        if (pending_main->npending > 0) {
+            /* We hit pending_main->maxloop. */
+            signal_pending_calls(tstate, interp);
         }
     }
 

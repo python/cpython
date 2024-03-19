@@ -14,19 +14,45 @@ extern "C" {
 
 typedef int (*_Py_pending_call_func)(void *);
 
+struct _pending_call;
+
+struct _pending_call {
+    _Py_pending_call_func func;
+    void *arg;
+    int flags;
+    int from_array;
+    struct _pending_call *next;
+};
+
+// Using an array for the first pending calls gives us some
+// extra stability in the case of signals.
+// We also use the value as the max and loop max for the main thread.
+#define NPENDINGCALLSARRAY 32
+
+// We effectively drop the limit for per-interpreter pending calls.
+#define MAXPENDINGCALLS INT32_MAX
+// We don't want a flood of pending calls to interrupt any one thread
+// for too long, so we keep a limit on the number handled per pass.
+#define MAXPENDINGCALLSLOOP 100
+
 struct _pending_calls {
     int busy;
     PyMutex mutex;
-    /* Request for running pending calls. */
-    int32_t calls_to_do;
-#define NPENDINGCALLS 32
-    struct _pending_call {
-        _Py_pending_call_func func;
-        void *arg;
-        int flags;
-    } calls[NPENDINGCALLS];
-    int first;
-    int last;
+    /* The number of pending calls. */
+    int32_t npending;
+    int32_t max;
+    /* How many pending calls are made at a time, at most. */
+    int32_t maxloop;
+    /* The linked list of pending calls. */
+    struct _pending_call *head;
+    struct _pending_call *tail;
+
+    // We have a set of pre-allocated pending calls, to avoid
+    // possible allocation failures (at least when the number
+    // of pending calls is small).
+    int _first;
+    int _next;
+    struct _pending_call _preallocated[NPENDINGCALLSARRAY];
 };
 
 typedef enum {
