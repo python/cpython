@@ -567,7 +567,7 @@ class Executive:
         if idlelib.testing is False:
             self.locals = __main__.__dict__
             self.calltip = calltip.Calltip()
-            self.autocomplete = autocomplete.AutoComplete()
+            self.autocomplete = autocomplete.AutoComplete(namespace=self.locals)
         else:
             self.locals = {}
 
