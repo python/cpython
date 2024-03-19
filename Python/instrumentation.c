@@ -2513,6 +2513,7 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
 
 /******************* Public API *******************/
 
+#ifdef Py_LIMITED_API
 void
 PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                        uint8_t *event_types, uint32_t length)
@@ -2647,3 +2648,5 @@ PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike
 {
     IF_ACTIVE(_PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception));
 }
+
+#endif
