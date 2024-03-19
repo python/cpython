@@ -2379,6 +2379,18 @@ class TestKDE(unittest.TestCase):
                 area = integrate(f_hat, -20, 20)
                 self.assertAlmostEqual(area, 1.0, places=4)
 
+        # Check CDF against an intergral of the PDF
+
+        data = [3, 5, 10, 12]
+        h = 2.3
+        x = 10.5
+        for kernel in kernels:
+            with self.subTest(kernel=kernel):
+                cdf = kde(data, h, kernel, cumulative=True)
+                f_hat = kde(data, h, kernel)
+                area = integrate(f_hat, -20, x, 100_000)
+                self.assertAlmostEqual(cdf(x), area, places=4)
+
         # Check error cases
 
         with self.assertRaises(StatisticsError):
@@ -2395,6 +2407,8 @@ class TestKDE(unittest.TestCase):
             kde(sample, h='str')                        # Wrong bandwidth type
         with self.assertRaises(StatisticsError):
             kde(sample, h=1.0, kernel='bogus')          # Invalid kernel
+        with self.assertRaises(TypeError):
+            kde(sample, 1.0, 'gauss', True)             # Positional cumulative argument
 
         # Test name and docstring of the generated function
 
