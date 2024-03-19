@@ -2995,7 +2995,7 @@ if support.has_subprocess_support:
             'a'
         ok
         1 items passed all tests:
-        2 tests in myfile.doc
+           2 tests in myfile.doc
         2 tests in 1 items.
         2 passed and 0 failed.
         Test passed.
@@ -3072,7 +3072,7 @@ if support.has_subprocess_support:
             'ajkml'
         **********************************************************************
         1 items had failures:
-        2 of   3 in myfile.doc
+           2 of   3 in myfile.doc
         ***Test Failed*** 2 failures.
 
     With -o ELLIPSIS specified, the second run, against just the first file, should
@@ -3099,7 +3099,7 @@ if support.has_subprocess_support:
             'abcdef'
         **********************************************************************
         1 items had failures:
-        1 of   2 in myfile.doc
+           1 of   2 in myfile.doc
         ***Test Failed*** 1 failures.
 
     The fifth test uses verbose with the two options, so we should get verbose
@@ -3124,7 +3124,7 @@ if support.has_subprocess_support:
             'a...l'
         ok
         1 items passed all tests:
-        3 tests in myfile.doc
+           3 tests in myfile.doc
         3 tests in 1 items.
         3 passed and 0 failed.
         Test passed.
@@ -3141,7 +3141,7 @@ if support.has_subprocess_support:
         1 items had no tests:
             myfile2
         1 items passed all tests:
-        2 tests in myfile2.test_func
+           2 tests in myfile2.test_func
         2 tests in 2 items.
         2 passed and 0 failed.
         Test passed.
