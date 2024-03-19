@@ -3,12 +3,15 @@
 
 /* Windows users:  read Python's PCbuild\readme.txt */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "zlib.h"
 #include "stdbool.h"
+#include <stddef.h>               // offsetof()
 
 #if defined(ZLIB_VERNUM) && ZLIB_VERNUM < 0x1221
 #error "At least zlib version 1.2.2.1 is required"
@@ -1346,7 +1349,7 @@ typedef struct {
        decompress_buf() */
     Py_ssize_t avail_in_real;
     bool is_initialised;
-    char eof;           /* T_BOOL expects a char */
+    char eof;           /* Py_T_BOOL expects a char */
     char needs_input;
 } ZlibDecompressor;
 
@@ -1519,6 +1522,7 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
         }
     } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(state, self->zst, err, "while decompressing data");
+        goto error;
     }
 
     self->avail_in_real += self->zst.avail_in;
@@ -1721,6 +1725,9 @@ ZlibDecompressor__new__(PyTypeObject *cls,
         return NULL;
     }
     ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls);
+    if (self == NULL) {
+        return NULL;
+    }
     self->eof = 0;
     self->needs_input = 1;
     self->avail_in_real = 0;
@@ -1799,9 +1806,9 @@ static PyMethodDef ZlibDecompressor_methods[] = {
 
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
-    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
-    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
+    {"unused_data",     _Py_T_OBJECT, COMP_OFF(unused_data), Py_READONLY},
+    {"unconsumed_tail", _Py_T_OBJECT, COMP_OFF(unconsumed_tail), Py_READONLY},
+    {"eof",             Py_T_BOOL,   COMP_OFF(eof), Py_READONLY},
     {NULL},
 };
 
@@ -1815,11 +1822,11 @@ PyDoc_STRVAR(ZlibDecompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
 static PyMemberDef ZlibDecompressor_members[] = {
-    {"eof", T_BOOL, offsetof(ZlibDecompressor, eof),
-     READONLY, ZlibDecompressor_eof__doc__},
-    {"unused_data", T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
-     READONLY, ZlibDecompressor_unused_data__doc__},
-    {"needs_input", T_BOOL, offsetof(ZlibDecompressor, needs_input), READONLY,
+    {"eof", Py_T_BOOL, offsetof(ZlibDecompressor, eof),
+     Py_READONLY, ZlibDecompressor_eof__doc__},
+    {"unused_data", Py_T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
+     Py_READONLY, ZlibDecompressor_unused_data__doc__},
+    {"needs_input", Py_T_BOOL, offsetof(ZlibDecompressor, needs_input), Py_READONLY,
      ZlibDecompressor_needs_input_doc},
     {NULL},
 };
@@ -1889,12 +1896,20 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. crc32() takes
-           length as an unsigned int, which may be narrower than Py_ssize_t. */
-        while ((size_t)len > UINT_MAX) {
-            value = crc32(value, buf, UINT_MAX);
-            buf += (size_t) UINT_MAX;
-            len -= (size_t) UINT_MAX;
+           length as an unsigned int, which may be narrower than Py_ssize_t.
+           We further limit size due to bugs in Apple's macOS zlib.
+           See https://github.com/python/cpython/issues/105967.
+         */
+#define ZLIB_CRC_CHUNK_SIZE 0x40000000
+#if ZLIB_CRC_CHUNK_SIZE > INT_MAX
+# error "unsupported less than 32-bit platform?"
+#endif
+        while ((size_t)len > ZLIB_CRC_CHUNK_SIZE) {
+            value = crc32(value, buf, ZLIB_CRC_CHUNK_SIZE);
+            buf += (size_t) ZLIB_CRC_CHUNK_SIZE;
+            len -= (size_t) ZLIB_CRC_CHUNK_SIZE;
         }
+#undef ZLIB_CRC_CHUNK_SIZE
         value = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
@@ -2028,17 +2043,11 @@ zlib_exec(PyObject *mod)
     }
 
     state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
-    if (state->ZlibError == NULL) {
+    if (PyModule_AddObjectRef(mod, "error", state->ZlibError) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "error", Py_NewRef(state->ZlibError)) < 0) {
-        Py_DECREF(state->ZlibError);
-        return -1;
-    }
-    if (PyModule_AddObject(mod, "_ZlibDecompressor",
-                           Py_NewRef(state->ZlibDecompressorType)) < 0) {
-        Py_DECREF(state->ZlibDecompressorType);
+    if (PyModule_AddObjectRef(mod, "_ZlibDecompressor",
+                              (PyObject *)state->ZlibDecompressorType) < 0) {
         return -1;
     }
 
@@ -2080,26 +2089,14 @@ zlib_exec(PyObject *mod)
 #ifdef Z_TREES // 1.2.3.4, only for inflate
     ZLIB_ADD_INT_MACRO(Z_TREES);
 #endif
-    PyObject *ver = PyUnicode_FromString(ZLIB_VERSION);
-    if (ver == NULL) {
+    if (PyModule_Add(mod, "ZLIB_VERSION",
+                     PyUnicode_FromString(ZLIB_VERSION)) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "ZLIB_VERSION", ver) < 0) {
-        Py_DECREF(ver);
+    if (PyModule_Add(mod, "ZLIB_RUNTIME_VERSION",
+                     PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
-
-    ver = PyUnicode_FromString(zlibVersion());
-    if (ver == NULL) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(mod, "ZLIB_RUNTIME_VERSION", ver) < 0) {
-        Py_DECREF(ver);
-        return -1;
-    }
-
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
         return -1;
     }
@@ -2108,6 +2105,7 @@ zlib_exec(PyObject *mod)
 
 static PyModuleDef_Slot zlib_slots[] = {
     {Py_mod_exec, zlib_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

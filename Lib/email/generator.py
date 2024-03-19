@@ -22,7 +22,6 @@ NLCRE = re.compile(r'\r\n|\r|\n')
 fcre = re.compile(r'^From ', re.MULTILINE)
 
 
-
 class Generator:
     """Generates output from a Message object tree.
 
@@ -244,7 +243,7 @@ class Generator:
                 # existing message.
                 msg = deepcopy(msg)
                 del msg['content-transfer-encoding']
-                msg.set_payload(payload, charset)
+                msg.set_payload(msg._payload, charset)
                 payload = msg.get_payload()
                 self._munge_cte = (msg['content-transfer-encoding'],
                                    msg['content-type'])
@@ -392,7 +391,7 @@ class Generator:
     def _compile_re(cls, s, flags):
         return re.compile(s, flags)
 
-
+
 class BytesGenerator(Generator):
     """Generates a bytes version of a Message object tree.
 
@@ -443,7 +442,6 @@ class BytesGenerator(Generator):
         return re.compile(s.encode('ascii'), flags)
 
 
-
 _FMT = '[Non-text (%(type)s) part of message omitted, filename %(filename)s]'
 
 class DecodedGenerator(Generator):
@@ -503,7 +501,6 @@ class DecodedGenerator(Generator):
                     }, file=self)
 
 
-
 # Helper used by Generator._make_boundary
 _width = len(repr(sys.maxsize-1))
 _fmt = '%%0%dd' % _width

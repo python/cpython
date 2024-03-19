@@ -1,1 +1,0 @@
-:meth:`TarFile.next` now returns ``None`` when called on an empty tarfile.

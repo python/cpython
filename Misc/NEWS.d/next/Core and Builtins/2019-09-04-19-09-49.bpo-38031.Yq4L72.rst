@@ -1,2 +1,0 @@
-Fix a possible assertion failure in :class:`io.FileIO` when the opener
-returns an invalid file descriptor.

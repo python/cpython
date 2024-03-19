@@ -1,2 +1,0 @@
-Fix substitution of :class:`~typing.ParamSpec` followed by
-:class:`~typing.TypeVarTuple` in generic aliases.

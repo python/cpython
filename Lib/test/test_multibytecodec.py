@@ -303,7 +303,7 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertRaises(TypeError, decoder.setstate, 123)
         self.assertRaises(TypeError, decoder.setstate, ("invalid", 0))
         self.assertRaises(TypeError, decoder.setstate, (b"1234", "invalid"))
-        self.assertRaises(UnicodeError, decoder.setstate, (b"123456789", 0))
+        self.assertRaises(UnicodeDecodeError, decoder.setstate, (b"123456789", 0))
 
 class Test_StreamReader(unittest.TestCase):
     def test_bug1728403(self):
@@ -363,6 +363,7 @@ class Test_ISO2022(unittest.TestCase):
             e = '\u3406'.encode(encoding)
             self.assertFalse(any(x > 0x80 for x in e))
 
+    @support.requires_resource('cpu')
     def test_bug1572832(self):
         for x in range(0x10000, 0x110000):
             # Any ISO 2022 codec will cause the segfault
