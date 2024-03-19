@@ -303,9 +303,9 @@ def _get_preferred_schemes():
         }
     if sys.platform in {'ios', 'tvos', 'watchos'}:
         return {
-            'prefix': sys.platform,
-            'home': sys.platform,
-            'user': sys.platform,
+            'prefix': "ios",
+            'home': "ios",
+            'user': "ios",
         }
 
     return {

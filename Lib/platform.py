@@ -996,10 +996,7 @@ def uname():
 
     # Normalize responses on Apple mobile platforms
     if sys.platform in {'ios', 'tvos'}:
-        system, release, model, is_simulator = ios_ver()
-
-        if is_simulator:
-            machine = f'{model}Simulator'
+        system, release, machine, _ = ios_ver()
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''
@@ -1280,7 +1277,8 @@ def platform(aliased=False, terse=False):
         system, release, version = system_alias(system, release, version)
 
     if system == 'Darwin':
-        if sys.platform in {'ios', 'tvos'}:
+        # macOS and iOS both report as a "Darwin" kernel
+        if sys.platform == "ios":
             system, release, _, _ = ios_ver()
         else:
             macos_release = mac_ver()[0]
