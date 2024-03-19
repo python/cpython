@@ -52,7 +52,7 @@ _pathseps_with_colon = {f':{s}' for s in path_separators}
 
 # Bootstrap-related code ######################################################
 _CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
-_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin'
+_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin', 'ios', 'tvos', 'watchos'
 _CASE_INSENSITIVE_PLATFORMS =  (_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY
                                 + _CASE_INSENSITIVE_PLATFORMS_STR_KEY)
 
@@ -1714,6 +1714,46 @@ class FileFinder:
         return f'FileFinder({self.path!r})'
 
 
+class AppleFrameworkLoader(ExtensionFileLoader):
+    """A loader for modules that have been packaged as frameworks for
+    compatibility with Apple's iOS App Store policies.
+    """
+    def create_module(self, spec):
+        # If the ModuleSpec has been created by the FileFinder, it will have
+        # been created with an origin pointing to the .fwork file. We need to
+        # redirect this to the location in the Frameworks folder, using the
+        # content of the .fwork file.
+        if spec.origin.endswith(".fwork"):
+            with _io.FileIO(spec.origin, 'r') as file:
+                framework_binary = file.read().decode().strip()
+            bundle_path = _path_split(sys.executable)[0]
+            spec.origin = _path_join(bundle_path, framework_binary)
+
+        # If the loader is created based on the spec for a loaded module, the
+        # path will be pointing at the Framework location. If this occurs,
+        # get the original .fwork location to use as the module's __file__.
+        if self.path.endswith(".fwork"):
+            path = self.path
+        else:
+            with _io.FileIO(self.path + ".origin", 'r') as file:
+                origin = file.read().decode().strip()
+                bundle_path = _path_split(sys.executable)[0]
+                path = _path_join(bundle_path, origin)
+
+        module = _bootstrap._call_with_frames_removed(_imp.create_dynamic, spec)
+
+        _bootstrap._verbose_message(
+            "Apple framework extension module {!r} loaded from {!r} (path {!r})",
+            spec.name,
+            spec.origin,
+            path,
+        )
+
+        # Ensure that the __file__ points at the .fwork location
+        module.__file__ = path
+
+        return module
+
 # Import setup ###############################################################
 
 def _fix_up_module(ns, name, pathname, cpathname=None):
@@ -1746,10 +1786,17 @@ def _get_supported_file_loaders():
 
     Each item is a tuple (loader, suffixes).
     """
-    extensions = ExtensionFileLoader, _imp.extension_suffixes()
+    if sys.platform in {"ios", "tvos", "watchos"}:
+        extension_loaders = [(AppleFrameworkLoader, [
+            suffix.replace(".so", ".fwork")
+            for suffix in _imp.extension_suffixes()
+        ])]
+    else:
+        extension_loaders = []
+    extension_loaders.append((ExtensionFileLoader, _imp.extension_suffixes()))
     source = SourceFileLoader, SOURCE_SUFFIXES
     bytecode = SourcelessFileLoader, BYTECODE_SUFFIXES
-    return [extensions, source, bytecode]
+    return extension_loaders + [source, bytecode]
 
 
 def _set_bootstrap_module(_bootstrap_module):
