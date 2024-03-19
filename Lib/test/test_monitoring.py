@@ -1933,12 +1933,12 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         else:
             sys.monitoring.set_events(TEST_TOOL, event)
         event_value = int(math.log2(event))
-        _testcapi.enter_scope_single_event(self.codelike, event_value)
+        _testcapi.enter_scope(self.codelike, event_value)
         counter.count = 0
         func(*args)
         self.assertEqual(counter.count, expected)
         prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
-        _testcapi.enter_scope_single_event(self.codelike, event_value)
+        _testcapi.enter_scope(self.codelike, event_value)
         counter.count = 0
         func(*args)
         self.assertEqual(counter.count, 0)
@@ -1965,7 +1965,7 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             else:
                 sys.monitoring.set_events(TEST_TOOL, event)
             event_value = int(math.log2(event))
-            _testcapi.enter_scope_single_event(self.codelike, event_value)
+            _testcapi.enter_scope(self.codelike, event_value)
             counter.count = 0
             func(*args)
             self.assertEqual(counter.count, expected)
@@ -1994,3 +1994,39 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                 args = (self.codelike, 0) + tuple(args)
                 self.check_disable(event, function, args, expected)
 
+    def test_enter_scope_two_events(self):
+        try:
+            yield_counter = CounterWithDisable()
+            unwind_counter = CounterWithDisable()
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_YIELD, yield_counter)
+            sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, unwind_counter)
+            sys.monitoring.set_events(TEST_TOOL, E.PY_YIELD | E.PY_UNWIND)
+
+            yield_value = int(math.log2(E.PY_YIELD))
+            unwind_value = int(math.log2(E.PY_UNWIND))
+            cl = _testcapi.CodeLike(2)
+            _testcapi.enter_scope(cl, yield_value, unwind_value)
+
+            assert(yield_counter.count == 0)
+            assert(unwind_counter.count == 0)
+
+            _testcapi.fire_event_py_unwind(cl, 0, ValueError(42))
+            assert(yield_counter.count == 0)
+            assert(unwind_counter.count == 1)
+
+            _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+            assert(yield_counter.count == 1)
+            assert(unwind_counter.count == 1)
+
+            yield_counter.disable = True
+            _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+            assert(yield_counter.count == 2)
+            assert(unwind_counter.count == 1)
+
+            _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+            assert(yield_counter.count == 2)
+            assert(unwind_counter.count == 1)
+
+            sys.monitoring.set_events(TEST_TOOL, 0)
+        finally:
+            sys.monitoring.restart_events()

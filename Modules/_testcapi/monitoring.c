@@ -360,18 +360,30 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
 /*******************************************************************/
 
 static PyObject *
-enter_scope_single_event(PyObject *self, PyObject *args)
+enter_scope(PyObject *self, PyObject *args)
 {
     PyObject *codelike_obj;
-    int event;
-    if (!PyArg_ParseTuple(args, "Oi", &codelike_obj, &event)) {
-        return NULL;
+    int event1, event2=0;
+    int num_events = PyTuple_Size(args) - 1;
+    if (num_events == 1) {
+        if (!PyArg_ParseTuple(args, "Oi", &codelike_obj, &event1)) {
+            return NULL;
+        }
+    }
+    else {
+        assert(num_events == 2);
+        if (!PyArg_ParseTuple(args, "Oii", &codelike_obj, &event1, &event2)) {
+            return NULL;
+        }
     }
     PyCodeLikeObject *codelike = (PyCodeLikeObject *) codelike_obj;
 
-    uint8_t events[] = { event };
+    uint8_t events[] = { event1, event2 };
 
-    PyMonitoring_BeginScope(codelike->monitoring_states, &codelike->version, events, 1);
+    PyMonitoring_BeginScope(codelike->monitoring_states,
+                            &codelike->version,
+                            events,
+                            num_events);
 
     Py_RETURN_NONE;
 }
@@ -391,7 +403,7 @@ static PyMethodDef TestMethods[] = {
     {"fire_event_exception_handled", fire_event_exception_handled, METH_VARARGS},
     {"fire_event_py_unwind", fire_event_py_unwind, METH_VARARGS},
     {"fire_event_stop_iteration", fire_event_stop_iteration, METH_VARARGS},
-    {"enter_scope_single_event", enter_scope_single_event, METH_VARARGS},
+    {"enter_scope", enter_scope, METH_VARARGS},
     {NULL},
 };
 
