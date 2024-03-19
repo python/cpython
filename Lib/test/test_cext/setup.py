@@ -11,20 +11,17 @@ from setuptools import setup, Extension
 
 
 SOURCE = 'extension.c'
-if not support.MS_WINDOWS:
+if not support.MS_WINDOWS and not sysconfig.get_config_var('Py_GIL_DISABLED'):
     # C compiler flags for GCC and clang
     CFLAGS = [
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+
+        # gh-116869: The Python C API must be compatible with building
+        # with the -Werror=declaration-after-statement compiler flag.
+        '-Werror=declaration-after-statement',
     ]
-    # Free Threading doesn't build with -Werror=declaration-after-statement
-    if not sysconfig.get_config_var('Py_GIL_DISABLED'):
-        CFLAGS.append(
-            # gh-116869: The Python C API must be compatible with building
-            # with the -Werror=declaration-after-statement compiler flag.
-            '-Werror=declaration-after-statement',
-        )
 else:
     # Don't pass any compiler flag to MSVC
     CFLAGS = []
