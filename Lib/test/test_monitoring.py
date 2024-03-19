@@ -1898,13 +1898,6 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
         self.codelike = capi.CodeLike(2)
 
-        def cb(name, args):
-            self.results.append((name,) + args)
-
-        self.cb1 = lambda codelike, *args : cb('cb1', args)
-        self.cb2 = lambda codelike, *args : cb('cb2', args)
-        self.cb3 = lambda codelike, *args : cb('cb3', args)
-
         self.cases = [
             # (Event, function, *args)
             (1, E.PY_START, capi.fire_event_py_start),
