@@ -710,10 +710,11 @@ else:
                     # The OS could not resolve this path fully, so we attempt
                     # to follow the link ourselves. If we succeed, keep running the loop.
                     new_path = _readlink_deep(path, seen)
-                    if new_path in seen:
+                    new_path_normcase = normcase(new_path)
+                    if new_path_normcase in seen:
                         return join(new_path, tail) if tail else new_path
                     else:
-                        seen.add(new_path)
+                        seen.add(new_path_normcase)
                         path = new_path
                 except OSError:
                     # If we fail to readlink(), let's keep traversing
