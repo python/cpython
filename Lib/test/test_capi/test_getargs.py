@@ -1156,7 +1156,7 @@ class SkipitemTest(unittest.TestCase):
         dict_b = {'b':1}
         keywords = ["a", "b"]
 
-        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w#', 'w*')
+        supported = ('s#', 's*', 'z#', 'z*', 'y#', 'y*', 'w*')
         for c in string.ascii_letters:
             for c2 in '#*':
                 f = c + c2
