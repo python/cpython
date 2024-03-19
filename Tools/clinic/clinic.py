@@ -1988,7 +1988,7 @@ def parse_file(
     libclinic.write_file(output, cooked)
 
 
-def create_python_parser_namespace() -> dict[str, Any]:
+def create_parser_namespace() -> dict[str, Any]:
     ns = dict(
         CConverter=CConverter,
         CReturnConverter=CReturnConverter,
@@ -2006,7 +2006,7 @@ def create_python_parser_namespace() -> dict[str, Any]:
 
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
-        self.namespace = create_python_parser_namespace()
+        self.namespace = create_parser_namespace()
 
     def parse(self, block: Block) -> None:
         ns = dict(self.namespace)
