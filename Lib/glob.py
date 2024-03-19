@@ -394,4 +394,3 @@ def _select_exists(path, rel_path, dir_fd, exists):
             yield path
         except OSError:
             pass
-
