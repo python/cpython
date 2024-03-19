@@ -1515,22 +1515,19 @@ def _shutdown():
     """
     Wait until the Python thread state of all non-daemon threads get deleted.
     """
-    # Obscure: other threads may be waiting to join _main_thread.  That's
-    # dubious, but some code does it. We can't wait for it to be marked as done
-    # normally - that won't happen until the interpreter is nearly dead. So
-    # mark it done here.
-    if _main_thread._handle.is_done() and _is_main_interpreter():
-        # _shutdown() was already called
-        return
-
     global _SHUTTING_DOWN
     _SHUTTING_DOWN = True
 
     # Call registered threading atexit functions before threads are joined.
     # Order is reversed, similar to atexit.
-    for atexit_call in reversed(_threading_atexits):
+    while _threading_atexits and (atexit_call := _threading_atexits.pop()):
         atexit_call()
 
+    # Obscure: Other threads may be waiting to join _main_thread.  That's
+    # dubious, but some code does it.  They can't wait for it to be marked done
+    # normally - that won't happen until the interpreter is nearly dead.  So
+    # mark it done here so they can proceed and be joined below.
+    # BPO-18984's https://github.com/python/cpython/commit/c363a23eff25d8ee74d
     if _is_main_interpreter():
         _main_thread._handle._set_done()
 

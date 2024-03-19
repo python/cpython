@@ -329,6 +329,9 @@ class BaseProcess(object):
             sys.stderr.write('Process %s:\n' % self.name)
             traceback.print_exc()
         finally:
+            # bpo-18966: Explicitly Join threads: .popen_fork.Popen.launch()
+            # and .forkserver._main() both call os._exit() after this which
+            # skips that.
             threading._shutdown()
             util.info('process exiting with exitcode %d' % exitcode)
             util._flush_std_streams()

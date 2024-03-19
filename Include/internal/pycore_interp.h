@@ -102,7 +102,7 @@ struct _is {
        In order to be effective, this must be set to 0 during or right
        after allocation. */
     int _initialized;
-    int finalizing;
+    int started_finalization;  /* set early, used to block some actions. */
 
     uintptr_t last_restart_version;
     struct pythreads {
@@ -125,7 +125,7 @@ struct _is {
        Get runtime from tstate: tstate->interp->runtime. */
     struct pyruntimestate *runtime;
 
-    /* Set by Py_EndInterpreter().
+    /* Set by Py_EndInterpreter() & Py_FinalizeEx().
 
        Use _PyInterpreterState_GetFinalizing()
        and _PyInterpreterState_SetFinalizing()

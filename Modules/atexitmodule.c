@@ -87,6 +87,7 @@ _PyAtExit_Init(PyInterpreterState *interp)
 
     state->callback_len = 32;
     state->ncallbacks = 0;
+    _Py_atomic_store_int(&state->handler_calling_started, 0);
     state->callbacks = PyMem_New(atexit_py_callback*, state->callback_len);
     if (state->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
@@ -118,9 +119,13 @@ _PyAtExit_Fini(PyInterpreterState *interp)
 
 
 static void
-atexit_callfuncs(struct atexit_state *state)
+atexit_callfuncs(struct atexit_state *state, int from_python_module)
 {
     assert(!PyErr_Occurred());
+
+    if (!from_python_module) {
+        _Py_atomic_store_int(&state->handler_calling_started, 1);
+    }
 
     if (state->ncallbacks == 0) {
         return;
@@ -155,7 +160,7 @@ void
 _PyAtExit_Call(PyInterpreterState *interp)
 {
     struct atexit_state *state = &interp->atexit;
-    atexit_callfuncs(state);
+    atexit_callfuncs(state, 0);
 }
 
 
@@ -191,6 +196,29 @@ atexit_register(PyObject *module, PyObject *args, PyObject *kwargs)
     }
 
     struct atexit_state *state = get_atexit_state();
+    if (_Py_atomic_load_int(&state->handler_calling_started)) {
+        /* We could instead raise an error in this situation, but it is action
+         * at a distance. Not the callers fault. The culprit may be via a call
+         * chain invoking code transitively via an atexit handler or from
+         * within a thread spawned by an atexit handler.  See GH-113964.
+         */
+        if (PyErr_WarnEx(
+                PyExc_RuntimeWarning,
+                "atexit.register() ignored; atexit handler calls"
+                " have already started.",
+                1)) {
+            return NULL;
+        }
+        return Py_NewRef(func);
+    }
+
+    // Extremely unlikely, just to avoid overflow.
+    if (state->ncallbacks > INT_MAX/2048) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Too many atexit handlers registered.");
+        return NULL;
+    }
+
     if (state->ncallbacks >= state->callback_len) {
         atexit_py_callback **r;
         state->callback_len += 16;
@@ -231,7 +259,7 @@ static PyObject *
 atexit_run_exitfuncs(PyObject *module, PyObject *unused)
 {
     struct atexit_state *state = get_atexit_state();
-    atexit_callfuncs(state);
+    atexit_callfuncs(state, 1);
     Py_RETURN_NONE;
 }
 
