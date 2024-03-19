@@ -1,6 +1,7 @@
 # gh-91321: Build a basic C test extension to check that the Python C API is
 # compatible with C and does not emit C compiler warnings.
 import os
+import platform
 import shlex
 import sys
 import sysconfig
@@ -17,8 +18,8 @@ if not support.MS_WINDOWS:
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
 
-        # gh-116869: The Python C API must build with
-        # -Werror=declaration-after-statement.
+        # gh-116869: The Python C API must be compatible with building
+        # with the -Werror=declaration-after-statement compiler flag.
         '-Werror=declaration-after-statement',
     ]
 else:
@@ -34,22 +35,44 @@ def main():
     cflags = list(CFLAGS)
     cflags.append(f'-DMODULE_NAME={module_name}')
 
+    # Add -std=STD or /std:STD (MSVC) compiler flag
     if std:
-        cflags.append(f'-std={std}')
+        if support.MS_WINDOWS:
+            cflags.append(f'/std:{std}')
+            std_prefix = '/std'
+        else:
+            cflags.append(f'-std={std}')
+            std_prefix = '-std'
 
         # Remove existing -std options to only test ours
         cmd = (sysconfig.get_config_var('CC') or '')
         if cmd is not None:
             cmd = shlex.split(cmd)
-            cmd = [arg for arg in cmd if not arg.startswith('-std=')]
+            cmd = [arg for arg in cmd if not arg.startswith(std_prefix)]
             cmd = shlex.join(cmd)
             # CC env var overrides sysconfig CC variable in setuptools
             os.environ['CC'] = cmd
 
+    # Define Py_LIMITED_API macro
     if limited:
         version = sys.hexversion
         cflags.append(f'-DPy_LIMITED_API={version:#x}')
 
+    # On Windows, add PCbuild\amd64\ to include and library directories
+    include_dirs = []
+    library_dirs = []
+    if support.MS_WINDOWS:
+        srcdir = sysconfig.get_config_var('srcdir')
+        machine = platform.uname().machine
+        pcbuild = os.path.join(srcdir, 'PCbuild', machine)
+        if os.path.exists(pcbuild):
+            # pyconfig.h is generated in PCbuild\amd64\
+            include_dirs.append(pcbuild)
+            # python313.lib is generated in PCbuild\amd64\
+            library_dirs.append(pcbuild)
+            print(f"Add PCbuild directory: {pcbuild}")
+
+    # Display information to help debugging
     for env_name in ('CC', 'CFLAGS'):
         if env_name in os.environ:
             print(f"{env_name} env var: {os.environ[env_name]!r}")
@@ -60,7 +83,9 @@ def main():
     ext = Extension(
         module_name,
         sources=[SOURCE],
-        extra_compile_args=cflags)
+        extra_compile_args=cflags,
+        include_dirs=include_dirs,
+        library_dirs=library_dirs)
     setup(name=f'internal_{module_name}',
           version='0.0',
           ext_modules=[ext])

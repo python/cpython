@@ -39,9 +39,11 @@ static PyMethodDef _testcext_methods[] = {
 static int
 _testcext_exec(PyObject *module)
 {
+#ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
         return -1;
     }
+#endif
     return 0;
 }
 
