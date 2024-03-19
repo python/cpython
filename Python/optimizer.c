@@ -913,6 +913,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, const _PyBloomFilter *depende
     if (executor == NULL) {
         return NULL;
     }
+    OPT_HIST(length, optimized_trace_length_hist);
+
     /* Initialize exits */
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
@@ -1051,7 +1053,6 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
-    OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
     *exec_ptr = executor;
     return 1;
 }
