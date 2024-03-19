@@ -109,34 +109,12 @@ unlink_and_clear_object_lock_held(PyWeakReference *self)
     }
 }
 
-static void
+static PyObject *
 clear_callback_lock_held(PyWeakReference *self)
 {
-    if (self->wr_callback != NULL) {
-        PyObject *callback = self->wr_callback;
-        self->wr_callback = NULL;
-        Py_DECREF(callback);
-    }
-}
-
-static int
-do_clear_weakref(PyWeakReference *self)
-{
-    Py_BEGIN_CRITICAL_SECTION2(self->wr_object, self);
-    unlink_and_clear_object_lock_held(self);
-    clear_callback_lock_held(self);
-    Py_END_CRITICAL_SECTION2();
-    return 0;
-}
-
-// Atomically clear the weakref
-static void
-clear_weakref(PyWeakReference *self)
-{
-    _PyOnceFlagRC *once = self->clear_once;
-    _PyOnceFlagRC_Incref(once);
-    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref, self);
-    _PyOnceFlagRC_Decref(once);
+    PyObject *callback = self->wr_callback;
+    self->wr_callback = NULL;
+    return callback;
 }
 
 // Clear the weakref while the world is stopped
@@ -144,7 +122,8 @@ static void
 gc_clear_weakref(PyWeakReference *self)
 {
     unlink_and_clear_object_lock_held(self);
-    clear_callback_lock_held(self);
+    PyObject *callback = clear_callback_lock_held(self);
+    Py_XDECREF(callback);
 }
 
 static int
@@ -156,7 +135,7 @@ do_clear_weakref_and_leave_callback(PyWeakReference *self)
     return 0;
 }
 
-// Atomically clear the weakref, but leave the callback intact
+// Clear the weakref, but leave the callback intact
 static void
 clear_weakref_and_leave_callback(PyWeakReference *self)
 {
@@ -177,8 +156,7 @@ do_clear_weakref_and_take_callback(ClearArgs *args)
     PyWeakReference *weakref = args->weakref;
     Py_BEGIN_CRITICAL_SECTION2(weakref->wr_object, weakref);
     unlink_and_clear_object_lock_held(weakref);
-    args->callback = weakref->wr_callback;
-    weakref->wr_callback = NULL;
+    args->callback = clear_callback_lock_held(args->weakref);
     Py_END_CRITICAL_SECTION2();
     return 0;
 }
@@ -196,6 +174,14 @@ clear_weakref_and_take_callback(PyWeakReference *self)
     _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref_and_take_callback, &args);
     _PyOnceFlagRC_Decref(once);
     return args.callback;
+}
+
+// Clear the weakref and its callback
+static void
+clear_weakref(PyWeakReference *self)
+{
+    PyObject *callback = clear_weakref_and_take_callback(self);
+    Py_XDECREF(callback);
 }
 
 #else
