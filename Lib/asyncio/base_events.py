@@ -207,12 +207,14 @@ def _check_ssl_socket(sock):
 
 class _SendfileFallbackProtocol(protocols.Protocol):
     def __init__(self, transp):
-        if not isinstance(transp, transports._FlowControlMixin):
-            raise TypeError("transport should be _FlowControlMixin instance")
         self._transport = transp
         self._proto = transp.get_protocol()
         self._should_resume_reading = transp.is_reading()
-        self._should_resume_writing = transp._protocol_paused
+
+        # should we expect a call to resume_writing?
+        _, high_water = transp.get_write_buffer_limits()
+        self._should_resume_writing = transp.get_write_buffer_size() > high_water
+
         transp.pause_reading()
         transp.set_protocol(self)
         if self._should_resume_writing:
