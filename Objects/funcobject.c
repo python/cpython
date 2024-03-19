@@ -218,45 +218,49 @@ error:
 }
 
 /*
-XXX TODO XXX Rewrite this entire comment to match the new reality!
+(This is purely internal documentation. There are no public APIs here.)
 
-Function versions
------------------
+Function (and code) versions
+----------------------------
 
-Function versions are used to detect when a function object has been
-updated, invalidating inline cache data used by the `CALL` bytecode
-(notably `CALL_PY_EXACT_ARGS` and a few other `CALL` specializations).
+The Tier 1 specializer generates CALL variants that can be invalidated
+by changes to critical function attributes:
 
-They are also used by the Tier 2 superblock creation code to find
-the function being called (and from there the code object).
+- __code__
+- __defaults__
+- __kwdefaults__
+- __closure__
 
-How does a function's `func_version` field get initialized?
+For this purpose function objects have a 32-bit func_version member
+that the specializer writes to the specialized instruction's inline
+cache and which is checked by a guard on the specialized instructions.
 
-- `PyFunction_New` and friends initialize it to 0.
-- The `MAKE_FUNCTION` instruction sets it from the code's `co_version`.
-- It is reset to 0 when various attributes like `__code__` are set.
-- A new version is allocated by `_PyFunction_GetVersionForCurrentState`
-  when the specializer needs a version and the version is 0.
+The MAKE_FUNCTION bytecode sets func_version from the code object's
+co_version field.  The latter is initialized from a counter in the
+interpreter state (interp->func_state.next_version) and never changes.
+When this counter overflows, it remains zero and the specializer loses
+the ability to specialize calls to new functions.
 
-The latter allocates versions using a counter in the interpreter state,
-`interp->func_state.next_version`.
-When the counter wraps around to 0, no more versions are allocated.
-There is one other special case: functions with a non-standard
-`vectorcall` field are not given a version.
+The func_version is reset to zero when any of the critical attributes
+is modified; after this point the specializer will no longer specialize
+calls to this function, and the guard will always fail.
 
-When the function version is 0, the `CALL` bytecode is not specialized.
+The function and code version cache
+-----------------------------------
 
-Code object versions
---------------------
+The Tier 2 optimizer now has a problem, since it needs to find the
+function and code objects given only the version number from the inline
+cache.  Our solution is to maintain a cache mapping version numbers to
+function and code objects.  To limit the cache size we could hash
+the version number, but for now we simply use it modulo the table size.
 
-So where to code objects get their `co_version`?
-They share the same counter, `interp->func_state.next_version`.
+There are some corner cases (e.g. generator expressions) where we will
+be unable to find the function object in the cache but we can still
+find the code object.  For this reason the cache stores both the
+function object and the code object.
 
-Code objects get a new `co_version` allocated from this counter upon
-creation. Since code objects are nominally immutable, `co_version` can
-not be invalidated. The only way it can be 0 is when 2**32 or more
-code objects have been created during the process's lifetime.
-(The counter isn't reset by `fork()`, extending the lifetime.)
+The cache doesn't contain strong references; cache entries are
+invalidated whenever the function or code object is deallocated.
 */
 
 void
