@@ -270,6 +270,11 @@ asyncio
   the buffer size.
   (Contributed by Jamie Phan in :gh:`115199`.)
 
+* Add :meth:`asyncio.Server.close_clients` and
+  :meth:`asyncio.Server.abort_clients` methods which allow to more
+  forcefully close an asyncio server.
+  (Contributed by Pierre Ossman in :gh:`113538`.)
+
 base64
 ---
 
@@ -569,6 +574,12 @@ time
   ``QueryPerformanceCounter()`` clock to have a resolution better than 1 us,
   instead of the ``GetTickCount64()`` clock which has a resolution of 15.6 ms.
   (Contributed by Victor Stinner in :gh:`88494`.)
+
+* On Windows, :func:`time.time()` now uses the
+  ``GetSystemTimePreciseAsFileTime()`` clock to have a resolution better
+  than 1 us, instead of the ``GetSystemTimeAsFileTime()`` clock which has a
+  resolution of 15.6 ms.
+  (Contributed by Victor Stinner in :gh:`63207`.)
 
 
 tkinter
