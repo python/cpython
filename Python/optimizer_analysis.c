@@ -252,7 +252,15 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
                 function_checked >>= 1;
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                uintptr_t operand = buffer[pc].operand;
+                if (operand == 0 || (operand & 1)) {
+                    // It's either a code object or NULL, so bail
+                    return 1;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)operand;
+                if (func == NULL) {
+                    return 1;
+                }
                 assert(PyFunction_Check(func));
                 function_version = func->func_version;
                 globals = func->func_globals;
