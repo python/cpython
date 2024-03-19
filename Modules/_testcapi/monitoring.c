@@ -105,7 +105,10 @@ static PyTypeObject PyCodeLike_Type = {
     .tp_str = (reprfunc) CodeLike_str,
 };
 
-#define PyCodeLike_Check(v) Py_IS_TYPE((v), &PyCodeLike_Type)
+#define RAISE_UNLESS_CODELIKE(v)  if (!Py_IS_TYPE((v), &PyCodeLike_Type)) { \
+        PyErr_Format(PyExc_TypeError, "expected a code-like, got %s", Py_TYPE(v)->tp_name); \
+        return NULL; \
+    }
 
 /*******************************************************************/
 
@@ -117,7 +120,7 @@ fire_event_py_start(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
-    assert(PyCodeLike_Check(codelike));
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -134,7 +137,7 @@ fire_event_py_resume(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
-    NULLABLE(codelike);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -152,7 +155,7 @@ fire_event_py_return(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    NULLABLE(codelike);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -170,7 +173,7 @@ fire_event_py_yield(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
-    NULLABLE(codelike);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -188,8 +191,8 @@ fire_event_call(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiOO", &codelike, &offset, &callable, &arg0)) {
         return NULL;
     }
-    NULLABLE(codelike);
     NULLABLE(arg0);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -206,6 +209,7 @@ fire_event_line(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &lineno)) {
         return NULL;
     }
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -223,6 +227,7 @@ fire_event_jump(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -240,6 +245,7 @@ fire_event_branch(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -258,6 +264,7 @@ fire_event_py_throw(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(exception);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -276,6 +283,7 @@ fire_event_raise(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(exception);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -294,6 +302,7 @@ fire_event_reraise(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(exception);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -312,6 +321,7 @@ fire_event_exception_handled(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(exception);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -330,6 +340,7 @@ fire_event_py_unwind(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(exception);
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -348,7 +359,7 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
         return NULL;
     }
     NULLABLE(exception);
-
+    RAISE_UNLESS_CODELIKE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
@@ -362,26 +373,27 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
 static PyObject *
 enter_scope(PyObject *self, PyObject *args)
 {
-    PyObject *codelike_obj;
+    PyObject *codelike;
     int event1, event2=0;
     int num_events = PyTuple_Size(args) - 1;
     if (num_events == 1) {
-        if (!PyArg_ParseTuple(args, "Oi", &codelike_obj, &event1)) {
+        if (!PyArg_ParseTuple(args, "Oi", &codelike, &event1)) {
             return NULL;
         }
     }
     else {
         assert(num_events == 2);
-        if (!PyArg_ParseTuple(args, "Oii", &codelike_obj, &event1, &event2)) {
+        if (!PyArg_ParseTuple(args, "Oii", &codelike, &event1, &event2)) {
             return NULL;
         }
     }
-    PyCodeLikeObject *codelike = (PyCodeLikeObject *) codelike_obj;
+    RAISE_UNLESS_CODELIKE(codelike);
+    PyCodeLikeObject *cl = (PyCodeLikeObject *) codelike;
 
     uint8_t events[] = { event1, event2 };
 
-    PyMonitoring_EnterScope(codelike->monitoring_states,
-                            &codelike->version,
+    PyMonitoring_EnterScope(cl->monitoring_states,
+                            &cl->version,
                             events,
                             num_events);
 
