@@ -6,7 +6,6 @@ from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
 from test.support import threading_helper, gc_threshold
-from test.support import Py_GIL_DISABLED
 
 import gc
 import sys
