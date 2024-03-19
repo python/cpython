@@ -1,0 +1,1 @@
+Remove regex pattern check in :func:`inspect.findsource` which makes the function work with class code objects.
