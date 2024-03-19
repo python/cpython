@@ -42,7 +42,6 @@
 #define RC_NO_ALIAS         115
 #define RC_NO_INI           116
 #define RC_ACCESS_DENIED    117
-#define RC_AGAIN            118
 
 static FILE * log_fp = NULL;
 static FILE * warn_fp = NULL;
@@ -2613,209 +2612,38 @@ listEnvironments(EnvironmentInfo *env, FILE * out, bool showPath, EnvironmentInf
  ***                          ALIAS CREATION/DELETE                         ***
 \******************************************************************************/
 
-static int
-_copyAlnum(wchar_t *dest, int destSize, const wchar_t *src)
-{
-    wchar_t *p = dest + wcsnlen(dest, destSize);
-    wchar_t *end = dest + destSize;
-    int n = 0;
-    while (p != end && src && *src && isalnum(*src)) {
-        *p++ = *src++;
-        *p = L'\0';
-        n += 1;
-    }
-    if (p == end || !src) {
-        return -1;
-    }
-    return n;
-}
-
-static int
-_deleteAllAlias(int dryRun)
-{
-    #define MAXSETTINGSLEN 32767
-    wchar_t settings[MAXSETTINGSLEN];
-    int exitCode = 0;
-    int n = _readIni(L"alias", NULL, settings, MAXSETTINGSLEN, 0);
-    if (n >= MAXSETTINGSLEN - 2) {
-        // If we have too many to read all at once, do as many as we can and
-        // request another call. We'll have removed some settings from the
-        // py.ini and can do the next batch.
-        exitCode = RC_AGAIN;
-        while (n > 0 && settings[n]) {
-            --n;
-        }
-        settings[n + 1] = L'\0';
-    }
-    if (!n) {
-        debug(L"# no aliases to delete\n");
-        return 0;
-    }
-
-    wchar_t pyExe[MAXLEN];
-    wchar_t aliasName[MAXLEN];
-    wchar_t aliasExe[MAXLEN];
-
-    if (!GetModuleFileNameW(NULL, pyExe, MAXLEN)) {
-        winerror(0, L"Reading py.exe location");
-        return RC_INTERNAL_ERROR;
-    }
-
-    for (wchar_t *p = settings; *p; p += wcslen(p) + 1) {
-        const wchar_t *sep = wcschr(p, L'=');
-        if (!sep) {
-            error(L"Invalid data in py.ini");
-            return RC_NO_INI;
-        }
-        if (wcsncpy_s(aliasName, MAXLEN, p, sep - p)
-            || wcscpy_s(aliasExe, MAXLEN, pyExe)
-            || !split_parent(aliasExe, MAXLEN)
-            || !join(aliasExe, MAXLEN, aliasName)
-            || wcscat_s(aliasExe, MAXLEN, L".exe")) {
-            warn(L"Unable to create alias path\n");
-            exitCode = RC_NO_ALIAS;
-            break;
-        }
-
-        debug(L"# Write NULL to alias/%s in py.ini\n", aliasName);
-        if (!dryRun) {
-            exitCode = _writeIni(0, L"alias", aliasName, NULL);
-            if (exitCode) {
-                return exitCode;
-            }
-        }
-
-        debug(L"# Delete alias at '%s'\n", aliasExe);
-        if (!dryRun && !DeleteFileW(aliasExe)) {
-            int err = GetLastError();
-            if (err != ERROR_FILE_NOT_FOUND) {
-                winerror(err, L"Failed to delete alias '%s'", aliasExe);
-                exitCode = RC_NO_ALIAS;
-            }
-        }
-    }
-    return exitCode;
-    #undef MAXSETTINGSLEN
-}
-
 int
 manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launch, const wchar_t *launchCommand)
 {
-    int exitCode;
-    int n;
-
-    wchar_t pythonShortAlias[MAXLEN];
-    wchar_t pythonTagAlias[MAXLEN];
-    const wchar_t * aliases[] = {
-        !search->windowed ? L"python" : L"pythonw",
-        pythonShortAlias,
-        pythonTagAlias,
-        NULL
-    };
-
-    int dryRun = isEnvVarSet(L"PYLAUNCHER_DRYRUN");
-
-    if (!activate && (!search->tag || !search->tagLength)) {
-        do {
-            exitCode = _deleteAllAlias(dryRun);
-        } while (exitCode == RC_AGAIN);
+    PythonApi api;
+    int exitCode = initPython(&api);
+    if (exitCode) {
+        closePython(&api);
         return exitCode;
     }
 
-    if (wcscpy_s(pythonShortAlias, MAXLEN, aliases[0])) {
-        error(L"Failed to construct alias name");
-        return RC_INTERNAL_ERROR;
+    PyObject *r;
+    if (search->tag && search->tagLength) {
+        r = (*api.PyObject_CallMethod)(
+            api.module,
+            activate ? "create_alias" : "delete_alias",
+            "u#",
+            search->tag,
+            (Py_ssize_t)search->tagLength
+        );
     }
-    n = _copyAlnum(pythonShortAlias, MAXLEN, launch->tag);
-    if (n < 0) {
-        error(L"Failed to construct alias name");
-        return RC_INTERNAL_ERROR;
-    } else if (n == 0) {
-        aliases[1] = aliases[2];
-        aliases[2] = NULL;
+    else {
+        r = (*api.PyObject_CallMethod)(api.module, "delete_all_aliases", NULL);
+    } 
+
+    if (!r) {
+        (*api.PyErr_Clear)();
+        error(L"Unable to %s alias", activate ? L"activate" : L"delete");
+        exitCode = RC_NO_ALIAS;
+    } else {
+        Py_DECREF(r);
     }
-
-    if (wcscpy_s(pythonTagAlias, MAXLEN, aliases[0]) ||
-        wcscat_s(pythonTagAlias, MAXLEN, launch->tag)) {
-        error(L"Failed to construct alias name");
-        return RC_INTERNAL_ERROR;
-    }
-
-    wchar_t pyExe[MAXLEN];
-    wchar_t aliasExe[MAXLEN];
-    int useHardLink = 1; /* start with hard links, disable if it fails */
-
-    if (!GetModuleFileNameW(NULL, pyExe, MAXLEN)) {
-        winerror(0, L"Reading py.exe location");
-        return RC_INTERNAL_ERROR;
-    }
-    debug(L"# Aliases based on '%s'\n", pyExe);
-
-    for (const wchar_t **aliasName = aliases; *aliasName; ++aliasName) {
-        debug(L"# Write %s to alias/%s in py.ini\n", activate ? launchCommand : L"NULL", *aliasName);
-        if (!dryRun) {
-            exitCode = _writeIni(0, L"alias", *aliasName, activate ? launchCommand : NULL);
-            if (exitCode) {
-                return exitCode;
-            }
-        }
-
-        if (wcscpy_s(aliasExe, MAXLEN, pyExe) ||
-            !split_parent(aliasExe, MAXLEN) ||
-            !join(aliasExe, MAXLEN, *aliasName) ||
-            wcscat_s(aliasExe, MAXLEN, L".exe")
-        ) {
-            warn(L"Unable to create alias path for '%s'\n", *aliasName);
-            exitCode = RC_NO_ALIAS;
-            break;
-        }
-
-        if (activate) {
-            int skip = dryRun;
-            debug(L"# Creating alias at '%s'\n", aliasExe);
-            if (!skip) {
-                if (!DeleteFileW(aliasExe)) {
-                    switch (GetLastError()) {
-                    case ERROR_FILE_NOT_FOUND:
-                        // Best result - file didn't exist
-                        break;
-                    case ERROR_ACCESS_DENIED:
-                        // File exists but we can't touch it.
-                        debug(L"Failed to remove existing alias '%s'\n", aliasExe);
-                        skip = 1;
-                        break;
-                    default:
-                        // Some other reason we can't create aliases here
-                        winerror(0, L"Failed to remove existing alias '%s'", aliasExe);
-                        skip = 1;
-                        break;
-                    }
-                }
-            }
-            if (!skip && useHardLink) {
-                if (!CreateHardLinkW(aliasExe, pyExe, NULL)) {
-                    useHardLink = 0;
-                }
-            }
-            if (!skip && !useHardLink) {
-                if (!CopyFileW(pyExe, aliasExe, FALSE)) {
-                    winerror(0, L"Failed to create alias '%s'", aliasExe);
-                    exitCode = RC_NO_ALIAS;
-                }
-            }
-        }
-        else {
-            debug(L"# Delete alias at '%s'\n", aliasExe);
-            if (!dryRun && !DeleteFileW(aliasExe)) {
-                int err = GetLastError();
-                if (err != ERROR_FILE_NOT_FOUND) {
-                    winerror(err, L"Failed to delete alias '%s'", aliasExe);
-                    exitCode = RC_NO_ALIAS;
-                }
-            }
-        }
-    }
-
+    closePython(&api);
     return exitCode;
 }
 
@@ -3193,11 +3021,8 @@ process(int argc, wchar_t ** argv)
     }
 
     if (search.activate || search.deactivate) {
-        exitCode = RC_AGAIN;
-        while (exitCode == RC_AGAIN) {
-            // Create/delete the aliases and update the INI file
-            exitCode = manageAlias(search.activate, &search, env, launchCommand);
-        }
+        // Create/delete the aliases and update the INI file
+        exitCode = manageAlias(search.activate, &search, env, launchCommand);
     }
     else {
         // Launch selected runtime

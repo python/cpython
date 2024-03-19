@@ -104,6 +104,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\PC\launcher.ico" />
+    <None Include="..\PC\manager.py">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pylauncher.rc" />
