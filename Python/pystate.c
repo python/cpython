@@ -1048,6 +1048,28 @@ _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
     return 0;
 }
 
+static int
+is_running_main(PyThreadState *tstate)
+{
+    if (tstate->interp->threads.main != NULL) {
+        return tstate == tstate->interp->threads.main;
+    }
+    return 0;
+}
+
+int
+_PyThreadState_IsRunningMain(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    if (interp->threads.main != NULL) {
+        return tstate == interp->threads.main;
+    }
+    if (_Py_IsMainInterpreter(interp)) {
+        return tstate->thread_id == interp->runtime->main_thread;
+    }
+    return 0;
+}
+
 int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {
@@ -1057,6 +1079,15 @@ _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
         return -1;
     }
     return 0;
+}
+
+void
+_PyInterpreterState_ReinitRunningMain(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    if (interp->threads.main != tstate) {
+        interp->threads.main = NULL;
+    }
 }
 
 
@@ -1488,6 +1519,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
     assert(current_fast_get()->interp == tstate->interp);
+    assert(!is_running_main(tstate));
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
@@ -1586,6 +1618,7 @@ tstate_delete_common(PyThreadState *tstate)
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     assert(tstate->state != _Py_THREAD_ATTACHED);
     tstate_verify_not_active(tstate);
+    assert(!is_running_main(tstate));
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
