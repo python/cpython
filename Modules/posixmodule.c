@@ -8419,6 +8419,7 @@ os_posix_openpt_impl(PyObject *module, int oflag)
 
 #ifdef HAVE_GRANTPT
 /*[clinic input]
+@critical_section
 os.grantpt
 
     fd: fildes
@@ -8432,7 +8433,7 @@ Performs a grantpt() C function call.
 
 static PyObject *
 os_grantpt_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=dfd580015cf548ab input=0668e3b96760e849]*/
+/*[clinic end generated code: output=dfd580015cf548ab input=c813b58c0ee7d9a0]*/
 {
     int ret;
     int saved_errno;
@@ -8547,6 +8548,7 @@ os_ptsname_impl(PyObject *module, int fd)
 
 #if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)
 /*[clinic input]
+@critical_section
 os.openpty
 
 Open a pseudo-terminal.
@@ -8557,7 +8559,7 @@ for both the master and slave ends.
 
 static PyObject *
 os_openpty_impl(PyObject *module)
-/*[clinic end generated code: output=98841ce5ec9cef3c input=f3d99fd99e762907]*/
+/*[clinic end generated code: output=98841ce5ec9cef3c input=49472bedd2dfaffe]*/
 {
     int master_fd = -1, slave_fd = -1;
 #ifndef HAVE_OPENPTY

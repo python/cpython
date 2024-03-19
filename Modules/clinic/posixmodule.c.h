@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
@@ -4537,7 +4538,9 @@ os_grantpt(PyObject *module, PyObject *arg)
     if (fd < 0) {
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = os_grantpt_impl(module, fd);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -4640,7 +4643,13 @@ os_openpty_impl(PyObject *module);
 static PyObject *
 os_openpty(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return os_openpty_impl(module);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = os_openpty_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #endif /* (defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX)) */
@@ -12602,4 +12611,4 @@ os__supports_virtual_terminal(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=511f0788a6b90db0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c961606cd40a4f2c input=a9049054013a1b77]*/
