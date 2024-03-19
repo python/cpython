@@ -597,82 +597,38 @@ get_heaptype_for_name(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyType_FromSpec(&HeapTypeNameType_Spec);
 }
 
+
 static PyObject *
-test_get_type_name(PyObject *self, PyObject *Py_UNUSED(ignored))
+get_type_name(PyObject *self, PyObject *type)
 {
-    PyObject *tp_name = PyType_GetName(&PyLong_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "int") == 0);
-    Py_DECREF(tp_name);
-
-    tp_name = PyType_GetName(&PyModule_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "module") == 0);
-    Py_DECREF(tp_name);
-
-    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
-    if (HeapTypeNameType == NULL) {
-        Py_RETURN_NONE;
-    }
-    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "HeapTypeNameType") == 0);
-    Py_DECREF(tp_name);
-
-    PyObject *name = PyUnicode_FromString("test_name");
-    if (name == NULL) {
-        goto done;
-    }
-    if (PyObject_SetAttrString(HeapTypeNameType, "__name__", name) < 0) {
-        Py_DECREF(name);
-        goto done;
-    }
-    tp_name = PyType_GetName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_name), "test_name") == 0);
-    Py_DECREF(name);
-    Py_DECREF(tp_name);
-
-  done:
-    Py_DECREF(HeapTypeNameType);
-    Py_RETURN_NONE;
+    assert(PyType_Check(type));
+    return PyType_GetName((PyTypeObject *)type);
 }
 
 
 static PyObject *
-test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
+get_type_qualname(PyObject *self, PyObject *type)
 {
-    PyObject *tp_qualname = PyType_GetQualName(&PyLong_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "int") == 0);
-    Py_DECREF(tp_qualname);
-
-    tp_qualname = PyType_GetQualName(&PyODict_Type);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "OrderedDict") == 0);
-    Py_DECREF(tp_qualname);
-
-    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
-    if (HeapTypeNameType == NULL) {
-        Py_RETURN_NONE;
-    }
-    tp_qualname = PyType_GetQualName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname), "HeapTypeNameType") == 0);
-    Py_DECREF(tp_qualname);
-
-    PyObject *spec_name = PyUnicode_FromString(HeapTypeNameType_Spec.name);
-    if (spec_name == NULL) {
-        goto done;
-    }
-    if (PyObject_SetAttrString(HeapTypeNameType,
-                               "__qualname__", spec_name) < 0) {
-        Py_DECREF(spec_name);
-        goto done;
-    }
-    tp_qualname = PyType_GetQualName((PyTypeObject *)HeapTypeNameType);
-    assert(strcmp(PyUnicode_AsUTF8(tp_qualname),
-                  "_testcapi.HeapTypeNameType") == 0);
-    Py_DECREF(spec_name);
-    Py_DECREF(tp_qualname);
-
-  done:
-    Py_DECREF(HeapTypeNameType);
-    Py_RETURN_NONE;
+    assert(PyType_Check(type));
+    return PyType_GetQualName((PyTypeObject *)type);
 }
+
+
+static PyObject *
+get_type_fullyqualname(PyObject *self, PyObject *type)
+{
+    assert(PyType_Check(type));
+    return PyType_GetFullyQualifiedName((PyTypeObject *)type);
+}
+
+
+static PyObject *
+get_type_module_name(PyObject *self, PyObject *type)
+{
+    assert(PyType_Check(type));
+    return PyType_GetModuleName((PyTypeObject *)type);
+}
+
 
 static PyObject *
 test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -3317,8 +3273,10 @@ static PyMethodDef TestMethods[] = {
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"get_heaptype_for_name",     get_heaptype_for_name,         METH_NOARGS},
-    {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
-    {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
+    {"get_type_name",            get_type_name,                  METH_O},
+    {"get_type_qualname",        get_type_qualname,              METH_O},
+    {"get_type_fullyqualname",   get_type_fullyqualname,         METH_O},
+    {"get_type_module_name",     get_type_module_name,           METH_O},
     {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
 #ifndef MS_WINDOWS

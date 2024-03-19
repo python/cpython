@@ -518,6 +518,26 @@ APIs:
         - :c:expr:`PyObject*`
         - The result of calling :c:func:`PyObject_Repr`.
 
+      * - ``T``
+        - :c:expr:`PyObject*`
+        - Get the fully qualified name of an object type;
+          call :c:func:`PyType_GetFullyQualifiedName`.
+
+      * - ``T#``
+        - :c:expr:`PyObject*`
+        - Similar to ``T`` format, but use a colon (``:``) as separator between
+          the module name and the qualified name.
+
+      * - ``N``
+        - :c:expr:`PyTypeObject*`
+        - Get the fully qualified name of a type;
+          call :c:func:`PyType_GetFullyQualifiedName`.
+
+      * - ``N#``
+        - :c:expr:`PyTypeObject*`
+        - Similar to ``N`` format, but use a colon (``:``) as separator between
+          the module name and the qualified name.
+
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes or :c:type:`wchar_t`
@@ -552,6 +572,9 @@ APIs:
       An unrecognized format character now sets a :exc:`SystemError`.
       In previous versions it caused all the rest of the format string to be
       copied as-is to the result string, and any extra arguments discarded.
+
+   .. versionchanged:: 3.13
+      Support for ``%T``, ``%T#``, ``%N`` and ``%N#`` formats added.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormatV(const char *format, va_list vargs)

@@ -9115,7 +9115,81 @@ os_setpgrp_impl(PyObject *module)
 #ifdef HAVE_GETPPID
 
 #ifdef MS_WINDOWS
-#include <processsnapshot.h>
+#include <winternl.h>
+#include <ProcessSnapshot.h>
+
+// The structure definition in winternl.h may be incomplete.
+// This structure is the full version from the MSDN documentation.
+typedef struct _PROCESS_BASIC_INFORMATION_FULL {
+    NTSTATUS ExitStatus;
+    PVOID PebBaseAddress;
+    ULONG_PTR AffinityMask;
+    LONG BasePriority;
+    ULONG_PTR UniqueProcessId;
+    ULONG_PTR InheritedFromUniqueProcessId;
+} PROCESS_BASIC_INFORMATION_FULL;
+
+typedef NTSTATUS (NTAPI *PNT_QUERY_INFORMATION_PROCESS) (
+    IN    HANDLE           ProcessHandle,
+    IN    PROCESSINFOCLASS ProcessInformationClass,
+    OUT   PVOID            ProcessInformation,
+    IN    ULONG            ProcessInformationLength,
+    OUT   PULONG           ReturnLength OPTIONAL);
+
+// This function returns the process ID of the parent process.
+// Returns 0 on failure.
+static ULONG
+win32_getppid_fast(void)
+{
+    NTSTATUS status;
+    HMODULE ntdll;
+    PNT_QUERY_INFORMATION_PROCESS pNtQueryInformationProcess;
+    PROCESS_BASIC_INFORMATION_FULL basic_information;
+    static ULONG cached_ppid = 0;
+
+    if (cached_ppid) {
+        // No need to query the kernel again.
+        return cached_ppid;
+    }
+
+    ntdll = GetModuleHandleW(L"ntdll.dll");
+    if (!ntdll) {
+        return 0;
+    }
+
+    pNtQueryInformationProcess = (PNT_QUERY_INFORMATION_PROCESS) GetProcAddress(ntdll, "NtQueryInformationProcess");
+    if (!pNtQueryInformationProcess) {
+        return 0;
+    }
+
+    status = pNtQueryInformationProcess(GetCurrentProcess(),
+                                        ProcessBasicInformation,
+                                        &basic_information,
+                                        sizeof(basic_information),
+                                        NULL);
+
+    if (!NT_SUCCESS(status)) {
+        return 0;
+    }
+
+    // Perform sanity check on the parent process ID we received from NtQueryInformationProcess.
+    // The check covers values which exceed the 32-bit range (if running on x64) as well as
+    // zero and (ULONG) -1.
+
+    if (basic_information.InheritedFromUniqueProcessId == 0 ||
+        basic_information.InheritedFromUniqueProcessId >= ULONG_MAX)
+    {
+        return 0;
+    }
+
+    // Now that we have reached this point, the BasicInformation.InheritedFromUniqueProcessId
+    // structure member contains a ULONG_PTR which represents the process ID of our parent
+    // process. This process ID will be correctly returned even if the parent process has
+    // exited or been terminated.
+
+    cached_ppid = (ULONG) basic_information.InheritedFromUniqueProcessId;
+    return cached_ppid;
+}
 
 static PyObject*
 win32_getppid(void)
@@ -9123,8 +9197,16 @@ win32_getppid(void)
     DWORD error;
     PyObject* result = NULL;
     HANDLE process = GetCurrentProcess();
-
     HPSS snapshot = NULL;
+    ULONG pid;
+
+    pid = win32_getppid_fast();
+    if (pid != 0) {
+        return PyLong_FromUnsignedLong(pid);
+    }
+
+    // If failure occurs in win32_getppid_fast(), fall back to using the PSS API.
+
     error = PssCaptureSnapshot(process, PSS_CAPTURE_NONE, 0, &snapshot);
     if (error != ERROR_SUCCESS) {
         return PyErr_SetFromWindowsErr(error);

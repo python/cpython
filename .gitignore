@@ -142,7 +142,6 @@ Tools/unicode/data/
 /profile-clean-stamp
 /profile-run-stamp
 /profile-bolt-stamp
-/Python/deepfreeze/*.c
 /pybuilddir.txt
 /pyconfig.h
 /python-config

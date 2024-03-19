@@ -105,12 +105,30 @@ my_double_sum_impl(PyObject *module, double x, double y)
 }
 
 
+/*[clinic input]
+get_file_descriptor -> int
+
+    file as fd: fildes
+    /
+
+Get a file descriptor.
+[clinic start generated code]*/
+
+static int
+get_file_descriptor_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=80051ebad54db8a8 input=82e2a1418848cd5b]*/
+{
+    return fd;
+}
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     MY_INT_FUNC_METHODDEF
     MY_INT_SUM_METHODDEF
     MY_FLOAT_SUM_METHODDEF
     MY_DOUBLE_SUM_METHODDEF
+    GET_FILE_DESCRIPTOR_METHODDEF
     {NULL, NULL}
 };
 
