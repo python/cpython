@@ -3725,7 +3725,7 @@
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
-                        if (1) JUMP_TO_ERROR;
+                        GOTO_UNWIND();
                     }
                     GOTO_TIER_ONE(target);
                 }

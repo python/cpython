@@ -4179,7 +4179,7 @@ dummy_func(
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
-                        ERROR_IF(1, error);
+                        GOTO_UNWIND();
                     }
                     GOTO_TIER_ONE(target);
                 }

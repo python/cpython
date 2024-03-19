@@ -988,10 +988,7 @@ sanity_check(_PyExecutorObject *executor)
     }
     bool ended = false;
     uint32_t i = 0;
-    CHECK(executor->trace[0].opcode == _START_EXECUTOR);
-    if (executor->trace[1].opcode == _COLD_EXIT) {
-        return;
-    }
+    CHECK(executor->trace[0].opcode == _START_EXECUTOR || executor->trace[0].opcode == _COLD_EXIT);
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
         uint16_t opcode = inst->opcode;
@@ -1016,7 +1013,7 @@ sanity_check(_PyExecutorObject *executor)
             CHECK(inst->format == UOP_FORMAT_JUMP);
             CHECK(inst->error_target < executor->code_size);
         }
-        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
+        if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE || opcode == _COLD_EXIT) {
             ended = true;
             i++;
             break;
@@ -1122,6 +1119,9 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         assert(executor->vm_data.bloom.bits[i] == 0);
     }
+#ifdef Py_DEBUG
+    sanity_check(executor);
+#endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
