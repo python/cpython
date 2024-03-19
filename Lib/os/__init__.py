@@ -58,7 +58,6 @@ if 'posix' in _names:
         __all__.append('_exit')
     except ImportError:
         pass
-    import posixpath as path
 
     try:
         from posix import _have_functions
@@ -78,7 +77,6 @@ elif 'nt' in _names:
         __all__.append('_exit')
     except ImportError:
         pass
-    import ntpath as path
 
     import nt
     __all__.extend(_get_exports_list(nt))
@@ -92,7 +90,7 @@ elif 'nt' in _names:
 else:
     raise ImportError('no os specific module found')
 
-sys.modules['os.path'] = path
+from os import path
 from os.path import (curdir, pardir, sep, pathsep, defpath, extsep, altsep,
     devnull)
 
