@@ -3099,8 +3099,7 @@ function_get_closure(PyObject *self, PyObject *func)
 {
     PyObject *closure = PyFunction_GetClosure(func);
     if (closure != NULL) {
-        Py_INCREF(closure);
-        return closure;
+        return Py_NewRef(closure);
     } else if (PyErr_Occurred()) {
         return NULL;
     } else {
