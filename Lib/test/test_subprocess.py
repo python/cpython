@@ -1620,6 +1620,22 @@ class ProcessTestCase(BaseTestCase):
                 subprocess.run([sys.executable, "-c", "pass"])
             self.assertFalse(mock_fork_exec.call_args_list[-1].args[-1])
 
+    @unittest.skipUnless(hasattr(subprocess, '_winapi'),
+                         'need subprocess._winapi')
+    def test_wait_negative_timeout(self):
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
+        with proc:
+            patch = mock.patch.object(
+                subprocess._winapi,
+                'WaitForSingleObject',
+                return_value=subprocess._winapi.WAIT_OBJECT_0)
+            with patch as mock_wait:
+                proc.wait(-1)  # negative timeout
+                mock_wait.assert_called_once_with(proc._handle, 0)
+                proc.returncode = None
+
+            self.assertEqual(proc.wait(), 0)
+
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
