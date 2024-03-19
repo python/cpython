@@ -72,8 +72,8 @@ Functions
    :class:`PrettyPrinter` constructor and their meanings are as
    described in its documentation below.
 
-   Note that *sort_dicts* default is ``True`` and you might want to use
-   :func:`~pprint.pp` instead.
+   Note that *sort_dicts* is ``True`` by default and you might want to use
+   :func:`~pprint.pp` instead where it is ``False`` by default.
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
                       compact=False, sort_dicts=True, underscore_numbers=False)
