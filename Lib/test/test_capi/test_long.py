@@ -4,8 +4,9 @@ import test.support as support
 
 from test.support import import_helper
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi and _testlimitedcapi modules isn't available.
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 NULL = None
 
@@ -56,7 +57,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_check(self):
         # Test PyLong_Check()
-        check = _testcapi.pylong_check
+        check = _testlimitedcapi.pylong_check
         self.assertTrue(check(1))
         self.assertTrue(check(123456789012345678901234567890))
         self.assertTrue(check(-1))
@@ -68,7 +69,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_checkexact(self):
         # Test PyLong_CheckExact()
-        check = _testcapi.pylong_checkexact
+        check = _testlimitedcapi.pylong_checkexact
         self.assertTrue(check(1))
         self.assertTrue(check(123456789012345678901234567890))
         self.assertTrue(check(-1))
@@ -80,7 +81,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_fromdouble(self):
         # Test PyLong_FromDouble()
-        fromdouble = _testcapi.pylong_fromdouble
+        fromdouble = _testlimitedcapi.pylong_fromdouble
         float_max = sys.float_info.max
         for value in (5.0, 5.1, 5.9, -5.1, -5.9, 0.0, -0.0, float_max, -float_max):
             with self.subTest(value=value):
@@ -91,7 +92,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_fromvoidptr(self):
         # Test PyLong_FromVoidPtr()
-        fromvoidptr = _testcapi.pylong_fromvoidptr
+        fromvoidptr = _testlimitedcapi.pylong_fromvoidptr
         obj = object()
         x = fromvoidptr(obj)
         y = fromvoidptr(NULL)
@@ -103,7 +104,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_fromstring(self):
         # Test PyLong_FromString()
-        fromstring = _testcapi.pylong_fromstring
+        fromstring = _testlimitedcapi.pylong_fromstring
         self.assertEqual(fromstring(b'123', 10), (123, 3))
         self.assertEqual(fromstring(b'cafe', 16), (0xcafe, 4))
         self.assertEqual(fromstring(b'xyz', 36), (44027, 3))
@@ -163,7 +164,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asint(self):
         # Test PyLong_AsInt()
-        PyLong_AsInt = _testcapi.PyLong_AsInt
+        PyLong_AsInt = _testlimitedcapi.PyLong_AsInt
         from _testcapi import INT_MIN, INT_MAX
 
         # round trip (object -> int -> object)
@@ -186,7 +187,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslong(self):
         # Test PyLong_AsLong() and PyLong_FromLong()
-        aslong = _testcapi.pylong_aslong
+        aslong = _testlimitedcapi.pylong_aslong
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
         for value in (LONG_MIN, LONG_MAX, -1, 0, 1, 1234):
@@ -206,7 +207,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslongandoverflow(self):
         # Test PyLong_AsLongAndOverflow()
-        aslongandoverflow = _testcapi.pylong_aslongandoverflow
+        aslongandoverflow = _testlimitedcapi.pylong_aslongandoverflow
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
         for value in (LONG_MIN, LONG_MAX, -1, 0, 1, 1234):
@@ -224,7 +225,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlong(self):
         # Test PyLong_AsUnsignedLong() and PyLong_FromUnsignedLong()
-        asunsignedlong = _testcapi.pylong_asunsignedlong
+        asunsignedlong = _testlimitedcapi.pylong_asunsignedlong
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
         for value in (ULONG_MAX, 0, 1, 1234):
@@ -244,7 +245,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlongmask(self):
         # Test PyLong_AsUnsignedLongMask()
-        asunsignedlongmask = _testcapi.pylong_asunsignedlongmask
+        asunsignedlongmask = _testlimitedcapi.pylong_asunsignedlongmask
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
         for value in (ULONG_MAX, 0, 1, 1234):
@@ -264,7 +265,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslonglong(self):
         # Test PyLong_AsLongLong() and PyLong_FromLongLong()
-        aslonglong = _testcapi.pylong_aslonglong
+        aslonglong = _testlimitedcapi.pylong_aslonglong
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
         for value in (LLONG_MIN, LLONG_MAX, -1, 0, 1, 1234):
@@ -284,7 +285,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_aslonglongandoverflow(self):
         # Test PyLong_AsLongLongAndOverflow()
-        aslonglongandoverflow = _testcapi.pylong_aslonglongandoverflow
+        aslonglongandoverflow = _testlimitedcapi.pylong_aslonglongandoverflow
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
         for value in (LLONG_MIN, LLONG_MAX, -1, 0, 1, 1234):
@@ -302,7 +303,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlonglong(self):
         # Test PyLong_AsUnsignedLongLong() and PyLong_FromUnsignedLongLong()
-        asunsignedlonglong = _testcapi.pylong_asunsignedlonglong
+        asunsignedlonglong = _testlimitedcapi.pylong_asunsignedlonglong
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
         for value in (ULLONG_MAX, 0, 1, 1234):
@@ -322,7 +323,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asunsignedlonglongmask(self):
         # Test PyLong_AsUnsignedLongLongMask()
-        asunsignedlonglongmask = _testcapi.pylong_asunsignedlonglongmask
+        asunsignedlonglongmask = _testlimitedcapi.pylong_asunsignedlonglongmask
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
         for value in (ULLONG_MAX, 0, 1, 1234):
@@ -342,7 +343,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_as_ssize_t(self):
         # Test PyLong_AsSsize_t() and PyLong_FromSsize_t()
-        as_ssize_t = _testcapi.pylong_as_ssize_t
+        as_ssize_t = _testlimitedcapi.pylong_as_ssize_t
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
         # round trip (object -> Py_ssize_t -> object)
         for value in (PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, -1, 0, 1, 1234):
@@ -362,7 +363,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_as_size_t(self):
         # Test PyLong_AsSize_t() and PyLong_FromSize_t()
-        as_size_t = _testcapi.pylong_as_size_t
+        as_size_t = _testlimitedcapi.pylong_as_size_t
         from _testcapi import SIZE_MAX
         # round trip (object -> size_t -> object)
         for value in (SIZE_MAX, 0, 1, 1234):
@@ -382,7 +383,7 @@ class LongTests(unittest.TestCase):
 
     def test_long_asdouble(self):
         # Test PyLong_AsDouble()
-        asdouble = _testcapi.pylong_asdouble
+        asdouble = _testlimitedcapi.pylong_asdouble
         MAX = int(sys.float_info.max)
         for value in (-MAX, MAX, -1, 0, 1, 1234):
             with self.subTest(value=value):
@@ -402,8 +403,8 @@ class LongTests(unittest.TestCase):
 
     def test_long_asvoidptr(self):
         # Test PyLong_AsVoidPtr()
-        fromvoidptr = _testcapi.pylong_fromvoidptr
-        asvoidptr = _testcapi.pylong_asvoidptr
+        fromvoidptr = _testlimitedcapi.pylong_fromvoidptr
+        asvoidptr = _testlimitedcapi.pylong_asvoidptr
         obj = object()
         x = fromvoidptr(obj)
         y = fromvoidptr(NULL)

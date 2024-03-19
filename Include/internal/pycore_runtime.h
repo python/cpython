@@ -55,74 +55,81 @@ typedef struct _Py_DebugOffsets {
     uint64_t version;
     // Runtime state offset;
     struct _runtime_state {
-        off_t finalizing;
-        off_t interpreters_head;
+        uint64_t finalizing;
+        uint64_t interpreters_head;
     } runtime_state;
 
     // Interpreter state offset;
     struct _interpreter_state {
-        off_t next;
-        off_t threads_head;
-        off_t gc;
-        off_t imports_modules;
-        off_t sysdict;
-        off_t builtins;
-        off_t ceval_gil;
-        off_t gil_runtime_state_locked;
-        off_t gil_runtime_state_holder;
+        uint64_t next;
+        uint64_t threads_head;
+        uint64_t gc;
+        uint64_t imports_modules;
+        uint64_t sysdict;
+        uint64_t builtins;
+        uint64_t ceval_gil;
+        uint64_t gil_runtime_state_locked;
+        uint64_t gil_runtime_state_holder;
     } interpreter_state;
 
     // Thread state offset;
     struct _thread_state{
-        off_t prev;
-        off_t next;
-        off_t interp;
-        off_t current_frame;
-        off_t thread_id;
-        off_t native_thread_id;
+        uint64_t prev;
+        uint64_t next;
+        uint64_t interp;
+        uint64_t current_frame;
+        uint64_t thread_id;
+        uint64_t native_thread_id;
     } thread_state;
 
     // InterpreterFrame offset;
     struct _interpreter_frame {
-        off_t previous;
-        off_t executable;
-        off_t instr_ptr;
-        off_t localsplus;
-        off_t owner;
+        uint64_t previous;
+        uint64_t executable;
+        uint64_t instr_ptr;
+        uint64_t localsplus;
+        uint64_t owner;
     } interpreter_frame;
 
     // CFrame offset;
     struct _cframe {
-        off_t current_frame;
-        off_t previous;
+        uint64_t current_frame;
+        uint64_t previous;
     } cframe;
 
     // Code object offset;
     struct _code_object {
-        off_t filename;
-        off_t name;
-        off_t linetable;
-        off_t firstlineno;
-        off_t argcount;
-        off_t localsplusnames;
-        off_t localspluskinds;
-        off_t co_code_adaptive;
+        uint64_t filename;
+        uint64_t name;
+        uint64_t linetable;
+        uint64_t firstlineno;
+        uint64_t argcount;
+        uint64_t localsplusnames;
+        uint64_t localspluskinds;
+        uint64_t co_code_adaptive;
     } code_object;
 
     // PyObject offset;
     struct _pyobject {
-        off_t ob_type;
+        uint64_t ob_type;
     } pyobject;
 
     // PyTypeObject object offset;
     struct _type_object {
-        off_t tp_name;
+        uint64_t tp_name;
     } type_object;
 
     // PyTuple object offset;
     struct _tuple_object {
-        off_t ob_item;
+        uint64_t ob_item;
     } tuple_object;
+
+    // Unicode object offset;
+    struct _unicode_object {
+        uint64_t state;
+        uint64_t length;
+        size_t asciiobject_size;
+    } unicode_object;
 } _Py_DebugOffsets;
 
 /* Full Python runtime state */
