@@ -1102,13 +1102,11 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIs(self.cls(self.base, 'mysock\udfff').is_socket(), False)
         self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
 
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "devnull is not implemented on Emscripten/WASI."
-    )
     def test_is_char_device_true(self):
         # os.devnull should generally be a char device.
         P = self.cls(os.devnull)
+        if not P.exists():
+            self.skipTest("null device required")
         self.assertTrue(P.is_char_device())
         self.assertFalse(P.is_block_device())
         self.assertFalse(P.is_file())
