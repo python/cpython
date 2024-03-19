@@ -225,7 +225,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched <<= 1;
                 globals_watched <<= 1;
                 function_checked <<= 1;
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                uintptr_t operand = buffer[pc].operand;
+                if (operand == 0 || (operand & 1)) {
+                    // It's either a code object or NULL, so bail
+                    return 1;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)operand;
                 if (func == NULL) {
                     return 1;
                 }
@@ -534,11 +539,16 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             case _PUSH_FRAME:
             case _POP_FRAME:
             {
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
-                if (func == NULL) {
+                uintptr_t operand = buffer[pc].operand;
+                if (operand & 1) {
+                    co = (PyCodeObject *)(operand & ~1);
+                    assert(PyCode_Check(co));
+                }
+                else if (operand == 0) {
                     co = NULL;
                 }
                 else {
+                    PyFunctionObject *func = (PyFunctionObject *)operand;
                     assert(PyFunction_Check(func));
                     co = (PyCodeObject *)func->func_code;
                 }

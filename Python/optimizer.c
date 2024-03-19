@@ -767,9 +767,19 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
                                 _Py_BloomFilter_Add(dependencies, new_code);
-                                /* Set the operand to the callee's function object,
-                                 * to assist optimization passes */
-                                ADD_TO_TRACE(uop, oparg, (uintptr_t)new_func, target);
+                                /* Set the operand to the callee's function or code object,
+                                 * to assist optimization passes.
+                                 * We prefer setting it to the function (for remove_globals())
+                                 * but if that's not available but the code is available,
+                                 * use the code, setting the low bit so the optimizer knows.
+                                 */
+                                if (new_func != NULL) {
+                                    operand = (uintptr_t)new_func;
+                                }
+                                else {
+                                    operand = (uintptr_t)new_code | 1;
+                                }
+                                ADD_TO_TRACE(uop, oparg, operand, target);
                                 code = new_code;
                                 func = new_func;
                                 instr = _PyCode_CODE(code);
