@@ -35,19 +35,23 @@ def main():
     if std:
         if support.MS_WINDOWS:
             cppflags.append(f'/std:{std}')
-            std_prefix = '/std'
         else:
             cppflags.append(f'-std={std}')
-            std_prefix = '-std'
 
-        # Remove existing -std options to only test ours
-        cmd = (sysconfig.get_config_var('CC') or '')
-        if cmd is not None:
-            cmd = shlex.split(cmd)
-            cmd = [arg for arg in cmd if not arg.startswith(std_prefix)]
-            cmd = shlex.join(cmd)
-            # CC env var overrides sysconfig CC variable in setuptools
-            os.environ['CC'] = cmd
+    # gh-105776: When "gcc -std=11" is used as the C++ compiler, -std=c11
+    # option emits a C++ compiler warning. Remove "-std11" option from the
+    # CC command.
+    cmd = (sysconfig.get_config_var('CC') or '')
+    if cmd is not None:
+        if support.MS_WINDOWS:
+            std_prefix = '/std'
+        else:
+            std_prefix = '-std'
+        cmd = shlex.split(cmd)
+        cmd = [arg for arg in cmd if not arg.startswith(std_prefix)]
+        cmd = shlex.join(cmd)
+        # CC env var overrides sysconfig CC variable in setuptools
+        os.environ['CC'] = cmd
 
     # On Windows, add PCbuild\amd64\ to include and library directories
     include_dirs = []

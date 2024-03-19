@@ -39,19 +39,22 @@ def main():
     if std:
         if support.MS_WINDOWS:
             cflags.append(f'/std:{std}')
-            std_prefix = '/std'
         else:
             cflags.append(f'-std={std}')
-            std_prefix = '-std'
 
-        # Remove existing -std options to only test ours
-        cmd = (sysconfig.get_config_var('CC') or '')
-        if cmd is not None:
-            cmd = shlex.split(cmd)
-            cmd = [arg for arg in cmd if not arg.startswith(std_prefix)]
-            cmd = shlex.join(cmd)
-            # CC env var overrides sysconfig CC variable in setuptools
-            os.environ['CC'] = cmd
+    # Remove existing -std or /std options from CC command line.
+    # Python adds -std=c11 option.
+    cmd = (sysconfig.get_config_var('CC') or '')
+    if cmd is not None:
+        if support.MS_WINDOWS:
+            std_prefix = '/std'
+        else:
+            std_prefix = '-std'
+        cmd = shlex.split(cmd)
+        cmd = [arg for arg in cmd if not arg.startswith(std_prefix)]
+        cmd = shlex.join(cmd)
+        # CC env var overrides sysconfig CC variable in setuptools
+        os.environ['CC'] = cmd
 
     # Define Py_LIMITED_API macro
     if limited:
