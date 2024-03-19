@@ -1581,6 +1581,8 @@ class Popen:
             """Internal implementation of wait() on Windows."""
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
+            elif timeout <= 0:
+                timeout_millis = 0
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
