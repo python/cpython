@@ -112,26 +112,6 @@ mark_executable(unsigned char *memory, size_t size)
     return 0;
 }
 
-static int
-mark_readable(unsigned char *memory, size_t size)
-{
-    if (size == 0) {
-        return 0;
-    }
-    assert(size % get_page_size() == 0);
-#ifdef MS_WINDOWS
-    DWORD old;
-    int failed = !VirtualProtect(memory, size, PAGE_READONLY, &old);
-#else
-    int failed = mprotect(memory, size, PROT_READ);
-#endif
-    if (failed) {
-        jit_error("unable to protect readable memory");
-        return -1;
-    }
-    return 0;
-}
-
 // JIT compiler stuff: /////////////////////////////////////////////////////////
 
 // Warning! AArch64 requires you to get your hands dirty. These are your gloves:
@@ -409,12 +389,14 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         code_size += group->code.body_size;
         data_size += group->data.body_size;
     }
-    // Round up to the nearest page (code and data need separate pages):
+    code_size += stencil_groups[_FATAL_ERROR].code.body_size;
+    data_size += stencil_groups[_FATAL_ERROR].data.body_size;
+    // Round up to the nearest page:
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
-    code_size += page_size - (code_size & (page_size - 1));
-    data_size += page_size - (data_size & (page_size - 1));
-    unsigned char *memory = jit_alloc(code_size + data_size);
+    size_t padding = page_size - ((code_size + data_size) & (page_size - 1));
+    size_t total_size = code_size + data_size + padding;
+    unsigned char *memory = jit_alloc(total_size);
     if (memory == NULL) {
         return -1;
     }
@@ -444,14 +426,26 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         code += group->code.body_size;
         data += group->data.body_size;
     }
-    if (mark_executable(memory, code_size) ||
-        mark_readable(memory + code_size, data_size))
-    {
-        jit_free(memory, code_size + data_size);
+    // Protect against accidental buffer overrun into data:
+    const StencilGroup *group = &stencil_groups[_FATAL_ERROR];
+    uint64_t patches[] = GET_PATCHES();
+    patches[HoleValue_CODE] = (uint64_t)code;
+    patches[HoleValue_CONTINUE] = (uint64_t)code;
+    patches[HoleValue_DATA] = (uint64_t)data;
+    patches[HoleValue_EXECUTOR] = (uint64_t)executor;
+    patches[HoleValue_TOP] = (uint64_t)code;
+    patches[HoleValue_ZERO] = 0;
+    emit(group, patches);
+    code += group->code.body_size;
+    data += group->data.body_size;
+    assert(code == memory + code_size);
+    assert(data == memory + code_size + data_size);
+    if (mark_executable(memory, total_size)) {
+        jit_free(memory, total_size);
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_size = code_size + data_size;
+    executor->jit_size = total_size;
     return 0;
 }
 
