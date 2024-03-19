@@ -1830,7 +1830,7 @@ compiler_make_closure(struct compiler *c, location loc,
                       PyCodeObject *co, Py_ssize_t flags)
 {
     if (co->co_nfreevars) {
-        int i = PyCode_GetFirstFree(co);
+        int i = PyUnstable_Code_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
