@@ -38,6 +38,17 @@ PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
                         const uint8_t *event_types, uint32_t length);
 #endif
 
+#ifndef Py_LIMITED_API
+static inline void
+PyMonitoring_EndScope(void)
+{
+    _PyMonitoring_EndScope();
+}
+#else
+extern void
+PyMonitoring_EndScope(void);
+#endif
+
 
 #ifndef Py_LIMITED_API
 static inline int

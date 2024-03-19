@@ -2360,6 +2360,11 @@ _PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
     *version = global_version(interp);
 }
 
+void
+_PyMonitoring_EndScope(void)
+{
+}
+
 int
 _PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int offset)
 {
@@ -2517,6 +2522,10 @@ PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
     _PyMonitoring_BeginScope(state_array, version, event_types, length);
 }
 
+void
+PyMonitoring_EndScope()
+{
+}
 
 int
 PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, uint32_t offset)

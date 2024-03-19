@@ -1894,6 +1894,16 @@ class TestMonitoringAtShutdown(unittest.TestCase):
 
 class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
+    class Scope:
+        def __init__(self, *args):
+            self.args = args
+
+        def __enter__(self):
+            _testcapi.enter_scope(*self.args)
+
+        def __exit__(self, *args):
+            _testcapi.exit_scope()
+
     def setUp(self):
         super(TestCApiEventGeneration, self).setUp()
 
@@ -1926,24 +1936,27 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             def __call__(self, *args):
                 self.count += 1
 
-        counter = Counter()
-        sys.monitoring.register_callback(TEST_TOOL, event, counter)
-        if event == E.C_RETURN or event == E.C_RAISE:
-            sys.monitoring.set_events(TEST_TOOL, E.CALL)
-        else:
-            sys.monitoring.set_events(TEST_TOOL, event)
-        event_value = int(math.log2(event))
-        _testcapi.enter_scope(self.codelike, event_value)
-        counter.count = 0
-        func(*args)
-        self.assertEqual(counter.count, expected)
-        prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
-        _testcapi.enter_scope(self.codelike, event_value)
-        counter.count = 0
-        func(*args)
-        self.assertEqual(counter.count, 0)
-        self.assertEqual(prev, counter)
-        sys.monitoring.set_events(TEST_TOOL, 0)
+        try:
+            counter = Counter()
+            sys.monitoring.register_callback(TEST_TOOL, event, counter)
+            if event == E.C_RETURN or event == E.C_RAISE:
+                sys.monitoring.set_events(TEST_TOOL, E.CALL)
+            else:
+                sys.monitoring.set_events(TEST_TOOL, event)
+            event_value = int(math.log2(event))
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, expected)
+
+            prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, 0)
+                self.assertEqual(prev, counter)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
 
     def test_fire_event(self):
         for expected, event, function, *args in self.cases:
@@ -1965,23 +1978,23 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             else:
                 sys.monitoring.set_events(TEST_TOOL, event)
             event_value = int(math.log2(event))
-            _testcapi.enter_scope(self.codelike, event_value)
-            counter.count = 0
-            func(*args)
-            self.assertEqual(counter.count, expected)
-            counter.disable = True
-            if event in self.CANNOT_DISABLE:
-                with self.assertRaises(ValueError):
-                    counter.count = 0
-                    func(*args)
-                    self.assertEqual(counter.count, expected)
-            else:
+            with self.Scope(self.codelike, event_value):
                 counter.count = 0
                 func(*args)
                 self.assertEqual(counter.count, expected)
-                counter.count = 0
-                func(*args)
-                self.assertEqual(counter.count, expected - 1)
+                counter.disable = True
+                if event in self.CANNOT_DISABLE:
+                    with self.assertRaises(ValueError):
+                        counter.count = 0
+                        func(*args)
+                        self.assertEqual(counter.count, expected)
+                else:
+                    counter.count = 0
+                    func(*args)
+                    self.assertEqual(counter.count, expected)
+                    counter.count = 0
+                    func(*args)
+                    self.assertEqual(counter.count, expected - 1)
             sys.monitoring.set_events(TEST_TOOL, 0)
         finally:
             sys.monitoring.restart_events()
@@ -2005,27 +2018,26 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             yield_value = int(math.log2(E.PY_YIELD))
             unwind_value = int(math.log2(E.PY_UNWIND))
             cl = _testcapi.CodeLike(2)
-            _testcapi.enter_scope(cl, yield_value, unwind_value)
+            with self.Scope(cl, yield_value, unwind_value):
+                yield_counter.count = 0
+                unwind_counter.count = 0
 
-            assert(yield_counter.count == 0)
-            assert(unwind_counter.count == 0)
+                _testcapi.fire_event_py_unwind(cl, 0, ValueError(42))
+                assert(yield_counter.count == 0)
+                assert(unwind_counter.count == 1)
 
-            _testcapi.fire_event_py_unwind(cl, 0, ValueError(42))
-            assert(yield_counter.count == 0)
-            assert(unwind_counter.count == 1)
+                _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+                assert(yield_counter.count == 1)
+                assert(unwind_counter.count == 1)
 
-            _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
-            assert(yield_counter.count == 1)
-            assert(unwind_counter.count == 1)
+                yield_counter.disable = True
+                _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+                assert(yield_counter.count == 2)
+                assert(unwind_counter.count == 1)
 
-            yield_counter.disable = True
-            _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
-            assert(yield_counter.count == 2)
-            assert(unwind_counter.count == 1)
-
-            _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
-            assert(yield_counter.count == 2)
-            assert(unwind_counter.count == 1)
+                _testcapi.fire_event_py_yield(cl, 0, ValueError(42))
+                assert(yield_counter.count == 2)
+                assert(unwind_counter.count == 1)
 
             sys.monitoring.set_events(TEST_TOOL, 0)
         finally:

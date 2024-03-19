@@ -6,6 +6,9 @@ PyAPI_FUNC(void)
 _PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
                          const uint8_t *event_types, uint32_t length);
 
+PyAPI_FUNC(void)
+_PyMonitoring_EndScope(void);
+
 PyAPI_FUNC(int)
 _PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int offset);
 

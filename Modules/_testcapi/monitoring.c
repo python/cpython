@@ -388,6 +388,12 @@ enter_scope(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+exit_scope(PyObject *self, PyObject *args)
+{
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"fire_event_py_start", fire_event_py_start, METH_VARARGS},
     {"fire_event_py_resume", fire_event_py_resume, METH_VARARGS},
@@ -404,6 +410,7 @@ static PyMethodDef TestMethods[] = {
     {"fire_event_py_unwind", fire_event_py_unwind, METH_VARARGS},
     {"fire_event_stop_iteration", fire_event_stop_iteration, METH_VARARGS},
     {"enter_scope", enter_scope, METH_VARARGS},
+    {"exit_scope", exit_scope, METH_VARARGS},
     {NULL},
 };
 
