@@ -1059,6 +1059,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     if (executor == NULL) {
         return NULL;
     }
+
     /* Initialize exits */
     assert(exit_count < UOP_MAX_TRACE_LENGTH/4);
     for (int i = 0; i < exit_count; i++) {
@@ -1143,6 +1144,28 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
     return 0;
 }
 
+#ifdef Py_STATS
+/* Returns the effective trace length.
+ * Ignores NOPs and trailing exit and error handling.*/
+int effective_trace_length(_PyUOpInstruction *buffer, int length)
+{
+    int nop_count = 0;
+    for (int i = 0; i < length; i++) {
+        int opcode = buffer[i].opcode;
+        if (opcode == _NOP) {
+            nop_count++;
+        }
+        if (opcode == _EXIT_TRACE ||
+            opcode == _JUMP_TO_TOP ||
+            opcode == _COLD_EXIT) {
+            return i+1-nop_count;
+        }
+    }
+    assert(0 && "No terminating instruction");
+    return length-nop_count;
+}
+#endif
+
 static int
 uop_optimize(
     _PyOptimizerObject *self,
@@ -1189,6 +1212,7 @@ uop_optimize(
         assert(_PyOpcode_uop_name[buffer[pc].opcode]);
         assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
     }
+    OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
     _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
@@ -1196,7 +1220,6 @@ uop_optimize(
         return -1;
     }
     assert(length <= UOP_MAX_TRACE_LENGTH);
-    OPT_HIST(Py_SIZE(executor), optimized_trace_length_hist);
     *exec_ptr = executor;
     return 1;
 }
