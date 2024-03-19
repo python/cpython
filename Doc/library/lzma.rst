@@ -322,9 +322,6 @@ Miscellaneous
    feature set.
 
 
-.. _filter-chain-specs:
-
-
 Information about the version of the lzma library in use is available through
 the following constants:
 
@@ -344,6 +341,7 @@ the following constants:
 
    .. versionadded:: 3.13
 
+.. _filter-chain-specs:
 
 Specifying custom filter chains
 -------------------------------
