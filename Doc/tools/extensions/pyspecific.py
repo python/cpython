@@ -133,7 +133,7 @@ class Availability(SphinxDirective):
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
         "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
-        "Unix", "VxWorks", "WASI", "Windows", "macOS",
+        "Unix", "VxWorks", "WASI", "Windows", "macOS", "iOS",
         # libc
         "BSD libc", "glibc", "musl",
         # POSIX platforms with pthreads
