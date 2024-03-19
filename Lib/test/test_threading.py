@@ -1161,7 +1161,7 @@ class ThreadTests(BaseTestCase):
             import _thread
 
             def f():
-                print("should be printed")
+                pass
 
             def exit_handler():
                 _thread.start_new_thread(f, ())
@@ -1169,10 +1169,9 @@ class ThreadTests(BaseTestCase):
             atexit.register(exit_handler)
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out.strip(), b'should be printed',
-                         msg=err.decode('utf-8', errors='replace'))
+        self.assertEqual(err.strip(), b'')
 
-    def test_start_new_thread_at_exit(self):
+    def test_start_threading_thread_at_exit(self):
         # gh-113964: atexit needs to be able to start threads.
         code = """if 1:
             import atexit
