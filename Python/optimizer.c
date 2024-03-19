@@ -479,8 +479,9 @@ BRANCH_TO_GUARD[4][2] = {
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
         goto done; \
     } \
-    assert(func->func_code == (PyObject *)code); \
+    assert(func == NULL || func->func_code == (PyObject *)code); \
     trace_stack[trace_stack_depth].func = func; \
+    trace_stack[trace_stack_depth].code = code; \
     trace_stack[trace_stack_depth].instr = instr; \
     trace_stack_depth++;
 #define TRACE_STACK_POP() \
@@ -489,7 +490,8 @@ BRANCH_TO_GUARD[4][2] = {
     } \
     trace_stack_depth--; \
     func = trace_stack[trace_stack_depth].func; \
-    code = (PyCodeObject *)trace_stack[trace_stack_depth].func->func_code; \
+    code = trace_stack[trace_stack_depth].code; \
+    assert(func == NULL || func->func_code == (PyObject *)code); \
     instr = trace_stack[trace_stack_depth].instr;
 
 /* Returns 1 on success,
@@ -515,6 +517,7 @@ translate_bytecode_to_trace(
     int max_length = buffer_size;
     struct {
         PyFunctionObject *func;
+        PyCodeObject *code;
         _Py_CODEUNIT *instr;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
@@ -739,7 +742,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 + 1;
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
                             PyCodeObject *new_code = NULL;
-                            PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version, &new_code);
+                            PyFunctionObject *new_func =
+                                _PyFunction_LookupByVersion(func_version, (PyObject **) &new_code);
                             DPRINTF(2, "Function: version=%#x; new_func=%p, new_code=%p\n",
                                     (int)func_version, new_func, new_code);
                             if (new_code != NULL) {
