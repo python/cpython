@@ -630,7 +630,6 @@ init_interpreter(PyInterpreterState *interp,
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
     (void)_Py_SetOptimizer(interp, NULL);
-    interp->next_func_version = 1;
     interp->executor_list_head = NULL;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
@@ -1032,20 +1031,7 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = interp->threads.main;
-    assert(tstate == current_fast_get());
-
-    if (tstate->on_delete != NULL) {
-        // The threading module was imported for the first time in this
-        // thread, so it was set as threading._main_thread.  (See gh-75698.)
-        // The thread has finished running the Python program so we mark
-        // the thread object as finished.
-        assert(tstate->_whence != _PyThreadState_WHENCE_THREADING);
-        tstate->on_delete(tstate->on_delete_data);
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-    }
-
+    assert(interp->threads.main == current_fast_get());
     interp->threads.main = NULL;
 }
 
@@ -1570,16 +1556,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
-    if (tstate->on_delete != NULL) {
-        // For the "main" thread of each interpreter, this is meant
-        // to be done in _PyInterpreterState_SetNotRunningMain().
-        // That leaves threads created by the threading module,
-        // and any threads killed by forking.
-        // However, we also accommodate "main" threads that still
-        // don't call _PyInterpreterState_SetNotRunningMain() yet.
-        tstate->on_delete(tstate->on_delete_data);
-    }
-
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
@@ -1609,6 +1585,7 @@ tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     assert(tstate->state != _Py_THREAD_ATTACHED);
+    tstate_verify_not_active(tstate);
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1687,8 +1664,8 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
     tstate_set_detached(tstate, _Py_THREAD_DETACHED);
-    tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
+    tstate_delete_common(tstate);
     _PyEval_ReleaseLock(tstate->interp, NULL);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
