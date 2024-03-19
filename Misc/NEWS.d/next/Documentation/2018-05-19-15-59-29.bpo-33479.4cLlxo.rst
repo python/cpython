@@ -1,4 +1,0 @@
-Remove the unqualified claim that tkinter is threadsafe. It has not been
-true for several years and likely never was. An explanation of what is true
-may be added later, after more discussion, and possibly after patching
-_tkinter.c,

@@ -203,7 +203,7 @@ def internalTk():
 
 # Do we use 8.6.8 when building our own copy
 # of Tcl/Tk or a modern version.
-#   We use the old version when buildin on
+#   We use the old version when building on
 #   old versions of macOS due to build issues.
 def useOldTk():
     return getBuildTuple() < (10, 15)
@@ -246,10 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1l",
-              url="https://www.openssl.org/source/openssl-1.1.1l.tar.gz",
-              checksum='ac0d4387f3ba0ad741b0580dd45f6ff3',
-              patches=['0001-Darwin-platform-allows-to-build-on-releases-before-Y.patch'],
+              name="OpenSSL 3.0.13",
+              url="https://www.openssl.org/source/openssl-3.0.13.tar.gz",
+              checksum='88525753f79d3bec27d2fa7c66aa0b92b3aa9498dafd93d7cfa4b3780cdae313',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -262,20 +261,21 @@ def library_recipes():
             tcl_checksum='81656d3367af032e0ae6157eff134f89'
 
             tk_checksum='5e0faecba458ee1386078fb228d008ba'
-            tk_patches = ['tk868_on_10_8_10_9.patch']
+            tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.11'
-            tcl_checksum='8a4c004f48984a03a7747e9ba06e4da4'
+            tcl_tk_ver='8.6.14'
+            tcl_checksum='5880225babf7954c58d4fb0f5cf6279104ce1cd6aa9b71e9a6322540e1c4de66'
 
-            tk_checksum='c7ee71a2d05bba78dfffd76528dc17c6'
-            tk_patches = [ ]
+            tk_checksum='8ffdb720f47a6ca6107eac2dd877e30b0ef7fac14f3a84ebbd0b3612cee41a94'
+            tk_patches = []
 
 
+        base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
         result.extend([
           dict(
               name="Tcl %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tcl", version=tcl_tk_ver),
               checksum=tcl_checksum,
               buildDir="unix",
               configure_pre=[
@@ -292,7 +292,7 @@ def library_recipes():
               ),
           dict(
               name="Tk %s"%(tcl_tk_ver,),
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk%s-src.tar.gz"%(tcl_tk_ver,),
+              url=base_url.format(what="tk", version=tcl_tk_ver),
               checksum=tk_checksum,
               patches=tk_patches,
               buildDir="unix",
@@ -359,14 +359,13 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.35.5",
-              url="https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz",
-              checksum='d1d1aba394c8e0443077dc9f1a681bb8',
+              name="SQLite 3.45.1",
+              url="https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz",
+              checksum="cd9c27841b7a5932c9897651e20b86c701dd740556989b01ca596fcfa3d49a0a",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
-                            '-DSQLITE_ENABLE_JSON1 '
                             '-DSQLITE_ENABLE_RTREE '
                             '-DSQLITE_OMIT_AUTOINIT '
                             '-DSQLITE_TCL=0 '
@@ -454,7 +453,7 @@ def pkg_recipes():
             source="/pydocs",
             readme="""\
                 This package installs the python documentation at a location
-                that is useable for pydoc and IDLE.
+                that is usable for pydoc and IDLE.
                 """,
             postflight="scripts/postflight.documentation",
             required=False,
@@ -729,6 +728,10 @@ def extractArchive(builddir, archiveName):
             if ((retval.startswith('tcl') or retval.startswith('tk'))
                     and retval.endswith('-src')):
                 retval = retval[:-4]
+                # Strip rcxx suffix from Tcl/Tk release candidates
+                retval_rc = retval.find('rc')
+                if retval_rc > 0:
+                    retval = retval[:retval_rc]
             if os.path.exists(retval):
                 shutil.rmtree(retval)
             fp = os.popen("tar zxf %s 2>&1"%(shellQuote(archiveName),), 'r')
@@ -794,10 +797,16 @@ def verifyThirdPartyFile(url, checksum, fname):
         print("Downloading %s"%(name,))
         downloadURL(url, fname)
         print("Archive for %s stored as %s"%(name, fname))
+    if len(checksum) == 32:
+        algo = 'md5'
+    elif len(checksum) == 64:
+        algo = 'sha256'
+    else:
+        raise ValueError(checksum)
     if os.system(
-            'MD5=$(openssl md5 %s) ; test "${MD5##*= }" = "%s"'
-                % (shellQuote(fname), checksum) ):
-        fatal('MD5 checksum mismatch for file %s' % fname)
+            'CHECKSUM=$(openssl %s %s) ; test "${CHECKSUM##*= }" = "%s"'
+                % (algo, shellQuote(fname), checksum) ):
+        fatal('%s checksum mismatch for file %s' % (algo, fname))
 
 def build_universal_openssl(basedir, archList):
     """
@@ -1138,7 +1147,9 @@ def buildPython():
     # will find them during its extension import sanity checks.
 
     print("Running configure...")
+    print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
+               "--with-mimalloc=no "
                "--with-universal-archs=%s "
                "%s "
                "%s "
@@ -1154,11 +1165,11 @@ def buildPython():
         (' ', '--without-ensurepip ')[PYTHON_3],
         (' ', "--with-openssl='%s/libraries/usr/local'"%(
                             shellQuote(WORKDIR)[1:-1],))[PYTHON_3],
-        (' ', "--with-tcltk-includes='-I%s/libraries/usr/local/include'"%(
-                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
-        (' ', "--with-tcltk-libs='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
-                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         (' ', "--enable-optimizations --with-lto")[compilerCanOptimize()],
+        (' ', "TCLTK_CFLAGS='-I%s/libraries/usr/local/include'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
+        (' ', "TCLTK_LIBS='-L%s/libraries/usr/local/lib -ltcl8.6 -ltk8.6'"%(
+                            shellQuote(WORKDIR)[1:-1],))[internalTk()],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
@@ -1349,7 +1360,7 @@ def buildPython():
         build_time_vars = l_dict['build_time_vars']
     vars = {}
     for k, v in build_time_vars.items():
-        if type(v) == type(''):
+        if isinstance(v, str):
             for p in (include_path, lib_path):
                 v = v.replace(' ' + p, '')
                 v = v.replace(p + ' ', '')
@@ -1481,7 +1492,7 @@ def packageFromRecipe(targetDir, recipe):
                 IFPkgFlagRelocatable=False,
                 IFPkgFlagRestartAction="NoRestart",
                 IFPkgFlagRootVolumeOnly=True,
-                IFPkgFlagUpdateInstalledLangauges=False,
+                IFPkgFlagUpdateInstalledLanguages=False,
             )
         writePlist(pl, os.path.join(packageContents, 'Info.plist'))
 
@@ -1602,7 +1613,7 @@ def buildDMG():
     # instead of 11.  We should not run into that situation here.)
     # Also we should use "macos" instead of "macosx" going forward.
     #
-    # To maintain compability for legacy variants, the file name for
+    # To maintain compatibility for legacy variants, the file name for
     # builds on macOS 10.15 and earlier remains:
     #   python-3.x.y-macosx10.z.{dmg->pkg}
     #   e.g. python-3.9.4-macosx10.9.{dmg->pkg}

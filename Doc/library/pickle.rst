@@ -90,7 +90,7 @@ Comparison with ``json``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are fundamental differences between the pickle protocols and
-`JSON (JavaScript Object Notation) <http://json.org>`_:
+`JSON (JavaScript Object Notation) <https://json.org>`_:
 
 * JSON is a text serialization format (it outputs unicode text, although
   most of the time it is then encoded to ``utf-8``), while pickle is
@@ -125,7 +125,7 @@ Data stream format
 
 The data format used by :mod:`pickle` is Python-specific.  This has the
 advantage that there are no restrictions imposed by external standards such as
-JSON or XDR (which can't represent pointer sharing); however it means that
+JSON (which can't represent pointer sharing); however it means that
 non-Python programs may not be able to reconstruct pickled Python objects.
 
 By default, the :mod:`pickle` data format uses a relatively compact binary
@@ -147,7 +147,7 @@ to read the pickle produced.
   earlier versions of Python.
 
 * Protocol version 2 was introduced in Python 2.3.  It provides much more
-  efficient pickling of :term:`new-style class`\es.  Refer to :pep:`307` for
+  efficient pickling of :term:`new-style classes <new-style class>`.  Refer to :pep:`307` for
   information about improvements brought by protocol 2.
 
 * Protocol version 3 was added in Python 3.0.  It has explicit support for
@@ -261,7 +261,7 @@ process more convenient:
    protocol argument is needed.  Bytes past the pickled representation
    of the object are ignored.
 
-   Arguments *file*, *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
+   Arguments *fix_imports*, *encoding*, *errors*, *strict* and *buffers*
    have the same meaning as in the :class:`Unpickler` constructor.
 
    .. versionchanged:: 3.8
@@ -272,13 +272,13 @@ The :mod:`pickle` module defines three exceptions:
 
 .. exception:: PickleError
 
-   Common base class for the other pickling exceptions.  It inherits
+   Common base class for the other pickling exceptions.  It inherits from
    :exc:`Exception`.
 
 .. exception:: PicklingError
 
    Error raised when an unpicklable object is encountered by :class:`Pickler`.
-   It inherits :exc:`PickleError`.
+   It inherits from :exc:`PickleError`.
 
    Refer to :ref:`pickle-picklable` to learn what kinds of objects can be
    pickled.
@@ -286,7 +286,7 @@ The :mod:`pickle` module defines three exceptions:
 .. exception:: UnpicklingError
 
    Error raised when there is a problem unpickling an object, such as a data
-   corruption or a security violation.  It inherits :exc:`PickleError`.
+   corruption or a security violation.  It inherits from :exc:`PickleError`.
 
    Note that other exceptions may also be raised during unpickling, including
    (but not necessarily limited to) AttributeError, EOFError, ImportError, and
@@ -345,6 +345,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Pickler`.
+
    .. attribute:: dispatch_table
 
       A pickler object's dispatch table is a registry of *reduction
@@ -352,7 +356,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       :func:`copyreg.pickle`.  It is a mapping whose keys are classes
       and whose values are reduction functions.  A reduction function
       takes a single argument of the associated class and should
-      conform to the same interface as a :meth:`__reduce__`
+      conform to the same interface as a :meth:`~object.__reduce__`
       method.
 
       By default, a pickler object will not have a
@@ -368,12 +372,12 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       .. versionadded:: 3.3
 
-   .. method:: reducer_override(self, obj)
+   .. method:: reducer_override(obj)
 
       Special reducer that can be defined in :class:`Pickler` subclasses. This
       method has priority over any reducer in the :attr:`dispatch_table`.  It
-      should conform to the same interface as a :meth:`__reduce__` method, and
-      can optionally return ``NotImplemented`` to fallback on
+      should conform to the same interface as a :meth:`~object.__reduce__` method, and
+      can optionally return :data:`NotImplemented` to fallback on
       :attr:`dispatch_table`-registered reducers to pickle ``obj``.
 
       For a detailed example, see :ref:`reducer_override`.
@@ -446,6 +450,10 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 
       See :ref:`pickle-persistent` for details and examples of uses.
 
+      .. versionchanged:: 3.13
+         Add the default implementation of this method in the C implementation
+         of :class:`!Unpickler`.
+
    .. method:: find_class(module, name)
 
       Import *module* if necessary and return the object called *name* from it,
@@ -494,24 +502,22 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``
+* built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
+  :data:`NotImplemented`);
 
-* integers, floating point numbers, complex numbers
+* integers, floating-point numbers, complex numbers;
 
-* strings, bytes, bytearrays
+* strings, bytes, bytearrays;
 
-* tuples, lists, sets, and dictionaries containing only picklable objects
+* tuples, lists, sets, and dictionaries containing only picklable objects;
 
-* functions defined at the top level of a module (using :keyword:`def`, not
-  :keyword:`lambda`)
+* functions (built-in and user-defined) accessible from the top level of a
+  module (using :keyword:`def`, not :keyword:`lambda`);
 
-* built-in functions defined at the top level of a module
+* classes accessible from the top level of a module;
 
-* classes that are defined at the top level of a module
-
-* instances of such classes whose :attr:`~object.__dict__` or the result of
-  calling :meth:`__getstate__` is picklable  (see section :ref:`pickle-inst` for
-  details).
+* instances of such classes whose the result of calling :meth:`~object.__getstate__`
+  is picklable  (see section :ref:`pickle-inst` for details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
@@ -520,14 +526,14 @@ structure may exceed the maximum recursion depth, a :exc:`RecursionError` will b
 raised in this case.  You can carefully raise this limit with
 :func:`sys.setrecursionlimit`.
 
-Note that functions (built-in and user-defined) are pickled by "fully qualified"
-name reference, not by value. [#]_  This means that only the function name is
-pickled, along with the name of the module the function is defined in.  Neither
+Note that functions (built-in and user-defined) are pickled by fully
+:term:`qualified name`, not by value. [#]_  This means that only the function name is
+pickled, along with the name of the containing module and classes.  Neither
 the function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
 
-Similarly, classes are pickled by named reference, so the same restrictions in
+Similarly, classes are pickled by fully qualified name, so the same restrictions in
 the unpickling environment apply.  Note that none of the class's code or data is
 pickled, so in the following example the class attribute ``attr`` is not
 restored in the unpickling environment::
@@ -537,7 +543,7 @@ restored in the unpickling environment::
 
    picklestring = pickle.dumps(Foo)
 
-These restrictions are why picklable functions and classes must be defined in
+These restrictions are why picklable functions and classes must be defined at
 the top level of a module.
 
 Similarly, when class instances are pickled, their class's code and data are not
@@ -546,7 +552,7 @@ purpose, so you can fix bugs in a class or add methods to the class and still
 load objects that were created with an earlier version of the class.  If you
 plan to have long-lived objects that will see many versions of a class, it may
 be worthwhile to put a version number in the objects so that suitable
-conversions can be made by the class's :meth:`__setstate__` method.
+conversions can be made by the class's :meth:`~object.__setstate__` method.
 
 
 .. _pickle-inst:
@@ -561,7 +567,7 @@ customize, and control how class instances are pickled and unpickled.
 
 In most cases, no additional code is needed to make instances picklable.  By
 default, pickle will retrieve the class and the attributes of an instance via
-introspection. When a class instance is unpickled, its :meth:`__init__` method
+introspection. When a class instance is unpickled, its :meth:`~object.__init__` method
 is usually *not* invoked.  The default behaviour first creates an uninitialized
 instance and then restores the saved attributes.  The following code shows an
 implementation of this behaviour::
@@ -569,7 +575,7 @@ implementation of this behaviour::
    def save(obj):
        return (obj.__class__, obj.__dict__)
 
-   def load(cls, attributes):
+   def restore(cls, attributes):
        obj = cls.__new__(cls)
        obj.__dict__.update(attributes)
        return obj
@@ -611,11 +617,31 @@ methods:
 
 .. method:: object.__getstate__()
 
-   Classes can further influence how their instances are pickled; if the class
-   defines the method :meth:`__getstate__`, it is called and the returned object
-   is pickled as the contents for the instance, instead of the contents of the
-   instance's dictionary.  If the :meth:`__getstate__` method is absent, the
-   instance's :attr:`~object.__dict__` is pickled as usual.
+   Classes can further influence how their instances are pickled by overriding
+   the method :meth:`__getstate__`.  It is called and the returned object
+   is pickled as the contents for the instance, instead of a default state.
+   There are several cases:
+
+   * For a class that has no instance :attr:`~object.__dict__` and no
+     :attr:`~object.__slots__`, the default state is ``None``.
+
+   * For a class that has an instance :attr:`~object.__dict__` and no
+     :attr:`~object.__slots__`, the default state is ``self.__dict__``.
+
+   * For a class that has an instance :attr:`~object.__dict__` and
+     :attr:`~object.__slots__`, the default state is a tuple consisting of two
+     dictionaries:  ``self.__dict__``, and a dictionary mapping slot
+     names to slot values.  Only slots that have a value are
+     included in the latter.
+
+   * For a class that has :attr:`~object.__slots__` and no instance
+     :attr:`~object.__dict__`, the default state is a tuple whose first item
+     is ``None`` and whose second item is a dictionary mapping slot names
+     to slot values described in the previous bullet.
+
+   .. versionchanged:: 3.11
+      Added the default implementation of the ``__getstate__()`` method in the
+      :class:`object` class.
 
 
 .. method:: object.__setstate__(state)
@@ -627,35 +653,35 @@ methods:
 
    .. note::
 
-      If :meth:`__getstate__` returns a false value, the :meth:`__setstate__`
-      method will not be called upon unpickling.
+      If :meth:`__reduce__` returns a state with value ``None`` at pickling,
+      the :meth:`__setstate__` method will not be called upon unpickling.
 
 
 Refer to the section :ref:`pickle-state` for more information about how to use
-the methods :meth:`__getstate__` and :meth:`__setstate__`.
+the methods :meth:`~object.__getstate__` and :meth:`~object.__setstate__`.
 
 .. note::
 
-   At unpickling time, some methods like :meth:`__getattr__`,
-   :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
+   At unpickling time, some methods like :meth:`~object.__getattr__`,
+   :meth:`~object.__getattribute__`, or :meth:`~object.__setattr__` may be called upon the
    instance.  In case those methods rely on some internal invariant being
-   true, the type should implement :meth:`__new__` to establish such an
-   invariant, as :meth:`__init__` is not called when unpickling an
+   true, the type should implement :meth:`~object.__new__` to establish such an
+   invariant, as :meth:`~object.__init__` is not called when unpickling an
    instance.
 
 .. index:: pair: copy; protocol
 
 As we shall see, pickle does not use directly the methods described above.  In
 fact, these methods are part of the copy protocol which implements the
-:meth:`__reduce__` special method.  The copy protocol provides a unified
+:meth:`~object.__reduce__` special method.  The copy protocol provides a unified
 interface for retrieving the data necessary for pickling and copying
 objects. [#]_
 
-Although powerful, implementing :meth:`__reduce__` directly in your classes is
+Although powerful, implementing :meth:`~object.__reduce__` directly in your classes is
 error prone.  For this reason, class designers should use the high-level
-interface (i.e., :meth:`__getnewargs_ex__`, :meth:`__getstate__` and
-:meth:`__setstate__`) whenever possible.  We will show, however, cases where
-using :meth:`__reduce__` is the only option or leads to more efficient pickling
+interface (i.e., :meth:`~object.__getnewargs_ex__`, :meth:`~object.__getstate__` and
+:meth:`~object.__setstate__`) whenever possible.  We will show, however, cases where
+using :meth:`!__reduce__` is the only option or leads to more efficient pickling
 or both.
 
 .. method:: object.__reduce__()
@@ -690,8 +716,9 @@ or both.
      These items will be appended to the object either using
      ``obj.append(item)`` or, in batch, using ``obj.extend(list_of_items)``.
      This is primarily used for list subclasses, but may be used by other
-     classes as long as they have :meth:`append` and :meth:`extend` methods with
-     the appropriate signature.  (Whether :meth:`append` or :meth:`extend` is
+     classes as long as they have
+     :ref:`append and extend methods <typesseq-common>` with
+     the appropriate signature.  (Whether :meth:`!append` or :meth:`!extend` is
      used depends on which pickle protocol version is used as well as the number
      of items to append, so both must be supported.)
 
@@ -767,8 +794,8 @@ any other code which depends on pickling, then one can create a
 pickler with a private dispatch table.
 
 The global dispatch table managed by the :mod:`copyreg` module is
-available as :data:`copyreg.dispatch_table`.  Therefore, one may
-choose to use a modified copy of :data:`copyreg.dispatch_table` as a
+available as :data:`!copyreg.dispatch_table`.  Therefore, one may
+choose to use a modified copy of :data:`!copyreg.dispatch_table` as a
 private dispatch table.
 
 For example ::
@@ -788,13 +815,14 @@ the code ::
    f = io.BytesIO()
    p = MyPickler(f)
 
-does the same, but all instances of ``MyPickler`` will by default
-share the same dispatch table.  The equivalent code using the
-:mod:`copyreg` module is ::
+does the same but all instances of ``MyPickler`` will by default
+share the private dispatch table.  On the other hand, the code ::
 
    copyreg.pickle(SomeClass, reduce_SomeClass)
    f = io.BytesIO()
    p = pickle.Pickler(f)
+
+modifies the global dispatch table shared by all users of the :mod:`copyreg` module.
 
 .. _pickle-state:
 
@@ -806,12 +834,12 @@ Handling Stateful Objects
    single: __setstate__() (copy protocol)
 
 Here's an example that shows how to modify pickling behavior for a class.
-The :class:`TextReader` class opens a text file, and returns the line number and
+The :class:`!TextReader` class below opens a text file, and returns the line number and
 line contents each time its :meth:`!readline` method is called. If a
-:class:`TextReader` instance is pickled, all attributes *except* the file object
+:class:`!TextReader` instance is pickled, all attributes *except* the file object
 member are saved. When the instance is unpickled, the file is reopened, and
-reading resumes from the last location. The :meth:`__setstate__` and
-:meth:`__getstate__` methods are used to implement this behavior. ::
+reading resumes from the last location. The :meth:`!__setstate__` and
+:meth:`!__getstate__` methods are used to implement this behavior. ::
 
    class TextReader:
        """Print and number lines in a text file."""
@@ -876,8 +904,8 @@ functions and classes.
 
 For those cases, it is possible to subclass from the :class:`Pickler` class and
 implement a :meth:`~Pickler.reducer_override` method. This method can return an
-arbitrary reduction tuple (see :meth:`__reduce__`). It can alternatively return
-``NotImplemented`` to fallback to the traditional behavior.
+arbitrary reduction tuple (see :meth:`~object.__reduce__`). It can alternatively return
+:data:`NotImplemented` to fallback to the traditional behavior.
 
 If both the :attr:`~Pickler.dispatch_table` and
 :meth:`~Pickler.reducer_override` are defined, then
@@ -944,7 +972,7 @@ provided by pickle protocol 5 and higher.
 Provider API
 ^^^^^^^^^^^^
 
-The large data objects to be pickled must implement a :meth:`__reduce_ex__`
+The large data objects to be pickled must implement a :meth:`~object.__reduce_ex__`
 method specialized for protocol 5 and higher, which returns a
 :class:`PickleBuffer` instance (instead of e.g. a :class:`bytes` object)
 for any large data.
@@ -1098,7 +1126,7 @@ Here is an example of an unpickler allowing only few safe classes from the
        """Helper function analogous to pickle.loads()."""
        return RestrictedUnpickler(io.BytesIO(s)).load()
 
-A sample usage of our unpickler working has intended::
+A sample usage of our unpickler working as intended::
 
     >>> restricted_loads(pickle.dumps([1, 2, range(15)]))
     [1, 2, range(0, 15)]
@@ -1142,7 +1170,7 @@ For the simplest code, use the :func:`dump` and :func:`load` functions. ::
 
    # An arbitrary collection of objects supported by pickle.
    data = {
-       'a': [1, 2.0, 3, 4+6j],
+       'a': [1, 2.0, 3+4j],
        'b': ("character string", b"byte string"),
        'c': {None, True, False}
    }
@@ -1198,6 +1226,6 @@ The following example reads the resulting pickled data. ::
    operations.
 
 .. [#] The limitation on alphanumeric characters is due to the fact
-   the persistent IDs, in protocol 0, are delimited by the newline
+   that persistent IDs in protocol 0 are delimited by the newline
    character.  Therefore if any kind of newline characters occurs in
-   persistent IDs, the resulting pickle will become unreadable.
+   persistent IDs, the resulting pickled data will become unreadable.

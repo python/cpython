@@ -1,4 +1,0 @@
-:func:`open`, :func:`io.open`, :func:`codecs.open` and
-:class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
-in the file mode. This flag was deprecated since Python 3.3. Patch by Victor
-Stinner.

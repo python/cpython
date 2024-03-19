@@ -1,2 +1,0 @@
-Replaced usage of :func:`tempfile.mktemp` with
-:class:`~tempfile.TemporaryDirectory` to avoid a potential race condition.

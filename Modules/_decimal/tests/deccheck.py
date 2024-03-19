@@ -47,7 +47,7 @@ from subprocess import PIPE, STDOUT
 from queue import Queue, Empty
 from threading import Thread, Event, Lock
 
-from test.support import import_fresh_module
+from test.support.import_helper import import_fresh_module
 from randdec import randfloat, all_unary, all_binary, all_ternary
 from randdec import unary_optarg, binary_optarg, ternary_optarg
 from formathelper import rand_format, rand_locale
@@ -1301,7 +1301,7 @@ if __name__ == '__main__':
                 out, _ = p.communicate()
                 write_output(out, p.returncode)
 
-        N = os.cpu_count()
+        N = os.process_cpu_count()
         t = N * [None]
 
         for i in range(N):

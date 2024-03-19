@@ -1,2 +1,0 @@
-Improve :mod:`ssl` module's deprecation messages, error reporting, and
-documentation for deprecations.
