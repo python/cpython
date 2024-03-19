@@ -2354,7 +2354,8 @@ _PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
 
     _Py_GlobalMonitors *m = &interp->monitors;
     for (uint32_t i = 0; i < length; i++) {
-        state_array[i].active = m->tools[event_types[i]];
+        int event = event_types[i];
+        state_array[i].active = m->tools[event];
     }
     *version = global_version(interp);
 }

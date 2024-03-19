@@ -3,6 +3,7 @@
 import collections
 import dis
 import functools
+import math
 import operator
 import sys
 import textwrap
@@ -1904,107 +1905,96 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
         self.cb2 = lambda codelike, *args : cb('cb2', args)
         self.cb3 = lambda codelike, *args : cb('cb3', args)
 
-        events = sys.monitoring.events
         self.cases = [
             # (Event, function, *args)
-            (events.PY_START, capi.fire_event_py_start),
-            (events.PY_RESUME, capi.fire_event_py_resume),
-            (events.PY_RETURN, capi.fire_event_py_return, 10),
-            (events.PY_YIELD, capi.fire_event_py_yield, 20),
-            (events.CALL, capi.fire_event_call, callable, 30),
-            (events.LINE, capi.fire_event_line, 40),
-            (events.JUMP, capi.fire_event_jump, 50),
-            (events.BRANCH, capi.fire_event_branch, 60),
-            (events.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
-            (events.RAISE, capi.fire_event_raise, ValueError(2)),
-            (events.RERAISE, capi.fire_event_reraise, ValueError(3)),
-            (events.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(4)),
-            (events.PY_UNWIND, capi.fire_event_py_unwind, ValueError(5)),
-            (events.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(6)),
+            (1, E.PY_START, capi.fire_event_py_start),
+            (1, E.PY_RESUME, capi.fire_event_py_resume),
+            (1, E.PY_RETURN, capi.fire_event_py_return, 10),
+            (1, E.PY_YIELD, capi.fire_event_py_yield, 20),
+            (2, E.CALL, capi.fire_event_call, callable, 30),
+            (3, E.LINE, capi.fire_event_line, 40),
+            (1, E.JUMP, capi.fire_event_jump, 50),
+            (1, E.BRANCH, capi.fire_event_branch, 60),
+            (1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
+            (1, E.RAISE, capi.fire_event_raise, ValueError(2)),
+            (1, E.RERAISE, capi.fire_event_reraise, ValueError(3)),
+            (1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(4)),
+            (1, E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(5)),
+            (1, E.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(6)),
         ]
 
+    def check_event_count(self, event, func, args, expected):
+        class Counter:
+            def __init__(self):
+                self.count = 0
+            def __call__(self, *args):
+                self.count += 1
+
+        counter = Counter()
+        sys.monitoring.register_callback(TEST_TOOL, event, counter)
+        if event == E.C_RETURN or event == E.C_RAISE:
+            sys.monitoring.set_events(TEST_TOOL, E.CALL)
+        else:
+            sys.monitoring.set_events(TEST_TOOL, event)
+        event_value = int(math.log2(event))
+        _testcapi.enter_scope_single_event(self.codelike, event_value)
+        counter.count = 0
+        func(*args)
+        self.assertEqual(counter.count, expected)
+        prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
+        _testcapi.enter_scope_single_event(self.codelike, event_value)
+        counter.count = 0
+        func(*args)
+        self.assertEqual(counter.count, 0)
+        self.assertEqual(prev, counter)
+        sys.monitoring.set_events(TEST_TOOL, 0)
+
     def test_fire_event(self):
-        for event, function, *args in self.cases:
+        for expected, event, function, *args in self.cases:
             offset = 0
-            self.codelike = _testcapi.CodeLike(2)
-            with self.subTest(event):
-                output = (offset, *args)
-                # Register TEST_TOOL and TEST_TOOL2, but activate only TEST_TOOL
-                sys.monitoring.register_callback(TEST_TOOL, event, self.cb1)
-                sys.monitoring.register_callback(TEST_TOOL2, event, self.cb2)
-                active = 1 << TEST_TOOL
+            self.codelike = _testcapi.CodeLike(1)
+            with self.subTest(function.__name__):
+                args = (self.codelike, 0) + tuple(args)
+                self.check_event_count(event, function, args, expected)
 
-                try:
-                    self.results = []
-                    # fire one of each event type
-                    for _, function, *args in self.cases:
-                        res = function(self.codelike, offset, active, *args)
-                        self.assertEqual(res, active)
+    CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
+                       E.EXCEPTION_HANDLED, E.PY_UNWIND }
 
-                    self.assertEqual(self.results, [('cb1',) + output])
-                finally:
-                    sys.monitoring.register_callback(TEST_TOOL, event, None)
-                    sys.monitoring.register_callback(TEST_TOOL2, event, None)
+    def check_disable(self, event, func, args, expected):
+        try:
+            counter = CounterWithDisable()
+            sys.monitoring.register_callback(TEST_TOOL, event, counter)
+            if event == E.C_RETURN or event == E.C_RAISE:
+                sys.monitoring.set_events(TEST_TOOL, E.CALL)
+            else:
+                sys.monitoring.set_events(TEST_TOOL, event)
+            event_value = int(math.log2(event))
+            _testcapi.enter_scope_single_event(self.codelike, event_value)
+            counter.count = 0
+            func(*args)
+            self.assertEqual(counter.count, expected)
+            counter.disable = True
+            if event in self.CANNOT_DISABLE:
+                with self.assertRaises(ValueError):
+                    counter.count = 0
+                    func(*args)
+                    self.assertEqual(counter.count, expected)
+            else:
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, expected)
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, expected - 1)
+            sys.monitoring.set_events(TEST_TOOL, 0)
+        finally:
+            sys.monitoring.restart_events()
 
     def test_disable_event(self):
-        events = sys.monitoring.events
-        cannot_disable = { events.PY_THROW, events.RAISE, events.RERAISE,
-                           events.EXCEPTION_HANDLED, events.PY_UNWIND }
-
-        def cb_disable(*args):
-            self.cb1(*args)
-            return sys.monitoring.DISABLE
-
-        for event, function, *args in self.cases:
-            offset = 1
+        for expected, event, function, *args in self.cases:
+            offset = 0
             self.codelike = _testcapi.CodeLike(2)
             with self.subTest(function.__name__):
-                output = (offset, *args)
+                args = (self.codelike, 0) + tuple(args)
+                self.check_disable(event, function, args, expected)
 
-                sys.monitoring.register_callback(TEST_TOOL, event, cb_disable)
-                active = 1 << TEST_TOOL
-
-                try:
-                    # fire one of each event type
-                    self.results = []
-                    for f_event, function, *args in self.cases:
-                        if f_event == event and f_event in cannot_disable:
-                            with self.assertRaises(ValueError):
-                                res = function(self.codelike, offset, active, *args)
-                            self.assertEqual(res, active)
-                        else:
-                            res = function(self.codelike, offset, active, *args)
-                            self.assertEqual(res, 0 if f_event == event else active)
-                    self.assertEqual(self.results, [('cb1',) + output])
-
-                finally:
-                    sys.monitoring.register_callback(TEST_TOOL, event, None)
-                    sys.monitoring.register_callback(TEST_TOOL2, event, None)
-
-    def test_enter_scope(self):
-        events = sys.monitoring.events
-        capi = _testcapi
-
-        cl = capi.CodeLike(2)
-        capi.enter_scope_py_start_py_return(cl)    # events = [PY_START, PY_RETURN]
-
-        sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_START, self.cb1)
-
-        self.results = []
-        capi.fire_event_py_start(cl, 0, 1 << sys.monitoring.PROFILER_ID)
-        capi.fire_event_py_return(cl, 1, 1 << sys.monitoring.PROFILER_ID, 42)
-        self.assertEqual(self.results, [('cb1', 0)])
-
-        sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_RETURN, self.cb2)
-
-        self.results = []
-        capi.fire_event_py_start(cl, 0, 1 << sys.monitoring.PROFILER_ID)
-        capi.fire_event_py_return(cl, 1, 1 << sys.monitoring.PROFILER_ID, 42)
-        self.assertEqual(self.results, [('cb1', 0), ('cb2', 1, 42)])
-
-        sys.monitoring.register_callback(sys.monitoring.PROFILER_ID, events.PY_START, None)
-
-        self.results = []
-        capi.fire_event_py_start(cl, 0, 1 << sys.monitoring.PROFILER_ID)
-        capi.fire_event_py_return(cl, 1, 1 << sys.monitoring.PROFILER_ID, 42)
-        self.assertEqual(self.results, [('cb2', 1, 42)])

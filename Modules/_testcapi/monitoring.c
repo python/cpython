@@ -105,6 +105,7 @@ static PyTypeObject PyCodeLike_Type = {
     .tp_str = (reprfunc) CodeLike_str,
 };
 
+#define PyCodeLike_Check(v) Py_IS_TYPE((v), &PyCodeLike_Type)
 
 /*******************************************************************/
 
@@ -112,15 +113,14 @@ static PyObject *
 fire_event_py_start(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
-    if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &active)) {
+    int offset;
+    if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
-    NULLABLE(codelike);
+    assert(PyCodeLike_Check(codelike));
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FirePyStartEvent(state, codelike, offset);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -130,15 +130,14 @@ static PyObject *
 fire_event_py_resume(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
-    if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &active)) {
+    int offset;
+    if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
         return NULL;
     }
     NULLABLE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FirePyResumeEvent(state, codelike, offset);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -148,16 +147,15 @@ static PyObject *
 fire_event_py_return(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *retval;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &retval)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
     NULLABLE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FirePyReturnEvent(state, codelike, offset, retval);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -167,16 +165,15 @@ static PyObject *
 fire_event_py_yield(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *retval;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &retval)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
         return NULL;
     }
     NULLABLE(codelike);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FirePyYieldEvent(state, codelike, offset, retval);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -186,9 +183,9 @@ static PyObject *
 fire_event_call(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *callable, *arg0;
-    if (!PyArg_ParseTuple(args, "OiiOO", &codelike, &offset, &active, &callable, &arg0)) {
+    if (!PyArg_ParseTuple(args, "OiOO", &codelike, &offset, &callable, &arg0)) {
         return NULL;
     }
     NULLABLE(codelike);
@@ -196,7 +193,6 @@ fire_event_call(PyObject *self, PyObject *args)
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireCallEvent(state, codelike, offset, callable, arg0);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -206,14 +202,13 @@ static PyObject *
 fire_event_line(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active, lineno;
-    if (!PyArg_ParseTuple(args, "Oiii", &codelike, &offset, &active, &lineno)) {
+    int offset, lineno;
+    if (!PyArg_ParseTuple(args, "Oii", &codelike, &offset, &lineno)) {
         return NULL;
     }
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireLineEvent(state, codelike, offset, lineno);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -223,15 +218,14 @@ static PyObject *
 fire_event_jump(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *target_offset;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &target_offset)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireJumpEvent(state, codelike, offset, target_offset);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -241,15 +235,14 @@ static PyObject *
 fire_event_branch(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *target_offset;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &target_offset)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
         return NULL;
     }
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -259,16 +252,15 @@ static PyObject *
 fire_event_py_throw(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FirePyThrowEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -278,16 +270,15 @@ static PyObject *
 fire_event_raise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireRaiseEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -297,16 +288,15 @@ static PyObject *
 fire_event_reraise(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireReraiseEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -316,16 +306,15 @@ static PyObject *
 fire_event_exception_handled(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireExceptionHandledEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -335,16 +324,15 @@ static PyObject *
 fire_event_py_unwind(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FirePyUnwindEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -354,9 +342,9 @@ static PyObject *
 fire_event_stop_iteration(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
-    int offset, active;
+    int offset;
     PyObject *exception;
-    if (!PyArg_ParseTuple(args, "OiiO", &codelike, &offset, &active, &exception)) {
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
         return NULL;
     }
     NULLABLE(exception);
@@ -364,7 +352,6 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
     PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
     assert(offset >= 0 && offset < cl->num_events);
     PyMonitoringState *state = &cl->monitoring_states[offset];
-    state->active = active;
 
     int res = PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
@@ -373,16 +360,18 @@ fire_event_stop_iteration(PyObject *self, PyObject *args)
 /*******************************************************************/
 
 static PyObject *
-enter_scope_py_start_py_return(PyObject *self, PyObject *args)
+enter_scope_single_event(PyObject *self, PyObject *args)
 {
     PyObject *codelike_obj;
-    if (!PyArg_ParseTuple(args, "O", &codelike_obj)) {
+    int event;
+    if (!PyArg_ParseTuple(args, "Oi", &codelike_obj, &event)) {
         return NULL;
     }
     PyCodeLikeObject *codelike = (PyCodeLikeObject *) codelike_obj;
 
-    uint8_t events[] = { PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RETURN };
-    PyMonitoring_BeginScope(codelike->monitoring_states, &codelike->version, events, 2);
+    uint8_t events[] = { event };
+
+    PyMonitoring_BeginScope(codelike->monitoring_states, &codelike->version, events, 1);
 
     Py_RETURN_NONE;
 }
@@ -402,7 +391,7 @@ static PyMethodDef TestMethods[] = {
     {"fire_event_exception_handled", fire_event_exception_handled, METH_VARARGS},
     {"fire_event_py_unwind", fire_event_py_unwind, METH_VARARGS},
     {"fire_event_stop_iteration", fire_event_stop_iteration, METH_VARARGS},
-    {"enter_scope_py_start_py_return", enter_scope_py_start_py_return, METH_VARARGS},
+    {"enter_scope_single_event", enter_scope_single_event, METH_VARARGS},
     {NULL},
 };
 
