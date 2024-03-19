@@ -1168,8 +1168,10 @@ def _dataclass_setstate(self, state):
 
 def _get_slots(cls):
     match cls.__dict__.get('__slots__'):
+        # A class which does not define __slots__ at all is equivalent
+        # to a class defining __slots__ = ('__dict__', '__weakref__')
         case None:
-            return
+            yield from ('__dict__', '__weakref__')
         case str(slot):
             yield slot
         # Slots may be any iterable, but we cannot handle an iterator

@@ -3403,6 +3403,17 @@ class TestSlots(unittest.TestCase):
         self.assertIs(a.__weakref__, a_ref)
 
 
+    def test_dataclass_derived_weakref_slot(self):
+        class A:
+            pass
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B(A):
+            pass
+
+        B()
+
+
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
         # See bpo-33141.
