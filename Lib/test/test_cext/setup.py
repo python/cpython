@@ -27,24 +27,43 @@ else:
 
 
 def main():
-    std = os.environ["CPYTHON_TEST_STD"]
-    name = os.environ["CPYTHON_TEST_EXT_NAME"]
-    cflags = [*CFLAGS, f'-std={std}']
+    std = os.environ.get("CPYTHON_TEST_STD", "")
+    module_name = os.environ["CPYTHON_TEST_EXT_NAME"]
+    limited = bool(os.environ.get("CPYTHON_TEST_LIMITED", ""))
 
-    # Remove existing -std options to only test ours
-    cmd = (sysconfig.get_config_var('CC') or '')
-    if cmd is not None:
-        cmd = shlex.split(cmd)
-        cmd = [arg for arg in cmd if not arg.startswith('-std=')]
-        cmd = shlex.join(cmd)
-        # CC env var overrides sysconfig CC variable in setuptools
-        os.environ['CC'] = cmd
+    cflags = list(CFLAGS)
+    cflags.append(f'-DMODULE_NAME={module_name}')
+
+    if std:
+        cflags.append(f'-std={std}')
+
+        # Remove existing -std options to only test ours
+        cmd = (sysconfig.get_config_var('CC') or '')
+        if cmd is not None:
+            cmd = shlex.split(cmd)
+            cmd = [arg for arg in cmd if not arg.startswith('-std=')]
+            cmd = shlex.join(cmd)
+            # CC env var overrides sysconfig CC variable in setuptools
+            os.environ['CC'] = cmd
+
+    if limited:
+        version = sys.hexversion
+        cflags.append(f'-DPy_LIMITED_API={version:#x}')
+
+    for env_name in ('CC', 'CFLAGS'):
+        if env_name in os.environ:
+            print(f"{env_name} env var: {os.environ[env_name]!r}")
+        else:
+            print(f"{env_name} env var: <missing>")
+    print(f"extra_compile_args: {cflags!r}")
 
     ext = Extension(
-        name,
+        module_name,
         sources=[SOURCE],
         extra_compile_args=cflags)
-    setup(name='internal' + name, version='0.0', ext_modules=[ext])
+    setup(name=f'internal_{module_name}',
+          version='0.0',
+          ext_modules=[ext])
 
 
 if __name__ == "__main__":
