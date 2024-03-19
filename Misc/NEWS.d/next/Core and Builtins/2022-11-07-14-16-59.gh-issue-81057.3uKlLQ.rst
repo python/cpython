@@ -1,3 +1,0 @@
-The 18 global C variables holding the state of the allocators have been
-moved to ``_PyRuntimeState``.  This is a strictly internal change with no
-change in behavior.

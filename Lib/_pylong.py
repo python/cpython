@@ -12,7 +12,6 @@ integers with a huge number of digits.  Saving a few microseconds with
 tricky or non-obvious code is not worth it.  For people looking for
 maximum performance, they should use something like gmpy2."""
 
-import sys
 import re
 import decimal
 

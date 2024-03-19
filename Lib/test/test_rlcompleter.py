@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 import builtins
 import rlcompleter
+from test.support import MISSING_C_DOCSTRINGS
 
 class CompleteMe:
     """ Trivial class used in testing rlcompleter.Completer. """
@@ -40,12 +41,12 @@ class TestRlcompleter(unittest.TestCase):
 
         # test with a customized namespace
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe()'])
+                ['CompleteMe(' if MISSING_C_DOCSTRINGS else 'CompleteMe()'])
         self.assertEqual(self.completer.global_matches('eg'),
                          ['egg('])
         # XXX: see issue5256
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe()'])
+                ['CompleteMe(' if MISSING_C_DOCSTRINGS else 'CompleteMe()'])
 
     def test_attr_matches(self):
         # test with builtins namespace
@@ -53,7 +54,10 @@ class TestRlcompleter(unittest.TestCase):
                          ['str.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
         self.assertEqual(self.stdcompleter.attr_matches('tuple.foospamegg'), [])
-        expected = sorted({'None.%s%s' % (x, '(' if x != '__doc__' else '')
+        expected = sorted({'None.%s%s' % (x,
+                                          '()' if x == '__init_subclass__'
+                                          else '' if x == '__doc__'
+                                          else '(')
                            for x in dir(None)})
         self.assertEqual(self.stdcompleter.attr_matches('None.'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None._'), expected)

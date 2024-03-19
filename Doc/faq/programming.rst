@@ -61,7 +61,7 @@ Yes.
 `Pyflakes <https://github.com/PyCQA/pyflakes>`_ do basic checking that will
 help you catch bugs sooner.
 
-Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+Static type checkers such as `Mypy <https://mypy-lang.org/>`_,
 `Pyre <https://pyre-check.org/>`_, and
 `Pytype <https://github.com/google/pytype>`_ can check type hints in Python
 source code.
@@ -112,6 +112,8 @@ Yes.  The coding style required for standard library modules is documented as
 
 Core Language
 =============
+
+.. _faq-unboundlocalerror:
 
 Why am I getting an UnboundLocalError when the variable has a value?
 --------------------------------------------------------------------
@@ -452,7 +454,7 @@ There are two factors that produce this result:
    (the list), and both ``x`` and ``y`` refer to it.
 2) Lists are :term:`mutable`, which means that you can change their content.
 
-After the call to :meth:`~list.append`, the content of the mutable object has
+After the call to :meth:`!append`, the content of the mutable object has
 changed from ``[]`` to ``[10]``.  Since both the variables refer to the same
 object, using either name accesses the modified value ``[10]``.
 
@@ -922,12 +924,12 @@ module::
    'Hello, there!'
 
    >>> import array
-   >>> a = array.array('u', s)
+   >>> a = array.array('w', s)
    >>> print(a)
-   array('u', 'Hello, world')
+   array('w', 'Hello, world')
    >>> a[0] = 'y'
    >>> print(a)
-   array('u', 'yello, world')
+   array('w', 'yello, world')
    >>> a.tounicode()
    'yello, world'
 
@@ -1023,6 +1025,46 @@ What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
 
 See the :ref:`unicode-howto`.
 
+
+.. _faq-programming-raw-string-backslash:
+
+Can I end a raw string with an odd number of backslashes?
+---------------------------------------------------------
+
+A raw string ending with an odd number of backslashes will escape the string's quote::
+
+   >>> r'C:\this\will\not\work\'
+     File "<stdin>", line 1
+       r'C:\this\will\not\work\'
+            ^
+   SyntaxError: unterminated string literal (detected at line 1)
+
+There are several workarounds for this. One is to use regular strings and double
+the backslashes::
+
+   >>> 'C:\\this\\will\\work\\'
+   'C:\\this\\will\\work\\'
+
+Another is to concatenate a regular string containing an escaped backslash to the
+raw string::
+
+   >>> r'C:\this\will\work' '\\'
+   'C:\\this\\will\\work\\'
+
+It is also possible to use :func:`os.path.join` to append a backslash on Windows::
+
+   >>> os.path.join(r'C:\this\will\work', '')
+   'C:\\this\\will\\work\\'
+
+Note that while a backslash will "escape" a quote for the purposes of
+determining where the raw string ends, no escaping occurs when interpreting the
+value of the raw string. That is, the backslash remains present in the value of
+the raw string::
+
+   >>> r'backslash\'preserved'
+   "backslash\\'preserved"
+
+Also see the specification in the :ref:`language reference <strings>`.
 
 Performance
 ===========
@@ -1355,7 +1397,7 @@ To see why this happens, you need to know that (a) if an object implements an
 :meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
 assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`~list.extend` on the list
+and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`!extend` on the list
 and returning the list.  That's why we say that for lists, ``+=`` is a
 "shorthand" for :meth:`!list.extend`::
 
@@ -1861,7 +1903,7 @@ identity tests.  This prevents the code from being confused by objects such as
 ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
-:meth:`collections.abc.Sequence.__contains__`::
+:meth:`!collections.abc.Sequence.__contains__`::
 
     def __contains__(self, value):
         for v in self:
@@ -1937,7 +1979,7 @@ method result will be released right away.  The disadvantage is that if
 instances accumulate, so too will the accumulated method results.  They
 can grow without bound.
 
-The *lru_cache* approach works with methods that have hashable
+The *lru_cache* approach works with methods that have :term:`hashable`
 arguments.  It creates a reference to the instance unless special
 efforts are made to pass in weak references.
 

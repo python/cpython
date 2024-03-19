@@ -1,1 +1,0 @@
-Remove older version of ``_SSLProtocolTransport.get_write_buffer_limits`` in :mod:`!asyncio.sslproto`
