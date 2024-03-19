@@ -4840,20 +4840,21 @@ class ForkTests(unittest.TestCase):
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
 
-    def test_fork_at_exit(self):
+    def test_fork_at_finalization(self):
         code = """if 1:
             import atexit
             import os
 
-            def exit_handler():
-                pid = os.fork()
-                if pid != 0:
-                    print("shouldn't be printed")
-
-            atexit.register(exit_handler)
+            class AtFinalization:
+                def __del__(self):
+                    print("OK")
+                    pid = os.fork()
+                    if pid != 0:
+                        print("shouldn't be printed")
+            at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(b"", out)
+        self.assertEqual(b"OK\n", out)
         self.assertIn(b"can't fork at interpreter shutdown", err)
 
 

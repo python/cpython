@@ -1133,21 +1133,21 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    def test_start_new_thread_at_exit(self):
+    def test_start_new_thread_at_finalization(self):
         code = """if 1:
-            import atexit
             import _thread
 
             def f():
                 print("shouldn't be printed")
 
-            def exit_handler():
-                _thread.start_new_thread(f, ())
-
-            atexit.register(exit_handler)
+            class AtFinalization:
+                def __del__(self):
+                    print("OK")
+                    _thread.start_new_thread(f, ())
+            at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
 class ThreadJoinOnShutdown(BaseTestCase):
@@ -1275,6 +1275,30 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         rc, out, err = assert_python_ok('-c', script)
         self.assertFalse(err)
+
+    def test_thread_from_thread(self):
+        script = """if True:
+            import threading
+            import time
+
+            def thread2():
+                time.sleep(0.05)
+                print("OK")
+
+            def thread1():
+                time.sleep(0.05)
+                t2 = threading.Thread(target=thread2)
+                t2.start()
+
+            t = threading.Thread(target=thread1)
+            t.start()
+            # do not join() -- the interpreter waits for non-daemon threads to
+            # finish.
+            """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(err, b"")
+        self.assertEqual(out.strip(), b"OK")
+        self.assertEqual(rc, 0)
 
     @skip_unless_reliable_fork
     def test_reinit_tls_after_fork(self):

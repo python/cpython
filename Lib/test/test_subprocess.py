@@ -3413,14 +3413,15 @@ class POSIXProcessTestCase(BaseTestCase):
         def dummy():
             pass
 
-        def exit_handler():
-            subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
-            print("shouldn't be printed")
-
-        atexit.register(exit_handler)
+        class AtFinalization:
+            def __del__(self):
+                print("OK")
+                subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
+                print("shouldn't be printed")
+        at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
 
