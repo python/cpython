@@ -248,19 +248,17 @@ clear_weakref(PyWeakReference *self)
 void
 _PyWeakref_ClearRef(PyWeakReference *self)
 {
-    PyObject *callback;
-
     assert(self != NULL);
     assert(PyWeakref_Check(self));
-    /* Preserve and restore the callback around clear_weakref. */
-    callback = self->wr_callback;
-    self->wr_callback = NULL;
 #ifdef Py_GIL_DISABLED
     unlink_and_clear_object_lock_held(self);
 #else
+    /* Preserve and restore the callback around clear_weakref. */
+    PyObject *callback = self->wr_callback;
+    self->wr_callback = NULL;
     clear_weakref(self);
-#endif
     self->wr_callback = callback;
+#endif
 }
 
 static void
