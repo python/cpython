@@ -1289,7 +1289,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
     PyObject **dest = self->ob_item + m;
     while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
         Py_INCREF(key);
-        *dest = key;
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
     Py_SET_SIZE(self, m + n);
@@ -1312,8 +1312,36 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
     while (_PyDict_Next((PyObject *)dict, &pos, &keyvalue[0], &keyvalue[1], NULL)) {
         PyObject *obj = keyvalue[which_item];
         Py_INCREF(obj);
-        *dest = obj;
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, obj);
         dest++;
+    }
+
+    Py_SET_SIZE(self, m + n);
+    return 0;
+}
+
+static int
+list_extend_dictitems(PyListObject *self, PyDictObject *dict)
+{
+    Py_ssize_t m = Py_SIZE(self);
+    Py_ssize_t n = PyDict_GET_SIZE(dict);
+    if (list_resize(self, m + n) < 0) {
+        return -1;
+    }
+
+    PyObject **dest = self->ob_item + m;
+    Py_ssize_t pos = 0;
+    Py_ssize_t i = 0;
+    PyObject *key, *value;
+    while (_PyDict_Next((PyObject *)dict, &pos, &key, &value, NULL)) {
+        PyObject *item = PyTuple_Pack(2, key, value);
+        if (item == NULL) {
+            Py_SET_SIZE(self, m + i);
+            return -1;
+        }
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, item);
+        dest++;
+        i++;
     }
 
     Py_SET_SIZE(self, m + n);
@@ -1325,7 +1353,6 @@ _list_extend(PyListObject *self, PyObject *iterable)
 {
     // Special case:
     // lists and tuples which can use PySequence_Fast ops
-    // TODO(@corona10): Add more special cases for other types.
     int res = -1;
     if ((PyObject *)self == iterable) {
         Py_BEGIN_CRITICAL_SECTION(self);
@@ -1357,6 +1384,12 @@ _list_extend(PyListObject *self, PyObject *iterable)
         PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
         Py_BEGIN_CRITICAL_SECTION2(self, dict);
         res = list_extend_dict(self, dict, 1 /*values*/);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else if (Py_IS_TYPE(iterable, &PyDictItems_Type)) {
+        PyDictObject *dict = ((_PyDictViewObject *)iterable)->dv_dict;
+        Py_BEGIN_CRITICAL_SECTION2(self, dict);
+        res = list_extend_dictitems(self, dict);
         Py_END_CRITICAL_SECTION2();
     }
     else {

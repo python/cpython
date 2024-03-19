@@ -26,16 +26,31 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
 
+    if (_PyTestLimitedCAPI_Init_Abstract(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_ByteArray(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Bytes(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Complex(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Dict(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Float(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_HeaptypeRelative(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_List(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Long(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_PyOS(mod) < 0) {
@@ -45,6 +60,9 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Sys(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Unicode(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_VectorcallLimited(mod) < 0) {

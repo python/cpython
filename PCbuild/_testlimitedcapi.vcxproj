@@ -94,13 +94,19 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\abstract.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\bytearray.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\bytes.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\complex.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\dict.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\float.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\list.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\long.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\pyos.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\set.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\sys.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
   </ItemGroup>
   <ItemGroup>

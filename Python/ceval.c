@@ -2903,7 +2903,7 @@ _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     if (_PyErr_Occurred(tstate))
         return;
     name = PyTuple_GET_ITEM(co->co_localsplusnames, oparg);
-    if (oparg < PyCode_GetFirstFree(co)) {
+    if (oparg < PyUnstable_Code_GetFirstFree(co)) {
         _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                                   UNBOUNDLOCAL_ERROR_MSG, name);
     } else {
