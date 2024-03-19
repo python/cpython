@@ -124,6 +124,9 @@ typedef struct _optimization_stats {
     uint64_t optimizer_attempts;
     uint64_t optimizer_successes;
     uint64_t optimizer_failure_reason_no_memory;
+    uint64_t remove_globals_builtins_changed;
+    uint64_t remove_globals_incorrect_keys;
+    uint64_t error_in_opcode[512];
 } OptimizationStats;
 
 typedef struct _rare_event_stats {
