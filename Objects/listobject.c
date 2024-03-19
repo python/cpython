@@ -1689,7 +1689,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     /* Regular insertion sort has average- and worst-case O(n**2) cost
        for both # of comparisons and number of bytes moved. But its branches
        are highly predictable, and it loves sorted input (n-1 compares and no
-       data movementl. This is significant in cases like sortperf.py's %sort,
+       data movement). This is significant in cases like sortperf.py's %sort,
        where an out-of-order element near the start of a run is moved into
        place slowly but then the remaining elements up to length minrun are
        generally at worst one slot away from their correct position (so only
