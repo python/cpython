@@ -1223,7 +1223,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
          * bits. These may result in us reporting overflow when the value
          * actually fits.
          */
-        if (n > 0 && res > n && nb == n * 8) {
+        if (n > 0 && res == n + 1 && nb == n * 8) {
             if (_PyLong_IsNegative(v)) {
                 /* Values of 0x80...00 from negative values that use every
                  * available bit in the buffer do not require an additional
@@ -1251,10 +1251,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
                 if (b[little_endian ? n - 1 : 0] & 0x80) {
                     /* TODO: Disabled because we don't know the caller's intent
                     res = n;
-                     * Instead, we'll return n+1, which is more accurate than
-                     * res at this stage (which might just be sizeof(size_t)),
-                     * and it's something we can test for to ensure this case
-                     * is being detected correctly.
+                     * Instead, we'll return res == n+1.
                      */
                     res = n + 1;
                 }
