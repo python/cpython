@@ -511,7 +511,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 static void
 peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
-    PyCodeObject *co = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *co = _PyFrame_GetCode(frame);
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch(opcode) {
@@ -576,7 +576,7 @@ _Py_uop_analyze_and_optimize(
     peephole_opt(frame, buffer, buffer_size);
 
     err = optimize_uops(
-        (PyCodeObject *)frame->f_executable, buffer,
+        _PyFrame_GetCode(frame), buffer,
         buffer_size, curr_stacklen, dependencies);
 
     if (err == 0) {

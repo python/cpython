@@ -211,7 +211,7 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     PyObject **stack_pointer, _PyExecutorObject **executor_ptr)
 {
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, start)) {
@@ -505,7 +505,7 @@ translate_bytecode_to_trace(
     _PyBloomFilter *dependencies)
 {
     bool progress_needed = true;
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
     assert(PyFunction_Check(func));
     PyCodeObject *initial_code = code;
@@ -740,7 +740,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
                             PyCodeObject *new_code = NULL;
                             PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version, &new_code);
-                            DPRINTF(2, "Function: version=%#x; object=%p, code=%p\n", (int)func_version, new_func, new_code);
+                            DPRINTF(2, "Function: version=%#x; new_func=%p, new_code=%p\n",
+                                    (int)func_version, new_func, new_code);
                             if (new_code != NULL) {
                                 if (new_code == code) {
                                     // Recursive call, bail (we could be here forever).
@@ -1116,7 +1117,7 @@ counter_optimize(
     int Py_UNUSED(curr_stackentries)
 )
 {
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     int oparg = instr->op.arg;
     while (instr->op.code == EXTENDED_ARG) {
         instr++;
