@@ -1,0 +1,3 @@
+On Windows, :meth:`subprocess.Popen.wait` no longer calls
+``WaitForSingleObject()`` with a negative timeout: pass ``0`` ms if the
+timeout is negative. Patch by Victor Stinner.
