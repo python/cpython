@@ -89,4 +89,3 @@ _PyTestLimitedCAPI_Init_Float(PyObject *mod)
 
     return 0;
 }
-
