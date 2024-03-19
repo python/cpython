@@ -2044,7 +2044,13 @@ testios:
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
 	# If the suite fails, extract and print the console output, then re-raise the failure
 	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
-		xcrun xcresulttool get --path $(XCRESULT) --id $$(xcrun xcresulttool get --path $(XCRESULT) --format json | $(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])"); \
+		xcrun xcresulttool get --path $(XCRESULT) \
+			--id $$( \
+				xcrun xcresulttool get --path $(XCRESULT) --format json | \
+				$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
+			) \
+			--format json | \
+			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"; \
 		echo ; \
 		exit 1; \
 	fi
