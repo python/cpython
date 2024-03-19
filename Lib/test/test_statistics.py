@@ -2379,7 +2379,7 @@ class TestKDE(unittest.TestCase):
                 area = integrate(f_hat, -20, 20)
                 self.assertAlmostEqual(area, 1.0, places=4)
 
-        # Check CDF against an intergral of the PDF
+        # Check CDF against an integral of the PDF
 
         data = [3, 5, 10, 12]
         h = 2.3
