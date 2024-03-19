@@ -3115,8 +3115,9 @@ function_set_closure(PyObject *self, PyObject *args)
         return NULL;
     }
     int result = PyFunction_SetClosure(func, closure);
-    if (result == -1)
+    if (result == -1) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
