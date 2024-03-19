@@ -27,17 +27,24 @@ SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 @support.requires_resource('cpu')
 class TestExt(unittest.TestCase):
     def test_build_c99(self):
-        self.check_build('c99', '_test_c99_ext')
+        self.check_build('_test_c99_ext', std='c99')
 
     def test_build_c11(self):
-        self.check_build('c11', '_test_c11_ext')
+        self.check_build('_test_c11_ext', std='c11')
 
-    def check_build(self, clang_std, extension_name):
+    def test_build_limited(self):
+        self.check_build('_test_limited_ext', limited=True)
+
+    def test_build_limited_c11(self):
+        self.check_build('_test_limited_c11_ext', limited=True, std='c11')
+
+    def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
         with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
-            self._check_build(clang_std, extension_name, python_exe)
+            self._check_build(extension_name, python_exe,
+                              std=std, limited=limited)
 
-    def _check_build(self, clang_std, extension_name, python_exe):
+    def _check_build(self, extension_name, python_exe, std, limited):
         pkg_dir = 'pkg'
         os.mkdir(pkg_dir)
         shutil.copy(SETUP, os.path.join(pkg_dir, os.path.basename(SETUP)))
@@ -45,7 +52,10 @@ class TestExt(unittest.TestCase):
 
         def run_cmd(operation, cmd):
             env = os.environ.copy()
-            env['CPYTHON_TEST_STD'] = clang_std
+            if std:
+                env['CPYTHON_TEST_STD'] = std
+            if limited:
+                env['CPYTHON_TEST_LIMITED'] = '1'
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
             if support.verbose:
                 print('Run:', ' '.join(cmd))
