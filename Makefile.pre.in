@@ -2601,12 +2601,14 @@ inclinstall:
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
-	$(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc
+	echo $(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h
+	$(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h
 	@for i in $(srcdir)/Include/internal/mimalloc/mimalloc/*.h; \
 	do \
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal/mimalloc/mimalloc; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; \
 	done
+	echo $(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 	$(INSTALL_DATA) pyconfig.h $(DESTDIR)$(CONFINCLUDEPY)/pyconfig.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
