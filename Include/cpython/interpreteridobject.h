@@ -9,3 +9,7 @@ PyAPI_DATA(PyTypeObject) PyInterpreterID_Type;
 PyAPI_FUNC(PyObject *) PyInterpreterID_New(int64_t);
 PyAPI_FUNC(PyObject *) PyInterpreterState_GetIDObject(PyInterpreterState *);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterID_LookUp(PyObject *);
+
+#ifndef Py_BUILD_CORE
+extern int64_t _PyInterpreterID_ObjectToID(PyObject *);
+#endif
