@@ -1016,7 +1016,7 @@ nearest binding is used. If a name is not bound in any nonlocal scope,
 or if there is no nonlocal scope, a SyntaxError is raised.
 
 The nonlocal statement applies to the entire scope of a function or
-class body. A SyntaxError is raised if a variable is used or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
 assigned to prior to its nonlocal declaration in the scope.
 
 .. seealso::
