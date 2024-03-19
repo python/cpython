@@ -26,10 +26,16 @@ PyInit__testlimitedcapi(void)
         return NULL;
     }
 
+    if (_PyTestLimitedCAPI_Init_Abstract(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_ByteArray(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_Bytes(mod) < 0) {
+        return NULL;
+    }
+    if (_PyTestLimitedCAPI_Init_Float(mod) < 0) {
         return NULL;
     }
     if (_PyTestLimitedCAPI_Init_HeaptypeRelative(mod) < 0) {
