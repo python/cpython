@@ -170,7 +170,7 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -279,12 +279,32 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~object.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
          the exact value is unimportant you may use :class:`auto` instances and an
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
+
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
+
+   .. attribute:: Enum._name_
+
+      Name of the member.
+
+   .. attribute:: Enum._value_
+
+      Value of the member, can be set in :meth:`~object.__new__`.
+
+   .. attribute:: Enum._order_
+
+      No longer used, kept for backward compatibility.
+      (class attribute, removed during class creation).
 
    .. attribute:: Enum._ignore_
 
@@ -337,7 +357,18 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init_subclass__(cls, \**kwds)
+   .. method:: Enum.__init__(self, *args, **kwds)
+
+      By default, does nothing.  If multiple values are given in the member
+      assignment, those values become separate arguments to ``__init__``; e.g.
+
+         >>> from enum import Enum
+         >>> class Weekday(Enum):
+         ...     MONDAY = 1, 'Mon'
+
+      ``Weekday.__init__()`` would be called as ``Weekday.__init__(self, 1, 'Mon')``
+
+   .. method:: Enum.__init_subclass__(cls, **kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.
@@ -363,6 +394,21 @@ Data Types
          'debug'
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
+
+   .. method:: Enum.__new__(cls, *args, **kwds)
+
+      By default, doesn't exist.  If specified, either in the enum class
+      definition or in a mixin class (such as ``int``), all values given
+      in the member assignment will be passed; e.g.
+
+         >>> from enum import Enum
+         >>> class MyIntEnum(Enum):
+         ...     SEVENTEEN = '1a', 16
+
+      results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
+
+      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
+               call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
@@ -477,9 +523,9 @@ Data Types
 
 .. class:: Flag
 
-   *Flag* members support the bitwise operators ``&`` (*AND*), ``|`` (*OR*),
-   ``^`` (*XOR*), and ``~`` (*INVERT*); the results of those operators are members
-   of the enumeration.
+   ``Flag`` is the same as :class:`Enum`, but its members support the bitwise
+   operators ``&`` (*AND*), ``|`` (*OR*), ``^`` (*XOR*), and ``~`` (*INVERT*);
+   the results of those operators are members of the enumeration.
 
    .. method:: __contains__(self, value)
 
@@ -511,9 +557,7 @@ Data Types
          >>> list(purple)
          [<Color.RED: 1>, <Color.BLUE: 4>]
 
-      .. versionchanged:: 3.11
-
-         Aliases are no longer returned during iteration.
+      .. versionadded:: 3.11
 
    .. method:: __len__(self):
 
@@ -802,8 +846,8 @@ Supported ``_sunder_`` names
 - :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
   :class:`str`, that will not be transformed into members, and will be removed
   from the final class
-- :attr:`~Enum._order_` -- used in Python 2/3 code to ensure member order is
-  consistent (class attribute, removed during class creation)
+- :attr:`~Enum._order_` -- no longer used, kept for backward
+  compatibility (class attribute, removed during class creation)
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
 

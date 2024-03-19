@@ -1,5 +1,5 @@
 from test.support import (
-    requires, _2G, _4G, gc_collect, cpython_only, is_emscripten
+    requires, _2G, _4G, gc_collect, cpython_only, is_emscripten, is_apple,
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -837,7 +837,7 @@ class MmapTests(unittest.TestCase):
         mm.write(b'python')
         result = mm.flush()
         self.assertIsNone(result)
-        if sys.platform.startswith('linux'):
+        if sys.platform.startswith(('linux', 'android')):
             # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))
@@ -1067,7 +1067,7 @@ class LargeMmapTests(unittest.TestCase):
         unlink(TESTFN)
 
     def _make_test_file(self, num_zeroes, tail):
-        if sys.platform[:3] == 'win' or sys.platform == 'darwin':
+        if sys.platform[:3] == 'win' or is_apple:
             requires('largefile',
                 'test requires %s bytes and a long time to run' % str(0x180000000))
         f = open(TESTFN, 'w+b')

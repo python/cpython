@@ -565,9 +565,9 @@ part of a :exc:`BaseExceptionGroup`, in addition to the recent support for
 .. section: Library
 
 The :class:`mmap.mmap` class now has an :meth:`~mmap.mmap.seekable` method
-that can be used where it requires a file-like object with seekable and the
-:meth:`~mmap.mmap.seek` method return the new absolute position. Patch by
-Donghee Na.
+that can be used when a seekable file-like object is required.
+The :meth:`~mmap.mmap.seek` method now returns the new absolute position.
+Patch by Donghee Na.
 
 ..
 

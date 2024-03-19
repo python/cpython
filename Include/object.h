@@ -212,7 +212,10 @@ struct _object {
 struct _PyMutex { uint8_t v; };
 
 struct _object {
-    uintptr_t ob_tid;           // thread id (or zero)
+    // ob_tid stores the thread id (or zero). It is also used by the GC and the
+    // trashcan mechanism as a linked list pointer and by the GC to store the
+    // computed "gc_refs" refcount.
+    uintptr_t ob_tid;
     uint16_t _padding;
     struct _PyMutex ob_mutex;   // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
@@ -340,8 +343,7 @@ PyAPI_DATA(PyTypeObject) PyBool_Type;
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
     assert(ob->ob_type != &PyLong_Type);
     assert(ob->ob_type != &PyBool_Type);
-    PyVarObject *var_ob = _PyVarObject_CAST(ob);
-    return var_ob->ob_size;
+    return  _PyVarObject_CAST(ob)->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
@@ -426,7 +428,11 @@ static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     assert(ob->ob_base.ob_type != &PyLong_Type);
     assert(ob->ob_base.ob_type != &PyBool_Type);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
+#else
     ob->ob_size = size;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
@@ -514,6 +520,10 @@ PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(PyObject *) PyType_GetFullyQualifiedName(PyTypeObject *type);
+PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
