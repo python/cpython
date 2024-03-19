@@ -11,7 +11,7 @@ from setuptools import setup, Extension
 
 
 SOURCE = 'extension.c'
-if not support.MS_WINDOWS and not sysconfig.get_config_var('Py_GIL_DISABLED'):
+if not support.MS_WINDOWS and not support.Py_GIL_DISABLED:
     # C compiler flags for GCC and clang
     CFLAGS = [
         # The purpose of test_cext extension is to check that building a C
