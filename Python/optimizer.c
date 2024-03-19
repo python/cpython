@@ -915,12 +915,26 @@ static void make_exit(_PyUOpInstruction *inst, int opcode, int target)
 static int
 prepare_for_execution(_PyUOpInstruction *buffer, int length)
 {
-    int next_spare = length;
     int32_t current_jump = -1;
     int32_t current_jump_target = -1;
     int32_t current_error = -1;
     int32_t current_error_target = -1;
     int32_t current_popped = -1;
+    /* Leaving in NOPs slows down the interpreter and messes up the stats */
+#ifndef _Py_JIT
+    _PyUOpInstruction *copy_to = &buffer[0];
+    for (int i = 0; i < length; i++) {
+        _PyUOpInstruction *inst = &buffer[i];
+        if (inst->opcode != _NOP) {
+            if (copy_to != inst) {
+                *copy_to = *inst;
+            }
+            copy_to++;
+        }
+    }
+    length = copy_to - buffer;
+#endif
+    int next_spare = length;
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
         int opcode = inst->opcode;
