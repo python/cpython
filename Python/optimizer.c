@@ -738,10 +738,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 // Add one to account for the actual opcode/oparg pair:
                                 + 1;
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
-                            PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version);
-                            DPRINTF(2, "Function: version=%#x; object=%p\n", (int)func_version, new_func);
-                            if (new_func != NULL) {
-                                PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(new_func);
+                            PyCodeObject *new_code = NULL;
+                            PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version, &new_code);
+                            DPRINTF(2, "Function: version=%#x; object=%p, code=%p\n", (int)func_version, new_func, new_code);
+                            if (new_code != NULL) {
                                 if (new_code == code) {
                                     // Recursive call, bail (we could be here forever).
                                     DPRINTF(2, "Bailing on recursive call to %s (%s:%d)\n",
@@ -780,8 +780,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     2 * INSTR_IP(instr, code));
                                 goto top;
                             }
-                            DPRINTF(2, "Bail, new_func == NULL\n");
-                            ADD_TO_TRACE(uop, oparg, operand, target);
+                            DPRINTF(2, "Bail, new_code == NULL\n");
+                            ADD_TO_TRACE(uop, oparg, 0, target);
                             ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                             goto done;
                         }

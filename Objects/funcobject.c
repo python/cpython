@@ -218,6 +218,8 @@ error:
 }
 
 /*
+XXX TODO XXX Rewrite this entire comment to match the new reality!
+
 Function versions
 -----------------
 
@@ -262,28 +264,60 @@ _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (func->func_version != 0) {
-        PyFunctionObject **slot =
+        struct _func_version_cache_item *slot =
             interp->func_state.func_version_cache
             + (func->func_version % FUNC_VERSION_CACHE_SIZE);
-        if (*slot == func) {
-            *slot = NULL;
+        if (slot->func == func) {
+            slot->func = NULL;
+            // Leave slot->code alone, there may be use for it.
         }
     }
     func->func_version = version;
     if (version != 0) {
-        interp->func_state.func_version_cache[
-            version % FUNC_VERSION_CACHE_SIZE] = func;
+        struct _func_version_cache_item *slot =
+            interp->func_state.func_version_cache
+            + (version % FUNC_VERSION_CACHE_SIZE);
+        slot->func = func;
+        slot->code = func->func_code;
+    }
+}
+
+void
+_PyFunction_ClearCodeByVersion(uint32_t version)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _func_version_cache_item *slot =
+        interp->func_state.func_version_cache
+        + (version % FUNC_VERSION_CACHE_SIZE);
+    if (slot->code) {
+        assert(PyCode_Check(slot->code));
+        PyCodeObject *code = (PyCodeObject *)slot->code;
+        if (code->co_version == version) {
+           slot->code = NULL;
+        }
     }
 }
 
 PyFunctionObject *
-_PyFunction_LookupByVersion(uint32_t version)
+_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyFunctionObject *func = interp->func_state.func_version_cache[
-        version % FUNC_VERSION_CACHE_SIZE];
-    if (func != NULL && func->func_version == version) {
-        return func;
+    struct _func_version_cache_item *slot =
+        interp->func_state.func_version_cache
+        + (version % FUNC_VERSION_CACHE_SIZE);
+    if (slot->code) {
+        assert(PyCode_Check(slot->code));
+        PyCodeObject *code = (PyCodeObject *)slot->code;
+        if (code->co_version == version) {
+            *p_code = slot->code;
+        }
+    }
+    else {
+        *p_code = NULL;
+    }
+    if (slot->func && slot->func->func_version == version) {
+        assert(slot->func->func_code == slot->code);
+        return slot->func;
     }
     return NULL;
 }

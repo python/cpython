@@ -1710,6 +1710,7 @@ code_dealloc(PyCodeObject *co)
     }
     Py_SET_REFCNT(co, 0);
 
+    _PyFunction_ClearCodeByVersion(co->co_version);
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         _PyCodeObjectExtra *co_extra = co->co_extra;
