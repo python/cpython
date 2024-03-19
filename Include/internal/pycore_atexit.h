@@ -52,6 +52,10 @@ struct atexit_state {
     atexit_py_callback **callbacks;
     int ncallbacks;
     int callback_len;
+
+    // Used to prevent registering of new atexit functions once atexit
+    // processing has started.  Boolean, use atomic access.
+    int handler_calling_started;
 };
 
 // Export for '_xxinterpchannels' shared extension

@@ -1,0 +1,5 @@
+Restores the ability to spawn threads from :mod:`atexit` handlers. The
+interpreter finalization code will join non-daemon threads spawned from that
+context before exiting.  No atexit handlers can be registered once atexit
+handler processing has started and none will remain to run after threads
+spawned during atexit processing exit.

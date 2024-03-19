@@ -1155,12 +1155,13 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b'')
 
     def test_start_new_thread_at_exit(self):
+        # The low level private API version of gh-113964.
         code = """if 1:
             import atexit
             import _thread
 
             def f():
-                print("shouldn't be printed")
+                pass
 
             def exit_handler():
                 _thread.start_new_thread(f, ())
@@ -1168,8 +1169,26 @@ class ThreadTests(BaseTestCase):
             atexit.register(exit_handler)
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
-        self.assertIn(b"can't create new thread at interpreter shutdown", err)
+        self.assertEqual(err.strip(), b'')
+
+    def test_start_threading_thread_at_exit(self):
+        # gh-113964: atexit needs to be able to start threads.
+        code = """if 1:
+            import atexit
+            import threading
+
+            def f():
+                print("should also be printed")
+
+            def exit_handler():
+                threading.Thread(target=f).start()
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(out.strip(), b'should also be printed',
+                         msg=err.decode('utf-8', errors='replace'))
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 

@@ -1877,26 +1877,26 @@ Py_FinalizeEx(void)
     // XXX assert(_Py_IsMainInterpreter(tstate->interp));
     // XXX assert(_Py_IsMainThread());
 
-    // Block some operations.
-    tstate->interp->finalizing = 1;
+    // Block some operations including fork().
+    tstate->interp->started_finalization = 1;
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
 
     /* The interpreter is still entirely intact at this point, and the
-     * exit funcs may be relying on that.  In particular, if some thread
-     * or exit func is still waiting to do an import, the import machinery
-     * expects Py_IsInitialized() to return true.  So don't say the
-     * runtime is uninitialized until after the exit funcs have run.
-     * Note that Threading.py uses an exit func to do a join on all the
-     * threads created thru it, so this also protects pending imports in
-     * the threads created via Threading.
+     * atexit handlers are relying on that.  We cannot say the runtime is
+     * uninitialized until after the atexit handlers have run and and any
+     * non-daemon threads they spawned have been joined.
      */
-
     _PyAtExit_Call(tstate->interp);
+
+    if (tstate != tstate->interp->threads.head || tstate->next != NULL) {
+        // An atexit or signal handler must've spawned a thread; one last reap.
+        wait_for_thread_shutdown(tstate);
+        _Py_FinishPendingCalls(tstate);
+    }
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -2259,18 +2259,23 @@ Py_EndInterpreter(PyThreadState *tstate)
     if (tstate->current_frame != NULL) {
         Py_FatalError("thread still has a frame");
     }
-    interp->finalizing = 1;
+    // Block some operations including fork().
+    interp->started_finalization = 1;
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
-    // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
 
     _PyAtExit_Call(tstate->interp);
 
     if (tstate != interp->threads.head || tstate->next != NULL) {
-        Py_FatalError("not the last thread");
+        // An atexit or signal handler must've spawned a thread; one last reap.
+        wait_for_thread_shutdown(tstate);
+        _Py_FinishPendingCalls(tstate);
+        if (tstate != interp->threads.head || tstate->next != NULL) {
+            Py_FatalError("not the last thread");
+        }
     }
 
     /* Remaining daemon threads will automatically exit
