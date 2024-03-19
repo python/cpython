@@ -1006,24 +1006,28 @@ The :keyword:`!nonlocal` statement
 .. productionlist:: python-grammar
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
-The :keyword:`nonlocal` statement causes the listed identifiers to refer to
-previously bound variables in the nearest enclosing scope excluding globals.
-This is important because the default behavior for binding is to search the
-local namespace first.  The statement allows encapsulated code to rebind
-variables outside of the local scope besides the global (module) scope.
+When the definition of a function or class is nested (enclosed) within
+the definitions of other functions, its nonlocal scopes are the local
+scopes of the enclosing functions. The :keyword:`nonlocal` statement
+causes the listed identifiers to refer to names previously bound in
+nonlocal scopes. It allows encapsulated code to rebind such nonlocal
+identifiers.  If a name is bound in more than one nonlocal scope, the
+nearest binding is used. If a name is not bound in any nonlocal scope,
+or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
-Names listed in a :keyword:`nonlocal` statement, unlike those listed in a
-:keyword:`global` statement, must refer to pre-existing bindings in an
-enclosing scope (the scope in which a new binding should be created cannot
-be determined unambiguously).
-
-Names listed in a :keyword:`nonlocal` statement must not collide with
-pre-existing bindings in the local scope.
+The nonlocal statement applies to the entire scope of a function or
+class body. A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its nonlocal declaration in the scope.
 
 .. seealso::
 
    :pep:`3104` - Access to Names in Outer Scopes
       The specification for the :keyword:`nonlocal` statement.
+
+**Programmer's note:** :keyword:`nonlocal` is a directive to the parser
+and applies only to code parsed along with it.  See the note for the
+:keyword:`global` statement.
+
 
 .. _type:
 
