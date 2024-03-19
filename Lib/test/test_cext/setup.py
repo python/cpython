@@ -16,6 +16,10 @@ if not support.MS_WINDOWS:
         # The purpose of test_cext extension is to check that building a C
         # extension using the Python C API does not emit C compiler warnings.
         '-Werror',
+
+        # gh-116869: The Python C API must build with
+        # -Werror=declaration-after-statement.
+        '-Werror=declaration-after-statement',
     ]
 else:
     # Don't pass any compiler flag to MSVC

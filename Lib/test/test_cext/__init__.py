@@ -1,5 +1,7 @@
 # gh-116869: Build a basic C test extension to check that the Python C API
 # does not emit C compiler warnings.
+#
+# Python C API must build with -Werror=declaration-after-statement.
 
 import os.path
 import shutil
