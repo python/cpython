@@ -409,6 +409,40 @@ class PlatformTest(unittest.TestCase):
             # parent
             support.wait_process(pid, exitcode=0)
 
+    def test_ios_ver(self):
+        system, release, model, is_simulator = platform.ios_ver()
+        if sys.platform == "ios":
+            # We can't assert specific values without reproducing the logic of
+            # ios_ver(), so we check that the values are broadly what we expect.
+
+            # System is either iOS or iPadOS, depending on the test device
+            self.assertIn(system, {"iOS", "iPadOS"})
+
+            # Release is a major.minor specifier
+            major, minor = release.split(".")
+            self.assertTrue(major.isdigit())
+            self.assertTrue(minor.isdigit())
+
+            # If this is a simulator, we get a high level device descriptor
+            # with no identifying model number. If this is a physical device,
+            # we get a model descriptor like "iPhone13,1"
+            if is_simulator:
+                self.assertIn(model, {"iPhone", "iPad"})
+            else:
+                self.assertTrue(
+                    (model.startswith("iPhone") or model.startswith("iPad"))
+                    and "," in model
+                )
+
+            self.assertEqual(type(is_simulator), bool)
+        else:
+            # On non-iOS platforms, calling ios_ver doesn't fail; you get
+            # default values
+            self.assertEqual(system, "")
+            self.assertEqual(release, "")
+            self.assertEqual(model, "")
+            self.assertFalse(is_simulator)
+
     @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception

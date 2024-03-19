@@ -496,6 +496,21 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     # If that also doesn't work return the default values
     return release, versioninfo, machine
 
+def ios_ver(system="", release="", model="", is_simulator=False):
+    """Get iOS version information, and return it as a tuple:
+        (system, release, model, is_simulator).
+
+    If values can't be determined, they are set to values provided as
+    parameters.
+    """
+    import _ios_support
+    result = _ios_support.get_platform_ios()
+    if result is not None:
+        return result
+    else:
+        return system, release, model, is_simulator
+
+
 def _java_getprop(name, default):
     """This private helper is deprecated in 3.13 and will be removed in 3.15"""
     from java.lang import System
@@ -654,7 +669,7 @@ def _syscmd_file(target, default=''):
         default in case the command should fail.
 
     """
-    if sys.platform in ('dos', 'win32', 'win16'):
+    if sys.platform in {'dos', 'win32', 'win16', 'ios', 'tvos', 'watchos'}:
         # XXX Others too ?
         return default
 
@@ -818,6 +833,13 @@ class _Processor:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
 
+    # On iOS, os.uname returns the architecture as uname.machine. On device it
+    # doesn't; but there's only one CPU architecture on device.
+    def get_ios():
+        if sys.implementation._multiarch.endswith("simulator"):
+            return os.uname().machine
+        return 'arm64'
+
     def from_subprocess():
         """
         Fall back to `uname -p`
@@ -971,6 +993,13 @@ def uname():
     if system == 'Microsoft' and release == 'Windows':
         system = 'Windows'
         release = 'Vista'
+
+    # Normalize responses on Apple mobile platforms
+    if sys.platform in {'ios', 'tvos'}:
+        system, release, model, is_simulator = ios_ver()
+
+        if is_simulator:
+            machine = f'{model}Simulator'
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''
@@ -1251,11 +1280,13 @@ def platform(aliased=False, terse=False):
         system, release, version = system_alias(system, release, version)
 
     if system == 'Darwin':
-        # macOS (darwin kernel)
-        macos_release = mac_ver()[0]
-        if macos_release:
-            system = 'macOS'
-            release = macos_release
+        if sys.platform in {'ios', 'tvos'}:
+            system, release, _, _ = ios_ver()
+        else:
+            macos_release = mac_ver()[0]
+            if macos_release:
+                system = 'macOS'
+                release = macos_release
 
     if system == 'Windows':
         # MS platforms

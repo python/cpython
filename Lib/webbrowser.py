@@ -607,16 +607,15 @@ if sys.platform == 'darwin':
 #
 if sys.platform == "ios":
     try:
-        from ctypes import cdll, c_void_p, c_char_p, c_ulong
-        from ctypes import util
+        from ctypes import cdll, c_void_p, c_char_p, c_ulong, util
     except ImportError:
         # If ctypes isn't available, we can't trigger the browser
         objc = None
     else:
         # ctypes is available. Load the ObjC library, and wrap the
         # objc_getClass, sel_registerName and objc_msgSend methods
-        objc = cdll.LoadLibrary(util.find_library(b"objc"))
-        if objc:
+        objc = cdll.LoadLibrary(util.find_library("objc"))
+        if objc._name:
             objc.objc_getClass.restype = c_void_p
             objc.objc_getClass.argtypes = [c_char_p]
             objc.sel_registerName.restype = c_void_p
@@ -624,6 +623,9 @@ if sys.platform == "ios":
             # The return type of objc_msgSend is always c_void_p; but the
             # argument types vary with the specific call.
             objc.objc_msgSend.restype = c_void_p
+        else:
+            # Failed to load the objc library
+            objc = None
 
     class IOSBrowser(BaseBrowser):
         def open(self, url, new=0, autoraise=True):

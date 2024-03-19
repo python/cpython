@@ -238,12 +238,28 @@ Windows Platform
 macOS Platform
 --------------
 
-
 .. function:: mac_ver(release='', versioninfo=('','',''), machine='')
 
    Get macOS version information and return it as tuple ``(release, versioninfo,
    machine)`` with *versioninfo* being a tuple ``(version, dev_stage,
    non_release_version)``.
+
+   Entries which cannot be determined are set to ``''``.  All tuple entries are
+   strings.
+
+iOS Platform
+------------
+
+.. function:: ios_ver(system='', release='', machine='', is_simulator=False)
+
+   Get iOS version information and return it as tuple ``(system, release,
+   machine, is_simulator)`` with *release* being a tuple ``(major, minor)``.
+
+   ``system`` is the OS name; either ``iOS`` or ``iPadOS``. ``release`` is the
+   iOS version number as a string (e.g., ``"17.2"``). ``machine`` is the device
+   model identifier; this will be a string like ``iPhone14,1`` for a physical
+   device, or ``iPhone`` on a simulator. ``is_simulator`` is a boolean
+   describing if the app is running on a simulator or a physical device.
 
    Entries which cannot be determined are set to ``''``.  All tuple entries are
    strings.
