@@ -964,16 +964,14 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             {
-                int argcount = oparg;
-                if (self_or_null != NULL) {
-                    args--;
-                    argcount++;
-                }
+                int has_self = (self_or_null != NULL);
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
-                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
-                for (int i = 0; i < argcount; i++) {
-                    new_frame->localsplus[i] = args[i];
+                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+                PyObject **first_non_self_local = new_frame->localsplus + has_self;
+                new_frame->localsplus[0] = self_or_null;
+                for (int i = 0; i < oparg; i++) {
+                    first_non_self_local[i] = args[i];
                 }
             }
             // _SAVE_RETURN_OFFSET
@@ -1223,7 +1221,7 @@
             EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
             if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
                 PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
-                PyTuple_GET_ITEM(callargs, 0) : Py_None;
+                PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
@@ -1755,16 +1753,14 @@
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             {
-                int argcount = oparg;
-                if (self_or_null != NULL) {
-                    args--;
-                    argcount++;
-                }
+                int has_self = (self_or_null != NULL);
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
-                new_frame = _PyFrame_PushUnchecked(tstate, func, argcount);
-                for (int i = 0; i < argcount; i++) {
-                    new_frame->localsplus[i] = args[i];
+                new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
+                PyObject **first_non_self_local = new_frame->localsplus + has_self;
+                new_frame->localsplus[0] = self_or_null;
+                for (int i = 0; i < oparg; i++) {
+                    first_non_self_local[i] = args[i];
                 }
             }
             // _SAVE_RETURN_OFFSET

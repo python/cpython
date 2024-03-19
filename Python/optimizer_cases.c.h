@@ -1561,6 +1561,7 @@
             int argcount = oparg;
             (void)callable;
             PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
+            DPRINTF(3, "func: %p ", func);
             if (func == NULL) {
                 goto error;
             }
