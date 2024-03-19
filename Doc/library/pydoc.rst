@@ -16,19 +16,19 @@
 
 --------------
 
-The :mod:`pydoc` module automatically generates documentation from Python
+The :mod:`!pydoc` module automatically generates documentation from Python
 modules.  The documentation can be presented as pages of text on the console,
 served to a web browser, or saved to HTML files.
 
 For modules, classes, functions and methods, the displayed documentation is
-derived from the docstring (i.e. the :attr:`__doc__` attribute) of the object,
+derived from the docstring (i.e. the :attr:`!__doc__` attribute) of the object,
 and recursively of its documentable members.  If there is no docstring,
-:mod:`pydoc` tries to obtain a description from the block of comment lines just
+:mod:`!pydoc` tries to obtain a description from the block of comment lines just
 above the definition of the class, function or method in the source file, or at
 the top of the module (see :func:`inspect.getcomments`).
 
 The built-in function :func:`help` invokes the online help system in the
-interactive interpreter, which uses :mod:`pydoc` to generate its documentation
+interactive interpreter, which uses :mod:`!pydoc` to generate its documentation
 as text on the console.  The same text documentation can also be viewed from
 outside the Python interpreter by running :program:`pydoc` as a script at the
 operating system's command prompt. For example, running ::
@@ -46,7 +46,7 @@ produced for that file.
 
 .. note::
 
-   In order to find objects and their documentation, :mod:`pydoc` imports the
+   In order to find objects and their documentation, :mod:`!pydoc` imports the
    module(s) to be documented.  Therefore, any code on module level will be
    executed on that occasion.  Use an ``if __name__ == '__main__':`` guard to
    only execute code when a file is invoked as a script and not just imported.
@@ -90,7 +90,7 @@ Python interpreter and typed ``import spam``.
 Module docs for core modules are assumed to reside in
 ``https://docs.python.org/X.Y/library/`` where ``X`` and ``Y`` are the
 major and minor version numbers of the Python interpreter.  This can
-be overridden by setting the :envvar:`PYTHONDOCS` environment variable
+be overridden by setting the :envvar:`!PYTHONDOCS` environment variable
 to a different URL or to a local directory containing the Library
 Reference Manual pages.
 
@@ -101,7 +101,7 @@ Reference Manual pages.
    The ``-g`` command line option was removed.
 
 .. versionchanged:: 3.4
-   :mod:`pydoc` now uses :func:`inspect.signature` rather than
+   :mod:`!pydoc` now uses :func:`inspect.signature` rather than
    :func:`inspect.getfullargspec` to extract signature information from
    callables.
 
