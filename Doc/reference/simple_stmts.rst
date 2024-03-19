@@ -1013,7 +1013,7 @@ causes the listed identifiers to refer to names previously bound in
 nonlocal scopes. It allows encapsulated code to rebind such nonlocal
 identifiers.  If a name is bound in more than one nonlocal scope, the
 nearest binding is used. If a name is not bound in any nonlocal scope,
-or if there is no nonlocal scope, a SyntaxError is raised.
+or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
 The nonlocal statement applies to the entire scope of a function or
 class body. A :exc:`SyntaxError` is raised if a variable is used or
