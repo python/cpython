@@ -111,7 +111,7 @@ python_parser = subparsers.add_parser(
     "python",
     help=(
         "Generate Python code, needs grammar definition with Python actions, "
-        "see `we-like-parsers/pegen`"
+        "see `we-like-parsers/pegen`, start with `data/python.gram`"
     )
 )
 python_parser.set_defaults(func=generate_python_code)
