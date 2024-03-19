@@ -65,7 +65,7 @@ typedef int (*optimize_func)(
     _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
     int curr_stackentries);
 
-typedef struct _PyOptimizerObject {
+struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
     /* These thresholds are treated as signed so do not exceed INT16_MAX
@@ -74,7 +74,7 @@ typedef struct _PyOptimizerObject {
     uint16_t side_threshold;
     uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
-} _PyOptimizerObject;
+};
 
 /** Test support **/
 typedef struct {
@@ -91,9 +91,6 @@ PyAPI_FUNC(int) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
-
-int
-_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
 void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorClear(_PyExecutorObject *);
