@@ -478,6 +478,9 @@ def register_standard_browsers():
         # OS X can use below Unix support (but we prefer using the OS X
         # specific stuff)
 
+    if sys.platform == "ios":
+        register("iosbrowser", None, IOSBrowser(), preferred=True)
+
     if sys.platform == "serenityos":
         # SerenityOS webbrowser, simply called "Browser".
         register("Browser", None, BackgroundBrowser("Browser"))
@@ -598,6 +601,80 @@ if sys.platform == 'darwin':
             osapipe.write(script)
             rc = osapipe.close()
             return not rc
+
+#
+# Platform support for iOS
+#
+if sys.platform == "ios":
+    try:
+        from ctypes import cdll, c_void_p, c_char_p, c_ulong
+        from ctypes import util
+    except ImportError:
+        # If ctypes isn't available, we can't trigger the browser
+        objc = None
+    else:
+        # ctypes is available. Load the ObjC library, and wrap the
+        # objc_getClass, sel_registerName and objc_msgSend methods
+        objc = cdll.LoadLibrary(util.find_library(b"objc"))
+        if objc:
+            objc.objc_getClass.restype = c_void_p
+            objc.objc_getClass.argtypes = [c_char_p]
+            objc.sel_registerName.restype = c_void_p
+            objc.sel_registerName.argtypes = [c_char_p]
+            # The return type of objc_msgSend is always c_void_p; but the
+            # argument types vary with the specific call.
+            objc.objc_msgSend.restype = c_void_p
+
+    class IOSBrowser(BaseBrowser):
+        def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
+            # If ctypes isn't available, we can't open a browser
+            if objc is None:
+                return False
+
+            # This is the equivalent of:
+            #    NSString url_string =
+            #        [NSString stringWithCString:url.encode("utf-8")
+            #                           encoding:NSUTF8StringEncoding];
+            NSString = objc.objc_getClass(b"NSString")
+            constructor = objc.sel_registerName(b"stringWithCString:encoding:")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_char_p, c_ulong]
+            url_string = objc.objc_msgSend(
+                NSString,
+                constructor,
+                url.encode("utf-8"),
+                4,  # NSUTF8StringEncoding = 4
+            )
+
+            # Create an NSURL object representing the URL
+            # This is the equivalent of:
+            #   NSURL *nsurl = [NSURL URLWithString:url];
+            NSURL = objc.objc_getClass(b"NSURL")
+            urlWithString_ = objc.sel_registerName(b"URLWithString:")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
+            ns_url = objc.objc_msgSend(NSURL, urlWithString_, url_string)
+
+            # Get the shared UIApplication instance
+            # This code is the equivalent of:
+            # UIApplication shared_app = [UIApplication sharedApplication]
+            UIApplication = objc.objc_getClass(b"UIApplication")
+            sharedApplication = objc.sel_registerName(b"sharedApplication")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
+            shared_app = objc.objc_msgSend(UIApplication, sharedApplication)
+
+            # Open the URL on the shared application
+            # This code is the equivalent of:
+            #   [shared_app openURL:ns_url
+            #               options:NIL
+            #     completionHandler:NIL];
+            openURL_ = objc.sel_registerName(b"openURL:options:completionHandler:")
+            objc.objc_msgSend.argtypes = [
+                c_void_p, c_void_p, c_void_p, c_void_p, c_void_p
+            ]
+            objc.objc_msgSend.restype = None
+            objc.objc_msgSend(shared_app, openURL_, ns_url, None, None)
+
+            return True
 
 
 def main():
