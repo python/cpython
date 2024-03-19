@@ -166,7 +166,7 @@ getargs_w_star_opt(PyObject *self, PyObject *args)
 
 /* Test the old w and w# codes that no longer work */
 static PyObject *
-test_w_code_invalid(PyObject *, PyObject *)
+test_w_code_invalid(PyObject *self, PyObject *arg)
 {
     static const char * const keywords[] = {"a", "b", "c", "d", NULL};
     char *formats_3[] = {"O|w#$O",
