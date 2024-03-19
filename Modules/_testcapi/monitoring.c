@@ -380,7 +380,7 @@ enter_scope(PyObject *self, PyObject *args)
 
     uint8_t events[] = { event1, event2 };
 
-    PyMonitoring_BeginScope(codelike->monitoring_states,
+    PyMonitoring_EnterScope(codelike->monitoring_states,
                             &codelike->version,
                             events,
                             num_events);
@@ -391,6 +391,7 @@ enter_scope(PyObject *self, PyObject *args)
 static PyObject *
 exit_scope(PyObject *self, PyObject *args)
 {
+    PyMonitoring_ExitScope();
     Py_RETURN_NONE;
 }
 

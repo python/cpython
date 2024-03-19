@@ -2344,7 +2344,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int offs
 }
 
 void
-_PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
+_PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                          const uint8_t *event_types, uint32_t length)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -2361,7 +2361,7 @@ _PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
 }
 
 void
-_PyMonitoring_EndScope(void)
+_PyMonitoring_ExitScope(void)
 {
 }
 
@@ -2516,14 +2516,14 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
 #ifdef Py_LIMITED_API
 
 void
-PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
+PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                        uint8_t *event_types, uint32_t length)
 {
-    _PyMonitoring_BeginScope(state_array, version, event_types, length);
+    _PyMonitoring_EnterScope(state_array, version, event_types, length);
 }
 
 void
-PyMonitoring_EndScope()
+PyMonitoring_ExitScope()
 {
 }
 

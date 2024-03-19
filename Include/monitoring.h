@@ -27,26 +27,26 @@ typedef struct _PyMonitoringState {
 
 #ifndef Py_LIMITED_API
 static inline void
-PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
+PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                         const uint8_t *event_types, uint32_t length)
 {
-    _PyMonitoring_BeginScope(state_array, version, event_types, length);
+    _PyMonitoring_EnterScope(state_array, version, event_types, length);
 }
 #else
 extern void
-PyMonitoring_BeginScope(PyMonitoringState *state_array, uint64_t *version,
+PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                         const uint8_t *event_types, uint32_t length);
 #endif
 
 #ifndef Py_LIMITED_API
 static inline void
-PyMonitoring_EndScope(void)
+PyMonitoring_ExitScope(void)
 {
-    _PyMonitoring_EndScope();
+    _PyMonitoring_ExitScope();
 }
 #else
 extern void
-PyMonitoring_EndScope(void);
+PyMonitoring_ExitScope(void);
 #endif
 
 
