@@ -57,6 +57,17 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
+    'ios': {
+        'stdlib': '{installed_base}/lib/python{py_version_short}',
+        'platstdlib': '{installed_base}/lib/python{py_version_short}',
+        'purelib': '{installed_base}/lib/python{py_version_short}/site-packages',
+        'platlib': '{installed_base}/lib/python{py_version_short}/site-packages',
+        'include': '{installed_base}/include/{implementation_lower}',
+        'platinclude': '{installed_base}/include/{implementation_lower}',
+        'scripts': '{installed_base}/bin',
+        'data': '{installed_base}/Resources',
+        },
+
     # Downstream distributors can overwrite the default install scheme.
     # This is done to support downstream modifications where distributors change
     # the installation layout (eg. different site-packages directory).
@@ -114,8 +125,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # Emscripten, VxWorks, and WASI have no home directories
-    if sys.platform in {"emscripten", "vxworks", "wasi"}:
+    # iOS, tvOS, watchOS, Emscripten, VxWorks, and WASI have no home directories
+    if sys.platform in {"ios", "emscripten", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
     def joinuser(*args):
@@ -290,6 +301,13 @@ def _get_preferred_schemes():
             'home': 'posix_home',
             'user': 'osx_framework_user',
         }
+    if sys.platform in {'ios', 'tvos', 'watchos'}:
+        return {
+            'prefix': sys.platform,
+            'home': sys.platform,
+            'user': sys.platform,
+        }
+
     return {
         'prefix': 'posix_prefix',
         'home': 'posix_home',
@@ -507,6 +525,9 @@ def _init_config_vars():
         import _osx_support
         _osx_support.customize_config_vars(_CONFIG_VARS)
 
+    if sys.platform in {'ios', 'tvos', 'watchos'}:
+        _CONFIG_VARS['installed_base'] = sys.executable
+
     global _CONFIG_VARS_INITIALIZED
     _CONFIG_VARS_INITIALIZED = True
 
@@ -623,10 +644,16 @@ def get_platform():
         if m:
             release = m.group()
     elif osname[:6] == "darwin":
-        import _osx_support
-        osname, release, machine = _osx_support.get_platform_osx(
-                                            get_config_vars(),
-                                            osname, release, machine)
+        if sys.platform in {"ios", "tvos", "watchos"}:
+            import _ios_support
+            _, release, _, _ = _ios_support.get_platform_ios()
+            osname = sys.platform
+            machine = sys.implementation._multiarch
+        else:
+            import _osx_support
+            osname, release, machine = _osx_support.get_platform_osx(
+                                                get_config_vars(),
+                                                osname, release, machine)
 
     return f"{osname}-{release}-{machine}"
 
