@@ -82,8 +82,7 @@ The following implementation-specific options are available:\n\
 -X faulthandler: dump the Python traceback on fatal errors;\n\
          also PYTHONFAULTHANDLER\n\
 -X frozen_modules=[on|off]: whether to use frozen modules; the default is \"on\"\n\
-         for installed Python and \"off\" for a local build;\n\
-         also PYTHON_FROZEN_MODULES\n\
+         for installed Python and \"off\" for a local build\n\
 -X importtime: show how long each import takes; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
