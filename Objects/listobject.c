@@ -1289,7 +1289,7 @@ list_extend_set(PyListObject *self, PySetObject *other)
     PyObject **dest = self->ob_item + m;
     while (_PySet_NextEntry((PyObject *)other, &setpos, &key, &hash)) {
         Py_INCREF(key);
-        *dest = key;
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, key);
         dest++;
     }
     Py_SET_SIZE(self, m + n);
@@ -1312,7 +1312,7 @@ list_extend_dict(PyListObject *self, PyDictObject *dict, int which_item)
     while (_PyDict_Next((PyObject *)dict, &pos, &keyvalue[0], &keyvalue[1], NULL)) {
         PyObject *obj = keyvalue[which_item];
         Py_INCREF(obj);
-        *dest = obj;
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, obj);
         dest++;
     }
 
@@ -1329,7 +1329,6 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
         return -1;
     }
 
-    // TODO: Don't start a garbage collection cycle when creating tuples
     PyObject **dest = self->ob_item + m;
     Py_ssize_t pos = 0;
     Py_ssize_t i = 0;
@@ -1340,7 +1339,7 @@ list_extend_dictitems(PyListObject *self, PyDictObject *dict)
             Py_SET_SIZE(self, m + i);
             return -1;
         }
-        FT_ATOMIC_STORE_PTR_RELAXED(*dest, item);
+        FT_ATOMIC_STORE_PTR_RELEASE(*dest, item);
         dest++;
         i++;
     }
@@ -1354,7 +1353,6 @@ _list_extend(PyListObject *self, PyObject *iterable)
 {
     // Special case:
     // lists and tuples which can use PySequence_Fast ops
-    // TODO(@corona10): Add more special cases for other types.
     int res = -1;
     if ((PyObject *)self == iterable) {
         Py_BEGIN_CRITICAL_SECTION(self);
