@@ -334,7 +334,8 @@ class TestPartial:
             f.__setstate__((f, (), {}, {}))
             try:
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                    with support.infinite_recursion():
+                    # gh-117008: Small limit since pickle uses C stack memory
+                    with support.infinite_recursion(100):
                         with self.assertRaises(RecursionError):
                             pickle.dumps(f, proto)
             finally:
