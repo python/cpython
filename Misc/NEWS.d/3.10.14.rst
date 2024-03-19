@@ -1,0 +1,147 @@
+.. date: 2024-02-18-03-14-40
+.. gh-issue: 115398
+.. nonce: tzvxH8
+.. release date: 2024-03-19
+.. section: Security
+
+Allow controlling Expat >=2.6.0 reparse deferral (CVE-2023-52425) by adding
+five new methods:
+
+* :meth:`xml.etree.ElementTree.XMLParser.flush`
+* :meth:`xml.etree.ElementTree.XMLPullParser.flush`
+* :meth:`xml.parsers.expat.xmlparser.GetReparseDeferralEnabled`
+* :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled`
+* :meth:`xml.sax.expatreader.ExpatParser.flush`
+
+..
+
+.. date: 2024-02-13-15-14-39
+.. gh-issue: 115399
+.. nonce: xT-scP
+.. section: Security
+
+Update bundled libexpat to 2.6.0
+
+..
+
+.. date: 2024-01-26-22-14-09
+.. gh-issue: 114572
+.. nonce: t1QMQD
+.. section: Security
+
+:meth:`ssl.SSLContext.cert_store_stats` and
+:meth:`ssl.SSLContext.get_ca_certs` now correctly lock access to the
+certificate store, when the :class:`ssl.SSLContext` is shared across
+multiple threads.
+
+..
+
+.. date: 2024-01-02-19-52-23
+.. gh-issue: 113659
+.. nonce: DkmnQc
+.. section: Security
+
+Skip ``.pth`` files with names starting with a dot or hidden file attribute.
+
+..
+
+.. date: 2023-10-27-19-38-33
+.. gh-issue: 102388
+.. nonce: vd5YUZ
+.. section: Core and Builtins
+
+Fix a bug where ``iso2022_jp_3`` and ``iso2022_jp_2004`` codecs read out of
+bounds
+
+..
+
+.. date: 2024-02-09-19-41-48
+.. gh-issue: 115197
+.. nonce: 20wkWH
+.. section: Library
+
+``urllib.request`` no longer resolves the hostname before checking it
+against the system's proxy bypass list on macOS and Windows.
+
+..
+
+.. date: 2024-02-08-14-21-28
+.. gh-issue: 115133
+.. nonce: ycl4ko
+.. section: Library
+
+Fix tests for :class:`~xml.etree.ElementTree.XMLPullParser` with Expat
+2.6.0.
+
+..
+
+.. date: 2023-12-01-16-09-59
+.. gh-issue: 81194
+.. nonce: FFad1c
+.. section: Library
+
+Fix a crash in :func:`socket.if_indextoname` with specific value (UINT_MAX).
+Fix an integer overflow in :func:`socket.if_indextoname` on 64-bit
+non-Windows platforms.
+
+..
+
+.. date: 2023-09-28-13-15-51
+.. gh-issue: 109858
+.. nonce: 43e2dg
+.. section: Library
+
+Protect :mod:`zipfile` from "quoted-overlap" zipbomb. It now raises
+BadZipFile when try to read an entry that overlaps with other entry or
+central directory.
+
+..
+
+.. date: 2022-12-01-16-57-44
+.. gh-issue: 91133
+.. nonce: LKMVCV
+.. section: Library
+
+Fix a bug in :class:`tempfile.TemporaryDirectory` cleanup, which now no
+longer dereferences symlinks when working around file system permission
+errors.
+
+..
+
+.. date: 2024-02-14-20-17-04
+.. gh-issue: 115399
+.. nonce: fb9a0R
+.. section: Documentation
+
+Document CVE-2023-52425 of Expat <2.6.0 under "XML vulnerabilities".
+
+..
+
+.. date: 2024-02-01-14-35-05
+.. gh-issue: 111239
+.. nonce: SO7SUF
+.. section: Windows
+
+Update Windows builds to use zlib v1.3.1.
+
+..
+
+.. date: 2023-09-29-10-35-29
+.. gh-issue: 109991
+.. nonce: GmuzGZ
+.. section: Windows
+
+Windows builds now use OpenSSL 1.1.1w. Note that OpenSSL 1.1 has reached its
+end of life and no future fixes will be made, and this version of Python is
+no longer receiving maintenance fixes and will not be updated to OpenSSL
+3.0.
+
+..
+
+.. date: 2023-09-27-23-31-54
+.. gh-issue: 109991
+.. nonce: sUUYY8
+.. section: Tools/Demos
+
+Update GitHub CI workflows to use OpenSSL 3.0.11 and multissltests to use
+1.1.1w, 3.0.11, and 3.1.3.
