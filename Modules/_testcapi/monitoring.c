@@ -375,7 +375,7 @@ enter_scope(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int event1, event2=0;
-    int num_events = PyTuple_Size(args) - 1;
+    Py_ssize_t num_events = PyTuple_Size(args) - 1;
     if (num_events == 1) {
         if (!PyArg_ParseTuple(args, "Oi", &codelike, &event1)) {
             return NULL;

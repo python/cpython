@@ -2511,9 +2511,7 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
                                      PY_MONITORING_EVENT_STOP_ITERATION);
 }
 
-
-
-#ifdef Py_LIMITED_API
+/******************* Public API *******************/
 
 void
 PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
@@ -2649,5 +2647,3 @@ PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike
 {
     IF_ACTIVE(_PyMonitoring_FireStopIterationEvent(state, codelike, offset, exception));
 }
-
-#endif
