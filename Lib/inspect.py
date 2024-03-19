@@ -954,6 +954,10 @@ def getsourcefile(object):
     elif any(filename.endswith(s) for s in
                  importlib.machinery.EXTENSION_SUFFIXES):
         return None
+    elif filename.endswith(".fwork"):
+        # Apple mobile framework markers are another type of non-source file
+        return None
+
     # return a filename found in the linecache even if it doesn't exist on disk
     if filename in linecache.cache:
         return filename
@@ -984,6 +988,7 @@ def getmodule(object, _filename=None):
         return object
     if hasattr(object, '__module__'):
         return sys.modules.get(object.__module__)
+
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:
         return sys.modules.get(modulesbyfile[_filename])
@@ -1119,7 +1124,7 @@ def findsource(object):
         # Allow filenames in form of "<something>" to pass through.
         # `doctest` monkeypatches `linecache` module to enable
         # inspection, so let `linecache.getlines` to be called.
-        if not (file.startswith('<') and file.endswith('>')):
+        if (not (file.startswith('<') and file.endswith('>'))) or file.endswith('.fwork'):
             raise OSError('source code not available')
 
     module = getmodule(object, file)
