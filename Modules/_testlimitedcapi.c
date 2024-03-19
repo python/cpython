@@ -44,6 +44,9 @@ PyInit__testlimitedcapi(void)
     if (_PyTestLimitedCAPI_Init_List(mod) < 0) {
         return NULL;
     }
+    if (_PyTestLimitedCAPI_Init_Long(mod) < 0) {
+        return NULL;
+    }
     if (_PyTestLimitedCAPI_Init_PyOS(mod) < 0) {
         return NULL;
     }
