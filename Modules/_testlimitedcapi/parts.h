@@ -31,6 +31,7 @@ int _PyTestLimitedCAPI_Init_List(PyObject *module);
 int _PyTestLimitedCAPI_Init_PyOS(PyObject *module);
 int _PyTestLimitedCAPI_Init_Set(PyObject *module);
 int _PyTestLimitedCAPI_Init_Sys(PyObject *module);
+int _PyTestLimitedCAPI_Init_Unicode(PyObject *module);
 int _PyTestLimitedCAPI_Init_VectorcallLimited(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H

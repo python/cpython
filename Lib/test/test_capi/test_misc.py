@@ -2338,7 +2338,7 @@ class Test_testcapi(unittest.TestCase):
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_widechar(self):
-        _testcapi.test_widechar()
+        _testlimitedcapi.test_widechar()
 
     def test_version_api_data(self):
         self.assertEqual(_testcapi.Py_Version, sys.hexversion)
