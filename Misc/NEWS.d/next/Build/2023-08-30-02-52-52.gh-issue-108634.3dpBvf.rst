@@ -1,3 +1,0 @@
-Python built with :file:`configure` :option:`--with-trace-refs` (tracing
-references) is now ABI compatible with Python release build and :ref:`debug
-build <debug-build>`. Patch by Victor Stinner.

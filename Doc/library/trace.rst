@@ -187,13 +187,21 @@ Programmatic Interface
 
       Merge in data from another :class:`CoverageResults` object.
 
-   .. method:: write_results(show_missing=True, summary=False, coverdir=None)
+   .. method:: write_results(show_missing=True, summary=False, coverdir=None,\
+                             *, ignore_missing_files=False)
 
       Write coverage results.  Set *show_missing* to show lines that had no
       hits.  Set *summary* to include in the output the coverage summary per
       module.  *coverdir* specifies the directory into which the coverage
       result files will be output.  If ``None``, the results for each source
       file are placed in its directory.
+
+      If *ignore_missing_files* is ``True``, coverage counts for files that no
+      longer exist are silently ignored. Otherwise, a missing file will
+      raise a :exc:`FileNotFoundError`.
+
+      .. versionchanged:: 3.13
+         Added *ignore_missing_files* parameter.
 
 A simple example demonstrating the use of the programmatic interface::
 

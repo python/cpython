@@ -3,8 +3,6 @@
 #include "parts.h"
 #include "util.h"
 
-static struct PyModuleDef *_testcapimodule = NULL;  // set at initialization
-
 static PyObject *
 codec_incrementalencoder(PyObject *self, PyObject *args)
 {
@@ -634,7 +632,7 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
     NULLABLE(unicode);
     s = PyUnicode_AsUTF8AndSize(unicode, &size);
     if (s == NULL) {
-        assert(size == UNINITIALIZED_SIZE);
+        assert(size == -1);
         return NULL;
     }
 
@@ -1429,6 +1427,48 @@ unicode_comparewithasciistring(PyObject *self, PyObject *args)
     return PyLong_FromLong(result);
 }
 
+/* Test PyUnicode_EqualToUTF8() */
+static PyObject *
+unicode_equaltoutf8(PyObject *self, PyObject *args)
+{
+    PyObject *left;
+    const char *right = NULL;
+    Py_ssize_t right_len;
+    int result;
+
+    if (!PyArg_ParseTuple(args, "Oz#", &left, &right, &right_len)) {
+        return NULL;
+    }
+
+    NULLABLE(left);
+    result = PyUnicode_EqualToUTF8(left, right);
+    assert(!PyErr_Occurred());
+    return PyLong_FromLong(result);
+}
+
+/* Test PyUnicode_EqualToUTF8AndSize() */
+static PyObject *
+unicode_equaltoutf8andsize(PyObject *self, PyObject *args)
+{
+    PyObject *left;
+    const char *right = NULL;
+    Py_ssize_t right_len;
+    Py_ssize_t size = -100;
+    int result;
+
+    if (!PyArg_ParseTuple(args, "Oz#|n", &left, &right, &right_len, &size)) {
+        return NULL;
+    }
+
+    NULLABLE(left);
+    if (size == -100) {
+        size = right_len;
+    }
+    result = PyUnicode_EqualToUTF8AndSize(left, right, size);
+    assert(!PyErr_Occurred());
+    return PyLong_FromLong(result);
+}
+
 /* Test PyUnicode_RichCompare() */
 static PyObject *
 unicode_richcompare(PyObject *self, PyObject *args)
@@ -2044,6 +2084,8 @@ static PyMethodDef TestMethods[] = {
     {"unicode_replace",          unicode_replace,                METH_VARARGS},
     {"unicode_compare",          unicode_compare,                METH_VARARGS},
     {"unicode_comparewithasciistring",unicode_comparewithasciistring,METH_VARARGS},
+    {"unicode_equaltoutf8",      unicode_equaltoutf8,            METH_VARARGS},
+    {"unicode_equaltoutf8andsize",unicode_equaltoutf8andsize,    METH_VARARGS},
     {"unicode_richcompare",      unicode_richcompare,            METH_VARARGS},
     {"unicode_format",           unicode_format,                 METH_VARARGS},
     {"unicode_contains",         unicode_contains,               METH_VARARGS},
@@ -2054,8 +2096,6 @@ static PyMethodDef TestMethods[] = {
 
 int
 _PyTestCapi_Init_Unicode(PyObject *m) {
-    _testcapimodule = PyModule_GetDef(m);
-
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
     }

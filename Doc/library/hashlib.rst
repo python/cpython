@@ -77,8 +77,6 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
    :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`
    were added.
-
-.. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
 
 .. _hashlib-usedforsecurity:
@@ -121,7 +119,7 @@ More condensed:
 Constructors
 ------------
 
-.. function:: new(name[, data], \*, usedforsecurity=True)
+.. function:: new(name[, data], *, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the

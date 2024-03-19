@@ -1,1 +1,0 @@
-Remove the make target ``regen-opcode-targets``, merge its work into ``regen-opcode`` which repeats most of the calculation. This simplifies the code for the build and reduces code duplication.

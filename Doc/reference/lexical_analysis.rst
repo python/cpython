@@ -514,7 +514,6 @@ is not supported.
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
    of ``'br'``.
 
-.. versionadded:: 3.3
    Support for the unicode legacy literal (``u'value'``) was reintroduced
    to simplify the maintenance of dual Python 2.x and 3.x codebases.
    See :pep:`414` for more information.
@@ -657,12 +656,12 @@ is more easily recognized as broken.)  It is also important to note that the
 escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
-   .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
+.. versionchanged:: 3.6
+   Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
 
-   .. versionchanged:: 3.12
-      Unrecognized escape sequences produce a :exc:`SyntaxWarning`. In a future
-      Python version they will be eventually a :exc:`SyntaxError`.
+.. versionchanged:: 3.12
+   Unrecognized escape sequences produce a :exc:`SyntaxWarning`. In a future
+   Python version they will be eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
@@ -708,10 +707,12 @@ and formatted string literals may be concatenated with plain string literals.
    single: ! (exclamation); in formatted string literal
    single: : (colon); in formatted string literal
    single: = (equals); for help in debugging using string literals
-.. _f-strings:
 
-Formatted string literals
--------------------------
+.. _f-strings:
+.. _formatted-string-literals:
+
+f-strings
+---------
 
 .. versionadded:: 3.6
 
@@ -732,7 +733,7 @@ for the contents of the string is:
                :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
    conversion: "s" | "r" | "a"
-   format_spec: (`literal_char` | NULL | `replacement_field`)*
+   format_spec: (`literal_char` | `replacement_field`)*
    literal_char: <any code point except "{", "}" or NULL>
 
 The parts of the string outside curly braces are treated literally,
