@@ -261,6 +261,18 @@ function object and the code object.
 
 The cache doesn't contain strong references; cache entries are
 invalidated whenever the function or code object is deallocated.
+
+Invariants
+----------
+
+These should hold at any time except when one of the cache-mutating
+functions is running.
+
+- For any slot s at index i:
+    - s->func == NULL or s->func->func_version % FUNC_VERSION_CACHE_SIZE == i
+    - s->code == NULL or s->code->co_version % FUNC_VERSION_CACHE_SIZE == i
+    if s->func != NULL, then s->func->func_code == s->code
+
 */
 
 void
@@ -297,7 +309,10 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
         assert(PyCode_Check(slot->code));
         PyCodeObject *code = (PyCodeObject *)slot->code;
         if (code->co_version == version) {
-           slot->code = NULL;
+            slot->code = NULL;
+            if (slot->func != NULL) {
+                slot->code = slot->func->func_code;
+            }
         }
     }
 }
