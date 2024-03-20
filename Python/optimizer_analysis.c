@@ -416,10 +416,12 @@ error:
 hit_bottom:
     // Attempted to push a "bottom" (contradition) symbol onto the stack.
     // This means that the abstract interpreter has hit unreachable code.
-    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but it's
-    // simpler to just leave the rest of the trace alone.
+    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
+    // bottom indicates type instability, so we are probably better off
+    // retrying later.
     DPRINTF(3, "\n");
     DPRINTF(1, "Hit bottom in abstract interpreter\n");
+    return 0;
 done:
     /* Cannot optimize further, but there would be no benefit
      * in retrying later */
