@@ -131,7 +131,7 @@ there are several major differences between iOS and other POSIX systems.
 
 * iOS can only use Python in "embedded" mode. There is no Python REPL, and no
   ability to execute binaries that are part of the normal Python developer
-  experience, such as ``pip``. To add Python code to your iOS app, you must use
+  experience, such as :program:`pip`. To add Python code to your iOS app, you must use
   the :ref:`Python embedding API <embedding>` to add a Python interpreter to an
   iOS app created with Xcode. See the :ref:`iOS usage guide <using-ios>` for
   more details.

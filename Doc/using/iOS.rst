@@ -9,13 +9,13 @@ Using Python on iOS
 
 Python on iOS is unlike Python on desktop platforms. On a desktop platform,
 Python is generally installed as a system resource that can be used by any user
-of that computer. Users then interact with Python by running a ``python``
+of that computer. Users then interact with Python by running a :program:`python`
 executable and entering commands at an interactive prompt, or by running a
 Python script.
 
 On iOS, there is no concept of installing as a system resource. The only unit
 of software distribution is an "app". There is also no console where you could
-run a ``python`` executable, or interact with a Python REPL.
+run a :program:`python` executable, or interact with a Python REPL.
 
 As a result, the only way you can use Python on iOS is in embedded mode - that
 is, by writing a native iOS application, and embedding a Python interpreter
@@ -51,7 +51,7 @@ device model, and whether the device is a simulator, can be obtained using
 Standard library availability
 -----------------------------
 
-The Python standard library has some notable ommissions and restrictions on
+The Python standard library has some notable omissions and restrictions on
 iOS. See the :ref:`API availability guide for iOS <iOS-availability>` for
 details.
 
@@ -66,7 +66,7 @@ The iOS App Store requires that *all* binary modules in an iOS app must be
 dynamic libraries, contained in a framework with appropriate metadata, stored
 in the ``Frameworks`` folder of the packaged app. There can be only a single
 binary per framework, and there can be no executable binary material outside
-the Frameworks folder.
+the ``Frameworks`` folder.
 
 This conflicts with the usual Python approach for distributing binaries, which
 allows a binary extension module to be loaded from any location on
@@ -109,7 +109,7 @@ Compiler stub binaries
 Xcode doesn't expose explicit compilers for iOS; instead, it uses an ``xcrun``
 script that resolves to a full compiler path (e.g., ``xcrun --sdk iphoneos
 clang`` to get the ``clang`` for an iPhone device). However, using this script
-poses 2 problems:
+poses two problems:
 
 * The output of ``xcrun`` includes paths that are machine specific, resulting
   in a sysconfig module that cannot be shared between users; and
@@ -144,11 +144,11 @@ install.
 If you want to run your code on the iOS simulator, you'll also need to install
 an iOS Simulator Platform. You should be prompted to select an iOS Simulator
 Platform when you first run Xcode. Alternatively, you can add an iOS Simulator
-Platform by selecting an open the Platforms tab of the Xcode Settings panel.
+Platform by selecting from the Platforms tab of the Xcode Settings panel.
 
 .. _adding-ios:
 
-Adding iOS to an XCode project
+Adding iOS to an Xcode project
 ------------------------------
 
 Python can be added to any iOS project, using either Swift or Objective C. The
@@ -188,7 +188,7 @@ To add Python to an iOS Xcode project:
 
    - Build Options
 
-     * User script sandboxing: No
+     * User Script Sandboxing: No
      * Enable Testability: Yes
 
    - Search Paths
@@ -198,7 +198,7 @@ To add Python to an iOS Xcode project:
 
    - Apple Clang - Warnings - All languages
 
-     * Quoted Include in Framework Header: No
+     * Quoted Include In Framework Header: No
 
 8. Add a build step that copies the Python standard library into your app. In
    the "Build Phases" tab, add a new "Run Script" build step *before* the

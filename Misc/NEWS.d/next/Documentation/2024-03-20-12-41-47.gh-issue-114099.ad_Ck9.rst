@@ -1,2 +1,1 @@
-An iOS platform guide was added, and modules not available on iOS were
-flagged.
+Add an iOS platform guide, and flag modules not available on iOS.

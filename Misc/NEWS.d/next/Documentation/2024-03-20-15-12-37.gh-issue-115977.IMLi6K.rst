@@ -1,1 +1,1 @@
-Compatibilty references to Emscripten were removed.
+Remove compatibilty references to Emscripten.
