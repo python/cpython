@@ -976,7 +976,7 @@ LDFLAGS
 CFLAGS
 CC
 HAS_XCRUN
-IOS_DEPLOYMENT_TARGET
+CONFIGURE_IOS_DEPLOYMENT_TARGET
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
 _PYTHON_HOST_PLATFORM
@@ -4597,6 +4597,10 @@ fi
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
+# Record the value of IOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+CONFIGURE_IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET}
+
+
 # checks for alternative programs
 
 # compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
@@ -4634,7 +4638,6 @@ case $ac_sys_system in #(
 
     as_fn_append CFLAGS " -mios-version-min=${IOS_DEPLOYMENT_TARGET}"
     as_fn_append LDFLAGS " -mios-version-min=${IOS_DEPLOYMENT_TARGET}"
-
    ;; #(
   *) :
      ;;

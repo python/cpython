@@ -866,6 +866,10 @@ AC_SUBST([EXPORT_MACOSX_DEPLOYMENT_TARGET])
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
+# Record the value of IOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+CONFIGURE_IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET}
+AC_SUBST([CONFIGURE_IOS_DEPLOYMENT_TARGET])
+
 # checks for alternative programs
 
 # compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
@@ -903,7 +907,6 @@ AS_CASE([$ac_sys_system],
   [iOS], [
     AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
     AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
-    AC_SUBST([IOS_DEPLOYMENT_TARGET])
   ],
 )
 

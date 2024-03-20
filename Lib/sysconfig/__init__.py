@@ -21,6 +21,7 @@ __all__ = [
 
 # Keys for get_config_var() that are never converted to Python integers.
 _ALWAYS_STR = {
+    'IOS_DEPLOYMENT_TARGET',
     'MACOSX_DEPLOYMENT_TARGET',
 }
 
@@ -645,8 +646,7 @@ def get_platform():
             release = m.group()
     elif osname[:6] == "darwin":
         if sys.platform == "ios":
-            import _ios_support
-            _, release, _, _ = _ios_support.get_platform_ios()
+            release = get_config_vars().get("IOS_DEPLOYMENT_TARGET", "12.0")
             osname = sys.platform
             machine = sys.implementation._multiarch
         else:
