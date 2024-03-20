@@ -165,6 +165,24 @@ fire_event_py_return(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+fire_event_c_return(PyObject *self, PyObject *args)
+{
+    PyObject *codelike;
+    int offset;
+    PyObject *retval;
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &retval)) {
+        return NULL;
+    }
+    RAISE_UNLESS_CODELIKE(codelike);
+    PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
+    assert(offset >= 0 && offset < cl->num_events);
+    PyMonitoringState *state = &cl->monitoring_states[offset];
+
+    int res = PyMonitoring_FireCReturnEvent(state, codelike, offset, retval);
+    RETURN_INT(res == -1 ? -1 : state->active);
+}
+
+static PyObject *
 fire_event_py_yield(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
@@ -215,6 +233,23 @@ fire_event_line(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
 
     int res = PyMonitoring_FireLineEvent(state, codelike, offset, lineno);
+    RETURN_INT(res == -1 ? -1 : state->active);
+}
+
+static PyObject *
+fire_event_instruction(PyObject *self, PyObject *args)
+{
+    PyObject *codelike;
+    int offset;
+    if (!PyArg_ParseTuple(args, "Oi", &codelike, &offset)) {
+        return NULL;
+    }
+    RAISE_UNLESS_CODELIKE(codelike);
+    PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
+    assert(offset >= 0 && offset < cl->num_events);
+    PyMonitoringState *state = &cl->monitoring_states[offset];
+
+    int res = PyMonitoring_FireInstructionEvent(state, codelike, offset);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -289,6 +324,25 @@ fire_event_raise(PyObject *self, PyObject *args)
     PyMonitoringState *state = &cl->monitoring_states[offset];
 
     int res = PyMonitoring_FireRaiseEvent(state, codelike, offset, exception);
+    RETURN_INT(res == -1 ? -1 : state->active);
+}
+
+static PyObject *
+fire_event_c_raise(PyObject *self, PyObject *args)
+{
+    PyObject *codelike;
+    int offset;
+    PyObject *exception;
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &exception)) {
+        return NULL;
+    }
+    NULLABLE(exception);
+    RAISE_UNLESS_CODELIKE(codelike);
+    PyCodeLikeObject *cl = ((PyCodeLikeObject *)codelike);
+    assert(offset >= 0 && offset < cl->num_events);
+    PyMonitoringState *state = &cl->monitoring_states[offset];
+
+    int res = PyMonitoring_FireCRaiseEvent(state, codelike, offset, exception);
     RETURN_INT(res == -1 ? -1 : state->active);
 }
 
@@ -411,13 +465,16 @@ static PyMethodDef TestMethods[] = {
     {"fire_event_py_start", fire_event_py_start, METH_VARARGS},
     {"fire_event_py_resume", fire_event_py_resume, METH_VARARGS},
     {"fire_event_py_return", fire_event_py_return, METH_VARARGS},
+    {"fire_event_c_return", fire_event_c_return, METH_VARARGS},
     {"fire_event_py_yield", fire_event_py_yield, METH_VARARGS},
     {"fire_event_call", fire_event_call, METH_VARARGS},
+    {"fire_event_instruction", fire_event_instruction, METH_VARARGS},
     {"fire_event_line", fire_event_line, METH_VARARGS},
     {"fire_event_jump", fire_event_jump, METH_VARARGS},
     {"fire_event_branch", fire_event_branch, METH_VARARGS},
     {"fire_event_py_throw", fire_event_py_throw, METH_VARARGS},
     {"fire_event_raise", fire_event_raise, METH_VARARGS},
+    {"fire_event_c_raise", fire_event_c_raise, METH_VARARGS},
     {"fire_event_reraise", fire_event_reraise, METH_VARARGS},
     {"fire_event_exception_handled", fire_event_exception_handled, METH_VARARGS},
     {"fire_event_py_unwind", fire_event_py_unwind, METH_VARARGS},

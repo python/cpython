@@ -1913,20 +1913,19 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
 
         self.cases = [
             # (Event, function, *args)
-            (1, E.PY_START, capi.fire_event_py_start),
-            (1, E.PY_RESUME, capi.fire_event_py_resume),
-            (1, E.PY_RETURN, capi.fire_event_py_return, 10),
-            (1, E.PY_YIELD, capi.fire_event_py_yield, 20),
-            (2, E.CALL, capi.fire_event_call, callable, 30),
-            (3, E.LINE, capi.fire_event_line, 40),
-            (1, E.JUMP, capi.fire_event_jump, 50),
-            (1, E.BRANCH, capi.fire_event_branch, 60),
-            (1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
-            (1, E.RAISE, capi.fire_event_raise, ValueError(2)),
-            (1, E.RERAISE, capi.fire_event_reraise, ValueError(3)),
-            (1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(4)),
-            (1, E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(5)),
-            (1, E.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(6)),
+            ( 1, E.PY_START, capi.fire_event_py_start),
+            ( 1, E.PY_RESUME, capi.fire_event_py_resume),
+            ( 1, E.PY_YIELD, capi.fire_event_py_yield, 10),
+            ( 1, E.PY_RETURN, capi.fire_event_py_return, 20),
+            ( 2, E.CALL, capi.fire_event_call, callable, 40),
+            (10, E.INSTRUCTION, capi.fire_event_instruction),
+            ( 1, E.JUMP, capi.fire_event_jump, 60),
+            ( 1, E.BRANCH, capi.fire_event_branch, 70),
+            ( 1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
+            ( 1, E.RAISE, capi.fire_event_raise, ValueError(2)),
+            ( 1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),
+            ( 1, E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(6)),
+            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(7)),
         ]
 
     def check_event_count(self, event, func, args, expected):
@@ -1984,10 +1983,16 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
                 self.assertEqual(counter.count, expected)
                 counter.disable = True
                 if event in self.CANNOT_DISABLE:
-                    with self.assertRaises(ValueError):
+                    # use try-except rather then assertRaises to avoid
+                    # events from framework code
+                    try:
                         counter.count = 0
                         func(*args)
                         self.assertEqual(counter.count, expected)
+                    except ValueError:
+                        pass
+                    else:
+                        self.Error("Expected a ValueError")
                 else:
                     counter.count = 0
                     func(*args)
