@@ -1825,6 +1825,7 @@
             assert(func->func_defaults);
             assert(PyTuple_CheckExact(func->func_defaults));
             int defcount = (int)PyTuple_GET_SIZE(func->func_defaults);
+            assert(defcount <= code->co_argcount);
             int min_args = code->co_argcount - defcount;
             DEOPT_IF(argcount > code->co_argcount, CALL);
             DEOPT_IF(argcount < min_args, CALL);
