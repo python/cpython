@@ -552,7 +552,7 @@ dummy_func(void) {
             assert(PyCode_Check(co));
         }
         else {
-            PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
+            PyFunctionObject *func = (PyFunctionObject *)push_operand;
             DPRINTF(3, "func=%p ", func);
             if (func == NULL) {
                 goto error;
