@@ -421,6 +421,7 @@ hit_bottom:
     // retrying later.
     DPRINTF(3, "\n");
     DPRINTF(1, "Hit bottom in abstract interpreter\n");
+    _Py_uop_abstractcontext_fini(ctx);
     return 0;
 done:
     /* Cannot optimize further, but there would be no benefit
