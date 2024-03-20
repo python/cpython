@@ -35,6 +35,7 @@
 
 #ifdef Py_DEBUG
     extern const char *_PyUOpName(int index);
+    extern void _PyUOpPrint(const _PyUOpInstruction *uop);
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
@@ -141,9 +142,11 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         return 1;
     }
     PyObject *globals = frame->f_globals;
-    assert(PyFunction_Check(((PyFunctionObject *)frame->f_funcobj)));
-    assert(((PyFunctionObject *)frame->f_funcobj)->func_builtins == builtins);
-    assert(((PyFunctionObject *)frame->f_funcobj)->func_globals == globals);
+    PyFunctionObject *function = (PyFunctionObject *)frame->f_funcobj;
+    assert(PyFunction_Check(function));
+    assert(function->func_builtins == builtins);
+    assert(function->func_globals == globals);
+    uint32_t function_version = _PyFunction_GetVersionForCurrentState(function);
     /* In order to treat globals as constants, we need to
      * know that the globals dict is the one we expected, and
      * that it hasn't changed
@@ -181,7 +184,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = (uintptr_t)builtins;
+                    buffer[pc].operand = function_version;
                     function_checked |= 1;
                 }
                 break;
@@ -203,7 +206,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = (uintptr_t)globals;
+                    buffer[pc].operand = function_version;
                     function_checked |= 1;
                 }
                 break;
@@ -227,7 +230,8 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     return 1;
                 }
                 assert(PyFunction_Check(func));
-                if (prechecked_function_version == func->func_version) {
+                function_version = func->func_version;
+                if (prechecked_function_version == function_version) {
                     function_checked |= 1;
                 }
                 prechecked_function_version = 0;
@@ -245,6 +249,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 function_checked >>= 1;
                 PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
                 assert(PyFunction_Check(func));
+                function_version = func->func_version;
                 globals = func->func_globals;
                 builtins = func->func_builtins;
                 break;
@@ -373,14 +378,20 @@ optimize_uops(
 
         _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
-        DPRINTF(3, "Abstract interpreting %s:%d ",
-                _PyUOpName(opcode),
-                oparg);
+#ifdef Py_DEBUG
+        if (get_lltrace() >= 3) {
+            printf("%4d abs: ", (int)(this_instr - trace));
+            _PyUOpPrint(this_instr);
+            printf(" ");
+        }
+#endif
+
         switch (opcode) {
+
 #include "optimizer_cases.c.h"
 
             default:
-                DPRINTF(1, "Unknown opcode in abstract interpreter\n");
+                DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
         }
         assert(ctx->frame != NULL);
@@ -393,11 +404,13 @@ optimize_uops(
     return 1;
 
 out_of_space:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Out of space in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
 
 error:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Encountered error in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
@@ -407,6 +420,7 @@ hit_bottom:
     // This means that the abstract interpreter has hit unreachable code.
     // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but it's
     // simpler to just admit failure and not create the executor.
+    DPRINTF(3, "\n");
     DPRINTF(1, "Hit bottom in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
@@ -426,7 +440,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _SET_IP:
-                buffer[pc].opcode = NOP;
+                buffer[pc].opcode = _NOP;
                 last_set_ip = pc;
                 break;
             case _CHECK_VALIDITY:
@@ -434,7 +448,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = false;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 break;
             case _CHECK_VALIDITY_AND_SET_IP:
@@ -443,7 +457,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _CHECK_VALIDITY;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 last_set_ip = pc;
                 break;
@@ -459,7 +473,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     last->opcode == _COPY
                 ) {
                     last->opcode = _NOP;
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 if (last->opcode == _REPLACE_WITH_TRUE) {
                     last->opcode = _NOP;
