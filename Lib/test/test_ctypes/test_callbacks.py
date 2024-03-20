@@ -106,7 +106,7 @@ class Callbacks(unittest.TestCase):
 
     def test_unsupported_restype_1(self):
         # Only "fundamental" result types are supported for callback
-        # functions, the type must have a non-NULL stgdict->setfunc.
+        # functions, the type must have a non-NULL stginfo->setfunc.
         # POINTER(c_double), for example, is not supported.
 
         prototype = self.functype.__func__(POINTER(c_double))
