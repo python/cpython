@@ -228,7 +228,7 @@ LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
 TZPATH=@TZPATH@
 
 # If to install mimalloc headers
-WITH_MIMALLOC=@WITH_MIMALLOC@
+INSTALL_MIMALLOC=@INSTALL_MIMALLOC@
 
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
@@ -2584,7 +2584,7 @@ inclinstall:
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal; \
 	else	true; \
 	fi
-	@if test "$(WITH_MIMALLOC)" == "yes"; then \
+	@if test "$(INSTALL_MIMALLOC)" == "yes"; then \
 		if test ! -d $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; then \
 			echo "Creating directory $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc"; \
 			$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc; \
@@ -2605,7 +2605,7 @@ inclinstall:
 		echo $(INSTALL_DATA) $$i $(INCLUDEPY)/internal; \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(INCLUDEPY)/internal; \
 	done
-	@if test "$(WITH_MIMALLOC)" == "yes"; then \
+	@if test "$(INSTALL_MIMALLOC)" == "yes"; then \
 		echo $(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
 		$(INSTALL_DATA) $(srcdir)/Include/internal/mimalloc/mimalloc.h $(DESTDIR)$(INCLUDEPY)/internal/mimalloc/mimalloc.h; \
 		for i in $(srcdir)/Include/internal/mimalloc/mimalloc/*.h; \
