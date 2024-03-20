@@ -105,13 +105,13 @@ Queue
       Shut down the queue, making :meth:`~Queue.get` and :meth:`~Queue.put`
       raise :exc:`QueueShutDown`.
 
-      By default, :meth:`~Queue.get` on a shut down queue will only raise once
-      the queue is empty. Set *immediate* to true to make gets raise
-      immediately instead.
+      By default, :meth:`~Queue.get` on a shut down queue will only
+      raise once the queue is empty. Set *immediate* to true to make
+      :meth:`~Queue.get` raise immediately instead.
 
       All blocked callers of :meth:`~Queue.put` will be unblocked. If
-      *immediate* is true, also unblock callers of :meth:`~Queue.get` and
-      :meth:`~Queue.join`.
+      *immediate* is true, also unblock callers of :meth:`~Queue.get`
+      and :meth:`~Queue.join`.
 
       .. versionadded:: 3.13
 
@@ -173,8 +173,8 @@ Exceptions
 
 .. exception:: QueueShutDown
 
-   Exception raised when getting an item from or putting an item onto a
-   queue which has been shut down.
+   Exception raised when :meth:`~Queue.put` or :meth:`~Queue.get` is
+   called on a queue which has been shut down.
 
    .. versionadded:: 3.13
 

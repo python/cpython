@@ -202,8 +202,7 @@ class Queue(mixins._LoopBoundMixin):
                     self._getters.remove(getter)
                 except ValueError:
                     # The getter could be removed from self._getters by a
-                    # previous put_nowait call,
-                    # or a shutdown call.
+                    # previous put_nowait call, or a shutdown call.
                     pass
                 if not self.empty() and not getter.cancelled():
                     # We were woken up by put_nowait(), but can't take

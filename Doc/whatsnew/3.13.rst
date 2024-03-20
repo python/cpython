@@ -275,6 +275,10 @@ asyncio
   forcefully close an asyncio server.
   (Contributed by Pierre Ossman in :gh:`113538`.)
 
+* Add :meth:`asyncio.queues.Queue.shutdown` (along with
+  :exc:`asyncio.queues.QueueShutDown`) for queue termination.
+  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104228`.)
+
 base64
 ---
 
