@@ -881,7 +881,7 @@ Security Options
 macOS Options
 -------------
 
-See ``Mac/README.rst``.
+See :source:`Mac/README.rst`.
 
 .. option:: --enable-universalsdk
 .. option:: --enable-universalsdk=SDKDIR

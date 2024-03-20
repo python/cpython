@@ -159,9 +159,9 @@ helpful.
 To add Python to an iOS Xcode project:
 
 1. Build or obtain a Python ``XCFramework``. See the instructions in
-   ``iOS/README.rst`` (in the CPython source distribution) for details on how
-   to build a Python ``XCFramework``. At a minimum, you will need a build that
-   supports ``arm64-apple-ios``, plus one of either
+   :source:`iOS/README.rst` (in the CPython source distribution) for details on
+   how to build a Python ``XCFramework``. At a minimum, you will need a build
+   that supports ``arm64-apple-ios``, plus one of either
    ``arm64-apple-ios-simulator`` or ``x86_64-apple-ios-simulator``.
 
 2. Drag the ``XCframework`` into your iOS project. In the following
