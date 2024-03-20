@@ -11,6 +11,21 @@ typedef struct interpid {
     int64_t id;
 } interpid;
 
+int64_t
+_PyInterpreterID_GetID(PyObject *self)
+{
+    if (!PyObject_TypeCheck(self, &PyInterpreterID_Type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected an InterpreterID, got %R",
+                     self);
+        return -1;
+
+    }
+    int64_t id = ((interpid *)self)->id;
+    assert(id >= 0);
+    return id;
+}
+
 static interpid *
 newinterpid(PyTypeObject *cls, int64_t id, int force)
 {
