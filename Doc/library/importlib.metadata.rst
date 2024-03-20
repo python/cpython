@@ -441,7 +441,7 @@ partitioning, the "path" would be irrelevant. In order to illustrate the
 purpose of ``path``, the example would need to illustrate a more complex
 ``DatabaseImporter`` whose behavior varied depending on
 ``sys.path``/``PYTHONPATH``. In that case, the ``find_distributions`` should
-honor the ``context.path`` and only yield ``Distribution``s pertinent to that
+honor the ``context.path`` and only yield ``Distribution``\ s pertinent to that
 path.
 
 ``DatabaseDistribution``, then, would look something like::
