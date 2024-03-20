@@ -234,6 +234,11 @@ check: venv
 serve:
 	@echo "The serve target was removed, use htmlview instead (see bpo-36329)"
 
+.PHONY: check-warnings
+check-warnings:
+	-make SPHINXOPTS="-q -n -W --keep-going -w sphinx-warnings.txt" html 2>/dev/null
+	(cd ..; python Doc/tools/check-warnings.py --annotate-diff main HEAD --fail-if-regression --fail-if-improved)
+
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.
 # This means it doesn't always pick up changes to preferred link targets, etc
