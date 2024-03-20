@@ -43,7 +43,9 @@ class Test(unittest.TestCase):
 
     def test_swapped_type_creation(self):
         cls = PyCSimpleType.__new__(PyCSimpleType, '', (), {'_type_': 'i'})
-        PyCSimpleType.__init__(cls)
+        with self.assertRaises(TypeError):
+            PyCSimpleType.__init__(cls)
+        PyCSimpleType.__init__(cls, '', (), {'_type_': 'i'})
         self.assertEqual(cls.__ctype_le__.__dict__.get('_type_'), 'i')
         self.assertEqual(cls.__ctype_be__.__dict__.get('_type_'), 'i')
 
