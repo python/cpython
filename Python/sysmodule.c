@@ -1376,10 +1376,8 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
 /*[clinic input]
 sys.set_asyncgen_hooks
 
-    firstiter: object = NULL
-    finalizer: object = NULL
-
-set_asyncgen_hooks([firstiter] [, finalizer])
+    firstiter: object = None
+    finalizer: object = None
 
 Set a finalizer for async generators objects.
 [clinic start generated code]*/
@@ -1387,7 +1385,7 @@ Set a finalizer for async generators objects.
 static PyObject *
 sys_set_asyncgen_hooks_impl(PyObject *module, PyObject *firstiter,
                             PyObject *finalizer)
-/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=abe3687861bb9e94]*/
+/*[clinic end generated code: output=6fe3b2dd3f9a9db5 input=3664f349bc833d43]*/
 {
     if (finalizer && finalizer != Py_None) {
         if (!PyCallable_Check(finalizer)) {
@@ -1900,25 +1898,20 @@ _PySys_GetSizeOf(PyObject *o)
     return (size_t)size + presize;
 }
 
-/*[clinic input]
-sys.getsizeof
-
-    object: object
-    default as dflt: object = NULL
-
-getsizeof(object [, default]) -> int
-
-Return the size of object in bytes.
-[clinic start generated code]*/
-
 static PyObject *
-sys_getsizeof_impl(PyObject *module, PyObject *object, PyObject *dflt)
-/*[clinic end generated code: output=3f326a2f59e30975 input=d21ca2aef11d2ff4]*/
+sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"object", "default", 0};
     size_t size;
+    PyObject *o, *dflt = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
-    size = _PySys_GetSizeOf(object);
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
+                                     kwlist, &o, &dflt)) {
+        return NULL;
+    }
+
+    size = _PySys_GetSizeOf(o);
 
     if (size == (size_t)-1 && _PyErr_Occurred(tstate)) {
         /* Has a default value been given */
@@ -1932,6 +1925,11 @@ sys_getsizeof_impl(PyObject *module, PyObject *object, PyObject *dflt)
 
     return PyLong_FromSize_t(size);
 }
+
+PyDoc_STRVAR(getsizeof_doc,
+"getsizeof(object [, default]) -> int\n\
+\n\
+Return the size of object in bytes.");
 
 /*[clinic input]
 sys.getrefcount -> Py_ssize_t
@@ -2509,7 +2507,8 @@ static PyMethodDef sys_methods[] = {
     SYS_GETTOTALREFCOUNT_METHODDEF
     SYS_GETREFCOUNT_METHODDEF
     SYS_GETRECURSIONLIMIT_METHODDEF
-    SYS_GETSIZEOF_METHODDEF
+    {"getsizeof", _PyCFunction_CAST(sys_getsizeof),
+     METH_VARARGS | METH_KEYWORDS, getsizeof_doc},
     SYS__GETFRAME_METHODDEF
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
