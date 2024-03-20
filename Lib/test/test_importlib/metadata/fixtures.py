@@ -9,6 +9,7 @@ import textwrap
 import functools
 import contextlib
 
+from test.support import import_helper
 from test.support.os_helper import FS_NONASCII
 from test.support import requires_zlib
 
@@ -85,6 +86,7 @@ class OnSysPath(Fixtures):
     def setUp(self):
         super().setUp()
         self.fixtures.enter_context(self.add_sys_path(self.site_dir))
+        self.fixtures.enter_context(import_helper.isolated_modules())
 
 
 class SiteBuilder(SiteDir):
@@ -348,7 +350,7 @@ def DALS(str):
 
 @requires_zlib()
 class ZipFixtures:
-    root = 'test.test_importlib.data'
+    root = 'test.test_importlib.metadata.data'
 
     def _fixture_on_path(self, filename):
         pkg_file = resources.files(self.root).joinpath(filename)
