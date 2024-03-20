@@ -7,6 +7,7 @@ extern "C" {
 
 typedef struct _PyMonitoringState {
     uint8_t active;
+    uint8_t opaque;
 } PyMonitoringState;
 
 
