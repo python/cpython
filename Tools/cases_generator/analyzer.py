@@ -8,8 +8,8 @@ from typing import Optional
 @dataclass
 class Properties:
     escapes: bool
-    pop_error: bool
-    no_pop_error: bool
+    error_with_pop: bool
+    error_without_pop: bool
     deopts: bool
     oparg: bool
     jumps: bool
@@ -38,8 +38,8 @@ class Properties:
     def from_list(properties: list["Properties"]) -> "Properties":
         return Properties(
             escapes=any(p.escapes for p in properties),
-            pop_error=any(p.pop_error for p in properties),
-            no_pop_error=any(p.no_pop_error for p in properties),
+            error_with_pop=any(p.error_with_pop for p in properties),
+            error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
@@ -59,14 +59,14 @@ class Properties:
 
     @property
     def infallible(self) -> bool:
-        return not self.pop_error and not self.no_pop_error
+        return not self.error_with_pop and not self.error_without_pop
 
 
 
 SKIP_PROPERTIES = Properties(
     escapes=False,
-    pop_error=False,
-    no_pop_error=False,
+    error_with_pop=False,
+    error_without_pop=False,
     deopts=False,
     oparg=False,
     jumps=False,
@@ -178,10 +178,10 @@ class Uop:
             return "uses the 'this_instr' variable"
         if len([c for c in self.caches if c.name != "unused"]) > 1:
             return "has unused cache entries"
-        if self.properties.pop_error and self.properties.no_pop_error:
+        if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
         if self.properties.eval_breaker:
-            if self.properties.pop_error or self.properties.no_pop_error:
+            if self.properties.error_with_pop or self.properties.error_without_pop:
                 return "has error handling and eval-breaker check"
             if self.properties.side_exit:
                 return "exits and eval-breaker check"
@@ -340,7 +340,7 @@ def tier_variable(node: parser.InstDef) -> int | None:
                 return int(token.text[-1])
     return None
 
-def has_pop_error(op: parser.InstDef) -> bool:
+def has_error_with_pop(op: parser.InstDef) -> bool:
     return (
         variable_used(op, "ERROR_IF")
         or variable_used(op, "pop_1_error")
@@ -348,7 +348,7 @@ def has_pop_error(op: parser.InstDef) -> bool:
         or variable_used(op, "resume_with_error")
     )
 
-def has_no_pop_error(op: parser.InstDef) -> bool:
+def has_error_without_pop(op: parser.InstDef) -> bool:
     return (
         variable_used(op, "ERROR_NO_POP")
         or variable_used(op, "pop_1_error")
@@ -534,14 +534,14 @@ def compute_properties(op: parser.InstDef) -> Properties:
             tkn.column,
             op.name,
         )
-    pop_error = has_pop_error(op)
-    no_pop_error = has_no_pop_error(op)
-    infallible = not pop_error and not no_pop_error
+    error_with_pop = has_error_with_pop(op)
+    error_without_pop = has_error_without_pop(op)
+    infallible = not error_with_pop and not error_without_pop
     passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
-        pop_error=pop_error,
-        no_pop_error=no_pop_error,
+        error_with_pop=error_with_pop,
+        error_without_pop=error_without_pop,
         deopts=deopts_if,
         side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
