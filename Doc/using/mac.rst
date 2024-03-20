@@ -152,26 +152,41 @@ Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with
 macOS by Apple, and the latest version can be downloaded and installed from
 https://www.activestate.com; it can also be built from source.
 
-*wxPython* is another popular cross-platform GUI toolkit that runs natively on
-macOS. Packages and documentation are available from https://www.wxpython.org.
+A number of alternative macOS GUI toolkits are available:
 
-*PyQt* is another popular cross-platform GUI toolkit that runs natively on
-macOS. More information can be found at
-https://riverbankcomputing.com/software/pyqt/intro.
+* `PySide <https://www.qt.io/qt-for-python>`__: Official Python bindings to the
+  `Qt GUI toolkit <https://qt.io>`__.
 
-*PySide* is another cross-platform Qt-based toolkit. More information at
-https://www.qt.io/qt-for-python.
+* `PyQt <https://riverbankcomputing.com/software/pyqt/intro>`__: Alternative
+  Python bindings to Qt.
 
+* `Kivy <https://kivy.org>`__: A cross-platform GUI toolkit that supports
+  desktop and mobile platforms.
+
+* `Toga <https://toga.readthedocs.io>`__: Part of the `BeeWare Project
+  <https://beeware.org>`__; supports desktop, mobile, web and console apps.
+
+* `wxPython <https://www.wxpython.org>`__: A cross-platform toolkit that
+  supports desktop operating systems.
 
 .. _distributing-python-applications-on-the-mac:
 
 Distributing Python Applications
 ================================
 
-The standard tool for deploying standalone Python applications on the Mac is
-:program:`py2app`. More information on installing and using :program:`py2app`
-can be found at https://pypi.org/project/py2app/.
+A range of tools exist for converting your Python code into a standalone
+distributable application:
 
+* `py2app <https://pypi.org/project/py2app/>`__: Supports creating macOS ``.app``
+  bundles from a Python project.
+
+* `Briefcase <https://briefcase.readthedocs.io>`__: Part of the `BeeWare Project
+  <https://beeware.org>`__; a cross-platform packaging tool that supports
+  creation of ``.app`` bundles on macOS, as well as managing signing and
+  notarization.
+
+* `PyInstaller <https://pyinstaller.org/>`__: A cross-platform packaging tool that creates
+  a single file or folder as a distributable artifact.
 
 Other Resources
 ===============
@@ -184,4 +199,3 @@ https://www.python.org/community/sigs/current/pythonmac-sig/
 Another useful resource is the MacPython wiki:
 
 https://wiki.python.org/moin/MacPython
-

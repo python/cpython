@@ -1,0 +1,2 @@
+The macOS usage guide was updated to include some newer GUI and packaging
+tools.
