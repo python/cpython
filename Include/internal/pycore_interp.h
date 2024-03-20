@@ -299,7 +299,7 @@ extern int64_t _PyInterpreterState_ObjectToID(PyObject *);
 
 // Export for the _xxinterpchannels module.
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_LookUpIDObject(PyObject *);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);

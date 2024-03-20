@@ -1110,7 +1110,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(interpid);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1478,7 +1478,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 get_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(idobj);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
     if (interp == NULL) {
         return NULL;
     }
@@ -1488,7 +1488,7 @@ get_interpreter_refcount(PyObject *self, PyObject *idobj)
 static PyObject *
 link_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(idobj);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
     if (interp == NULL) {
         assert(PyErr_Occurred());
         return NULL;
@@ -1500,7 +1500,7 @@ link_interpreter_refcount(PyObject *self, PyObject *idobj)
 static PyObject *
 unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(idobj);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
     if (interp == NULL) {
         assert(PyErr_Occurred());
         return NULL;

@@ -35,7 +35,7 @@ _get_current_interp(void)
     return PyInterpreterState_Get();
 }
 
-#define look_up_interp PyInterpreterState_LookUpIDObject
+#define look_up_interp _PyInterpreterState_LookUpIDObject
 
 
 static PyObject *

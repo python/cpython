@@ -1273,7 +1273,7 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
 }
 
 PyInterpreterState *
-PyInterpreterState_LookUpIDObject(PyObject *requested_id)
+_PyInterpreterState_LookUpIDObject(PyObject *requested_id)
 {
     int64_t id = _PyInterpreterState_ObjectToID(requested_id);
     if (id < 0) {
