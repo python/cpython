@@ -1157,7 +1157,7 @@ def findsource(object):
         if not hasattr(object, 'co_firstlineno'):
             raise OSError('could not find function definition')
         lnum = object.co_firstlineno - 1
-        if lnum > len(lines):
+        if lnum >= len(lines):
             raise OSError('lineno is out of bounds')
         return lines, lnum
     raise OSError('could not find code object')
