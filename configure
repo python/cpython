@@ -12740,7 +12740,6 @@ if test -z "$SHLIB_SUFFIX"; then
 		esac
 		;;
 	CYGWIN*)   SHLIB_SUFFIX=.dll;;
-	iOS)   SHLIB_SUFFIX=.dylib;;
 	*)	   SHLIB_SUFFIX=.so;;
 	esac
 fi
@@ -27318,8 +27317,7 @@ SRCDIRS="\
   Parser/lexer \
   Programs \
   Python \
-  Python/frozen_modules \
-  Python/deepfreeze"
+  Python/frozen_modules"
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for build directories" >&5
 printf %s "checking for build directories... " >&6; }
 for dir in $SRCDIRS; do

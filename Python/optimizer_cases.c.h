@@ -1533,6 +1533,10 @@
 
         /* _CALL is not a viable micro-op for tier 2 */
 
+        case _CHECK_PERIODIC: {
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             _Py_UopsSymbol *null;
             _Py_UopsSymbol *callable;
@@ -1593,6 +1597,7 @@
             int argcount = oparg;
             (void)callable;
             PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
+            DPRINTF(3, "func: %p ", func);
             if (func == NULL) {
                 goto error;
             }

@@ -343,8 +343,7 @@ PyAPI_DATA(PyTypeObject) PyBool_Type;
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
     assert(ob->ob_type != &PyLong_Type);
     assert(ob->ob_type != &PyBool_Type);
-    PyVarObject *var_ob = _PyVarObject_CAST(ob);
-    return var_ob->ob_size;
+    return  _PyVarObject_CAST(ob)->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
@@ -521,6 +520,10 @@ PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(PyObject *) PyType_GetFullyQualifiedName(PyTypeObject *type);
+PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
