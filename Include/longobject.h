@@ -45,7 +45,6 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 # elif SIZEOF_INT == SIZEOF_LONG
 #   define PyLong_AsPid PyLong_AsLong
 # else
-#include "pyerrors.h"
 static inline int
 PyLong_AsPid(PyObject *obj)
 {

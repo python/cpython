@@ -428,9 +428,9 @@ class LongTests(unittest.TestCase):
     def _test_long_aspid(self, aspid):
         # Test PyLong_AsPid()
         from _testcapi import SIZEOF_PID_T
-        bits = 8*SIZEOF_PID_T
+        bits = 8 * SIZEOF_PID_T
         PID_T_MIN = -2**(bits-1)
-        PID_T_MAX = 2**(bits-1)-1
+        PID_T_MAX = 2**(bits-1) - 1
         # round trip (object -> long -> object)
         for value in (PID_T_MIN, PID_T_MAX, -1, 0, 1, 1234):
             with self.subTest(value=value):
