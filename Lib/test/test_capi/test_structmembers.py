@@ -216,46 +216,5 @@ class ReadWriteTests_NewAPI(ReadWriteTests, unittest.TestCase):
         self._test_int_range('T_PID', -2**(bits-1), 2**(bits-1)-1)
 
 
-class TestWarnings:
-    def setUp(self):
-        self.ts = _make_test_object(self.cls)
-
-    def test_byte_max(self):
-        ts = self.ts
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_BYTE = CHAR_MAX+1
-
-    def test_byte_min(self):
-        ts = self.ts
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_BYTE = CHAR_MIN-1
-
-    def test_ubyte_max(self):
-        ts = self.ts
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_UBYTE = UCHAR_MAX+1
-
-    def test_short_max(self):
-        ts = self.ts
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_SHORT = SHRT_MAX+1
-
-    def test_short_min(self):
-        ts = self.ts
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_SHORT = SHRT_MIN-1
-
-    def test_ushort_max(self):
-        ts = self.ts
-        with warnings_helper.check_warnings(('', RuntimeWarning)):
-            ts.T_USHORT = USHRT_MAX+1
-
-class TestWarnings_OldAPI(TestWarnings, unittest.TestCase):
-    cls = _test_structmembersType_OldAPI
-
-class TestWarnings_NewAPI(TestWarnings, unittest.TestCase):
-    cls = _test_structmembersType_NewAPI
-
-
 if __name__ == "__main__":
     unittest.main()

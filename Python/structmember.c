@@ -462,11 +462,7 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
 #endif
     case Py_T_PID: {
-#if !defined(SIZEOF_PID_T) || SIZEOF_PID_T == SIZEOF_INT
-        pid_t value = PyLong_AsInt(v);
-#else
         pid_t value = PyLong_AsPid(v);
-#endif
         if (value == (pid_t)-1 && PyErr_Occurred()) {
             return -1;
         }

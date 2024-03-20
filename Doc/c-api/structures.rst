@@ -633,7 +633,6 @@ Macro name                       C type                        Python type
                                  :c:expr:`long long`
                                  (on Windows)
 .. c:macro:: Py_T_PID            :c:expr:`pid_t`               :py:class:`int`
-
 .. c:macro:: Py_T_FLOAT          :c:expr:`float`               :py:class:`float`
 .. c:macro:: Py_T_DOUBLE         :c:expr:`double`              :py:class:`float`
 .. c:macro:: Py_T_BOOL           :c:expr:`char`                :py:class:`bool`
