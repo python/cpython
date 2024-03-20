@@ -12,5 +12,4 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterID_LookUp(PyObject *);
 
 #ifdef Py_BUILD_CORE
 extern int64_t _PyInterpreterID_GetID(PyObject *);
-extern int64_t _PyInterpreterID_ObjectToID(PyObject *);
 #endif

@@ -2,6 +2,8 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
+#include "interpreteridobject.h"  // PyInterpreterID_Type
+#include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
 #include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
@@ -1092,6 +1094,44 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
 //----------
 // interp ID
 //----------
+
+int64_t
+_PyInterpreterState_ObjectToID(PyObject *idobj)
+{
+    if (PyObject_TypeCheck(idobj, &PyInterpreterID_Type)) {
+        return _PyInterpreterID_GetID(idobj);
+    }
+
+    if (!_PyIndex_Check(idobj)) {
+        PyErr_Format(PyExc_TypeError,
+                     "interpreter ID must be an int, got %.100s",
+                     Py_TYPE(idobj)->tp_name);
+        return -1;
+    }
+
+    // This may raise OverflowError.
+    // For now, we don't worry about if LLONG_MAX < INT64_MAX.
+    long long id = PyLong_AsLongLong(idobj);
+    if (id == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+
+    if (id < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "interpreter ID must be a non-negative int, got %R",
+                     idobj);
+        return -1;
+    }
+#if LLONG_MAX > INT64_MAX
+    else if (id > INT64_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "int too big to convert");
+        return -1;
+    }
+#endif
+    else {
+        return (int64_t)id;
+    }
+}
 
 int64_t
 PyInterpreterState_GetID(PyInterpreterState *interp)

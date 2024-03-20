@@ -1,8 +1,7 @@
 /* InterpreterID object */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_interp.h"     // _PyInterpreterState_LookUpID()
+#include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 #include "interpreteridobject.h"
 
 
@@ -57,45 +56,6 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
     return self;
 }
 
-int64_t
-_PyInterpreterID_ObjectToID(PyObject *idobj)
-{
-    if (PyObject_TypeCheck(idobj, &PyInterpreterID_Type)) {
-        assert(((interpid *)idobj)->id >= 0);
-        return ((interpid *)idobj)->id;
-    }
-
-    if (!_PyIndex_Check(idobj)) {
-        PyErr_Format(PyExc_TypeError,
-                     "interpreter ID must be an int, got %.100s",
-                     Py_TYPE(idobj)->tp_name);
-        return -1;
-    }
-
-    // This may raise OverflowError.
-    // For now, we don't worry about if LLONG_MAX < INT64_MAX.
-    long long id = PyLong_AsLongLong(idobj);
-    if (id == -1 && PyErr_Occurred()) {
-        return -1;
-    }
-
-    if (id < 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "interpreter ID must be a non-negative int, got %R",
-                     idobj);
-        return -1;
-    }
-#if LLONG_MAX > INT64_MAX
-    else if (id > INT64_MAX) {
-        PyErr_SetString(PyExc_OverflowError, "int too big to convert");
-        return -1;
-    }
-#endif
-    else {
-        return (int64_t)id;
-    }
-}
-
 static PyObject *
 interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
@@ -107,7 +67,7 @@ interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
                                      &idobj, &force)) {
         return NULL;
     }
-    int64_t id = _PyInterpreterID_ObjectToID(idobj);
+    int64_t id = _PyInterpreterState_ObjectToID(idobj);
     if (id < 0) {
         return NULL;
     }
@@ -316,7 +276,7 @@ PyInterpreterState_GetIDObject(PyInterpreterState *interp)
 PyInterpreterState *
 PyInterpreterID_LookUp(PyObject *requested_id)
 {
-    int64_t id = _PyInterpreterID_ObjectToID(requested_id);
+    int64_t id = _PyInterpreterState_ObjectToID(requested_id);
     if (id < 0) {
         return NULL;
     }
