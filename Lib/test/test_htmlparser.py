@@ -348,18 +348,16 @@ text
         collector = lambda: EventCollectorCharrefs()
         self.assertTrue(collector().convert_charrefs)
         charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
-        # check charrefs in the middle of the text/attributes
-        expected = [('starttag', 'a', [('href', 'foo"zar')]),
-                    ('data', 'a"z'), ('endtag', 'a')]
+        # check charrefs in the middle of the text
+        expected = [('starttag', 'a', []), ('data', 'a"z'), ('endtag', 'a')]
         for charref in charrefs:
-            self._run_check('<a href="foo{0}zar">a{0}z</a>'.format(charref),
+            self._run_check('<a>a{0}z</a>'.format(charref),
                             expected, collector=collector())
-        # check charrefs at the beginning/end of the text/attributes
-        expected = [('data', '"'),
-                    ('starttag', 'a', [('x', '"'), ('y', '"X'), ('z', 'X"')]),
+        # check charrefs at the beginning/end of the text
+        expected = [('data', '"'), ('starttag', 'a', []),
                     ('data', '"'), ('endtag', 'a'), ('data', '"')]
         for charref in charrefs:
-            self._run_check('{0}<a x="{0}" y="{0}X" z="X{0}">'
+            self._run_check('{0}<a>'
                             '{0}</a>{0}'.format(charref),
                             expected, collector=collector())
         # check charrefs in <script>/<style> elements
@@ -381,6 +379,35 @@ text
         # check a string with no charrefs
         self._run_check('no charrefs here', [('data', 'no charrefs here')],
                         collector=collector())
+
+    def test_convert_charrefs_in_attribute_values(self):
+        # default value for convert_charrefs is now True
+        collector = lambda: EventCollectorCharrefs()
+        self.assertTrue(collector().convert_charrefs)
+
+        # always unescape terminated entity refs, numeric and hex char refs:
+        # - regardless whether they are at start, middle, end of attribute
+        # - or followed by alphanumeric, non-alphanumeric, or equals char
+        charrefs = ['&cent;', '&#xa2;', '&#xa2', '&#162;', '&#162']
+        expected = [('starttag', 'a',
+                     [('x', '¢'), ('x', 'z¢'), ('x', '¢z'),
+                      ('x', 'z¢z'), ('x', '¢ z'), ('x', '¢=z')]),
+                    ('endtag', 'a')]
+        for charref in charrefs:
+            self._run_check('<a x="{0}" x="z{0}" x="{0}z" '
+                            '   x="z{0}z" x="{0} z" x="{0}=z"></a>'
+                            .format(charref), expected, collector=collector())
+
+        # only unescape unterminated entity matches if they are not followed by
+        # an alphanumeric or an equals sign
+        charref = '&cent'
+        expected = [('starttag', 'a',
+                     [('x', '¢'), ('x', 'z¢'), ('x', '&centz'),
+                      ('x', 'z&centz'), ('x', '¢ z'), ('x', '&cent=z')]),
+                    ('endtag', 'a')]
+        self._run_check('<a x="{0}" x="z{0}" x="{0}z" '
+                        '   x="z{0}z" x="{0} z" x="{0}=z"></a>'
+                        .format(charref), expected, collector=collector())
 
     # the remaining tests were for the "tolerant" parser (which is now
     # the default), and check various kind of broken markup
