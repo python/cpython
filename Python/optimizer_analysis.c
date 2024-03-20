@@ -439,8 +439,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
      * instruction could have escaped. */
     int last_set_ip = -1;
     bool may_have_escaped = true;
-    for (int pc = 0; ; pc++) {
-        assert(pc < buffer_size && "No terminating uop");
+    for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _SET_IP:
@@ -510,6 +509,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
         }
     }
+    Py_FatalError("No terminating instruction");
+    Py_UNREACHABLE();
 }
 
 static void

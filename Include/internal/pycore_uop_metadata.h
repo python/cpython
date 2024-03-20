@@ -244,8 +244,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
     [_SIDE_EXIT] = 0,
-    [_ERROR_0] = 0,
-    [_ERROR_N] = HAS_ARG_FLAG,
+    [_ERROR_POP_N] = HAS_ARG_FLAG,
 };
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -326,8 +325,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
     [_END_SEND] = "_END_SEND",
-    [_ERROR_0] = "_ERROR_0",
-    [_ERROR_N] = "_ERROR_N",
+    [_ERROR_POP_N] = "_ERROR_POP_N",
     [_EXIT_INIT_CHECK] = "_EXIT_INIT_CHECK",
     [_EXIT_TRACE] = "_EXIT_TRACE",
     [_FATAL_ERROR] = "_FATAL_ERROR",
@@ -936,9 +934,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _SIDE_EXIT:
             return 0;
-        case _ERROR_0:
-            return 0;
-        case _ERROR_N:
+        case _ERROR_POP_N:
             return oparg;
         default:
             return -1;

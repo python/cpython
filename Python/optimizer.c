@@ -159,8 +159,11 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 static int
 init_cold_exit_executor(_PyExecutorObject *executor, int oparg);
 
+/* The maximum number of exits in a trace cannot reach 1/4 of its length */
+#define COLD_EXIT_COUNT (UOP_MAX_TRACE_LENGTH/4)
+
 static int cold_exits_initialized = 0;
-static _PyExecutorObject COLD_EXITS[UOP_MAX_TRACE_LENGTH/4] = { 0 };
+static _PyExecutorObject COLD_EXITS[COLD_EXIT_COUNT] = { 0 };
 
 static const _PyBloomFilter EMPTY_FILTER = { 0 };
 
@@ -172,7 +175,7 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     }
     else if (cold_exits_initialized == 0) {
         cold_exits_initialized = 1;
-        for (int i = 0; i < UOP_MAX_TRACE_LENGTH/4; i++) {
+        for (int i = 0; i < COLD_EXIT_COUNT; i++) {
             if (init_cold_exit_executor(&COLD_EXITS[i], i)) {
                 return NULL;
             }
@@ -921,7 +924,6 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
     int32_t current_error_target = -1;
     int32_t current_popped = -1;
     /* Leaving in NOPs slows down the interpreter and messes up the stats */
-#ifndef _Py_JIT
     _PyUOpInstruction *copy_to = &buffer[0];
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
@@ -932,8 +934,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             copy_to++;
         }
     }
-    length = copy_to - buffer;
-#endif
+    length = (int)(copy_to - buffer);
     int next_spare = length;
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
@@ -957,8 +958,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 current_popped = popped;
                 current_error = next_spare;
                 current_error_target = target;
-                uint16_t error_op = popped ? _ERROR_N : _ERROR_0;
-                make_exit(&buffer[next_spare], error_op, 0);
+                make_exit(&buffer[next_spare], _ERROR_POP_N, 0);
                 buffer[next_spare].oparg = popped;
                 next_spare++;
             }
@@ -1049,8 +1049,7 @@ sanity_check(_PyExecutorObject *executor)
         CHECK(
             opcode == _DEOPT ||
             opcode == _SIDE_EXIT ||
-            opcode == _ERROR_0 ||
-            opcode == _ERROR_N);
+            opcode == _ERROR_POP_N);
         if (opcode == _SIDE_EXIT) {
             CHECK(inst->format == UOP_FORMAT_EXIT);
         }
@@ -1075,7 +1074,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
 
     /* Initialize exits */
-    assert(exit_count < UOP_MAX_TRACE_LENGTH/4);
+    assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
         executor->exits[i].temperature = 0;
@@ -1175,8 +1174,8 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
             return i+1-nop_count;
         }
     }
-    assert(0 && "No terminating instruction");
-    return length-nop_count;
+    Py_FatalError("No terminating instruction");
+    Py_UNREACHABLE();
 }
 #endif
 

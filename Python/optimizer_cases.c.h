@@ -1988,11 +1988,7 @@
             break;
         }
 
-        case _ERROR_0: {
-            break;
-        }
-
-        case _ERROR_N: {
+        case _ERROR_POP_N: {
             stack_pointer += -oparg;
             break;
         }

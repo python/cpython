@@ -4215,11 +4215,7 @@ dummy_func(
             EXIT_TO_TRACE();
         }
 
-        tier2 op(_ERROR_0, (--)) {
-            GOTO_UNWIND();
-        }
-
-        tier2 op(_ERROR_N, (values[oparg] --)) {
+        tier2 op(_ERROR_POP_N, (values[oparg] --)) {
             (void)values;
             SYNC_SP();
             GOTO_UNWIND();

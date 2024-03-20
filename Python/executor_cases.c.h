@@ -3759,12 +3759,7 @@
             break;
         }
 
-        case _ERROR_0: {
-            GOTO_UNWIND();
-            break;
-        }
-
-        case _ERROR_N: {
+        case _ERROR_POP_N: {
             PyObject **values;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
