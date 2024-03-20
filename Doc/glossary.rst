@@ -726,18 +726,6 @@ Glossary
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
 
-   locale encoding
-      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
-
-      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
-
-      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
-
-      ``locale.getencoding()`` can be used to get the locale encoding.
-
-      See also the :term:`filesystem encoding and error handler`.
-
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
@@ -756,6 +744,18 @@ Glossary
       :meth:`load_module`. A loader is typically returned by a
       :term:`finder`. See :pep:`302` for details and
       :class:`importlib.abc.Loader` for an :term:`abstract base class`.
+
+   locale encoding
+      On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
+
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
+
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
+
+      :func:`locale.getencoding` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    magic method
       .. index:: pair: magic; method
