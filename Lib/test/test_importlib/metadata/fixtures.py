@@ -350,7 +350,7 @@ def DALS(str):
 
 @requires_zlib()
 class ZipFixtures:
-    root = 'test.test_importlib.data'
+    root = 'test.test_importlib.metadata.data'
 
     def _fixture_on_path(self, filename):
         pkg_file = resources.files(self.root).joinpath(filename)
