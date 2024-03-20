@@ -346,8 +346,7 @@ class _AssertNotWarnsContext(_AssertWarnsContext):
         for m in self.warnings:
             w = m.message
             if isinstance(w, self.expected):
-                self._raiseFailure(
-                        f"{exc_name} triggered by {self.obj_namel}: {w}")
+                self._raiseFailure(f"{exc_name} triggered: {w}")
 
 
 class _OrderedChainMap(collections.ChainMap):
