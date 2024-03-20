@@ -44,6 +44,16 @@ def save_cwd():
 
 
 @contextlib.contextmanager
+def save_mode(path, *, follow_symlinks=True):
+    path = pathlib.Path(path)
+    orig = path.stat(follow_symlinks=follow_symlinks)
+    try:
+        yield
+    finally:
+        path.chmod(orig.st_mode, follow_symlinks=follow_symlinks)
+
+
+@contextlib.contextmanager
 def tempdir_as_cwd():
     with tempdir() as tmp:
         with save_cwd():
