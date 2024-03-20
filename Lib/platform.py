@@ -496,8 +496,16 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     # If that also doesn't work return the default values
     return release, versioninfo, machine
 
+
+# A namedtuple for iOS version information.
+IOSVersionInfo = collections.namedtuple(
+    "IOSVersionInfo",
+    ["system", "release", "model", "is_simulator"]
+)
+
+
 def ios_ver(system="", release="", model="", is_simulator=False):
-    """Get iOS version information, and return it as a tuple:
+    """Get iOS version information, and return it as a namedtuple:
         (system, release, model, is_simulator).
 
     If values can't be determined, they are set to values provided as
@@ -507,9 +515,9 @@ def ios_ver(system="", release="", model="", is_simulator=False):
         import _ios_support
         result = _ios_support.get_platform_ios()
         if result is not None:
-            return result
+            return IOSVersionInfo(*result)
 
-    return system, release, model, is_simulator
+    return IOSVersionInfo(system, release, model, is_simulator)
 
 
 def _java_getprop(name, default):

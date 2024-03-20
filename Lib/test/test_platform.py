@@ -410,8 +410,16 @@ class PlatformTest(unittest.TestCase):
             support.wait_process(pid, exitcode=0)
 
     def test_ios_ver(self):
-        system, release, model, is_simulator = platform.ios_ver()
+        result = platform.ios_ver()
         if sys.platform == "ios":
+            system, release, model, is_simulator = result
+
+            # Result is a namedtuple
+            self.assertEqual(result.system, system)
+            self.assertEqual(result.release, release)
+            self.assertEqual(result.model, model)
+            self.assertEqual(result.is_simulator, is_simulator)
+
             # We can't assert specific values without reproducing the logic of
             # ios_ver(), so we check that the values are broadly what we expect.
 
@@ -438,10 +446,10 @@ class PlatformTest(unittest.TestCase):
         else:
             # On non-iOS platforms, calling ios_ver doesn't fail; you get
             # default values
-            self.assertEqual(system, "")
-            self.assertEqual(release, "")
-            self.assertEqual(model, "")
-            self.assertFalse(is_simulator)
+            self.assertEqual(result.system, "")
+            self.assertEqual(result.release, "")
+            self.assertEqual(result.model, "")
+            self.assertFalse(result.is_simulator)
 
     @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
