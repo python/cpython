@@ -1064,6 +1064,35 @@ _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 // accessors
 //----------
 
+PyObject *
+PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+{
+    PyObject *modules = _PyImport_GetModules(interp);
+    if (modules == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
+        return NULL;
+    }
+    return PyMapping_GetItemString(modules, "__main__");
+}
+
+PyObject *
+PyInterpreterState_GetDict(PyInterpreterState *interp)
+{
+    if (interp->dict == NULL) {
+        interp->dict = PyDict_New();
+        if (interp->dict == NULL) {
+            PyErr_Clear();
+        }
+    }
+    /* Returning NULL means no per-interpreter dict is available. */
+    return interp->dict;
+}
+
+
+//----------
+// interp ID
+//----------
+
 int64_t
 PyInterpreterState_GetID(PyInterpreterState *interp)
 {
@@ -1140,30 +1169,6 @@ void
 _PyInterpreterState_RequireIDRef(PyInterpreterState *interp, int required)
 {
     interp->requires_idref = required ? 1 : 0;
-}
-
-PyObject *
-PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
-{
-    PyObject *modules = _PyImport_GetModules(interp);
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
-        return NULL;
-    }
-    return PyMapping_GetItemString(modules, "__main__");
-}
-
-PyObject *
-PyInterpreterState_GetDict(PyInterpreterState *interp)
-{
-    if (interp->dict == NULL) {
-        interp->dict = PyDict_New();
-        if (interp->dict == NULL) {
-            PyErr_Clear();
-        }
-    }
-    /* Returning NULL means no per-interpreter dict is available. */
-    return interp->dict;
 }
 
 
