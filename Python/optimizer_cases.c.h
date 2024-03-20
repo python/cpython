@@ -1608,7 +1608,9 @@
                 PyFunctionObject *func = (PyFunctionObject *)push_operand;
                 DPRINTF(3, "func=%p ", func);
                 if (func == NULL) {
-                    goto error;
+                    DPRINTF(3, "\n");
+                    DPRINTF(1, "Missing function\n");
+                    goto done;
                 }
                 co = (PyCodeObject *)func->func_code;
                 DPRINTF(3, "code=%p ", co);
