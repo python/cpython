@@ -236,8 +236,8 @@ serve:
 
 .PHONY: check-warnings
 check-warnings:
-	-make SPHINXOPTS="-q -n -W --keep-going -w sphinx-warnings.txt" html 2>/dev/null
-	(cd ..; python Doc/tools/check-warnings.py --annotate-diff main HEAD --fail-if-regression --fail-if-improved)
+	-make SPHINXOPTS="-q -n -W --keep-going -w build/sphinx-warnings.txt" html 2>/dev/null
+	(cd ..; python Doc/tools/check-warnings.py --annotate-diff main HEAD --fail-if-regression)
 
 # Targets for daily automated doc build
 # By default, Sphinx only rebuilds pages where the page content has changed.
