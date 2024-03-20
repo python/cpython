@@ -331,7 +331,8 @@ static PyMethodDef TestMethods[] = {
 };
 
 int
-_PyTestCapi_Init_HeaptypeRelative(PyObject *m) {
+_PyTestLimitedCAPI_Init_HeaptypeRelative(PyObject *m)
+{
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
     }
