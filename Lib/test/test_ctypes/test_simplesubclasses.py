@@ -41,6 +41,12 @@ class Test(unittest.TestCase):
         with self.assertRaisesRegex(SystemError, "already initialized"):
             PyCSimpleType.__init__(T, 'ptr', (), {})
 
+    def test_swapped_type_creation(self):
+        cls = PyCSimpleType.__new__(PyCSimpleType, '', (), {'_type_': 'i'})
+        PyCSimpleType.__init__(cls)
+        self.assertEqual(cls.__ctype_le__.__dict__.get('_type_'), 'i')
+        self.assertEqual(cls.__ctype_be__.__dict__.get('_type_'), 'i')
+
     def test_compare(self):
         self.assertEqual(MyInt(3), MyInt(3))
         self.assertNotEqual(MyInt(42), MyInt(43))
