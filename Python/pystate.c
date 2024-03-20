@@ -1048,6 +1048,7 @@ _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
     return 0;
 }
 
+#ifndef NDEBUG
 static int
 is_running_main(PyThreadState *tstate)
 {
@@ -1056,6 +1057,7 @@ is_running_main(PyThreadState *tstate)
     }
     return 0;
 }
+#endif
 
 int
 _PyThreadState_IsRunningMain(PyThreadState *tstate)
