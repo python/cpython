@@ -2073,6 +2073,9 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     PyMethodDef *ml;
     struct fielddesc *fmt;
 
+    if (PyType_Type.tp_init(self, args, kwds) < 0) {
+        return -1;
+    }
     if (PyObject_GetOptionalAttr(self, &_Py_ID(_type_), &proto) < 0) {
         return -1;
     }
