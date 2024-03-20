@@ -27,7 +27,7 @@ from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
-from test.libregrtest.filter import set_match_tests, match_test
+from test.libregrtest.filter import get_match_tests, set_match_tests, match_test
 from test.libregrtest.result import TestStats
 from test.libregrtest.utils import normalize_test_name
 
@@ -1171,8 +1171,8 @@ class ArgsTestCase(BaseTestCase):
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
 
-        line = 'beginning 6 repetitions\n123456\n......\n'
-        self.check_line(output, re.escape(line))
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        self.check_line(output, line)
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
         self.assertIn(line2, output)
@@ -2297,6 +2297,10 @@ class TestUtils(unittest.TestCase):
 
             def id(self):
                 return self.test_id
+
+        # Restore patterns once the test completes
+        patterns = get_match_tests()
+        self.addCleanup(set_match_tests, patterns)
 
         test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')

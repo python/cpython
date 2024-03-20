@@ -11,6 +11,7 @@
 #include "pycore_object_stack.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_time.h"          // _PyTime_GetPerfCounter()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
 #include "pydtrace.h"
@@ -319,6 +320,23 @@ merge_all_queued_objects(PyInterpreterState *interp, struct collection_state *st
     HEAD_LOCK(&_PyRuntime);
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         merge_queued_objects((_PyThreadStateImpl *)p, state);
+    }
+    HEAD_UNLOCK(&_PyRuntime);
+}
+
+static void
+process_delayed_frees(PyInterpreterState *interp)
+{
+    // In STW status, we can observe the latest write sequence by
+    // advancing the write sequence immediately.
+    _Py_qsbr_advance(&interp->qsbr);
+    _PyThreadStateImpl *current_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    _Py_qsbr_quiescent_state(current_tstate->qsbr);
+    HEAD_LOCK(&_PyRuntime);
+    PyThreadState *tstate = interp->threads.head;
+    while (tstate != NULL) {
+        _PyMem_ProcessDelayed(tstate);
+        tstate = (PyThreadState *)tstate->next;
     }
     HEAD_UNLOCK(&_PyRuntime);
 }
@@ -981,7 +999,7 @@ record_allocation(PyThreadState *tstate)
         if (gc_should_collect(gcstate) &&
             !_Py_atomic_load_int_relaxed(&gcstate->collecting))
         {
-            _Py_ScheduleGC(tstate->interp);
+            _Py_ScheduleGC(tstate);
         }
     }
 }
@@ -1005,6 +1023,7 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
     _PyEval_StopTheWorld(interp);
     // merge refcounts for all queued objects
     merge_all_queued_objects(interp, state);
+    process_delayed_frees(interp);
 
     // Find unreachable objects
     int err = deduce_unreachable_heap(interp, state);
@@ -1039,6 +1058,8 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state)
     // Handle any objects that may have resurrected after the finalization.
     _PyEval_StopTheWorld(interp);
     err = handle_resurrected_objects(state);
+    // Clear free lists in all threads
+    _PyGC_ClearAllFreeLists(interp);
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
@@ -1071,7 +1092,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     int i;
     Py_ssize_t m = 0; /* # objects collected */
     Py_ssize_t n = 0; /* # unreachable objects that couldn't be collected */
-    _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
+    PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
     GCState *gcstate = &tstate->interp->gc;
 
     // gc_collect_main() must not be called before _PyGC_Init
@@ -1107,7 +1128,7 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
         PySys_WriteStderr("gc: collecting generation %d...\n", generation);
         show_stats_each_generations(gcstate);
-        t1 = _PyTime_GetPerfCounter();
+        t1 = _PyTime_PerfCounterUnchecked();
     }
 
     if (PyDTrace_GC_START_ENABLED()) {
@@ -1135,14 +1156,15 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     n = state.uncollectable;
 
     if (gcstate->debug & _PyGC_DEBUG_STATS) {
-        double d = _PyTime_AsSecondsDouble(_PyTime_GetPerfCounter() - t1);
+        double d = PyTime_AsSecondsDouble(_PyTime_PerfCounterUnchecked() - t1);
         PySys_WriteStderr(
             "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
             n+m, n, d);
     }
 
-    // Clear free lists in all threads
-    _PyGC_ClearAllFreeLists(interp);
+    // Clear the current thread's free-list again.
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    _PyObject_ClearFreeLists(&tstate_impl->freelists, 0);
 
     if (_PyErr_Occurred(tstate)) {
         if (reason == _Py_GC_REASON_SHUTDOWN) {
@@ -1564,9 +1586,12 @@ PyObject_IS_GC(PyObject *obj)
 }
 
 void
-_Py_ScheduleGC(PyInterpreterState *interp)
+_Py_ScheduleGC(PyThreadState *tstate)
 {
-    _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 1);
+    if (!_Py_eval_breaker_bit_is_set(tstate, _PY_GC_SCHEDULED_BIT))
+    {
+        _Py_set_eval_breaker_bit(tstate, _PY_GC_SCHEDULED_BIT);
+    }
 }
 
 void
@@ -1578,6 +1603,10 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
+    GCState *gcstate = get_gc_state();
+    if (!gcstate->enabled) {
+        return;
+    }
     gc_collect_main(tstate, 0, _Py_GC_REASON_HEAP);
 }
 
@@ -1670,6 +1699,7 @@ PyObject_GC_Del(void *op)
 {
     size_t presize = _PyType_PreHeaderSize(((PyObject *)op)->ob_type);
     if (_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_UNTRACK(op);
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
@@ -1682,26 +1712,25 @@ PyObject_GC_Del(void *op)
     }
 
     record_deallocation(_PyThreadState_GET());
-
-    PyObject_Free(((char *)op)-presize);
+    PyObject *self = (PyObject *)op;
+    if (_PyObject_GC_IS_SHARED_INLINE(self)) {
+        _PyObject_FreeDelayed(((char *)op)-presize);
+    }
+    else {
+        PyObject_Free(((char *)op)-presize);
+    }
 }
 
 int
 PyObject_GC_IsTracked(PyObject* obj)
 {
-    if (_PyObject_IS_GC(obj) && _PyObject_GC_IS_TRACKED(obj)) {
-        return 1;
-    }
-    return 0;
+    return _PyObject_GC_IS_TRACKED(obj);
 }
 
 int
 PyObject_GC_IsFinalized(PyObject *obj)
 {
-    if (_PyObject_IS_GC(obj) && _PyGC_FINALIZED(obj)) {
-         return 1;
-    }
-    return 0;
+    return _PyGC_FINALIZED(obj);
 }
 
 struct custom_visitor_args {

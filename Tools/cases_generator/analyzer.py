@@ -17,7 +17,6 @@ class Properties:
     needs_this: bool
     always_exits: bool
     stores_sp: bool
-    tier_one_only: bool
     uses_co_consts: bool
     uses_co_names: bool
     uses_locals: bool
@@ -25,6 +24,7 @@ class Properties:
     side_exit: bool
     pure: bool
     passthrough: bool
+    tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
 
@@ -46,7 +46,6 @@ class Properties:
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
-            tier_one_only=any(p.tier_one_only for p in properties),
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
@@ -68,7 +67,6 @@ SKIP_PROPERTIES = Properties(
     needs_this=False,
     always_exits=False,
     stores_sp=False,
-    tier_one_only=False,
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
@@ -312,6 +310,15 @@ def variable_used(node: parser.InstDef, name: str) -> bool:
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
 
+def tier_variable(node: parser.InstDef) -> int | None:
+    """Determine whether a tier variable is used in a node."""
+    for token in node.tokens:
+        if token.kind == "ANNOTATION":
+            if token.text == "specializing":
+                return 1
+            if re.fullmatch(r"tier\d", token.text):
+                return int(token.text[-1])
+    return None
 
 def is_infallible(op: parser.InstDef) -> bool:
     return not (
@@ -328,6 +335,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictOrValues_IsValues",
     "_PyObject_DictOrValuesPointer",
     "_PyDictOrValues_GetValues",
+    "_PyDictValues_AddToInsertionOrder",
     "_PyObject_MakeInstanceAttributesFromDict",
     "Py_DECREF",
     "_Py_DECREF_SPECIALIZED",
@@ -348,8 +356,10 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsCompact",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_CompactValue",
+    "_PyLong_DigitCount",
     "_Py_NewRef",
     "_Py_IsImmortal",
+    "PyLong_FromLong",
     "_Py_STR",
     "_PyLong_Add",
     "_PyLong_Multiply",
@@ -361,6 +371,17 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_atomic_load_uintptr_relaxed",
     "_PyFrame_GetCode",
     "_PyThreadState_HasStackSpace",
+    "_PyUnicode_Equal",
+    "_PyFrame_SetStackPointer",
+    "_PyType_HasFeature",
+    "PyUnicode_Concat",
+    "_PyList_FromArraySteal",
+    "_PyTuple_FromArraySteal",
+    "PySlice_New",
+    "_Py_LeaveRecursiveCallPy",
+    "CALL_STAT_INC",
+    "maybe_lltrace_resume_frame",
+    "_PyUnicode_JoinArray",
 )
 
 ESCAPING_FUNCTIONS = (
@@ -371,6 +392,8 @@ ESCAPING_FUNCTIONS = (
 
 def makes_escaping_api_call(instr: parser.InstDef) -> bool:
     if "CALL_INTRINSIC" in instr.name:
+        return True
+    if instr.name == "_BINARY_OP":
         return True
     tkns = iter(instr.tokens)
     for tkn in tkns:
@@ -498,7 +521,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "SYNC_SP"),
-        tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
@@ -506,6 +528,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         passthrough=passthrough,
+        tier=tier_variable(op),
     )
 
 

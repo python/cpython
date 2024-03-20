@@ -85,7 +85,7 @@ typedef struct _rare_events {
    */
 struct _is {
 
-    /* This struct countains the eval_breaker,
+    /* This struct contains the eval_breaker,
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
@@ -231,6 +231,7 @@ struct _is {
 
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
+    struct _Py_mem_interp_free_queue mem_free_queue;
 
     struct ast_state ast;
     struct types_state types;
@@ -244,7 +245,6 @@ struct _is {
 
     uint16_t optimizer_side_threshold;
 
-    uint32_t next_func_version;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

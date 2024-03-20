@@ -1,0 +1,2 @@
+Add ``test_cext`` test: build a C extension to check if the Python C API
+emits C compiler warnings. Patch by Victor Stinner.
