@@ -1,0 +1,2 @@
+An iOS platform guide was added, and modules not available on iOS were
+flagged.
