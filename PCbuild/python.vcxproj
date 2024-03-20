@@ -145,7 +145,7 @@ set PYTHONPATH=$(PySourcePath)Lib
 @rem and using it outside of that context is ill-advised.
 @echo Running $(Configuration)^|$(Platform) interpreter...
 @setlocal
-@set PYTHONHOME=$(PySourcePath)
+@set PYTHONHOME=$(PySourcePath.TrimEnd('\'))
 @"$(OutDir)$(PyExeName)$(PyDebugExt).exe" %*
 </_Content>
       <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
