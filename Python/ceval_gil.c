@@ -671,7 +671,7 @@ _push_pending_call(struct _pending_calls *pending,
     pending->calls[i].flags = flags;
     pending->last = j;
     assert(pending->calls_to_do < NPENDINGCALLS);
-    pending->calls_to_do++;
+    _Py_atomic_add_int32(&pending->calls_to_do, 1);
     return 0;
 }
 
@@ -701,7 +701,7 @@ _pop_pending_call(struct _pending_calls *pending,
         pending->calls[i] = (struct _pending_call){0};
         pending->first = (i + 1) % NPENDINGCALLS;
         assert(pending->calls_to_do > 0);
-        pending->calls_to_do--;
+        _Py_atomic_add_int32(&pending->calls_to_do, -1);
     }
 }
 
