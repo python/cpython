@@ -455,6 +455,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
                 break;
             default:
                 assert(0);
+                Py_FatalError("Illegal instruction format");
         }
         patches[HoleValue_TOP] = (uint64_t)memory + instruction_starts[1];
         patches[HoleValue_ZERO] = 0;
