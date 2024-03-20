@@ -384,19 +384,11 @@ class GCTests(unittest.TestCase):
         # each call to collect(N)
         x = []
         gc.collect(0)
-        # x is now in gen 1
+        # x is now in the old gen
         a, b, c = gc.get_count()
-        gc.collect(1)
-        # x is now in gen 2
-        d, e, f = gc.get_count()
-        gc.collect(2)
-        # x is now in gen 3
-        g, h, i = gc.get_count()
-        # We don't check a, d, g since their exact values depends on
+        # We don't check a since its exact values depends on
         # internal implementation details of the interpreter.
         self.assertEqual((b, c), (1, 0))
-        self.assertEqual((e, f), (0, 1))
-        self.assertEqual((h, i), (0, 0))
 
     def test_trashcan(self):
         class Ouch:
@@ -847,16 +839,6 @@ class GCTests(unittest.TestCase):
         self.assertFalse(
                 any(l is element for element in gc.get_objects(generation=2))
         )
-        gc.collect(generation=1)
-        self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=0))
-        )
-        self.assertFalse(
-                any(l is element for element in  gc.get_objects(generation=1))
-        )
-        self.assertTrue(
-                any(l is element for element in gc.get_objects(generation=2))
-        )
         gc.collect(generation=2)
         self.assertFalse(
                 any(l is element for element in gc.get_objects(generation=0))
@@ -1075,6 +1057,56 @@ class GCTests(unittest.TestCase):
         # cleared before Z dies.
         callback.assert_not_called()
         gc.enable()
+
+    @unittest.skipIf(Py_GIL_DISABLED, "Free threading does not support incremental GC")
+    def test_incremental_gc_handles_fast_cycle_creation(self):
+
+        class LinkedList:
+
+            #Use slots to reduce number of implicit objects
+            __slots__ = "next", "prev", "surprise"
+
+            def __init__(self, next=None, prev=None):
+                self.next = next
+                if next is not None:
+                    next.prev = self
+                self.prev = prev
+                if prev is not None:
+                    prev.next = self
+
+        def make_ll(depth):
+            head = LinkedList()
+            for i in range(depth):
+                head = LinkedList(head, head.prev)
+            return head
+
+        head = make_ll(10000)
+        count = 10000
+
+        # We expect the counts to go negative eventually
+        # as there will some objects we aren't counting,
+        # e.g. the gc stats dicts. The test merely checks
+        # that the counts don't grow.
+
+        enabled = gc.isenabled()
+        gc.enable()
+        olds = []
+        for i in range(1000):
+            newhead = make_ll(200)
+            count += 200
+            newhead.surprise = head
+            olds.append(newhead)
+            if len(olds) == 50:
+                stats = gc.get_stats()
+                young = stats[0]
+                incremental = stats[1]
+                old = stats[2]
+                collected = young['collected'] + incremental['collected'] + old['collected']
+                live = count - collected
+                self.assertLess(live, 25000)
+                del olds[:]
+        if not enabled:
+            gc.disable()
 
 
 class GCCallbackTests(unittest.TestCase):

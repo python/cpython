@@ -125,19 +125,8 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
-static inline void _Py_SetImmortal(PyObject *op)
-{
-    if (op) {
-#ifdef Py_GIL_DISABLED
-        op->ob_tid = _Py_UNOWNED_TID;
-        op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
-        op->ob_ref_shared = 0;
-#else
-        op->ob_refcnt = _Py_IMMORTAL_REFCNT;
-#endif
-    }
-}
-#define _Py_SetImmortal(op) _Py_SetImmortal(_PyObject_CAST(op))
+extern void _Py_SetImmortal(PyObject *op);
+extern void _Py_SetImmortalUntracked(PyObject *op);
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
@@ -325,11 +314,12 @@ static inline void _PyObject_GC_TRACK(
                           filename, lineno, __func__);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyGC_Head *generation0 = interp->gc.generation0;
+    PyGC_Head *generation0 = &interp->gc.young.head;
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
     _PyGCHead_SET_NEXT(gc, generation0);
+    assert((gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1) == 0);
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
