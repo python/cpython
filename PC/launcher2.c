@@ -777,29 +777,50 @@ parseCommandLine(SearchInfo *search)
 int
 readAliasInfo(SearchInfo *search, const wchar_t *tail, int tailLen)
 {
-    wchar_t buffer[MAXLEN];
     wchar_t key[MAXLEN];
     if (tailLen < 0 ? wcscpy_s(key, MAXLEN, tail) : wcsncpy_s(key, MAXLEN, tail, tailLen)) {
         error(L"Launcher filename was too long");
         return RC_NO_MEMORY;
     }
-    int n = _readIni(L"alias", key, buffer, MAXLEN, 0);
-    if (!n) {
-        return RC_NO_ALIAS;
+
+    LSTATUS status;
+    HKEY roots[] = {HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, 0};
+    for (HKEY *root = roots; *root; ++root) {
+        HKEY hkey;
+        DWORD regType;
+        DWORD n;
+
+        status = RegOpenKeyExW(*root, L"Software\\Python\\PyLauncher\\Alias", 0, KEY_READ, &hkey);
+        if (status) {
+            winerror(status, L"Failed to open registry to find aliases");
+            break;
+        }
+
+        status = RegQueryValueExW(hkey, key, NULL, &regType, NULL, &n);
+        if (!status && regType == REG_SZ) {
+            n += 1;
+            wchar_t *buf = allocSearchInfoBuffer(search, n);
+            if (!buf) {
+                return RC_NO_MEMORY;
+            }
+
+            status = RegQueryValueExW(hkey, key, NULL, &regType, (LPBYTE)buf, &n);
+
+            if (!status && regType == REG_SZ) {
+                RegCloseKey(hkey);
+                /* Allow ourselves to override the executable path entirely */
+                search->allowExecutableOverride = true;
+                search->executablePath = buf;
+                search->allowPyvenvCfg = false;
+                search->allowDefaults = false;
+
+                return 0;
+            }
+        }
+        RegCloseKey(hkey);
     }
 
-    wchar_t *buf = allocSearchInfoBuffer(search, n + 1);
-    if (!buf || wcscpy_s(buf, n + 1, buffer)) {
-        return RC_NO_MEMORY;
-    }
-
-    /* Allow ourselves to override the executable path entirely */
-    search->allowExecutableOverride = true;
-    search->executablePath = buf;
-    search->allowPyvenvCfg = false;
-    search->allowDefaults = false;
-
-    return 0;
+    return RC_NO_ALIAS;
 }
 
 int
@@ -2174,22 +2195,20 @@ collectEnvironments(const SearchInfo *search, EnvironmentInfo **result)
  ***                       EMBEDDED PYTHON MANAGEMENT                       ***
 \******************************************************************************/
 
-typedef PyObject *(*PPyObject_CallMethod)(PyObject *obj, const char *method, const char *fmt, ...);
-typedef void (*PPyErr_Clear)();
-
 typedef struct {
-    HMODULE _pydll;
     PyObject *module;
-    PPyObject_CallMethod PyObject_CallMethod;
-    PPyErr_Clear PyErr_Clear;
 } PythonApi;
+
+int isPythonFailure(PyObject *result);
+
+#define STRINGIZE2(x) L""#x
+#define STRINGIZE(x) STRINGIZE2(x)
 
 int
 initPython(PythonApi *api)
 {
     PyStatus status;
 
-    api->_pydll = NULL;
     api->module = NULL;
 
     wchar_t pyExe[MAXLEN];
@@ -2209,7 +2228,7 @@ initPython(PythonApi *api)
 #ifndef _DEBUG
         || !join(pyDll, MAXLEN, L"runtime")
 #endif
-        || !join(pyDll, MAXLEN, L"" Py_DLL_NAME)
+        || !join(pyDll, MAXLEN, STRINGIZE(Py_DLL_NAME))
         || GetFileAttributesW(pyDll) == INVALID_FILE_ATTRIBUTES
     ) {
         warn(L"Unable to locate runtime files\n");
@@ -2224,108 +2243,79 @@ initPython(PythonApi *api)
         return RC_INTERNAL_ERROR;
     }
 
-    typedef void (*PPyConfig_InitIsolatedConfig)(PyConfig *config);
-    typedef PyStatus (*PPyConfig_SetString)(PyConfig *config, wchar_t *const *config_str, const wchar_t *str);
-    typedef void (*PPyConfig_Clear)(PyConfig *config);
-    typedef PyStatus (*PPy_InitializeFromConfig)(PyConfig *config);
-    typedef void (*PPy_ExitStatusException)(PyStatus status);
-    typedef PyObject *(*PPyImport_ImportModule)(const char *modName);
-    PPyConfig_InitIsolatedConfig PyConfig_InitIsolatedConfig = (PPyConfig_InitIsolatedConfig)GetProcAddress(py, "PyConfig_InitIsolatedConfig");
-    PPyConfig_SetString PyConfig_SetString = (PPyConfig_SetString)GetProcAddress(py, "PyConfig_SetString");
-    PPyConfig_Clear PyConfig_Clear = (PPyConfig_Clear)GetProcAddress(py, "PyConfig_Clear");
-    PPy_InitializeFromConfig Py_InitializeFromConfig = (PPy_InitializeFromConfig)GetProcAddress(py, "Py_InitializeFromConfig");
-    PPy_ExitStatusException Py_ExitStatusException = (PPy_ExitStatusException)GetProcAddress(py, "Py_ExitStatusException");
-    PPyImport_ImportModule PyImport_ImportModule = (PPyImport_ImportModule)GetProcAddress(py, "PyImport_ImportModule");
-    PPyObject_CallMethod PyObject_CallMethod = (PPyObject_CallMethod)GetProcAddress(py, "PyObject_CallMethod");
-    PPyErr_Clear PyErr_Clear = isEnvVarSet(L"PYLAUNCHER_DEBUG")
-        ? (PPyErr_Clear)GetProcAddress(py, "PyErr_Print")
-        : (PPyErr_Clear)GetProcAddress(py, "PyErr_Clear");
-
-    if (!PyConfig_InitIsolatedConfig
-        || !PyConfig_Clear
-        || !Py_ExitStatusException
-        || !Py_InitializeFromConfig
-        || !PyConfig_SetString
-        || !PyErr_Clear
-        || !PyImport_ImportModule
-        || !PyObject_CallMethod
-    ) {
-        warn(L"Unable to load runtime\n");
-        FreeLibrary(py);
-        CoTaskMemFree(appdata);
-        return RC_INTERNAL_ERROR;
-    }
-
     PyConfig config;
-    (*PyConfig_InitIsolatedConfig)(&config);
+    PyConfig_InitIsolatedConfig(&config);
 
-    status = (*PyConfig_SetString)(&config, &config.program_name, pyExe);
+    status = PyConfig_SetString(&config, &config.program_name, pyExe);
     if (PyStatus_Exception(status)) {
         goto exception;
     }
 
-    status = (*Py_InitializeFromConfig)(&config);
+    status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
         goto exception;
     }
-    (*PyConfig_Clear)(&config);
+    PyConfig_Clear(&config);
 
-    api->_pydll = py;
-    api->PyObject_CallMethod = PyObject_CallMethod;
-    api->PyErr_Clear = PyErr_Clear;
-    api->module = (*PyImport_ImportModule)("manager");
+    api->module = PyImport_ImportModule("manager");
     if (!api->module) {
-        (*PyErr_Clear)();
+        isPythonFailure(NULL); // to print the error
         warn(L"Unable to load manager runtime\n");
         return RC_INTERNAL_ERROR;
     }
 
-    PyObject *r = (*PyObject_CallMethod)(api->module, "init", "uuiii",
+    if (isPythonFailure(PyObject_CallMethod(api->module, "init", "uuiii",
         pyExe,
         appdata,
         isEnvVarSet(L"PYLAUNCHER_DRYRUN"),
         isEnvVarSet(L"PYLAUNCHER_DEBUG"),
         isEnvVarSet(L"PYLAUNCHER_QUIET")
-    );
-    CoTaskMemFree(appdata);
-    if (!r) {
-        (*PyErr_Clear)();
+    ))) {
+        CoTaskMemFree(appdata);
         warn(L"Unable to initialize runtime\n");
         return RC_INTERNAL_ERROR;
     }
-    Py_DECREF(r);
 
+    CoTaskMemFree(appdata);
     return 0;
 
 exception:
     if (PyConfig_Clear) {
-        (*PyConfig_Clear)(&config);
+        PyConfig_Clear(&config);
     }
-    (*Py_ExitStatusException)(status);
+    Py_ExitStatusException(status);
     FreeLibrary(py);
     CoTaskMemFree(appdata);
+    return RC_INTERNAL_ERROR;
+}
+
+int
+isPythonFailure(PyObject *result)
+{
+    if (result) {
+        Py_DECREF(result);
+        return 0;
+    }
+    if (isEnvVarSet(L"PYLAUNCHER_DEBUG")) {
+        if (PyErr_Occurred()) {
+            PyErr_Print();
+        }
+    } else {
+        PyErr_Clear();
+    }
     return RC_INTERNAL_ERROR;
 }
 
 void
 closePython(PythonApi *api)
 {
-    if (!api || !api->_pydll) {
+    if (!api) {
         return;
     }
     if (api->module) {
         Py_CLEAR(api->module);
     }
-    typedef void (*PPy_Finalize)();
-    PPy_Finalize Py_Finalize = (PPy_Finalize)GetProcAddress(api->_pydll, "Py_Finalize");
-    assert(Py_Finalize);
-    if (Py_Finalize) {
-        (*Py_Finalize)();
-    }
-    FreeLibrary(api->_pydll);
-    api->PyObject_CallMethod = NULL;
-    api->PyErr_Clear = NULL;
-    api->_pydll = NULL;
+    Py_Finalize();
 }
 
 /******************************************************************************\
@@ -2351,14 +2341,10 @@ installEnvironment(const SearchInfo *search)
 
     PythonApi api;
     int exitCode = initPython(&api);
-    if (!exitCode) {
-        PyObject *r = (*api.PyObject_CallMethod)(api.module, "install", "u#", search->tag, (Py_ssize_t)search->tagLength);
-        if (!r) {
-            (*api.PyErr_Clear)();
-            exitCode = RC_NO_PYTHON;
-        } else {
-            Py_DECREF(r);
-        }
+    if (!exitCode &&
+        isPythonFailure(PyObject_CallMethod(api.module, "install", "u#", search->tag, (Py_ssize_t)search->tagLength)))
+    {
+        exitCode = RC_NO_PYTHON;
     }
     closePython(&api);
 
@@ -2616,32 +2602,34 @@ int
 manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launch, const wchar_t *launchCommand)
 {
     PythonApi api;
+
     int exitCode = initPython(&api);
-    if (exitCode) {
-        closePython(&api);
-        return exitCode;
-    }
-
-    PyObject *r;
-    if (search->tag && search->tagLength) {
-        r = (*api.PyObject_CallMethod)(
-            api.module,
-            activate ? "create_alias" : "delete_alias",
-            "u#",
-            search->tag,
-            (Py_ssize_t)search->tagLength
-        );
-    }
-    else {
-        r = (*api.PyObject_CallMethod)(api.module, "delete_all_aliases", NULL);
-    } 
-
-    if (!r) {
-        (*api.PyErr_Clear)();
-        error(L"Unable to %s alias", activate ? L"activate" : L"delete");
-        exitCode = RC_NO_ALIAS;
-    } else {
-        Py_DECREF(r);
+    if (!exitCode) {
+        PyObject *r;
+        if (activate) {
+            if (launch && launch->tag) {
+                r = PyObject_CallMethod(api.module, "create_alias", "uu", launch->tag, launchCommand);
+            } else {
+                error(L"Unable to create alias for unspecified tag.");
+                exitCode = RC_NO_ALIAS;
+            }
+        } else {
+            if (!(search->tag && search->tagLength)) {
+                r = PyObject_CallMethod(api.module, "delete_all_aliases", NULL);
+            } else if (launch && launch->tag) {
+                r = PyObject_CallMethod(api.module, "delete_alias", "u", launch->tag);
+            } else if (search->tag && search->tagLength) {
+                r = PyObject_CallMethod(api.module, "delete_alias", "u#", search->tag, (Py_ssize_t)search->tagLength);
+            } else {
+                error(L"Unable to remove unspecified alias.");
+                exitCode = RC_NO_ALIAS;
+            }
+        }
+        
+        if (!exitCode && isPythonFailure(r)) {
+            error(L"Unable to %s alias", activate ? L"activate" : L"delete");
+            exitCode = RC_NO_ALIAS;
+        }
     }
     closePython(&api);
     return exitCode;
@@ -2962,6 +2950,12 @@ process(int argc, wchar_t ** argv)
     // responses to any errors occur later.
     searchExitCode = selectEnvironment(&search, envs, &env);
 
+    // Allow deleting aliases that can't be found
+    if (search.deactivate && searchExitCode == RC_NO_PYTHON) {
+        exitCode = manageAlias(search.activate, &search, NULL, NULL);
+        goto abort;
+    }
+
     // List all environments, then exit
     if (search.list || search.listPaths) {
         exitCode = listEnvironments(envs, stdout, search.listPaths, env);
@@ -3021,7 +3015,7 @@ process(int argc, wchar_t ** argv)
     }
 
     if (search.activate || search.deactivate) {
-        // Create/delete the aliases and update the INI file
+        // Create/delete the aliases and update the registry
         exitCode = manageAlias(search.activate, &search, env, launchCommand);
     }
     else {

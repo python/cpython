@@ -38,6 +38,7 @@ def init(py_exe, local_appdata, dryrun, verbose, quiet):
 import os
 import subprocess
 import sys
+import winreg
 
 def debug(message):
     if VERBOSE:
@@ -109,43 +110,6 @@ def install(tag):
 # ALIAS MANAGEMENT
 # ==============================================================================
 
-def _read_aliases_from_file():
-    pre = []
-    section = None
-    post = None
-    with open(os.path.join(PY_EXE, "..", "py.ini"), "r", encoding="utf-8", errors="surrogateescape") as f:
-        for line in f:
-            if post is not None:
-                post.append(line.rstrip())
-            elif section is not None:
-                if line.lstrip().startswith("["):
-                    post = [line.rstrip()]
-                else:
-                    section.append(line.rstrip())
-            else:
-                pre.append(line.rstrip())
-                if pre[-1] == "[alias]":
-                    section = []
-    while section and not section[-1]:
-        post.insert(0, section.pop())
-    section_dict = {
-        k: v
-        for k, sep, v in (line.partition("=") for line in section)
-        if sep == "="
-    }
-    return pre, section_dict, post
-
-
-def _write_aliases_to_file(pre, section, post):
-    with open(os.path.join(PY_EXE, "..", "py.ini"), "w", encoding="utf-8", errors="surrogateescape") as f:
-        for line in pre:
-            print(line, file=f)
-        for key, value in section.items():
-            print(key, value, sep="=", file=f)
-        for line in post:
-            print(line, file=f)
-
-
 def _get_aliases(tag):
     if not PY_EXE:
         raise RuntimeError("Cannot create alias without py.exe path")
@@ -157,58 +121,73 @@ def _get_aliases(tag):
     #    srcw = PY_EXE.rpartition("_d.")[0] + "w_d.exe"
     #else:
     #    srcw = PY_EXE.rpartition(".")[0] + "w.exe"
-    yield f"{company}.exe", src
-    #yield f"{company}w.exe", srcw
-    yield f"{company}{tag}.exe", src
-    #yield f"{company}w{tag}.exe", srcw
+    yield f"{company}", src
+    #yield f"{company}w", srcw
+    yield f"{company}{tag}", src
+    #yield f"{company}w{tag}", srcw
     for i, c in enumerate(tag):
         if not c.isalnum():
-            yield f"{company}{tag[:i]}.exe", src
-            #yield f"{company}w{tag[:i]}.exe", srcw
+            yield f"{company}{tag[:i]}", src
+            #yield f"{company}w{tag[:i]}", srcw
             break
 
 
-def _manage_alias(tag, create=True):
-    pre, section, post = _read_aliases_from_file()
+def _open_key(hklm=True, hkcu=True):
+    try:
+        return winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, r"Software\Python\PyLauncher\Alias")
+    except PermissionError:
+        pass
+    return winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Python\PyLauncher\Alias")
 
-    if tag is None:
-        aliases = [(k, None) for k in section]
-    else:
-        aliases = _get_aliases(tag)
+
+def _manage_alias(tag, create=True):
+    aliases = _get_aliases(tag)
 
     for alias_name, exe_path in aliases:
-        alias_exe = os.path.join(os.path.dirname(PY_EXE), alias_name)
+        alias_exe = os.path.join(PY_EXE, "..", alias_name) + ".exe"
+        friendly_exe = os.path.normpath(alias_exe)
         if create:
-            debug(f"# Creating alias at '{alias_exe}'")
+            debug(f"# Creating alias at '{friendly_exe}'")
         else:
-            debug(f"# Removing alias at '{alias_exe}'")
+            debug(f"# Removing alias at '{friendly_exe}'")
         if not DRYRUN:
             try:
                 os.unlink(alias_exe)
             except FileNotFoundError:
                 pass
             except PermissionError as ex:
-                debug(f"# Failed to remove existing alias '{alias_exe}': {ex}")
+                debug(f"# Failed to remove existing alias '{friendly_exe}': {ex}")
             except Exception as ex:
-                warn(f"Failed to remove alias at '{alias_exe}': {ex}")
+                warn(f"Failed to remove alias at '{friendly_exe}': {ex}")
             if create:
                 try:
                     os.link(exe_path, alias_exe, follow_symlinks=False)
                 except OSError:
                     shutil.copy2(exe_path, alias_exe, follow_symlinks=False)
-                section[alias_name] = launch_command
-            else:
-                section.pop(alias_name, None)
-            _write_aliases_to_file(pre, section, post)
+            yield alias_name
 
 
-def create_alias(tag):
-    _manage_alias(tag, create=True)
+def create_alias(tag, launch_command):
+    with _open_key() as hkey:
+        for alias in _manage_alias(tag, create=True):
+            winreg.SetValueEx(hkey, alias, None, winreg.REG_SZ, launch_command)
 
 
 def delete_alias(tag):
-    _manage_alias(tag, create=False)
+    with _open_key() as hkey:
+        for alias in _manage_alias(tag, create=False):
+            try:
+                winreg.DeleteValue(hkey, alias)
+            except OSError as ex:
+                debug(f"# Failed to remove {alias}: {ex}")
 
 
 def delete_all_aliases():
-    _manage_alias(None, create=False)
+    try:
+        winreg.DeleteKey(winreg.HKEY_LOCAL_MACHINE, r"Software\Python\PyLauncher\Alias")
+    except (FileNotFoundError, PermissionError):
+        pass
+    try:
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, r"Software\Python\PyLauncher\Alias")
+    except FileNotFoundError:
+        pass
