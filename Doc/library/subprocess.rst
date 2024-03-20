@@ -1,5 +1,5 @@
-:mod:`subprocess` --- Subprocess management
-===========================================
+:mod:`!subprocess` --- Subprocess management
+============================================
 
 .. module:: subprocess
    :synopsis: Subprocess management.

@@ -1,5 +1,5 @@
-:mod:`optparse` --- Parser for command line options
-===================================================
+:mod:`!optparse` --- Parser for command line options
+====================================================
 
 .. module:: optparse
    :synopsis: Command-line option parsing library.

@@ -1,5 +1,5 @@
-:mod:`socket` --- Low-level networking interface
-================================================
+:mod:`!socket` --- Low-level networking interface
+=================================================
 
 .. module:: socket
    :synopsis: Low-level networking interface.

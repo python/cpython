@@ -1,5 +1,5 @@
-:mod:`marshal` --- Internal Python object serialization
-=======================================================
+:mod:`!marshal` --- Internal Python object serialization
+========================================================
 
 .. module:: marshal
    :synopsis: Convert Python objects to streams of bytes and back (with different

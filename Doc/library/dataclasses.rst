@@ -1,5 +1,5 @@
-:mod:`dataclasses` --- Data Classes
-===================================
+:mod:`!dataclasses` --- Data Classes
+====================================
 
 .. module:: dataclasses
     :synopsis: Generate special methods on user-defined classes.

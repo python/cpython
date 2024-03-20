@@ -1,5 +1,5 @@
-:mod:`tempfile` --- Generate temporary files and directories
-============================================================
+:mod:`!tempfile` --- Generate temporary files and directories
+=============================================================
 
 .. module:: tempfile
    :synopsis: Generate temporary files and directories.

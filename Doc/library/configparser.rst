@@ -1,5 +1,5 @@
-:mod:`configparser` --- Configuration file parser
-=================================================
+:mod:`!configparser` --- Configuration file parser
+==================================================
 
 .. module:: configparser
    :synopsis: Configuration file parser.

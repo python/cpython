@@ -1,5 +1,5 @@
-:mod:`shelve` --- Python object persistence
-===========================================
+:mod:`!shelve` --- Python object persistence
+============================================
 
 .. module:: shelve
    :synopsis: Python object persistence.

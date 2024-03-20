@@ -1,5 +1,5 @@
-:mod:`secrets` --- Generate secure random numbers for managing secrets
-======================================================================
+:mod:`!secrets` --- Generate secure random numbers for managing secrets
+=======================================================================
 
 .. module:: secrets
    :synopsis: Generate secure random numbers for managing secrets.

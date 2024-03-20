@@ -1,6 +1,5 @@
-
-:mod:`unittest.mock` --- mock object library
-============================================
+:mod:`!unittest.mock` --- mock object library
+=============================================
 
 .. module:: unittest.mock
    :synopsis: Mock object library.

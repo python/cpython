@@ -1,5 +1,5 @@
-:mod:`filecmp` --- File and Directory Comparisons
-=================================================
+:mod:`!filecmp` --- File and Directory Comparisons
+==================================================
 
 .. module:: filecmp
    :synopsis: Compare files efficiently.

@@ -1,5 +1,5 @@
-:mod:`hashlib` --- Secure hashes and message digests
-====================================================
+:mod:`!hashlib` --- Secure hashes and message digests
+=====================================================
 
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.

@@ -1,5 +1,5 @@
-:mod:`abc` --- Abstract Base Classes
-====================================
+:mod:`!abc` --- Abstract Base Classes
+=====================================
 
 .. module:: abc
    :synopsis: Abstract base classes according to :pep:`3119`.

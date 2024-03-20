@@ -1,5 +1,5 @@
-:mod:`fileinput` --- Iterate over lines from multiple input streams
-===================================================================
+:mod:`!fileinput` --- Iterate over lines from multiple input streams
+====================================================================
 
 .. module:: fileinput
    :synopsis: Loop over standard input or a list of files.

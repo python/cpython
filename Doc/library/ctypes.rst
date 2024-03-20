@@ -1,5 +1,5 @@
-:mod:`ctypes` --- A foreign function library for Python
-=======================================================
+:mod:`!ctypes` --- A foreign function library for Python
+========================================================
 
 .. module:: ctypes
    :synopsis: A foreign function library for Python.

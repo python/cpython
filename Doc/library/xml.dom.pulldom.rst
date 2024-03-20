@@ -1,5 +1,5 @@
-:mod:`xml.dom.pulldom` --- Support for building partial DOM trees
-=================================================================
+:mod:`!xml.dom.pulldom` --- Support for building partial DOM trees
+==================================================================
 
 .. module:: xml.dom.pulldom
    :synopsis: Support for building partial DOM trees from SAX events.

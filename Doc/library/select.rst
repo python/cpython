@@ -1,5 +1,5 @@
-:mod:`select` --- Waiting for I/O completion
-============================================
+:mod:`!select` --- Waiting for I/O completion
+=============================================
 
 .. module:: select
    :synopsis: Wait for I/O completion on multiple streams.

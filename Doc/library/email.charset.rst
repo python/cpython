@@ -1,5 +1,5 @@
-:mod:`email.charset`: Representing character sets
--------------------------------------------------
+:mod:`!email.charset`: Representing character sets
+--------------------------------------------------
 
 .. module:: email.charset
    :synopsis: Character Sets

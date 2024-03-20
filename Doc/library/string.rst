@@ -1,5 +1,5 @@
-:mod:`string` --- Common string operations
-==========================================
+:mod:`!string` --- Common string operations
+===========================================
 
 .. module:: string
    :synopsis: Common string operations.

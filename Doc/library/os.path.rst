@@ -1,5 +1,5 @@
-:mod:`os.path` --- Common pathname manipulations
-================================================
+:mod:`!os.path` --- Common pathname manipulations
+=================================================
 
 .. module:: os.path
    :synopsis: Operations on pathnames.

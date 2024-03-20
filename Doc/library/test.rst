@@ -1,5 +1,5 @@
-:mod:`test` --- Regression tests package for Python
-===================================================
+:mod:`!test` --- Regression tests package for Python
+====================================================
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.

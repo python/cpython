@@ -1,5 +1,5 @@
-:mod:`pwd` --- The password database
-====================================
+:mod:`!pwd` --- The password database
+=====================================
 
 .. module:: pwd
    :platform: Unix

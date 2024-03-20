@@ -1,5 +1,5 @@
-:mod:`urllib.request` --- Extensible library for opening URLs
-=============================================================
+:mod:`!urllib.request` --- Extensible library for opening URLs
+==============================================================
 
 .. module:: urllib.request
    :synopsis: Extensible library for opening URLs.

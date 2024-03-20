@@ -1,5 +1,5 @@
-:mod:`shlex` --- Simple lexical analysis
-========================================
+:mod:`!shlex` --- Simple lexical analysis
+=========================================
 
 .. module:: shlex
    :synopsis: Simple lexical analysis for Unix shell-like languages.

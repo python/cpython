@@ -1,5 +1,5 @@
-:mod:`compileall` --- Byte-compile Python libraries
-===================================================
+:mod:`!compileall` --- Byte-compile Python libraries
+====================================================
 
 .. module:: compileall
    :synopsis: Tools for byte-compiling all Python source files in a directory tree.

@@ -1,5 +1,5 @@
-:mod:`hmac` --- Keyed-Hashing for Message Authentication
-========================================================
+:mod:`!hmac` --- Keyed-Hashing for Message Authentication
+=========================================================
 
 .. module:: hmac
    :synopsis: Keyed-Hashing for Message Authentication (HMAC) implementation

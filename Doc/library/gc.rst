@@ -1,5 +1,5 @@
-:mod:`gc` --- Garbage Collector interface
-=========================================
+:mod:`!gc` --- Garbage Collector interface
+==========================================
 
 .. module:: gc
    :synopsis: Interface to the cycle-detecting garbage collector.
