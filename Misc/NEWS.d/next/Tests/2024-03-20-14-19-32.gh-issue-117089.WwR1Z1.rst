@@ -1,0 +1,1 @@
+Consolidated tests for importlib.metadata in their own ``metadata`` package.
