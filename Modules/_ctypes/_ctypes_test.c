@@ -690,11 +690,54 @@ struct BITS {
  */
 #ifndef __xlc__
 #define SIGNED_SHORT_BITFIELDS
-     short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+    signed short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 #endif
 };
 
 EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
+{
+    switch (name) {
+    case 'A': return bits->A;
+    case 'B': return bits->B;
+    case 'C': return bits->C;
+    case 'D': return bits->D;
+    case 'E': return bits->E;
+    case 'F': return bits->F;
+    case 'G': return bits->G;
+    case 'H': return bits->H;
+    case 'I': return bits->I;
+
+#ifdef SIGNED_SHORT_BITFIELDS
+    case 'M': return bits->M;
+    case 'N': return bits->N;
+    case 'O': return bits->O;
+    case 'P': return bits->P;
+    case 'Q': return bits->Q;
+    case 'R': return bits->R;
+    case 'S': return bits->S;
+#endif
+    }
+    return 999;
+}
+
+struct
+#ifndef MS_WIN32
+__attribute__ ((ms_struct))
+#endif
+BITS_msvc
+{
+    signed int A: 1, B:2, C:3, D:4, E: 5, F: 6, G: 7, H: 8, I: 9;
+/*
+ * The test case needs/uses "signed short" bitfields, but the
+ * IBM XLC compiler does not support this
+ */
+#ifndef __xlc__
+#define SIGNED_SHORT_BITFIELDS
+    signed short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
+#endif
+};
+
+EXPORT(int) unpack_bitfields_msvc(struct BITS_msvc *bits, char name)
 {
     switch (name) {
     case 'A': return bits->A;

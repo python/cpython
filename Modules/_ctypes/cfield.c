@@ -31,84 +31,170 @@ static void pymem_destructor(PyObject *ptr)
   PyCField_Type
 */
 
-/*
- * Expects the size, index and offset for the current field in *psize and
- * *poffset, stores the total size so far in *psize, the offset for the next
- * field in *poffset, the alignment requirements for the current field in
- * *palign, and returns a field descriptor for this field.
- */
-/*
- * bitfields extension:
- * bitsize != 0: this is a bit field.
- * pbitofs points to the current bit offset, this will be updated.
- * prev_desc points to the type of the previous bitfield, if any.
- */
+static inline
+Py_ssize_t round_down(Py_ssize_t numToRound, Py_ssize_t multiple)
+{
+    assert(numToRound >= 0);
+    assert(multiple >= 0);
+    if (multiple == 0)
+        return numToRound;
+    return (numToRound / multiple) * multiple;
+}
+
+static inline
+Py_ssize_t round_up(Py_ssize_t numToRound, Py_ssize_t multiple)
+{
+    assert(numToRound >= 0);
+    assert(multiple >= 0);
+    if (multiple == 0)
+        return numToRound;
+    return ((numToRound + multiple - 1) / multiple) * multiple;
+}
+
+static inline
+Py_ssize_t NUM_BITS(Py_ssize_t bitsize);
+static inline
+Py_ssize_t LOW_BIT(Py_ssize_t offset);
+static inline
+Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset);
+
+/* PyCField_FromDesc creates and returns a struct/union field descriptor.
+
+The function expects to be called repeatedly for all fields in a struct or
+union.  It uses helper functions PyCField_FromDesc_gcc and
+PyCField_FromDesc_msvc to simulate the corresponding compilers.
+
+GCC mode places fields one after another, bit by bit.  But when a field would
+straddle an alignment boundary for its type, we insert a few bits of padding to
+avoid that.
+
+MSVC mode works similar except for bitfield packing.  Adjacent bit-fields are
+packed into the same 1-, 2-, or 4-byte allocation unit if the integral types
+are the same size and if the next bit-field fits into the current allocation
+unit without crossing the boundary imposed by the common alignment requirements
+of the bit-fields.
+
+See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html#index-mms-bitfields for details.
+
+We do not support zero length bitfields.  In fact we use bitsize != 0 to
+indicate a bitfield.
+
+PyCField_FromDesc manages:
+- *psize: the size of the structure / union so far.
+- *poffset, *pbitofs: 8* (*poffset) + *pbitofs points to where the next field
+  would start.
+- *palign: the alignment requirements of the last field we placed.
+*/
+
+static void
+PyCField_FromDesc_gcc(Py_ssize_t bitsize, Py_ssize_t *pbitofs,
+                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
+                CFieldObject* self, StgDictObject* dict,
+                int is_bitfield
+                )
+{
+    // We don't use poffset here, so clear it, if it has been set.
+    *pbitofs += *poffset * 8;
+    *poffset = 0;
+
+    *palign = dict->align;
+
+    if ((bitsize > 0)
+        && (round_down(*pbitofs, 8 * dict->align)
+            < round_down(*pbitofs + bitsize - 1, 8 * dict->align))) {
+        // We would be straddling alignment units.
+        *pbitofs = round_up(*pbitofs, 8*dict->align);
+    }
+    assert(*poffset == 0);
+
+    if(is_bitfield) {
+        self->offset = round_down(*pbitofs, 8*dict->size) / 8;
+        Py_ssize_t effective_bitsof = *pbitofs - 8 * self->offset;
+        self->size = BUILD_SIZE(bitsize, effective_bitsof);
+        assert(dict->size == dict->align);
+        assert(effective_bitsof <= dict->size * 8);
+    } else {
+        self->offset = round_down(*pbitofs, 8*dict->align) / 8;
+        self->size = dict->size;
+    }
+
+    *pbitofs += bitsize;
+    *psize = round_up(*pbitofs, 8) / 8;
+}
+
+static void
+PyCField_FromDesc_msvc(
+                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
+                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset,
+                Py_ssize_t *palign, int pack,
+                CFieldObject* self, StgDictObject* dict,
+                int is_bitfield
+                )
+{
+    if (pack)
+        *palign = min(pack, dict->align);
+    else
+        *palign = dict->align;
+
+    // *poffset points to end of current bitfield.
+    // *pbitofs is generally non-positive,
+    // and 8 * (*poffset) + *pbitofs points just behind
+    // the end of the last field we placed.
+    if (0 < *pbitofs + bitsize || 8 * dict->size != *pfield_size) {
+        // Close the previous bitfield (if any).
+        // and start a new bitfield:
+        *poffset = round_up(*poffset, *palign);
+
+        *poffset += dict->size;
+
+        *pfield_size = dict->size * 8;
+        // Reminder: 8 * (*poffset) + *pbitofs points to where we would start a
+        // new field.  Ie just behind where we placed the last field plus an
+        // allowance for alignment.
+        *pbitofs = - *pfield_size;
+    }
+
+    assert(8 * dict->size == *pfield_size);
+
+    self->offset = *poffset - (*pfield_size) / 8;
+    if(is_bitfield) {
+        assert(dict->size == dict->align);
+        assert(0 <= (*pfield_size + *pbitofs));
+        assert((*pfield_size + *pbitofs) < dict->size * 8);
+        self->size = BUILD_SIZE(bitsize, *pfield_size + *pbitofs);
+    } else {
+        self->size = dict->size;
+    }
+    assert(*pfield_size + *pbitofs <= dict->size * 8);
+
+    *pbitofs += bitsize;
+    *psize = *poffset;
+}
+
 PyObject *
 PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian)
+                Py_ssize_t *pfield_size, Py_ssize_t bitsize,
+                Py_ssize_t *pbitofs, Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
+                int pack, int big_endian, int ms_struct)
 {
-    CFieldObject *self;
-    PyObject *proto;
-    Py_ssize_t size, align;
-    SETFUNC setfunc = NULL;
-    GETFUNC getfunc = NULL;
-    StgDictObject *dict;
-    int fieldtype;
-#define NO_BITFIELD 0
-#define NEW_BITFIELD 1
-#define CONT_BITFIELD 2
-#define EXPAND_BITFIELD 3
-
-    self = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
+    CFieldObject* self = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
     if (self == NULL)
         return NULL;
-    dict = PyType_stgdict(desc);
+    StgDictObject* dict = PyType_stgdict(desc);
     if (!dict) {
         PyErr_SetString(PyExc_TypeError,
                         "has no _stginfo_");
         Py_DECREF(self);
         return NULL;
     }
-    if (bitsize /* this is a bitfield request */
-        && *pfield_size /* we have a bitfield open */
-#ifdef MS_WIN32
-        /* MSVC, GCC with -mms-bitfields */
-        && dict->size * 8 == *pfield_size
-#else
-        /* GCC */
-        && dict->size * 8 <= *pfield_size
-#endif
-        && (*pbitofs + bitsize) <= *pfield_size) {
-        /* continue bit field */
-        fieldtype = CONT_BITFIELD;
-#ifndef MS_WIN32
-    } else if (bitsize /* this is a bitfield request */
-        && *pfield_size /* we have a bitfield open */
-        && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
-        /* expand bit field */
-        fieldtype = EXPAND_BITFIELD;
-#endif
-    } else if (bitsize) {
-        /* start new bitfield */
-        fieldtype = NEW_BITFIELD;
-        *pbitofs = 0;
-        *pfield_size = dict->size * 8;
-    } else {
-        /* not a bit field */
-        fieldtype = NO_BITFIELD;
-        *pbitofs = 0;
-        *pfield_size = 0;
-    }
 
-    size = dict->size;
-    proto = desc;
+    PyObject* proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
     */
+    SETFUNC setfunc = NULL;
+    GETFUNC getfunc = NULL;
     if (PyCArrayTypeObject_Check(proto)) {
         StgDictObject *adict = PyType_stgdict(proto);
         StgDictObject *idict;
@@ -140,61 +226,38 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     Py_INCREF(proto);
     self->proto = proto;
 
-    switch (fieldtype) {
-    case NEW_BITFIELD:
-        if (big_endian)
-            self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
-        else
-            self->size = (bitsize << 16) + *pbitofs;
-        *pbitofs = bitsize;
-        /* fall through */
-    case NO_BITFIELD:
-        if (pack)
-            align = min(pack, dict->align);
-        else
-            align = dict->align;
-        if (align && *poffset % align) {
-            Py_ssize_t delta = align - (*poffset % align);
-            *psize += delta;
-            *poffset += delta;
-        }
-
-        if (bitsize == 0)
-            self->size = size;
-        *psize += size;
-
-        self->offset = *poffset;
-        *poffset += size;
-
-        *palign = align;
-        break;
-
-    case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
-
-        *pfield_size = dict->size * 8;
-
-        if (big_endian)
-            self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
-        else
-            self->size = (bitsize << 16) + *pbitofs;
-
-        self->offset = *poffset - size; /* poffset is already updated for the NEXT field */
-        *pbitofs += bitsize;
-        break;
-
-    case CONT_BITFIELD:
-        if (big_endian)
-            self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
-        else
-            self->size = (bitsize << 16) + *pbitofs;
-
-        self->offset = *poffset - size; /* poffset is already updated for the NEXT field */
-        *pbitofs += bitsize;
-        break;
+    int is_bitfield = !!bitsize;
+    if(!is_bitfield) {
+        assert(dict->size >= 0);
+        // assert: no overflow;
+        assert((unsigned long long int) dict->size
+            < (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8);
+        bitsize = 8 * dict->size;
+        // Caution: bitsize might still be 0 now.
     }
+    assert(bitsize <= dict->size * 8);
 
+    // `pack` only makes sense in msvc compatibility mode.
+    if (ms_struct || pack != 0) {
+        PyCField_FromDesc_msvc(
+                pfield_size, bitsize, pbitofs,
+                psize, poffset, palign,
+                pack,
+                self, dict,
+                is_bitfield
+                );
+    } else {
+        PyCField_FromDesc_gcc(
+                bitsize, pbitofs,
+                psize, poffset, palign,
+                self, dict,
+                is_bitfield
+                );
+    }
+    assert(!is_bitfield || (LOW_BIT(self->size) <= self->size * 8));
+    if(big_endian && is_bitfield) {
+        self->size = BUILD_SIZE(NUM_BITS(self->size), 8*dict->size - LOW_BIT(self->size) - bitsize);
+    }
     return (PyObject *)self;
 }
 
@@ -281,8 +344,8 @@ static PyObject *
 PyCField_repr(CFieldObject *self)
 {
     PyObject *result;
-    Py_ssize_t bits = self->size >> 16;
-    Py_ssize_t size = self->size & 0xFFFF;
+    Py_ssize_t bits = NUM_BITS(self->size);
+    Py_ssize_t size = LOW_BIT(self->size);
     const char *name;
 
     name = ((PyTypeObject *)self->proto)->tp_name;
@@ -401,8 +464,28 @@ get_ulonglong(PyObject *v, unsigned long long *p)
  */
 
 /* how to decode the size field, for integer get/set functions */
-#define LOW_BIT(x)  ((x) & 0xFFFF)
-#define NUM_BITS(x) ((x) >> 16)
+static inline
+Py_ssize_t LOW_BIT(Py_ssize_t offset) {
+    return offset & 0xFFFF;
+}
+static inline
+Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
+    return bitsize >> 16;
+}
+
+static inline
+Py_ssize_t BUILD_SIZE(Py_ssize_t bitsize, Py_ssize_t offset) {
+    assert(0 <= offset);
+    assert(offset <= 0xFFFF);
+    // We don't support zero length bitfields.
+    // And GET_BITFIELD uses NUM_BITS(size)==0,
+    // to figure out whether we are handling a bitfield.
+    assert(0 < bitsize);
+    Py_ssize_t result = (bitsize << 16) + offset;
+    assert(bitsize == NUM_BITS(result));
+    assert(offset == LOW_BIT(result));
+    return result;
+}
 
 /* Doesn't work if NUM_BITS(size) == 0, but it never happens in SET() call. */
 #define BIT_MASK(type, size) (((((type)1 << (NUM_BITS(size) - 1)) - 1) << 1) + 1)

@@ -350,11 +350,12 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     _Py_IDENTIFIER(_swappedbytes_);
     _Py_IDENTIFIER(_use_broken_old_ctypes_structure_semantics_);
     _Py_IDENTIFIER(_pack_);
+    _Py_IDENTIFIER(_ms_struct_);
     StgDictObject *stgdict, *basedict;
     Py_ssize_t len, offset, size, align, i;
     Py_ssize_t union_size, total_align;
     Py_ssize_t field_size = 0;
-    int bitofs;
+    Py_ssize_t bitofs = 0;
     PyObject *tmp;
     int isPacked;
     int pack;
@@ -404,6 +405,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         isPacked = 1;
         pack = _PyLong_AsInt(tmp);
         Py_DECREF(tmp);
+        // TODO(Matthias): It looks like pack == 0 triggers a bug.
         if (pack < 0) {
             if (!PyErr_Occurred() ||
                 PyErr_ExceptionMatches(PyExc_TypeError) ||
@@ -418,6 +420,28 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     else {
         isPacked = 0;
         pack = 0;
+    }
+
+    #ifdef MS_WIN32
+    int ms_struct = 1;
+    #else
+    int ms_struct = 0;
+    #endif
+
+    if (_PyObject_LookupAttrId(type, &PyId__ms_struct_, &tmp) < 0) {
+        return -1;
+    }
+    if (tmp) {
+        ms_struct = _PyLong_AsInt(tmp);
+        Py_DECREF(tmp);
+        if (PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError) ||
+                PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_ValueError,
+                                "_pack_ must be a bool or integer");
+            }
+            return -1;
+        }
     }
 
     len = PySequence_Size(fields);
@@ -513,7 +537,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         PyObject *pair = PySequence_GetItem(fields, i);
         PyObject *prop;
         StgDictObject *dict;
-        int bitsize = 0;
+        Py_ssize_t bitsize = 0;
 
         if (!pair || !PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
             PyErr_SetString(PyExc_TypeError,
@@ -613,15 +637,17 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, ms_struct);
         } else /* union */ {
+            field_size = 0;
             size = 0;
+            bitofs = 0;
             offset = 0;
             align = 0;
             prop = PyCField_FromDesc(desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
-                                   pack, big_endian);
+                                   pack, big_endian, ms_struct);
             union_size = max(size, union_size);
         }
         total_align = max(align, total_align);
