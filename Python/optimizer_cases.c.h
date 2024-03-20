@@ -1599,7 +1599,9 @@
             PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
             DPRINTF(3, "func: %p ", func);
             if (func == NULL) {
-                goto error;
+                DPRINTF(3, "\n");
+                DPRINTF(1, "Missing function\n");
+                goto done;
             }
             PyCodeObject *co = (PyCodeObject *)func->func_code;
             assert(self_or_null != NULL);
