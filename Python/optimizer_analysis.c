@@ -35,6 +35,7 @@
 
 #ifdef Py_DEBUG
     extern const char *_PyUOpName(int index);
+    extern void _PyUOpPrint(const _PyUOpInstruction *uop);
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
@@ -377,14 +378,20 @@ optimize_uops(
 
         _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
-        DPRINTF(3, "Abstract interpreting %s:%d ",
-                _PyUOpName(opcode),
-                oparg);
+#ifdef Py_DEBUG
+        if (get_lltrace() >= 3) {
+            printf("%4d abs: ", (int)(this_instr - trace));
+            _PyUOpPrint(this_instr);
+            printf(" ");
+        }
+#endif
+
         switch (opcode) {
+
 #include "optimizer_cases.c.h"
 
             default:
-                DPRINTF(1, "Unknown opcode in abstract interpreter\n");
+                DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
         }
         assert(ctx->frame != NULL);
@@ -397,23 +404,30 @@ optimize_uops(
     return 1;
 
 out_of_space:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Out of space in abstract interpreter\n");
-    _Py_uop_abstractcontext_fini(ctx);
-    return 0;
-
+    goto done;
 error:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Encountered error in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
-    return 0;
+    return -1;
 
 hit_bottom:
     // Attempted to push a "bottom" (contradition) symbol onto the stack.
     // This means that the abstract interpreter has hit unreachable code.
-    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but it's
-    // simpler to just admit failure and not create the executor.
+    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
+    // bottom indicates type instability, so we are probably better off
+    // retrying later.
+    DPRINTF(3, "\n");
     DPRINTF(1, "Hit bottom in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
+done:
+    /* Cannot optimize further, but there would be no benefit
+     * in retrying later */
+    _Py_uop_abstractcontext_fini(ctx);
+    return 1;
 }
 
 
@@ -430,7 +444,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _SET_IP:
-                buffer[pc].opcode = NOP;
+                buffer[pc].opcode = _NOP;
                 last_set_ip = pc;
                 break;
             case _CHECK_VALIDITY:
@@ -438,7 +452,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = false;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 break;
             case _CHECK_VALIDITY_AND_SET_IP:
@@ -447,7 +461,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _CHECK_VALIDITY;
                 }
                 else {
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 last_set_ip = pc;
                 break;
@@ -463,7 +477,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     last->opcode == _COPY
                 ) {
                     last->opcode = _NOP;
-                    buffer[pc].opcode = NOP;
+                    buffer[pc].opcode = _NOP;
                 }
                 if (last->opcode == _REPLACE_WITH_TRUE) {
                     last->opcode = _NOP;
