@@ -952,7 +952,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         }
         if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
             int popped = (_PyUop_Flags[opcode] & HAS_NO_POP_ERROR_FLAG) ?
-                0 : _PyUop_Popped(opcode, inst->oparg);
+                0 : _PyUop_num_popped(opcode, inst->oparg);
             if (target != current_error_target || popped != current_popped) {
                 current_popped = popped;
                 current_error = next_spare;

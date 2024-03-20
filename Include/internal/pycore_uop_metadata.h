@@ -15,7 +15,7 @@ extern const uint16_t _PyUop_Flags[MAX_UOP_ID+1];
 extern const uint8_t _PyUop_Replication[MAX_UOP_ID+1];
 extern const char * const _PyOpcode_uop_name[MAX_UOP_ID+1];
 
-extern int _PyUop_Popped(int opcode, int oparg);
+extern int _PyUop_num_popped(int opcode, int oparg);
 
 #ifdef NEED_OPCODE_METADATA
 const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
@@ -483,7 +483,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_UNPACK_SEQUENCE_TWO_TUPLE] = "_UNPACK_SEQUENCE_TWO_TUPLE",
     [_WITH_EXCEPT_START] = "_WITH_EXCEPT_START",
 };
-int _PyUop_Popped(int opcode, int oparg)
+int _PyUop_num_popped(int opcode, int oparg)
 {
     switch(opcode) {
         case _NOP:
