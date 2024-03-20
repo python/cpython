@@ -80,9 +80,6 @@ Queue
       work on it is complete.  When the count of unfinished tasks drops
       to zero, :meth:`join` unblocks.
 
-      Raises :exc:`QueueShutDown` if the queue has been shut down
-      immediately.
-
    .. coroutinemethod:: put(item)
 
       Put an item into the queue. If the queue is full, wait until a
@@ -128,11 +125,11 @@ Queue
       call was received for every item that had been :meth:`~Queue.put`
       into the queue).
 
+      ``shutdown(immediate=True)`` calls :meth:`task_done` for each
+      remaining item in the queue.
+
       Raises :exc:`ValueError` if called more times than there were
       items placed in the queue.
-
-      Raises :exc:`QueueShutDown` if the queue has been shut down
-      immediately.
 
 
 Priority Queue

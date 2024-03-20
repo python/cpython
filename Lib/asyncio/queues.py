@@ -8,7 +8,6 @@ __all__ = (
 )
 
 import collections
-import enum
 import heapq
 from types import GenericAlias
 
@@ -29,12 +28,6 @@ class QueueFull(Exception):
 class QueueShutDown(Exception):
     """Raised when putting on to or getting from a shut-down Queue."""
     pass
-
-
-class _QueueState(enum.Enum):
-    ALIVE = "alive"
-    SHUTDOWN = "shutdown"
-    SHUTDOWN_IMMEDIATE = "shutdown-immediate"
 
 
 class Queue(mixins._LoopBoundMixin):
@@ -60,7 +53,7 @@ class Queue(mixins._LoopBoundMixin):
         self._finished = locks.Event()
         self._finished.set()
         self._init(maxsize)
-        self._shutdown_state = _QueueState.ALIVE
+        self._is_shutdown = False
 
     # These three are overridable in subclasses.
 
@@ -101,8 +94,8 @@ class Queue(mixins._LoopBoundMixin):
             result += f' _putters[{len(self._putters)}]'
         if self._unfinished_tasks:
             result += f' tasks={self._unfinished_tasks}'
-        if not self._is_alive():
-            result += f' state={self._shutdown_state.value}'
+        if self._is_shutdown:
+            result += ' shutdown'
         return result
 
     def qsize(self):
@@ -137,7 +130,7 @@ class Queue(mixins._LoopBoundMixin):
 
         Raises QueueShutDown if the queue has been shut down.
         """
-        if not self._is_alive():
+        if self._is_shutdown:
             raise QueueShutDown
         while self.full():
             putter = self._get_loop().create_future()
@@ -158,7 +151,7 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._putters)
                 raise
-            if not self._is_alive():
+            if self._is_shutdown:
                 raise QueueShutDown
         return self.put_nowait(item)
 
@@ -169,7 +162,7 @@ class Queue(mixins._LoopBoundMixin):
 
         Raises QueueShutDown if the queue has been shut down.
         """
-        if not self._is_alive():
+        if self._is_shutdown:
             raise QueueShutDown
         if self.full():
             raise QueueFull
@@ -186,11 +179,9 @@ class Queue(mixins._LoopBoundMixin):
         Raises QueueShutDown if the queue has been shut down and is empty, or
         if the queue has been shut down immediately.
         """
-        if self._is_shutdown_immediate():
+        if self._is_shutdown and self.empty():
             raise QueueShutDown
         while self.empty():
-            if self._is_shutdown():
-                raise QueueShutDown
             getter = self._get_loop().create_future()
             self._getters.append(getter)
             try:
@@ -209,7 +200,7 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._getters)
                 raise
-            if self._is_shutdown_immediate():
+            if self._is_shutdown and self.empty():
                 raise QueueShutDown
         return self.get_nowait()
 
@@ -221,10 +212,8 @@ class Queue(mixins._LoopBoundMixin):
         Raises QueueShutDown if the queue has been shut down and is empty, or
         if the queue has been shut down immediately.
         """
-        if self._is_shutdown_immediate():
-            raise QueueShutDown
         if self.empty():
-            if self._is_shutdown():
+            if self._is_shutdown:
                 raise QueueShutDown
             raise QueueEmpty
         item = self._get()
@@ -242,13 +231,12 @@ class Queue(mixins._LoopBoundMixin):
         been processed (meaning that a task_done() call was received for every
         item that had been put() into the queue).
 
-        Raises ValueError if called more times than there were items placed in
+        shutdown(immediate=True) calls task_done() for each remaining item in
         the queue.
 
-        Raises QueueShutDown if the queue has been shut down immediately.
+        Raises ValueError if called more times than there were items placed in
+        the queue.
         """
-        if self._is_shutdown_immediate():
-            raise QueueShutDown
         if self._unfinished_tasks <= 0:
             raise ValueError('task_done() called too many times')
         self._unfinished_tasks -= 1
@@ -262,57 +250,36 @@ class Queue(mixins._LoopBoundMixin):
         queue. The count goes down whenever a consumer calls task_done() to
         indicate that the item was retrieved and all work on it is complete.
         When the count of unfinished tasks drops to zero, join() unblocks.
-
-        Raises QueueShutDown if the queue has been shut down immediately.
         """
-        if self._is_shutdown_immediate():
-            raise QueueShutDown
         if self._unfinished_tasks > 0:
             await self._finished.wait()
-            if self._is_shutdown_immediate():
-                raise QueueShutDown
 
     def shutdown(self, immediate=False):
-        """Shut-down the queue, making queue gets and puts raise.
+        """Shut-down the queue, making queue gets and puts raise
+        QueueShutDown.
 
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
         All blocked callers of put() will be unblocked, and also get()
-        and join() if 'immediate'. The QueueShutDown exception is raised.
+        and join() if 'immediate'.
         """
-        if self._is_shutdown_immediate():
-            return
-        # here _shutdown_state is ALIVE or SHUTDOWN
+        self._is_shutdown = True
         if immediate:
-            self._set_shutdown_immediate()
+            while not self.empty():
+                self._get()
+                if self._unfinished_tasks > 0:
+                    self._unfinished_tasks -= 1
+            if self._unfinished_tasks <= 0:
+                self._finished.set()
             while self._getters:
                 getter = self._getters.popleft()
                 if not getter.done():
                     getter.set_result(None)
-            # Release all 'blocked' tasks/coros in `join()`
-            self._finished.set()
-        else:
-            self._set_shutdown()
         while self._putters:
             putter = self._putters.popleft()
             if not putter.done():
                 putter.set_result(None)
-
-    def _is_alive(self):
-        return self._shutdown_state is _QueueState.ALIVE
-
-    def _is_shutdown(self):
-        return self._shutdown_state is _QueueState.SHUTDOWN
-
-    def _is_shutdown_immediate(self):
-        return self._shutdown_state is _QueueState.SHUTDOWN_IMMEDIATE
-
-    def _set_shutdown(self):
-        self._shutdown_state = _QueueState.SHUTDOWN
-
-    def _set_shutdown_immediate(self):
-        self._shutdown_state = _QueueState.SHUTDOWN_IMMEDIATE
 
 
 class PriorityQueue(Queue):

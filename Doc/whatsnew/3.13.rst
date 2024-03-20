@@ -277,7 +277,7 @@ asyncio
 
 * Add :meth:`asyncio.queues.Queue.shutdown` (along with
   :exc:`asyncio.queues.QueueShutDown`) for queue termination.
-  (Contributed by Laurie Opperman and Yves Duprat in :gh:`104228`.)
+  (Contributed by Laurie Opperman in :gh:`104228`.)
 
 base64
 ---
