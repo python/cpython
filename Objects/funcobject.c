@@ -236,8 +236,9 @@ How does a function's `func_version` field get initialized?
 - A new version is allocated by `_PyFunction_GetVersionForCurrentState`
   when the specializer needs a version and the version is 0.
 
-The latter allocates versions using a counter in the interpreter state;
-when the counter wraps around to 0, no more versions are allocated.
+The latter allocates versions using a counter in the interpreter state,
+`interp->func_state.next_version`.
+When the counter wraps around to 0, no more versions are allocated.
 There is one other special case: functions with a non-standard
 `vectorcall` field are not given a version.
 
@@ -247,8 +248,7 @@ Code object versions
 --------------------
 
 So where to code objects get their `co_version`?
-There is a per-interpreter counter, `next_func_version`.
-This is initialized to 1 when the interpreter is created.
+They share the same counter, `interp->func_state.next_version`.
 
 Code objects get a new `co_version` allocated from this counter upon
 creation. Since code objects are nominally immutable, `co_version` can

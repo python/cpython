@@ -89,7 +89,7 @@ class _Target(typing.Generic[_S, _R]):
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
-        group.process_relocations()
+        group.process_relocations(alignment=self.alignment)
         return group
 
     def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:

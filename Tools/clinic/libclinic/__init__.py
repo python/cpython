@@ -28,6 +28,10 @@ from .utils import (
     compute_checksum,
     create_regex,
     write_file,
+    VersionTuple,
+    Sentinels,
+    unspecified,
+    unknown,
 )
 
 
@@ -60,6 +64,10 @@ __all__ = [
     "compute_checksum",
     "create_regex",
     "write_file",
+    "VersionTuple",
+    "Sentinels",
+    "unspecified",
+    "unknown",
 ]
 
 
