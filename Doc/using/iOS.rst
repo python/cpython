@@ -96,10 +96,10 @@ the path ``Frameworks/foo.bar._whiz/foo.bar._whiz``. The framework would also
 contain ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz.origin``, containing
 the path to the ``.fwork`` file.
 
-When running on iOS, the Python interpreter will install a :class:`loader
-<importlib.AppleFrameworkLoader>` that is able to read and import ``.fwork``
-files. Once imported, the ``__file__`` attribute of the binary module will
-report as the location of the ``.fwork`` file. However, the
+When running on iOS, the Python interpreter will install an
+:class:`~importlib.machinery.AppleFrameworkLoader` that is able to read and
+import ``.fwork`` files. Once imported, the ``__file__`` attribute of the
+binary module will report as the location of the ``.fwork`` file. However, the
 :class:`~importlib.machinery.ModuleSpec` for the loaded module will report the
 ``origin`` as the location of the binary in the framework folder.
 
