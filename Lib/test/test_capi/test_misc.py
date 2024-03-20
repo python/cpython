@@ -2185,7 +2185,7 @@ class InterpreterIDTests(unittest.TestCase):
 
     def test_linked_lifecycle(self):
         id1 = _interpreters.create()
-        _testcapi.unlink_interpreter_refcount(id1)
+        _testinternalcapi.unlink_interpreter_refcount(id1)
         self.assertEqual(
             _testinternalcapi.get_interpreter_refcount(id1),
             0)
@@ -2201,7 +2201,7 @@ class InterpreterIDTests(unittest.TestCase):
             _testinternalcapi.get_interpreter_refcount(id1),
             0)
 
-        _testcapi.link_interpreter_refcount(id1)
+        _testinternalcapi.link_interpreter_refcount(id1)
         self.assertEqual(
             _testinternalcapi.get_interpreter_refcount(id1),
             0)

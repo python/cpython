@@ -272,13 +272,3 @@ PyInterpreterState_GetIDObject(PyInterpreterState *interp)
     }
     return (PyObject *)newinterpid(&PyInterpreterID_Type, id, 0);
 }
-
-PyInterpreterState *
-PyInterpreterID_LookUp(PyObject *requested_id)
-{
-    int64_t id = _PyInterpreterState_ObjectToID(requested_id);
-    if (id < 0) {
-        return NULL;
-    }
-    return _PyInterpreterState_LookUpID(id);
-}

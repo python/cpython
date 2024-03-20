@@ -1272,6 +1272,16 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
     return interp;
 }
 
+PyInterpreterState *
+PyInterpreterState_LookUpIDObject(PyObject *requested_id)
+{
+    int64_t id = _PyInterpreterState_ObjectToID(requested_id);
+    if (id < 0) {
+        return NULL;
+    }
+    return _PyInterpreterState_LookUpID(id);
+}
+
 
 /********************************/
 /* the per-thread runtime state */

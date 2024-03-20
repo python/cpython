@@ -35,7 +35,7 @@ _get_current_interp(void)
     return PyInterpreterState_Get();
 }
 
-#define look_up_interp PyInterpreterID_LookUp
+#define look_up_interp PyInterpreterState_LookUpIDObject
 
 
 static PyObject *
@@ -625,7 +625,7 @@ interp_set___main___attrs(PyObject *self, PyObject *args)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
     }

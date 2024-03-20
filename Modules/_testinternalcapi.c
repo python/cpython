@@ -29,8 +29,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
-#include "interpreteridobject.h"  // PyInterpreterID_LookUp()
-
 #include "clinic/_testinternalcapi.c.h"
 
 // Include test definitions from _testinternalcapi/
@@ -1112,7 +1110,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1378,6 +1376,31 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
+}
+
+
 /* To run some code in a sub-interpreter. */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1480,7 +1503,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 get_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    PyInterpreterState *interp = PyInterpreterState_LookUpIDObject(idobj);
     if (interp == NULL) {
         return NULL;
     }
@@ -1724,6 +1747,8 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
