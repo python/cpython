@@ -109,10 +109,7 @@ c_parser.add_argument(
 
 python_parser = subparsers.add_parser(
     "python",
-    help=(
-        "Generate Python code, needs grammar definition with Python actions, "
-        "see `we-like-parsers/pegen`"
-    )
+    help="Generate Python code, needs grammar definition with Python actions",
 )
 python_parser.set_defaults(func=generate_python_code)
 python_parser.add_argument("grammar_filename", help="Grammar description")
