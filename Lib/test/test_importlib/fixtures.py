@@ -9,6 +9,7 @@ import textwrap
 import functools
 import contextlib
 
+from test.support import import_helper
 from test.support.os_helper import FS_NONASCII
 from test.support import requires_zlib
 
@@ -85,6 +86,7 @@ class OnSysPath(Fixtures):
     def setUp(self):
         super().setUp()
         self.fixtures.enter_context(self.add_sys_path(self.site_dir))
+        self.fixtures.enter_context(import_helper.isolated_modules())
 
 
 class SiteBuilder(SiteDir):
