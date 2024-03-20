@@ -17301,6 +17301,7 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
 printf "%s\n" "$with_mimalloc" >&6; }
+WITH_MIMALLOC=$with_mimalloc
 
 
 
