@@ -129,6 +129,13 @@ iOS is, in most respects, a POSIX operating system. File I/O, socket handling,
 and threading all behave as they would on any POSIX operating system. However,
 there are several major differences between iOS and other POSIX systems.
 
+* iOS can only use Python in "embedded" mode. There is no Python REPL, and no
+  ability to execute binaries that are part of the normal Python developer
+  experience, such as ``pip``. To add Python code to your iOS app, you must use
+  the :ref:`Python embedding API <embedding>` to add a Python interpreter to an
+  iOS app created with Xcode. See the :ref:`iOS usage guide <using-ios>` for
+  more details.
+
 * An iOS app cannot use any form of subprocessing, background processing, or
   inter-process communication. If an iOS app attempts to create a subprocess,
   the process creating the subprocess will either lock up, or crash. An iOS app
@@ -136,8 +143,9 @@ there are several major differences between iOS and other POSIX systems.
   communicate with other running applications, outside of the iOS-specific APIs
   that exist for this purpose.
 
-* iOS apps have limited access to modify system resources. These resources will
-  often be *readable*, but attempts to modify those resources will either fail.
+* iOS apps have limited access to modify system resources (such as the system
+  clock). These resources will often be *readable*, but attempts to modify
+  those resources will usually fail.
 
 * iOS apps have a limited concept of console input and output. ``stdout`` and
   ``stderr`` *exist*, and content written to ``stdout`` and ``stderr`` will be
@@ -151,4 +159,4 @@ there are several major differences between iOS and other POSIX systems.
   ``stdin``.
 
   As a result, Python library that involve console manipulation (such as
-  ``curses`` and ``readline``) are not available on iOS.
+  :mod:`curses` and :mod:`readline`) are not available on iOS.

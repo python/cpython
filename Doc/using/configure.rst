@@ -916,6 +916,20 @@ See ``Mac/README.rst``.
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
 
+iOS Options
+-----------
+
+See ``iOS/README.rst``.
+
+.. option:: --enable-framework=INSTALLDIR
+
+   Create a Python.framework. Unlike macOS, the *INSTALLDIR* argument
+   specifying the installation path is mandatory.
+
+.. option:: --with-framework-name=FRAMEWORK
+
+   Specify the name for the framework (default: ``Python``).
+
 
 Cross Compiling Options
 -----------------------

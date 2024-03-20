@@ -182,7 +182,10 @@ This can be done by defining the ``LIBLZMA_CFLAGS``, ``LIBLZMA_LIBS``,
 ``BZIP2_CFLAGS``, ``BZIP2_LIBS``, ``LIBFFI_CFLAGS``, and ``LIBFFI_LIBS``
 environment variables, and the ``--with-openssl`` configure option. Versions of
 these libraries pre-compiled for iOS can be found in `this repository
-<https://github.com/beeware/cpython-apple-source-deps/releases>`__.
+<https://github.com/beeware/cpython-apple-source-deps/releases>`__. LibFFI is
+especially important, as many parts of the standard library (including the
+``platform``, ``sysconfig`` and ``webbrowser`` modules) require the use of the
+``ctypes`` module at runtime.
 
 By default, Python will be compiled with an iOS deployment target (i.e., the
 minimum supported iOS version) of 12.0. To specify a different deployment
@@ -252,12 +255,7 @@ the XCframework::
     cp path/to/iphonesimulator/lib Python.xcframework/ios-arm64_x86-64-simulator
 
 Note that the name of the architecture-specific slice for the simulator will
-depend on the CPU architecture that you build.
-
-Then, add symbolic links to "common" platform names for each slice::
-
-    ln -si ios-arm64 Python.xcframework/iphoneos
-    ln -si ios-arm64_x86-64-simulator Python.xcframework/iphonesimulator
+depend on the CPU architecture(s) that you build.
 
 You now have a Python.xcframework that can be used in a project.
 
