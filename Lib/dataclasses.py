@@ -1075,7 +1075,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         cmp_fields = (field for field in field_list if field.compare)
         terms = [f'self.{field.name}==other.{field.name}' for field in cmp_fields]
         field_comparisons = ' and '.join(terms) or 'True'
-        body =  [f'if other.__class__ is self.__class__:',
+        body =  [f'if self is other:',
+                 f' return True',
+                 f'if other.__class__ is self.__class__:',
                  f' return {field_comparisons}',
                  f'return NotImplemented']
         func = _create_fn('__eq__',
@@ -1159,8 +1161,10 @@ def _dataclass_setstate(self, state):
 
 def _get_slots(cls):
     match cls.__dict__.get('__slots__'):
+        # A class which does not define __slots__ at all is equivalent
+        # to a class defining __slots__ = ('__dict__', '__weakref__')
         case None:
-            return
+            yield from ('__dict__', '__weakref__')
         case str(slot):
             yield slot
         # Slots may be any iterable, but we cannot handle an iterator

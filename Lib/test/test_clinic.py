@@ -3698,6 +3698,39 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     func(1., "2")
 
+    def test_get_file_descriptor(self):
+        # test 'file descriptor' converter: call PyObject_AsFileDescriptor()
+        get_fd = _testclinic_limited.get_file_descriptor
+
+        class MyInt(int):
+            pass
+
+        class MyFile:
+            def __init__(self, fd):
+                self._fd = fd
+            def fileno(self):
+                return self._fd
+
+        for fd in (0, 1, 2, 5, 123_456):
+            self.assertEqual(get_fd(fd), fd)
+
+            myint = MyInt(fd)
+            self.assertEqual(get_fd(myint), fd)
+
+            myfile = MyFile(fd)
+            self.assertEqual(get_fd(myfile), fd)
+
+        with self.assertRaises(OverflowError):
+            get_fd(2**256)
+        with self.assertWarnsRegex(RuntimeWarning,
+                                   "bool is used as a file descriptor"):
+            get_fd(True)
+        with self.assertRaises(TypeError):
+            get_fd(1.0)
+        with self.assertRaises(TypeError):
+            get_fd("abc")
+        with self.assertRaises(TypeError):
+            get_fd(None)
 
 
 class PermutationTests(unittest.TestCase):
