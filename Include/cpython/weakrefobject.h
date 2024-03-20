@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef Py_GIL_DISABLED
-struct _PyOnceFlagRC;
-#endif
-
 /* PyWeakReference is the base struct for the Python ReferenceType, ProxyType,
  * and CallableProxyType.
  */
@@ -27,10 +23,8 @@ struct _PyWeakReference {
     Py_hash_t hash;
 
 #ifdef Py_GIL_DISABLED
-    /* Used in free-threaded builds to ensure that a weakref is only cleared
-     * once.
-     */
-    struct _PyOnceFlagRC *clear_once;
+    /* Used in free-threaded builds to protect wr_object and wr_callback. */
+    struct _PyWeakRefClearState *clear_state;
 #endif
 
     /* If wr_object is weakly referenced, wr_object has a doubly-linked NULL-

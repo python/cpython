@@ -8,8 +8,17 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_lock.h"
 #include "pycore_object.h"           // _Py_REF_IS_MERGED()
+
+#ifdef Py_GIL_DISABLED
+typedef struct _PyWeakRefClearState {
+    PyMutex mutex;
+    _PyOnceFlag once;
+    int cleared;
+    Py_ssize_t refcount;
+} _PyWeakRefClearState;
+#endif
 
 static inline int _is_dead(PyObject *obj)
 {
@@ -27,12 +36,23 @@ static inline int _is_dead(PyObject *obj)
 #endif
 }
 
+#if defined(Py_GIL_DISABLED)
+#    define LOCK_WR_OBJECT(weakref) PyMutex_Lock(&(weakref)->clear_state->mutex);
+#    define UNLOCK_WR_OBJECT(weakref) PyMutex_Unlock(&(weakref)->clear_state->mutex);
+#else
+#    define LOCK_WR_OBJECT(weakref)
+#    define UNLOCK_WR_OBJECT(weakref)
+#endif
+
+// NB: In free-threaded builds nothing between the LOCK/UNLOCK calls below can
+// suspend.
+
 static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
 {
     assert(PyWeakref_Check(ref_obj));
     PyObject *ret = NULL;
-    Py_BEGIN_CRITICAL_SECTION(ref_obj);
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
+    LOCK_WR_OBJECT(ref)
     PyObject *obj = ref->wr_object;
 
     if (obj == Py_None) {
@@ -48,7 +68,7 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
 #endif
     ret = Py_NewRef(obj);
 end:
-    Py_END_CRITICAL_SECTION();
+    UNLOCK_WR_OBJECT(ref);
     return ret;
 }
 
@@ -56,8 +76,8 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
 {
     assert(PyWeakref_Check(ref_obj));
     int ret = 0;
-    Py_BEGIN_CRITICAL_SECTION(ref_obj);
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
+    LOCK_WR_OBJECT(ref);
     PyObject *obj = ref->wr_object;
     if (obj == Py_None) {
         // clear_weakref() was called
@@ -67,7 +87,7 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
         // See _PyWeakref_GET_REF() for the rationale of this test
         ret = _is_dead(obj);
     }
-    Py_END_CRITICAL_SECTION();
+    UNLOCK_WR_OBJECT(ref);
     return ret;
 }
 

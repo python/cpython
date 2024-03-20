@@ -362,32 +362,6 @@ _PyOnceFlag_CallOnceSlow(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     }
 }
 
-_PyOnceFlagRC *
-_PyOnceFlagRC_New(void)
-{
-    _PyOnceFlagRC *self = (_PyOnceFlagRC *)PyMem_RawCalloc(1, sizeof(_PyOnceFlagRC));
-    if (self == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    self->refcount = 1;
-    return self;
-}
-
-void
-_PyOnceFlagRC_Incref(_PyOnceFlagRC *self)
-{
-    _Py_atomic_add_ssize(&self->refcount, 1);
-}
-
-void
-_PyOnceFlagRC_Decref(_PyOnceFlagRC *self)
-{
-    if (_Py_atomic_add_ssize(&self->refcount, -1) == 1) {
-        PyMem_RawFree(self);
-    }
-}
-
 #define _Py_WRITE_LOCKED 1
 #define _PyRWMutex_READER_SHIFT 2
 #define _Py_RWMUTEX_MAX_READERS (UINTPTR_MAX >> _PyRWMutex_READER_SHIFT)

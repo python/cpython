@@ -1,33 +1,113 @@
 #include "Python.h"
+#include "pycore_critical_section.h"
 #include "pycore_lock.h"
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GET_WEAKREFS_LISTPTR()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+#ifdef Py_GIL_DISABLED
 /*
  * Thread-safety for free-threaded builds
  * ======================================
  *
  * In free-threaded builds we need to protect mutable state of:
  *
- * - The weakref
- * - The referenced object
+ * - The weakref (the referenced object, the hash)
+ * - The referenced object (its head-of-list pointer)
  * - The linked-list of weakrefs
  *
  * The above may be modified concurrently when creating weakrefs, destroying
- * weakrefs, or destroying the referenced object. Critical sections are
- * used to protect the mutable state:
+ * weakrefs, or destroying the referenced object. A combination of techniques
+ * are used to ensure it is accessed safely:
  *
- * - The weakref is protected by its per-object lock.
- * - The referenced object is protected by its per-object lock.
- * - The linked-list of weakrefs is protected by the referenced object's
+ * - The weakref's hash is protected using a critical section on the weakref's
  *   per-object lock.
- * - Both locks must be held (using the two-variant form of critical sections)
- *   if both the weakref and referenced object or linked-list need to be
- *   modified.
+ * - The referenced object and the callback are protected by a separate mutex
+ *   in the weakref, the `clear_mutex`.
+ * - The linked-list of weakrefs and the object's head-of-list pointer are
+ *   protected using a critical section on the referenced object's per-object
+ *   lock.
+ * - Concurrent attempts to clear the weakref (i.e. from the referenced object
+ *   and the weakref) cooperate using the protocol described below.
  *
+ * Destroying the referenced object
+ * --------------------------------
+ * When the referenced object is destroyed it must clear the borrowed reference
+ * in each weakref and unlink the weakref from the linked-list:
+ *
+ * 1. Acquire a critical section on the referenced object's per-object lock.
+ * 2. If the linked-list is empty, release the critical section and stop.
+ * 3. For the first object in the list, incref its `clear_state`.
+ * 4. Release the critical section.
+ * 5. Call the once flag. If we enter:
+ *    a. Acquire a CS on the referenced object's per-object lock.
+ *    b. Lock the `clear_mutex`. Note that this is not a critical section, so we
+ *       must be careful not to do anything that could suspend while it is held.
+ *    c. Unlink the weakref from the list.
+ *    d. Set `wr_object` to Py_None.
+ *    e. Unlock the `clear_mutex`.
+ *    f. Release the CS.
+ * 6. Goto (1).
+ *
+ * Destroying a weakref
+ * --------------------
+ * The weakref must unlink itself from the linked-list and clear its borrowed
+ * reference when destroyed:
+ *
+ * 1. Call its once flag. If we enter:
+ *    a. Try to incref the referenced object. We must hold a strong reference to it
+ *       before attempting to acquire the critical section. Otherwise, if it's
+ *       cyclic garbage it may be destroyed if we're suspended when we acquire the
+ *       CS on its per-object lock below.
+ *    b. If (1a) fails, return -1.
+ *    c. Acquire a CS on the referenced object's per-object lock.
+ *    d. Lock `clear_mutex`.
+ *    e. Unlink the weakref from the list.
+ *    f. Set `wr_object` to Py_None.
+ *    g. Unlock the `clear_mutex`.
+ *    h. Release the CS.
+ * 2. If (1) failed, retry.
+ *
+ * Garbage Collection
+ * ------------------
+ * If the GC determines that an object is cyclic garbage it needs to go through
+ * and clear any weakrefs to the object. Similarly, if the the GC determines
+ * that a weakref is garbage it must also be cleared. Thankfully, the world is
+ * stopped while GC is running, so it can just clear each weakref without
+ * resorting to the complex protocol above.
  */
+
+_PyWeakRefClearState *
+_PyWeakRefClearState_New(void)
+{
+    _PyWeakRefClearState *self = (_PyWeakRefClearState *)PyMem_RawCalloc(1, sizeof(_PyWeakRefClearState));
+    if (self == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    self->mutex = (PyMutex){0};
+    self->once = (_PyOnceFlag){0};
+    self->cleared = 0;
+    self->refcount = 1;
+    return self;
+}
+
+void
+_PyWeakRefClearState_Incref(_PyWeakRefClearState *self)
+{
+    _Py_atomic_add_ssize(&self->refcount, 1);
+}
+
+void
+_PyWeakRefClearState_Decref(_PyWeakRefClearState *self)
+{
+    if (_Py_atomic_add_ssize(&self->refcount, -1) == 1) {
+        PyMem_RawFree(self);
+    }
+}
+
+#endif
 
 #define GET_WEAKREFS_LISTPTR(o) \
         ((PyWeakReference **) _PyObject_GET_WEAKREFS_LISTPTR(o))
@@ -61,8 +141,8 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     self->wr_callback = Py_XNewRef(callback);
     self->vectorcall = weakref_vectorcall;
 #ifdef Py_GIL_DISABLED
-    self->clear_once = _PyOnceFlagRC_New();
-    if (self->clear_once == NULL) {
+    self->clear_state = _PyWeakRefClearState_New();
+    if (self->clear_state == NULL) {
         Py_XDECREF(self->wr_callback);
         return -1;
     }
@@ -89,9 +169,11 @@ new_weakref(PyObject *ob, PyObject *callback)
 
 #ifdef Py_GIL_DISABLED
 
+// Clear the weakref and steal its callback into `callback`, if provided.
 static void
-unlink_and_clear_object_lock_held(PyWeakReference *self)
+clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
 {
+    // TODO: Assert locks are held or world is stopped
     if (self->wr_object != Py_None) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
         if (*list == self)
@@ -107,31 +189,104 @@ unlink_and_clear_object_lock_held(PyWeakReference *self)
         self->wr_prev = NULL;
         self->wr_next = NULL;
     }
-}
-
-static PyObject *
-clear_callback_lock_held(PyWeakReference *self)
-{
-    PyObject *callback = self->wr_callback;
-    self->wr_callback = NULL;
-    return callback;
+    if (callback != NULL) {
+        *callback = self->wr_callback;
+        self->wr_callback = NULL;
+    }
+    self->clear_state->cleared = 1;
 }
 
 // Clear the weakref while the world is stopped
 static void
 gc_clear_weakref(PyWeakReference *self)
 {
-    unlink_and_clear_object_lock_held(self);
-    PyObject *callback = clear_callback_lock_held(self);
+    PyObject *callback = NULL;
+    clear_weakref_lock_held(self, &callback);
     Py_XDECREF(callback);
 }
 
+typedef struct {
+    PyWeakReference *self;
+
+    // A strong reference to the callback in self (out param)
+    PyObject *callback;
+
+    // A strong reference to the referenced object in self (out param)
+    PyObject *object;
+} DeallocClearArgs;
+
 static int
-do_clear_weakref_and_leave_callback(PyWeakReference *self)
+try_clear_weakref_for_wr_dealloc(DeallocClearArgs *args)
 {
-    Py_BEGIN_CRITICAL_SECTION2(self->wr_object, self);
-    unlink_and_clear_object_lock_held(self);
-    Py_END_CRITICAL_SECTION2();
+    PyWeakReference *self = args->self;
+    if (self->clear_state->cleared) {
+        return 0;
+    }
+
+    // Ensure we have a strong reference to the referenced object before we try
+    // to acquire the critical section.
+    if (_Py_TryIncref(&self->wr_object, self->wr_object)) {
+        args->object = self->wr_object;
+        Py_BEGIN_CRITICAL_SECTION(self->wr_object);
+        PyMutex_Lock(&self->clear_state->mutex);
+        clear_weakref_lock_held(self, &args->callback);
+        PyMutex_Unlock(&self->clear_state->mutex);
+        Py_END_CRITICAL_SECTION();
+        return 0;
+    }
+    else if (_PyTrash_contains(self->wr_object)) {
+        PyMutex_Lock(&self->clear_state->mutex);
+        clear_weakref_lock_held(self, &args->callback);
+        PyMutex_Unlock(&self->clear_state->mutex);
+        return 0;
+    }
+
+    return -1;
+}
+
+static void
+clear_weakref_for_wr_dealloc(PyWeakReference *self)
+{
+    for (int done = 0; !done;) {
+        DeallocClearArgs args = {
+            .self = self,
+            .callback = NULL,
+            .object = NULL,
+        };
+        done = !_PyOnceFlag_CallOnce(&self->clear_state->once, (_Py_once_fn_t *) try_clear_weakref_for_wr_dealloc, &args);
+        Py_XDECREF(args.callback);
+        Py_XDECREF(args.object);
+
+        if (!done) {
+            PyThreadState *tstate = _PyThreadState_GET();;
+            if (tstate && tstate->state == _Py_THREAD_ATTACHED) {
+                // Only detach if we are attached
+                PyEval_ReleaseThread(tstate);
+                sleep(1);
+                PyEval_AcquireThread(tstate);
+            }
+
+        }
+    }
+}
+
+typedef struct {
+    PyWeakReference *weakref;
+    _PyWeakRefClearState *clear_state;
+    PyObject *object;
+    PyObject **callback;
+} ClearArgs;
+
+static int
+do_clear_weakref(ClearArgs *args)
+{
+    Py_BEGIN_CRITICAL_SECTION(args->object);
+    PyMutex_Lock(&args->clear_state->mutex);
+    if (!args->clear_state->cleared) {
+        clear_weakref_lock_held(args->weakref, args->callback);
+    }
+    PyMutex_Unlock(&args->clear_state->mutex);
+    Py_END_CRITICAL_SECTION();
     return 0;
 }
 
@@ -139,41 +294,34 @@ do_clear_weakref_and_leave_callback(PyWeakReference *self)
 static void
 clear_weakref_and_leave_callback(PyWeakReference *self)
 {
-    _PyOnceFlagRC *once = self->clear_once;
-    _PyOnceFlagRC_Incref(once);
-    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref_and_leave_callback, self);
-    _PyOnceFlagRC_Decref(once);
+    _PyWeakRefClearState *clear_state = self->clear_state;
+    _PyWeakRefClearState_Incref(clear_state);
+    ClearArgs args = {
+        .weakref = self,
+        .clear_state = clear_state,
+        .object = self->wr_object,
+        .callback = NULL,
+    };
+    _PyOnceFlag_CallOnce(&clear_state->once, (_Py_once_fn_t *) do_clear_weakref, &args);
+    _PyWeakRefClearState_Decref(clear_state);
 }
 
-typedef struct {
-    PyWeakReference *weakref;
-    PyObject *callback;
-} ClearArgs;
-
-static int
-do_clear_weakref_and_take_callback(ClearArgs *args)
-{
-    PyWeakReference *weakref = args->weakref;
-    Py_BEGIN_CRITICAL_SECTION2(weakref->wr_object, weakref);
-    unlink_and_clear_object_lock_held(weakref);
-    args->callback = clear_callback_lock_held(args->weakref);
-    Py_END_CRITICAL_SECTION2();
-    return 0;
-}
-
-// Clear the weakref and return the a strong reference to the callback, if any
+// Clear the weakref and return a strong reference to the callback, if any
 static PyObject *
 clear_weakref_and_take_callback(PyWeakReference *self)
 {
+    PyObject *callback = NULL;
+    _PyWeakRefClearState *clear_state = self->clear_state;
+    _PyWeakRefClearState_Incref(clear_state);
     ClearArgs args = {
         .weakref = self,
-        .callback = NULL,
+        .clear_state = clear_state,
+        .object = self->wr_object,
+        .callback = &callback,
     };
-    _PyOnceFlagRC *once = self->clear_once;
-    _PyOnceFlagRC_Incref(once);
-    _PyOnceFlag_CallOnce(&once->flag, (_Py_once_fn_t *) do_clear_weakref_and_take_callback, &args);
-    _PyOnceFlagRC_Decref(once);
-    return args.callback;
+    _PyOnceFlag_CallOnce(&clear_state->once, (_Py_once_fn_t *) do_clear_weakref, &args);
+    _PyWeakRefClearState_Decref(clear_state);
+    return callback;
 }
 
 // Clear the weakref and its callback
@@ -237,7 +385,7 @@ _PyWeakref_ClearRef(PyWeakReference *self)
     assert(self != NULL);
     assert(PyWeakref_Check(self));
 #ifdef Py_GIL_DISABLED
-    unlink_and_clear_object_lock_held(self);
+    clear_weakref_lock_held(self, NULL);
 #else
     /* Preserve and restore the callback around clear_weakref. */
     PyObject *callback = self->wr_callback;
@@ -251,9 +399,12 @@ static void
 weakref_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
-    clear_weakref((PyWeakReference *) self);
 #ifdef Py_GIL_DISABLED
-    _PyOnceFlagRC_Decref(((PyWeakReference*)self)->clear_once);
+    PyWeakReference *wr = (PyWeakReference *) self;
+    clear_weakref_for_wr_dealloc(wr);
+    _PyWeakRefClearState_Decref(wr->clear_state);
+#else
+    clear_weakref((PyWeakReference *) self);
 #endif
     Py_TYPE(self)->tp_free(self);
 }
@@ -1122,6 +1273,56 @@ handle_callback(PyWeakReference *ref, PyObject *callback)
         Py_DECREF(cbresult);
 }
 
+#ifdef Py_GIL_DISABLED
+
+// Clear the weakrefs and invoke their callbacks.
+static void
+clear_weakrefs_and_invoke_callbacks_lock_held(PyWeakReference **list)
+{
+    Py_ssize_t num_weakrefs = _PyWeakref_GetWeakrefCount(*list);
+    if (num_weakrefs == 0) {
+        return;
+    }
+
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *tuple = PyTuple_New(num_weakrefs * 2);
+    if (tuple == NULL) {
+        _PyErr_ChainExceptions1(exc);
+        return;
+    }
+
+    int num_items = 0;
+    while (*list != NULL) {
+        PyWeakReference *cur = *list;
+        int live = _Py_TryIncref((PyObject **) &cur, (PyObject *) cur);
+        PyObject *callback = clear_weakref_and_take_callback(cur);
+        if (live) {
+            assert(num_items / 2 < num_weakrefs);
+            PyTuple_SET_ITEM(tuple, num_items, (PyObject *) cur);
+            PyTuple_SET_ITEM(tuple, num_items + 1, callback);
+            num_items += 2;
+        }
+        else {
+            Py_DECREF(callback);
+        }
+    }
+
+    for (int i = 0; i < num_items; i += 2) {
+        PyObject *callback = PyTuple_GET_ITEM(tuple, i + 1);
+        if (callback != NULL) {
+            PyObject *weakref = PyTuple_GET_ITEM(tuple, i);
+            handle_callback((PyWeakReference *)weakref, callback);
+        }
+    }
+
+    Py_DECREF(tuple);
+
+    assert(!PyErr_Occurred());
+    PyErr_SetRaisedException(exc);
+}
+
+#endif
+
 /* This function is called by the tp_dealloc handler to clear weak references.
  *
  * This iterates through the weak references for 'object' and calls callbacks
@@ -1142,11 +1343,6 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
     list = GET_WEAKREFS_LISTPTR(object);
 #ifdef Py_GIL_DISABLED
-    /* Protect the linked-list and the head pointer in object.
-
-       At this point no new weakrefs to object can be created, so we should be
-       safe to iterate until the list is empty.
-     */
     Py_BEGIN_CRITICAL_SECTION(object);
 
     /* Remove the callback-less basic and proxy references, which always appear
@@ -1158,21 +1354,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
 
     /* Deal with non-canonical (subtypes or refs with callbacks) references. */
-    PyObject *exc = PyErr_GetRaisedException();
-    while (*list != NULL) {
-        PyWeakReference *cur = *list;
-        int live = _Py_TryIncref((PyObject **) &cur, (PyObject *) cur);
-        PyObject *callback = clear_weakref_and_take_callback(cur);
-        if (live) {
-            if (callback != NULL) {
-                handle_callback(cur, callback);
-                Py_DECREF(callback);
-            }
-            Py_DECREF(cur);
-        }
-    }
-    assert(!PyErr_Occurred());
-    PyErr_SetRaisedException(exc);
+    clear_weakrefs_and_invoke_callbacks_lock_held(list);
 
     Py_END_CRITICAL_SECTION();
 #else

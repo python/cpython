@@ -217,17 +217,6 @@ _PyOnceFlag_CallOnce(_PyOnceFlag *flag, _Py_once_fn_t *fn, void *arg)
     return _PyOnceFlag_CallOnceSlow(flag, fn, arg);
 }
 
-// A refcounted flag
-typedef struct _PyOnceFlagRC {
-    _PyOnceFlag flag;
-
-    Py_ssize_t refcount;
-} _PyOnceFlagRC;
-
-PyAPI_FUNC(_PyOnceFlagRC *) _PyOnceFlagRC_New(void);
-PyAPI_FUNC(void) _PyOnceFlagRC_Incref(_PyOnceFlagRC *flag);
-PyAPI_FUNC(void) _PyOnceFlagRC_Decref(_PyOnceFlagRC *flag);
-
 // A readers-writer (RW) lock. The lock supports multiple concurrent readers or
 // a single writer. The lock is write-preferring: if a writer is waiting while
 // the lock is read-locked then, new readers will be blocked. This avoids
