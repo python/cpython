@@ -605,7 +605,7 @@ class ZipInfo:
 
     def is_dir(self):
         """Return True if this archive member is a directory."""
-        return self.filename.endswith('/')
+        return self.filename.endswith('/') or self.filename.endswith('\\')
 
 
 # ZIP encryption uses the CRC32 one-byte primitive for scrambling some
