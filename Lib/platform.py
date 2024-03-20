@@ -503,12 +503,13 @@ def ios_ver(system="", release="", model="", is_simulator=False):
     If values can't be determined, they are set to values provided as
     parameters.
     """
-    import _ios_support
-    result = _ios_support.get_platform_ios()
-    if result is not None:
-        return result
-    else:
-        return system, release, model, is_simulator
+    if sys.platform == "ios":
+        import _ios_support
+        result = _ios_support.get_platform_ios()
+        if result is not None:
+            return result
+
+    return system, release, model, is_simulator
 
 
 def _java_getprop(name, default):
