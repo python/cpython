@@ -115,19 +115,20 @@ For all the following functions:
 
 - *path_names* are components of a resource's path name, relative to
   the anchor.
-  The individual components may not contain path separators.
   For example, to get the text of resource named ``info.txt``, use::
 
       importlib.resources.read_text(my_module, "info.txt")
 
-  To get the contents of ``pics/painting.png`` as bytes, use::
+  Like :meth:`Traversable.joinpath <importlib.resources.abc.Traversable>`,
+  The individual components should use forward slashes `/` as path separators.
+  The following are equivalent::
 
+      importlib.resources.read_binary(my_module, "pics/painting.png")
       importlib.resources.read_binary(my_module, "pics", "painting.png")
 
   For backward compatibility reasons, functions that read text require
   an explicit *encoding* argument if multiple *path_names* are given.
-
-  So, to get the text of ``info/chapter1.txt``, use::
+  For example, to get the text of ``info/chapter1.txt``, use::
 
       importlib.resources.read_text(my_module, "info", "chapter1.txt",
                                     encoding='utf-8')
@@ -142,9 +143,9 @@ For all the following functions:
     This function returns a :class:`~typing.BinaryIO` object,
     that is, a binary stream open for reading.
 
-    For a single path name *name*, this function is roughly equivalent to::
+    This function is roughly equivalent to::
 
-        files(anchor).joinpath(name).open('rb')
+        files(anchor).joinpath(*path_names).open('rb')
 
     .. versionchanged:: 3.13
         Multiple *path_names* are accepted.
@@ -166,9 +167,9 @@ For all the following functions:
     This function returns a :class:`~typing.TextIO` object,
     that is, a text stream open for reading.
 
-    For a single path name *name*, this function is roughly equivalent to::
+    This function is roughly equivalent to::
 
-          files(anchor).joinpath(name).open('r', encoding=encoding)
+          files(anchor).joinpath(*path_names).open('r', encoding=encoding)
 
     .. versionchanged:: 3.13
         Multiple *path_names* are accepted.
@@ -182,9 +183,9 @@ For all the following functions:
     See :ref:`the introduction <importlib_resources_functional>` for
     details on *anchor* and *path_names*.
 
-    For a single path name *name*, this function is roughly equivalent to::
+    This function is roughly equivalent to::
 
-          files(anchor).joinpath(name).read_bytes()
+          files(anchor).joinpath(*path_names).read_bytes()
 
     .. versionchanged:: 3.13
         Multiple *path_names* are accepted.
@@ -203,9 +204,9 @@ For all the following functions:
     explicitly if there are multiple *path_names*.
     This limitation is scheduled to be removed in Python 3.15.
 
-    For a single path name *name*, this function is roughly equivalent to::
+    This function is roughly equivalent to::
 
-          files(anchor).joinpath(name).read_text(encoding=encoding)
+          files(anchor).joinpath(*path_names).read_text(encoding=encoding)
 
     .. versionchanged:: 3.13
         Multiple *path_names* are accepted.
@@ -230,9 +231,9 @@ For all the following functions:
     See :ref:`the introduction <importlib_resources_functional>` for
     details on *anchor* and *path_names*.
 
-    For a single path name *name*, this function is roughly equivalent to::
+    This function is roughly equivalent to::
 
-          as_file(files(anchor).joinpath(name))
+          as_file(files(anchor).joinpath(*path_names))
 
     .. versionchanged:: 3.13
         Multiple *path_names* are accepted.
@@ -247,9 +248,9 @@ For all the following functions:
     See :ref:`the introduction <importlib_resources_functional>` for
     details on *anchor* and *path_names*.
 
-    For a single path name *name*, this function is roughly equivalent to::
+    This function is roughly equivalent to::
 
-          files(anchor).joinpath(name).is_file()
+          files(anchor).joinpath(*path_names).is_file()
 
     .. versionchanged:: 3.13
         Multiple *path_names* are accepted.
@@ -265,9 +266,9 @@ For all the following functions:
     See :ref:`the introduction <importlib_resources_functional>` for
     details on *anchor* and *path_names*.
 
-    For a single path name *name*, this function is roughly equivalent to::
+    This function is roughly equivalent to::
 
-        for resource in files(anchor).joinpath(name).iterdir():
+        for resource in files(anchor).joinpath(*path_names).iterdir():
             yield resource.name
 
     .. deprecated:: 3.11

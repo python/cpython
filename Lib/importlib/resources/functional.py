@@ -85,13 +85,4 @@ def _get_encoding_arg(path_names, encoding):
 def _get_resource(anchor, path_names):
     if anchor is None:
         raise TypeError("anchor must be module or string, got None")
-    traversable = files(anchor)
-    for name in path_names:
-        str_path = str(name)
-        parent, file_name = os.path.split(str_path)
-        if parent:
-            raise ValueError(
-                'path name elements must not contain path separators, '
-                f'got {name!r}')
-        traversable = traversable.joinpath(file_name)
-    return traversable
+    return files(anchor).joinpath(*path_names)

@@ -21,6 +21,17 @@ class ModuleAnchorMixin:
 
 
 class FunctionalAPIBase():
+    def _gen_resourcetxt_path_parts(self):
+        """Yield various names of a text file in anchor02, each in a subTest
+        """
+        for path_parts in (
+            ('subdirectory', 'subsubdir', 'resource.txt'),
+            ('subdirectory/subsubdir/resource.txt',),
+            ('subdirectory/subsubdir', 'resource.txt'),
+        ):
+            with self.subTest(path_parts=path_parts):
+                yield path_parts
+
     def test_read_text(self):
         self.assertEqual(
             importlib.resources.read_text(self.anchor01, 'utf-8.file'),
@@ -33,6 +44,13 @@ class FunctionalAPIBase():
             ),
             'a resource',
         )
+        for path_parts in self._gen_resourcetxt_path_parts():
+            self.assertEqual(
+                importlib.resources.read_text(
+                    self.anchor02, *path_parts, encoding='utf-8',
+                ),
+                'a resource',
+            )
         # Use generic OSError, since e.g. attempting to read a directory can
         # fail with PermissionError rather than IsADirectoryError
         with self.assertRaises(OSError):
@@ -62,21 +80,21 @@ class FunctionalAPIBase():
             importlib.resources.read_binary(self.anchor01, 'utf-8.file'),
             b'Hello, UTF-8 world!\n',
         )
-        self.assertEqual(
-            importlib.resources.read_binary(
-                self.anchor02, 'subdirectory', 'subsubdir', 'resource.txt',
-            ),
-            b'a resource',
-        )
+        for path_parts in self._gen_resourcetxt_path_parts():
+            self.assertEqual(
+                importlib.resources.read_binary(self.anchor02, *path_parts),
+                b'a resource',
+            )
 
     def test_open_text(self):
         with importlib.resources.open_text(self.anchor01, 'utf-8.file') as f:
             self.assertEqual(f.read(), 'Hello, UTF-8 world!\n')
-        with importlib.resources.open_text(
-            self.anchor02, 'subdirectory', 'subsubdir', 'resource.txt',
-            encoding='utf-8',
-        ) as f:
-            self.assertEqual(f.read(), 'a resource')
+        for path_parts in self._gen_resourcetxt_path_parts():
+            with importlib.resources.open_text(
+                self.anchor02, *path_parts,
+                encoding='utf-8',
+            ) as f:
+                self.assertEqual(f.read(), 'a resource')
         # Use generic OSError, since e.g. attempting to read a directory can
         # fail with PermissionError rather than IsADirectoryError
         with self.assertRaises(OSError):
@@ -104,10 +122,11 @@ class FunctionalAPIBase():
     def test_open_binary(self):
         with importlib.resources.open_binary(self.anchor01, 'utf-8.file') as f:
             self.assertEqual(f.read(), b'Hello, UTF-8 world!\n')
-        with importlib.resources.open_binary(
-            self.anchor02, 'subdirectory', 'subsubdir', 'resource.txt',
-        ) as f:
-            self.assertEqual(f.read(), b'a resource')
+        for path_parts in self._gen_resourcetxt_path_parts():
+            with importlib.resources.open_binary(
+                self.anchor02, *path_parts,
+            ) as f:
+                self.assertEqual(f.read(), b'a resource')
 
     def test_path(self):
         with importlib.resources.path(self.anchor01, 'utf-8.file') as path:
@@ -123,6 +142,8 @@ class FunctionalAPIBase():
         self.assertFalse(is_resource(self.anchor01, 'no_such_file'))
         self.assertFalse(is_resource(self.anchor01))
         self.assertFalse(is_resource(self.anchor01, 'subdirectory'))
+        for path_parts in self._gen_resourcetxt_path_parts():
+            self.assertTrue(is_resource(self.anchor02, *path_parts))
 
     def test_contents(self):
         is_resource = importlib.resources.is_resource
@@ -133,9 +154,14 @@ class FunctionalAPIBase():
             {'utf-8.file', 'utf-16.file', 'binary.file', 'subdirectory'},
         )
         with (self.assertRaises(OSError),
-              check_warnings((".*contents.*", DeprecationWarning)),
-              ):
+            check_warnings((".*contents.*", DeprecationWarning)),
+        ):
             importlib.resources.contents(self.anchor01, 'utf-8.file')
+        for path_parts in self._gen_resourcetxt_path_parts():
+            with (self.assertRaises(OSError),
+                check_warnings((".*contents.*", DeprecationWarning)),
+            ):
+                importlib.resources.contents(self.anchor01, *path_parts)
         with check_warnings((".*contents.*", DeprecationWarning)):
             c = importlib.resources.contents(self.anchor01, 'subdirectory')
         self.assertGreaterEqual(
@@ -155,11 +181,6 @@ class FunctionalAPIBase():
             importlib.resources.contents,
         ):
             with self.subTest(func=func):
-                # Rejecting path separators
-                with self.assertRaises(ValueError):
-                    func(self.anchor02, os.path.join(
-                        'subdirectory', 'subsubdir', 'resource.txt',
-                    ))
                 # Rejecting None anchor
                 with self.assertRaises(TypeError):
                     func(None)
