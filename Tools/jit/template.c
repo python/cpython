@@ -75,10 +75,10 @@ do {                                                         \
 } while (0)
 
 #undef JUMP_TO_JUMP_TARGET
-#define JUMP_TO_JUMP_TARGET PATCH_JUMP(_JIT_JUMP_TARGET)
+#define JUMP_TO_JUMP_TARGET() PATCH_JUMP(_JIT_JUMP_TARGET)
 
 #undef JUMP_TO_ERROR
-#define JUMP_TO_ERROR PATCH_JUMP(_JIT_ERROR_TARGET)
+#define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
 _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)

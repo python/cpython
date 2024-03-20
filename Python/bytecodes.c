@@ -179,7 +179,7 @@ dummy_func(
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 next_instr = this_instr;
             }
@@ -281,7 +281,7 @@ dummy_func(
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -296,7 +296,7 @@ dummy_func(
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -832,7 +832,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) NO_POP_ERROR();
+            if (err) ERROR_NO_POP();
             STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -856,7 +856,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) NO_POP_ERROR();
+            if (err) ERROR_NO_POP();
             Py_INCREF(retval);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -912,7 +912,7 @@ dummy_func(
             if (PyAsyncGen_CheckExact(aiter)) {
                 awaitable = type->tp_as_async->am_anext(aiter);
                 if (awaitable == NULL) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
             } else {
                 if (type->tp_as_async != NULL){
@@ -922,7 +922,7 @@ dummy_func(
                 if (getter != NULL) {
                     next_iter = (*getter)(aiter);
                     if (next_iter == NULL) {
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                 }
                 else {
@@ -930,7 +930,7 @@ dummy_func(
                                   "'async for' requires an iterator with "
                                   "__anext__ method, got %.100s",
                                   type->tp_name);
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
 
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
@@ -942,7 +942,7 @@ dummy_func(
                         Py_TYPE(next_iter)->tp_name);
 
                     Py_DECREF(next_iter);
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 } else {
                     Py_DECREF(next_iter);
                 }
@@ -1024,7 +1024,7 @@ dummy_func(
                     JUMPBY(oparg);
                 }
                 else {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
             }
             Py_DECREF(v);
@@ -1060,7 +1060,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, retval);
-            if (err) NO_POP_ERROR();
+            if (err) ERROR_NO_POP();
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -1114,7 +1114,7 @@ dummy_func(
                 else {
                     assert(PyLong_Check(lasti));
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
             }
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1190,7 +1190,7 @@ dummy_func(
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when deleting %R", name);
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
@@ -1198,7 +1198,7 @@ dummy_func(
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                           NAME_ERROR_MSG,
                                           name);
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
         }
 
@@ -1318,12 +1318,12 @@ dummy_func(
             int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
             if (err < 0) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             if (err == 0) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                           NAME_ERROR_MSG, name);
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
         }
 
@@ -1340,21 +1340,21 @@ dummy_func(
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             if (v == NULL) {
                 if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                 }
             }
@@ -1370,21 +1370,21 @@ dummy_func(
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             if (v == NULL) {
                 if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                 }
             }
@@ -1516,7 +1516,7 @@ dummy_func(
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             SETLOCAL(oparg, cell);
         }
@@ -1528,7 +1528,7 @@ dummy_func(
             // Fortunately we don't need its superpower.
             if (oldobj == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             PyCell_SET(cell, NULL);
             Py_DECREF(oldobj);
@@ -1540,14 +1540,14 @@ dummy_func(
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 Py_INCREF(value);
             }
@@ -1627,7 +1627,7 @@ dummy_func(
         inst(BUILD_SET, (values[oparg] -- set)) {
             set = PySet_New(NULL);
             if (set == NULL)
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
@@ -2510,7 +2510,7 @@ dummy_func(
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 iter = iterable;
             }
@@ -2521,7 +2521,7 @@ dummy_func(
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
                 if (iter == NULL) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 DECREF_INPUTS();
             }
@@ -2558,7 +2558,7 @@ dummy_func(
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -2581,7 +2581,7 @@ dummy_func(
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                     _PyErr_Clear(tstate);
                 }
@@ -2607,7 +2607,7 @@ dummy_func(
             else {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -2787,7 +2787,7 @@ dummy_func(
                                   "asynchronous context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
@@ -2799,7 +2799,7 @@ dummy_func(
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             DECREF_INPUTS();
             res = PyObject_CallNoArgs(enter);
@@ -2822,7 +2822,7 @@ dummy_func(
                                   "context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
@@ -2834,7 +2834,7 @@ dummy_func(
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             DECREF_INPUTS();
             res = PyObject_CallNoArgs(enter);
@@ -3083,7 +3083,7 @@ dummy_func(
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 frame->return_offset = (uint16_t)(next_instr - this_instr);
                 DISPATCH_INLINED(new_frame);
@@ -3306,7 +3306,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);
             if (self == NULL) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
@@ -3343,7 +3343,7 @@ dummy_func(
                 PyErr_Format(PyExc_TypeError,
                     "__init__() should return None, not '%.200s'",
                     Py_TYPE(should_be_none)->tp_name);
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
         }
 
@@ -3480,7 +3480,7 @@ dummy_func(
             PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3506,7 +3506,7 @@ dummy_func(
             PyObject *inst = args[0];
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3720,7 +3720,7 @@ dummy_func(
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 assert(next_instr - this_instr == 1);
                 frame->return_offset = 1;
@@ -3768,11 +3768,11 @@ dummy_func(
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
                 if (tuple == NULL) {
-                    NO_POP_ERROR();
+                    ERROR_NO_POP();
                 }
                 Py_SETREF(callargs, tuple);
             }
@@ -3784,7 +3784,7 @@ dummy_func(
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
-                if (err) NO_POP_ERROR();
+                if (err) ERROR_NO_POP();
                 result = PyObject_Call(func, callargs, kwargs);
 
                 if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
@@ -3818,7 +3818,7 @@ dummy_func(
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
-                        NO_POP_ERROR();
+                        ERROR_NO_POP();
                     }
                     assert(next_instr - this_instr == 1);
                     frame->return_offset = 1;
@@ -3839,7 +3839,7 @@ dummy_func(
 
             Py_DECREF(codeobj);
             if (func_obj == NULL) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
 
             _PyFunction_SetVersion(
@@ -3879,7 +3879,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             if (gen == NULL) {
-                NO_POP_ERROR();
+                ERROR_NO_POP();
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);

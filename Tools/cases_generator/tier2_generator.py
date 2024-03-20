@@ -72,10 +72,10 @@ def tier2_replace_error(
     label = next(tkn_iter).text
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
-    out.emit(") JUMP_TO_ERROR;\n")
+    out.emit(") JUMP_TO_ERROR();\n")
 
 
-def tier2_replace_no_pop_error(
+def tier2_replace_error_no_pop(
     out: CWriter,
     tkn: Token,
     tkn_iter: Iterator[Token],
@@ -86,7 +86,7 @@ def tier2_replace_no_pop_error(
     next(tkn_iter)  # LPAREN
     next(tkn_iter)  # RPAREN
     next(tkn_iter)  # Semi colon
-    out.emit_at("JUMP_TO_ERROR;", tkn)
+    out.emit_at("JUMP_TO_ERROR();", tkn)
 
 def tier2_replace_deopt(
     out: CWriter,
@@ -100,7 +100,7 @@ def tier2_replace_deopt(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") JUMP_TO_JUMP_TARGET;\n")
+    out.emit(") JUMP_TO_JUMP_TARGET();\n")
 
 
 def tier2_replace_exit_if(
@@ -115,7 +115,7 @@ def tier2_replace_exit_if(
     out.emit(next(tkn_iter))
     emit_to(out, tkn_iter, "RPAREN")
     next(tkn_iter)  # Semi colon
-    out.emit(") JUMP_TO_JUMP_TARGET;\n")
+    out.emit(") JUMP_TO_JUMP_TARGET();\n")
 
 
 def tier2_replace_oparg(
@@ -141,7 +141,7 @@ def tier2_replace_oparg(
 
 TIER2_REPLACEMENT_FUNCTIONS = REPLACEMENT_FUNCTIONS.copy()
 TIER2_REPLACEMENT_FUNCTIONS["ERROR_IF"] = tier2_replace_error
-TIER2_REPLACEMENT_FUNCTIONS["NO_POP_ERROR"] = tier2_replace_no_pop_error
+TIER2_REPLACEMENT_FUNCTIONS["ERROR_NO_POP"] = tier2_replace_error_no_pop
 TIER2_REPLACEMENT_FUNCTIONS["DEOPT_IF"] = tier2_replace_deopt
 TIER2_REPLACEMENT_FUNCTIONS["oparg"] = tier2_replace_oparg
 TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if

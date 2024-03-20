@@ -99,7 +99,7 @@ def replace_error(
     out.emit(close)
 
 
-def replace_no_pop_error(
+def replace_error_no_pop(
     out: CWriter,
     tkn: Token,
     tkn_iter: Iterator[Token],
@@ -174,7 +174,7 @@ REPLACEMENT_FUNCTIONS = {
     "EXIT_IF": replace_deopt,
     "DEOPT_IF": replace_deopt,
     "ERROR_IF": replace_error,
-    "NO_POP_ERROR": replace_no_pop_error,
+    "ERROR_NO_POP": replace_error_no_pop,
     "DECREF_INPUTS": replace_decrefs,
     "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
     "SYNC_SP": replace_sync_sp,
@@ -229,7 +229,7 @@ def cflags(p: Properties) -> str:
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
     if p.no_pop_error:
-        flags.append("HAS_NO_POP_ERROR_FLAG")
+        flags.append("HAS_ERROR_NO_POP_FLAG")
     if p.escapes:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:

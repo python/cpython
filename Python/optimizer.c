@@ -952,7 +952,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             buffer[i].format = UOP_FORMAT_JUMP;
         }
         if (_PyUop_Flags[opcode] & HAS_ERROR_FLAG) {
-            int popped = (_PyUop_Flags[opcode] & HAS_NO_POP_ERROR_FLAG) ?
+            int popped = (_PyUop_Flags[opcode] & HAS_ERROR_NO_POP_FLAG) ?
                 0 : _PyUop_num_popped(opcode, inst->oparg);
             if (target != current_error_target || popped != current_popped) {
                 current_popped = popped;

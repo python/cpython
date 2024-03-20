@@ -350,7 +350,7 @@ def has_pop_error(op: parser.InstDef) -> bool:
 
 def has_no_pop_error(op: parser.InstDef) -> bool:
     return (
-        variable_used(op, "NO_POP_ERROR")
+        variable_used(op, "ERROR_NO_POP")
         or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
         or variable_used(op, "resume_with_error")
