@@ -1,4 +1,3 @@
-import typing
 import textwrap
 import unittest
 import warnings
@@ -32,12 +31,13 @@ class FilesTests:
         actual = files.joinpath('utf-8.file').read_text(encoding='utf-8')
         assert actual == 'Hello, UTF-8 world!\n'
 
-    @unittest.skipUnless(
-        hasattr(typing, 'runtime_checkable'),
-        "Only suitable when typing supports runtime_checkable",
-    )
     def test_traversable(self):
         assert isinstance(resources.files(self.data), Traversable)
+
+    def test_joinpath_with_multiple_args(self):
+        files = resources.files(self.data)
+        binfile = files.joinpath('subdirectory', 'binary.file')
+        self.assertTrue(binfile.is_file())
 
     def test_old_parameter(self):
         """
@@ -62,6 +62,10 @@ class OpenNamespaceTests(FilesTests, unittest.TestCase):
         from . import namespacedata01
 
         self.data = namespacedata01
+
+
+class OpenNamespaceZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
+    ZIP_MODULE = 'namespacedata01'
 
 
 class SiteDir:
