@@ -1,6 +1,7 @@
 import unittest
 import types
 from test.support import import_helper
+from textwrap import dedent
 
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
@@ -76,6 +77,40 @@ class TestRareEventCounters(unittest.TestCase):
                 orig_counter + 1,
                 _testinternalcapi.get_rare_event_counters()["func_modification"]
             )
+
+
+class TestOptimizations(unittest.TestCase):
+
+    def test_globals_to_consts(self):
+        #GH-117051
+        src = """
+        def f():
+            global x
+            def inner(i):
+                a = 1
+                for _ in range(100):
+                    a = x + i
+                return a
+            return inner
+
+        func = f()
+        """
+
+        co = compile(dedent(src), __file__, "exec")
+
+        ns1 = {"x": 1000}
+        eval(co, ns1)
+        func1 = ns1["func"]
+        for i in range(1000):
+            x = func1(i)
+        self.assertEqual(x, 1999)
+
+        ns2 = {"x": 2000}
+        eval(co, ns2)
+        func2 = ns2["func"]
+        for i in range(1000):
+            x = func2(i)
+        self.assertEqual(x, 2999)
 
 
 class TestOptimizerSymbols(unittest.TestCase):
