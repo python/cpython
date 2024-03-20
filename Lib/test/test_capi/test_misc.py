@@ -2207,132 +2207,219 @@ class SubinterpreterTest(unittest.TestCase):
 @requires_subinterpreters
 class InterpreterIDTests(unittest.TestCase):
 
-    InterpreterID = _testcapi.get_interpreterid_type()
+#    InterpreterID = _testcapi.get_interpreterid_type()
 
-    def new_interpreter(self):
-        def ensure_destroyed(interpid):
+    def check_id(self, interpid, *, force=False):
+        if force:
+            return
+
+    def add_interp_cleanup(self, interpid):
+        def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)
             except _interpreters.InterpreterNotFoundError:
                 pass
+        self.addCleanup(ensure_destroyed)
+
+    def new_interpreter(self):
         id = _interpreters.create()
-        self.addCleanup(lambda: ensure_destroyed(id))
+        self.add_interp_cleanup(id)
         return id
 
-    def test_with_int(self):
-        id = self.InterpreterID(10, force=True)
+    def test_conversion(self):
+        convert = _testinternalcapi.normalize_interp_id
 
-        self.assertEqual(int(id), 10)
+        with self.subTest('int'):
+            interpid = convert(10)
+            self.assertEqual(interpid, 10)
 
-    def test_coerce_id(self):
-        class Int(str):
-            def __index__(self):
-                return 10
+        with self.subTest('coerced'):
+            class MyInt(str):
+                def __index__(self):
+                    return 10
 
-        id = self.InterpreterID(Int(), force=True)
-        self.assertEqual(int(id), 10)
+            interpid = convert(MyInt())
+            self.assertEqual(interpid, 10)
 
-    def test_bad_id(self):
         for badid in [
             object(),
             10.0,
             '10',
             b'10',
         ]:
-            with self.subTest(badid):
+            with self.subTest(f'bad: {badid!r}'):
                 with self.assertRaises(TypeError):
-                    self.InterpreterID(badid)
+                    convert(badid)
 
         badid = -1
-        with self.subTest(badid):
+        with self.subTest(f'bad: {badid!r}'):
             with self.assertRaises(ValueError):
-                self.InterpreterID(badid)
+                convert(badid)
 
         badid = 2**64
-        with self.subTest(badid):
+        with self.subTest(f'bad: {badid!r}'):
             with self.assertRaises(OverflowError):
-                self.InterpreterID(badid)
+                convert(badid)
 
-    def test_exists(self):
-        id = self.new_interpreter()
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            self.InterpreterID(int(id) + 1)  # unforced
+    def test_lookup(self):
+        with self.subTest('exists'):
+            interpid = self.new_interpreter()
+            self.assertTrue(
+                _testinternalcapi.interpreter_exists(interpid))
 
-    def test_does_not_exist(self):
-        id = self.new_interpreter()
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            self.InterpreterID(int(id) + 1)  # unforced
+        with self.subTest('does not exist'):
+            interpid = _testinternalcapi.unused_interpreter_id()
+            self.assertFalse(
+                _testinternalcapi.interpreter_exists(interpid))
 
-    def test_destroyed(self):
-        id = _interpreters.create()
-        _interpreters.destroy(id)
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            self.InterpreterID(id)  # unforced
-
-    def test_str(self):
-        id = self.InterpreterID(10, force=True)
-        self.assertEqual(str(id), '10')
-
-    def test_repr(self):
-        id = self.InterpreterID(10, force=True)
-        self.assertEqual(repr(id), 'InterpreterID(10)')
-
-    def test_equality(self):
-        id1 = self.new_interpreter()
-        id2 = self.InterpreterID(id1)
-        id3 = self.InterpreterID(
-                self.new_interpreter())
-
-        self.assertTrue(id2 == id2)  # identity
-        self.assertTrue(id2 == id1)  # int-equivalent
-        self.assertTrue(id1 == id2)  # reversed
-        self.assertTrue(id2 == int(id2))
-        self.assertTrue(id2 == float(int(id2)))
-        self.assertTrue(float(int(id2)) == id2)
-        self.assertFalse(id2 == float(int(id2)) + 0.1)
-        self.assertFalse(id2 == str(int(id2)))
-        self.assertFalse(id2 == 2**1000)
-        self.assertFalse(id2 == float('inf'))
-        self.assertFalse(id2 == 'spam')
-        self.assertFalse(id2 == id3)
-
-        self.assertFalse(id2 != id2)
-        self.assertFalse(id2 != id1)
-        self.assertFalse(id1 != id2)
-        self.assertTrue(id2 != id3)
+        with self.subTest('destroyed'):
+            interpid = _interpreters.create()
+            _interpreters.destroy(interpid)
+            self.assertFalse(
+                _testinternalcapi.interpreter_exists(interpid))
 
     def test_linked_lifecycle(self):
-        id1 = _interpreters.create()
-        _testinternalcapi.unlink_interpreter_refcount(id1)
-        self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            0)
+        def create():
+            interpid = _testinternalcapi.new_interpreter()
+            self.add_interp_cleanup(interpid)
+            return interpid
 
-        id2 = self.InterpreterID(id1)
-        self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            1)
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        unlink = _testinternalcapi.unlink_interpreter_refcount
+        get_refcount = _testinternalcapi.get_interpreter_refcount
+        incref = _testinternalcapi.interpreter_incref
+        decref = _testinternalcapi.interpreter_decref
 
-        # The interpreter isn't linked to ID objects, so it isn't destroyed.
-        del id2
-        self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            0)
+        with self.subTest('does not exist'):
+            interpid = _testinternalcapi.unused_interpreter_id()
+            self.assertFalse(
+                exists(interpid))
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                is_linked(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                link(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                unlink(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                get_refcount(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                incref(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                decref(interpid)
 
-        _testinternalcapi.link_interpreter_refcount(id1)
-        self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            0)
+        with self.subTest('destroyed'):
+            interpid = _interpreters.create()
+            _interpreters.destroy(interpid)
+            self.assertFalse(
+                exists(interpid))
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                is_linked(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                link(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                unlink(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                get_refcount(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                incref(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                decref(interpid)
 
-        id3 = self.InterpreterID(id1)
+        # A new interpreter will start out not linked, with a refcount of 0.
+        interpid = create()
+        self.assertFalse(
+            is_linked(interpid))
         self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            1)
+            0, get_refcount(interpid))
 
-        # The interpreter is linked now so is destroyed.
-        del id3
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            _testinternalcapi.get_interpreter_refcount(id1)
+        with self.subTest('never linked'):
+            interpid = create()
+
+            # Incref will not automatically link it.
+            incref(interpid)
+            self.assertFalse(
+                is_linked(interpid))
+            self.assertEqual(
+                1, get_refcount(interpid))
+
+            # It isn't linked so it isn't destroyed.
+            decref(interpid)
+            self.assertTrue(
+                exists(interpid))
+            self.assertFalse(
+                is_linked(interpid))
+            self.assertEqual(
+                0, get_refcount(interpid))
+
+        with self.subTest('linking/unlinking at refcount 0 does not destroy'):
+            interpid = create()
+
+            link(interpid)
+            self.assertTrue(
+                exists(interpid))
+
+            unlink(interpid)
+            self.assertTrue(
+                exists(interpid))
+
+        with self.subTest('link -> incref -> decref => destroyed'):
+            interpid = create()
+
+            # Linking it will not change the refcount.
+            link(interpid)
+            self.assertTrue(
+                is_linked(interpid))
+            self.assertEqual(
+                0, get_refcount(interpid))
+
+            # Decref with a refcount of 0 is not allowed.
+            incref(interpid)
+            self.assertEqual(
+                1, get_refcount(interpid))
+
+            # When linked, decref back to 0 destroys the interpreter.
+            decref(interpid)
+            self.assertFalse(
+                exists(interpid))
+
+        with self.subTest('linked after incref'):
+            interpid = create()
+
+            incref(interpid)
+            self.assertEqual(
+                1, get_refcount(interpid))
+
+            # Linking it will not reset the refcount.
+            link(interpid)
+            self.assertEqual(
+                1, get_refcount(interpid))
+
+        with self.subTest('decref to 0 after unlink does not destroy'):
+            interpid = create()
+
+            link(interpid)
+            self.assertTrue(
+                is_linked(interpid))
+
+            incref(interpid)
+            self.assertEqual(
+                1, get_refcount(interpid))
+
+            # Unlinking it will not change the refcount.
+            unlink(interpid)
+            self.assertFalse(
+                is_linked(interpid))
+            self.assertEqual(
+                1, get_refcount(interpid))
+
+            # When linked, decref back to 0 destroys the interpreter.
+            decref(interpid)
+            self.assertTrue(
+                exists(interpid))
+            self.assertEqual(
+                0, get_refcount(interpid))
 
 
 class BuiltinStaticTypesTests(unittest.TestCase):

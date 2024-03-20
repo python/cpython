@@ -1476,6 +1476,83 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 
 
 static PyObject *
+normalize_interp_id(PyObject *self, PyObject *idobj)
+{
+    int64_t interpid = _PyInterpreterState_ObjectToID(idobj);
+    if (interpid < 0) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(interpid);
+}
+
+static PyObject *
+unused_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    int64_t interpid = INT64_MAX;
+    assert(interpid > _PyRuntime.interpreters.next_id);
+    return PyLong_FromLongLong(interpid);
+}
+
+static PyObject *
+new_interpreter(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Unlike _interpreters.create(), we do not automatically link
+    // the interpreter to its refcount.
+    PyThreadState *save_tstate = PyThreadState_Get();
+    const PyInterpreterConfig config = \
+            (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+    PyThreadState *tstate = NULL;
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+    PyThreadState_Swap(save_tstate);
+    if (PyStatus_Exception(status)) {
+        _PyErr_SetFromPyStatus(status);
+        return NULL;
+    }
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+
+    if (_PyInterpreterState_IDInitref(interp) < 0) {
+        goto error;
+    }
+
+    int64_t interpid = PyInterpreterState_GetID(interp);
+    if (interpid < 0) {
+        goto error;
+    }
+    PyObject *idobj = PyLong_FromLongLong(interpid);
+    if (idobj == NULL) {
+        goto error;
+    }
+
+    PyThreadState_Swap(tstate);
+    PyThreadState_Clear(tstate);
+    PyThreadState_Swap(save_tstate);
+    PyThreadState_Delete(tstate);
+
+    return idobj;
+
+error:
+    save_tstate = PyThreadState_Swap(tstate);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(save_tstate);
+    return NULL;
+}
+
+static PyObject *
+interpreter_exists(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_InterpreterNotFoundError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        }
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
 get_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
     PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
@@ -1506,6 +1583,41 @@ unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
         return NULL;
     }
     _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+interpreter_refcount_linked(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    if (_PyInterpreterState_RequiresIDRef(interp)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+interpreter_incref(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    _PyInterpreterState_IDIncref(interp);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+interpreter_decref(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    _PyInterpreterState_IDDecref(interp);
     Py_RETURN_NONE;
 }
 
@@ -1749,9 +1861,16 @@ static PyMethodDef module_functions[] = {
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
+    {"normalize_interp_id", normalize_interp_id, METH_O},
+    {"unused_interpreter_id", unused_interpreter_id, METH_NOARGS},
+    {"new_interpreter", new_interpreter, METH_NOARGS},
+    {"interpreter_exists", interpreter_exists, METH_O},
     {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
     {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
     {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
+    {"interpreter_refcount_linked", interpreter_refcount_linked, METH_O},
+    {"interpreter_incref", interpreter_incref, METH_O},
+    {"interpreter_decref", interpreter_decref, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
