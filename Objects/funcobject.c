@@ -310,9 +310,7 @@ _PyFunction_ClearCodeByVersion(uint32_t version)
         PyCodeObject *code = (PyCodeObject *)slot->code;
         if (code->co_version == version) {
             slot->code = NULL;
-            if (slot->func != NULL) {
-                slot->code = slot->func->func_code;
-            }
+            slot->func = NULL;
         }
     }
 }
