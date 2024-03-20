@@ -67,9 +67,9 @@ The :func:`deepcopy` function avoids these problems by:
 * letting user-defined classes override the copying operation or the set of
   components copied.
 
-This module does not copy types like module, method, stack trace, stack frame,
-file, socket, window, or any similar types.  It does "copy" functions and
-classes (shallow and deeply), by returning the original object unchanged; this
+This module does not copy types like immutable object, module, method, stack trace,
+stack frame, file, socket, window, or any similar types.  It does "copy" functions
+and classes (shallow and deeply), by returning the original object unchanged; this
 is compatible with the way these are treated by the :mod:`pickle` module.
 
 Shallow copies of dictionaries can be made using :meth:`dict.copy`, and
