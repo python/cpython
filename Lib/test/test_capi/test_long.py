@@ -400,6 +400,29 @@ class LongTests(unittest.TestCase):
         self.assertRaises(OverflowError, asvoidptr, -2**1000)
         # CRASHES asvoidptr(NULL)
 
+    def test_long_aspid(self):
+        # Test PyLong_AsPid()
+        aspid = _testcapi.pylong_aspid
+        from _testcapi import SIZEOF_PID_T
+        bits = 8 * SIZEOF_PID_T
+        PID_T_MIN = -2**(bits-1)
+        PID_T_MAX = 2**(bits-1) - 1
+        # round trip (object -> long -> object)
+        for value in (PID_T_MIN, PID_T_MAX, -1, 0, 1, 1234):
+            with self.subTest(value=value):
+                self.assertEqual(aspid(value), value)
+
+        self.assertEqual(aspid(IntSubclass(42)), 42)
+        self.assertEqual(aspid(Index(42)), 42)
+        self.assertEqual(aspid(MyIndexAndInt()), 10)
+
+        self.assertRaises(OverflowError, aspid, PID_T_MIN - 1)
+        self.assertRaises(OverflowError, aspid, PID_T_MAX + 1)
+        self.assertRaises(TypeError, aspid, 1.0)
+        self.assertRaises(TypeError, aspid, b'2')
+        self.assertRaises(TypeError, aspid, '3')
+        self.assertRaises(SystemError, aspid, NULL)
+
 
 if __name__ == "__main__":
     unittest.main()
