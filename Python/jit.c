@@ -440,7 +440,11 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
                 patches[HoleValue_TARGET] = instruction->target;
                 break;
             case UOP_FORMAT_EXIT:
+                assert(instruction->exit_index < executor->exit_count);
                 patches[HoleValue_EXIT_INDEX] = instruction->exit_index;
+                if (instruction->error_target < length) {
+                    patches[HoleValue_ERROR_TARGET] = (uint64_t)memory + instruction_starts[instruction->error_target];
+                }
                 break;
             case UOP_FORMAT_JUMP:
                 assert(instruction->jump_target < length);
