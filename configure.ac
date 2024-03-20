@@ -4752,7 +4752,7 @@ elif test "$disable_gil" = "yes"; then
 fi
 
 AC_MSG_RESULT([$with_mimalloc])
-AC_SUBST([INSTALL_MIMALLOC], $with_mimalloc)
+AC_SUBST([INSTALL_MIMALLOC], [$with_mimalloc])
 AC_SUBST([MIMALLOC_HEADERS])
 
 # Check for Python-specific malloc support
