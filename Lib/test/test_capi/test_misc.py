@@ -1170,7 +1170,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
 
-
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
     """Test API for extending opaque types (PEP 697)"""
@@ -1324,6 +1323,125 @@ class TestHeapTypeRelative(unittest.TestCase):
             # int is variable-length, but doesn't have the
             # Py_TPFLAGS_ITEMS_AT_END layout (and flag)
             _testcapi.pyobject_getitemdata(0)
+
+
+    def test_function_get_closure(self):
+        from types import CellType
+
+        def regular_function(): ...
+        def unused_one_level(arg1):
+            def inner(arg2, arg3): ...
+            return inner
+        def unused_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6): ...
+                return inner
+            return decorator
+        def with_one_level(arg1):
+            def inner(arg2, arg3):
+                return arg1 + arg2 + arg3
+            return inner
+        def with_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6):
+                    return arg1 + arg2 + arg3 + arg4 + arg5 + arg6
+                return inner
+            return decorator
+
+        # Functions without closures:
+        self.assertIsNone(_testcapi.function_get_closure(regular_function))
+        self.assertIsNone(regular_function.__closure__)
+
+        func = unused_one_level(1)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        func = unused_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        # Functions with closures:
+        func = with_one_level(5)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 1)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertTrue(closure[0].cell_contents, 5)
+
+        func = with_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 4)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertEqual([cell.cell_contents for cell in closure],
+                         [1, 2, 3, 4])
+
+    def test_function_get_closure_error(self):
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(1)
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(None)
+
+    def test_function_set_closure(self):
+        from types import CellType
+
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        func = function_without_closure
+        _testcapi.function_set_closure(func, (CellType(1), CellType(1)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 1])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 1])
+
+        func = function_with_closure(1)
+        _testcapi.function_set_closure(func,
+                                       (CellType(1), CellType(2), CellType(3)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 2, 3])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 2, 3])
+
+    def test_function_set_closure_none(self):
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        _testcapi.function_set_closure(function_without_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_without_closure))
+        self.assertIsNone(function_without_closure.__closure__)
+
+        _testcapi.function_set_closure(function_with_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_with_closure))
+        self.assertIsNone(function_with_closure.__closure__)
+
+    def test_function_set_closure_errors(self):
+        def function_without_closure(): ...
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(None, ())  # not a function
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(function_without_closure, 1)
+        self.assertIsNone(function_without_closure.__closure__)  # no change
+
+        # NOTE: this works, but goes against the docs:
+        _testcapi.function_set_closure(function_without_closure, (1, 2))
+        self.assertEqual(
+            _testcapi.function_get_closure(function_without_closure), (1, 2))
+        self.assertEqual(function_without_closure.__closure__, (1, 2))
 
 
 class TestPendingCalls(unittest.TestCase):
