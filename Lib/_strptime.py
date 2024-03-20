@@ -250,12 +250,32 @@ class TimeRE(dict):
         format = regex_chars.sub(r"\\\1", format)
         whitespace_replacement = re_compile(r'\s+')
         format = whitespace_replacement.sub(r'\\s+', format)
+        year_in_format = False
+        day_of_month_in_format = False
         while '%' in format:
             directive_index = format.index('%')+1
+            format_char = format[directive_index]
             processed_format = "%s%s%s" % (processed_format,
                                            format[:directive_index-1],
-                                           self[format[directive_index]])
+                                           self[format_char])
             format = format[directive_index+1:]
+            match format_char:
+                case 'Y' | 'y' | 'G':
+                    year_in_format = True
+                case 'd':
+                    day_of_month_in_format = True
+        if day_of_month_in_format and not year_in_format:
+            import warnings
+            warnings.warn("""\
+Parsing dates involving a day of month without a year specified is ambiguious
+and fails to parse leap day. The default behavior will change in Python 3.15
+to either always raise an exception or to use a different default year (TBD).
+To avoid trouble, add a specific year to the input & format. For example:
+  strptime(f"{mm_dd},{datetime.now().year}", "%m-%d,%y")
+See https://github.com/python/cpython/issues/70647.""",
+                          DeprecationWarning,
+                          # -> .compile -> {time,datetime}.strptime -> User
+                          stacklevel=3)
         return "%s%s" % (processed_format, format)
 
     def compile(self, format):
