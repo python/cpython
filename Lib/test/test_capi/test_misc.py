@@ -1100,21 +1100,75 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
-    def test_get_type_module_name(self):
+    def test_get_type_name(self):
+        class MyType:
+            pass
+
+        from _testcapi import (
+            get_type_name, get_type_qualname,
+            get_type_fullyqualname, get_type_module_name)
+
         from collections import OrderedDict
         ht = _testcapi.get_heaptype_for_name()
-        for cls, expected in {
-            int: 'builtins',
-            OrderedDict: 'collections',
-            ht: '_testcapi',
-        }.items():
-            with self.subTest(repr(cls)):
-                modname = _testinternalcapi.get_type_module_name(cls)
-                self.assertEqual(modname, expected)
+        for cls, fullname, modname, qualname, name in (
+            (int,
+             'int',
+             'builtins',
+             'int',
+             'int'),
+            (OrderedDict,
+             'collections.OrderedDict',
+             'collections',
+             'OrderedDict',
+             'OrderedDict'),
+            (ht,
+             '_testcapi.HeapTypeNameType',
+             '_testcapi',
+             'HeapTypeNameType',
+             'HeapTypeNameType'),
+            (MyType,
+             f'{__name__}.CAPITest.test_get_type_name.<locals>.MyType',
+             __name__,
+             'CAPITest.test_get_type_name.<locals>.MyType',
+             'MyType'),
+        ):
+            with self.subTest(cls=repr(cls)):
+                self.assertEqual(get_type_fullyqualname(cls), fullname)
+                self.assertEqual(get_type_module_name(cls), modname)
+                self.assertEqual(get_type_qualname(cls), qualname)
+                self.assertEqual(get_type_name(cls), name)
 
+        # override __module__
         ht.__module__ = 'test_module'
-        modname = _testinternalcapi.get_type_module_name(ht)
-        self.assertEqual(modname, 'test_module')
+        self.assertEqual(get_type_fullyqualname(ht), 'test_module.HeapTypeNameType')
+        self.assertEqual(get_type_module_name(ht), 'test_module')
+        self.assertEqual(get_type_qualname(ht), 'HeapTypeNameType')
+        self.assertEqual(get_type_name(ht), 'HeapTypeNameType')
+
+        # override __name__ and __qualname__
+        MyType.__name__ = 'my_name'
+        MyType.__qualname__ = 'my_qualname'
+        self.assertEqual(get_type_fullyqualname(MyType), f'{__name__}.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), __name__)
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
+
+        # override also __module__
+        MyType.__module__ = 'my_module'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_module.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), 'my_module')
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
+
+        # PyType_GetFullyQualifiedName() ignores the module if it's "builtins"
+        # or "__main__" of it is not a string
+        MyType.__module__ = 'builtins'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = '__main__'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = 123
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
@@ -1269,6 +1323,125 @@ class TestHeapTypeRelative(unittest.TestCase):
             # int is variable-length, but doesn't have the
             # Py_TPFLAGS_ITEMS_AT_END layout (and flag)
             _testcapi.pyobject_getitemdata(0)
+
+
+    def test_function_get_closure(self):
+        from types import CellType
+
+        def regular_function(): ...
+        def unused_one_level(arg1):
+            def inner(arg2, arg3): ...
+            return inner
+        def unused_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6): ...
+                return inner
+            return decorator
+        def with_one_level(arg1):
+            def inner(arg2, arg3):
+                return arg1 + arg2 + arg3
+            return inner
+        def with_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6):
+                    return arg1 + arg2 + arg3 + arg4 + arg5 + arg6
+                return inner
+            return decorator
+
+        # Functions without closures:
+        self.assertIsNone(_testcapi.function_get_closure(regular_function))
+        self.assertIsNone(regular_function.__closure__)
+
+        func = unused_one_level(1)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        func = unused_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        # Functions with closures:
+        func = with_one_level(5)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 1)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertTrue(closure[0].cell_contents, 5)
+
+        func = with_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 4)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertEqual([cell.cell_contents for cell in closure],
+                         [1, 2, 3, 4])
+
+    def test_function_get_closure_error(self):
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(1)
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(None)
+
+    def test_function_set_closure(self):
+        from types import CellType
+
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        func = function_without_closure
+        _testcapi.function_set_closure(func, (CellType(1), CellType(1)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 1])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 1])
+
+        func = function_with_closure(1)
+        _testcapi.function_set_closure(func,
+                                       (CellType(1), CellType(2), CellType(3)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 2, 3])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 2, 3])
+
+    def test_function_set_closure_none(self):
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        _testcapi.function_set_closure(function_without_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_without_closure))
+        self.assertIsNone(function_without_closure.__closure__)
+
+        _testcapi.function_set_closure(function_with_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_with_closure))
+        self.assertIsNone(function_with_closure.__closure__)
+
+    def test_function_set_closure_errors(self):
+        def function_without_closure(): ...
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(None, ())  # not a function
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(function_without_closure, 1)
+        self.assertIsNone(function_without_closure.__closure__)  # no change
+
+        # NOTE: this works, but goes against the docs:
+        _testcapi.function_set_closure(function_without_closure, (1, 2))
+        self.assertEqual(
+            _testcapi.function_get_closure(function_without_closure), (1, 2))
+        self.assertEqual(function_without_closure.__closure__, (1, 2))
 
 
 class TestPendingCalls(unittest.TestCase):
@@ -1797,6 +1970,7 @@ class SubinterpreterTest(unittest.TestCase):
         # double checked at the time this test was written.
         config = _testinternalcapi.get_config()
         config['int_max_str_digits'] = 55555
+        config['parse_argv'] = 0
         _testinternalcapi.set_config(config)
         sub_value = _testinternalcapi.get_config()['int_max_str_digits']
         assert sub_value == 55555, sub_value
@@ -2000,6 +2174,13 @@ class SubinterpreterTest(unittest.TestCase):
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
 
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
         script = textwrap.dedent(f"""
             import importlib.machinery
             import importlib.util
@@ -2007,7 +2188,7 @@ class SubinterpreterTest(unittest.TestCase):
 
             fullname = '_test_module_state_shared'
             origin = importlib.util.find_spec('_testmultiphase').origin
-            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+            loader = importlib.machinery.{loader}(fullname, origin)
             spec = importlib.util.spec_from_loader(fullname, loader)
             module = importlib.util.module_from_spec(spec)
             attr_id = str(id(module.Error)).encode()
@@ -2282,7 +2463,7 @@ class Test_testcapi(unittest.TestCase):
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_widechar(self):
-        _testcapi.test_widechar()
+        _testlimitedcapi.test_widechar()
 
     def test_version_api_data(self):
         self.assertEqual(_testcapi.Py_Version, sys.hexversion)
@@ -2315,7 +2496,12 @@ class Test_ModuleStateAccess(unittest.TestCase):
     def setUp(self):
         fullname = '_testmultiphase_meth_state_access'  # XXX
         origin = importlib.util.find_spec('_testmultiphase').origin
-        loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = importlib.machinery.AppleFrameworkLoader(fullname, origin)
+        else:
+            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
         spec = importlib.util.spec_from_loader(fullname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)

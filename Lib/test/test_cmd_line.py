@@ -38,6 +38,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotIn(b'Traceback', err)
         return out
 
+    @support.cpython_only
     def test_help(self):
         self.verify_valid_flag('-h')
         self.verify_valid_flag('-?')
@@ -48,14 +49,17 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotIn(b'-X dev', out)
         self.assertLess(len(lines), 50)
 
+    @support.cpython_only
     def test_help_env(self):
         out = self.verify_valid_flag('--help-env')
         self.assertIn(b'PYTHONHOME', out)
 
+    @support.cpython_only
     def test_help_xoptions(self):
         out = self.verify_valid_flag('--help-xoptions')
         self.assertIn(b'-X dev', out)
 
+    @support.cpython_only
     def test_help_all(self):
         out = self.verify_valid_flag('--help-all')
         lines = out.splitlines()
@@ -74,6 +78,7 @@ class CmdLineTest(unittest.TestCase):
     def test_site_flag(self):
         self.verify_valid_flag('-S')
 
+    @support.cpython_only
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
@@ -139,6 +144,7 @@ class CmdLineTest(unittest.TestCase):
         else:
             self.assertEqual(err, b'')
 
+    @support.cpython_only
     def test_xoption_frozen_modules(self):
         tests = {
             ('=on', 'FrozenImporter'),
@@ -153,6 +159,7 @@ class CmdLineTest(unittest.TestCase):
                 res = assert_python_ok(*cmd)
                 self.assertRegex(res.out.decode('utf-8'), expected)
 
+    @support.cpython_only
     def test_env_var_frozen_modules(self):
         tests = {
             ('on', 'FrozenImporter'),
@@ -579,6 +586,7 @@ class CmdLineTest(unittest.TestCase):
             print("del sys.modules['__main__']", file=script)
         assert_python_ok(filename)
 
+    @support.cpython_only
     def test_unknown_options(self):
         rc, out, err = assert_python_failure('-E', '-z')
         self.assertIn(b'Unknown option: -z', err)
@@ -691,6 +699,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc)
         return proc.stdout.rstrip()
 
+    @support.cpython_only
     def test_xdev(self):
         # sys.flags.dev_mode
         code = "import sys; print(sys.flags.dev_mode)"
@@ -869,6 +878,39 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_GIL and -X gil only supported in Py_GIL_DISABLED builds")
+    def test_python_gil(self):
+        cases = [
+            # (env, opt, expected, msg)
+            (None, None, 'None', "no options set"),
+            ('0', None, '0', "PYTHON_GIL=0"),
+            ('1', None, '1', "PYTHON_GIL=1"),
+            ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
+            (None, '0', '0', "-X gil=0"),
+            (None, '1', '1', "-X gil=1"),
+        ]
+
+        code = "import sys; print(sys.flags.gil)"
+        environ = dict(os.environ)
+
+        for env, opt, expected, msg in cases:
+            with self.subTest(msg, env=env, opt=opt):
+                environ.pop('PYTHON_GIL', None)
+                if env is not None:
+                    environ['PYTHON_GIL'] = env
+                extra_args = []
+                if opt is not None:
+                    extra_args = ['-X', f'gil={opt}']
+
+                proc = subprocess.run([sys.executable, *extra_args, '-c', code],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
+                                      text=True, env=environ)
+                self.assertEqual(proc.returncode, 0, proc)
+                self.assertEqual(proc.stdout.rstrip(), expected)
+                self.assertEqual(proc.stderr, '')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'bpo-32457 only applies on Windows')
     def test_argv0_normalization(self):
@@ -881,6 +923,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc)
         self.assertEqual(proc.stdout.strip(), b'0')
 
+    @support.cpython_only
     def test_parsing_error(self):
         args = [sys.executable, '-I', '--unknown-option']
         proc = subprocess.run(args,

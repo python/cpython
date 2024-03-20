@@ -62,7 +62,7 @@ else:
     import platform
     _platform_system = platform.system()
     _AIX     = _platform_system == 'AIX'
-    _LINUX   = _platform_system == 'Linux'
+    _LINUX   = _platform_system in ('Linux', 'Android')
 
 _MAC_DELIM = b':'
 _MAC_OMITS_LEADING_ZEROES = False
@@ -567,32 +567,16 @@ def _netstat_getnode():
     # This works on AIX and might work on Tru64 UNIX.
     return _find_mac_under_heading('netstat', '-ian', b'Address')
 
-def _ipconfig_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
-def _netbios_getnode():
-    """[DEPRECATED] Get the hardware address on Windows."""
-    # bpo-40501: UuidCreateSequential() is now the only supported approach
-    return _windll_getnode()
-
 
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
     import _uuid
     _generate_time_safe = getattr(_uuid, "generate_time_safe", None)
     _UuidCreate = getattr(_uuid, "UuidCreate", None)
-    _has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
 except ImportError:
     _uuid = None
     _generate_time_safe = None
     _UuidCreate = None
-    _has_uuid_generate_time_safe = None
-
-
-def _load_system_functions():
-    """[DEPRECATED] Platform-specific functions loaded at import time"""
 
 
 def _unix_getnode():
