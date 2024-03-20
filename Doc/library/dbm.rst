@@ -10,8 +10,6 @@
 
 :mod:`dbm` is a generic interface to variants of the DBM database:
 
-.. include:: ../includes/wasm-ios-notavail.rst
-
 * :mod:`dbm.sqlite3`
 * :mod:`dbm.gnu`
 * :mod:`dbm.ndbm`
@@ -21,6 +19,7 @@ slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
 
+.. include:: ../includes/wasm-ios-notavail.rst
 
 .. exception:: error
 
