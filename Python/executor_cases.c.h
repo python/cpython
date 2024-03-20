@@ -3510,7 +3510,10 @@
                 GOTO_ERROR(error);
             }
             PyCodeObject *code = (PyCodeObject *)codeobj;
-            if (code->co_version == 0) {
+            if (func_obj->func_builtins != tstate->interp->builtins) {
+                _PyFunction_SetVersion(func_obj, 0);
+            }
+            else if (code->co_version == 0) {
                 code->co_version = tstate->interp->func_state.next_version;
                 if (tstate->interp->func_state.next_version != 0) {
                     tstate->interp->func_state.next_version++;
