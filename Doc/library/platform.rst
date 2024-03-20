@@ -255,11 +255,12 @@ iOS Platform
    Get iOS version information and return it as tuple ``(system, release,
    machine, is_simulator)`` with *release* being a tuple ``(major, minor)``.
 
-   ``system`` is the OS name; either ``iOS`` or ``iPadOS``. ``release`` is the
-   iOS version number as a string (e.g., ``'17.2'``). ``machine`` is the device
-   model identifier; this will be a string like ``iPhone13,2`` for a physical
-   device, or ``iPhone`` on a simulator. ``is_simulator`` is a boolean
-   describing if the app is running on a simulator or a physical device.
+   * ``system`` is the OS name; either ``iOS`` or ``iPadOS``.
+   * ``release`` is the iOS version number as a string (e.g., ``'17.2'``).
+   * ``machine`` is the device model identifier; this will be a string like
+     ``iPhone13,2`` for a physical device, or ``iPhone`` on a simulator.
+   * ``is_simulator`` is a boolean describing if the app is running on a
+     simulator or a physical device.
 
    Entries which cannot be determined are set to ``''``.
 
