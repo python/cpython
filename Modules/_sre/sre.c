@@ -1964,8 +1964,6 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; max = arg;
                 if (min > max)
                     FAIL;
-                if (max > SRE_MAXREPEAT)
-                    FAIL;
                 if (_validate_inner(code, code+skip-4, groups))
                     FAIL;
                 code += skip-4;
@@ -1983,8 +1981,6 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; min = arg;
                 GET_ARG; max = arg;
                 if (min > max)
-                    FAIL;
-                if (max > SRE_MAXREPEAT)
                     FAIL;
                 if (_validate_inner(code, code+skip-3, groups))
                     FAIL;
