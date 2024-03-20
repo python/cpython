@@ -119,7 +119,7 @@ Python/dynload_*.c            @ericsnowcurrently
 Lib/test/test_module/         @ericsnowcurrently
 Doc/c-api/module.rst          @ericsnowcurrently
 **/*importlib/resources/*     @jaraco @warsaw @FFY00
-**/importlib/metadata/*       @jaraco @warsaw
+**/*importlib/metadata/*       @jaraco @warsaw
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
