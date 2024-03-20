@@ -10,6 +10,8 @@
 
 :mod:`dbm` is a generic interface to variants of the DBM database:
 
+.. include:: ../includes/wasm-ios-notavail.rst
+
 * :mod:`dbm.sqlite3`
 * :mod:`dbm.gnu`
 * :mod:`dbm.ndbm`
@@ -455,4 +457,3 @@ The :mod:`!dbm.dumb` module defines the following:
    .. method:: dumbdbm.close()
 
       Close the database.
-

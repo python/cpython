@@ -16,6 +16,8 @@
 The :mod:`curses` module provides an interface to the curses library, the
 de-facto standard for portable advanced terminal handling.
 
+.. include:: ../includes/wasm-ios-notavail.rst
+
 While curses is most widely used in the Unix environment, versions are available
 for Windows, DOS, and possibly other systems as well.  This extension module is
 designed to match the API of ncurses, an open-source curses library hosted on

@@ -34,12 +34,13 @@ Notes on the availability of these functions:
 
 * On VxWorks, os.popen, os.fork, os.execv and os.spawn*p* are not supported.
 
-* On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, large
-  parts of the :mod:`os` module are not available or behave differently. API
-  related to processes (e.g. :func:`~os.fork`, :func:`~os.execve`), signals
-  (e.g. :func:`~os.kill`, :func:`~os.wait`), and resources
-  (e.g. :func:`~os.nice`) are not available. Others like :func:`~os.getuid`
-  and :func:`~os.getpid` are emulated or stubs.
+* On WebAssembly platforms ``wasm32-emscripten`` and ``wasm32-wasi``, and on
+  iOS, large parts of the :mod:`os` module are not available or behave
+  differently. API related to processes (e.g. :func:`~os.fork`,
+  :func:`~os.execve`) and resources (e.g. :func:`~os.nice`) are not available.
+  Others like :func:`~os.getuid` and :func:`~os.getpid` are emulated or stubs.
+  WebAssembly platforms also lack support for signals (e.g. :func:`~os.kill`,
+  :func:`~os.wait`).
 
 
 .. note::
@@ -4271,7 +4272,7 @@ to be ignored.
 
    .. audit-event:: os.exec path,args,env os.execl
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI, not iOS.
 
    .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor
@@ -4474,7 +4475,7 @@ written in Python, such as a mail server's external command delivery program.
       for technical details of why we're surfacing this longstanding
       platform compatibility problem to developers.
 
-   .. availability:: POSIX, not Emscripten, not WASI.
+   .. availability:: POSIX, not Emscripten, not WASI, not iOS.
 
 
 .. function:: forkpty()
@@ -4501,7 +4502,7 @@ written in Python, such as a mail server's external command delivery program.
       threads, this now raises a :exc:`DeprecationWarning`. See the
       longer explanation on :func:`os.fork`.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: kill(pid, sig, /)
@@ -4525,7 +4526,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.kill pid,sig os.kill
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI, not iOS.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -4541,7 +4542,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.killpg pgid,sig os.killpg
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: nice(increment, /)
@@ -4578,7 +4579,7 @@ written in Python, such as a mail server's external command delivery program.
    Lock program segments into memory.  The value of *op* (defined in
    ``<sys/lock.h>``) determines which segments are locked.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: popen(cmd, mode='r', buffering=-1)
@@ -4610,7 +4611,7 @@ written in Python, such as a mail server's external command delivery program.
    documentation for more powerful ways to manage and communicate with
    subprocesses.
 
-   .. availability:: not Emscripten, not WASI.
+   .. availability:: not Emscripten, not WASI, not iOS.
 
    .. note::
       The :ref:`Python UTF-8 Mode <utf8-mode>` affects encodings used
@@ -4718,7 +4719,7 @@ written in Python, such as a mail server's external command delivery program.
       ``os.POSIX_SPAWN_CLOSEFROM`` is available on platforms where
       :c:func:`!posix_spawn_file_actions_addclosefrom_np` exists.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 .. function:: posix_spawnp(path, argv, env, *, file_actions=None, \
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
@@ -4734,7 +4735,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.8
 
-   .. availability:: POSIX, not Emscripten, not WASI.
+   .. availability:: POSIX, not Emscripten, not WASI, not iOS.
 
       See :func:`posix_spawn` documentation.
 
@@ -4767,7 +4768,7 @@ written in Python, such as a mail server's external command delivery program.
 
    There is no way to unregister a function.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
    .. versionadded:: 3.7
 
@@ -4836,7 +4837,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.spawn mode,path,args,env os.spawnl
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI, not iOS.
 
       :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
@@ -4960,7 +4961,7 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.system command os.system
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI, not iOS.
 
 
 .. function:: times()
@@ -5004,7 +5005,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
    .. seealso::
 
@@ -5038,7 +5039,7 @@ written in Python, such as a mail server's external command delivery program.
    Otherwise, if there are no matching children
    that could be waited for, :exc:`ChildProcessError` is raised.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5079,7 +5080,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exit code.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI, not iOS.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -5099,7 +5100,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: wait4(pid, options)
@@ -5113,7 +5114,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitstatus_to_exitcode` can be used to convert the exit status into an
    exitcode.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. data:: P_PID
@@ -5130,7 +5131,7 @@ written in Python, such as a mail server's external command delivery program.
    * :data:`!P_PIDFD` - wait for the child identified by the file descriptor
      *id* (a process file descriptor created with :func:`pidfd_open`).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
    .. note:: :data:`!P_PIDFD` is only available on Linux >= 5.4.
 
@@ -5145,7 +5146,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitid` causes child processes to be reported if they have been
    continued from a job control stop since they were last reported.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. data:: WEXITED
@@ -5156,7 +5157,7 @@ written in Python, such as a mail server's external command delivery program.
    The other ``wait*`` functions always report children that have terminated,
    so this option is not available for them.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5168,7 +5169,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for the other ``wait*`` functions.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5181,7 +5182,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for :func:`waitid`.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. data:: WNOHANG
@@ -5190,7 +5191,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`waitid` to return right away if no child process status is available
    immediately.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. data:: WNOWAIT
@@ -5200,7 +5201,7 @@ written in Python, such as a mail server's external command delivery program.
 
    This option is not available for the other ``wait*`` functions.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. data:: CLD_EXITED
@@ -5213,7 +5214,7 @@ written in Python, such as a mail server's external command delivery program.
    These are the possible values for :attr:`!si_code` in the result returned by
    :func:`waitid`.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
    .. versionadded:: 3.3
 
@@ -5248,7 +5249,7 @@ written in Python, such as a mail server's external command delivery program.
       :func:`WIFEXITED`, :func:`WEXITSTATUS`, :func:`WIFSIGNALED`,
       :func:`WTERMSIG`, :func:`WIFSTOPPED`, :func:`WSTOPSIG` functions.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not Emscripten, not WASI, not iOS.
 
    .. versionadded:: 3.9
 
@@ -5264,7 +5265,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: WIFCONTINUED(status)
@@ -5275,7 +5276,7 @@ used to determine the disposition of a process.
 
    See :data:`WCONTINUED` option.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: WIFSTOPPED(status)
@@ -5287,14 +5288,14 @@ used to determine the disposition of a process.
    done using :data:`WUNTRACED` option or when the process is being traced (see
    :manpage:`ptrace(2)`).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 .. function:: WIFSIGNALED(status)
 
    Return ``True`` if the process was terminated by a signal, otherwise return
    ``False``.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: WIFEXITED(status)
@@ -5303,7 +5304,7 @@ used to determine the disposition of a process.
    by calling ``exit()`` or ``_exit()``, or by returning from ``main()``;
    otherwise return ``False``.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: WEXITSTATUS(status)
@@ -5312,7 +5313,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFEXITED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: WSTOPSIG(status)
@@ -5321,7 +5322,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSTOPPED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 .. function:: WTERMSIG(status)
@@ -5330,7 +5331,7 @@ used to determine the disposition of a process.
 
    This function should be employed only if :func:`WIFSIGNALED` is true.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not Emscripten, not WASI, not iOS.
 
 
 Interface to the scheduler
