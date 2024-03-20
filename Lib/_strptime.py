@@ -270,12 +270,10 @@ class TimeRE(dict):
 Parsing dates involving a day of month without a year specified is ambiguious
 and fails to parse leap day. The default behavior will change in Python 3.15
 to either always raise an exception or to use a different default year (TBD).
-To avoid trouble, add a specific year to the input & format. For example:
-  strptime(f"{mm_dd},{datetime.now().year}", "%m-%d,%y")
+To avoid trouble, add a specific year to the input & format.
 See https://github.com/python/cpython/issues/70647.""",
                           DeprecationWarning,
-                          # -> .compile -> {time,datetime}.strptime -> User
-                          stacklevel=3)
+                          stacklevel=5)
         return "%s%s" % (processed_format, format)
 
     def compile(self, format):
