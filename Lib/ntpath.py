@@ -29,7 +29,8 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "ismount","isreserved","expanduser","expandvars","normpath",
            "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction"]
+           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
+           "isdevdrive"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -285,16 +286,6 @@ else:
         os.fspath(path)
         return False
 
-
-# Being true for dangling symbolic links is also useful.
-
-def lexists(path):
-    """Test whether a path exists.  Returns True for broken symbolic links"""
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError):
-        return False
-    return True
 
 # Is a path a mount point?
 # Any drive letter root (eg c:\)

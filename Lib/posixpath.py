@@ -35,7 +35,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction"]
+           "commonpath", "isjunction","isreserved","isdevdrive"]
 
 
 def _get_sep(path):
@@ -168,23 +168,14 @@ def splitroot(p):
 
 def basename(p):
     """Returns the final component of a pathname"""
-    p = os.fspath(p)
-    sep = _get_sep(p)
-    i = p.rfind(sep) + 1
-    return p[i:]
+    return split(p)[1]
 
 
 # Return the head (dirname) part of a path, same as split(path)[0].
 
 def dirname(p):
     """Returns the directory component of a pathname"""
-    p = os.fspath(p)
-    sep = _get_sep(p)
-    i = p.rfind(sep) + 1
-    head = p[:i]
-    if head and head != sep*len(head):
-        head = head.rstrip(sep)
-    return head
+    return split(p)[0]
 
 
 # Is a path a junction?
@@ -196,16 +187,16 @@ def isjunction(path):
     return False
 
 
-# Being true for dangling symbolic links is also useful.
+def isreserved(path):
+    """Return true if the pathname is reserved by the system.
+    Always returns False on posix"""
+    return False
 
-def lexists(path):
-    """Test whether a path exists.  Returns True for broken symbolic links"""
-    try:
-        os.lstat(path)
-    except (OSError, ValueError):
-        return False
-    return True
 
+def isdevdrive(path):
+    """Determines whether the specified path is on a Dev Drive.
+    Dev Drives are not a part of posix semantics"""
+    return False
 
 # Is a path a mount point?
 # (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
