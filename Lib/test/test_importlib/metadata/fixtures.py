@@ -10,7 +10,7 @@ import functools
 import contextlib
 
 from test.support import import_helper
-from test.support.os_helper import FS_NONASCII
+from test.support import os_helper
 from test.support import requires_zlib
 
 from . import _path
@@ -143,15 +143,13 @@ class DistInfoPkgEditable(DistInfoPkg):
     some_hash = '524127ce937f7cb65665130c695abd18ca386f60bb29687efb976faa1596fdcc'
     files: FilesSpec = {
         'distinfo_pkg-1.0.0.dist-info': {
-            'direct_url.json': json.dumps(
-                {
-                    "archive_info": {
-                        "hash": f"sha256={some_hash}",
-                        "hashes": {"sha256": f"{some_hash}"},
-                    },
-                    "url": "file:///path/to/distinfo_pkg-1.0.0.editable-py3-none-any.whl",
-                }
-            )
+            'direct_url.json': json.dumps({
+                "archive_info": {
+                    "hash": f"sha256={some_hash}",
+                    "hashes": {"sha256": f"{some_hash}"},
+                },
+                "url": "file:///path/to/distinfo_pkg-1.0.0.editable-py3-none-any.whl",
+            })
         },
     }
 
@@ -340,7 +338,9 @@ def record_names(file_defs):
 
 class FileBuilder:
     def unicode_filename(self):
-        return FS_NONASCII or self.skip("File system does not support non-ascii.")
+        return os_helper.FS_NONASCII or self.skip(
+            "File system does not support non-ascii."
+        )
 
 
 def DALS(str):

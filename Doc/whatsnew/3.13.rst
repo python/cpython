@@ -1527,7 +1527,7 @@ Build Changes
 * The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
   ``termios``, ``winsound``,
   ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
-  ``_statistics``, ``_testimportmultiple`` and ``_uuid``
+  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
   C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
@@ -1730,6 +1730,11 @@ New Features
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions
+  to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
+  :term:`strong reference` to the constant zero.
+  (Contributed by Victor Stinner in :gh:`115754`.)
 
 
 Porting to Python 3.13
