@@ -42,6 +42,7 @@ typedef struct {
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
     PyTypeObject *StructParam_Type;
+    PyTypeObject *PyCType_Type;
     PyTypeObject *PyCStructType_Type;
     PyTypeObject *UnionType_Type;
     PyTypeObject *PyCPointerType_Type;
@@ -58,7 +59,15 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
-    PyTypeObject *PyCType_Type;
+    /* This dict maps ctypes types to POINTER types */
+    PyObject *_ctypes_ptrtype_cache;
+    /* a callable object used for unpickling:
+       strong reference to _ctypes._unpickle() function */
+    PyObject *_unpickle;
+    PyObject *array_cache;
+    PyObject *error_object_name;  // callproc.c
+    PyObject *PyExc_ArgError;
+    PyObject *swapped_suffix;
 } ctypes_state;
 
 extern ctypes_state global_state;
@@ -375,9 +384,6 @@ extern char basespec_string[];
 
 extern ffi_type *_ctypes_get_ffi_type(PyObject *obj);
 
-/* exception classes */
-extern PyObject *PyExc_ArgError;
-
 extern char *_ctypes_conversion_encoding;
 extern char *_ctypes_conversion_errors;
 
@@ -393,7 +399,6 @@ extern char *_ctypes_alloc_format_string_with_shape(int ndim,
 
 extern int _ctypes_simple_instance(PyObject *obj);
 
-extern PyObject *_ctypes_ptrtype_cache;
 PyObject *_ctypes_get_errobj(int **pspace);
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
