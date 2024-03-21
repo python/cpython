@@ -1455,30 +1455,6 @@ get_interpreterid_type(PyObject *self, PyObject *Py_UNUSED(ignored))
     return Py_NewRef(&PyInterpreterID_Type);
 }
 
-static PyObject *
-link_interpreter_refcount(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
-    if (interp == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    _PyInterpreterState_RequireIDRef(interp, 1);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
-    if (interp == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    _PyInterpreterState_RequireIDRef(interp, 0);
-    Py_RETURN_NONE;
-}
-
 static PyMethodDef ml;
 
 static PyObject *
@@ -3324,8 +3300,6 @@ static PyMethodDef TestMethods[] = {
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
     {"get_interpreterid_type",  get_interpreterid_type,          METH_NOARGS},
-    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
-    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},

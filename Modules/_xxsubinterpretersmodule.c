@@ -35,83 +35,8 @@ _get_current_interp(void)
     return PyInterpreterState_Get();
 }
 
-static int64_t
-pylong_to_interpid(PyObject *idobj)
-{
-    assert(PyLong_CheckExact(idobj));
+#define look_up_interp _PyInterpreterState_LookUpIDObject
 
-    if (_PyLong_IsNegative((PyLongObject *)idobj)) {
-        PyErr_Format(PyExc_ValueError,
-                     "interpreter ID must be a non-negative int, got %R",
-                     idobj);
-        return -1;
-    }
-
-    int overflow;
-    long long id = PyLong_AsLongLongAndOverflow(idobj, &overflow);
-    if (id == -1) {
-        if (!overflow) {
-            assert(PyErr_Occurred());
-            return -1;
-        }
-        assert(!PyErr_Occurred());
-        // For now, we don't worry about if LLONG_MAX < INT64_MAX.
-        goto bad_id;
-    }
-#if LLONG_MAX > INT64_MAX
-    if (id > INT64_MAX) {
-        goto bad_id;
-    }
-#endif
-    return (int64_t)id;
-
-bad_id:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %O", idobj);
-    return -1;
-}
-
-static int64_t
-convert_interpid_obj(PyObject *arg)
-{
-    int64_t id = -1;
-    if (_PyIndex_Check(arg)) {
-        PyObject *idobj = PyNumber_Long(arg);
-        if (idobj == NULL) {
-            return -1;
-        }
-        id = pylong_to_interpid(idobj);
-        Py_DECREF(idobj);
-        if (id < 0) {
-            return -1;
-        }
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "interpreter ID must be an int, got %.100s",
-                     Py_TYPE(arg)->tp_name);
-        return -1;
-    }
-    return id;
-}
-
-static PyInterpreterState *
-look_up_interp(PyObject *arg)
-{
-    int64_t id = convert_interpid_obj(arg);
-    if (id < 0) {
-        return NULL;
-    }
-    return _PyInterpreterState_LookUpID(id);
-}
-
-
-static PyObject *
-interpid_to_pylong(int64_t id)
-{
-    assert(id < LLONG_MAX);
-    return PyLong_FromLongLong(id);
-}
 
 static PyObject *
 get_interpid_obj(PyInterpreterState *interp)
@@ -123,7 +48,8 @@ get_interpid_obj(PyInterpreterState *interp)
     if (id < 0) {
         return NULL;
     }
-    return interpid_to_pylong(id);
+    assert(id < LLONG_MAX);
+    return PyLong_FromLongLong(id);
 }
 
 static PyObject *
@@ -699,7 +625,7 @@ interp_set___main___attrs(PyObject *self, PyObject *args)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
     }
