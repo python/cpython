@@ -251,8 +251,8 @@ the XCframework::
     cp path/to/iphoneos/bin Python.xcframework/ios-arm64
     cp path/to/iphoneos/lib Python.xcframework/ios-arm64
 
-    cp path/to/iphonesimulator/bin Python.xcframework/ios-arm64_x86-64-simulator
-    cp path/to/iphonesimulator/lib Python.xcframework/ios-arm64_x86-64-simulator
+    cp path/to/iphonesimulator/bin Python.xcframework/ios-arm64_x86_64-simulator
+    cp path/to/iphonesimulator/lib Python.xcframework/ios-arm64_x86_64-simulator
 
 Note that the name of the architecture-specific slice for the simulator will
 depend on the CPU architecture(s) that you build.
@@ -303,6 +303,49 @@ Debugging test failures
 
 The easiest way to diagnose a single test failure is to open the testbed project
 in Xcode and run the tests from there using the "Product > Test" menu item.
+
+To test in Xcode, you must ensure the testbed project has a copy of a compiled
+framework. If you've configured your build with the default install location of
+``iOS/Frameworks``, you can copy from that location into the test project. To
+test on an ARM64 simulator, run::
+
+    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/*
+    $ cp -r iOS/Frameworks/arm64-iphonesimulator/* iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+
+To test on an x86-64 simulator, run::
+
+    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/*
+    $ cp -r iOS/Frameworks/x86_64-iphonesimulator/* iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+
+To test on a physical device::
+
+    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64/*
+    $ cp -r iOS/Frameworks/arm64-iphoneos/* iOS/testbed/Python.xcframework/ios-arm64
+
+Alternatively, you can configure your build to install directly into the
+testbed project. For a simulator, use::
+
+    --enable-framework=$(pwd)/iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+
+For a physical device, use::
+
+    --enable-framework=$(pwd)/iOS/testbed/Python.xcframework/ios-arm64
+
+
+Testing on an iOS device
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To test on an iOS device, the app needs to be signed with known developer
+credentials. To obtain these credentials, you must have an iOS Developer
+account, and your Xcode install will need to be logged into your account (see
+the Accounts tab of the Preferences dialog).
+
+Once the project is open, and you're signed into your Apple Developer account,
+select the root node of the project tree (labeled "iOSTestbed"), then the
+"Signing & Capabilities" tab in the details page. Select a development team
+(this will likely be your own name), and plug in a physical device to your
+macOS machine with a USB cable. You should then be able to select your physical
+device from the list of targets in the pulldown in the Xcode titlebar.
 
 Running specific tests
 ^^^^^^^^^^^^^^^^^^^^^^
