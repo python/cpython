@@ -2,6 +2,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+#ifndef Py_LIMITED_API
+
 PyAPI_FUNC(void)
 _PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                          const uint8_t *event_types, uint32_t length);
@@ -81,3 +83,5 @@ _PyMonitoring_FirePyUnwindEvent(PyMonitoringState *state, PyObject *codelike, in
 PyAPI_FUNC(int)
 _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike, int offset,
                                     PyObject *exception);
+
+#endif
