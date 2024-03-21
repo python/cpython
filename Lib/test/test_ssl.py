@@ -544,7 +544,7 @@ class BasicSocketTests(unittest.TestCase):
         else:
             openssl_ver = f"OpenSSL {major:d}.{minor:d}.{fix:d}"
         self.assertTrue(
-            s.startswith((openssl_ver, libressl_ver)),
+            s.startswith((openssl_ver, libressl_ver, "AWS-LC")),
             (s, t, hex(n))
         )
 
@@ -1162,24 +1162,30 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             ctx.load_cert_chain(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_cert_chain(BADCERT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_cert_chain(EMPTYCERT)
         # Separate key and cert
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_cert_chain(ONLYCERT, ONLYKEY)
         ctx.load_cert_chain(certfile=ONLYCERT, keyfile=ONLYKEY)
         ctx.load_cert_chain(certfile=BYTES_ONLYCERT, keyfile=BYTES_ONLYKEY)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_cert_chain(ONLYCERT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_cert_chain(ONLYKEY)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_cert_chain(certfile=ONLYKEY, keyfile=ONLYCERT)
         # Mismatching key and cert
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        with self.assertRaisesRegex(ssl.SSLError, "key values mismatch"):
+        # Allow for flexible libssl error messages.
+        regex = re.compile(r"""(
+            key values mismatch         # OpenSSL
+            |
+            KEY_VALUES_MISMATCH         # AWS-LC
+        )""", re.X)
+        with self.assertRaisesRegex(ssl.SSLError, regex):
             ctx.load_cert_chain(CAFILE_CACERT, ONLYKEY)
         # Password protected key and cert
         ctx.load_cert_chain(CERTFILE_PROTECTED, password=KEY_PASSWORD)
@@ -1247,7 +1253,7 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             ctx.load_verify_locations(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
+        with self.assertRaisesRegex(ssl.SSLError, "PEM (lib|routines)"):
             ctx.load_verify_locations(BADCERT)
         ctx.load_verify_locations(CERTFILE, CAPATH)
         ctx.load_verify_locations(CERTFILE, capath=BYTES_CAPATH)
@@ -1651,9 +1657,10 @@ class SSLErrorTests(unittest.TestCase):
         with self.assertRaises(ssl.SSLError) as cm:
             ctx.load_dh_params(CERTFILE)
         self.assertEqual(cm.exception.library, 'PEM')
-        self.assertEqual(cm.exception.reason, 'NO_START_LINE')
+        regex = "(NO_START_LINE|UNSUPPORTED_PUBLIC_KEY_TYPE)"
+        self.assertRegex(cm.exception.reason, regex)
         s = str(cm.exception)
-        self.assertTrue(s.startswith("[PEM: NO_START_LINE] no start line"), s)
+        self.assertTrue("NO_START_LINE" in s, s)
 
     def test_subclass(self):
         # Check that the appropriate SSLError subclass is raised
@@ -1833,7 +1840,13 @@ class SimpleBackgroundTests(unittest.TestCase):
         s = test_wrap_socket(socket.socket(socket.AF_INET),
                             cert_reqs=ssl.CERT_REQUIRED)
         self.addCleanup(s.close)
-        self.assertRaisesRegex(ssl.SSLError, "certificate verify failed",
+        # Allow for flexible libssl error messages.
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
+        self.assertRaisesRegex(ssl.SSLError, regex,
                                s.connect, self.server_addr)
 
     def test_connect_ex(self):
@@ -1901,7 +1914,13 @@ class SimpleBackgroundTests(unittest.TestCase):
             server_hostname=SIGNED_CERTFILE_HOSTNAME
         )
         self.addCleanup(s.close)
-        self.assertRaisesRegex(ssl.SSLError, "certificate verify failed",
+        # Allow for flexible libssl error messages.
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
+        self.assertRaisesRegex(ssl.SSLError, regex,
                                 s.connect, self.server_addr)
 
     def test_connect_capath(self):
@@ -2118,14 +2137,16 @@ class SimpleBackgroundTests(unittest.TestCase):
         self.assertIsNone(sslobj.version())
         self.assertIsNone(sslobj.shared_ciphers())
         self.assertRaises(ValueError, sslobj.getpeercert)
-        if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
+        # tls-unique is not defined for TLSv1.3
+        # https://datatracker.ietf.org/doc/html/rfc8446#appendix-C.5
+        if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES and sslobj.version() != "TLSv1.3":
             self.assertIsNone(sslobj.get_channel_binding('tls-unique'))
         self.ssl_io_loop(sock, incoming, outgoing, sslobj.do_handshake)
         self.assertTrue(sslobj.cipher())
         self.assertIsNone(sslobj.shared_ciphers())
         self.assertIsNotNone(sslobj.version())
         self.assertTrue(sslobj.getpeercert())
-        if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
+        if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES and sslobj.version() != "TLSv1.3":
             self.assertTrue(sslobj.get_channel_binding('tls-unique'))
         try:
             self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
@@ -2850,11 +2871,16 @@ class ThreadedTests(unittest.TestCase):
         client_context.verify_flags |= ssl.VERIFY_CRL_CHECK_LEAF
 
         server = ThreadedEchoServer(context=server_context, chatty=True)
+        # Allow for flexible libssl error messages.
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:
-                with self.assertRaisesRegex(ssl.SSLError,
-                                            "certificate verify failed"):
+                with self.assertRaisesRegex(ssl.SSLError, regex):
                     s.connect((HOST, server.port))
 
         # now load a CRL file. The CRL file is signed by the CA.
@@ -2885,12 +2911,16 @@ class ThreadedTests(unittest.TestCase):
 
         # incorrect hostname should raise an exception
         server = ThreadedEchoServer(context=server_context, chatty=True)
+        # Allow for flexible libssl error messages.
+        regex = re.compile(r"""(
+            certificate verify failed   # OpenSSL
+            |
+            CERTIFICATE_VERIFY_FAILED   # AWS-LC
+        )""", re.X)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname="invalid") as s:
-                with self.assertRaisesRegex(
-                        ssl.CertificateError,
-                        "Hostname mismatch, certificate is not valid for 'invalid'."):
+                with self.assertRaisesRegex(ssl.CertificateError, regex):
                     s.connect((HOST, server.port))
 
         # missing server_hostname arg should cause an exception, too
@@ -3094,7 +3124,7 @@ class ThreadedTests(unittest.TestCase):
             s.connect((HOST, server.port))
             with self.assertRaisesRegex(
                 ssl.SSLError,
-                'alert unknown ca|EOF occurred'
+                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -3158,13 +3188,21 @@ class ThreadedTests(unittest.TestCase):
                                      server_hostname=SIGNED_CERTFILE_HOSTNAME) as s:
                 try:
                     s.connect((HOST, server.port))
+                    self.fail("Expected connection failure")
                 except ssl.SSLError as e:
                     msg = 'unable to get local issuer certificate'
                     self.assertIsInstance(e, ssl.SSLCertVerificationError)
                     self.assertEqual(e.verify_code, 20)
                     self.assertEqual(e.verify_message, msg)
-                    self.assertIn(msg, repr(e))
-                    self.assertIn('certificate verify failed', repr(e))
+                    # Allow for flexible libssl error messages.
+                    regex = f"({msg}|CERTIFICATE_VERIFY_FAILED)"
+                    self.assertRegex(repr(e), regex)
+                    regex = re.compile(r"""(
+                        certificate verify failed   # OpenSSL
+                        |
+                        CERTIFICATE_VERIFY_FAILED   # AWS-LC
+                    )""", re.X)
+                    self.assertRegex(repr(e), regex)
 
     def test_PROTOCOL_TLS(self):
         """Connecting to an SSLv23 server with various client options"""
@@ -3696,7 +3734,7 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 with self.assertRaises(OSError):
                     s.connect((HOST, server.port))
-        self.assertIn("no shared cipher", server.conn_errors[0])
+        self.assertIn("NO_SHARED_CIPHER", server.conn_errors[0])
 
     def test_version_basic(self):
         """
@@ -3784,7 +3822,7 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 with self.assertRaises(ssl.SSLError) as e:
                     s.connect((HOST, server.port))
-                self.assertIn("alert", str(e.exception))
+                self.assertRegex("(alert|ALERT)", str(e.exception))
 
     @requires_tls_version('SSLv3')
     def test_min_max_version_sslv3(self):
@@ -3825,6 +3863,10 @@ class ThreadedTests(unittest.TestCase):
             sys.stdout.write("\n")
 
         client_context, server_context, hostname = testing_context()
+
+        # tls-unique is not defined for TLSv1.3
+        # https://datatracker.ietf.org/doc/html/rfc8446#appendix-C.5
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
 
         server = ThreadedEchoServer(context=server_context,
                                     chatty=True,
@@ -3926,7 +3968,7 @@ class ThreadedTests(unittest.TestCase):
         cipher = stats["cipher"][0]
         parts = cipher.split("-")
         if "ADH" not in parts and "EDH" not in parts and "DHE" not in parts:
-            self.fail("Non-DH cipher: " + cipher[0])
+            self.fail("Non-DH key exchange: " + cipher[0])
 
     def test_ecdh_curve(self):
         # server secp384r1, client auto
@@ -4093,8 +4135,9 @@ class ThreadedTests(unittest.TestCase):
                                            chatty=False,
                                            sni_name='supermessage')
 
-            self.assertEqual(cm.exception.reason,
-                             'SSLV3_ALERT_HANDSHAKE_FAILURE')
+            # Allow for flexible libssl error messages.
+            regex = "(SSLV3_ALERT_HANDSHAKE_FAILURE|NO_PRIVATE_VALUE)"
+            self.assertRegex(regex, cm.exception.reason)
             self.assertEqual(catch.unraisable.exc_type, ZeroDivisionError)
 
     def test_sni_callback_wrong_return_type(self):
