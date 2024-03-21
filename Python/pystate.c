@@ -1763,15 +1763,17 @@ PyThreadState_DeleteCurrent(void)
 }
 
 
-/*
- * Delete all thread states except the one passed as argument.
- * Note that, if there is a current thread state, it *must* be the one
- * passed as argument.  Also, this won't touch any other interpreters
- * than the current one, since we don't know which thread state should
- * be kept in those other interpreters.
- */
-void
-_PyThreadState_DeleteExcept(PyThreadState *tstate)
+// Unlinks and removes all thread states from `tstate->interp`, with the
+// exception of the one passed as an argument. However, it does not delete
+// these thread states. Instead, it returns the removed thread states as a
+// linked list.
+//
+// Note that if there is a current thread state, it *must* be the one
+// passed as argument.  Also, this won't touch any interpreters other
+// than the current one, since we don't know which thread state should
+// be kept in those other interpreters.
+PyThreadState *
+_PyThreadState_RemoveExcept(PyThreadState *tstate)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
@@ -1783,8 +1785,7 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
 
     HEAD_LOCK(runtime);
     /* Remove all thread states, except tstate, from the linked list of
-       thread states.  This will allow calling PyThreadState_Clear()
-       without holding the lock. */
+       thread states. */
     PyThreadState *list = interp->threads.head;
     if (list == tstate) {
         list = tstate->next;
@@ -1799,11 +1800,19 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     interp->threads.head = tstate;
     HEAD_UNLOCK(runtime);
 
-    _PyEval_StartTheWorldAll(runtime);
+    return list;
+}
 
-    /* Clear and deallocate all stale thread states.  Even if this
-       executes Python code, we should be safe since it executes
-       in the current thread, not one of the stale threads. */
+// Deletes the thread states in the linked list `list`.
+//
+// This is intended to be used in conjunction with _PyThreadState_RemoveExcept.
+void
+_PyThreadState_DeleteList(PyThreadState *list)
+{
+    // The world can't be stopped because we PyThreadState_Clear() can
+    // call destructors.
+    assert(!_PyRuntime.stoptheworld.world_stopped);
+
     PyThreadState *p, *next;
     for (p = list; p; p = next) {
         next = p->next;
