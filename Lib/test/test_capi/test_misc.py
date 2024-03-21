@@ -2207,8 +2207,6 @@ class SubinterpreterTest(unittest.TestCase):
 @requires_subinterpreters
 class InterpreterIDTests(unittest.TestCase):
 
-#    InterpreterID = _testcapi.get_interpreterid_type()
-
     def check_id(self, interpid, *, force=False):
         if force:
             return
