@@ -299,29 +299,60 @@ _a85chars2 = None
 _A85START = b"<~"
 _A85END = b"~>"
 
+def _85buffer_iter_words(b):
+    # Utility method for _85encode
+    # yield unpacked int32 words from buffer, hopefully in an efficient manner,
+    # padding the last part with NULL bytes if necessary
+    n1 = len(b) // 512  # number of 512 bytes unpack
+    n2 = (len(b) - n1 * 512) // 4  # number of 4 bytes unpack
+    padding = (-len(b)) % 4
+
+    unpack512 = struct.Struct("!128I").unpack
+    unpack4 = struct.Struct("!I").unpack
+
+    offset = 0
+    for _ in range(n1):
+        yield from unpack512(b[offset:offset+512])
+        offset += 512
+
+    for _ in range(n2):
+        yield unpack4(b[offset:offset+4])[0]
+        offset += 4
+
+    if padding:
+        yield unpack4(b[offset:] + b'\0' * padding)[0]
+
 def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
     # Helper function for a85encode and b85encode
     if not isinstance(b, bytes_types):
         b = memoryview(b).tobytes()
 
-    padding = (-len(b)) % 4
-    if padding:
-        b = b + b'\0' * padding
-    words = struct.Struct('!%dI' % (len(b) // 4)).unpack(b)
-
-    chunks = [b'z' if foldnuls and not word else
+    words = _85buffer_iter_words(b)
+    chunks = (b'z' if foldnuls and not word else
               b'y' if foldspaces and word == 0x20202020 else
               (chars2[word // 614125] +
                chars2[word // 85 % 7225] +
                chars[word % 85])
-              for word in words]
+              for word in words)
 
-    if padding and not pad:
-        if chunks[-1] == b'z':
-            chunks[-1] = chars[0] * 5
-        chunks[-1] = chunks[-1][:-padding]
+    chunk = None
+    ret = bytearray()
+    for chunk in chunks:
+        ret += chunk
 
-    return b''.join(chunks)
+    # update of the last chunk afterwards
+    padding = (-len(b)) % 4
+    if chunk and padding and not pad:
+        ret[-len(chunk):] = []
+
+        if chunk == b'z':
+            chunk = chars[0] * 5
+        chunk = chunk[:-padding]
+
+        ret += chunk
+
+    return bytes(ret)
+
 
 def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     """Encode bytes-like object b using Ascii85 and return a bytes object.
