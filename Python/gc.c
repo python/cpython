@@ -1237,7 +1237,7 @@ gc_list_set_space(PyGC_Head *list, uintptr_t space)
     Py_ssize_t size = 0;
     PyGC_Head *gc;
     for (gc = GC_NEXT(list); gc != list; gc = GC_NEXT(gc)) {
-        gc_set_old_space(gc, space);
+        gc_set_old_space(gc, (int)space);
         size++;
     }
     return size;
@@ -1384,8 +1384,7 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
 static void
 completed_cycle(GCState *gcstate)
 {
-    PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
-    assert(gc_list_is_empty(not_visited));
+    assert(gc_list_is_empty(&gcstate->old[gcstate->visited_space^1].head));
     gcstate->visited_space = flip_old_space(gcstate->visited_space);
     if (gcstate->work_to_do > 0) {
         gcstate->work_to_do = 0;
@@ -1697,7 +1696,7 @@ _PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
         }
     }
     else {
-        if (append_objects(result, GEN_HEAD(gcstate, generation))) {
+        if (append_objects(result, GEN_HEAD(gcstate, (int)generation))) {
             goto error;
         }
     }
