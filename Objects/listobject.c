@@ -1726,7 +1726,10 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
        where an out-of-order element near the start of a run is moved into
        place slowly but then the remaining elements up to length minrun are
        generally at worst one slot away from their correct position (so only
-       need 1 or 2 commpares to resolve).
+       need 1 or 2 commpares to resolve). If comparisons are very fast (such
+       as for a list of Python floats), the simple inner loop leaves it
+       very competitive with binary insertion, despite that it does
+       significantly more compares overall on random data.
 
        Binary insertion sort has worst, average, and best case O(n log n)
        cost for # of comparisons, but worst and average case O(n**2) cost
@@ -1734,8 +1737,12 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
        the comparison advantage. But its branches are less predictable the
        more "randomish" the data, and that's so significant its worst case
        in real life is random input rather than reverse-ordered (which does
-       about twice the data movement than random input does). */
-#if 1 // ordinary insertion sort
+       about twice the data movement than random input does).
+
+       Note that the number of bytes moved doesn't seem to matter. MAX_MINRUN
+       of 64 is so small that the key and value pointers all fit in a corner
+       of L1 cache, and moving things around in that is very fast. */
+#if 0 // ordinary insertion sort.
     PyObject * vpivot = NULL;
     for (; ok < n; ++ok) {
         pivot = a[ok];
@@ -1778,12 +1785,17 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             /* don't do silly ;-) things to prevent overflow when finding
                the midpoint; L and R are very far from filling a Py_ssize_t */
             M = (L + R) >> 1;
-#if 0
+#if 1 // straightforward, but highly unpredictable branch on random data
             IFLT(pivot, a[M])
                 R = M;
             else
                 L = M + 1;
-#else // try to get compiler to generate conditional move instructions
+#else
+            /* Try to get compiler to generate conditional move instructions
+               instead. Works fine, but leaving it disabled for now because
+               it's not yielding consistently faster sorts. Needs more
+               investigation. More computation in the inner loop adds its own
+               costs, which can be significant when compares are fast. */
             k = ISLT(pivot, a[M]);
             if (k < 0)
                 goto fail;
@@ -1796,7 +1808,8 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
         /* a[:L] holds all elements from a[:ok] <= pivot now, so pivot belongs
            at index L. Slide a[L:ok] to the right a slot to make room for it.
            Caution: using memmove is much slower under MSVC 5; we're not
-           usually moving many slots. */
+           usually moving many slots. Years later: under Visual Studio 2022,
+           memmove seems just slightly slower than doing it "by hand". */
         for (M = ok; M > L; --M)
             a[M] = a[M - 1];
         a[L] = pivot;
@@ -1807,7 +1820,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             v[L] = pivot;
         }
     }
-#endif
+#endif // pick binary or regular insertion sort
     return 0;
 
  fail:
