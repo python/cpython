@@ -2257,7 +2257,7 @@ initPython(PythonApi *api)
     }
     PyConfig_Clear(&config);
 
-    api->module = PyImport_ImportModule("manager");
+    api->module = PyImport_ImportModule("pylauncher");
     if (!api->module) {
         isPythonFailure(NULL); // to print the error
         warn(L"Unable to load manager runtime\n");
