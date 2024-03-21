@@ -2,7 +2,6 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "interpreteridobject.h"  // PyInterpreterID_Type
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
@@ -1131,10 +1130,6 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
 int64_t
 _PyInterpreterState_ObjectToID(PyObject *idobj)
 {
-    if (PyObject_TypeCheck(idobj, &PyInterpreterID_Type)) {
-        return _PyInterpreterID_GetID(idobj);
-    }
-
     if (!_PyIndex_Check(idobj)) {
         PyErr_Format(PyExc_TypeError,
                      "interpreter ID must be an int, got %.100s",

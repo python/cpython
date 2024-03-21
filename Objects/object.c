@@ -24,8 +24,6 @@
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_unionobject.h"   // _PyUnion_Type
 
-#include "interpreteridobject.h"  // _PyInterpreterID_Type
-
 #ifdef Py_LIMITED_API
    // Prevent recursive call _Py_IncRef() <=> Py_INCREF()
 #  error "Py_LIMITED_API macro must not be defined"
@@ -2240,7 +2238,6 @@ static PyTypeObject* static_types[] = {
     &PyGen_Type,
     &PyGetSetDescr_Type,
     &PyInstanceMethod_Type,
-    &PyInterpreterID_Type,
     &PyListIter_Type,
     &PyListRevIter_Type,
     &PyList_Type,
