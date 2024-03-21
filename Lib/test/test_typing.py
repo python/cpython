@@ -152,6 +152,12 @@ class AnyTests(BaseTestCase):
         typing.Pattern[Any]
         typing.IO[Any]
 
+    def test_subclass_can_instantiate_with_arguments(self):
+        class Sub(Any):
+            def __init__(self, *args, **kwargs): pass
+        # The instantiation must not fail.
+        Sub(0, s="")
+
 
 class BottomTypeTestsMixin:
     bottom_type: ClassVar[Any]
