@@ -120,8 +120,9 @@ For all the following functions:
       importlib.resources.read_text(my_module, "info.txt")
 
   Like :meth:`Traversable.joinpath <importlib.resources.abc.Traversable>`,
-  The individual components should use forward slashes `/` as path separators.
-  The following are equivalent::
+  The individual components should use forward slashes (``/``)
+  as path separators.
+  For example, the following are equivalent::
 
       importlib.resources.read_binary(my_module, "pics/painting.png")
       importlib.resources.read_binary(my_module, "pics", "painting.png")
