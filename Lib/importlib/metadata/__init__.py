@@ -18,7 +18,7 @@ import itertools
 import posixpath
 import collections
 
-from . import _adapters, _meta
+from . import _meta
 from ._collections import FreezableDefaultDict, Pair
 from ._functools import method_cache, pass_none
 from ._itertools import always_iterable, unique_everseen
@@ -456,6 +456,9 @@ class Distribution(DeprecatedNonAbstract):
         Custom providers may provide the METADATA file or override this
         property.
         """
+        # deferred for performance (python/cpython#109829)
+        from . import _adapters
+
         opt_text = (
             self.read_text('METADATA')
             or self.read_text('PKG-INFO')
