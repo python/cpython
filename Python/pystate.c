@@ -1042,10 +1042,12 @@ _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
     if (interp->threads.main != NULL) {
         return 1;
     }
-    // For now, we assume the main interpreter is always running.
-    if (_Py_IsMainInterpreter(interp)) {
-        return 1;
-    }
+    // Embedders might not know to call _PyInterpreterState_SetRunningMain(),
+    // so their main thread wouldn't show it is running the main interpreter's
+    // program.  (Py_Main() doesn't have this problem.)  For now this isn't
+    // critical.  If it were, we would need to infer "running main" from other
+    // information, like if it's the main interpreter.  We used to do that
+    // but the naive approach led to some inconsistencies that caused problems.
     return 0;
 }
 
@@ -1067,9 +1069,8 @@ _PyThreadState_IsRunningMain(PyThreadState *tstate)
     if (interp->threads.main != NULL) {
         return tstate == interp->threads.main;
     }
-    if (_Py_IsMainInterpreter(interp)) {
-        return tstate->thread_id == interp->runtime->main_thread;
-    }
+    // See the note in _PyInterpreterState_IsRunningMain() about
+    // possible false negatives here for embedders.
     return 0;
 }
 
