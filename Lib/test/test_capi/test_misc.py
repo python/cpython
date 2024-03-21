@@ -2255,6 +2255,11 @@ class InterpreterIDTests(unittest.TestCase):
             with self.assertRaises(OverflowError):
                 convert(badid)
 
+        with self.subTest('from interpreter'):
+            interpid = self.new_interpreter()
+            converted = convert(interpid)
+            self.assertEqual(converted, interpid)
+
     def test_lookup(self):
         with self.subTest('exists'):
             interpid = self.new_interpreter()
