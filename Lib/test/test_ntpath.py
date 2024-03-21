@@ -124,6 +124,11 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitdrive("//?/UNC/server/share/dir")',
                ("//?/UNC/server/share", "/dir"))
 
+        # gh-101363: match GetFullPathNameW() drive letter parsing behaviour
+        tester('ntpath.splitdrive(" :/foo")', (" :", "/foo"))
+        tester('ntpath.splitdrive("/:/foo")', ("", "/:/foo"))
+
+
     def test_splitroot(self):
         tester("ntpath.splitroot('')", ('', '', ''))
         tester("ntpath.splitroot('foo')", ('', '', 'foo'))
@@ -209,10 +214,6 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.splitroot("///y")', ("///y", "", ""))  # empty server & non-empty share
         tester('ntpath.splitroot("//x")', ("//x", "", ""))  # non-empty server & missing share
         tester('ntpath.splitroot("//x/")', ("//x/", "", ""))  # non-empty server & empty share
-
-        # gh-101363: match GetFullPathNameW() drive letter parsing behaviour
-        tester('ntpath.splitroot(" :/foo")', (" :", "/", "foo"))
-        tester('ntpath.splitroot("/:/foo")', ("", "/", ":/foo"))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))

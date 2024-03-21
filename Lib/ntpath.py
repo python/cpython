@@ -177,7 +177,11 @@ def splitdrive(p):
         colon = ':'
         unc_prefix = '\\\\?\\UNC\\'
     normp = p.replace(altsep, sep)
-    if normp[:2] == sep * 2:
+    if normp[:1] != sep:
+        if normp[1:2] == colon:
+            # Drive-letter drives, e.g. X:
+            return p[:2], p[2:]
+    elif normp[1:2] == sep:
         # UNC drives, e.g. \\server\share or \\?\UNC\server\share
         # Device drives, e.g. \\.\device or \\?\device
         start = 8 if normp[:8].upper() == unc_prefix else 2
@@ -188,9 +192,6 @@ def splitdrive(p):
         if index2 == -1:
             return p, p[:0]
         return p[:index2], p[index2:]
-    if normp[1:2] == colon:
-        # Drive-letter drives, e.g. X:
-        return p[:2], p[2:]
     return p[:0], p
 
 
