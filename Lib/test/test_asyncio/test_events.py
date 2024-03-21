@@ -1425,14 +1425,14 @@ class EventLoopTestsMixin:
         transport_3.abort()
 
         transport_1.sendto(b'a', addr=addr_2)
-        assert loop.run_until_complete(
+        self.assertEqual(loop.run_until_complete(
             protocol_2.wait_for_datagram_received()
-        ) == b'a'
+        ), b'a')
 
         transport_2.sendto(b'b', addr=addr_1)
-        assert loop.run_until_complete(
+        self.assertEqual(loop.run_until_complete(
             protocol_1.wait_for_datagram_received()
-        ) == b'b'
+        ), b'b')
 
         # this should send to an address that isn't listening
         transport_1.sendto(b'c', addr=addr_3)
@@ -1441,9 +1441,9 @@ class EventLoopTestsMixin:
         # transport 1 should still be able to receive messages after sending to
         # an address that wasn't listening
         transport_2.sendto(b'd', addr=addr_1)
-        assert loop.run_until_complete(
+        self.assertEqual(loop.run_until_complete(
             protocol_1.wait_for_datagram_received()
-        ) == b'd'
+        ), b'd')
 
     def test_internal_fds(self):
         loop = self.create_event_loop()
