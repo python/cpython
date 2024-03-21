@@ -211,6 +211,10 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 800
 #elif defined(_WIN32)
 #  define Py_C_RECURSION_LIMIT 3000
+#elif defined(__ANDROID__)
+   // On an ARM64 emulator, API level 34 was OK with 10000, but API level 21
+   // crashed in test_compiler_recursion_limit.
+#  define Py_C_RECURSION_LIMIT 3000
 #elif defined(_Py_ADDRESS_SANITIZER)
 #  define Py_C_RECURSION_LIMIT 4000
 #else
