@@ -1349,8 +1349,6 @@ class PosixTester(unittest.TestCase):
             # sched_setaffinity() manual page documents EINVAL error
             # when the mask is empty.
             pass
-        except Exception as exc:
-            self.fail("unexpected exception: {exc!r}")
 
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
