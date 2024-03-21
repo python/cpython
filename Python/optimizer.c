@@ -399,6 +399,30 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_clear = executor_clear,
 };
 
+/*
+ * Called during trace projection just after emitting _PUSH_FRAME.
+ * Convert the corresponding _CHECK_STACK_SPACE to _CHECK_STACK_SPACE_OPERAND
+ * and set its operand to the amount of space required.
+ */
+static void
+update_last_check_stack_space(
+    _PyUOpInstruction *trace,
+    int trace_length,
+    PyCodeObject *new_code)
+{
+    if (new_code == NULL) {
+        return;
+    }
+    assert(trace[trace_length - 1].opcode == _PUSH_FRAME);
+    // -1 to _PUSH_FRAME; -3 from _PUSH_FRAME to _CHECK_STACK_SPACE
+    int last_check_stack_idx = trace_length - 4;
+    assert(last_check_stack_idx >= 0);
+    assert(trace[last_check_stack_idx].opcode == _CHECK_STACK_SPACE);
+    assert(new_code != NULL);
+    trace[last_check_stack_idx].opcode = _CHECK_STACK_SPACE_OPERAND;
+    trace[last_check_stack_idx].operand = new_code->co_framesize;
+}
+
 /* TO DO -- Generate these tables */
 static const uint16_t
 _PyUOp_Replacements[MAX_UOP_ID + 1] = {
@@ -456,6 +480,11 @@ BRANCH_TO_GUARD[4][2] = {
     trace_length++;
 #endif
 
+#define ADD_PUSH_FRAME_TO_TRACE(OPCODE, OPARG, OPERAND, TARGET) \
+    assert((OPCODE) == _PUSH_FRAME); \
+    ADD_TO_TRACE((OPCODE), (OPARG), (OPERAND), (TARGET)); \
+    update_last_check_stack_space(trace, trace_length, new_code); \
+
 #define INSTR_IP(INSTR, CODE) \
     ((uint32_t)((INSTR) - ((_Py_CODEUNIT *)(CODE)->co_code_adaptive)))
 
@@ -476,7 +505,7 @@ BRANCH_TO_GUARD[4][2] = {
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
         OPT_STAT_INC(trace_stack_overflow); \
-        ADD_TO_TRACE(uop, oparg, operand, target); \
+        ADD_PUSH_FRAME_TO_TRACE(uop, oparg, operand, target); \
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
         goto done; \
     } \
@@ -765,7 +794,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
                                     OPT_STAT_INC(recursive_call);
-                                    ADD_TO_TRACE(uop, oparg, 0, target);
+                                    ADD_PUSH_FRAME_TO_TRACE(uop, oparg, 0, target)
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
@@ -774,7 +803,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     // Perhaps it may happen again, so don't bother tracing.
                                     // TODO: Reason about this -- is it better to bail or not?
                                     DPRINTF(2, "Bailing because co_version != func_version\n");
-                                    ADD_TO_TRACE(uop, oparg, 0, target);
+                                    ADD_PUSH_FRAME_TO_TRACE(uop, oparg, 0, target);
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
@@ -791,13 +820,10 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 if (new_func != NULL) {
                                     operand = (uintptr_t)new_func;
                                 }
-                                else if (new_code != NULL) {
+                                else {
                                     operand = (uintptr_t)new_code | 1;
                                 }
-                                else {
-                                    operand = 0;
-                                }
-                                ADD_TO_TRACE(uop, oparg, operand, target);
+                                ADD_PUSH_FRAME_TO_TRACE(uop, oparg, operand, target);
                                 code = new_code;
                                 func = new_func;
                                 instr = _PyCode_CODE(code);
@@ -810,7 +836,7 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 goto top;
                             }
                             DPRINTF(2, "Bail, new_code == NULL\n");
-                            ADD_TO_TRACE(uop, oparg, 0, target);
+                            ADD_PUSH_FRAME_TO_TRACE(uop, oparg, 0, target);
                             ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                             goto done;
                         }

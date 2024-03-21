@@ -4,6 +4,7 @@ import textwrap
 import unittest
 import gc
 import os
+import platform
 
 import _opcode
 import _testinternalcapi
@@ -578,6 +579,13 @@ class TestUops(unittest.TestCase):
 @requires_specialization
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
+    FRAMESIZE_ADJUSTMENT = 1 if platform.architecture()[0] == "32bit" else 0
+
+    def _assert_framesize_cross_platform(self, fn_obj, expected_framesize):
+        self.assertEqual(
+            _testinternalcapi.get_co_framesize(fn_obj.__code__),
+            expected_framesize + self.FRAMESIZE_ADJUSTMENT
+        )
 
     def _run_with_optimizer(self, testfunc, arg):
         res = None
@@ -952,6 +960,299 @@ class TestUopsOptimization(unittest.TestCase):
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNone(ex)
 
+    def test_combine_stack_space_checks_sequential(self):
+        def dummy12(x):
+            return x - 1
+        def dummy13(y):
+            z = y + 2
+            return y, z
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                b = dummy12(7)
+                c, d = dummy13(9)
+                a += b + c + d
+            return a
+
+        self._assert_framesize_cross_platform((dummy12), 12)
+        self._assert_framesize_cross_platform((dummy13), 13)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 832)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 2)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # sequential calls: max(12, 13) == 13
+        largest_stack = _testinternalcapi.get_co_framesize(dummy13.__code__)
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_checks_nested(self):
+        def dummy12(x):
+            return x + 3
+        def dummy15(y):
+            z = dummy12(y)
+            return y, z
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                b, c = dummy15(2)
+                a += b + c
+            return a
+
+        self._assert_framesize_cross_platform((dummy12), 12)
+        self._assert_framesize_cross_platform((dummy15), 15)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 224)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 2)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # nested calls: 15 + 12 == 27
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy15.__code__) +
+            _testinternalcapi.get_co_framesize(dummy12.__code__)
+        )
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_checks_several_calls(self):
+        def dummy12(x):
+            return x + 3
+        def dummy13(y):
+            z = y + 2
+            return y, z
+        def dummy18(y):
+            z = dummy12(y)
+            x, w = dummy13(z)
+            return z, x, w
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                b = dummy12(5)
+                c, d, e = dummy18(2)
+                a += b + c + d + e
+            return a
+
+        self._assert_framesize_cross_platform((dummy12), 12)
+        self._assert_framesize_cross_platform((dummy13), 13)
+        self._assert_framesize_cross_platform((dummy18), 18)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 800)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 4)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # max(12, 18 + max(12, 13)) == 31
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy18.__code__) +
+            _testinternalcapi.get_co_framesize(dummy13.__code__)
+        )
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_checks_several_calls_different_order(self):
+        # same as `several_calls` but with top-level calls reversed
+        def dummy12(x):
+            return x + 3
+        def dummy13(y):
+            z = y + 2
+            return y, z
+        def dummy18(y):
+            z = dummy12(y)
+            x, w = dummy13(z)
+            return z, x, w
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                c, d, e = dummy18(2)
+                b = dummy12(5)
+                a += b + c + d + e
+            return a
+
+        self._assert_framesize_cross_platform((dummy12), 12)
+        self._assert_framesize_cross_platform((dummy13), 13)
+        self._assert_framesize_cross_platform((dummy18), 18)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 800)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 4)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        # max(18 + max(12, 13), 12) == 31
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy18.__code__) +
+            _testinternalcapi.get_co_framesize(dummy13.__code__)
+        )
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
+    def test_combine_stack_space_complex(self):
+        def dummy0(x):
+            return x
+        def dummy1(x):
+            return dummy0(x)
+        def dummy2(x):
+            return dummy1(x)
+        def dummy3(x):
+            return dummy0(x)
+        def dummy4(x):
+            y = dummy0(x)
+            return dummy3(y)
+        def dummy5(x):
+            return dummy2(x)
+        def dummy6(x):
+            y = dummy5(x)
+            z = dummy0(y)
+            return dummy4(z)
+        def testfunc(n):
+            a = 0;
+            for _ in range(32):
+                b = dummy5(1)
+                c = dummy0(1)
+                d = dummy6(1)
+                a += b + c + d
+            return a
+
+        self._assert_framesize_cross_platform(dummy0, 11)
+        self._assert_framesize_cross_platform(dummy1, 14)
+        self._assert_framesize_cross_platform(dummy2, 14)
+        self._assert_framesize_cross_platform(dummy3, 14)
+        self._assert_framesize_cross_platform(dummy4, 16)
+        self._assert_framesize_cross_platform(dummy5, 14)
+        self._assert_framesize_cross_platform(dummy6, 18)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 96)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 15)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 15)
+
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy6.__code__) +
+            _testinternalcapi.get_co_framesize(dummy5.__code__) +
+            _testinternalcapi.get_co_framesize(dummy2.__code__) +
+            _testinternalcapi.get_co_framesize(dummy1.__code__) +
+            _testinternalcapi.get_co_framesize(dummy0.__code__)
+        )
+        self.assertIn(
+            ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
+        )
+
+    def test_combine_stack_space_checks_large_framesize(self):
+        # Create a function with a large framesize. This ensures _CHECK_STACK_SPACE is
+        # actually doing its job. Note that the resulting trace hits
+        # UOP_MAX_TRACE_LENGTH, but since all _CHECK_STACK_SPACEs happen early, this
+        # test is still meaningful.
+        repetitions = 10000
+        ns = {}
+        header = """
+            def dummy_large(a0):
+        """
+        body = "".join([f"""
+                a{n+1} = a{n} + 1
+        """ for n in range(repetitions)])
+        return_ = f"""
+                return a{repetitions-1}
+        """
+        exec(textwrap.dedent(header + body + return_), ns, ns)
+        dummy_large = ns['dummy_large']
+
+        # this is something like:
+        #
+        # def dummy_large(a0):
+        #     a1 = a0 + 1
+        #     a2 = a1 + 1
+        #     ....
+        #     a99999 = a99998 + 1
+        #     return a99999
+
+        def dummy15(z):
+            y = dummy_large(z)
+            return y + 3
+
+        def testfunc(n):
+            b = 0
+            for _ in range(n):
+                b += dummy15(7)
+            return b
+
+        self._assert_framesize_cross_platform((dummy_large), repetitions + 12)
+        self._assert_framesize_cross_platform((dummy15), 15)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 32 * (repetitions + 9))
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+
+        # this hits a different case during trace projection in refcount test runs only,
+        # so we need to account for both possibilities
+        self.assertIn(uop_names.count("_CHECK_STACK_SPACE"), [0, 1])
+        if uop_names.count("_CHECK_STACK_SPACE") == 0:
+            largest_stack = (
+                _testinternalcapi.get_co_framesize(dummy15.__code__) +
+                _testinternalcapi.get_co_framesize(dummy_large.__code__)
+            )
+            self.assertIn(
+                ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
+            )
+        else:
+            largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
+        self.assertIn(
+            ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
+        )
+
+    def test_combine_stack_space_checks_recursion(self):
+        def dummy15(x):
+            while x > 0:
+                return dummy15(x - 1)
+            return 42
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a += dummy15(n)
+            return a
+
+        self._assert_framesize_cross_platform((dummy15), 15)
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 42 * 32)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
+        self.assertEqual(uop_names.count("_POP_FRAME"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__) * 2
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+
     def test_many_nested(self):
         # overflow the trace_stack
         def dummy_a(x):
@@ -970,14 +1271,42 @@ class TestUopsOptimization(unittest.TestCase):
             return dummy_f(x)
         def dummy_h(x):
             return dummy_g(x)
+        def dummy_i(x):
+            return dummy_h(x)
+        def dummy_j(x):
+            return dummy_i(x)
+        def dummy_k(x):
+            return dummy_j(x)
+        def dummy_l(x):
+            return dummy_k(x)
         def testfunc(n):
             a = 0
             for _ in range(n):
-                a += dummy_h(n)
+                a += dummy_l(n)
             return a
 
-        self._run_with_optimizer(testfunc, 32)
+        self._assert_framesize_cross_platform((dummy_l), 14)
 
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertEqual(res, 32 * 32)
+        self.assertIsNotNone(ex)
+
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uop_names = [uop[0] for uop in uops_and_operands]
+        self.assertEqual(uop_names.count("_PUSH_FRAME"), 6)
+        # we run out of trace stack depth before emitting any _POP_FRAMEs
+        self.assertEqual(uop_names.count("_POP_FRAME"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
+        largest_stack = (
+            _testinternalcapi.get_co_framesize(dummy_l.__code__) +
+            _testinternalcapi.get_co_framesize(dummy_k.__code__) +
+            _testinternalcapi.get_co_framesize(dummy_j.__code__) +
+            _testinternalcapi.get_co_framesize(dummy_i.__code__) +
+            _testinternalcapi.get_co_framesize(dummy_h.__code__) +
+            _testinternalcapi.get_co_framesize(dummy_g.__code__)
+        )
+        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
 
 if __name__ == "__main__":
     unittest.main()
