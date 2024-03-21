@@ -1,5 +1,4 @@
-"""Simplified function-based API for importlib.resources
-"""
+"""Simplified function-based API for importlib.resources"""
 
 import warnings
 
@@ -7,6 +6,7 @@ from ._common import files, as_file
 
 
 _MISSING = object()
+
 
 def open_binary(anchor, *path_names):
     """Open for binary reading the *resource* within *package*."""

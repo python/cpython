@@ -20,7 +20,7 @@ class ModuleAnchorMixin:
     from . import data02 as anchor02
 
 
-class FunctionalAPIBase():
+class FunctionalAPIBase:
     def _gen_resourcetxt_path_parts(self):
         """Yield various names of a text file in anchor02, each in a subTest
         """
@@ -72,7 +72,7 @@ class FunctionalAPIBase():
             ),
             'Hello, UTF-16 world!\n'.encode('utf-16').decode(
                 errors='backslashreplace',
-            )
+            ),
         )
 
     def test_read_binary(self):
@@ -116,7 +116,7 @@ class FunctionalAPIBase():
                 f.read(),
                 'Hello, UTF-16 world!\n'.encode('utf-16').decode(
                     errors='backslashreplace',
-                )
+                ),
             )
 
     def test_open_binary(self):
