@@ -1722,7 +1722,23 @@ SyntaxError: 'not' after an operator must be parenthesized
 Traceback (most recent call last):
 SyntaxError: 'not' after an operator must be parenthesized
 
->>> 3 ~ not 3
+>>> + not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> - not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> ~ not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 3 + - not 3
+Traceback (most recent call last):
+SyntaxError: 'not' after an operator must be parenthesized
+
+>>> 3 + not -1
 Traceback (most recent call last):
 SyntaxError: 'not' after an operator must be parenthesized
 
@@ -1732,6 +1748,10 @@ Traceback (most recent call last):
 SyntaxError: invalid syntax
 
 >>> not 1 +
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> not + 1 +
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
