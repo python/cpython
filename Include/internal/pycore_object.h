@@ -716,6 +716,8 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 // Export for the stable ABI.
 PyAPI_DATA(int) _Py_SwappedOp[];
 
+extern void _Py_GetConstant_Init(void);
+
 #ifdef __cplusplus
 }
 #endif

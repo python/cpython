@@ -6,6 +6,55 @@ Object Protocol
 ===============
 
 
+.. c:function:: PyObject* Py_GetConstant(unsigned int constant_id)
+
+   Get a :term:`strong reference` to a constant.
+
+   Set an exception and return ``NULL`` if *constant_id* is invalid.
+
+   *constant_id* must be one of these constant identifiers:
+
+   .. c:namespace:: NULL
+
+   ========================================  =====  =========================
+   Constant Identifier                       Value  Returned object
+   ========================================  =====  =========================
+   .. c:macro:: Py_CONSTANT_NONE             ``0``  :py:data:`None`
+   .. c:macro:: Py_CONSTANT_FALSE            ``1``  :py:data:`False`
+   .. c:macro:: Py_CONSTANT_TRUE             ``2``  :py:data:`True`
+   .. c:macro:: Py_CONSTANT_ELLIPSIS         ``3``  :py:data:`Ellipsis`
+   .. c:macro:: Py_CONSTANT_NOT_IMPLEMENTED  ``4``  :py:data:`NotImplemented`
+   .. c:macro:: Py_CONSTANT_ZERO             ``5``  ``0``
+   .. c:macro:: Py_CONSTANT_ONE              ``6``  ``1``
+   .. c:macro:: Py_CONSTANT_EMPTY_STR        ``7``  ``''``
+   .. c:macro:: Py_CONSTANT_EMPTY_BYTES      ``8``  ``b''``
+   .. c:macro:: Py_CONSTANT_EMPTY_TUPLE      ``9``  ``()``
+   ========================================  =====  =========================
+
+   Numeric values are only given for projects which cannot use the constant
+   identifiers.
+
+
+   .. versionadded:: 3.13
+
+   .. impl-detail::
+
+      In CPython, all of these constants are :term:`immortal`.
+
+
+.. c:function:: PyObject* Py_GetConstantBorrowed(unsigned int constant_id)
+
+   Similar to :c:func:`Py_GetConstant`, but return a :term:`borrowed
+   reference`.
+
+   This function is primarily intended for backwards compatibility:
+   using :c:func:`Py_GetConstant` is recommended for new code.
+
+   The reference is borrowed from the interpreter, and is valid until the
+   interpreter finalization.
+   .. versionadded:: 3.13
+
+
 .. c:var:: PyObject* Py_NotImplemented
 
    The ``NotImplemented`` singleton, used to signal that an operation is
