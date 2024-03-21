@@ -1445,6 +1445,9 @@ class EventLoopTestsMixin:
             protocol_1.wait_for_datagram_received()
         ), b'd')
 
+        transport_1.close()
+        transport_2.close()
+
     def test_internal_fds(self):
         loop = self.create_event_loop()
         if not isinstance(loop, selector_events.BaseSelectorEventLoop):
