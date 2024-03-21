@@ -94,6 +94,7 @@ typedef struct _gc_stats {
     uint64_t collections;
     uint64_t object_visits;
     uint64_t objects_collected;
+    uint64_t objects_queued;
 } GCStats;
 
 typedef struct _uop_stats {
