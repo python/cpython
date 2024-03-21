@@ -223,6 +223,14 @@ the Python configuration.
 
    Return ``1`` or ``0`` depending on whether *ch* is a titlecase character.
 
+.. c:function:: int Py_UNICODE_ISCASED(Py_UCS4 ch)
+
+   Return ``1`` or ``0`` depending on whether *ch* is a cased character.
+
+.. c:function:: int Py_UNICODE_ISCASEIGNORABLE(Py_UCS4 ch)
+
+   Return ``1`` or ``0`` depending on whether *ch* is a case-ignorable character.
+
 
 .. c:function:: int Py_UNICODE_ISLINEBREAK(Py_UCS4 ch)
 
@@ -322,6 +330,26 @@ These APIs can be used to work with surrogates:
    surrogate pair. *high* must be in the range [0xD800; 0xDBFF] and *low* must
    be in the range [0xDC00; 0xDFFF].
 
+.. c:function:: Py_ssize_t PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *buffer, \
+                                             Py_ssize_t size)
+
+   Convert *ch* to lower case, store result in *buffer*, which should be
+   able to hold *size* characters, and return the number of characters stored.
+   If the buffer is not big enough, return -1.
+
+.. c:function:: Py_ssize_t PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer, \
+                                             Py_ssize_t size)
+
+   Convert *ch* to upper case, store result in *buffer*, which should be
+   able to hold *size* characters, and return the number of characters stored.
+   If the buffer is not big enough, return -1.
+
+.. c:function:: Py_ssize_t PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer, \
+                                             Py_ssize_t size)
+
+   Convert *ch* to title case, store result in *buffer*, which should be
+   able to hold *size* characters, and return the number of characters stored.
+   If the buffer is not big enough, return -1.
 
 Creating and accessing Unicode strings
 """"""""""""""""""""""""""""""""""""""
