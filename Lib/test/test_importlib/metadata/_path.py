@@ -17,20 +17,15 @@ FilesSpec = Dict[str, Union[str, bytes, Symlink, 'FilesSpec']]  # type: ignore
 
 @runtime_checkable
 class TreeMaker(Protocol):
-    def __truediv__(self, *args, **kwargs):
-        ...  # pragma: no cover
+    def __truediv__(self, *args, **kwargs): ...  # pragma: no cover
 
-    def mkdir(self, **kwargs):
-        ...  # pragma: no cover
+    def mkdir(self, **kwargs): ...  # pragma: no cover
 
-    def write_text(self, content, **kwargs):
-        ...  # pragma: no cover
+    def write_text(self, content, **kwargs): ...  # pragma: no cover
 
-    def write_bytes(self, content):
-        ...  # pragma: no cover
+    def write_bytes(self, content): ...  # pragma: no cover
 
-    def symlink_to(self, target):
-        ...  # pragma: no cover
+    def symlink_to(self, target): ...  # pragma: no cover
 
 
 def _ensure_tree_maker(obj: Union[str, TreeMaker]) -> TreeMaker:

@@ -2356,6 +2356,11 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/import_ \
 		test/test_importlib/metadata \
 		test/test_importlib/metadata/data \
+		test/test_importlib/metadata/data/sources \
+		test/test_importlib/metadata/data/sources/example \
+		test/test_importlib/metadata/data/sources/example/example \
+		test/test_importlib/metadata/data/sources/example2 \
+		test/test_importlib/metadata/data/sources/example2/example2 \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
