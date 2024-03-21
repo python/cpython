@@ -21,6 +21,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_new_const _Py_uop_sym_new_const
 #define sym_new_null _Py_uop_sym_new_null
 #define sym_matches_type _Py_uop_sym_matches_type
+#define sym_has_type _Py_uop_sym_has_type
 #define sym_set_null _Py_uop_sym_set_null
 #define sym_set_non_null _Py_uop_sym_set_non_null
 #define sym_set_type _Py_uop_sym_set_type
@@ -36,6 +37,8 @@ optimize_to_bool(
     _Py_UopsSymbol *value,
     _Py_UopsSymbol **result_ptr);
 
+extern void
+eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
 
 static int
 dummy_func(void) {
@@ -348,6 +351,47 @@ dummy_func(void) {
         }
     }
 
+    op(_COMPARE_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        if (oparg & 16) {
+            OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+        }
+        else {
+            OUT_OF_SPACE_IF_NULL(res = _Py_uop_sym_new_not_null(ctx));
+        }
+    }
+
+    op(_COMPARE_OP_INT, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_COMPARE_OP_FLOAT, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_COMPARE_OP_STR, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_IS_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
+    op(_CONTAINS_OP, (left, right -- res)) {
+        (void)left;
+        (void)right;
+        OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyBool_Type));
+    }
+
     op(_LOAD_CONST, (-- value)) {
         // There should be no LOAD_CONST. It should be all
         // replaced by peephole_opt.
@@ -402,6 +446,14 @@ dummy_func(void) {
                     this_instr->opcode = _NOP;
                 }
             }
+        }
+    }
+
+    op(_LOAD_ATTR, (owner -- attr, self_or_null if (oparg & 1))) {
+        (void)owner;
+        OUT_OF_SPACE_IF_NULL(attr = sym_new_not_null(ctx));
+        if (oparg & 1) {
+            OUT_OF_SPACE_IF_NULL(self_or_null = sym_new_unknown(ctx));
         }
     }
 
@@ -469,7 +521,6 @@ dummy_func(void) {
         OUT_OF_SPACE_IF_NULL(self = sym_new_not_null(ctx));
     }
 
-
     op(_CHECK_FUNCTION_EXACT_ARGS, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
         if (!sym_set_type(callable, &PyFunction_Type)) {
             goto hit_bottom;
@@ -493,8 +544,11 @@ dummy_func(void) {
         (void)callable;
 
         PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
+        DPRINTF(3, "func: %p ", func);
         if (func == NULL) {
-            goto error;
+            DPRINTF(3, "\n");
+            DPRINTF(1, "Missing function\n");
+            goto done;
         }
         PyCodeObject *co = (PyCodeObject *)func->func_code;
 
@@ -557,7 +611,45 @@ dummy_func(void) {
        (void)iter;
     }
 
+    op(_GUARD_IS_TRUE_POP, (flag -- )) {
+        if (sym_is_const(flag)) {
+            PyObject *value = sym_get_const(flag);
+            assert(value != NULL);
+            eliminate_pop_guard(this_instr, value != Py_True);
+        }
+    }
 
+    op(_GUARD_IS_FALSE_POP, (flag -- )) {
+        if (sym_is_const(flag)) {
+            PyObject *value = sym_get_const(flag);
+            assert(value != NULL);
+            eliminate_pop_guard(this_instr, value != Py_False);
+        }
+    }
+
+    op(_GUARD_IS_NONE_POP, (flag -- )) {
+        if (sym_is_const(flag)) {
+            PyObject *value = sym_get_const(flag);
+            assert(value != NULL);
+            eliminate_pop_guard(this_instr, !Py_IsNone(value));
+        }
+        else if (sym_has_type(flag)) {
+            assert(!sym_matches_type(flag, &_PyNone_Type));
+            eliminate_pop_guard(this_instr, true);
+        }
+    }
+
+    op(_GUARD_IS_NOT_NONE_POP, (flag -- )) {
+        if (sym_is_const(flag)) {
+            PyObject *value = sym_get_const(flag);
+            assert(value != NULL);
+            eliminate_pop_guard(this_instr, Py_IsNone(value));
+        }
+        else if (sym_has_type(flag)) {
+            assert(!sym_matches_type(flag, &_PyNone_Type));
+            eliminate_pop_guard(this_instr, false);
+        }
+    }
 
 
 // END BYTECODES //

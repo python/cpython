@@ -6,7 +6,6 @@
 #endif
 
 #include "Python.h"
-#include "interpreteridobject.h"
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 
@@ -17,7 +16,11 @@
 #include <sched.h>          // sched_yield()
 #endif
 
+#define REGISTERS_HEAP_TYPES
+#define RETURNS_INTERPID_OBJECT
 #include "_interpreters_common.h"
+#undef RETURNS_INTERPID_OBJECT
+#undef REGISTERS_HEAP_TYPES
 
 
 /*
@@ -281,17 +284,17 @@ clear_xid_types(module_state *state)
 {
     /* external types */
     if (state->send_channel_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
+        (void)clear_xid_class(state->send_channel_type);
         Py_CLEAR(state->send_channel_type);
     }
     if (state->recv_channel_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->recv_channel_type);
+        (void)clear_xid_class(state->recv_channel_type);
         Py_CLEAR(state->recv_channel_type);
     }
 
     /* heap types */
     if (state->ChannelIDType != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
+        (void)clear_xid_class(state->ChannelIDType);
         Py_CLEAR(state->ChannelIDType);
     }
 }
@@ -2677,11 +2680,11 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
 
     // Clear the old values if the .py module was reloaded.
     if (state->send_channel_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
+        (void)clear_xid_class(state->send_channel_type);
         Py_CLEAR(state->send_channel_type);
     }
     if (state->recv_channel_type != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->recv_channel_type);
+        (void)clear_xid_class(state->recv_channel_type);
         Py_CLEAR(state->recv_channel_type);
     }
 
@@ -2694,7 +2697,7 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
         return -1;
     }
     if (ensure_xid_class(recv, _channelend_shared) < 0) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->send_channel_type);
+        (void)clear_xid_class(state->send_channel_type);
         Py_CLEAR(state->send_channel_type);
         Py_CLEAR(state->recv_channel_type);
         return -1;
@@ -2906,7 +2909,7 @@ channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            interpid_obj = PyInterpreterState_GetIDObject(interp);
+            interpid_obj = get_interpid_obj(interp);
             if (interpid_obj == NULL) {
                 goto except;
             }

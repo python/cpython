@@ -279,12 +279,19 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~object.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
          the exact value is unimportant you may use :class:`auto` instances and an
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
+
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
 
    .. attribute:: Enum._name_
 
