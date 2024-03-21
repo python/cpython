@@ -1911,6 +1911,9 @@ Py_FinalizeEx(void)
     int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
 
+    /* Ensure that remaining threads are detached */
+    _PyEval_StopTheWorldAll(runtime);
+
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);

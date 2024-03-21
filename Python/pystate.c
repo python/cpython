@@ -1692,6 +1692,10 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     _PyRuntimeState *runtime = interp->runtime;
 
+#ifdef Py_GIL_DISABLED
+    assert(runtime->stoptheworld.world_stopped);
+#endif
+
     HEAD_LOCK(runtime);
     /* Remove all thread states, except tstate, from the linked list of
        thread states.  This will allow calling PyThreadState_Clear()
@@ -1709,6 +1713,8 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     tstate->prev = tstate->next = NULL;
     interp->threads.head = tstate;
     HEAD_UNLOCK(runtime);
+
+    _PyEval_StartTheWorldAll(runtime);
 
     /* Clear and deallocate all stale thread states.  Even if this
        executes Python code, we should be safe since it executes
