@@ -2351,10 +2351,16 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/unwritable \
 		test/test_importlib \
 		test/test_importlib/builtin \
-		test/test_importlib/data \
 		test/test_importlib/extension \
 		test/test_importlib/frozen \
 		test/test_importlib/import_ \
+		test/test_importlib/metadata \
+		test/test_importlib/metadata/data \
+		test/test_importlib/metadata/data/sources \
+		test/test_importlib/metadata/data/sources/example \
+		test/test_importlib/metadata/data/sources/example/example \
+		test/test_importlib/metadata/data/sources/example2 \
+		test/test_importlib/metadata/data/sources/example2/example2 \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
