@@ -3095,6 +3095,33 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+function_get_closure(PyObject *self, PyObject *func)
+{
+    PyObject *closure = PyFunction_GetClosure(func);
+    if (closure != NULL) {
+        return Py_NewRef(closure);
+    } else if (PyErr_Occurred()) {
+        return NULL;
+    } else {
+        Py_RETURN_NONE;  // This can happen when `closure` is set to `None`
+    }
+}
+
+static PyObject *
+function_set_closure(PyObject *self, PyObject *args)
+{
+    PyObject *func = NULL, *closure = NULL;
+    if (!PyArg_ParseTuple(args, "OO", &func, &closure)) {
+        return NULL;
+    }
+    int result = PyFunction_SetClosure(func, closure);
+    if (result == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
     const char *name;
@@ -3379,6 +3406,8 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
+    {"function_get_closure", function_get_closure, METH_O, NULL},
+    {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {NULL, NULL} /* sentinel */
@@ -3946,6 +3975,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    PyModule_AddObject(m, "SIZEOF_PID_T", PyLong_FromSsize_t(sizeof(pid_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
