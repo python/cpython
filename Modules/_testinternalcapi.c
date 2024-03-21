@@ -23,10 +23,12 @@
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
+#include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pylifecycle.h"   // _PyInterpreterState_ResolveConfig()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -829,6 +831,7 @@ _testinternalcapi_assemble_code_object_impl(PyObject *module,
 }
 
 
+// Maybe this could be replaced by get_interpreter_config()?
 static PyObject *
 get_interp_settings(PyObject *self, PyObject *args)
 {
@@ -1376,6 +1379,91 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+get_interpreter_config(PyObject *self, PyObject *args)
+{
+    PyObject *idobj = NULL;
+    if (!PyArg_ParseTuple(args, "|O:get_interpreter_config", &idobj)) {
+        return NULL;
+    }
+
+    PyInterpreterState *interp;
+    if (idobj == NULL) {
+        interp = PyInterpreterState_Get();
+    }
+    else {
+        interp = _PyInterpreterState_LookUpIDObject(idobj);
+        if (interp == NULL) {
+            return NULL;
+        }
+    }
+
+    PyInterpreterConfig config;
+    if (_PyInterpreterState_ResolveConfig(interp, &config) < 0) {
+        return NULL;
+    }
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+static PyObject *
+new_interpreter_config(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    const char *initialized = NULL;
+    PyObject *overrides = NULL;
+    static char *kwlist[] = {"initialized", "overrides", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "|sO:new_interpreter_config", kwlist,
+                    &initialized, &overrides))
+    {
+        return NULL;
+    }
+    if (initialized == NULL
+            || strcmp(initialized, "") == 0
+            || strcmp(initialized, "default") == 0)
+    {
+        initialized = "isolated";
+    }
+
+    PyInterpreterConfig config;
+    if (strcmp(initialized, "isolated") == 0) {
+        config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+    }
+    else if (strcmp(initialized, "legacy") == 0) {
+        config = (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+    }
+    else if (strcmp(initialized, "empty") == 0) {
+        config = (PyInterpreterConfig){0};
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported initialized arg '%s'", initialized);
+        return NULL;
+    }
+
+    if (overrides != NULL) {
+        if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
+            return NULL;
+        }
+    }
+
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+
 /* To run some code in a sub-interpreter. */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1858,6 +1946,9 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"get_interpreter_config",  get_interpreter_config,          METH_VARARGS},
+    {"new_interpreter_config", _PyCFunction_CAST(new_interpreter_config),
+     METH_VARARGS | METH_KEYWORDS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},

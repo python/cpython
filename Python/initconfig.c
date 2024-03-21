@@ -3474,7 +3474,7 @@ _PyInterpreterConfig_FromDict(PyObject *dict, PyInterpreterConfig *config)
 }
 
 int
-_PyInterpreterConfig_UpdateFromDict(PyObject *dict, PyInterpreterConfig *config)
+_PyInterpreterConfig_UpdateFromDict(PyInterpreterConfig *config, PyObject *dict)
 {
     if (!PyDict_Check(dict)) {
         PyErr_SetString(PyExc_TypeError, "dict expected");

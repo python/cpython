@@ -119,14 +119,17 @@ int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCo
 
 /* interpreter config */
 
-extern int _PyInterpreterState_ResolveConfig(
+// Export for _testinternalcapi shared extension
+PyAPI_FUNC(int) _PyInterpreterState_ResolveConfig(
     PyInterpreterState *,
     PyInterpreterConfig *);
-extern PyObject * _PyInterpreterConfig_AsDict(PyInterpreterConfig *);
-extern int _PyInterpreterConfig_FromDict(PyObject *, PyInterpreterConfig *);
-extern int _PyInterpreterConfig_UpdateFromDict(
+PyAPI_FUNC(PyObject *) _PyInterpreterConfig_AsDict(PyInterpreterConfig *);
+PyAPI_FUNC(int) _PyInterpreterConfig_FromDict(
     PyObject *,
     PyInterpreterConfig *);
+PyAPI_FUNC(int) _PyInterpreterConfig_UpdateFromDict(
+    PyInterpreterConfig *,
+    PyObject *);
 
 
 #ifdef __cplusplus
