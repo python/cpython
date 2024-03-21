@@ -5952,7 +5952,8 @@ class TestExitOnError(TestCase):
 
     def setUp(self):
         self.parser = argparse.ArgumentParser(exit_on_error=False)
-        self.parser.add_argument('--integers', metavar='N', type=int)
+        self.parser.add_argument(
+            '--integers', metavar='N', type=int, required=True)
 
     def test_exit_on_error_with_good_args(self):
         ns = self.parser.parse_args('--integers 4'.split())
@@ -5961,6 +5962,28 @@ class TestExitOnError(TestCase):
     def test_exit_on_error_with_bad_args(self):
         with self.assertRaises(argparse.ArgumentError):
             self.parser.parse_args('--integers a'.split())
+
+    def test_exit_on_error_missing_required_arg(self):
+        msg = 'the following arguments are required: --integers'
+        with self.assertRaisesRegex(argparse.ArgumentError, msg):
+            self.parser.parse_args([])
+
+    def test_exit_on_error_unknown_arg(self):
+        msg = 'unrecognized arguments: --unknown'
+        with self.assertRaisesRegex(argparse.ArgumentError, msg):
+            self.parser.parse_args('--integers 4 --unknown'.split())
+        with self.assertRaisesRegex(argparse.ArgumentError, msg.replace('--', '')):
+            self.parser.parse_intermixed_args('--integers 4 unknown'.split())
+
+    def test_exit_on_error_mutually_exclusive_group(self):
+        other_parser = argparse.ArgumentParser(exit_on_error=False)
+        group = other_parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('--up', action='store_true')
+        group.add_argument('--down', action='store_true')
+
+        msg = 'one of the arguments --up --down is required'
+        with self.assertRaisesRegex(argparse.ArgumentError, msg):
+            other_parser.parse_args([])
 
 
 def tearDownModule():

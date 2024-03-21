@@ -1,0 +1,2 @@
+The :attr:`exit_on_error` attribute of :class:`argparse.ArgumentParser` did
+not always avoid exiting when set to False.

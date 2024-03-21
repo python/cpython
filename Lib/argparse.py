@@ -1916,6 +1916,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         args, argv = self.parse_known_args(args, namespace)
         if argv:
             msg = _('unrecognized arguments: %s')
+            if not self.exit_on_error:
+                raise ArgumentError(
+                    None,
+                    msg % ' '.join(argv)
+                )
             self.error(msg % ' '.join(argv))
         return args
 
@@ -2205,8 +2210,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                                 self._get_value(action, action.default))
 
         if required_actions:
-            self.error(_('the following arguments are required: %s') %
-                       ', '.join(required_actions))
+            raise ArgumentError(
+                None,
+                _('the following arguments are required: %s') %
+                ', '.join(required_actions)
+            )
 
         # make sure all required groups had one option present
         for group in self._mutually_exclusive_groups:
@@ -2221,7 +2229,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                              for action in group._group_actions
                              if action.help is not SUPPRESS]
                     msg = _('one of the arguments %s is required')
-                    self.error(msg % ' '.join(names))
+                    raise ArgumentError(
+                        None,
+                        msg % ' '.join(names)
+                    )
 
         # return the updated namespace and the extra arguments
         return namespace, extras
@@ -2446,7 +2457,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         args, argv = self.parse_known_intermixed_args(args, namespace)
         if argv:
             msg = _('unrecognized arguments: %s')
-            self.error(msg % ' '.join(argv))
+            formatted_msg = msg % ' '.join(argv)
+            if self.exit_on_error:
+                self.error(formatted_msg)
+            raise ArgumentError(None, formatted_msg)
         return args
 
     def parse_known_intermixed_args(self, args=None, namespace=None):
