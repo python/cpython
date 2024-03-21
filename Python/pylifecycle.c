@@ -687,6 +687,10 @@ pycore_init_global_objects(PyInterpreterState *interp)
 
     _PyUnicode_InitState(interp);
 
+    if (_Py_IsMainInterpreter(interp)) {
+        _Py_GetConstant_Init();
+    }
+
     return _PyStatus_OK();
 }
 
