@@ -126,8 +126,8 @@ def _getuserbase():
     if env_base:
         return env_base
 
-    # iOS, tvOS, watchOS, Emscripten, VxWorks, and WASI have no home directories
-    if sys.platform in {"ios", "emscripten", "tvos", "vxworks", "wasi", "watchos"}:
+    # Emscripten, iOS, tvOS, VxWorks, WASI, and watchOS have no home directories
+    if sys.platform in {"emscripten", "ios", "tvos", "vxworks", "wasi", "watchos"}:
         return None
 
     def joinuser(*args):

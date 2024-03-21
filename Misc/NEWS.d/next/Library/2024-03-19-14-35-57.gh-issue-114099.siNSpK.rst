@@ -1,1 +1,1 @@
-Standard library was modified to allow for iOS platform differences.
+Modify standard library to allow for iOS platform differences.

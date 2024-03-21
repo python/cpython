@@ -189,7 +189,7 @@ Notes:
    Skipstone, Iceape, and Firefox versions 35 and below.
 
 .. versionchanged:: 3.13
-   Support for iOS was added.
+   Support for iOS has been added.
 
 Here are some simple examples::
 

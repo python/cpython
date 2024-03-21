@@ -29,7 +29,7 @@ def get_platform_ios():
 
     # We can't use ctypes; abort
     if not objc:
-        return
+        return None
 
     # Most of the methods return ObjC objects
     objc.objc_msgSend.restype = c_void_p
