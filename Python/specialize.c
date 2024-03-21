@@ -247,6 +247,8 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization optimizer successes: %" PRIu64 "\n", stats->optimizer_successes);
     fprintf(out, "Optimization optimizer failure no memory: %" PRIu64 "\n",
             stats->optimizer_failure_reason_no_memory);
+    fprintf(out, "Optimizer remove globals builtins changed: %" PRIu64 "\n", stats->remove_globals_builtins_changed);
+    fprintf(out, "Optimizer remove globals incorrect keys: %" PRIu64 "\n", stats->remove_globals_incorrect_keys);
 
     const char* const* names;
     for (int i = 0; i <= MAX_UOP_ID; i++) {
@@ -265,6 +267,17 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
                 "unsupported_opcode[%s].count : %" PRIu64 "\n",
                 _PyOpcode_OpName[i],
                 stats->unsupported_opcode[i]
+            );
+        }
+    }
+
+    for (int i = 0; i < MAX_UOP_ID; i++) {
+        if (stats->error_in_opcode[i]) {
+            fprintf(
+                out,
+                "error_in_opcode[%s].count : %" PRIu64 "\n",
+                _PyUOpName(i),
+                stats->error_in_opcode[i]
             );
         }
     }

@@ -513,6 +513,8 @@ class Stats:
         attempts = self._data["Optimization optimizer attempts"]
         successes = self._data["Optimization optimizer successes"]
         no_memory = self._data["Optimization optimizer failure no memory"]
+        builtins_changed = self._data["Optimizer remove globals builtins changed"]
+        incorrect_keys = self._data["Optimizer remove globals incorrect keys"]
 
         return {
             Doc(
@@ -527,6 +529,14 @@ class Stats:
                 "Optimizer no memory",
                 "The number of optimizations that failed due to no memory.",
             ): (no_memory, attempts),
+            Doc(
+                "Remove globals builtins changed",
+                "The builtins changed during optimization",
+            ): (builtins_changed, attempts),
+            Doc(
+                "Remove globals incorrect keys",
+                "The keys in the globals dictionary aren't what was expected",
+            ): (incorrect_keys, attempts),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -1177,6 +1187,17 @@ def optimization_section() -> Section:
             reverse=True,
         )
 
+    def calc_error_in_opcodes_table(stats: Stats) -> Rows:
+        error_in_opcodes = stats.get_opcode_stats("error_in_opcode")
+        return sorted(
+            [
+                (opcode, Count(count))
+                for opcode, count in error_in_opcodes.get_opcode_counts().items()
+            ],
+            key=itemgetter(1),
+            reverse=True,
+        )
+
     def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None):
         if not base_stats.get_optimization_stats() or (
             head_stats is not None and not head_stats.get_optimization_stats()
@@ -1222,6 +1243,11 @@ def optimization_section() -> Section:
                     JoinMode.CHANGE,
                 )
             ],
+        )
+        yield Section(
+            "Optimizer errored out with opcode",
+            "Optimization stopped after encountering this opcode",
+            [Table(("Opcode", "Count:"), calc_error_in_opcodes_table, JoinMode.CHANGE)],
         )
 
     return Section(
