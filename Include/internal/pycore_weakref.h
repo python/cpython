@@ -8,16 +8,25 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_lock.h"
 #include "pycore_object.h"           // _Py_REF_IS_MERGED()
 
 #ifdef Py_GIL_DISABLED
+
 typedef struct _PyWeakRefClearState {
+    // Protects the weakref's wr_object and wr_callback.
+    // Protects the cleared flag below.
     PyMutex mutex;
-    _PyOnceFlag once;
+
+    // Set if the weakref has been cleared.
     int cleared;
+
     Py_ssize_t refcount;
 } _PyWeakRefClearState;
+
+#define WEAKREF_LIST_LOCK(obj) _PyInterpreterState_GET()->weakref_locks[((uintptr_t) obj) % NUM_WEAKREF_LIST_LOCKS]
+
 #endif
 
 static inline int _is_dead(PyObject *obj)
@@ -36,23 +45,12 @@ static inline int _is_dead(PyObject *obj)
 #endif
 }
 
-#if defined(Py_GIL_DISABLED)
-#    define LOCK_WR_OBJECT(weakref) PyMutex_Lock(&(weakref)->clear_state->mutex);
-#    define UNLOCK_WR_OBJECT(weakref) PyMutex_Unlock(&(weakref)->clear_state->mutex);
-#else
-#    define LOCK_WR_OBJECT(weakref)
-#    define UNLOCK_WR_OBJECT(weakref)
-#endif
-
-// NB: In free-threaded builds nothing between the LOCK/UNLOCK calls below can
-// suspend.
-
 static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
 {
     assert(PyWeakref_Check(ref_obj));
     PyObject *ret = NULL;
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
-    LOCK_WR_OBJECT(ref)
+    Py_BEGIN_CRITICAL_SECTION_MU(ref->clear_state->mutex);
     PyObject *obj = ref->wr_object;
 
     if (obj == Py_None) {
@@ -68,7 +66,7 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
 #endif
     ret = Py_NewRef(obj);
 end:
-    UNLOCK_WR_OBJECT(ref);
+    Py_END_CRITICAL_SECTION();
     return ret;
 }
 
@@ -77,7 +75,7 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
     assert(PyWeakref_Check(ref_obj));
     int ret = 0;
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
-    LOCK_WR_OBJECT(ref);
+    Py_BEGIN_CRITICAL_SECTION_MU(ref->clear_state->mutex);
     PyObject *obj = ref->wr_object;
     if (obj == Py_None) {
         // clear_weakref() was called
@@ -87,13 +85,15 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
         // See _PyWeakref_GET_REF() for the rationale of this test
         ret = _is_dead(obj);
     }
-    UNLOCK_WR_OBJECT(ref);
+    Py_END_CRITICAL_SECTION();
     return ret;
 }
 
-// NB: In free-threaded builds the referenced object must be live for the
-// duration of the call.
+// NB: In free-threaded builds the weakref list lock for the referenced object
+// must be held around calls to this function.
 extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
+
+extern Py_ssize_t _PyWeakref_GetWeakrefCountThreadsafe(PyObject *obj);
 
 // Clear all the weak references to obj but leave their callbacks uncalled and
 // intact.

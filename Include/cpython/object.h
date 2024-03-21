@@ -465,13 +465,6 @@ PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
 /* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
 PyAPI_FUNC(int) _PyTrash_cond(PyObject *op, destructor dealloc);
 
-#ifdef Py_GIL_DISABLED
-
-/* Private API, used by weakrefs in free-threaded builds */
-PyAPI_FUNC(int) _PyTrash_contains(PyObject *op);
-
-#endif
-
 #define Py_TRASHCAN_BEGIN_CONDITION(op, cond) \
     do { \
         PyThreadState *_tstate = NULL; \

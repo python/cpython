@@ -30,9 +30,7 @@ _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         return 0;
     }
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
-    return count;
+    return _PyWeakref_GetWeakrefCountThreadsafe(object);
 }
 
 
@@ -94,7 +92,7 @@ _weakref_getweakrefs_impl(PyObject *module, PyObject *object)
     }
 
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
+    Py_ssize_t count = _PyWeakref_GetWeakrefCountThreadsafe(object);
 
     PyObject *result = PyList_New(count);
     if (result == NULL) {
@@ -103,7 +101,7 @@ _weakref_getweakrefs_impl(PyObject *module, PyObject *object)
 
 #ifdef Py_GIL_DISABLED
     Py_ssize_t num_added = 0;
-    Py_BEGIN_CRITICAL_SECTION(object);
+    Py_BEGIN_CRITICAL_SECTION_MU(WEAKREF_LIST_LOCK(object));
     PyWeakReference *current = *list;
     // Weakrefs may be added or removed since the count was computed.
     while (num_added < count && current != NULL) {

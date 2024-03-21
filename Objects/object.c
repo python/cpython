@@ -2835,25 +2835,6 @@ _PyTrash_cond(PyObject *op, destructor dealloc)
     return Py_TYPE(op)->tp_dealloc == dealloc;
 }
 
-#ifdef Py_GIL_DISABLED
-
-int
-_PyTrash_contains(PyObject *op)
-{
-     PyThreadState *tstate = _PyThreadState_GET();
-    struct _py_trashcan *trash = _PyTrash_get_state(tstate);
-    PyObject *cur = trash->delete_later;
-    while (cur) {
-        if (cur == op) {
-            return 1;
-        }
-        cur = (PyObject *) cur->ob_tid;
-    }
-    return 0;
-}
-
-#endif
-
 
 void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
