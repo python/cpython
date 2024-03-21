@@ -1,9 +1,6 @@
 """Simplified function-based API for importlib.resources
-
-
 """
 
-import os
 import warnings
 
 from ._common import files, as_file
