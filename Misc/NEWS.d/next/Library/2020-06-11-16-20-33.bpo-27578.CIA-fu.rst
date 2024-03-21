@@ -1,0 +1,3 @@
+:func:`inspect.getsource` (and related functions) work with
+empty module files, returning ``'\n'`` (or reasonable equivalent)
+instead of raising ``OSError``. Patch by Kernc.

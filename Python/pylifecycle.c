@@ -612,7 +612,7 @@ builtins_dict_watcher(PyDict_WatchEvent event, PyObject *dict, PyObject *key, Py
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->rare_events.builtin_dict < _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
-        _Py_Executors_InvalidateAll(interp);
+        _Py_Executors_InvalidateAll(interp, 1);
     }
     RARE_EVENT_INTERP_INC(interp, builtin_dict);
     return 0;
@@ -686,6 +686,10 @@ pycore_init_global_objects(PyInterpreterState *interp)
     }
 
     _PyUnicode_InitState(interp);
+
+    if (_Py_IsMainInterpreter(interp)) {
+        _Py_GetConstant_Init();
+    }
 
     return _PyStatus_OK();
 }
@@ -1628,7 +1632,7 @@ finalize_modules(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
 
     // Invalidate all executors and turn off tier 2 optimizer
-    _Py_Executors_InvalidateAll(interp);
+    _Py_Executors_InvalidateAll(interp, 0);
     _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
     Py_XDECREF(old);
 
@@ -1910,6 +1914,9 @@ Py_FinalizeEx(void)
 #ifdef WITH_PYMALLOC
     int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
+
+    /* Ensure that remaining threads are detached */
+    _PyEval_StopTheWorldAll(runtime);
 
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
@@ -3135,6 +3142,10 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
 void _Py_NO_RETURN
 Py_Exit(int sts)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
+        _PyInterpreterState_SetNotRunningMain(tstate->interp);
+    }
     if (Py_FinalizeEx() < 0) {
         sts = 120;
     }

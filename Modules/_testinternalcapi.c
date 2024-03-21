@@ -24,12 +24,10 @@
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_typeobject.h"    // _PyType_GetModuleName()
-
-#include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
 #include "clinic/_testinternalcapi.c.h"
 
@@ -1035,7 +1033,7 @@ static PyObject *
 invalidate_executors(PyObject *self, PyObject *obj)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    _Py_Executors_InvalidateDependency(interp, obj);
+    _Py_Executors_InvalidateDependency(interp, obj, 1);
     Py_RETURN_NONE;
 }
 
@@ -1112,7 +1110,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1287,8 +1285,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* This test would fail if run with the address sanitizer */
-#ifdef _Py_ADDRESS_SANITIZER
+    /* ASan or TSan would report an use-after-free error */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
@@ -1480,11 +1478,35 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 get_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
     if (interp == NULL) {
         return NULL;
     }
     return PyLong_FromLongLong(interp->id_refcount);
+}
+
+static PyObject *
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
 }
 
 
@@ -1631,13 +1653,6 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 
 
 static PyObject *
-get_type_module_name(PyObject *self, PyObject *type)
-{
-    assert(PyType_Check(type));
-    return _PyType_GetModuleName((PyTypeObject *)type);
-}
-
-static PyObject *
 get_rare_event_counters(PyObject *self, PyObject *type)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -1676,7 +1691,6 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromUnsignedLongLong(tid);
 }
 #endif
-
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -1736,17 +1750,19 @@ static PyMethodDef module_functions[] = {
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
     {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
-    {"get_type_module_name",    get_type_module_name,            METH_O},
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
+    {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

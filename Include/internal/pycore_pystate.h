@@ -83,6 +83,9 @@ PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
 
+extern int _PyThreadState_IsRunningMain(PyThreadState *);
+extern void _PyInterpreterState_ReinitRunningMain(PyThreadState *);
+
 
 static inline const PyConfig *
 _Py_GetMainConfig(void)
