@@ -439,6 +439,7 @@ class Distribution(DeprecatedNonAbstract):
         The returned object will have keys that name the various bits of
         metadata.  See PEP 566 for details.
         """
+        # deferred for performance (python/cpython#109829)
         from . import _adapters
 
         opt_text = (

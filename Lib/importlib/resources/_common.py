@@ -107,7 +107,9 @@ def from_package(package: types.ModuleType):
     Return a Traversable object for the given package.
 
     """
+    # deferred for performance (python/cpython#109829)
     from ._adapters import wrap_spec
+
     spec = wrap_spec(package)
     reader = spec.loader.get_resource_reader(spec.name)
     return reader.files()
