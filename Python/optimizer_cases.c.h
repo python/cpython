@@ -1596,14 +1596,25 @@
             callable = stack_pointer[-2 - oparg];
             int argcount = oparg;
             (void)callable;
-            PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
-            DPRINTF(3, "func: %p ", func);
-            if (func == NULL) {
-                DPRINTF(3, "\n");
-                DPRINTF(1, "Missing function\n");
-                goto done;
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            uintptr_t push_operand = (this_instr + 2)->operand;
+            if (push_operand & 1) {
+                co = (PyCodeObject *)(push_operand & ~1);
+                DPRINTF(3, "code=%p ", co);
+                assert(PyCode_Check(co));
             }
-            PyCodeObject *co = (PyCodeObject *)func->func_code;
+            else {
+                PyFunctionObject *func = (PyFunctionObject *)push_operand;
+                DPRINTF(3, "func=%p ", func);
+                if (func == NULL) {
+                    DPRINTF(3, "\n");
+                    DPRINTF(1, "Missing function\n");
+                    goto done;
+                }
+                co = (PyCodeObject *)func->func_code;
+                DPRINTF(3, "code=%p ", co);
+            }
             assert(self_or_null != NULL);
             assert(args != NULL);
             if (sym_is_not_null(self_or_null)) {

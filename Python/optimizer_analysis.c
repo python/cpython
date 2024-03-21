@@ -228,7 +228,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched <<= 1;
                 globals_watched <<= 1;
                 function_checked <<= 1;
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand;
+                if (operand == 0 || (operand & 1)) {
+                    // It's either a code object or NULL, so bail
+                    return 1;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)operand;
                 if (func == NULL) {
                     return 1;
                 }
@@ -251,7 +256,15 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
                 function_checked >>= 1;
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand;
+                if (operand == 0 || (operand & 1)) {
+                    // It's either a code object or NULL, so bail
+                    return 1;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)operand;
+                if (func == NULL) {
+                    return 1;
+                }
                 assert(PyFunction_Check(func));
                 function_version = func->func_version;
                 globals = func->func_globals;
@@ -522,7 +535,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 static void
 peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
-    PyCodeObject *co = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *co = _PyFrame_GetCode(frame);
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch(opcode) {
@@ -545,11 +558,16 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             case _PUSH_FRAME:
             case _POP_FRAME:
             {
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
-                if (func == NULL) {
+                uint64_t operand = buffer[pc].operand;
+                if (operand & 1) {
+                    co = (PyCodeObject *)(operand & ~1);
+                    assert(PyCode_Check(co));
+                }
+                else if (operand == 0) {
                     co = NULL;
                 }
                 else {
+                    PyFunctionObject *func = (PyFunctionObject *)operand;
                     assert(PyFunction_Check(func));
                     co = (PyCodeObject *)func->func_code;
                 }
@@ -587,7 +605,7 @@ _Py_uop_analyze_and_optimize(
     peephole_opt(frame, buffer, buffer_size);
 
     err = optimize_uops(
-        (PyCodeObject *)frame->f_executable, buffer,
+        _PyFrame_GetCode(frame), buffer,
         buffer_size, curr_stacklen, dependencies);
 
     if (err == 0) {
