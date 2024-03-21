@@ -116,6 +116,19 @@ PyAPI_FUNC(char*) _Py_SetLocaleFromEnv(int category);
 // Export for special main.c string compiling with source tracebacks
 int _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags);
 
+
+/* interpreter config */
+
+extern int _PyInterpreterState_ResolveConfig(
+    PyInterpreterState *,
+    PyInterpreterConfig *);
+extern PyObject * _PyInterpreterConfig_AsDict(PyInterpreterConfig *);
+extern int _PyInterpreterConfig_FromDict(PyObject *, PyInterpreterConfig *);
+extern int _PyInterpreterConfig_UpdateFromDict(
+    PyObject *,
+    PyInterpreterConfig *);
+
+
 #ifdef __cplusplus
 }
 #endif
