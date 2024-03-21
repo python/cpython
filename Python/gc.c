@@ -1384,7 +1384,11 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
 static void
 completed_cycle(GCState *gcstate)
 {
+    #ifdef Py_DEBUG
+    PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     assert(gc_list_is_empty(not_visited));
+    #endif
+
     gcstate->visited_space = flip_old_space(gcstate->visited_space);
     if (gcstate->work_to_do > 0) {
         gcstate->work_to_do = 0;
