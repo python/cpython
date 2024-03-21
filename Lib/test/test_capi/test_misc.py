@@ -2207,10 +2207,6 @@ class SubinterpreterTest(unittest.TestCase):
 @requires_subinterpreters
 class InterpreterIDTests(unittest.TestCase):
 
-    def check_id(self, interpid, *, force=False):
-        if force:
-            return
-
     def add_interp_cleanup(self, interpid):
         def ensure_destroyed():
             try:
