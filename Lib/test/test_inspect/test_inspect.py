@@ -983,6 +983,9 @@ class TestBuggyCases(GetSourceBase):
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
 
+    def test_getsource_on_class_code_object(self):
+        self.assertSourceEqual(mod2.ClassWithCodeObject.code, 315, 317)
+
     def test_nested_func(self):
         self.assertSourceEqual(mod2.cls135.func136, 136, 139)
 
