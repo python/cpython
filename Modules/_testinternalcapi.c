@@ -29,8 +29,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
-#include "interpreteridobject.h"  // PyInterpreterID_LookUp()
-
 #include "clinic/_testinternalcapi.c.h"
 
 // Include test definitions from _testinternalcapi/
@@ -1112,7 +1110,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1480,11 +1478,35 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 get_interpreter_refcount(PyObject *self, PyObject *idobj)
 {
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
     if (interp == NULL) {
         return NULL;
     }
     return PyLong_FromLongLong(interp->id_refcount);
+}
+
+static PyObject *
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
 }
 
 
@@ -1728,6 +1750,8 @@ static PyMethodDef module_functions[] = {
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
     {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
