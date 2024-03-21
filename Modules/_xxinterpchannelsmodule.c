@@ -6,7 +6,6 @@
 #endif
 
 #include "Python.h"
-#include "interpreteridobject.h"
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 
@@ -18,7 +17,9 @@
 #endif
 
 #define REGISTERS_HEAP_TYPES
+#define RETURNS_INTERPID_OBJECT
 #include "_interpreters_common.h"
+#undef RETURNS_INTERPID_OBJECT
 #undef REGISTERS_HEAP_TYPES
 
 
@@ -2908,7 +2909,7 @@ channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            interpid_obj = PyInterpreterState_GetIDObject(interp);
+            interpid_obj = get_interpid_obj(interp);
             if (interpid_obj == NULL) {
                 goto except;
             }

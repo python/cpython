@@ -13,7 +13,6 @@
 #include "_testcapi/parts.h"
 
 #include "frameobject.h"          // PyFrame_New()
-#include "interpreteridobject.h"  // PyInterpreterID_Type
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
@@ -1447,12 +1446,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
     PyThreadState_Swap(mainstate);
 
     return PyLong_FromLong(r);
-}
-
-static PyObject *
-get_interpreterid_type(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return Py_NewRef(&PyInterpreterID_Type);
 }
 
 static PyMethodDef ml;
@@ -3299,7 +3292,6 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"get_interpreterid_type",  get_interpreterid_type,          METH_NOARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},

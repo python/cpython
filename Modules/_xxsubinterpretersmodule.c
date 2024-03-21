@@ -16,10 +16,11 @@
 #include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
 
-#include "interpreteridobject.h"
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
+#define RETURNS_INTERPID_OBJECT
 #include "_interpreters_common.h"
+#undef RETURNS_INTERPID_OBJECT
 
 
 #define MODULE_NAME _xxsubinterpreters
@@ -37,20 +38,6 @@ _get_current_interp(void)
 
 #define look_up_interp _PyInterpreterState_LookUpIDObject
 
-
-static PyObject *
-get_interpid_obj(PyInterpreterState *interp)
-{
-    if (_PyInterpreterState_IDInitref(interp) != 0) {
-        return NULL;
-    };
-    int64_t id = PyInterpreterState_GetID(interp);
-    if (id < 0) {
-        return NULL;
-    }
-    assert(id < LLONG_MAX);
-    return PyLong_FromLongLong(id);
-}
 
 static PyObject *
 _get_current_module(void)
