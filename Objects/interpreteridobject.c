@@ -1,8 +1,7 @@
 /* InterpreterID object */
 
 #include "Python.h"
-#include "pycore_abstract.h"   // _PyIndex_Check()
-#include "pycore_interp.h"     // _PyInterpreterState_LookUpID()
+#include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 #include "interpreteridobject.h"
 
 
@@ -10,6 +9,21 @@ typedef struct interpid {
     PyObject_HEAD
     int64_t id;
 } interpid;
+
+int64_t
+_PyInterpreterID_GetID(PyObject *self)
+{
+    if (!PyObject_TypeCheck(self, &PyInterpreterID_Type)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected an InterpreterID, got %R",
+                     self);
+        return -1;
+
+    }
+    int64_t id = ((interpid *)self)->id;
+    assert(id >= 0);
+    return id;
+}
 
 static interpid *
 newinterpid(PyTypeObject *cls, int64_t id, int force)
@@ -42,43 +56,19 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
     return self;
 }
 
-static int
-interp_id_converter(PyObject *arg, void *ptr)
-{
-    int64_t id;
-    if (PyObject_TypeCheck(arg, &PyInterpreterID_Type)) {
-        id = ((interpid *)arg)->id;
-    }
-    else if (_PyIndex_Check(arg)) {
-        id = PyLong_AsLongLong(arg);
-        if (id == -1 && PyErr_Occurred()) {
-            return 0;
-        }
-        if (id < 0) {
-            PyErr_Format(PyExc_ValueError,
-                         "interpreter ID must be a non-negative int, got %R", arg);
-            return 0;
-        }
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "interpreter ID must be an int, got %.100s",
-                     Py_TYPE(arg)->tp_name);
-        return 0;
-    }
-    *(int64_t *)ptr = id;
-    return 1;
-}
-
 static PyObject *
 interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "force", NULL};
-    int64_t id;
+    PyObject *idobj;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&|$p:InterpreterID.__init__", kwlist,
-                                     interp_id_converter, &id, &force)) {
+                                     "O|$p:InterpreterID.__init__", kwlist,
+                                     &idobj, &force)) {
+        return NULL;
+    }
+    int64_t id = _PyInterpreterState_ObjectToID(idobj);
+    if (id < 0) {
         return NULL;
     }
 
@@ -281,14 +271,4 @@ PyInterpreterState_GetIDObject(PyInterpreterState *interp)
         return NULL;
     }
     return (PyObject *)newinterpid(&PyInterpreterID_Type, id, 0);
-}
-
-PyInterpreterState *
-PyInterpreterID_LookUp(PyObject *requested_id)
-{
-    int64_t id;
-    if (!interp_id_converter(requested_id, &id)) {
-        return NULL;
-    }
-    return _PyInterpreterState_LookUpID(id);
 }
