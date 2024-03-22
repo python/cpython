@@ -56,7 +56,7 @@ from libclinic.language import Language, PythonLanguage
 from libclinic.block_parser import Block, BlockParser
 from libclinic.crenderdata import CRenderData, Include, TemplateDict
 from libclinic.converter import (
-    CConverter, CConverterClassT,
+    CConverter, CConverterClassT, ConverterType,
     converters, legacy_converters)
 
 
@@ -5001,8 +5001,8 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error(
                 "can't specify --converters and a filename at the same time"
             )
-        converter_list: list[tuple[str, str, Any]] = []
-        return_converter_list: list[tuple[str, str, Any]] = []
+        converter_list: list[tuple[str, str, ConverterType]] = []
+        return_converter_list: list[tuple[str, str, ReturnConverterType]] = []
 
         for name, converter in converters.items():
             converter_list.append((
