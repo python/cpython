@@ -259,13 +259,12 @@ class DefaultContext(BaseContext):
 
     def get_all_start_methods(self):
         """Returns a list of the supported start methods, default first."""
-        if sys.platform == 'win32':
-            return ['spawn']
-        else:
-            methods = ['spawn', 'fork'] if sys.platform == 'darwin' else ['fork', 'spawn']
-            if reduction.HAVE_SEND_HANDLE:
-                methods.append('forkserver')
-            return methods
+        default = self._default_context.get_start_method()
+        start_method_names = [default]
+        start_method_names += (
+                name for name in _concrete_contexts if name != default
+        )
+        return start_method_names
 
 
 #
@@ -325,7 +324,11 @@ if sys.platform != 'win32':
         # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
         _default_context = DefaultContext(_concrete_contexts['spawn'])
     else:
-        _default_context = DefaultContext(_concrete_contexts['fork'])
+        # gh-84559: We changed the default to a thread safe one in 3.14.
+        if reduction.HAVE_SEND_HANDLE:
+            _default_context = DefaultContext(_concrete_contexts['forkserver'])
+        else:
+            _default_context = DefaultContext(_concrete_contexts['spawn'])
 
 else:
 

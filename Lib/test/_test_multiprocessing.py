@@ -5536,15 +5536,26 @@ class TestStartMethod(unittest.TestCase):
             multiprocessing.set_start_method(old_method, force=True)
         self.assertGreaterEqual(count, 1)
 
-    def test_get_all(self):
+    def test_get_all_start_methods(self):
         methods = multiprocessing.get_all_start_methods()
+        self.assertIn('spawn', methods)
         if sys.platform == 'win32':
             self.assertEqual(methods, ['spawn'])
+        if sys.platform == 'darwin':
+            self.assertEqual(methods[0], 'spawn')  # The default is first.
+            # Whether these work or not, they remain available on macOS.
+            self.assertIn('fork', methods)
+            self.assertIn('forkserver', methods)
         else:
-            self.assertTrue(methods == ['fork', 'spawn'] or
-                            methods == ['spawn', 'fork'] or
-                            methods == ['fork', 'spawn', 'forkserver'] or
-                            methods == ['spawn', 'fork', 'forkserver'])
+            # POSIX
+            self.assertIn('fork', methods)
+            if other_methods := set(methods) - {'fork', 'spawn'}:
+                self.assertEqual({'forkserver'}, other_methods)
+            # >=3.14 Defaults to forkserver if the platform supports it.
+            self.assertIn(methods[0], {'forkserver', 'spawn'},
+                          msg='3.14+ default must not be fork')
+            if methods[0] == 'spawn':
+                self.assertNotIn('forkserver', methods)
 
     def test_preload_resources(self):
         if multiprocessing.get_start_method() != 'forkserver':
