@@ -111,6 +111,14 @@ Improved Error Messages
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
+Incremental Garbage Collection
+------------------------------
+
+* The cycle garbage collector is now incremental.
+  This means that maximum pause times are reduced
+  by an order of magnitude or more for larger heaps.
+
+
 Other Language Changes
 ======================
 
@@ -353,6 +361,28 @@ fractions
   the standard format specification mini-language rules for fill, alignment,
   sign handling, minimum width and grouping. (Contributed by Mark Dickinson
   in :gh:`111320`.)
+
+gc
+--
+
+* The cyclic garbage collector is now incremental, which changes the meanings
+  of the results of :meth:`gc.get_threshold` and :meth:`gc.get_threshold` as
+  well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
+* :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
+  the first value is the threshold for young collections, as before, the second
+  value determines the rate at which the old collection is scanned; the
+  default is 10 and higher values mean that the old collection is scanned more slowly.
+  The third value is meangless and is always zero.
+* :meth:`gc.set_threshold` ignores any items after the second.
+* :meth:`gc.get_count` and :meth:`gc.get_stats`.
+  These functions return the same format of results as before.
+  The only difference is that instead of the results refering to
+  the young, aging and old generations, the results refer to the
+  young generation and the aging and collecting spaces of the old generation.
+
+In summary, code that attempted to manipulate the behavior of the cycle GC may
+not work exactly as intended, but it is very unlikely to harmful.
+All other code will work just fine.
 
 glob
 ----
@@ -1501,7 +1531,7 @@ Build Changes
 * The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
   ``termios``, ``winsound``,
   ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
-  ``_statistics``, ``_testimportmultiple`` and ``_uuid``
+  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
   C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
@@ -1704,6 +1734,11 @@ New Features
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions
+  to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
+  :term:`strong reference` to the constant zero.
+  (Contributed by Victor Stinner in :gh:`115754`.)
 
 
 Porting to Python 3.13

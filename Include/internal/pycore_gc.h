@@ -109,11 +109,14 @@ static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
-#define _PyGC_PREV_MASK_FINALIZED  (1)
+#define _PyGC_PREV_MASK_FINALIZED  1
 /* Bit 1 is set when the object is in generation which is GCed currently. */
-#define _PyGC_PREV_MASK_COLLECTING (2)
-/* The (N-2) most significant bits contain the real address. */
-#define _PyGC_PREV_SHIFT           (2)
+#define _PyGC_PREV_MASK_COLLECTING 2
+
+/* Bit 0 is set if the object belongs to old space 1 */
+#define _PyGC_NEXT_MASK_OLD_SPACE_1    1
+
+#define _PyGC_PREV_SHIFT           2
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
 /* set for debugging information */
@@ -139,11 +142,13 @@ typedef enum {
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
 static inline PyGC_Head* _PyGCHead_NEXT(PyGC_Head *gc) {
-    uintptr_t next = gc->_gc_next;
+    uintptr_t next = gc->_gc_next & _PyGC_PREV_MASK;
     return (PyGC_Head*)next;
 }
 static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
-    gc->_gc_next = (uintptr_t)next;
+    uintptr_t unext = (uintptr_t)next;
+    assert((unext & ~_PyGC_PREV_MASK) == 0);
+    gc->_gc_next = (gc->_gc_next & ~_PyGC_PREV_MASK) | unext;
 }
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
@@ -151,6 +156,7 @@ static inline PyGC_Head* _PyGCHead_PREV(PyGC_Head *gc) {
     uintptr_t prev = (gc->_gc_prev & _PyGC_PREV_MASK);
     return (PyGC_Head*)prev;
 }
+
 static inline void _PyGCHead_SET_PREV(PyGC_Head *gc, PyGC_Head *prev) {
     uintptr_t uprev = (uintptr_t)prev;
     assert((uprev & ~_PyGC_PREV_MASK) == 0);
@@ -236,6 +242,13 @@ struct gc_generation {
                   generations */
 };
 
+struct gc_collection_stats {
+    /* number of collected objects */
+    Py_ssize_t collected;
+    /* total number of uncollectable objects (put into gc.garbage) */
+    Py_ssize_t uncollectable;
+};
+
 /* Running stats per generation */
 struct gc_generation_stats {
     /* total number of collections */
@@ -257,8 +270,8 @@ struct _gc_runtime_state {
     int enabled;
     int debug;
     /* linked lists of container objects */
-    struct gc_generation generations[NUM_GENERATIONS];
-    PyGC_Head *generation0;
+    struct gc_generation young;
+    struct gc_generation old[2];
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
@@ -268,6 +281,12 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
+
+    Py_ssize_t work_to_do;
+    /* Which of the old spaces is the visited space */
+    int visited_space;
+
+#ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -279,6 +298,7 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+#endif
 };
 
 #ifdef Py_GIL_DISABLED
@@ -291,9 +311,8 @@ struct _gc_thread_state {
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 
-extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation,
-                                _PyGC_Reason reason);
-extern Py_ssize_t _PyGC_CollectNoFail(PyThreadState *tstate);
+extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason);
+extern void _PyGC_CollectNoFail(PyThreadState *tstate);
 
 /* Freeze objects tracked by the GC and ignore them in future collections. */
 extern void _PyGC_Freeze(PyInterpreterState *interp);
