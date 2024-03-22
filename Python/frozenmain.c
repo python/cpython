@@ -54,6 +54,12 @@ Py_FrozenMain(int argc, char **argv)
         Py_ExitStatusException(status);
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
+        PyErr_Print();
+        exit(1);
+    }
+
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeInit();
 #endif
@@ -83,6 +89,9 @@ Py_FrozenMain(int argc, char **argv)
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeTerm();
 #endif
+
+    _PyInterpreterState_SetNotRunningMain(interp);
+
     if (Py_FinalizeEx() < 0) {
         sts = 120;
     }

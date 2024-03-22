@@ -1042,23 +1042,14 @@ _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
     if (interp->threads.main != NULL) {
         return 1;
     }
-    // For now, we assume the main interpreter is always running.
-    if (_Py_IsMainInterpreter(interp)) {
-        return 1;
-    }
+    // Embedders might not know to call _PyInterpreterState_SetRunningMain(),
+    // so their main thread wouldn't show it is running the main interpreter's
+    // program.  (Py_Main() doesn't have this problem.)  For now this isn't
+    // critical.  If it were, we would need to infer "running main" from other
+    // information, like if it's the main interpreter.  We used to do that
+    // but the naive approach led to some inconsistencies that caused problems.
     return 0;
 }
-
-#ifndef NDEBUG
-static int
-is_running_main(PyThreadState *tstate)
-{
-    if (tstate->interp->threads.main != NULL) {
-        return tstate == tstate->interp->threads.main;
-    }
-    return 0;
-}
-#endif
 
 int
 _PyThreadState_IsRunningMain(PyThreadState *tstate)
@@ -1067,9 +1058,8 @@ _PyThreadState_IsRunningMain(PyThreadState *tstate)
     if (interp->threads.main != NULL) {
         return tstate == interp->threads.main;
     }
-    if (_Py_IsMainInterpreter(interp)) {
-        return tstate->thread_id == interp->runtime->main_thread;
-    }
+    // See the note in _PyInterpreterState_IsRunningMain() about
+    // possible false negatives here for embedders.
     return 0;
 }
 
@@ -1571,7 +1561,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
     assert(current_fast_get()->interp == tstate->interp);
-    assert(!is_running_main(tstate));
+    assert(!_PyThreadState_IsRunningMain(tstate));
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
@@ -1670,7 +1660,7 @@ tstate_delete_common(PyThreadState *tstate)
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     assert(tstate->state != _Py_THREAD_ATTACHED);
     tstate_verify_not_active(tstate);
-    assert(!is_running_main(tstate));
+    assert(!_PyThreadState_IsRunningMain(tstate));
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
