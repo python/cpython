@@ -461,11 +461,23 @@ class IocpProactor:
         try:
             return ov.getresult()
         except OSError as exc:
-            if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
-                return b'', None
-            elif exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
+            if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
                                 _overlapped.ERROR_OPERATION_ABORTED):
                 raise ConnectionResetError(*exc.args)
+            else:
+                raise
+
+    @classmethod
+    def _finish_recvfrom(cls, trans, key, ov):
+        try:
+            return cls.finish_socket_func(trans, key, ov)
+        except OSError as exc:
+            raise
+            # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the
+            # same socket is used to send to an address that is not
+            # listening.
+            if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
+                return b'', None
             else:
                 raise
 
@@ -503,7 +515,7 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((b'', None))
 
-        return self._register(ov, conn, self.finish_socket_func)
+        return self._register(ov, conn, self._finish_recvfrom)
 
     def recvfrom_into(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -513,19 +525,7 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((0, None))
 
-        def finish_recv(trans, key, ov):
-            try:
-                return ov.getresult()
-            except OSError as exc:
-                if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
-                    return b'', None
-                elif exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
-                    raise ConnectionResetError(*exc.args)
-                else:
-                    raise
-
-        return self._register(ov, conn, finish_recv)
+        return self._register(ov, conn, self._finish_recvfrom)
 
     def sendto(self, conn, buf, flags=0, addr=None):
         self._register_with_iocp(conn)
