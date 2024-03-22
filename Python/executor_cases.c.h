@@ -3697,32 +3697,34 @@
             _PyExitData *exit = &previous->exits[oparg];
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (!ADAPTIVE_COUNTER_IS_ZERO(exit->temperature)) {
-                DECREMENT_ADAPTIVE_COUNTER(exit->temperature);
-                GOTO_TIER_ONE(target);
-            }
-            _PyExecutorObject *executor;
-            if (target->op.code == ENTER_EXECUTOR) {
-                executor = code->co_executors->executors[target->op.arg];
-                Py_INCREF(executor);
-            }
-            else {
-                int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
-                if (optimized <= 0) {
-                    exit->temperature = adaptive_counter_backoff(exit->temperature);
-                    if (optimized < 0) {
-                        Py_DECREF(previous);
-                        tstate->previous_executor = Py_None;
-                        GOTO_UNWIND();
-                    }
-                    GOTO_TIER_ONE(target);
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(exit->temperature)) {
+                _PyExecutorObject *executor;
+                if (target->op.code == ENTER_EXECUTOR) {
+                    executor = code->co_executors->executors[target->op.arg];
+                    Py_INCREF(executor);
                 }
+                else {
+                    int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
+                    if (optimized <= 0) {
+                        exit->temperature = adaptive_counter_backoff(exit->temperature);
+                        if (optimized < 0) {
+                            Py_DECREF(previous);
+                            tstate->previous_executor = Py_None;
+                            GOTO_UNWIND();
+                        }
+                        GOTO_TIER_ONE(target);
+                    }
+                }
+                /* We need two references. One to store in exit->executor and
+                 * one to keep the executor alive when executing. */
+                Py_INCREF(executor);
+                exit->executor = executor;
+                GOTO_TIER_TWO(executor);
             }
-            /* We need two references. One to store in exit->executor and
-             * one to keep the executor alive when executing. */
-            Py_INCREF(executor);
-            exit->executor = executor;
-            GOTO_TIER_TWO(executor);
+            DECREMENT_ADAPTIVE_COUNTER(exit->temperature);
+            #endif
+            GOTO_TIER_ONE(target);
             break;
         }
 
