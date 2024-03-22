@@ -187,40 +187,39 @@ def splitroot(p):
         altsep = b'/'
         colon = b':'
         unc_prefix = b'\\\\?\\UNC\\'
+        empty = b''
     else:
         sep = '\\'
         altsep = '/'
         colon = ':'
         unc_prefix = '\\\\?\\UNC\\'
+        empty = ''
     normp = p.replace(altsep, sep)
-    if normp[:1] != sep:
-        if normp[1:2] == colon:
-            # Drive-letter drives, e.g. X:
-            drive, p = p[:2], p[2:]
-        else:
-            drive = p[:0]
-    elif normp[1:2] != sep:
-        drive = p[:0]
-    else:
-        # UNC drives, e.g. \\server\share or \\?\UNC\server\share
-        # Device drives, e.g. \\.\device or \\?\device
-        start = 8 if normp[:8].upper() == unc_prefix else 2
-        index = normp.find(sep, start)
-        if index == -1:
-            drive, p = p, p[:0]
-        else:
+    if normp[:1] == sep:
+        if normp[1:2] == sep:
+            # UNC drives, e.g. \\server\share or \\?\UNC\server\share
+            # Device drives, e.g. \\.\device or \\?\device
+            start = 8 if normp[:8].upper() == unc_prefix else 2
+            index = normp.find(sep, start)
+            if index == -1:
+                return p, empty, empty
             index2 = normp.find(sep, index + 1)
             if index2 == -1:
-                drive, p = p, p[:0]
-            else:
-                drive, p = p[:index2], p[index2:]
-
-    # Split root
-    if normp[len(drive):len(drive)+1] == sep:
-        # Absolute path, e.g. X:\Windows
-        return drive, p[:1], p[1:]
-    # Relative path, e.g. X:Windows
-    return drive, p[:0], p
+                return p, empty, empty
+            return p[:index2], p[index2:index2 + 1], p[index2 + 1:]
+        else:
+            # Relative path with root, e.g. \Windows
+            return empty, p[:1], p[1:]
+    elif normp[1:2] == colon:
+        if normp[2:3] == sep:
+            # Absolute drive-letter path, e.g. X:\Windows
+            return p[:2], p[2:3], p[3:]
+        else:
+            # Relative path with drive, e.g. X:Windows
+            return p[:2], empty, p[2:]
+    else:
+        # Relative path, e.g. Windows
+        return empty, empty, p
 
 
 # Split a path in head (everything up to the last '/') and tail (the
