@@ -2327,7 +2327,7 @@ class InterpreterIDTests(unittest.TestCase):
         get_refcount = _testinternalcapi.get_interpreter_refcount
 
         # A new interpreter will start out not linked, with a refcount of 0.
-        interpid = _testinternalcapi.new_interpreter()
+        interpid = self.new_interpreter()
         self.add_interp_cleanup(interpid)
         linked = is_linked(interpid)
         refcount = get_refcount(interpid)
@@ -2342,7 +2342,7 @@ class InterpreterIDTests(unittest.TestCase):
         incref = (lambda id: _interpreters._incref(id, implieslink=False))
         decref = _interpreters._decref
 
-        interpid = _testinternalcapi.new_interpreter()
+        interpid = self.new_interpreter()
         self.add_interp_cleanup(interpid)
 
         # Incref will not automatically link it.
@@ -2367,7 +2367,7 @@ class InterpreterIDTests(unittest.TestCase):
         link = _testinternalcapi.link_interpreter_refcount
         unlink = _testinternalcapi.unlink_interpreter_refcount
 
-        interpid = _testinternalcapi.new_interpreter()
+        interpid = self.new_interpreter()
         self.add_interp_cleanup(interpid)
 
         # Linking at refcount 0 does not destroy the interpreter.
@@ -2392,7 +2392,7 @@ class InterpreterIDTests(unittest.TestCase):
         incref = (lambda id: _interpreters._incref(id, implieslink=False))
         decref = _interpreters._decref
 
-        interpid = _testinternalcapi.new_interpreter()
+        interpid = self.new_interpreter()
         self.add_interp_cleanup(interpid)
 
         # Linking it will not change the refcount.
@@ -2418,7 +2418,7 @@ class InterpreterIDTests(unittest.TestCase):
         get_refcount = _testinternalcapi.get_interpreter_refcount
         incref = (lambda id: _interpreters._incref(id, implieslink=False))
 
-        interpid = _testinternalcapi.new_interpreter()
+        interpid = self.new_interpreter()
         self.add_interp_cleanup(interpid)
 
         incref(interpid)
@@ -2441,7 +2441,7 @@ class InterpreterIDTests(unittest.TestCase):
         incref = (lambda id: _interpreters._incref(id, implieslink=False))
         decref = _interpreters._decref
 
-        interpid = _testinternalcapi.new_interpreter()
+        interpid = self.new_interpreter()
         self.add_interp_cleanup(interpid)
 
         link(interpid)

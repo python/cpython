@@ -407,6 +407,59 @@ config_from_object(PyObject *configobj, PyInterpreterConfig *config)
 }
 
 
+static PyInterpreterState *
+new_interpreter(PyInterpreterConfig *config, PyObject **p_idobj,  PyThreadState **p_tstate)
+{
+    PyThreadState *save_tstate = PyThreadState_Get();
+    assert(save_tstate != NULL);
+    PyThreadState *tstate = NULL;
+    // XXX Possible GILState issues?
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, config);
+    PyThreadState_Swap(save_tstate);
+    if (PyStatus_Exception(status)) {
+        /* Since no new thread state was created, there is no exception to
+           propagate; raise a fresh one after swapping in the old thread
+           state. */
+        _PyErr_SetFromPyStatus(status);
+        return NULL;
+    }
+    assert(tstate != NULL);
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+
+    if (_PyInterpreterState_IDInitref(interp) < 0) {
+        goto error;
+    }
+
+    if (p_idobj != NULL) {
+        // We create the object using the original interpreter.
+        PyObject *idobj = get_interpid_obj(interp);
+        if (idobj == NULL) {
+            goto error;
+        }
+        *p_idobj = idobj;
+    }
+
+    if (p_tstate != NULL) {
+        *p_tstate = tstate;
+    }
+    else {
+        PyThreadState_Swap(tstate);
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(save_tstate);
+        PyThreadState_Delete(tstate);
+    }
+
+    return interp;
+
+error:
+    // XXX Possible GILState issues?
+    save_tstate = PyThreadState_Swap(tstate);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(save_tstate);
+    return NULL;
+}
+
+
 static int
 _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 {
@@ -534,42 +587,20 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    // Create and initialize the new interpreter.
-    PyThreadState *save_tstate = PyThreadState_Get();
-    assert(save_tstate != NULL);
-    // XXX Possible GILState issues?
-    PyThreadState *tstate = NULL;
-    PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
-    PyThreadState_Swap(save_tstate);
-    if (PyStatus_Exception(status)) {
-        /* Since no new thread state was created, there is no exception to
-           propagate; raise a fresh one after swapping in the old thread
-           state. */
-        _PyErr_SetFromPyStatus(status);
+    PyObject *idobj = NULL;
+    PyInterpreterState *interp = new_interpreter(&config, &idobj, NULL);
+    if (interp == NULL) {
+        // XXX Move the chained exception to interpreters.create()?
         PyObject *exc = PyErr_GetRaisedException();
+        assert(exc != NULL);
         PyErr_SetString(PyExc_RuntimeError, "interpreter creation failed");
         _PyErr_ChainExceptions1(exc);
         return NULL;
     }
-    assert(tstate != NULL);
-
-    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    PyObject *idobj = get_interpid_obj(interp);
-    if (idobj == NULL) {
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
-        Py_EndInterpreter(tstate);
-        PyThreadState_Swap(save_tstate);
-        return NULL;
-    }
-
-    PyThreadState_Swap(tstate);
-    PyThreadState_Clear(tstate);
-    PyThreadState_Swap(save_tstate);
-    PyThreadState_Delete(tstate);
 
     return idobj;
 }
+
 
 PyDoc_STRVAR(create_doc,
 "create() -> ID\n\

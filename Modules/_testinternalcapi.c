@@ -1452,50 +1452,6 @@ unused_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-new_interpreter(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    // Unlike _interpreters.create(), we do not automatically link
-    // the interpreter to its refcount.
-    PyThreadState *save_tstate = PyThreadState_Get();
-    const PyInterpreterConfig config = \
-            (PyInterpreterConfig)_PyInterpreterConfig_INIT;
-    PyThreadState *tstate = NULL;
-    PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
-    PyThreadState_Swap(save_tstate);
-    if (PyStatus_Exception(status)) {
-        _PyErr_SetFromPyStatus(status);
-        return NULL;
-    }
-    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-
-    if (_PyInterpreterState_IDInitref(interp) < 0) {
-        goto error;
-    }
-
-    int64_t interpid = PyInterpreterState_GetID(interp);
-    if (interpid < 0) {
-        goto error;
-    }
-    PyObject *idobj = PyLong_FromLongLong(interpid);
-    if (idobj == NULL) {
-        goto error;
-    }
-
-    PyThreadState_Swap(tstate);
-    PyThreadState_Clear(tstate);
-    PyThreadState_Swap(save_tstate);
-    PyThreadState_Delete(tstate);
-
-    return idobj;
-
-error:
-    save_tstate = PyThreadState_Swap(tstate);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(save_tstate);
-    return NULL;
-}
-
-static PyObject *
 interpreter_exists(PyObject *self, PyObject *idobj)
 {
     PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
@@ -1799,7 +1755,6 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS},
     {"normalize_interp_id", normalize_interp_id, METH_O},
     {"unused_interpreter_id", unused_interpreter_id, METH_NOARGS},
-    {"new_interpreter", new_interpreter, METH_NOARGS},
     {"interpreter_exists", interpreter_exists, METH_O},
     {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
     {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
