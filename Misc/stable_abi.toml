@@ -2500,3 +2500,7 @@
     added = '3.13'
 [function.PyType_GetModuleName]
     added = '3.13'
+[function.Py_GetConstant]
+    added = '3.13'
+[function.Py_GetConstantBorrowed]
+    added = '3.13'
