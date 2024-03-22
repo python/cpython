@@ -1059,9 +1059,10 @@ class GCTests(unittest.TestCase):
         gc.enable()
 
 
-class IncremetalGCTests(unittest.TestCase):
+class IncrementalGCTests(unittest.TestCase):
 
     def setUp(self):
+        # Reenable GC as it is disabled module-wide
         gc.enable()
 
     def tearDown(self):
