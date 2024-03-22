@@ -4535,7 +4535,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 # server aborts connection with an error.
                 with self.assertRaisesRegex(
                     OSError,
-                    '(certificate required|EOF occurred|closed by the remote host)'
+                    'certificate required|EOF occurred|closed by the remote host|Connection reset by peer'
                 ):
                     # receive CertificateRequest
                     data = s.recv(1024)
