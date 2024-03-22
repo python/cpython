@@ -851,8 +851,8 @@ For an example of the usage of queues for interprocess communication see
       free slot was available within that time.  Otherwise (*block* is
       ``False``), put an item on the queue if a free slot is immediately
       available, else raise the :exc:`queue.Full` exception (*timeout* is
-      ignored in that case).  Raises :exc:`ShutDown` if the queue has been shut
-      down.
+      ignored in that case).  Raises the :exc:`queue.ShutDown` if the queue has
+      been shut down.
 
       .. versionchanged:: 3.8
          If the queue is closed, :exc:`ValueError` is raised instead of
@@ -871,8 +871,8 @@ For an example of the usage of queues for interprocess communication see
       exception if no item was available within that time.  Otherwise (block is
       ``False``), return an item if one is immediately available, else raise the
       :exc:`queue.Empty` exception (*timeout* is ignored in that case).  Raises
-      :exc:`queue.ShutDown` if the queue has been shut down and is empty, or if
-      the queue has been shut down immediately.
+      the :exc:`queue.ShutDown` exception if the queue has been shut down and
+      is empty, or if the queue has been shut down immediately.
 
       .. versionchanged:: 3.8
          If the queue is closed, :exc:`ValueError` is raised instead of
@@ -884,14 +884,14 @@ For an example of the usage of queues for interprocess communication see
 
    .. method:: shutdown(immediate=False)
 
-      Shut-down the queue, making :meth:`~Queue.get` and :meth:`~Queue.put`
+      Shut down the queue, making :meth:`~Queue.get` and :meth:`~Queue.put`
       raise :exc:`queue.ShutDown`.
 
       By default, :meth:`~Queue.get` on a shut down queue will only raise once
       the queue is empty.  Set *immediate* to true to make :meth:`~Queue.get`
       raise immediately instead.
 
-      All blocked callers of :meth:`~Queue.put` will be unblocked. If
+      All blocked callers of :meth:`~Queue.put` will be unblocked.  If
       *immediate* is true, also unblock callers of :meth:`~Queue.get` and
       :meth:`~Queue.join`.
 
@@ -983,10 +983,11 @@ For an example of the usage of queues for interprocess communication see
       items have been processed (meaning that a :meth:`task_done` call was
       received for every item that had been :meth:`~Queue.put` into the queue).
 
+      ``shutdown(immediate=True)`` calls :meth:`task_done` for each remaining
+      item in the queue.
+
       Raises a :exc:`ValueError` if called more times than there were items
       placed in the queue.
-
-      Raises :exc:`queue.ShutDown` if the queue has been shut down immediately.
 
 
    .. method:: join()
@@ -998,8 +999,6 @@ For an example of the usage of queues for interprocess communication see
       :meth:`task_done` to indicate that the item was retrieved and all work on
       it is complete.  When the count of unfinished tasks drops to zero,
       :meth:`~queue.Queue.join` unblocks.
-
-      Raises :exc:`queue.ShutDown` if the queue has been shut down immediately.
 
 
 Miscellaneous

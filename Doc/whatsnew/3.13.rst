@@ -439,6 +439,12 @@ mmap
   the file descriptor specified by *fileno* will not be duplicated.
   (Contributed by Zackery Spytz and Petr Viktorin in :gh:`78502`.)
 
+multiprocessing
+---------------
+
+* Add :meth:`multiprocessing.Queue.shutdown` for queue termination.
+  (Contributed by Laurie Opperman in :gh:`104230`.)
+
 opcode
 ------
 
