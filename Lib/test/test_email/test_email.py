@@ -1449,6 +1449,13 @@ List: List-Unsubscribe:
              =?utf-8?q?_to_see_if_line_wrapping_with_encoded_words_and_embedded?=
              =?utf-8?q?_folding_white_space_works?=""")+'\n')
 
+    def test_long_quoted_string_header(self):
+        msg = Message(policy=email.policy.default)
+        msg['To'] = '"John Doe Example Inc. Houtesiplou Belgium" <john.doe@example.com>'
+        self.assertEqual(
+            msg.as_string(maxheaderlen=40),
+            'To: "John Doe Example Inc. Houtesiplou\n Belgium" <john.doe@example.com>\n\n',
+        )
 
 
 # Test mangling of "From " lines in the body of a message
