@@ -58,16 +58,6 @@ _INSTALL_SCHEMES = {
         'scripts': '{base}/Scripts',
         'data': '{base}',
         },
-    'ios': {
-        'stdlib': '{installed_base}/lib/python{py_version_short}',
-        'platstdlib': '{installed_base}/lib/python{py_version_short}',
-        'purelib': '{installed_base}/lib/python{py_version_short}/site-packages',
-        'platlib': '{installed_base}/lib/python{py_version_short}/site-packages',
-        'include': '{installed_base}/include/{implementation_lower}',
-        'platinclude': '{installed_base}/include/{implementation_lower}',
-        'scripts': '{installed_base}/bin',
-        'data': '{installed_base}/Resources',
-        },
 
     # Downstream distributors can overwrite the default install scheme.
     # This is done to support downstream modifications where distributors change
@@ -301,12 +291,6 @@ def _get_preferred_schemes():
             'prefix': 'posix_prefix',
             'home': 'posix_home',
             'user': 'osx_framework_user',
-        }
-    if sys.platform in {'ios', 'tvos', 'watchos'}:
-        return {
-            'prefix': "ios",
-            'home': "ios",
-            'user': "ios",
         }
 
     return {
