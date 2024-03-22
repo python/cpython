@@ -173,7 +173,7 @@
 
 platlibdir = config.get('platlibdir') or PLATLIBDIR
 
-if os_name in {"darwin", "ios", "posix", "tvos", "watchos"}:
+if os_name == 'posix' or os_name == 'darwin':
     BUILDDIR_TXT = 'pybuilddir.txt'
     BUILD_LANDMARK = 'Modules/Setup.local'
     DEFAULT_PROGRAM_NAME = f'python{VERSION_MAJOR}'

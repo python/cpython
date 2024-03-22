@@ -19,7 +19,6 @@
 #ifdef __APPLE__
 #  include <dlfcn.h>
 #  include <mach-o/dyld.h>
-#  include <TargetConditionals.h>
 #endif
 
 /* Reference the precompiled getpath.py */
@@ -924,11 +923,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 #ifdef MS_WINDOWS
         !decode_to_dict(dict, "os_name", "nt") ||
 #elif defined(__APPLE__)
-#   if TARGET_OS_IOS
-        !decode_to_dict(dict, "os_name", "ios") ||
-#   else
         !decode_to_dict(dict, "os_name", "darwin") ||
-#   endif
 #else
         !decode_to_dict(dict, "os_name", "posix") ||
 #endif
