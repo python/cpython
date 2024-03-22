@@ -162,6 +162,11 @@ def _dedent(text):
         lines[j] = l[i:]
     return '\n'.join(lines)
 
+class _not_given:
+    def __repr__(self):
+        return('<not given>')
+_not_given = _not_given()
+
 class _auto_null:
     def __repr__(self):
         return '_auto_null'
@@ -547,7 +552,10 @@ class EnumType(type):
         classdict['_inverted_'] = None
         try:
             exc = None
+            classdict['_%s__in_progress' % cls] = True
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
+            classdict['_%s__in_progress' % cls] = False
+            delattr(enum_class, '_%s__in_progress' % cls)
         except Exception as e:
             # since 3.12 the line "Error calling __set_name__ on '_proto_member' instance ..."
             # is tacked on to the error instead of raising a RuntimeError
@@ -677,7 +685,7 @@ class EnumType(type):
         """
         return True
 
-    def __call__(cls, value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None):
+    def __call__(cls, value, names=_not_given, *values, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Either returns an existing member, or creates a new enum class.
 
@@ -706,18 +714,18 @@ class EnumType(type):
         """
         if cls._member_map_:
             # simple value lookup if members exist
-            if names:
+            if names is not _not_given:
                 value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
-        if names is None and type is None:
+        if names is _not_given and type is None:
             # no body? no data-type? possibly wrong usage
             raise TypeError(
                     f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
                     )
         return cls._create_(
                 class_name=value,
-                names=names,
+                names=None if names is _not_given else names,
                 module=module,
                 qualname=qualname,
                 type=type,
@@ -1155,6 +1163,8 @@ class Enum(metaclass=EnumType):
         # still not found -- verify that members exist, in-case somebody got here mistakenly
         # (such as via super when trying to override __new__)
         if not cls._member_map_:
+            if getattr(cls, '_%s__in_progress' % cls.__name__, False):
+                raise TypeError('do not use `super().__new__; call the appropriate __new__ directly') from None
             raise TypeError("%r has no members defined" % cls)
         #
         # still not found -- try _missing_ hook
@@ -1670,7 +1680,7 @@ def global_flag_repr(self):
     cls_name = self.__class__.__name__
     if self._name_ is None:
         return "%s.%s(%r)" % (module, cls_name, self._value_)
-    if _is_single_bit(self):
+    if _is_single_bit(self._value_):
         return '%s.%s' % (module, self._name_)
     if self._boundary_ is not FlagBoundary.KEEP:
         return '|'.join(['%s.%s' % (module, name) for name in self.name.split('|')])

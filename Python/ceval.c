@@ -337,6 +337,12 @@ const binaryfunc _PyEval_BinaryOps[] = {
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
 };
 
+const conversion_func _PyEval_ConversionFuncs[4] = {
+    [FVC_STR] = PyObject_Str,
+    [FVC_REPR] = PyObject_Repr,
+    [FVC_ASCII] = PyObject_ASCII
+};
+
 
 // PEP 634: Structural Pattern Matching
 
@@ -1011,7 +1017,12 @@ enter_tier_two:
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (lltrace >= 3) {
-            printf("%4d uop: ", (int)(next_uop - (current_executor == NULL ? next_uop : current_executor->trace)));
+            if (next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT) {
+                printf("%4d uop: ", 0);
+            }
+            else {
+                printf("%4d uop: ", (int)(next_uop - current_executor->trace));
+            }
             _PyUOpPrint(next_uop);
             printf(" stack_level=%d\n",
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
@@ -1107,7 +1118,7 @@ side_exit:
         _PyUOpPrint(&next_uop[-1]);
         printf(", exit %u, temp %d, target %d -> %s]\n",
                exit_index, exit->temperature, exit->target,
-               _PyOpcode_OpName[frame->instr_ptr->op.code]);
+               _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
     }
 #endif
     Py_INCREF(exit->executor);
@@ -2892,7 +2903,7 @@ _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
     if (_PyErr_Occurred(tstate))
         return;
     name = PyTuple_GET_ITEM(co->co_localsplusnames, oparg);
-    if (oparg < PyCode_GetFirstFree(co)) {
+    if (oparg < PyUnstable_Code_GetFirstFree(co)) {
         _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                                   UNBOUNDLOCAL_ERROR_MSG, name);
     } else {

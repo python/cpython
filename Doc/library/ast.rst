@@ -2183,14 +2183,17 @@ and classes for traversing abstract syntax trees:
    modified to correspond to :pep:`484` "signature type comments",
    e.g. ``(str, int) -> List[str]``.
 
-   Also, setting ``feature_version`` to a tuple ``(major, minor)``
-   will attempt to parse using that Python version's grammar.
-   Currently ``major`` must equal to ``3``.  For example, setting
-   ``feature_version=(3, 4)`` will allow the use of ``async`` and
-   ``await`` as variable names.  The lowest supported version is
-   ``(3, 7)``; the highest is ``sys.version_info[0:2]``.
+   Setting ``feature_version`` to a tuple ``(major, minor)`` will result in
+   a "best-effort" attempt to parse using that Python version's grammar.
+   For example, setting ``feature_version=(3, 9)`` will attempt to disallow
+   parsing of :keyword:`match` statements.
+   Currently ``major`` must equal to ``3``. The lowest supported version is
+   ``(3, 7)`` (and this may increase in future Python versions);
+   the highest is ``sys.version_info[0:2]``. "Best-effort" attempt means there
+   is no guarantee that the parse (or success of the parse) is the same as
+   when run on the Python version corresponding to ``feature_version``.
 
-   If source contains a null character ('\0'), :exc:`ValueError` is raised.
+   If source contains a null character (``\0``), :exc:`ValueError` is raised.
 
    .. warning::
       Note that successfully parsing source code into an AST object doesn't

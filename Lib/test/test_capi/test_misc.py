@@ -47,6 +47,7 @@ except ModuleNotFoundError:
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 
+import _testlimitedcapi
 import _testinternalcapi
 
 
@@ -1099,21 +1100,75 @@ class CAPITest(unittest.TestCase):
         del d.extra
         self.assertIsNone(d.extra)
 
-    def test_get_type_module_name(self):
+    def test_get_type_name(self):
+        class MyType:
+            pass
+
+        from _testcapi import (
+            get_type_name, get_type_qualname,
+            get_type_fullyqualname, get_type_module_name)
+
         from collections import OrderedDict
         ht = _testcapi.get_heaptype_for_name()
-        for cls, expected in {
-            int: 'builtins',
-            OrderedDict: 'collections',
-            ht: '_testcapi',
-        }.items():
-            with self.subTest(repr(cls)):
-                modname = _testinternalcapi.get_type_module_name(cls)
-                self.assertEqual(modname, expected)
+        for cls, fullname, modname, qualname, name in (
+            (int,
+             'int',
+             'builtins',
+             'int',
+             'int'),
+            (OrderedDict,
+             'collections.OrderedDict',
+             'collections',
+             'OrderedDict',
+             'OrderedDict'),
+            (ht,
+             '_testcapi.HeapTypeNameType',
+             '_testcapi',
+             'HeapTypeNameType',
+             'HeapTypeNameType'),
+            (MyType,
+             f'{__name__}.CAPITest.test_get_type_name.<locals>.MyType',
+             __name__,
+             'CAPITest.test_get_type_name.<locals>.MyType',
+             'MyType'),
+        ):
+            with self.subTest(cls=repr(cls)):
+                self.assertEqual(get_type_fullyqualname(cls), fullname)
+                self.assertEqual(get_type_module_name(cls), modname)
+                self.assertEqual(get_type_qualname(cls), qualname)
+                self.assertEqual(get_type_name(cls), name)
 
+        # override __module__
         ht.__module__ = 'test_module'
-        modname = _testinternalcapi.get_type_module_name(ht)
-        self.assertEqual(modname, 'test_module')
+        self.assertEqual(get_type_fullyqualname(ht), 'test_module.HeapTypeNameType')
+        self.assertEqual(get_type_module_name(ht), 'test_module')
+        self.assertEqual(get_type_qualname(ht), 'HeapTypeNameType')
+        self.assertEqual(get_type_name(ht), 'HeapTypeNameType')
+
+        # override __name__ and __qualname__
+        MyType.__name__ = 'my_name'
+        MyType.__qualname__ = 'my_qualname'
+        self.assertEqual(get_type_fullyqualname(MyType), f'{__name__}.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), __name__)
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
+
+        # override also __module__
+        MyType.__module__ = 'my_module'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_module.my_qualname')
+        self.assertEqual(get_type_module_name(MyType), 'my_module')
+        self.assertEqual(get_type_qualname(MyType), 'my_qualname')
+        self.assertEqual(get_type_name(MyType), 'my_name')
+
+        # PyType_GetFullyQualifiedName() ignores the module if it's "builtins"
+        # or "__main__" of it is not a string
+        MyType.__module__ = 'builtins'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = '__main__'
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+        MyType.__module__ = 123
+        self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
@@ -1124,7 +1179,7 @@ class TestHeapTypeRelative(unittest.TestCase):
         # Test subclassing using "relative" basicsize, see PEP 697
         def check(extra_base_size, extra_size):
             Base, Sub, instance, data_ptr, data_offset, data_size = (
-                _testcapi.make_sized_heaptypes(
+                _testlimitedcapi.make_sized_heaptypes(
                     extra_base_size, -extra_size))
 
             # no alignment shenanigans when inheriting directly
@@ -1152,11 +1207,11 @@ class TestHeapTypeRelative(unittest.TestCase):
 
                 # we don't reserve (requested + alignment) or more data
                 self.assertLess(data_size - extra_size,
-                                _testcapi.ALIGNOF_MAX_ALIGN_T)
+                                _testlimitedcapi.ALIGNOF_MAX_ALIGN_T)
 
             # The offsets/sizes we calculated should be aligned.
-            self.assertEqual(data_offset % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
-            self.assertEqual(data_size % _testcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_offset % _testlimitedcapi.ALIGNOF_MAX_ALIGN_T, 0)
+            self.assertEqual(data_size % _testlimitedcapi.ALIGNOF_MAX_ALIGN_T, 0)
 
         sizes = sorted({0, 1, 2, 3, 4, 7, 8, 123,
                         object.__basicsize__,
@@ -1182,7 +1237,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                         object.__basicsize__+1})
         for extra_size in sizes:
             with self.subTest(extra_size=extra_size):
-                Sub = _testcapi.subclass_var_heaptype(
+                Sub = _testlimitedcapi.subclass_var_heaptype(
                     _testcapi.HeapCCollection, -extra_size, 0, 0)
                 collection = Sub(1, 2, 3)
                 collection.set_data_to_3s()
@@ -1196,7 +1251,7 @@ class TestHeapTypeRelative(unittest.TestCase):
         with self.assertRaises(SystemError,
                                msg="Cannot extend variable-size class without "
                                + "Py_TPFLAGS_ITEMS_AT_END"):
-            _testcapi.subclass_heaptype(int, -8, 0)
+            _testlimitedcapi.subclass_heaptype(int, -8, 0)
 
     def test_heaptype_relative_members(self):
         """Test HeapCCollection subclasses work properly"""
@@ -1209,7 +1264,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                 for offset in sizes:
                     with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size, offset=offset):
                         if offset < extra_size:
-                            Sub = _testcapi.make_heaptype_with_member(
+                            Sub = _testlimitedcapi.make_heaptype_with_member(
                                 extra_base_size, -extra_size, offset, True)
                             Base = Sub.mro()[1]
                             instance = Sub()
@@ -1228,29 +1283,29 @@ class TestHeapTypeRelative(unittest.TestCase):
                                 instance.set_memb_relative(0)
                         else:
                             with self.assertRaises(SystemError):
-                                Sub = _testcapi.make_heaptype_with_member(
+                                Sub = _testlimitedcapi.make_heaptype_with_member(
                                     extra_base_size, -extra_size, offset, True)
                         with self.assertRaises(SystemError):
-                            Sub = _testcapi.make_heaptype_with_member(
+                            Sub = _testlimitedcapi.make_heaptype_with_member(
                                 extra_base_size, extra_size, offset, True)
                 with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size):
                     with self.assertRaises(SystemError):
-                        Sub = _testcapi.make_heaptype_with_member(
+                        Sub = _testlimitedcapi.make_heaptype_with_member(
                             extra_base_size, -extra_size, -1, True)
 
     def test_heaptype_relative_members_errors(self):
         with self.assertRaisesRegex(
                 SystemError,
                 r"With Py_RELATIVE_OFFSET, basicsize must be negative"):
-            _testcapi.make_heaptype_with_member(0, 1234, 0, True)
+            _testlimitedcapi.make_heaptype_with_member(0, 1234, 0, True)
         with self.assertRaisesRegex(
                 SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
-            _testcapi.make_heaptype_with_member(0, -8, 1234, True)
+            _testlimitedcapi.make_heaptype_with_member(0, -8, 1234, True)
         with self.assertRaisesRegex(
                 SystemError, r"Member offset out of range \(0\.\.-basicsize\)"):
-            _testcapi.make_heaptype_with_member(0, -8, -1, True)
+            _testlimitedcapi.make_heaptype_with_member(0, -8, -1, True)
 
-        Sub = _testcapi.make_heaptype_with_member(0, -8, 0, True)
+        Sub = _testlimitedcapi.make_heaptype_with_member(0, -8, 0, True)
         instance = Sub()
         with self.assertRaisesRegex(
                 SystemError, r"PyMember_GetOne used with Py_RELATIVE_OFFSET"):
@@ -1268,6 +1323,125 @@ class TestHeapTypeRelative(unittest.TestCase):
             # int is variable-length, but doesn't have the
             # Py_TPFLAGS_ITEMS_AT_END layout (and flag)
             _testcapi.pyobject_getitemdata(0)
+
+
+    def test_function_get_closure(self):
+        from types import CellType
+
+        def regular_function(): ...
+        def unused_one_level(arg1):
+            def inner(arg2, arg3): ...
+            return inner
+        def unused_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6): ...
+                return inner
+            return decorator
+        def with_one_level(arg1):
+            def inner(arg2, arg3):
+                return arg1 + arg2 + arg3
+            return inner
+        def with_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6):
+                    return arg1 + arg2 + arg3 + arg4 + arg5 + arg6
+                return inner
+            return decorator
+
+        # Functions without closures:
+        self.assertIsNone(_testcapi.function_get_closure(regular_function))
+        self.assertIsNone(regular_function.__closure__)
+
+        func = unused_one_level(1)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        func = unused_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        # Functions with closures:
+        func = with_one_level(5)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 1)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertTrue(closure[0].cell_contents, 5)
+
+        func = with_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 4)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertEqual([cell.cell_contents for cell in closure],
+                         [1, 2, 3, 4])
+
+    def test_function_get_closure_error(self):
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(1)
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(None)
+
+    def test_function_set_closure(self):
+        from types import CellType
+
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        func = function_without_closure
+        _testcapi.function_set_closure(func, (CellType(1), CellType(1)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 1])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 1])
+
+        func = function_with_closure(1)
+        _testcapi.function_set_closure(func,
+                                       (CellType(1), CellType(2), CellType(3)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 2, 3])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 2, 3])
+
+    def test_function_set_closure_none(self):
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        _testcapi.function_set_closure(function_without_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_without_closure))
+        self.assertIsNone(function_without_closure.__closure__)
+
+        _testcapi.function_set_closure(function_with_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_with_closure))
+        self.assertIsNone(function_with_closure.__closure__)
+
+    def test_function_set_closure_errors(self):
+        def function_without_closure(): ...
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(None, ())  # not a function
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(function_without_closure, 1)
+        self.assertIsNone(function_without_closure.__closure__)  # no change
+
+        # NOTE: this works, but goes against the docs:
+        _testcapi.function_set_closure(function_without_closure, (1, 2))
+        self.assertEqual(
+            _testcapi.function_get_closure(function_without_closure), (1, 2))
+        self.assertEqual(function_without_closure.__closure__, (1, 2))
 
 
 class TestPendingCalls(unittest.TestCase):
@@ -1796,6 +1970,7 @@ class SubinterpreterTest(unittest.TestCase):
         # double checked at the time this test was written.
         config = _testinternalcapi.get_config()
         config['int_max_str_digits'] = 55555
+        config['parse_argv'] = 0
         _testinternalcapi.set_config(config)
         sub_value = _testinternalcapi.get_config()['int_max_str_digits']
         assert sub_value == 55555, sub_value
@@ -1999,6 +2174,13 @@ class SubinterpreterTest(unittest.TestCase):
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
 
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
         script = textwrap.dedent(f"""
             import importlib.machinery
             import importlib.util
@@ -2006,7 +2188,7 @@ class SubinterpreterTest(unittest.TestCase):
 
             fullname = '_test_module_state_shared'
             origin = importlib.util.find_spec('_testmultiphase').origin
-            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+            loader = importlib.machinery.{loader}(fullname, origin)
             spec = importlib.util.spec_from_loader(fullname, loader)
             module = importlib.util.module_from_spec(spec)
             attr_id = str(id(module.Error)).encode()
@@ -2264,25 +2446,36 @@ class TestThreadState(unittest.TestCase):
         _testcapi.test_current_tstate_matches()
 
 
+def get_test_funcs(mod, exclude_prefix=None):
+    funcs = {}
+    for name in dir(mod):
+        if not name.startswith('test_'):
+            continue
+        if exclude_prefix is not None and name.startswith(exclude_prefix):
+            continue
+        funcs[name] = getattr(mod, name)
+    return funcs
+
+
 class Test_testcapi(unittest.TestCase):
-    locals().update((name, getattr(_testcapi, name))
-                    for name in dir(_testcapi)
-                    if name.startswith('test_'))
+    locals().update(get_test_funcs(_testcapi))
 
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_widechar(self):
-        _testcapi.test_widechar()
+        _testlimitedcapi.test_widechar()
 
     def test_version_api_data(self):
         self.assertEqual(_testcapi.Py_Version, sys.hexversion)
 
 
+class Test_testlimitedcapi(unittest.TestCase):
+    locals().update(get_test_funcs(_testlimitedcapi))
+
+
 class Test_testinternalcapi(unittest.TestCase):
-    locals().update((name, getattr(_testinternalcapi, name))
-                    for name in dir(_testinternalcapi)
-                    if name.startswith('test_')
-                    and not name.startswith('test_lock_'))
+    locals().update(get_test_funcs(_testinternalcapi,
+                                   exclude_prefix='test_lock_'))
 
 
 @threading_helper.requires_working_threading()
@@ -2303,7 +2496,12 @@ class Test_ModuleStateAccess(unittest.TestCase):
     def setUp(self):
         fullname = '_testmultiphase_meth_state_access'  # XXX
         origin = importlib.util.find_spec('_testmultiphase').origin
-        loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = importlib.machinery.AppleFrameworkLoader(fullname, origin)
+        else:
+            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
         spec = importlib.util.spec_from_loader(fullname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)

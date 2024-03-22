@@ -630,7 +630,6 @@ init_interpreter(PyInterpreterState *interp,
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
     (void)_Py_SetOptimizer(interp, NULL);
-    interp->next_func_version = 1;
     interp->executor_list_head = NULL;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
@@ -795,7 +794,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
     Py_CLEAR(interp->audit_hooks);
 
+    // At this time, all the threads should be cleared so we don't need atomic
+    // operations for instrumentation_version or eval_breaker.
     interp->ceval.instrumentation_version = 0;
+    tstate->eval_breaker = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -900,7 +902,7 @@ _PyInterpreterState_Clear(PyThreadState *tstate)
 
 
 static inline void tstate_deactivate(PyThreadState *tstate);
-static void tstate_set_detached(PyThreadState *tstate);
+static void tstate_set_detached(PyThreadState *tstate, int detached_state);
 static void zapthreads(PyInterpreterState *interp);
 
 void
@@ -1029,20 +1031,7 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = interp->threads.main;
-    assert(tstate == current_fast_get());
-
-    if (tstate->on_delete != NULL) {
-        // The threading module was imported for the first time in this
-        // thread, so it was set as threading._main_thread.  (See gh-75698.)
-        // The thread has finished running the Python program so we mark
-        // the thread object as finished.
-        assert(tstate->_whence != _PyThreadState_WHENCE_THREADING);
-        tstate->on_delete(tstate->on_delete_data);
-        tstate->on_delete = NULL;
-        tstate->on_delete_data = NULL;
-    }
-
+    assert(interp->threads.main == current_fast_get());
     interp->threads.main = NULL;
 }
 
@@ -1567,16 +1556,6 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(tstate->context);
 
-    if (tstate->on_delete != NULL) {
-        // For the "main" thread of each interpreter, this is meant
-        // to be done in _PyInterpreterState_SetNotRunningMain().
-        // That leaves threads created by the threading module,
-        // and any threads killed by forking.
-        // However, we also accommodate "main" threads that still
-        // don't call _PyInterpreterState_SetNotRunningMain() yet.
-        tstate->on_delete(tstate->on_delete_data);
-    }
-
 #ifdef Py_GIL_DISABLED
     // Each thread should clear own freelists in free-threading builds.
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
@@ -1606,6 +1585,7 @@ tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
     assert(tstate->state != _Py_THREAD_ATTACHED);
+    tstate_verify_not_active(tstate);
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1683,9 +1663,9 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
-    tstate_set_detached(tstate);
-    tstate_delete_common(tstate);
+    tstate_set_detached(tstate, _Py_THREAD_DETACHED);
     current_fast_clear(tstate->interp->runtime);
+    tstate_delete_common(tstate);
     _PyEval_ReleaseLock(tstate->interp, NULL);
     free_threadstate((_PyThreadStateImpl *)tstate);
 }
@@ -1712,6 +1692,10 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     _PyRuntimeState *runtime = interp->runtime;
 
+#ifdef Py_GIL_DISABLED
+    assert(runtime->stoptheworld.world_stopped);
+#endif
+
     HEAD_LOCK(runtime);
     /* Remove all thread states, except tstate, from the linked list of
        thread states.  This will allow calling PyThreadState_Clear()
@@ -1729,6 +1713,8 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     tstate->prev = tstate->next = NULL;
     interp->threads.head = tstate;
     HEAD_UNLOCK(runtime);
+
+    _PyEval_StartTheWorldAll(runtime);
 
     /* Clear and deallocate all stale thread states.  Even if this
        executes Python code, we should be safe since it executes
@@ -1856,13 +1842,13 @@ tstate_try_attach(PyThreadState *tstate)
 }
 
 static void
-tstate_set_detached(PyThreadState *tstate)
+tstate_set_detached(PyThreadState *tstate, int detached_state)
 {
     assert(tstate->state == _Py_THREAD_ATTACHED);
 #ifdef Py_GIL_DISABLED
-    _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
+    _Py_atomic_store_int(&tstate->state, detached_state);
 #else
-    tstate->state = _Py_THREAD_DETACHED;
+    tstate->state = detached_state;
 #endif
 }
 
@@ -1932,7 +1918,7 @@ detach_thread(PyThreadState *tstate, int detached_state)
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
     tstate_deactivate(tstate);
-    tstate_set_detached(tstate);
+    tstate_set_detached(tstate, detached_state);
     current_fast_clear(&_PyRuntime);
     _PyEval_ReleaseLock(tstate->interp, tstate);
 }
@@ -2528,16 +2514,7 @@ PyGILState_Check(void)
         return 0;
     }
 
-#ifdef MS_WINDOWS
-    int err = GetLastError();
-#endif
-
     PyThreadState *tcur = gilstate_tss_get(runtime);
-
-#ifdef MS_WINDOWS
-    SetLastError(err);
-#endif
-
     return (tstate == tcur);
 }
 
@@ -2845,6 +2822,7 @@ tstate_mimalloc_bind(PyThreadState *tstate)
     // the "backing" heap.
     mi_tld_t *tld = &mts->tld;
     _mi_tld_init(tld, &mts->heaps[_Py_MIMALLOC_HEAP_MEM]);
+    llist_init(&mts->page_list);
 
     // Exiting threads push any remaining in-use segments to the abandoned
     // pool to be re-claimed later by other threads. We use per-interpreter
@@ -2870,6 +2848,12 @@ tstate_mimalloc_bind(PyThreadState *tstate)
         _mi_heap_init_ex(&mts->heaps[i], tld, _mi_arena_id_none(), false, i);
         mts->heaps[i].debug_offset = (uint8_t)debug_offsets[i];
     }
+
+    // Heaps that store Python objects should use QSBR to delay freeing
+    // mimalloc pages while there may be concurrent lock-free readers.
+    mts->heaps[_Py_MIMALLOC_HEAP_OBJECT].page_use_qsbr = true;
+    mts->heaps[_Py_MIMALLOC_HEAP_GC].page_use_qsbr = true;
+    mts->heaps[_Py_MIMALLOC_HEAP_GC_PRE].page_use_qsbr = true;
 
     // By default, object allocations use _Py_MIMALLOC_HEAP_OBJECT.
     // _PyObject_GC_New() and similar functions temporarily override this to
