@@ -1,2 +1,0 @@
-Add the :c:func:`PySys_Audit` function to the limited C API. Patch by Victor
-Stinner.

@@ -170,7 +170,7 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -235,6 +235,10 @@ Data Types
         >>> len(Color)
         3
 
+   .. attribute:: EnumType.__members__
+
+      Returns a mapping of every enum name to its member, including aliases
+
    .. method:: EnumType.__reversed__(cls)
 
       Returns each member in *cls* in reverse definition order::
@@ -242,9 +246,19 @@ Data Types
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
+   .. method:: EnumType._add_alias_
+
+      Adds a new name as an alias to an existing member.  Raises a
+      :exc:`NameError` if the name is already assigned to a different member.
+
+   .. method:: EnumType._add_value_alias_
+
+      Adds a new value as an alias to an existing member.  Raises a
+      :exc:`ValueError` if the value is already linked with a different member.
+
    .. versionadded:: 3.11
 
-      Before 3.11 ``enum`` used ``EnumMeta`` type, which is kept as an alias.
+      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
 
 .. class:: Enum
@@ -265,12 +279,32 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~object.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
          the exact value is unimportant you may use :class:`auto` instances and an
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
+
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
+
+   .. attribute:: Enum._name_
+
+      Name of the member.
+
+   .. attribute:: Enum._value_
+
+      Value of the member, can be set in :meth:`~object.__new__`.
+
+   .. attribute:: Enum._order_
+
+      No longer used, kept for backward compatibility.
+      (class attribute, removed during class creation).
 
    .. attribute:: Enum._ignore_
 
@@ -323,6 +357,17 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
+   .. method:: Enum.__init__(self, *args, **kwds)
+
+      By default, does nothing.  If multiple values are given in the member
+      assignment, those values become separate arguments to ``__init__``; e.g.
+
+         >>> from enum import Enum
+         >>> class Weekday(Enum):
+         ...     MONDAY = 1, 'Mon'
+
+      ``Weekday.__init__()`` would be called as ``Weekday.__init__(self, 1, 'Mon')``
+
    .. method:: Enum.__init_subclass__(cls, **kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
@@ -349,6 +394,21 @@ Data Types
          'debug'
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
+
+   .. method:: Enum.__new__(cls, *args, **kwds)
+
+      By default, doesn't exist.  If specified, either in the enum class
+      definition or in a mixin class (such as ``int``), all values given
+      in the member assignment will be passed; e.g.
+
+         >>> from enum import Enum
+         >>> class MyIntEnum(Enum):
+         ...     SEVENTEEN = '1a', 16
+
+      results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
+
+      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
+               call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
@@ -463,9 +523,9 @@ Data Types
 
 .. class:: Flag
 
-   *Flag* members support the bitwise operators ``&`` (*AND*), ``|`` (*OR*),
-   ``^`` (*XOR*), and ``~`` (*INVERT*); the results of those operators are members
-   of the enumeration.
+   ``Flag`` is the same as :class:`Enum`, but its members support the bitwise
+   operators ``&`` (*AND*), ``|`` (*OR*), ``^`` (*XOR*), and ``~`` (*INVERT*);
+   the results of those operators are members of the enumeration.
 
    .. method:: __contains__(self, value)
 
@@ -497,9 +557,7 @@ Data Types
          >>> list(purple)
          [<Color.RED: 1>, <Color.BLUE: 4>]
 
-      .. versionchanged:: 3.11
-
-         Aliases are no longer returned during iteration.
+      .. versionadded:: 3.11
 
    .. method:: __len__(self):
 
@@ -549,7 +607,7 @@ Data Types
 
    .. method:: __invert__(self):
 
-      Returns all the flags in *type(self)* that are not in self::
+      Returns all the flags in *type(self)* that are not in *self*::
 
          >>> ~white
          <Color: 0>
@@ -769,37 +827,41 @@ Supported ``__dunder__`` names
 :attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`~object.__new__`, if specified, must create and return the enum members; it is
-also a very good idea to set the member's :attr:`!_value_` appropriately.  Once
-all the members are created it is no longer used.
+:meth:`~object.__new__`, if specified, must create and return the enum members;
+it is also a very good idea to set the member's :attr:`!_value_` appropriately.
+Once all the members are created it is no longer used.
 
 
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- ``_name_`` -- name of the member
-- ``_value_`` -- value of the member; can be set / modified in ``__new__``
-
-- ``_missing_`` -- a lookup function used when a value is not found; may be
-  overridden
-- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
-  that will not be transformed into members, and will be removed from the final
-  class
-- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent
-  (class attribute, removed during class creation)
-- ``_generate_next_value_`` -- used to get an appropriate value for an enum
-  member; may be overridden
+- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
+  existing member.
+- :attr:`~Enum._name_` -- name of the member
+- :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
+- :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
+  may be overridden
+- :attr:`~Enum._ignore_` -- a list of names, either as a :class:`list` or a
+  :class:`str`, that will not be transformed into members, and will be removed
+  from the final class
+- :attr:`~Enum._order_` -- no longer used, kept for backward
+  compatibility (class attribute, removed during class creation)
+- :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
+  an enum member; may be overridden
 
   .. note::
 
-     For standard :class:`Enum` classes the next value chosen is the last value seen
-     incremented by one.
+     For standard :class:`Enum` classes the next value chosen is the highest
+     value seen incremented by one.
 
      For :class:`Flag` classes the next value chosen will be the next highest
-     power-of-two, regardless of the last value seen.
+     power-of-two.
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
 
 ---------------
 
@@ -820,7 +882,7 @@ Utilities and Decorators
 
    * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
    * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
-      used to create the ``SECOND`` enum member;
+     used to create the ``SECOND`` enum member;
    * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
      create the ``THREE`` enum member)
 

@@ -343,17 +343,17 @@ Module functions
    .. audit-event:: sqlite3.connect database sqlite3.connect
    .. audit-event:: sqlite3.connect/handle connection_handle sqlite3.connect
 
-   .. versionadded:: 3.4
-      The *uri* parameter.
+   .. versionchanged:: 3.4
+      Added the *uri* parameter.
 
    .. versionchanged:: 3.7
       *database* can now also be a :term:`path-like object`, not only a string.
 
-   .. versionadded:: 3.10
-      The ``sqlite3.connect/handle`` auditing event.
+   .. versionchanged:: 3.10
+      Added the ``sqlite3.connect/handle`` auditing event.
 
-   .. versionadded:: 3.12
-      The *autocommit* parameter.
+   .. versionchanged:: 3.12
+      Added the *autocommit* parameter.
 
    .. versionchanged:: 3.13
       Positional use of the parameters *timeout*, *detect_types*,
@@ -747,8 +747,8 @@ Connection objects
           `deterministic <https://sqlite.org/deterministic.html>`_,
           which allows SQLite to perform additional optimizations.
 
-      .. versionadded:: 3.8
-         The *deterministic* parameter.
+      .. versionchanged:: 3.8
+         Added the *deterministic* parameter.
 
       Example:
 
@@ -1132,16 +1132,23 @@ Connection objects
       .. versionchanged:: 3.10
          Added the ``sqlite3.load_extension`` auditing event.
 
-      .. versionadded:: 3.12
-         The *entrypoint* parameter.
+      .. versionchanged:: 3.12
+         Added the *entrypoint* parameter.
 
-   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension_
+   .. _Loading an Extension: https://www.sqlite.org/loadext.html#loading_an_extension
 
-   .. method:: iterdump
+   .. method:: iterdump(*, filter=None)
 
       Return an :term:`iterator` to dump the database as SQL source code.
       Useful when saving an in-memory database for later restoration.
       Similar to the ``.dump`` command in the :program:`sqlite3` shell.
+
+      :param filter:
+
+        An optional ``LIKE`` pattern for database objects to dump, e.g. ``prefix_%``.
+        If ``None`` (the default), all database objects will be included.
+
+      :type filter: str | None
 
       Example:
 
@@ -1158,6 +1165,8 @@ Connection objects
 
          :ref:`sqlite3-howto-encoding`
 
+      .. versionchanged:: 3.13
+         Added the *filter* parameter.
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
@@ -1502,7 +1511,7 @@ Cursor objects
 
    .. method:: execute(sql, parameters=(), /)
 
-      Execute SQL a single SQL statement,
+      Execute a single SQL statement,
       optionally binding Python values using
       :ref:`placeholders <sqlite3-placeholders>`.
 
@@ -1762,9 +1771,9 @@ Row objects
 Blob objects
 ^^^^^^^^^^^^
 
-.. versionadded:: 3.11
-
 .. class:: Blob
+
+   .. versionadded:: 3.11
 
    A :class:`Blob` instance is a :term:`file-like object`
    that can read and write data in an SQLite :abbr:`BLOB (Binary Large OBject)`.

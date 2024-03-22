@@ -13,7 +13,7 @@ except ImportError:
     _testcapi = None
 
 from test import support
-from test.support import threading_helper
+from test.support import threading_helper, Py_GIL_DISABLED
 from test.support.script_helper import assert_python_ok
 
 
@@ -54,6 +54,27 @@ class ClearTest(unittest.TestCase):
         support.gc_collect()
         # The reference was released by .clear()
         self.assertIs(None, wr())
+
+    def test_clear_locals_after_f_locals_access(self):
+        # see gh-113939
+        class C:
+            pass
+
+        wr = None
+        def inner():
+            nonlocal wr
+            c = C()
+            wr = weakref.ref(c)
+            1/0
+
+        try:
+            inner()
+        except ZeroDivisionError as exc:
+            support.gc_collect()
+            self.assertIsNotNone(wr())
+            exc.__traceback__.tb_next.tb_frame.clear()
+            support.gc_collect()
+            self.assertIsNone(wr())
 
     def test_clear_does_not_clear_specials(self):
         class C:
@@ -271,69 +292,6 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             gen()
         """)
         assert_python_ok("-c", code)
-
-    @support.cpython_only
-    def test_sneaky_frame_object(self):
-
-        def trace(frame, event, arg):
-            """
-            Don't actually do anything, just force a frame object to be created.
-            """
-
-        def callback(phase, info):
-            """
-            Yo dawg, I heard you like frames, so I'm allocating a frame while
-            you're allocating a frame, so you can have a frame while you have a
-            frame!
-            """
-            nonlocal sneaky_frame_object
-            sneaky_frame_object = sys._getframe().f_back.f_back
-            # We're done here:
-            gc.callbacks.remove(callback)
-
-        def f():
-            while True:
-                yield
-
-        old_threshold = gc.get_threshold()
-        old_callbacks = gc.callbacks[:]
-        old_enabled = gc.isenabled()
-        old_trace = sys.gettrace()
-        try:
-            # Stop the GC for a second while we set things up:
-            gc.disable()
-            # Create a paused generator:
-            g = f()
-            next(g)
-            # Move all objects to the oldest generation, and tell the GC to run
-            # on the *very next* allocation:
-            gc.collect()
-            gc.set_threshold(1, 0, 0)
-            # Okay, so here's the nightmare scenario:
-            # - We're tracing the resumption of a generator, which creates a new
-            #   frame object.
-            # - The allocation of this frame object triggers a collection
-            #   *before* the frame object is actually created.
-            # - During the collection, we request the exact same frame object.
-            #   This test does it with a GC callback, but in real code it would
-            #   likely be a trace function, weakref callback, or finalizer.
-            # - The collection finishes, and the original frame object is
-            #   created. We now have two frame objects fighting over ownership
-            #   of the same interpreter frame!
-            sys.settrace(trace)
-            gc.callbacks.append(callback)
-            sneaky_frame_object = None
-            gc.enable()
-            next(g)
-            # g.gi_frame should be the frame object from the callback (the
-            # one that was *requested* second, but *created* first):
-            self.assertIs(g.gi_frame, sneaky_frame_object)
-        finally:
-            gc.set_threshold(*old_threshold)
-            gc.callbacks[:] = old_callbacks
-            sys.settrace(old_trace)
-            if old_enabled:
-                gc.enable()
 
     @support.cpython_only
     @threading_helper.requires_working_threading()

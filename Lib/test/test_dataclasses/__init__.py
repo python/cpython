@@ -22,6 +22,8 @@ from functools import total_ordering
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
+from test import support
+
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
 
@@ -2216,6 +2218,7 @@ class TestDocString(unittest.TestCase):
         #  whitespace stripped.
         self.assertEqual(a.replace(' ', ''), b.replace(' ', ''))
 
+    @support.requires_docstrings
     def test_existing_docstring_not_overridden(self):
         @dataclass
         class C:
@@ -2468,6 +2471,15 @@ class TestRepr(unittest.TestCase):
 
 
 class TestEq(unittest.TestCase):
+    def test_recursive_eq(self):
+        # Test a class with recursive child
+        @dataclass
+        class C:
+            recursive: object = ...
+        c = C()
+        c.recursive = c
+        self.assertEqual(c, c)
+
     def test_no_eq(self):
         # Test a class with no __eq__ and eq=False.
         @dataclass(eq=False)
@@ -3493,6 +3505,17 @@ class TestSlots(unittest.TestCase):
         a = A(1)
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
+
+
+    def test_dataclass_derived_weakref_slot(self):
+        class A:
+            pass
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B(A):
+            pass
+
+        B()
 
 
 class TestDescriptors(unittest.TestCase):

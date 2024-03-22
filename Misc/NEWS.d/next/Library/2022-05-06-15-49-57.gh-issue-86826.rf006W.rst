@@ -1,4 +1,0 @@
-:mod:`zipinfo` now supports the full range of values in the TZ string
-determined by RFC 8536 and detects all invalid formats.
-Both Python and C implementations now raise exceptions of the same
-type on invalid data.

@@ -332,10 +332,10 @@ Suppose you configure logging with the following JSON:
         }
     }
 
-This configuration does *almost* what we want, except that ``sys.stdout`` would
-show messages of severity ``ERROR`` and above as well as ``INFO`` and
-``WARNING`` messages. To prevent this, we can set up a filter which excludes
-those messages and add it to the relevant handler. This can be configured by
+This configuration does *almost* what we want, except that ``sys.stdout`` would show messages
+of severity ``ERROR`` and only events of this severity and higher will be tracked
+as well as ``INFO`` and ``WARNING`` messages. To prevent this, we can set up a filter which
+excludes those messages and add it to the relevant handler. This can be configured by
 adding a ``filters`` section parallel to ``formatters`` and ``handlers``:
 
 .. code-block:: json
@@ -1744,13 +1744,11 @@ to the above, as in the following example::
             return self.fmt.format(*self.args)
 
     class StyleAdapter(logging.LoggerAdapter):
-        def __init__(self, logger, extra=None):
-            super().__init__(logger, extra or {})
-
-        def log(self, level, msg, /, *args, **kwargs):
+        def log(self, level, msg, /, *args, stacklevel=1, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
-                self.logger._log(level, Message(msg, args), (), **kwargs)
+                self.logger.log(level, Message(msg, args), **kwargs,
+                                stacklevel=stacklevel+1)
 
     logger = StyleAdapter(logging.getLogger(__name__))
 
@@ -1762,7 +1760,7 @@ to the above, as in the following example::
         main()
 
 The above script should log the message ``Hello, world!`` when run with
-Python 3.2 or later.
+Python 3.8 or later.
 
 
 .. currentmodule:: logging
@@ -1933,30 +1931,28 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
 
     LOGGING = {
         'version': 1,
-        'disable_existing_loggers': True,
+        'disable_existing_loggers': False,
         'formatters': {
             'verbose': {
-                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
             },
             'simple': {
-                'format': '%(levelname)s %(message)s'
+                'format': '{levelname} {message}',
+                'style': '{',
             },
         },
         'filters': {
             'special': {
                 '()': 'project.logging.SpecialFilter',
                 'foo': 'bar',
-            }
+            },
         },
         'handlers': {
-            'null': {
-                'level':'DEBUG',
-                'class':'django.utils.log.NullHandler',
-            },
-            'console':{
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-                'formatter': 'simple'
+            'console': {
+                'level': 'INFO',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
             },
             'mail_admins': {
                 'level': 'ERROR',
@@ -1966,9 +1962,8 @@ This dictionary is passed to :func:`~config.dictConfig` to put the configuration
         },
         'loggers': {
             'django': {
-                'handlers':['null'],
+                'handlers': ['console'],
                 'propagate': True,
-                'level':'INFO',
             },
             'django.request': {
                 'handlers': ['mail_admins'],
@@ -3423,9 +3418,10 @@ The worker thread is implemented using Qt's ``QThread`` class rather than the
 :mod:`threading` module, as there are circumstances where one has to use
 ``QThread``, which offers better integration with other ``Qt`` components.
 
-The code should work with recent releases of either ``PySide2`` or ``PyQt5``.
-You should be able to adapt the approach to earlier versions of Qt. Please
-refer to the comments in the code snippet for more detailed information.
+The code should work with recent releases of either ``PySide6``, ``PyQt6``,
+``PySide2`` or ``PyQt5``. You should be able to adapt the approach to earlier
+versions of Qt. Please refer to the comments in the code snippet for more
+detailed information.
 
 .. code-block:: python3
 
@@ -3435,16 +3431,25 @@ refer to the comments in the code snippet for more detailed information.
     import sys
     import time
 
-    # Deal with minor differences between PySide2 and PyQt5
+    # Deal with minor differences between different Qt packages
     try:
-        from PySide2 import QtCore, QtGui, QtWidgets
+        from PySide6 import QtCore, QtGui, QtWidgets
         Signal = QtCore.Signal
         Slot = QtCore.Slot
     except ImportError:
-        from PyQt5 import QtCore, QtGui, QtWidgets
-        Signal = QtCore.pyqtSignal
-        Slot = QtCore.pyqtSlot
-
+        try:
+            from PyQt6 import QtCore, QtGui, QtWidgets
+            Signal = QtCore.pyqtSignal
+            Slot = QtCore.pyqtSlot
+        except ImportError:
+            try:
+                from PySide2 import QtCore, QtGui, QtWidgets
+                Signal = QtCore.Signal
+                Slot = QtCore.Slot
+            except ImportError:
+                from PyQt5 import QtCore, QtGui, QtWidgets
+                Signal = QtCore.pyqtSignal
+                Slot = QtCore.pyqtSlot
 
     logger = logging.getLogger(__name__)
 
@@ -3516,8 +3521,14 @@ refer to the comments in the code snippet for more detailed information.
             while not QtCore.QThread.currentThread().isInterruptionRequested():
                 delay = 0.5 + random.random() * 2
                 time.sleep(delay)
-                level = random.choice(LEVELS)
-                logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+                try:
+                    if random.random() < 0.1:
+                        raise ValueError('Exception raised: %d' % i)
+                    else:
+                        level = random.choice(LEVELS)
+                        logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+                except ValueError as e:
+                    logger.exception('Failed: %s', e, extra=extra)
                 i += 1
 
     #
@@ -3544,7 +3555,10 @@ refer to the comments in the code snippet for more detailed information.
             self.textedit = te = QtWidgets.QPlainTextEdit(self)
             # Set whatever the default monospace font is for the platform
             f = QtGui.QFont('nosuchfont')
-            f.setStyleHint(f.Monospace)
+            if hasattr(f, 'Monospace'):
+                f.setStyleHint(f.Monospace)
+            else:
+                f.setStyleHint(f.StyleHint.Monospace)  # for Qt6
             te.setFont(f)
             te.setReadOnly(True)
             PB = QtWidgets.QPushButton
@@ -3631,7 +3645,11 @@ refer to the comments in the code snippet for more detailed information.
         app = QtWidgets.QApplication(sys.argv)
         example = Window(app)
         example.show()
-        sys.exit(app.exec_())
+        if hasattr(app, 'exec'):
+            rc = app.exec()
+        else:
+            rc = app.exec_()
+        sys.exit(rc)
 
     if __name__=='__main__':
         main()

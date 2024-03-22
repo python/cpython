@@ -7,6 +7,7 @@
 #include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_traceback.h"     // _PyTraceback_Add()
 
+#include <stdbool.h>
 #include <stddef.h>               // offsetof()
 #include "expat.h"
 #include "pyexpat.h"
@@ -21,7 +22,7 @@ module pyexpat
 #define XML_COMBINED_VERSION (10000*XML_MAJOR_VERSION+100*XML_MINOR_VERSION+XML_MICRO_VERSION)
 
 static XML_Memory_Handling_Suite ExpatMemoryHandler = {
-    PyObject_Malloc, PyObject_Realloc, PyObject_Free};
+    PyMem_Malloc, PyMem_Realloc, PyMem_Free};
 
 enum HandlerTypes {
     StartElement,
@@ -81,6 +82,12 @@ typedef struct {
                                 /* NULL if not enabled */
     int buffer_size;            /* Size of buffer, in XML_Char units */
     int buffer_used;            /* Buffer units in use */
+    bool reparse_deferral_enabled; /* Whether to defer reparsing of
+                                   unfinished XML tokens; a de-facto cache of
+                                   what Expat has the authority on, for lack
+                                   of a getter API function
+                                   "XML_GetReparseDeferralEnabled" in Expat
+                                   2.6.0 */
     PyObject *intern;           /* Dictionary to intern strings */
     PyObject **handlers;
 } xmlparseobject;
@@ -240,19 +247,12 @@ string_intern(xmlparseobject *self, const char* str)
         return result;
     if (!self->intern)
         return result;
-    value = PyDict_GetItemWithError(self->intern, result);
-    if (!value) {
-        if (!PyErr_Occurred() &&
-            PyDict_SetItem(self->intern, result, result) == 0)
-        {
-            return result;
-        }
-        else {
-            Py_DECREF(result);
-            return NULL;
-        }
+    if (PyDict_GetItemRef(self->intern, result, &value) == 0 &&
+        PyDict_SetItem(self->intern, result, result) == 0)
+    {
+        return result;
     }
-    Py_INCREF(value);
+    assert((value != NULL) == !PyErr_Occurred());
     Py_DECREF(result);
     return value;
 }
@@ -711,6 +711,40 @@ get_parse_result(pyexpat_state *state, xmlparseobject *self, int rv)
 #define MAX_CHUNK_SIZE (1 << 20)
 
 /*[clinic input]
+pyexpat.xmlparser.SetReparseDeferralEnabled
+
+    enabled: bool
+    /
+
+Enable/Disable reparse deferral; enabled by default with Expat >=2.6.0.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetReparseDeferralEnabled_impl(xmlparseobject *self,
+                                                 int enabled)
+/*[clinic end generated code: output=5ec539e3b63c8c49 input=021eb9e0bafc32c5]*/
+{
+#if XML_COMBINED_VERSION >= 20600
+    XML_SetReparseDeferralEnabled(self->itself, enabled ? XML_TRUE : XML_FALSE);
+    self->reparse_deferral_enabled = (bool)enabled;
+#endif
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+pyexpat.xmlparser.GetReparseDeferralEnabled
+
+Retrieve reparse deferral enabled status; always returns false with Expat <2.6.0.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_GetReparseDeferralEnabled_impl(xmlparseobject *self)
+/*[clinic end generated code: output=4e91312e88a595a8 input=54b5f11d32b20f3e]*/
+{
+    return PyBool_FromLong(self->reparse_deferral_enabled);
+}
+
+/*[clinic input]
 pyexpat.xmlparser.Parse
 
     cls: defining_class
@@ -1070,6 +1104,8 @@ static struct PyMethodDef xmlparse_methods[] = {
 #if XML_COMBINED_VERSION >= 19505
     PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif
+    PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF
+    PYEXPAT_XMLPARSER_GETREPARSEDEFERRALENABLED_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -1165,6 +1201,11 @@ newxmlparseobject(pyexpat_state *state, const char *encoding,
     self->ns_prefixes = 0;
     self->handlers = NULL;
     self->intern = Py_XNewRef(intern);
+#if XML_COMBINED_VERSION >= 20600
+    self->reparse_deferral_enabled = true;
+#else
+    self->reparse_deferral_enabled = false;
+#endif
 
     /* namespace_separator is either NULL or contains one char + \0 */
     self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
@@ -1622,7 +1663,8 @@ static int init_handler_descrs(pyexpat_state *state)
         if (descr == NULL)
             return -1;
 
-        if (PyDict_SetDefault(state->xml_parse_type->tp_dict, PyDescr_NAME(descr), descr) == NULL) {
+        if (PyDict_SetDefaultRef(state->xml_parse_type->tp_dict,
+                                 PyDescr_NAME(descr), descr, NULL) < 0) {
             Py_DECREF(descr);
             return -1;
         }
@@ -2025,6 +2067,11 @@ pyexpat_exec(PyObject *mod)
 #else
     capi->SetHashSalt = NULL;
 #endif
+#if XML_COMBINED_VERSION >= 20600
+    capi->SetReparseDeferralEnabled = XML_SetReparseDeferralEnabled;
+#else
+    capi->SetReparseDeferralEnabled = NULL;
+#endif
 
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
@@ -2069,9 +2116,7 @@ pyexpat_free(void *module)
 
 static PyModuleDef_Slot pyexpat_slots[] = {
     {Py_mod_exec, pyexpat_exec},
-    // XXX gh-103092: fix isolation.
-    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
-    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -6,7 +6,7 @@
 
 #include "pycore_critical_section.h"
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 #define assert_nogil assert
 #define assert_gil(x)
 #else
@@ -25,7 +25,7 @@ test_critical_sections(PyObject *self, PyObject *Py_UNUSED(args))
     assert(d2 != NULL);
 
     // Beginning a critical section should lock the associated object and
-    // push the critical section onto the thread's stack (in Py_NOGIL builds).
+    // push the critical section onto the thread's stack (in Py_GIL_DISABLED builds).
     Py_BEGIN_CRITICAL_SECTION(d1);
     assert_nogil(PyMutex_IsLocked(&d1->ob_mutex));
     assert_nogil(_PyCriticalSection_IsActive(PyThreadState_GET()->critical_section));
@@ -48,6 +48,15 @@ test_critical_sections(PyObject *self, PyObject *Py_UNUSED(args))
     assert_nogil(PyMutex_IsLocked(&d2->ob_mutex));
     Py_END_CRITICAL_SECTION2();
     assert_nogil(!PyMutex_IsLocked(&d2->ob_mutex));
+
+    // Optional variant behaves the same if the object is non-NULL
+    Py_XBEGIN_CRITICAL_SECTION(d1);
+    assert_nogil(PyMutex_IsLocked(&d1->ob_mutex));
+    Py_XEND_CRITICAL_SECTION();
+
+    // No-op
+    Py_XBEGIN_CRITICAL_SECTION(NULL);
+    Py_XEND_CRITICAL_SECTION();
 
     Py_DECREF(d2);
     Py_DECREF(d1);
@@ -170,6 +179,7 @@ thread_critical_sections(void *arg)
     }
 }
 
+#ifdef Py_CAN_START_THREADS
 static PyObject *
 test_critical_sections_threads(PyObject *self, PyObject *Py_UNUSED(args))
 {
@@ -194,12 +204,15 @@ test_critical_sections_threads(PyObject *self, PyObject *Py_UNUSED(args))
     Py_DECREF(test_data.obj1);
     Py_RETURN_NONE;
 }
+#endif
 
 static PyMethodDef test_methods[] = {
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"test_critical_sections_nest", test_critical_sections_nest, METH_NOARGS},
     {"test_critical_sections_suspend", test_critical_sections_suspend, METH_NOARGS},
+#ifdef Py_CAN_START_THREADS
     {"test_critical_sections_threads", test_critical_sections_threads, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
