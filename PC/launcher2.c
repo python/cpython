@@ -2625,7 +2625,7 @@ manageAlias(int activate, const SearchInfo *search, const EnvironmentInfo *launc
                 exitCode = RC_NO_ALIAS;
             }
         }
-        
+
         if (!exitCode && isPythonFailure(r)) {
             error(L"Unable to %s alias", activate ? L"activate" : L"delete");
             exitCode = RC_NO_ALIAS;
