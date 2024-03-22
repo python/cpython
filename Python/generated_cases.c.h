@@ -3416,7 +3416,7 @@
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             uint16_t counter = this_instr[1].cache;
-            if (ADAPTIVE_COUNTER_IS_ZERO(counter) && this_instr->op.code == JUMP_BACKWARD) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 if (counter == 0) {
                     // Dynamically initialize the counter
                     PyInterpreterState *interp = tstate->interp;
@@ -3426,7 +3426,7 @@
                         this_instr[1].cache = counter;
                     }
                 }
-                else {
+                if (ADAPTIVE_COUNTER_IS_ZERO(counter) && this_instr->op.code == JUMP_BACKWARD) {
                     _Py_CODEUNIT *start = this_instr;
                     /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                     while (oparg > 255) {

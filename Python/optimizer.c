@@ -136,7 +136,7 @@ shift_and_offset_threshold(uint32_t threshold)
     if (threshold == OPTIMIZER_UNREACHABLE_THRESHOLD) {
         return threshold;
     }
-    return adaptive_counter_bits(threshold - 1, MIN_TIER2_BACKOFF);
+    return adaptive_counter_bits(threshold, MIN_TIER2_BACKOFF);
 }
 
 _PyOptimizerObject *
