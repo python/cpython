@@ -1988,7 +1988,11 @@ def parse_file(
     libclinic.write_file(output, cooked)
 
 
-def _create_parser_namespace() -> dict[str, Any]:
+def create_parser_namespace() -> dict[str, Any]:
+    global _BASE_PARSER_NAMESPACE
+    if _BASE_PARSER_NAMESPACE is not None:
+        return _BASE_PARSER_NAMESPACE.copy()
+
     ns = dict(
         CConverter=CConverter,
         CReturnConverter=CReturnConverter,
@@ -1996,17 +2000,16 @@ def _create_parser_namespace() -> dict[str, Any]:
         robuffer=robuffer,
         rwbuffer=rwbuffer,
         unspecified=unspecified,
+        NoneType=NoneType,
     )
     for name, converter in converters.items():
         ns[f'{name}_converter'] = converter
     for name, return_converter in return_converters.items():
         ns[f'{name}_return_converter'] = return_converter
-    return ns
-_BASE_PARSER_NAMESPACE = _create_parser_namespace()
 
-
-def create_parser_namespace() -> dict[str, Any]:
+    _BASE_PARSER_NAMESPACE = ns
     return _BASE_PARSER_NAMESPACE.copy()
+_BASE_PARSER_NAMESPACE = None
 
 
 class PythonParser:
@@ -3465,7 +3468,6 @@ class float_return_converter(double_return_converter):
 
 def eval_ast_expr(
         node: ast.expr,
-        globals: dict[str, Any],
         *,
         filename: str = '-'
 ) -> Any:
@@ -4486,12 +4488,11 @@ class DSLParser:
             case ast.Name(name):
                 return name, False, {}
             case ast.Call(func=ast.Name(name)):
-                symbols = globals()
                 kwargs: ConverterArgs = {}
                 for node in annotation.keywords:
                     if not isinstance(node.arg, str):
                         fail("Cannot use a kwarg splat in a function-call annotation")
-                    kwargs[node.arg] = eval_ast_expr(node.value, symbols)
+                    kwargs[node.arg] = eval_ast_expr(node.value)
                 return name, False, kwargs
             case _:
                 fail(
