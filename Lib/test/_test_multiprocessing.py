@@ -295,6 +295,70 @@ def get_value(self):
 # Testcases
 #
 
+class ProcessFuture:
+    __slots__ = ("process", "connection")
+
+    def __init__(self, process, connection):
+        self.process = process
+        self.connection = connection
+
+    def __del__(self):
+        self.process.kill()
+        self.connection.close()
+
+    @staticmethod
+    def _target(conn, fn, args):
+        try:
+            result = fn(*args)
+        except Exception as e:
+            try:
+                conn.send((False, e))
+            except pickle.PicklingError:
+                exc = Exception(str(e))
+                exc.__class__ = e.__class__
+                conn.send((False, exc))
+        else:
+            conn.send((True, result))
+        conn.close()
+
+    def _run(self, fn, *args):
+        def get_result(timeout=None):
+            process.join(timeout)
+            result = recv.recv()
+            if isinstance(result, Exception):
+                raise result
+            else:
+                return result
+
+        recv, send = multiprocessing.Pipe()
+        process = multiprocessing.Process(target=self._target, args=(send, fn, args))
+        process.start()
+        return process, get_result
+
+    @classmethod
+    def start(cls, target, args=(), kwargs={}):
+        recv, send = multiprocessing.Pipe()
+        process = multiprocessing.Process(
+            target=cls._target, args=(send, target, args)
+        )
+        process.start()
+        return cls(process, recv)
+
+    @classmethod
+    def run(cls, target, args=(), kwargs={}):
+        future = cls.start(target, args, kwargs)
+        return future.result()
+
+    def result(self):
+        self.process.join()
+        if not self.connection.poll():
+            raise RuntimeError("Process failed to send result")
+        success, result = self.connection.recv()
+        if success:
+            return result
+        else:
+            raise result
+
 class DummyCallable:
     def __call__(self, q, c):
         assert isinstance(c, DummyCallable)
@@ -1340,260 +1404,137 @@ class _TestQueue(BaseTestCase):
             with self.assertRaisesRegex(ValueError, 'is closed'):
                 q.get()
 
+    @classmethod
+    def _join_worker(cls, q):
+        q.join()
+
+    @classmethod
+    def _task_done_worker(cls, q):
+        q.task_done()
+
+    @classmethod
+    def _get_worker(cls, q):
+        return q.get()
+
+    def assertRaisesShutdown(self, msg="Didn't appear to shut-down queue"):
+        return self.assertRaises(pyqueue.ShutDown, msg=msg)
+
     def test_shutdown_empty(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
-            q.shutdown()
+            if isinstance(q, multiprocessing.JoinableQueue):
+                join = ProcessFuture.start(self._join_worker, (q,))
+            q.shutdown(immediate=False)  # [joinable] unfinished tasks: 0 -> 0
             _wait()
-            with self.assertRaises(
-                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
-                ):
-                q.put("data")
-            with self.assertRaises(
-                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
-                ):
-                q.get()
+
+            self.assertEqual(q.qsize(), 0)
+
+            if isinstance(q, multiprocessing.JoinableQueue):
+                self.assertFalse(join.process.is_alive())
+                join.result()
+
+            with self.assertRaisesShutdown():
+                ProcessFuture.run(q.put, "data")
+            with self.assertRaisesShutdown():
+                q.put_nowait("data")
+
+            with self.assertRaisesShutdown():
+                ProcessFuture.run(q.get)
+            with self.assertRaisesShutdown():
+                q.get_nowait()
 
     def test_shutdown_nonempty(self):
         for q in multiprocessing.Queue(1), multiprocessing.JoinableQueue(1):
             q.put("data")
-            q.shutdown()
+            if isinstance(q, multiprocessing.JoinableQueue):
+                join = ProcessFuture.start(self._join_worker, (q,))
+            q.shutdown(immediate=False)  # [joinable] unfinished tasks: 1 -> 1
             _wait()
-            q.get()
-            with self.assertRaises(
-                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
-                ):
-                q.get()
+
+            self.assertEqual(q.qsize(), 1)
+
+            self.assertEqual(ProcessFuture.run(q.get), "data")
+
+            if isinstance(q, multiprocessing.JoinableQueue):
+                self.assertTrue(join.process.is_alive())
+
+            with self.assertRaisesShutdown():
+                ProcessFuture.run(q.put, "data")
+            with self.assertRaisesShutdown():
+                q.put_nowait("data")
+
+            with self.assertRaisesShutdown():
+                ProcessFuture.run(q.get)
+            with self.assertRaisesShutdown():
+                q.get_nowait()
+
+            if isinstance(q, multiprocessing.JoinableQueue):
+                q.task_done()
+
+            if isinstance(q, multiprocessing.JoinableQueue):
+                self.assertFalse(join.process.is_alive())
+                join.result()
 
     def test_shutdown_immediate(self):
         for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
             q.put("data")
+            if isinstance(q, multiprocessing.JoinableQueue):
+                join = ProcessFuture.start(self._join_worker, (q,))
             q.shutdown(immediate=True)
             _wait()
-            with self.assertRaises(
-                pyqueue.ShutDown, msg="Didn't appear to shut-down queue"
+
+            self.assertEqual(q.qsize(), 0)
+
+            if isinstance(q, multiprocessing.JoinableQueue):
+                self.assertFalse(join.process.is_alive())
+                join.result()
+
+            with self.assertRaisesShutdown():
+                ProcessFuture.run(q.put, "data")
+            with self.assertRaisesShutdown():
+                q.put_nowait("data")
+
+            with self.assertRaisesShutdown():
+                ProcessFuture.run(q.get)
+            with self.assertRaisesShutdown():
+                q.get_nowait()
+
+            if isinstance(q, multiprocessing.JoinableQueue):
+                with self.assertRaises(
+                    ValueError, msg="Didn't appear to mark all tasks done"
                 ):
-                q.get()
-
-    def test_shutdown_allowed_transitions(self):
-        # allowed transitions would be from `alive`` via `shutdown` to `shutdown_immediate``
-        mod_q = multiprocessing.queues
-        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
-            self.assertEqual(mod_q._queue_alive, q._shutdown_state.value)
-
-            # default -> immediate=False
-            q.shutdown()
-            self.assertEqual(mod_q._queue_shutdown, q._shutdown_state.value)
-
-            q.shutdown(immediate=True)
-            self.assertEqual(mod_q._queue_shutdown_immediate, q._shutdown_state.value)
-
-            q.shutdown(immediate=False)
-            self.assertNotEqual(mod_q._queue_shutdown, q._shutdown_state.value)
-
-    def _shutdown_all_methods_in_one_process(self, immediate):
-        # part 1: Queue
-        q = multiprocessing.Queue(2)
-        q.put("L")
-        _wait() # Give time to simulate many processes
-        q.put_nowait("O")
-        q.shutdown(immediate)
-        _wait() # simulate time of synchro primitive
-
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put("E")
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put_nowait("W")
-        if immediate:
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get()
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get_nowait()
-        else:
-            # Neither `task_done`, neither `join`methods` to test
-            self.assertEqual(q.get(), "L")
-            self.assertEqual(q.get_nowait(), "O")
-            _wait()
-
-            # on shutdown(immediate=False)
-            # when queue is empty, should raise ShutDown Exception
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get() # p.get(True)
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get_nowait() # q.get(False)
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get(True, 1.0)
-
-        # part 2: JoinableQueue
-        q = multiprocessing.JoinableQueue(2)
-        q.put("L")
-        _wait()
-        q.put_nowait("O")
-        q.shutdown(immediate)
-        _wait()
-
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put("E")
-        with self.assertRaises(pyqueue.ShutDown):
-            q.put_nowait("W")
-        if immediate:
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get()
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get_nowait()
-            with self.assertRaises(pyqueue.ShutDown):
-                q.task_done()
-            with self.assertRaises(pyqueue.ShutDown):
-                q.join()
-        else:
-            self.assertEqual(q.get(), "L")
-            q.task_done()
-            _wait()
-            self.assertEqual(q.get(), "O")
-            q.task_done()
-            _wait()
-            q.join()
-            # when `shutdown` queue is empty, should raise ShutDown Exception
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get() # p.get(True)
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get_nowait() # p.get(False)
-            with self.assertRaises(pyqueue.ShutDown):
-                q.get(True, 1.0)
-
-    def test_shutdown_all_methods_in_one_process(self):
-        return self._shutdown_all_methods_in_one_process(False)
-
-    def test_shutdown_immediate_all_methods_in_one_process(self):
-        return self._shutdown_all_methods_in_one_process(True)
-
-    @classmethod
-    def _write_msg_process(cls, q, n, results, delay,
-                            i_when_exec_shutdown,
-                            event_start, event_end):
-        event_start.wait()
-        for i in range(1, n+1):
-            try:
-                q.put((i, "YDLO"))
-                results.append(True)
-            except pyqueue.ShutDown:
-                results.append(False)
-            # triggers shutdown of queue
-            if i == i_when_exec_shutdown:
-                event_end.set()
-            time.sleep(delay)
-        # end of all puts
-        if isinstance(q, type(multiprocessing.JoinableQueue())):
-            try:
-                q.join()
-            except pyqueue.ShutDown:
-                pass
-
-    @classmethod
-    def _read_msg_process(cls, q, nb, results, delay, event_start):
-        event_start.wait()
-        block = True
-        while nb:
-            time.sleep(delay)
-            try:
-                # Get at least one message
-                q.get(block)
-                block = False
-                if isinstance(q, type(multiprocessing.JoinableQueue())):
                     q.task_done()
-                results.append(True)
-                nb -= 1
-            except pyqueue.ShutDown:
-                results.append(False)
-                nb -= 1
-            except pyqueue.Empty:
-                pass
-        # end of all gets
-        if isinstance(q, type(multiprocessing.JoinableQueue())):
-            try:
-                q.join()
-            except pyqueue.ShutDown:
-                pass
 
-    @classmethod
-    def _shutdown_process(cls, q, event_end, immediate):
-        event_end.wait()
-        q.shutdown(immediate)
-        if isinstance(q, type(multiprocessing.JoinableQueue())):
-            try:
-                q.join()
-            except pyqueue.ShutDown:
-                pass
+    def test_shutdown_immediate_with_unfinished(self):
+        q = multiprocessing.JoinableQueue()
+        q.put("data")
+        q.put("data")
+        join = ProcessFuture.start(self._join_worker, (q,))
+        self.assertEqual(ProcessFuture.run(q.get), "data")
+        q.shutdown(immediate=True)
+        _wait()
 
-    @classmethod
-    def _join_process(cls, q, delay, event_start):
-        event_start.wait()
-        time.sleep(delay)
-        try:
-            q.join()
-        except pyqueue.ShutDown:
-            pass
+        self.assertEqual(q.qsize(), 0)
 
-    #@classmethod
-    def _shutdown_all_methods_in_many_processes(self, immediate):
-        for q in multiprocessing.Queue(), multiprocessing.JoinableQueue():
-            ps = []
-            ev_start = multiprocessing.Event()
-            ev_exec_shutdown = multiprocessing.Event()
-            m =  multiprocessing.Manager()
-            res_puts = m.list()
-            res_gets = m.list()
-            delay = 1e-4
-            read_process = 4
-            nb_msgs = read_process * 16
-            nb_msgs_r = nb_msgs // read_process
-            when_exec_shutdown = nb_msgs // 2
-            if isinstance(q, type(multiprocessing.Queue())):
-                lprocs = (
-                    (self._write_msg_process, 1, (q, nb_msgs, res_puts, delay,
-                                                   when_exec_shutdown,
-                                                   ev_start, ev_exec_shutdown)),
-                    (self._read_msg_process, read_process, (q, nb_msgs_r,
-                                                            res_gets, delay*2,
-                                                            ev_start)),
-                    (self._shutdown_process, 1, (q, ev_exec_shutdown, immediate)),
-                )
-            else:
-                # add 2 self._join process processes
-                lprocs = (
-                    (self._write_msg_process, 1,  (q, nb_msgs, res_puts, delay,
-                                                   when_exec_shutdown,
-                                                   ev_start, ev_exec_shutdown)),
-                    (self._read_msg_process, read_process, (q, nb_msgs_r,
-                                                            res_gets, delay*2,
-                                                            ev_start)),
-                    (self._join_process, 2, (q, delay*2, ev_start)),
-                    (self._shutdown_process, 1, (q, ev_exec_shutdown, immediate)),
-                )
-            # start all processes
-            for func, n, args in lprocs:
-                for i in range(n):
-                    ps.append(multiprocessing.Process(target=func, args=args))
-                    ps[-1].start()
-            # set event in order to run q.shutdown()
-            ev_start.set()
-            _wait()
-            # wait
-            if isinstance(q, type(multiprocessing.Queue())):
-                for p in ps:
-                    p.join()
+        self.assertTrue(join.process.is_alive())
 
-            if not immediate:
-                self.assertTrue(q.empty())
-                self.assertEqual(res_gets.count(True), res_puts.count(True))
-            else:
-                self.assertTrue(res_gets.count(True) <= res_puts.count(True))
+        with self.assertRaisesShutdown():
+            ProcessFuture.run(q.put, "data")
+        with self.assertRaisesShutdown():
+            q.put_nowait("data")
 
-    def test_shutdown_all_methods_in_many_processes(self):
-        return self._shutdown_all_methods_in_many_processes(False)
+        with self.assertRaisesShutdown():
+            ProcessFuture.run(q.get)
+        with self.assertRaisesShutdown():
+            q.get_nowait()
 
-    def test_shutdown_immediate_all_methods_in_many_processes(self):
-        return self._shutdown_all_methods_in_many_processes(True)
+        q.task_done()
+        with self.assertRaises(
+            ValueError, msg="Didn't appear to mark all tasks done"
+        ):
+            q.task_done()
 
+        self.assertFalse(join.process.is_alive())
+        join.result()
 
 #
 #
