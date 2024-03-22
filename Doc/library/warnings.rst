@@ -614,6 +614,6 @@ is primarily used by :class:`catch_warnings` with *record* set to :const:`True` 
 
 .. class:: WarningMessage(message, category, filename, lineno, file=None, line=None, source=None)
 
-   The *message*, *category*, *filename*, *lineno*, *file*, *line*, have the same meaning as they
-   have in :func:`showwarning`. *source* is optionally given to indicate the destroyed object which
+   *message*, *category*, *filename*, *lineno*, *file* and *line* have the same meaning as
+   in :func:`showwarning`. *source* is optionally given to indicate the destroyed object which
    emitted a :exc:`ResourceWarning`.
