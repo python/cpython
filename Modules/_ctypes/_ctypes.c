@@ -5740,7 +5740,7 @@ static PyModuleDef_Slot module_slots[] = {
     {0, NULL}
 };
 
-struct PyModuleDef _ctypesmodule = {
+static struct PyModuleDef _ctypesmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_ctypes",
     .m_doc = _ctypes__doc__,
