@@ -157,6 +157,20 @@ class GetCurrentTests(TestBase):
             id2 = id(interp)
             self.assertNotEqual(id1, id2)
 
+    def test_unmanaged(self):
+        with self.unmanaged_interpreter() as unmanaged:
+            print(unmanaged)
+            err = unmanaged.exec(dedent(f"""
+                import {interpreters.__name__} as interpreters
+                err = None
+                try:
+                    interpreters.get_current()
+                except ValueError as exc:
+                    err = exc
+                assert exc is not None
+                """))
+            self.assertEqual(err, '')
+
 
 class ListAllTests(TestBase):
 
@@ -198,6 +212,9 @@ class ListAllTests(TestBase):
         self.assertEqual(actual, expected)
         for interp1, interp2 in zip(actual, expected):
             self.assertIs(interp1, interp2)
+
+    def test_unmanaged(self):
+        ...
 
 
 class InterpreterObjectTests(TestBase):
@@ -1071,7 +1088,7 @@ class LowLevelTests(TestBase):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
-            interpid = _interpreters.get_main()
+            interpid, _ = _interpreters.get_main()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
@@ -1137,6 +1154,12 @@ class LowLevelTests(TestBase):
             orig.spam = True
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
+
+    def test_current(self):
+        ...
+
+    def test_list_all(self):
+        ...
 
 
 if __name__ == '__main__':

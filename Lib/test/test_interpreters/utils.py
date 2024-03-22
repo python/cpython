@@ -1,6 +1,7 @@
 import contextlib
 import os
 import os.path
+import pickle
 import subprocess
 import sys
 import tempfile
@@ -64,6 +65,111 @@ def _running(interp):
     with open(w, 'w') as spipe:
         spipe.write('done')
     t.join()
+
+
+class UnmanagedInterpreter:
+
+    @classmethod
+    def start(cls, create_pipe, *, legacy=True):
+        r_in, _ = inpipe = create_pipe()
+        r_out, w_out = outpipe = create_pipe()
+
+        script = dedent(f"""
+            import pickle, os, traceback, _testcapi
+
+            # Send the interpreter ID.
+            interpid = _testcapi.get_current_interpid()
+            os.write({w_out}, pickle.dumps(interpid))
+
+            # Run exec requests until "done".
+            script = b''
+            while True:
+                ch = os.read({r_in}, 1)
+                if ch == b'\0':
+                    if not script:
+                        # done!
+                        break
+
+                    # Run the provided script.
+                    try:
+                        exec(script)
+                    except Exception as exc:
+                        traceback.print_exc()
+                        err = traceback.format_exception_only(exc)
+                        os.write(w_out, err.encode('utf-8'))
+                    os.write(w_out, b'\0')
+                    script = b''
+                else:
+                    script += ch
+            """)
+        def run():
+            try:
+                if legacy:
+                    rc = support.run_in_subinterp(script)
+                else:
+                    rc = support.run_in_subinterp_with_config(script)
+                assert rc == 0, rc
+            except BaseException:
+                os.write(w_out, b'\0')
+                raise  # re-raise
+        t = threading.Thread(target=run)
+        t.start()
+        try:
+            # Get the interpreter ID.
+            data = os.read(r_out, 10)
+            assert len(data) < 10, repr(data) 
+            assert data != b'\0'
+            interpid = pickle.loads(data)
+
+            return cls(interpid, t, inpipe, outpipe)
+        except BaseException:
+            os.write(w_out, b'\0')
+            raise  # re-raise
+
+    def __init__(self, id, thread, inpipe, outpipe):
+        self._id = id
+        self._thread = thread
+        self._r_in, self._w_in = inpipe
+        self._r_out, self._w_out = outpipe
+
+    def __repr__(self):
+        return f'<{type(self).__name__} {self._id}>'
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.shutdown()
+
+    @property
+    def id(self):
+        return self._id
+
+    def exec(self, code):
+        if isinstance(code, str):
+            code = code.encode('utf-8')
+        elif not isinstance(code, bytes):
+            raise TypeError(f'expected str/bytes, got {code!r}')
+        if not code:
+            raise ValueError('empty code')
+        os.write(self._w_in, code)
+        os.write(self._w_in, b'\0')
+
+        out = b''
+        while True:
+            ch = os.read(self._r_out, 1)
+            if ch == b'\0':
+                break
+            out += ch
+        return out.decode('utf-8')
+
+    def shutdown(self, *, wait=True):
+        t = self._thread
+        self._thread = None
+        if t is not None:
+            os.write(self._w_in, b'\0')
+            if wait:
+                t.join()
 
 
 class TestBase(unittest.TestCase):
@@ -175,3 +281,40 @@ class TestBase(unittest.TestCase):
         diff = f'namespace({diff})'
         standardMsg = self._truncateMessage(standardMsg, diff)
         self.fail(self._formatMessage(msg, standardMsg))
+
+    def unmanaged_interpreter(self, *, legacy=True):
+        return UnmanagedInterpreter.start(self.pipe, legacy=legacy)
+#    @contextlib.contextmanager
+#    def unmanaged_interpreter(self, *, legacy=True):
+#        r_id, w_id = self.pipe()
+#        r_done, w_done = self.pipe()
+#        script = dedent(f"""
+#            import marshal, os, _testcapi
+#
+#            # Send the interpreter ID.
+#            interpid = _testcapi.get_current_interpid()
+#            data = marshal.dumps(interpid)
+#            os.write({w_id}, data)
+#
+#            # Wait for "done".
+#            os.read({r_done}, 1)
+#            """)
+#        rc = None
+#        def task():
+#            nonlocal rc
+#            if legacy:
+#                rc = support.run_in_subinterp(script)
+#            else:
+#                rc = support.run_in_subinterp_with_config(script)
+#        t = threading.Thread(target=task)
+#        t.start()
+#        try:
+#            # Get the interpreter ID.
+#            data = os.read(r_id, 10)
+#            assert len(data) < 10, repr(data) 
+#            yield marshal.loads(data)
+#        finally:
+#            # Send "done".
+#            os.write(w_done, b'\0')
+#            t.join()
+#        self.assertEqual(rc, 0)
