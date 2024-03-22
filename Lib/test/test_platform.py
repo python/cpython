@@ -219,6 +219,10 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[-1], res.processor)
         self.assertEqual(len(res), 6)
 
+        if sys.platform == "ios":
+            self.assertIn(res.system, {"iOS", "iPadOS"})
+            self.assertIn(res.release, platform.ios_ver().release)
+
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_without_wmi(self):
         def raises_oserror(*a):
@@ -450,6 +454,13 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(result.release, "")
             self.assertEqual(result.model, "")
             self.assertFalse(result.is_simulator)
+
+            # Check the fallback values can be overridden by arguments
+            override = platform.ios_ver("Foo", "Bar", "Whiz", True)
+            self.assertEqual(override.system, "Foo")
+            self.assertEqual(override.release, "Bar")
+            self.assertEqual(override.model, "Whiz")
+            self.assertTrue(override.is_simulator)
 
     @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):

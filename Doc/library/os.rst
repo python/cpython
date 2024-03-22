@@ -784,6 +784,11 @@ process and user.
    :func:`socket.gethostname`  or even
    ``socket.gethostbyaddr(socket.gethostname())``.
 
+   On macOS, iOS and Android, this returns the *kernel* name and version (i.e.,
+   ``'Darwin'`` on macOS and iOS; ``'Linux'`` on Android), not the user-facing
+   operating system name. :func:`platform.uname()` can be used to get the
+   user-facing operating system name on iOS and Android.
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.3

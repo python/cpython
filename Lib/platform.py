@@ -842,8 +842,9 @@ class _Processor:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU', 0)
             return 'Alpha' if cpu_number >= 128 else 'VAX'
 
-    # On iOS, os.uname returns the architecture as uname.machine. On device it
-    # doesn't; but there's only one CPU architecture on device.
+    # On the iOS simulator, os.uname returns the architecture as uname.machine.
+    # On device it returns the model name for some reason; but there's only one
+    # CPU architecture for iOS devices, so we know the right answer.
     def get_ios():
         if sys.implementation._multiarch.endswith("simulator"):
             return os.uname().machine
@@ -1005,7 +1006,7 @@ def uname():
 
     # Normalize responses on iOS
     if sys.platform == 'ios':
-        system, release, machine, _ = ios_ver()
+        system, release, _, _ = ios_ver()
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''

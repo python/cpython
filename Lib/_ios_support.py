@@ -3,24 +3,23 @@ try:
     from ctypes import cdll, c_void_p, c_char_p, util
 except ImportError:
     # ctypes is an optional module. If it's not present, we're limited in what
-    # we can tell about the system, but we don't want to prevent the platform
-    # module from working.
+    # we can tell about the system, but we don't want to prevent the module
+    # from working.
+    print("ctypes isn't available; iOS system calls will not be available")
     objc = None
 else:
     # ctypes is available. Load the ObjC library, and wrap the objc_getClass,
-    # sel_registerName and objc_msgSend methods
-    objc = cdll.LoadLibrary(util.find_library("objc"))
-    if objc._name:
-        objc.objc_getClass.restype = c_void_p
-        objc.objc_getClass.argtypes = [c_char_p]
-        objc.sel_registerName.restype = c_void_p
-        objc.sel_registerName.argtypes = [c_char_p]
-        # The calls to objc_msgSend all have no arguments; but the return types
-        # vary with the specific call.
-        objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
-    else:
+    # sel_registerName methods
+    lib = util.find_library("objc")
+    if lib is None:
         # Failed to load the objc library
-        objc = None
+        raise RuntimeError("ObjC runtime library couldn't be loaded")
+
+    objc = cdll.LoadLibrary(lib)
+    objc.objc_getClass.restype = c_void_p
+    objc.objc_getClass.argtypes = [c_char_p]
+    objc.sel_registerName.restype = c_void_p
+    objc.sel_registerName.argtypes = [c_char_p]
 
 
 def get_platform_ios():
@@ -33,6 +32,8 @@ def get_platform_ios():
 
     # Most of the methods return ObjC objects
     objc.objc_msgSend.restype = c_void_p
+    # All the methods used have no arguments.
+    objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
 
     # Equivalent of:
     #   device = [UIDevice currentDevice]
