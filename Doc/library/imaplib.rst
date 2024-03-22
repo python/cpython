@@ -322,8 +322,22 @@ An :class:`IMAP4` instance has the following methods:
 .. method:: IMAP4.login_cram_md5(user, password)
 
    Force use of ``CRAM-MD5`` authentication when identifying the client to protect
-   the password.  Will only work if the server ``CAPABILITY`` response includes the
-   phrase ``AUTH=CRAM-MD5``.
+   the password. It will only work if the server ``CAPABILITY`` response includes
+   the phrase ``AUTH=CRAM-MD5``.
+
+
+.. method:: IMAP4.login_plain(login, password)
+
+    Authenticate using PLAIN SASL mechanism.
+
+    This is a plain-text authentication mechanism that can be used
+    instead of :meth:`IMAP4.login()` when UTF-8 support is required.
+    See :RFC:`6855`, page 5.
+
+    It will only work if the server ``CAPABILITY`` response includes
+    the phrase ``AUTH=PLAIN``.
+
+    .. versionadded:: 3.11
 
 
 .. method:: IMAP4.logout()

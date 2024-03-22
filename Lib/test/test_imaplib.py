@@ -425,6 +425,36 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", "tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
+    def test_login_plain_ascii(self):
+        class AuthHandler(SimpleIMAPHandler):
+            capabilities = 'LOGINDISABLED AUTH=PLAIN'
+            def cmd_AUTHENTICATE(self, tag, args):
+                self._send_textline('+')
+                r = yield
+                if r == b'cHJlbQBwcmVtAHBhc3M=\r\n':
+                    self._send_tagged(tag, 'OK', 'Logged in.')
+                else:
+                    self._send_tagged(tag, 'NO', 'No access')
+        client, _ = self._setup(AuthHandler)
+        self.assertTrue('AUTH=PLAIN' in client.capabilities)
+        ret, _ = client.login_plain("prem", "pass")
+        self.assertEqual(ret, "OK")
+
+    def test_login_plain_utf8(self):
+        class AuthHandler(SimpleIMAPHandler):
+            capabilities = 'LOGINDISABLED AUTH=PLAIN'
+            def cmd_AUTHENTICATE(self, tag, args):
+                self._send_textline('+')
+                r = yield
+                if r == b'cHLEmW0AcHLEmW0AxbzDs8WCxIc=\r\n':
+                    self._send_tagged(tag, 'OK', 'Logged in.')
+                else:
+                    self._send_tagged(tag, 'NO', 'No access')
+        client, _ = self._setup(AuthHandler)
+        self.assertTrue('AUTH=PLAIN' in client.capabilities)
+        ret, _ = client.login_plain("pręm", "żółć")
+        self.assertEqual(ret, "OK")
+
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
             def cmd_AUTHENTICATE(self, tag, args):

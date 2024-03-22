@@ -614,6 +614,18 @@ class IMAP4:
         return typ, dat
 
 
+    def login_plain(self, user, password):
+        """Authenticate using PLAIN SASL mechanism.
+
+        This is a plain-text authentication mechanism that can be used
+        instead of login() when UTF-8 support is required.
+        """
+        return self.authenticate(
+            "PLAIN",
+            lambda _: "{0}\x00{0}\x00{1}".format(user, password).encode()
+        )
+
+
     def login_cram_md5(self, user, password):
         """ Force use of CRAM-MD5 authentication.
 
