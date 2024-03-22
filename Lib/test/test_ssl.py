@@ -3168,8 +3168,8 @@ class ThreadedTests(unittest.TestCase):
                                         suppress_ragged_eofs=False) as s:
             s.connect((HOST, server.port))
             with self.assertRaisesRegex(
-                ssl.SSLError,
-                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA'
+                OSError,
+                'alert unknown ca|EOF occurred|TLSV1_ALERT_UNKNOWN_CA|closed by the remote host|Connection reset by peer'
             ):
                 # TLS 1.3 perform client cert exchange after handshake
                 s.write(b'data')
@@ -4534,7 +4534,7 @@ class TestPostHandshakeAuth(unittest.TestCase):
                 # test sometimes fails with EOF error. Test passes as long as
                 # server aborts connection with an error.
                 with self.assertRaisesRegex(
-                    (ssl.SSLError, OSError),
+                    OSError,
                     '(certificate required|EOF occurred|closed by the remote host)'
                 ):
                     # receive CertificateRequest
