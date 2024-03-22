@@ -212,6 +212,7 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
         *callback = self->wr_callback;
         self->wr_callback = NULL;
     }
+    self->clear_state->cleared = 1;
 }
 
 // Clear the weakref while the world is stopped
