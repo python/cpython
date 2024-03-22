@@ -250,19 +250,20 @@ macOS Platform
 iOS Platform
 ------------
 
-.. function:: ios_ver(system='', release='', machine='', is_simulator=False)
+.. function:: ios_ver(system='', release='', model='', is_simulator=False)
 
-   Get iOS version information and return it as tuple ``(system, release,
-   machine, is_simulator)`` with *release* being a tuple ``(major, minor)``.
+   Get iOS version information and return it as a
+   :func:`~collections.namedtuple` with the following attributes:
 
    * ``system`` is the OS name; either ``iOS`` or ``iPadOS``.
    * ``release`` is the iOS version number as a string (e.g., ``'17.2'``).
-   * ``machine`` is the device model identifier; this will be a string like
-     ``iPhone13,2`` for a physical device, or ``iPhone`` on a simulator.
+   * ``model`` is the device model identifier; this will be a string like
+     ``iPhone13,2`` for a physical device, or ``'iPhone'`` on a simulator.
    * ``is_simulator`` is a boolean describing if the app is running on a
      simulator or a physical device.
 
-   Entries which cannot be determined are set to ``''``.
+   Entries which cannot be determined are set to the defaults given as
+   parameters.
 
 
 Unix Platforms
