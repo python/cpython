@@ -1064,6 +1064,48 @@ Return whether or not the identified interpreter is running.");
 
 
 static PyObject *
+interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *idobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:get_config", kwlist, &idobj))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp;
+    if (idobj == NULL) {
+        interp = PyInterpreterState_Get();
+    }
+    else {
+        interp = _PyInterpreterState_LookUpIDObject(idobj);
+        if (interp == NULL) {
+            return NULL;
+        }
+    }
+
+    PyInterpreterConfig config;
+    if (_PyInterpreterConfig_InitFromState(&config, interp) < 0) {
+        return NULL;
+    }
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+PyDoc_STRVAR(get_config_doc,
+"get_config(id) -> types.SimpleNamespace\n\
+\n\
+Return a representation of the config used to initialize the interpreter.");
+
+
+static PyObject *
 interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", NULL};
@@ -1122,6 +1164,8 @@ static PyMethodDef module_functions[] = {
 
     {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
+    {"get_config",                _PyCFunction_CAST(interp_get_config),
+     METH_VARARGS | METH_KEYWORDS, get_config_doc},
     {"exec",                      _PyCFunction_CAST(interp_exec),
      METH_VARARGS | METH_KEYWORDS, exec_doc},
     {"call",                      _PyCFunction_CAST(interp_call),

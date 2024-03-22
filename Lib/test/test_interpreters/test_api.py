@@ -950,7 +950,6 @@ class LowLevelTests(TestBase):
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.
 
-    @requires__testinternalcapi
     def test_new_config(self):
         default = _interpreters.new_config('isolated')
         with self.subTest('no arg'):
@@ -1069,6 +1068,27 @@ class LowLevelTests(TestBase):
             with self.subTest(f'bad override (gil={value!r})'):
                 with self.assertRaises(ValueError):
                     _interpreters.new_config(gil=value)
+
+    @requires__testinternalcapi
+    def test_get_config(self):
+        with self.subTest('main'):
+            expected = _interpreters.new_config('legacy')
+            expected.gil = 'own'
+            interpid = _interpreters.get_main()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('isolated'):
+            expected = _interpreters.new_config('isolated')
+            interpid = _interpreters.create(isolated=True)
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('legacy'):
+            expected = _interpreters.new_config('legacy')
+            interpid = _interpreters.create(isolated=False)
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
 
 
 if __name__ == '__main__':

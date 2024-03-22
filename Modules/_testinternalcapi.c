@@ -23,12 +23,11 @@
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
-#include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromState()
+#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -1379,40 +1378,6 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *
-get_interpreter_config(PyObject *self, PyObject *args)
-{
-    PyObject *idobj = NULL;
-    if (!PyArg_ParseTuple(args, "|O:get_interpreter_config", &idobj)) {
-        return NULL;
-    }
-
-    PyInterpreterState *interp;
-    if (idobj == NULL) {
-        interp = PyInterpreterState_Get();
-    }
-    else {
-        interp = _PyInterpreterState_LookUpIDObject(idobj);
-        if (interp == NULL) {
-            return NULL;
-        }
-    }
-
-    PyInterpreterConfig config;
-    if (_PyInterpreterConfig_InitFromState(&config, interp) < 0) {
-        return NULL;
-    }
-    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
-    if (dict == NULL) {
-        return NULL;
-    }
-
-    PyObject *configobj = _PyNamespace_New(dict);
-    Py_DECREF(dict);
-    return configobj;
-}
-
-
 /* To run some code in a sub-interpreter. */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1851,7 +1816,6 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
-    {"get_interpreter_config",  get_interpreter_config,          METH_VARARGS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
