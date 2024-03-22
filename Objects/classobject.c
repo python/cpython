@@ -301,7 +301,7 @@ static Py_hash_t
 method_hash(PyMethodObject *a)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(a->im_self);
+    x = PyObject_GenericHash(a->im_self);
     y = PyObject_Hash(a->im_func);
     if (y == -1)
         return -1;

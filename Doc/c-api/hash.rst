@@ -82,3 +82,14 @@ See also the :c:member:`PyTypeObject.tp_hash` member and :ref:`numeric-hash`.
    The function cannot fail: it cannot return ``-1``.
 
    .. versionadded:: 3.13
+
+.. c:function:: Py_hash_t PyObject_GenericHash(PyObject *obj)
+
+   Generic hashing function that is meant to be put into a type
+   object's ``tp_hash`` slot.
+   Its result only depends on the object's identity.
+
+   .. impl-detail::
+      In CPython, it is equivalent to :c:func:`Py_HashPointer`.
+
+   .. versionadded:: 3.13
