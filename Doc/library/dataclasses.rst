@@ -434,26 +434,16 @@ Module contents
    :ref:`__post_init__ <post-init-processing>`, if present, is also called.
 
    Init-only variables without default values, if any exist, must be
-<<<<<<< HEAD
-   specified on the call to :func:`replace` so that they can be passed to
-   :meth:`~object.__init__` and :ref:`__post_init__ <post-init-processing>`.
-=======
    specified on the call to :func:`!replace` so that they can be passed to
    :meth:`!__init__` and :meth:`__post_init__`.
->>>>>>> 0907871d43 (docs: fix over-linking in dataclasses.rst (#117005))
 
    It is an error for ``changes`` to contain any fields that are
    defined as having ``init=False``.  A :exc:`ValueError` will be raised
    in this case.
 
    Be forewarned about how ``init=False`` fields work during a call to
-<<<<<<< HEAD
-   :func:`replace`.  They are not copied from the source object, but
-   rather are initialized in :ref:`__post_init__ <post-init-processing>`, if they're
-=======
    :func:`!replace`.  They are not copied from the source object, but
    rather are initialized in :meth:`__post_init__`, if they're
->>>>>>> 0907871d43 (docs: fix over-linking in dataclasses.rst (#117005))
    initialized at all.  It is expected that ``init=False`` fields will
    be rarely and judiciously used.  If they are used, it might be wise
    to have alternate class constructors, or perhaps a custom
@@ -522,17 +512,12 @@ passed to :meth:`!__post_init__` in the order they were defined in the
 class.  If no :meth:`~object.__init__` method is generated, then
 :meth:`!__post_init__` will not automatically be called.
 
-<<<<<<< HEAD
-Among other uses, this allows for initializing field values that
-depend on one or more other fields.  For example::
-=======
    When defined on the class, it will be called by the generated
    :meth:`~object.__init__`, normally as ``self.__post_init__()``.
    However, if any ``InitVar`` fields are defined, they will also be
    passed to :meth:`!__post_init__` in the order they were defined in the
    class.  If no :meth:`!__init__` method is generated, then
    :meth:`!__post_init__` will not automatically be called.
->>>>>>> 0907871d43 (docs: fix over-linking in dataclasses.rst (#117005))
 
     @dataclass
     class C:
