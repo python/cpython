@@ -110,9 +110,7 @@ never_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
-    /* Although it should be benign for this to be called,
-     * it shouldn't happen, so fail in debug builds. */
-    assert(0 && "never optimize should never be called");
+    // This may be called if the optimizer is reset
     return 0;
 }
 
@@ -135,17 +133,16 @@ static _PyOptimizerObject _PyOptimizer_Default = {
 static uint32_t
 shift_and_offset_threshold(uint32_t threshold)
 {
-    return (threshold << OPTIMIZER_BITS_IN_COUNTER) + (1 << 15);
+    if (threshold == OPTIMIZER_UNREACHABLE_THRESHOLD) {
+        return threshold;
+    }
+    return adaptive_counter_bits(threshold - 1, MIN_TIER2_BACKOFF);
 }
 
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->optimizer_backedge_threshold ==
-           shift_and_offset_threshold(interp->optimizer->backedge_threshold));
-    assert(interp->optimizer_resume_threshold ==
-           shift_and_offset_threshold(interp->optimizer->resume_threshold));
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
@@ -194,8 +191,8 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
     interp->optimizer_side_threshold = optimizer->side_threshold;
     if (optimizer == &_PyOptimizer_Default) {
-        assert(interp->optimizer_backedge_threshold > (1 << 16));
-        assert(interp->optimizer_resume_threshold > (1 << 16));
+        assert(interp->optimizer_backedge_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
+        assert(interp->optimizer_resume_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
     }
     return old;
 }

@@ -3416,40 +3416,38 @@
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             uint16_t counter = this_instr[1].cache;
-            this_instr[1].cache = counter + (1 << OPTIMIZER_BITS_IN_COUNTER);
-            /* We are using unsigned values, but we really want signed values, so
-             * do the 2s complement adjustment manually */
-            uint32_t offset_counter = counter ^ (1 << 15);
-            uint32_t threshold = tstate->interp->optimizer_backedge_threshold;
-            assert((threshold & OPTIMIZER_BITS_MASK) == 0);
-            // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
-            // Double-check that the opcode isn't instrumented or something:
-            if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
-                _Py_CODEUNIT *start = this_instr;
-                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                while (oparg > 255) {
-                    oparg >>= 8;
-                    start--;
-                }
-                _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
-                if (optimized < 0) goto error;
-                if (optimized) {
-                    assert(tstate->previous_executor == NULL);
-                    tstate->previous_executor = Py_None;
-                    GOTO_TIER_TWO(executor);
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter) && this_instr->op.code == JUMP_BACKWARD) {
+                if (counter == 0) {
+                    // Dynamically initialize the counter
+                    PyInterpreterState *interp = tstate->interp;
+                    if (interp->optimizer_backedge_threshold != OPTIMIZER_UNREACHABLE_THRESHOLD) {
+                        counter = interp->optimizer_backedge_threshold;
+                        assert(counter != 0);
+                        this_instr[1].cache = counter;
+                    }
                 }
                 else {
-                    int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
-                    backoff++;
-                    if (backoff < MIN_TIER2_BACKOFF) {
-                        backoff = MIN_TIER2_BACKOFF;
+                    _Py_CODEUNIT *start = this_instr;
+                    /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                    while (oparg > 255) {
+                        oparg >>= 8;
+                        start--;
                     }
-                    else if (backoff > MAX_TIER2_BACKOFF) {
-                        backoff = MAX_TIER2_BACKOFF;
+                    _PyExecutorObject *executor;
+                    int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
+                    if (optimized < 0) goto error;
+                    if (optimized) {
+                        assert(tstate->previous_executor == NULL);
+                        tstate->previous_executor = Py_None;
+                        GOTO_TIER_TWO(executor);
                     }
-                    this_instr[1].cache = ((UINT16_MAX << OPTIMIZER_BITS_IN_COUNTER) << backoff) | backoff;
+                    else {
+                        this_instr[1].cache = adaptive_counter_backoff(counter);
+                    }
                 }
+            }
+            else {
+                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             }
             #endif  /* ENABLE_SPECIALIZATION */
             DISPATCH();

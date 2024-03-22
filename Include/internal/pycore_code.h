@@ -499,6 +499,11 @@ adaptive_counter_cooldown(void) {
 }
 
 static inline uint16_t
+adaptive_counter_jump_init(void) {
+    return adaptive_counter_bits(16, 4);
+}
+
+static inline uint16_t
 adaptive_counter_backoff(uint16_t counter) {
     uint16_t backoff = counter & ((1 << ADAPTIVE_BACKOFF_BITS) - 1);
     backoff++;
