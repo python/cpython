@@ -3401,18 +3401,27 @@ _config_dict_copy_str(PyObject *dict, const char *name,
 }
 
 static int
-interp_config_from_dict(PyObject *dict, PyInterpreterConfig *config,
+interp_config_from_dict(PyObject *origdict, PyInterpreterConfig *config,
                         bool missing_allowed)
 {
-    Py_ssize_t unused = PyDict_GET_SIZE(dict);
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return -1;
+    }
+    if (PyDict_Update(dict, origdict) < 0) {
+        goto error;
+    }
 
 #define CHECK(NAME)                                                 \
     do {                                                            \
-        if (!PyErr_Occurred()) {                                    \
+        if (PyErr_Occurred()) {                                     \
+            goto error;                                             \
+        }                                                           \
+        else {                                                      \
             if (!missing_allowed) {                                 \
                 (void)config_dict_get(dict, NAME);                  \
                 assert(PyErr_Occurred());                           \
-                return -1;                                          \
+                goto error;                                         \
             }                                                       \
         }                                                           \
     } while (0)
@@ -3424,7 +3433,7 @@ interp_config_from_dict(PyObject *dict, PyInterpreterConfig *config,
         }                                                           \
         else {                                                      \
             config->FIELD = flag;                                   \
-            unused -= 1;                                            \
+            (void)PyDict_PopString(dict, #FIELD, NULL);             \
         }                                                           \
     } while (0)
 
@@ -3443,21 +3452,31 @@ interp_config_from_dict(PyObject *dict, PyInterpreterConfig *config,
     else {
         int flag;
         if (gil_flag_from_str(buf, &flag) < 0) {
-            return -1;
+            goto error;
         }
         config->gil = flag;
-        unused -= 1;
+        (void)PyDict_PopString(dict, "gil", NULL);
     }
 
 #undef COPY_BOOL
 #undef CHECK
 
-    if (unused > 0) {
+    Py_ssize_t unused = PyDict_GET_SIZE(dict);
+    if (unused == 1) {
         PyErr_Format(PyExc_ValueError,
-                     "dict as %d extra items", unused);
-        return -1;
+                     "config dict has 1 extra item (%R)", dict);
+        goto error;
+    }
+    else if (unused > 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "config dict has %d extra items (%R)", unused, dict);
+        goto error;
     }
     return 0;
+
+error:
+    Py_DECREF(dict);
+    return -1;
 }
 
 int

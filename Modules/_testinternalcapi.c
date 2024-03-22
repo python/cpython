@@ -1469,78 +1469,32 @@ static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
-    int use_main_obmalloc = -1;
-    int allow_fork = -1;
-    int allow_exec = -1;
-    int allow_threads = -1;
-    int allow_daemon_threads = -1;
-    int check_multi_interp_extensions = -1;
-    int gil = -1;
-    int r;
-    PyThreadState *substate, *mainstate;
-    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
-    PyCompilerFlags cflags = {0};
-
-    static char *kwlist[] = {"code",
-                             "use_main_obmalloc",
-                             "allow_fork",
-                             "allow_exec",
-                             "allow_threads",
-                             "allow_daemon_threads",
-                             "check_multi_interp_extensions",
-                             "gil",
-                             NULL};
+    PyObject *configobj;
+    static char *kwlist[] = {"code", "config", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
-                    &code, &use_main_obmalloc,
-                    &allow_fork, &allow_exec,
-                    &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions,
-                    &gil)) {
-        return NULL;
-    }
-    if (use_main_obmalloc < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
-        return NULL;
-    }
-    if (allow_fork < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
-        return NULL;
-    }
-    if (allow_exec < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
-        return NULL;
-    }
-    if (allow_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
-        return NULL;
-    }
-    if (gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing gil");
-        return NULL;
-    }
-    if (allow_daemon_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
-        return NULL;
-    }
-    if (check_multi_interp_extensions < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
+                    "sO:run_in_subinterp_with_config", kwlist,
+                    &code, &configobj))
+    {
         return NULL;
     }
 
-    mainstate = PyThreadState_Get();
+    PyObject *dict = PyObject_GetAttrString(configobj, "__dict__");
+    if (dict == NULL) {
+        PyErr_Format(PyExc_TypeError, "bad config %R", configobj);
+        return NULL;
+    }
+    PyInterpreterConfig config = {0};
+    int res = _PyInterpreterConfig_FromDict(dict, &config);
+    Py_DECREF(dict);
+    if (res < 0) {
+        return NULL;
+    }
+
+    PyThreadState *mainstate = PyThreadState_Get();
 
     PyThreadState_Swap(NULL);
 
-    const PyInterpreterConfig config = {
-        .use_main_obmalloc = use_main_obmalloc,
-        .allow_fork = allow_fork,
-        .allow_exec = allow_exec,
-        .allow_threads = allow_threads,
-        .allow_daemon_threads = allow_daemon_threads,
-        .check_multi_interp_extensions = check_multi_interp_extensions,
-        .gil = gil,
-    };
+    PyThreadState *substate;
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
@@ -1554,7 +1508,9 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     assert(substate != NULL);
-    r = PyRun_SimpleStringFlags(code, &cflags);
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
+    int r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
     PyThreadState_Swap(mainstate);
