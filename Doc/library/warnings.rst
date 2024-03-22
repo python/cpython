@@ -609,7 +609,7 @@ Available Context Managers
 :class:`WarningMessage` Objects
 -------------------------------
 
-A :class:`WarningMessage` object represents a warning along with information about it's emission. It
+A :class:`WarningMessage` object represents a warning along with information about its emission. It
 is primarily used by :class:`catch_warnings` with *record* set to :const:`True` to record warnings.
 
 .. class:: WarningMessage(message, category, filename, lineno, file=None, line=None, source=None)
