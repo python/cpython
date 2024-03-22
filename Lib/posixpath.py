@@ -35,7 +35,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction","isreserved","isdevdrive"]
+           "commonpath", "isjunction","isdevdrive"]
 
 
 def _get_sep(path):
@@ -168,14 +168,23 @@ def splitroot(p):
 
 def basename(p):
     """Returns the final component of a pathname"""
-    return split(p)[1]
+    p = os.fspath(p)
+    sep = _get_sep(p)
+    i = p.rfind(sep) + 1
+    return p[i:]
 
 
 # Return the head (dirname) part of a path, same as split(path)[0].
 
 def dirname(p):
     """Returns the directory component of a pathname"""
-    return split(p)[0]
+    p = os.fspath(p)
+    sep = _get_sep(p)
+    i = p.rfind(sep) + 1
+    head = p[:i]
+    if head and head != sep*len(head):
+        head = head.rstrip(sep)
+    return head
 
 
 # Is a path a junction?
@@ -184,12 +193,6 @@ def isjunction(path):
     """Test whether a path is a junction
     Junctions are not a part of posix semantics"""
     os.fspath(path)
-    return False
-
-
-def isreserved(path):
-    """Return true if the pathname is reserved by the system.
-    Always returns False on posix"""
     return False
 
 

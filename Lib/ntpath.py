@@ -165,6 +165,22 @@ def splitdrive(p):
     Paths cannot contain both a drive letter and a UNC path.
 
     """
+    drive, root, tail = splitroot(p)
+    return drive, root + tail
+
+
+def splitroot(p):
+    """Split a pathname into drive, root and tail. The drive is defined
+    exactly as in splitdrive(). On Windows, the root may be a single path
+    separator or an empty string. The tail contains anything after the root.
+    For example:
+
+        splitroot('//server/share/') == ('//server/share', '/', '')
+        splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
+        splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
+        splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
+    """
+    # Split drive
     p = os.fspath(p)
     if isinstance(p, bytes):
         sep = b'\\'
@@ -180,41 +196,27 @@ def splitdrive(p):
     if normp[:1] != sep:
         if normp[1:2] == colon:
             # Drive-letter drives, e.g. X:
-            return p[:2], p[2:]
-    elif normp[1:2] == sep:
+            drive, p = p[:2], p[2:]
+        else:
+            drive = p[:0]
+    elif normp[1:2] != sep:
+        drive = p[:0]
+    else:
         # UNC drives, e.g. \\server\share or \\?\UNC\server\share
         # Device drives, e.g. \\.\device or \\?\device
         start = 8 if normp[:8].upper() == unc_prefix else 2
         index = normp.find(sep, start)
         if index == -1:
-            return p, p[:0]
-        index2 = normp.find(sep, index + 1)
-        if index2 == -1:
-            return p, p[:0]
-        return p[:index2], p[index2:]
-    return p[:0], p
+            drive, p = p, p[:0]
+        else:
+            index2 = normp.find(sep, index + 1)
+            if index2 == -1:
+                drive, p = p, p[:0]
+            else:
+                drive, p = p[:index2], p[index2:]
 
-
-def splitroot(p):
-    """Split a pathname into drive, root and tail. The drive is defined
-    exactly as in splitdrive(). On Windows, the root may be a single path
-    separator or an empty string. The tail contains anything after the root.
-    For example:
-
-        splitroot('//server/share/') == ('//server/share', '/', '')
-        splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-        splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-        splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-    """
-    drive, p = splitdrive(p)
-    if isinstance(p, bytes):
-        sep = b'\\'
-        altsep = b'/'
-    else:
-        sep = '\\'
-        altsep = '/'
-    normp = p.replace(altsep, sep)
-    if normp[:1] == sep:
+    # Split root
+    if normp[len(drive):len(drive)+1] == sep:
         # Absolute path, e.g. X:\Windows
         return drive, p[:1], p[1:]
     # Relative path, e.g. X:Windows
