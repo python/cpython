@@ -238,7 +238,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     result = raw
     try:
         line_buffering = False
-        if buffering == 1 or buffering < 0 and raw.isatty():
+        if buffering == 1 or buffering < 0 and getattr(raw, '_size', 0) == 0 and raw.isatty():
             buffering = -1
             line_buffering = True
         if buffering < 0:
@@ -1577,6 +1577,7 @@ class FileIO(RawIOBase):
             self._blksize = getattr(fdfstat, 'st_blksize', 0)
             if self._blksize <= 1:
                 self._blksize = DEFAULT_BUFFER_SIZE
+            self._size = fdfstat.st_size
 
             if _setmode:
                 # don't translate newlines (\r\n <=> \n)

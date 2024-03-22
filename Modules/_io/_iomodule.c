@@ -209,6 +209,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     char rawmode[6], *m;
     int line_buffering, is_number, isatty = 0;
+    __int64_t size = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
@@ -346,6 +347,16 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* buffering */
     if (buffering < 0) {
+        PyObject *size_obj;
+        size_obj = PyObject_GetAttr(raw, &_Py_ID(_size));
+        if (size_obj == NULL)
+            goto error;
+        size = PyLong_AsLongLong(size_obj);
+        Py_DECREF(size_obj);
+        if (size == -1 && PyErr_Occurred())
+            goto error;
+    }
+    if (buffering < 0 && size == 0) {
         PyObject *res = PyObject_CallMethodNoArgs(raw, &_Py_ID(isatty));
         if (res == NULL)
             goto error;

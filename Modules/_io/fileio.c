@@ -72,6 +72,7 @@ typedef struct {
     unsigned int closefd : 1;
     char finalizing;
     unsigned int blksize;
+    __int64_t size;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -196,6 +197,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->appending = 0;
         self->seekable = -1;
         self->blksize = 0;
+        self->size = 0;
         self->closefd = 1;
         self->weakreflist = NULL;
     }
@@ -482,6 +484,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         if (fdfstat.st_blksize > 1)
             self->blksize = fdfstat.st_blksize;
 #endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
+	self->size = fdfstat.st_size;
     }
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -1213,6 +1216,7 @@ static PyGetSetDef fileio_getsetlist[] = {
 
 static PyMemberDef fileio_members[] = {
     {"_blksize", Py_T_UINT, offsetof(fileio, blksize), 0},
+    {"_size", T_UINT, offsetof(fileio, size), 0},
     {"_finalizing", Py_T_BOOL, offsetof(fileio, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(fileio, weakreflist), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET, offsetof(fileio, dict), Py_READONLY},
