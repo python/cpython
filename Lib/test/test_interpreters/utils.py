@@ -545,7 +545,8 @@ class TestBase(unittest.TestCase):
     @contextlib.contextmanager
     def interpreter_obj_from_capi(self, config='legacy'):
         with self.interpreter_from_capi(config) as interpid:
-            yield interpreters.Interpreter(interpid), interpid
+            interp = interpreters.Interpreter(interpid, _owned=False)
+            yield interp, interpid
 
     @contextlib.contextmanager
     def capturing(self, script):

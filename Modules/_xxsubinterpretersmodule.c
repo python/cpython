@@ -489,6 +489,24 @@ _run_in_interpreter(PyInterpreterState *interp,
 }
 
 
+/* global state *************************************************************/
+
+static void
+set_owned(PyInterpreterState *interp)
+{
+}
+
+static int
+is_owned(PyInterpreterState *interp)
+{
+    // XXX
+    if (_Py_IsMainInterpreter(interp)) {
+        return 0;
+    }
+    return 1;
+}
+
+
 /* module level code ********************************************************/
 
 static PyObject *
@@ -498,7 +516,8 @@ get_summary(PyInterpreterState *interp)
     if (idobj == NULL) {
         return NULL;
     }
-    PyObject *res = PyTuple_Pack(1, idobj);
+    PyObject *owned = is_owned(interp) ? Py_True : Py_False;
+    PyObject *res = PyTuple_Pack(2, idobj, owned);
     Py_DECREF(idobj);
     return res;
 }
@@ -580,6 +599,8 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    set_owned(interp);
+
     if (reqrefs) {
         // Decref to 0 will destroy the interpreter.
         _PyInterpreterState_RequireIDRef(interp, 1);
@@ -658,21 +679,19 @@ So does an unrecognized ID.");
 static PyObject *
 interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *ids;
-    PyInterpreterState *interp;
-
-    ids = PyList_New(0);
+    PyObject *ids = PyList_New(0);
     if (ids == NULL) {
         return NULL;
     }
 
-    interp = PyInterpreterState_Head();
+    PyInterpreterState *interp = PyInterpreterState_Head();
     while (interp != NULL) {
         PyObject *item = get_summary(interp);
         if (item == NULL) {
             Py_DECREF(ids);
             return NULL;
         }
+
         // insert at front of list
         int res = PyList_Insert(ids, 0, item);
         Py_DECREF(item);
@@ -688,7 +707,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(list_all_doc,
-"list_all() -> [(ID,)]\n\
+"list_all() -> [(ID, owned)]\n\
 \n\
 Return a list containing the ID of every existing interpreter.");
 
@@ -704,7 +723,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_current_doc,
-"get_current() -> (ID,)\n\
+"get_current() -> (ID, owned)\n\
 \n\
 Return the ID of current interpreter.");
 
@@ -717,9 +736,10 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(get_main_doc,
-"get_main() -> (ID,)\n\
+"get_main() -> (ID, owned)\n\
 \n\
 Return the ID of main interpreter.");
+
 
 static PyObject *
 interp_set___main___attrs(PyObject *self, PyObject *args)
@@ -774,6 +794,7 @@ PyDoc_STRVAR(set___main___attrs_doc,
 "set___main___attrs(id, ns)\n\
 \n\
 Bind the given attributes in the interpreter's __main__ module.");
+
 
 static PyUnicodeObject *
 convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
@@ -1178,6 +1199,31 @@ Return an identifier for where the interpreter was created.");
 
 
 static PyObject *
+interp_is_owned(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *id;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:is_owned", kwlist, &id))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp = look_up_interp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    return is_owned(interp) ? Py_True : Py_False;
+}
+
+PyDoc_STRVAR(is_owned_doc,
+"is_owned(id) -> bool\n\
+\n\
+Return True if the interpreter was created by this module.");
+
+
+static PyObject *
 interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "implieslink",  NULL};
@@ -1308,6 +1354,8 @@ static PyMethodDef module_functions[] = {
     {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
 
+    {"is_owned",                  _PyCFunction_CAST(interp_is_owned),
+     METH_VARARGS | METH_KEYWORDS, is_owned_doc},
     {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
     {"get_config",                _PyCFunction_CAST(interp_get_config),

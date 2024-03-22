@@ -74,51 +74,59 @@ class ExecutionFailed(InterpreterError):
 def create():
     """Return a new (idle) Python interpreter."""
     id = _interpreters.create(reqrefs=True)
-    return Interpreter(id)
+    return Interpreter(id, _owned=True)
 
 
 def list_all():
     """Return all existing interpreters."""
-    return [Interpreter(id)
-            for id, in _interpreters.list_all()]
+    return [Interpreter(id, _owned=owned)
+            for id, owned in _interpreters.list_all()]
 
 
 def get_current():
     """Return the currently running interpreter."""
-    id, = _interpreters.get_current()
-    return Interpreter(id)
+    id, owned = _interpreters.get_current()
+    return Interpreter(id, _owned=owned)
 
 
 def get_main():
     """Return the main interpreter."""
-    id, = _interpreters.get_main()
-    return Interpreter(id)
+    id, owned = _interpreters.get_main()
+    assert owned is False
+    return Interpreter(id, _owned=owned)
 
 
 _known = weakref.WeakValueDictionary()
 
 class Interpreter:
-    """A single Python interpreter."""
+    """A single Python interpreter.
 
-    def __new__(cls, id, /):
+    Attributes:
+
+    "id" - the unique process-global ID number for the interpreter
+    "owned" - indicates whether or not the interpreter was created
+              by interpreters.create()
+    """
+
+    def __new__(cls, id, /, _owned=None):
         # There is only one instance for any given ID.
         if not isinstance(id, int):
             raise TypeError(f'id must be an int, got {id!r}')
         id = int(id)
+        if _owned is None:
+            _owned = _interpreters.is_owned(id)
         try:
             self = _known[id]
             assert hasattr(self, '_ownsref')
         except KeyError:
-            # This may raise InterpreterNotFoundError:
-            _interpreters.incref(id)
-            try:
-                self = super().__new__(cls)
-                self._id = id
-                self._ownsref = True
-            except BaseException:
-                _interpreters.decref(id)
-                raise
+            self = super().__new__(cls)
             _known[id] = self
+            self._id = id
+            self._owned = _owned
+            self._ownsref = _owned
+            if _owned:
+                # This may raise InterpreterNotFoundError:
+                _interpreters.incref(id)
         return self
 
     def __repr__(self):
@@ -143,13 +151,17 @@ class Interpreter:
             return
         self._ownsref = False
         try:
-            _interpreters.decref(self.id)
+            _interpreters.decref(self._id)
         except InterpreterNotFoundError:
             pass
 
     @property
     def id(self):
         return self._id
+
+    @property
+    def owned(self):
+        return self._owned
 
     def is_running(self):
         """Return whether or not the identified interpreter is running."""

@@ -172,10 +172,11 @@ class GetCurrentTests(TestBase):
         text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.get_current()
-            print(interp.id)
+            print((interp.id, interp.owned))
             """)
-        interpid = eval(text)
+        interpid, owned = eval(text)
         self.assertEqual(interpid, expected)
+        self.assertFalse(owned)
 
 
 class ListAllTests(TestBase):
@@ -227,22 +228,22 @@ class ListAllTests(TestBase):
         interpid4 = interpid3 + 1
         interpid5 = interpid4 + 1
         expected = [
-            (mainid,),
-            (interpid1,),
-            (interpid2,),
-            (interpid3,),
-            (interpid4,),
-            (interpid5,),
+            (mainid, False),
+            (interpid1, True),
+            (interpid2, True),
+            (interpid3, True),
+            (interpid4, False),
+            (interpid5, True),
         ]
         expected2 = expected[:-2]
         text = self.run_temp_from_capi(f"""
             import {interpreters.__name__} as interpreters
             interp = interpreters.create()
             print(
-                [(i.id,) for i in interpreters.list_all()])
+                [(i.id, i.owned) for i in interpreters.list_all()])
             """)
         res = eval(text)
-        res2 = [(i.id,) for i in interpreters.list_all()]
+        res2 = [(i.id, i.owned) for i in interpreters.list_all()]
         self.assertEqual(res, expected)
         self.assertEqual(res2, expected2)
 
@@ -297,6 +298,32 @@ class InterpreterObjectTests(TestBase):
         interp = interpreters.create()
         with self.assertRaises(AttributeError):
             interp.id = 1_000_000
+
+    def test_owned(self):
+        main = interpreters.get_main()
+        interp = interpreters.create()
+
+        with self.subTest('main'):
+            self.assertFalse(main.owned)
+
+        with self.subTest('from _interpreters'):
+            self.assertTrue(interp.owned)
+
+        with self.subTest('from C-API'):
+            text = self.run_temp_from_capi(f"""
+                import {interpreters.__name__} as interpreters
+                interp = interpreters.get_current()
+                print(interp.owned)
+                """)
+            owned = eval(text)
+            self.assertFalse(owned)
+
+        with self.subTest('readonly'):
+            for value in (True, False):
+                with self.assertRaises(AttributeError):
+                    interp.owned = value
+                with self.assertRaises(AttributeError):
+                    main.owned = value
 
     def test_hashable(self):
         interp = interpreters.create()
@@ -1115,7 +1142,7 @@ class LowLevelTests(TestBase):
 
     def interp_exists(self, interpid):
         try:
-            _interpreters.is_running(interpid)
+            _interpreters.is_owned(interpid)
         except InterpreterNotFoundError:
             return False
         else:
@@ -1244,32 +1271,38 @@ class LowLevelTests(TestBase):
                     _interpreters.new_config(gil=value)
 
     def test_get_main(self):
-        interpid, = _interpreters.get_main()
+        interpid, owned = _interpreters.get_main()
         self.assertEqual(interpid, 0)
+        self.assertFalse(owned)
+        self.assertFalse(
+            _interpreters.is_owned(interpid))
 
     def test_get_current(self):
         with self.subTest('main'):
             main, *_ = _interpreters.get_main()
-            interpid, = _interpreters.get_current()
+            interpid, owned = _interpreters.get_current()
             self.assertEqual(interpid, main)
+            self.assertFalse(owned)
 
         script = f"""
             import {_interpreters.__name__} as _interpreters
-            interpid, = _interpreters.get_current()
-            print(interpid)
+            interpid, owned = _interpreters.get_current()
+            print(interpid, owned)
             """
         def parse_stdout(text):
             parts = text.split()
-            assert len(parts) == 1, parts
-            interpid, = parts
+            assert len(parts) == 2, parts
+            interpid, owned = parts
             interpid = int(interpid)
-            return interpid,
+            owned = eval(owned)
+            return interpid, owned
 
         with self.subTest('from _interpreters'):
             orig = _interpreters.create()
             text = self.run_and_capture(orig, script)
-            interpid, = parse_stdout(text)
+            interpid, owned = parse_stdout(text)
             self.assertEqual(interpid, orig)
+            self.assertTrue(owned)
 
         with self.subTest('from C-API'):
             last = 0
@@ -1277,8 +1310,9 @@ class LowLevelTests(TestBase):
                 last = max(last, id)
             expected = last + 1
             text = self.run_temp_from_capi(script)
-            interpid, = parse_stdout(text)
+            interpid, owned = parse_stdout(text)
             self.assertEqual(interpid, expected)
+            self.assertFalse(owned)
 
     def test_list_all(self):
         mainid, *_ = _interpreters.get_main()
@@ -1286,17 +1320,17 @@ class LowLevelTests(TestBase):
         interpid2 = _interpreters.create()
         interpid3 = _interpreters.create()
         expected = [
-            (mainid,),
-            (interpid1,),
-            (interpid2,),
-            (interpid3,),
+            (mainid, False),
+            (interpid1, True),
+            (interpid2, True),
+            (interpid3, True),
         ]
 
         with self.subTest('main'):
             res = _interpreters.list_all()
             self.assertEqual(res, expected)
 
-        with self.subTest('from _interpreters'):
+        with self.subTest('via interp from _interpreters'):
             text = self.run_and_capture(interpid2, f"""
                 import {_interpreters.__name__} as _interpreters
                 print(
@@ -1306,15 +1340,15 @@ class LowLevelTests(TestBase):
             res = eval(text)
             self.assertEqual(res, expected)
 
-        with self.subTest('from C-API'):
+        with self.subTest('via interp from C-API'):
             interpid4 = interpid3 + 1
             interpid5 = interpid4 + 1
             expected2 = expected + [
-                (interpid4,),
-                (interpid5,),
+                (interpid4, False),
+                (interpid5, True),
             ]
             expected3 = expected + [
-                (interpid5,),
+                (interpid5, True),
             ]
             text = self.run_temp_from_capi(f"""
                 import {_interpreters.__name__} as _interpreters
@@ -1377,6 +1411,11 @@ class LowLevelTests(TestBase):
             orig.spam = True
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
+
+        with self.subTest('is owned'):
+            interpid = _interpreters.create()
+            self.assertTrue(
+                _interpreters.is_owned(interpid))
 
     @requires_test_modules
     def test_destroy(self):
