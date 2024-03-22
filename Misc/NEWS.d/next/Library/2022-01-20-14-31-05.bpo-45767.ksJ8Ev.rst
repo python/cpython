@@ -1,0 +1,2 @@
+Make ``_PyLong_FromDev`` treat ``dev_t`` as ``unsigned long
+long`` instead of ``long long``.
