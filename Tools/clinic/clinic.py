@@ -5008,9 +5008,9 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error(
                 "can't specify --converters and a filename at the same time"
             )
-        any_converter_type = ConverterType | ReturnConverterType
-        converter_list: list[tuple[str, any_converter_type]] = []
-        return_converter_list: list[tuple[str, any_converter_type]] = []
+        AnyConverterType = ConverterType | ReturnConverterType
+        converter_list: list[tuple[str, AnyConverterType]] = []
+        return_converter_list: list[tuple[str, AnyConverterType]] = []
 
         for name, converter in converters.items():
             converter_list.append((
