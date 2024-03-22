@@ -521,6 +521,7 @@ class.  If no :meth:`~object.__init__` method is generated, then
 
     @dataclass
     class C:
+
         a: float
         b: float
         c: float = field(init=False)
