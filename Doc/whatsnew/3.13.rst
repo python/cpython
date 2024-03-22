@@ -1702,6 +1702,10 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`PyObject_GenericHash` function that implements the default
+  hashing function of a Python object.
+  (Contributed by Serhiy Storchaka in :gh:`113024`.)
+
 * Add PyTime C API:
 
   * :c:type:`PyTime_t` type.
