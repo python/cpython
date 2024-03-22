@@ -179,6 +179,9 @@ The module defines the following items:
       Opening :class:`GzipFile` for writing without specifying the *mode*
       argument is deprecated.
 
+   .. versionchanged:: 3.11
+      A UserWarning is now emitted when gzip files contain trailing garbage
+      instead of throwing a BadGzipFile error.
 
 .. function:: compress(data, compresslevel=9, *, mtime=None)
 
@@ -208,6 +211,9 @@ The module defines the following items:
    .. versionchanged:: 3.11
       Speed is improved by decompressing members at once in memory instead of in
       a streamed fashion.
+   .. versionchanged:: 3.11
+      A UserWarning is now emitted when gzip data contains trailing garbage
+      instead of throwing a BadGzipFile error.
 
 .. _gzip-usage-examples:
 

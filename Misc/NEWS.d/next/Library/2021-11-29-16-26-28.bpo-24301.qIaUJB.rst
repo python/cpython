@@ -1,0 +1,2 @@
+A UserWarning is now emitted when gzip files contain trailing garbage
+instead of throwing a BadGzipFile error.
