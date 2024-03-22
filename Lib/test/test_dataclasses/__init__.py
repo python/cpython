@@ -2471,6 +2471,15 @@ class TestRepr(unittest.TestCase):
 
 
 class TestEq(unittest.TestCase):
+    def test_recursive_eq(self):
+        # Test a class with recursive child
+        @dataclass
+        class C:
+            recursive: object = ...
+        c = C()
+        c.recursive = c
+        self.assertEqual(c, c)
+
     def test_no_eq(self):
         # Test a class with no __eq__ and eq=False.
         @dataclass(eq=False)

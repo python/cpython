@@ -6,12 +6,8 @@
 
 #include "Python.h"
 
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ > 201710L
-#  define NAME _test_c2x_ext
-#elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-#  define NAME _test_c11_ext
-#else
-#  define NAME _test_c99_ext
+#ifndef MODULE_NAME
+#  error "MODULE_NAME macro must be defined"
 #endif
 
 #define _STR(NAME) #NAME
@@ -25,11 +21,11 @@ PyDoc_STRVAR(_testcext_add_doc,
 static PyObject *
 _testcext_add(PyObject *Py_UNUSED(module), PyObject *args)
 {
-    long i, j;
+    long i, j, res;
     if (!PyArg_ParseTuple(args, "ll:foo", &i, &j)) {
         return NULL;
     }
-    long res = i + j;
+    res = i + j;
     return PyLong_FromLong(res);
 }
 
@@ -43,9 +39,11 @@ static PyMethodDef _testcext_methods[] = {
 static int
 _testcext_exec(PyObject *module)
 {
+#ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
         return -1;
     }
+#endif
     return 0;
 }
 
@@ -59,7 +57,7 @@ PyDoc_STRVAR(_testcext_doc, "C test extension.");
 
 static struct PyModuleDef _testcext_module = {
     PyModuleDef_HEAD_INIT,  // m_base
-    STR(NAME),  // m_name
+    STR(MODULE_NAME),  // m_name
     _testcext_doc,  // m_doc
     0,  // m_size
     _testcext_methods,  // m_methods
@@ -74,7 +72,7 @@ static struct PyModuleDef _testcext_module = {
 #define FUNC_NAME(NAME) _FUNC_NAME(NAME)
 
 PyMODINIT_FUNC
-FUNC_NAME(NAME)(void)
+FUNC_NAME(MODULE_NAME)(void)
 {
     return PyModuleDef_Init(&_testcext_module);
 }
