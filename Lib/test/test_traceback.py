@@ -3715,10 +3715,16 @@ class SuggestionFormattingTestBase:
 
         class B:
             _bluch = None
+            def method(self, name):
+                getattr(self, name)
 
         self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
         self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
         self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
 
     def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
         class A:
