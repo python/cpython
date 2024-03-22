@@ -29,7 +29,7 @@ static int
 gil_flag_from_str(const char *str, int *p_flag)
 {
     int flag;
-    if (str == NULL || strcmp(str, "") == 0) {
+    if (str == NULL) {
         flag = PyInterpreterConfig_DEFAULT_GIL;
     }
     else if (strcmp(str, "default") == 0) {
@@ -42,8 +42,8 @@ gil_flag_from_str(const char *str, int *p_flag)
         flag = PyInterpreterConfig_OWN_GIL;
     }
     else {
-        PyErr_SetString(PyExc_SystemError,
-                        "invalid interpreter config 'gil' value");
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported interpreter config .gil value '%s'", str);
         return -1;
     }
     *p_flag = flag;
@@ -73,7 +73,7 @@ _PyInterpreterConfig_AsDict(PyInterpreterConfig *config)
             if (STR == NULL) {                                      \
                 goto error;                                         \
             }                                                       \
-            PyObject *obj = PyUnicode_FromString(#FIELD);           \
+            PyObject *obj = PyUnicode_FromString(STR);           \
             if (obj == NULL) {                                      \
                 goto error;                                         \
             }                                                       \
@@ -107,11 +107,14 @@ _config_dict_get_bool(PyObject *dict, const char *name, int *p_flag)
     if (_config_dict_get(dict, name, &item) < 0) {
         return -1;
     }
-    int flag = PyObject_IsTrue(item);
-    Py_DECREF(item);
-    if (flag < 0) {
+    // For now we keep things strict, rather than using PyObject_IsTrue().
+    int flag = item == Py_True;
+    if (!flag && item != Py_False) {
+        Py_DECREF(item);
+        config_dict_invalid_type(name);
         return -1;
     }
+    Py_DECREF(item);
     *p_flag = flag;
     return 0;
 }

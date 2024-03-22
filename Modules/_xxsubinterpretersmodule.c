@@ -12,8 +12,10 @@
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
+#include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_pyerrors.h"      // _Py_excinfo
+#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -350,6 +352,34 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
 /* interpreter-specific code ************************************************/
 
 static int
+init_named_config(PyInterpreterConfig *config, const char *name)
+{
+    if (name == NULL
+            || strcmp(name, "") == 0
+            || strcmp(name, "default") == 0)
+    {
+        name = "isolated";
+    }
+
+    if (strcmp(name, "isolated") == 0) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+    }
+    else if (strcmp(name, "legacy") == 0) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+    }
+    else if (strcmp(name, "empty") == 0) {
+        *config = (PyInterpreterConfig){0};
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported config name '%s'", name);
+        return -1;
+    }
+    return 0;
+}
+
+
+static int
 _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 {
     PyObject *result = NULL;
@@ -416,6 +446,50 @@ _run_in_interpreter(PyInterpreterState *interp,
 
 
 /* module level code ********************************************************/
+
+static PyObject *
+interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    const char *name = NULL;
+    if (!PyArg_ParseTuple(args, "|s:" MODULE_NAME_STR ".new_config",
+                          &name))
+    {
+        return NULL;
+    }
+    PyObject *overrides = kwds;
+
+    PyInterpreterConfig config;
+    if (init_named_config(&config, name) < 0) {
+        return NULL;
+    }
+
+    if (overrides != NULL && PyDict_GET_SIZE(overrides) > 0) {
+        if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
+            return NULL;
+        }
+    }
+
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+PyDoc_STRVAR(new_config_doc,
+"new_config(name='isolated', /, **overrides) -> type.SimpleNamespace\n\
+\n\
+Return a representation of a new PyInterpreterConfig.\n\
+\n\
+The name determines the initial values of the config.  Supported named\n\
+configs are: default, isolated, legacy, and empty.\n\
+\n\
+Any keyword arguments are set on the corresponding config fields,\n\
+overriding the initial values.");
+
 
 static PyObject *
 interp_create(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1033,6 +1107,8 @@ interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
 
 
 static PyMethodDef module_functions[] = {
+    {"new_config",                _PyCFunction_CAST(interp_new_config),
+     METH_VARARGS | METH_KEYWORDS, new_config_doc},
     {"create",                    _PyCFunction_CAST(interp_create),
      METH_VARARGS | METH_KEYWORDS, create_doc},
     {"destroy",                   _PyCFunction_CAST(interp_destroy),

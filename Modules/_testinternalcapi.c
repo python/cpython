@@ -1412,57 +1412,6 @@ get_interpreter_config(PyObject *self, PyObject *args)
     return configobj;
 }
 
-static PyObject *
-new_interpreter_config(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    const char *initialized = NULL;
-    PyObject *overrides = NULL;
-    static char *kwlist[] = {"initialized", "overrides", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "|sO:new_interpreter_config", kwlist,
-                    &initialized, &overrides))
-    {
-        return NULL;
-    }
-    if (initialized == NULL
-            || strcmp(initialized, "") == 0
-            || strcmp(initialized, "default") == 0)
-    {
-        initialized = "isolated";
-    }
-
-    PyInterpreterConfig config;
-    if (strcmp(initialized, "isolated") == 0) {
-        config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
-    }
-    else if (strcmp(initialized, "legacy") == 0) {
-        config = (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
-    }
-    else if (strcmp(initialized, "empty") == 0) {
-        config = (PyInterpreterConfig){0};
-    }
-    else {
-        PyErr_Format(PyExc_ValueError,
-                     "unsupported initialized arg '%s'", initialized);
-        return NULL;
-    }
-
-    if (overrides != NULL) {
-        if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
-            return NULL;
-        }
-    }
-
-    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
-    if (dict == NULL) {
-        return NULL;
-    }
-
-    PyObject *configobj = _PyNamespace_New(dict);
-    Py_DECREF(dict);
-    return configobj;
-}
-
 
 /* To run some code in a sub-interpreter. */
 static PyObject *
@@ -1903,8 +1852,6 @@ static PyMethodDef module_functions[] = {
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"get_interpreter_config",  get_interpreter_config,          METH_VARARGS},
-    {"new_interpreter_config", _PyCFunction_CAST(new_interpreter_config),
-     METH_VARARGS | METH_KEYWORDS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
