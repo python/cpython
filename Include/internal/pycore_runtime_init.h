@@ -83,6 +83,11 @@ extern PyTypeObject _PyExc_MemoryError;
             .tuple_object = { \
                 .ob_item = offsetof(PyTupleObject, ob_item), \
             }, \
+            .unicode_object = { \
+                .state = offsetof(PyUnicodeObject, _base._base.state), \
+                .length = offsetof(PyUnicodeObject, _base._base.length), \
+                .asciiobject_size = sizeof(PyASCIIObject), \
+            }, \
         }, \
         .allocators = { \
             .standard = _pymem_allocators_standard_INIT(runtime), \
@@ -163,12 +168,12 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
-            .generations = { \
-                /* .head is set in _PyGC_InitState(). */ \
-                { .threshold = 700, }, \
+            .young = { .threshold = 2000, }, \
+            .old = { \
                 { .threshold = 10, }, \
-                { .threshold = 10, }, \
+                { .threshold = 0, }, \
             }, \
+            .work_to_do = -5000, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
@@ -176,6 +181,7 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .dtoa = _dtoa_state_INIT(&(INTERP)), \
         .dict_state = _dict_state_INIT, \
+        .mem_free_queue = _Py_mem_free_queue_INIT(INTERP.mem_free_queue), \
         .func_state = { \
             .next_version = 1, \
         }, \

@@ -20,8 +20,6 @@ import errno
 
 from queue import Empty, Full, ShutDown
 
-import _multiprocessing
-
 from . import connection
 from . import context
 _ForkingPickler = context.reduction.ForkingPickler
