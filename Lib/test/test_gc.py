@@ -1094,7 +1094,7 @@ class IncremetalGCTests(unittest.TestCase):
         head = make_ll(1000)
         count = 1000
 
-        # There will some objects we aren't counting,
+        # There will be some objects we aren't counting,
         # e.g. the gc stats dicts. This test checks
         # that the counts don't grow, so we try to
         # correct for the uncounted objects
