@@ -656,7 +656,7 @@ class MagicNumberTests(unittest.TestCase):
 class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
     def run_with_own_gil(self, script):
-        interpid = _interpreters.create(isolated=True)
+        interpid = _interpreters.create('isolated')
         def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)
@@ -669,7 +669,7 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
                 raise ImportError(excsnap.msg)
 
     def run_with_shared_gil(self, script):
-        interpid = _interpreters.create(isolated=False)
+        interpid = _interpreters.create('legacy')
         def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)

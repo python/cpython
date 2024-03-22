@@ -378,6 +378,34 @@ init_named_config(PyInterpreterConfig *config, const char *name)
     return 0;
 }
 
+static int
+config_from_object(PyObject *configobj, PyInterpreterConfig *config)
+{
+    if (configobj == NULL || configobj == Py_None) {
+        if (init_named_config(config, NULL) < 0) {
+            return -1;
+        }
+    }
+    else if (PyUnicode_Check(configobj)) {
+        if (init_named_config(config, PyUnicode_AsUTF8(configobj)) < 0) {
+            return -1;
+        }
+    }
+    else {
+        PyObject *dict = PyObject_GetAttrString(configobj, "__dict__");
+        if (dict == NULL) {
+            PyErr_Format(PyExc_TypeError, "bad config %R", configobj);
+            return -1;
+        }
+        int res = _PyInterpreterConfig_InitFromDict(config, dict);
+        Py_DECREF(dict);
+        if (res < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 
 static int
 _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
@@ -494,21 +522,21 @@ overriding the initial values.");
 static PyObject *
 interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"config", NULL};
+    PyObject *configobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:create", kwlist,
+                                     &configobj)) {
+        return NULL;
+    }
 
-    static char *kwlist[] = {"isolated", NULL};
-    int isolated = 1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|$i:create", kwlist,
-                                     &isolated)) {
+    PyInterpreterConfig config;
+    if (config_from_object(configobj, &config) < 0) {
         return NULL;
     }
 
     // Create and initialize the new interpreter.
     PyThreadState *save_tstate = PyThreadState_Get();
     assert(save_tstate != NULL);
-    const PyInterpreterConfig config = isolated
-        ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
-        : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
-
     // XXX Possible GILState issues?
     PyThreadState *tstate = NULL;
     PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);

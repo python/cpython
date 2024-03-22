@@ -1069,7 +1069,6 @@ class LowLevelTests(TestBase):
                 with self.assertRaises(ValueError):
                     _interpreters.new_config(gil=value)
 
-    @requires__testinternalcapi
     def test_get_config(self):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
@@ -1080,15 +1079,67 @@ class LowLevelTests(TestBase):
 
         with self.subTest('isolated'):
             expected = _interpreters.new_config('isolated')
-            interpid = _interpreters.create(isolated=True)
+            interpid = _interpreters.create('isolated')
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
         with self.subTest('legacy'):
             expected = _interpreters.new_config('legacy')
-            interpid = _interpreters.create(isolated=False)
+            interpid = _interpreters.create('legacy')
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
+
+    @requires__testinternalcapi
+    def test_create(self):
+        isolated = _interpreters.new_config('isolated')
+        legacy = _interpreters.new_config('legacy')
+        default = isolated
+
+        with self.subTest('no arg'):
+            interpid = _interpreters.create()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, default)
+
+        with self.subTest('arg: None'):
+            interpid = _interpreters.create(None)
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, default)
+
+        with self.subTest('arg: \'empty\''):
+            with self.assertRaises(RuntimeError):
+                # The "empty" config isn't viable on its own.
+                _interpreters.create('empty')
+
+        for arg, expected in {
+            '': default,
+            'default': default,
+            'isolated': isolated,
+            'legacy': legacy,
+        }.items():
+            with self.subTest(f'str arg: {arg!r}'):
+                interpid = _interpreters.create(arg)
+                config = _interpreters.get_config(interpid)
+                self.assert_ns_equal(config, expected)
+
+        with self.subTest('custom'):
+            orig = _interpreters.new_config('empty')
+            orig.use_main_obmalloc = True
+            orig.gil = 'shared'
+            interpid = _interpreters.create(orig)
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, orig)
+
+        with self.subTest('missing fields'):
+            orig = _interpreters.new_config()
+            del orig.gil
+            with self.assertRaises(ValueError):
+                _interpreters.create(orig)
+
+        with self.subTest('extra fields'):
+            orig = _interpreters.new_config()
+            orig.spam = True
+            with self.assertRaises(ValueError):
+                _interpreters.create(orig)
 
 
 if __name__ == '__main__':
