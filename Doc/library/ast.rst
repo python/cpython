@@ -1649,7 +1649,9 @@ Pattern matching
                                     MatchValue(
                                         value=Constant(value=0)),
                                     MatchValue(
-                                        value=Constant(value=0))]),
+                                        value=Constant(value=0))],
+                                kwd_attrs=[],
+                                kwd_patterns=[]),
                             body=[
                                 Expr(
                                     value=Constant(value=Ellipsis))]),

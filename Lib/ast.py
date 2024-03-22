@@ -157,9 +157,10 @@ def dump(
                 if (
                     not show_empty
                     and (value is None or value == [])
-                    and not isinstance(node, Constant)
+                    # Special cases:
+                    # `Constant(value=None)` and `MatchSingleton(value=None)`
+                    and not isinstance(node, (Constant, MatchSingleton))
                 ):
-                    # Special case: `Constant(value=None)`
                     continue
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple

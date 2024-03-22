@@ -1357,6 +1357,12 @@ Module(
         )
 
         check_node(
+            ast.MatchSingleton(value=None),
+            empty="MatchSingleton(value=None)",
+            full="MatchSingleton(value=None)",
+        )
+
+        check_node(
             ast.Constant(value=None),
             empty="Constant(value=None)",
             full="Constant(value=None)",
