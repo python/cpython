@@ -180,7 +180,6 @@ def splitroot(p):
         splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
         splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
     """
-    # Split drive
     p = os.fspath(p)
     if isinstance(p, bytes):
         sep = b'\\'
