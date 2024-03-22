@@ -109,10 +109,14 @@ PrintError(const char *msg, ...)
  * slower.
  */
 static void
-TryAddRef(StgDictObject *dict, CDataObject *obj)
+TryAddRef(PyObject *cnv, CDataObject *obj)
 {
     IUnknown *punk;
-    int r = PyDict_Contains((PyObject *)dict, &_Py_ID(_needs_com_addref_));
+    PyObject *attrdict = _PyType_GetDict((PyTypeObject *)cnv);
+    if (!attrdict) {
+        return;
+    }
+    int r = PyDict_Contains(attrdict, &_Py_ID(_needs_com_addref_));
     if (r <= 0) {
         if (r < 0) {
             PrintError("getting _needs_com_addref_");
@@ -154,22 +158,26 @@ static void _CallPythonObject(void *mem,
     ctypes_state *st = GLOBAL_STATE();
     for (i = 0; i < nargs; i++) {
         PyObject *cnv = cnvs[i]; // borrowed ref
-        StgDictObject *dict;
-        dict = PyType_stgdict(cnv);
 
-        if (dict && dict->getfunc && !_ctypes_simple_instance(cnv)) {
-            PyObject *v = dict->getfunc(*pArgs, dict->size);
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, cnv, &info) < 0) {
+            goto Done;
+        }
+
+        if (info && info->getfunc && !_ctypes_simple_instance(cnv)) {
+            PyObject *v = info->getfunc(*pArgs, info->size);
             if (!v) {
                 PrintError("create argument %zd:\n", i);
                 goto Done;
             }
             args[i] = v;
             /* XXX XXX XX
-               We have the problem that c_byte or c_short have dict->size of
+               We have the problem that c_byte or c_short have info->size of
                1 resp. 4, but these parameters are pushed as sizeof(int) bytes.
                BTW, the same problem occurs when they are pushed as parameters
             */
-        } else if (dict) {
+        }
+        else if (info) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
             CDataObject *obj = (CDataObject *)_PyObject_CallNoArgs(cnv);
             if (!obj) {
@@ -181,10 +189,10 @@ static void _CallPythonObject(void *mem,
                 PrintError("unexpected result of create argument %zd:\n", i);
                 goto Done;
             }
-            memcpy(obj->b_ptr, *pArgs, dict->size);
+            memcpy(obj->b_ptr, *pArgs, info->size);
             args[i] = (PyObject *)obj;
 #ifdef MS_WIN32
-            TryAddRef(dict, obj);
+            TryAddRef(cnv, obj);
 #endif
         } else {
             PyErr_SetString(PyExc_TypeError,
@@ -348,10 +356,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     if (p == NULL)
         return NULL;
 
-#ifdef Py_DEBUG
     ctypes_state *st = GLOBAL_STATE();
     assert(CThunk_CheckExact(st, (PyObject *)p));
-#endif
 
     p->pcl_write = Py_ffi_closure_alloc(sizeof(ffi_closure), &p->pcl_exec);
     if (p->pcl_write == NULL) {
@@ -372,14 +378,18 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         p->setfunc = NULL;
         p->ffi_restype = &ffi_type_void;
     } else {
-        StgDictObject *dict = PyType_stgdict(restype);
-        if (dict == NULL || dict->setfunc == NULL) {
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, restype, &info) < 0) {
+            goto error;
+        }
+
+        if (info == NULL || info->setfunc == NULL) {
           PyErr_SetString(PyExc_TypeError,
                           "invalid result type for callback function");
           goto error;
         }
-        p->setfunc = dict->setfunc;
-        p->ffi_restype = &dict->ffi_type_pointer;
+        p->setfunc = info->setfunc;
+        p->ffi_restype = &info->ffi_type_pointer;
     }
 
     cc = FFI_DEFAULT_ABI;

@@ -35,6 +35,7 @@
 
 #ifdef Py_DEBUG
     extern const char *_PyUOpName(int index);
+    extern void _PyUOpPrint(const _PyUOpInstruction *uop);
     static const char *const DEBUG_ENV = "PYTHON_OPT_DEBUG";
     static inline int get_lltrace(void) {
         char *uop_debug = Py_GETENV(DEBUG_ENV);
@@ -138,6 +139,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *builtins = frame->f_builtins;
     if (builtins != interp->builtins) {
+        OPT_STAT_INC(remove_globals_builtins_changed);
         return 1;
     }
     PyObject *globals = frame->f_globals;
@@ -169,6 +171,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         switch(opcode) {
             case _GUARD_BUILTINS_VERSION:
                 if (incorrect_keys(inst, builtins)) {
+                    OPT_STAT_INC(remove_globals_incorrect_keys);
                     return 0;
                 }
                 if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
@@ -189,6 +192,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 break;
             case _GUARD_GLOBALS_VERSION:
                 if (incorrect_keys(inst, globals)) {
+                    OPT_STAT_INC(remove_globals_incorrect_keys);
                     return 0;
                 }
                 uint64_t watched_mutations = get_mutations(globals);
@@ -224,7 +228,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched <<= 1;
                 globals_watched <<= 1;
                 function_checked <<= 1;
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand;
+                if (operand == 0 || (operand & 1)) {
+                    // It's either a code object or NULL, so bail
+                    return 1;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)operand;
                 if (func == NULL) {
                     return 1;
                 }
@@ -237,6 +246,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 globals = func->func_globals;
                 builtins = func->func_builtins;
                 if (builtins != interp->builtins) {
+                    OPT_STAT_INC(remove_globals_builtins_changed);
                     return 1;
                 }
                 break;
@@ -246,7 +256,15 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
                 function_checked >>= 1;
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand;
+                if (operand == 0 || (operand & 1)) {
+                    // It's either a code object or NULL, so bail
+                    return 1;
+                }
+                PyFunctionObject *func = (PyFunctionObject *)operand;
+                if (func == NULL) {
+                    return 1;
+                }
                 assert(PyFunction_Check(func));
                 function_version = func->func_version;
                 globals = func->func_globals;
@@ -357,6 +375,7 @@ optimize_uops(
 
     _Py_UOpsContext context;
     _Py_UOpsContext *ctx = &context;
+    uint32_t opcode = UINT16_MAX;
 
     if (_Py_uop_abstractcontext_init(ctx) < 0) {
         goto out_of_space;
@@ -373,18 +392,23 @@ optimize_uops(
          this_instr++) {
 
         int oparg = this_instr->oparg;
-        uint32_t opcode = this_instr->opcode;
-
+        opcode = this_instr->opcode;
         _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
 
-        DPRINTF(3, "Abstract interpreting %s:%d ",
-                _PyUOpName(opcode),
-                oparg);
+#ifdef Py_DEBUG
+        if (get_lltrace() >= 3) {
+            printf("%4d abs: ", (int)(this_instr - trace));
+            _PyUOpPrint(this_instr);
+            printf(" ");
+        }
+#endif
+
         switch (opcode) {
+
 #include "optimizer_cases.c.h"
 
             default:
-                DPRINTF(1, "Unknown opcode in abstract interpreter\n");
+                DPRINTF(1, "\nUnknown opcode in abstract interpreter\n");
                 Py_UNREACHABLE();
         }
         assert(ctx->frame != NULL);
@@ -397,23 +421,33 @@ optimize_uops(
     return 1;
 
 out_of_space:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Out of space in abstract interpreter\n");
-    _Py_uop_abstractcontext_fini(ctx);
-    return 0;
-
+    goto done;
 error:
+    DPRINTF(3, "\n");
     DPRINTF(1, "Encountered error in abstract interpreter\n");
+    if (opcode <= MAX_UOP_ID) {
+        OPT_ERROR_IN_OPCODE(opcode);
+    }
     _Py_uop_abstractcontext_fini(ctx);
-    return 0;
+    return -1;
 
 hit_bottom:
     // Attempted to push a "bottom" (contradition) symbol onto the stack.
     // This means that the abstract interpreter has hit unreachable code.
-    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but it's
-    // simpler to just admit failure and not create the executor.
+    // We *could* generate an _EXIT_TRACE or _FATAL_ERROR here, but hitting
+    // bottom indicates type instability, so we are probably better off
+    // retrying later.
+    DPRINTF(3, "\n");
     DPRINTF(1, "Hit bottom in abstract interpreter\n");
     _Py_uop_abstractcontext_fini(ctx);
     return 0;
+done:
+    /* Cannot optimize further, but there would be no benefit
+     * in retrying later */
+    _Py_uop_abstractcontext_fini(ctx);
+    return 1;
 }
 
 
@@ -501,7 +535,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 static void
 peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
-    PyCodeObject *co = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *co = _PyFrame_GetCode(frame);
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch(opcode) {
@@ -524,11 +558,16 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             case _PUSH_FRAME:
             case _POP_FRAME:
             {
-                PyFunctionObject *func = (PyFunctionObject *)buffer[pc].operand;
-                if (func == NULL) {
+                uint64_t operand = buffer[pc].operand;
+                if (operand & 1) {
+                    co = (PyCodeObject *)(operand & ~1);
+                    assert(PyCode_Check(co));
+                }
+                else if (operand == 0) {
                     co = NULL;
                 }
                 else {
+                    PyFunctionObject *func = (PyFunctionObject *)operand;
                     assert(PyFunction_Check(func));
                     co = (PyCodeObject *)func->func_code;
                 }
@@ -566,7 +605,7 @@ _Py_uop_analyze_and_optimize(
     peephole_opt(frame, buffer, buffer_size);
 
     err = optimize_uops(
-        (PyCodeObject *)frame->f_executable, buffer,
+        _PyFrame_GetCode(frame), buffer,
         buffer_size, curr_stacklen, dependencies);
 
     if (err == 0) {
