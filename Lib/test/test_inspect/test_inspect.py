@@ -35,7 +35,7 @@ except ImportError:
 from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
-from test.support.os_helper import TESTFN
+from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
 from test.support import has_subprocess_support, SuppressCrashReport
 from test import support
@@ -730,6 +730,18 @@ class TestRetrievingSourceCode(GetSourceBase):
         finally:
             del linecache.cache[co.co_filename]
 
+    def test_getsource_empty_file(self):
+        with temp_cwd() as cwd:
+            with open('empty_file.py', 'w'):
+                pass
+            sys.path.insert(0, cwd)
+            try:
+                import empty_file
+                self.assertEqual(inspect.getsource(empty_file), '\n')
+                self.assertEqual(inspect.getsourcelines(empty_file), (['\n'], 0))
+            finally:
+                sys.path.remove(cwd)
+
     def test_getfile(self):
         self.assertEqual(inspect.getfile(mod.StupidGit), mod.__file__)
 
@@ -970,6 +982,9 @@ class TestBuggyCases(GetSourceBase):
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
+
+    def test_getsource_on_class_code_object(self):
+        self.assertSourceEqual(mod2.ClassWithCodeObject.code, 315, 317)
 
     def test_nested_func(self):
         self.assertSourceEqual(mod2.cls135.func136, 136, 139)
