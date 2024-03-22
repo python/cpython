@@ -540,7 +540,6 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     PyThreadState_Swap(save_tstate);
     PyThreadState_Delete(tstate);
 
-    _PyInterpreterState_RequireIDRef(interp, 1);
     return idobj;
 }
 
@@ -1108,16 +1107,27 @@ Return a representation of the config used to initialize the interpreter.");
 static PyObject *
 interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", NULL};
+    static char *kwlist[] = {"id", "implieslink",  NULL};
     PyObject *id;
+    int implieslink = -1;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:_incref", kwlist, &id)) {
+                                     "O|$p:_incref", kwlist,
+                                     &id, &implieslink))
+    {
         return NULL;
     }
 
     PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
+    }
+    if (implieslink < 0) {
+        implieslink = !_Py_IsMainInterpreter(interp);
+    }
+
+    if (implieslink) {
+        // Decref to 0 will destroy the interpreter.
+        _PyInterpreterState_RequireIDRef(interp, 1);
     }
     if (_PyInterpreterState_IDInitref(interp) < 0) {
         return NULL;
