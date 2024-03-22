@@ -1,0 +1,2 @@
+Allow :func:`~functools.singledispatch` to dispatch on positional or keyword
+arguments.
