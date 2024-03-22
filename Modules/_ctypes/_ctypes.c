@@ -537,12 +537,6 @@ CType_Type_sizeof(PyObject *self)
     return PyLong_FromSsize_t(size);
 }
 
-static PyMethodDef ctype_methods[] = {
-    {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
-     METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
-    {0},
-};
-
 /*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
   __metaclass__ will call the constructor StructUnionType_new.
@@ -972,6 +966,17 @@ CTypeType_repeat(PyObject *self, Py_ssize_t length)
     return PyCArrayType_from_ctype(self, length);
 }
 
+static PyMethodDef ctype_methods[] = {
+    {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
+         METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
+    { "from_param", CTypeType_from_param, METH_O, from_param_doc },
+    { "from_address", CTypeType_from_address, METH_O, from_address_doc },
+    { "from_buffer", CTypeType_from_buffer, METH_VARARGS, from_buffer_doc, },
+    { "from_buffer_copy", CTypeType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
+    { "in_dll", CTypeType_in_dll, METH_VARARGS, in_dll_doc },
+    { NULL, NULL },
+};
+
 static PyType_Slot ctype_type_slots[] = {
     {Py_tp_traverse, CType_Type_traverse},
     {Py_tp_clear, CType_Type_clear},
@@ -990,15 +995,6 @@ static PyType_Spec pyctype_type_spec = {
               Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_BASETYPE ),
     .slots = ctype_type_slots,
-};
-
-static PyMethodDef CTypeType_methods[] = {
-    { "from_param", CTypeType_from_param, METH_O, from_param_doc },
-    { "from_address", CTypeType_from_address, METH_O, from_address_doc },
-    { "from_buffer", CTypeType_from_buffer, METH_VARARGS, from_buffer_doc, },
-    { "from_buffer_copy", CTypeType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
-    { "in_dll", CTypeType_in_dll, METH_VARARGS, in_dll_doc },
-    { NULL, NULL },
 };
 
 
@@ -1032,7 +1028,7 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 static PyType_Slot pycstruct_type_slots[] = {
     {Py_tp_setattro, PyCStructType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
-    {Py_tp_methods, CTypeType_methods},
+    {Py_tp_methods, ctype_methods},
     {Py_tp_init, PyCStructType_init},
     {0, NULL},
 };
@@ -1047,7 +1043,7 @@ static PyType_Spec pycstruct_type_spec = {
 static PyType_Slot union_type_slots[] = {
     {Py_tp_setattro, UnionType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the Union Objects")},
-    {Py_tp_methods, CTypeType_methods},
+    {Py_tp_methods, ctype_methods},
     {Py_tp_init, UnionType_init},
     {0, NULL},
 };
@@ -1611,7 +1607,7 @@ error:
 
 static PyType_Slot pycarray_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
-    {Py_tp_methods, CTypeType_methods},
+    {Py_tp_methods, ctype_methods},
     {Py_tp_init, PyCArrayType_init},
     {0, NULL},
 };
@@ -2533,7 +2529,7 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 static PyType_Slot pycfuncptr_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for C function pointers")},
-    {Py_tp_methods, CTypeType_methods},
+    {Py_tp_methods, ctype_methods},
     {Py_tp_init, PyCFuncPtrType_init},
     {0, NULL},
 };
