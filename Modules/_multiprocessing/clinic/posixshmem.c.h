@@ -42,6 +42,53 @@ exit:
 
 #endif /* defined(HAVE_SHM_OPEN) */
 
+#if defined(HAVE_SHM_RENAME)
+
+PyDoc_STRVAR(_posixshmem_shm_rename__doc__,
+"shm_rename($module, path_from, path_to, flags, /)\n"
+"--\n"
+"\n"
+"Rename a shared memory object.\n"
+"\n"
+"Remove a shared memory object and relink to another path.\n"
+"By default, if the destination path already exist, it will be unlinked.\n"
+"With the SHM_RENAME_EXCHANGE flag, source and destination paths\n"
+"will be exchanged.\n"
+"With the SHM_RENAME_NOREPLACE flag, an error will be triggered\n"
+"if the destination alredady exists.");
+
+#define _POSIXSHMEM_SHM_RENAME_METHODDEF    \
+    {"shm_rename", (PyCFunction)(void(*)(void))_posixshmem_shm_rename, METH_FASTCALL, _posixshmem_shm_rename__doc__},
+
+static int
+_posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
+                            PyObject *path_to, int flags);
+
+static PyObject *
+_posixshmem_shm_rename(PyObject *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"path_from", "path_to", "flags", NULL};
+    PyObject *path_from;
+    PyObject *path_to;
+    int flags;
+    int _return_value;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Ui|i:shm_rename", _keywords,
+        &path_from, &path_to, &flags))
+        goto exit;
+    _return_value = _posixshmem_shm_rename_impl(module, path_from, path_to, flags);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SHM_RENAME) */
+
 #if defined(HAVE_SHM_UNLINK)
 
 PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
@@ -56,9 +103,6 @@ PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
 
 #define _POSIXSHMEM_SHM_UNLINK_METHODDEF    \
     {"shm_unlink", (PyCFunction)(void(*)(void))_posixshmem_shm_unlink, METH_VARARGS|METH_KEYWORDS, _posixshmem_shm_unlink__doc__},
-
-static PyObject *
-_posixshmem_shm_unlink_impl(PyObject *module, PyObject *path);
 
 static PyObject *
 _posixshmem_shm_unlink(PyObject *module, PyObject *args, PyObject *kwargs)
@@ -82,7 +126,11 @@ exit:
     #define _POSIXSHMEM_SHM_OPEN_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_OPEN_METHODDEF) */
 
+#ifndef _POSIXSHMEM_SHM_RENAME_METHODDEF
+    #define _POSIXSHMEM_SHM_RENAME_METHODDEF
+#endif /* !defined(_POSIXSHMEM_SHM_RENAME_METHODDEF) */
+
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=be0661dbed83ea23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca3677d5d1e7755f input=a9049054013a1b77]*/

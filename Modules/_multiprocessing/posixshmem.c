@@ -73,6 +73,53 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 }
 #endif /* HAVE_SHM_OPEN */
 
+#ifdef HAVE_SHM_RENAME
+/*[clinic input]
+_posixshmem.shm_rename
+    path_from: unicode
+    path_to: unicode
+    flags: int
+    /
+
+Rename a shared memory object.
+
+Remove a shared memory object and relink to another path.
+By default, if the destination path already exist, it will be unlinked.
+With the SHM_RENAME_EXCHANGE flag, source and destination paths
+will be exchanged.
+With the SHM_RENAME_NOREPLACE flag, an error will be triggered
+if the destination alredady exists.
+
+[clinic start generated code]*/
+
+static int
+_posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
+                            PyObject *path_to, int flags)
+/*[clinic end generated code: output=a9101f606826ad30 input=0373bfc9c491e123]*/
+{
+    int rv;
+    int async_err = 0;
+    const char *from = PyUnicode_AsUTF8AndSize(path_from, NULL);
+    const char *to = PyUnicode_AsUTF8AndSize(path_to, NULL);
+    if (from == NULL || to == NULL) {
+        return -1;
+    }
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        rv = shm_rename(from, to, flags);
+        Py_END_ALLOW_THREADS
+    } while (rv < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (rv < 0) {
+        if (!async_err)
+            PyErr_SetFromErrnoWithFilenameObjects(PyExc_OSError, path_from, path_to);
+        return -1;
+    }
+
+    return rv;
+}
+#endif /* HAVE_SHM_RENAME */
+
 #ifdef HAVE_SHM_UNLINK
 /*[clinic input]
 _posixshmem.shm_unlink
@@ -121,6 +168,9 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 
 static PyMethodDef module_methods[ ] = {
     _POSIXSHMEM_SHM_OPEN_METHODDEF
+#if defined(HAVE_SHM_RENAME)
+    _POSIXSHMEM_SHM_RENAME_METHODDEF
+#endif
     _POSIXSHMEM_SHM_UNLINK_METHODDEF
     {NULL} /* Sentinel */
 };
