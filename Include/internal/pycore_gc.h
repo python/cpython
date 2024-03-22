@@ -322,7 +322,7 @@ extern void _PyGC_Unfreeze(PyInterpreterState *interp);
 /* Number of frozen objects */
 extern Py_ssize_t _PyGC_GetFreezeCount(PyInterpreterState *interp);
 
-extern PyObject *_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation);
+extern PyObject *_PyGC_GetObjects(PyInterpreterState *interp, int generation);
 extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists

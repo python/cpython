@@ -1233,7 +1233,7 @@ gc_collect_region(PyThreadState *tstate,
                   struct gc_collection_stats *stats);
 
 static inline Py_ssize_t
-gc_list_set_space(PyGC_Head *list, uintptr_t space)
+gc_list_set_space(PyGC_Head *list, int space)
 {
     Py_ssize_t size = 0;
     PyGC_Head *gc;
@@ -1673,7 +1673,7 @@ _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
 }
 
 PyObject *
-_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
+_PyGC_GetObjects(PyInterpreterState *interp, int generation)
 {
     assert(generation >= -1 && generation < NUM_GENERATIONS);
     GCState *gcstate = &interp->gc;
