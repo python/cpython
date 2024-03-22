@@ -215,7 +215,7 @@ error:
 }
 
 int
-_PyInterpreterConfig_FromDict(PyObject *dict, PyInterpreterConfig *config)
+_PyInterpreterConfig_InitFromDict(PyInterpreterConfig *config, PyObject *dict)
 {
     if (!PyDict_Check(dict)) {
         PyErr_SetString(PyExc_TypeError, "dict expected");
@@ -237,5 +237,27 @@ _PyInterpreterConfig_UpdateFromDict(PyInterpreterConfig *config, PyObject *dict)
     if (interp_config_from_dict(dict, config, true) < 0) {
         return -1;
     }
+    return 0;
+}
+
+int
+_PyInterpreterConfig_InitFromState(PyInterpreterConfig *config,
+                                   PyInterpreterState *interp)
+{
+    // Populate the config by re-constructing the values from the interpreter.
+    *config = (PyInterpreterConfig){
+#define FLAG(flag) \
+        (interp->feature_flags & Py_RTFLAGS_ ## flag)
+        .use_main_obmalloc = FLAG(USE_MAIN_OBMALLOC),
+        .allow_fork = FLAG(FORK),
+        .allow_exec = FLAG(EXEC),
+        .allow_threads = FLAG(THREADS),
+        .allow_daemon_threads = FLAG(DAEMON_THREADS),
+        .check_multi_interp_extensions = FLAG(MULTI_INTERP_EXTENSIONS),
+#undef FLAG
+        .gil = interp->ceval.own_gil
+            ? PyInterpreterConfig_OWN_GIL
+            : PyInterpreterConfig_SHARED_GIL,
+    };
     return 0;
 }

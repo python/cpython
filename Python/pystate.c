@@ -1122,28 +1122,6 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
     return interp->dict;
 }
 
-int
-_PyInterpreterState_ResolveConfig(PyInterpreterState *interp,
-                                  PyInterpreterConfig *config)
-{
-    // Populate the config by re-constructing the values from the interpreter.
-    *config = (PyInterpreterConfig){
-#define FLAG(flag) \
-        (interp->feature_flags & Py_RTFLAGS_ ## flag)
-        .use_main_obmalloc = FLAG(USE_MAIN_OBMALLOC),
-        .allow_fork = FLAG(FORK),
-        .allow_exec = FLAG(EXEC),
-        .allow_threads = FLAG(THREADS),
-        .allow_daemon_threads = FLAG(DAEMON_THREADS),
-        .check_multi_interp_extensions = FLAG(MULTI_INTERP_EXTENSIONS),
-#undef FLAG
-        .gil = interp->ceval.own_gil
-            ? PyInterpreterConfig_OWN_GIL
-            : PyInterpreterConfig_SHARED_GIL,
-    };
-    return 0;
-}
-
 
 //----------
 // interp ID

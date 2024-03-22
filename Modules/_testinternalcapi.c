@@ -28,7 +28,7 @@
 #include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_pylifecycle.h"   // _PyInterpreterState_ResolveConfig()
+#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -1399,7 +1399,7 @@ get_interpreter_config(PyObject *self, PyObject *args)
     }
 
     PyInterpreterConfig config;
-    if (_PyInterpreterState_ResolveConfig(interp, &config) < 0) {
+    if (_PyInterpreterConfig_InitFromState(&config, interp) < 0) {
         return NULL;
     }
     PyObject *dict = _PyInterpreterConfig_AsDict(&config);
@@ -1484,7 +1484,7 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     PyInterpreterConfig config = {0};
-    int res = _PyInterpreterConfig_FromDict(dict, &config);
+    int res = _PyInterpreterConfig_InitFromDict(&config, dict);
     Py_DECREF(dict);
     if (res < 0) {
         return NULL;
