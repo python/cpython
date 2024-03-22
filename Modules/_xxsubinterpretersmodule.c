@@ -56,6 +56,24 @@ _get_current_module(void)
 }
 
 
+static int
+is_running_main(PyInterpreterState *interp)
+{
+    if (_PyInterpreterState_IsRunningMain(interp)) {
+        return 1;
+    }
+    // Unlike with the general C-API, we can be confident that someone
+    // using this module for the main interpreter is doing so through
+    // the main program.  Thus we can make this extra check.  This benefits
+    // applications that embed Python but haven't been updated yet
+    // to call_PyInterpreterState_SetRunningMain().
+    if (_Py_IsMainInterpreter(interp)) {
+        return 1;
+    }
+    return 0;
+}
+
+
 /* Cross-interpreter Buffer Views *******************************************/
 
 // XXX Release when the original interpreter is destroyed.
@@ -509,7 +527,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     // Ensure the interpreter isn't running.
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
-    if (_PyInterpreterState_IsRunningMain(interp)) {
+    if (is_running_main(interp)) {
         PyErr_Format(PyExc_RuntimeError, "interpreter running");
         return NULL;
     }
@@ -977,7 +995,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
     if (interp == NULL) {
         return NULL;
     }
-    if (_PyInterpreterState_IsRunningMain(interp)) {
+    if (is_running_main(interp)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
