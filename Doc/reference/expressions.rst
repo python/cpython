@@ -1851,7 +1851,8 @@ object.  The unnamed object behaves like a function object defined with:
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
 functions created with lambda expressions cannot contain statements or
-annotations.
+annotations. See :doc:`standard Python grammar <./grammar>`
+for precise grammar specification of lambda parameters.
 
 
 .. _exprlists:
