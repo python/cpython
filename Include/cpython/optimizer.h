@@ -89,7 +89,7 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 typedef struct _exit_data {
     uint32_t target;
-    int16_t temperature;
+    uint16_t temperature;
     const struct _PyExecutorObject *executor;
 } _PyExitData;
 
@@ -115,11 +115,10 @@ typedef int (*optimize_func)(
 struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
-    /* These thresholds are treated as signed so do not exceed INT16_MAX
-     * Use INT16_MAX to indicate that the optimizer should never be called */
+    /* Initial values for adaptive-style counters */
+    uint16_t backedge_threshold;
     uint16_t resume_threshold;
     uint16_t side_threshold;
-    uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 };
 

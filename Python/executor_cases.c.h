@@ -3695,21 +3695,21 @@
             oparg = CURRENT_OPARG();
             _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
             _PyExitData *exit = &previous->exits[oparg];
-            exit->temperature++;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
+            if (!ADAPTIVE_COUNTER_IS_ZERO(exit->temperature)) {
+                DECREMENT_ADAPTIVE_COUNTER(exit->temperature);
                 GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
-            } else {
+            }
+            else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
-                    exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
+                    exit->temperature = adaptive_counter_backoff(exit->temperature);
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
