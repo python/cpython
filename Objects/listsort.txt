@@ -270,9 +270,9 @@ result.  This has two primary good effects:
 
 Computing minrun
 ----------------
-If N < 64, minrun is N.  IOW, binary insertion sort is used for the whole
-array then; it's hard to beat that given the overheads of trying something
-fancier (see note BINSORT).
+If N < MAX_MINRUN, minrun is N.  IOW, binary insertion sort is used for the 
+whole array then; it's hard to beat that given the overheads of trying 
+something fancier (see note BINSORT).
 
 When N is a power of 2, testing on random data showed that minrun values of
 16, 32, 64 and 128 worked about equally well.  At 256 the data-movement cost
@@ -310,12 +310,13 @@ place, and r < minrun is small compared to N), or q a little larger than a
 power of 2 regardless of r (then we've got a case similar to "2112", again
 leaving too little work for the last merge to do).
 
-Instead we pick a minrun in range(32, 65) such that N/minrun is exactly a
-power of 2, or if that isn't possible, is close to, but strictly less than,
-a power of 2.  This is easier to do than it may sound:  take the first 6
-bits of N, and add 1 if any of the remaining bits are set.  In fact, that
-rule covers every case in this section, including small N and exact powers
-of 2; merge_compute_minrun() is a deceptively simple function.
+Instead we pick a minrun in range(MAX_MINRUN / 2, MAX_MINRUN + 1) such that 
+N/minrun is exactly a power of 2, or if that isn't possible, is close to, but 
+strictly less than, a power of 2.  This is easier to do than it may sound: 
+take the first log2(MAX_MINRUN) bits of N, and add 1 if any of the remaining 
+bits are set. In fact, that rule covers every case in this section, including 
+small N and exact powers of 2; merge_compute_minrun() is a deceptively simple 
+function.
 
 
 The Merge Pattern

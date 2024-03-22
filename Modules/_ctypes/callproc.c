@@ -664,15 +664,20 @@ struct argument {
  */
 static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 {
-    StgDictObject *dict;
     pa->keep = NULL; /* so we cannot forget it later */
+    ctypes_state *st = GLOBAL_STATE();
 
-    dict = PyObject_stgdict(obj);
-    if (dict) {
+    StgInfo *info;
+    int result = PyStgInfo_FromObject(st, obj, &info);
+    if (result < 0) {
+        return -1;
+    }
+    if (info) {
+        assert(info);
         PyCArgObject *carg;
-        assert(dict->paramfunc);
-        /* If it has an stgdict, it is a CDataObject */
-        carg = dict->paramfunc((CDataObject *)obj);
+        assert(info->paramfunc);
+        /* If it has an stginfo, it is a CDataObject */
+        carg = info->paramfunc((CDataObject *)obj);
         if (carg == NULL)
             return -1;
         pa->ffi_type = carg->pffi_type;
@@ -681,7 +686,6 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         return 0;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
     if (PyCArg_CheckExact(st, obj)) {
         PyCArgObject *carg = (PyCArgObject *)obj;
         pa->ffi_type = carg->pffi_type;
@@ -778,26 +782,34 @@ int can_return_struct_as_sint64(size_t s)
 #endif
 
 
+// returns NULL with exception set on error
 ffi_type *_ctypes_get_ffi_type(PyObject *obj)
 {
-    StgDictObject *dict;
-    if (obj == NULL)
+    if (obj == NULL) {
         return &ffi_type_sint;
-    dict = PyType_stgdict(obj);
-    if (dict == NULL)
+    }
+
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, obj, &info) < 0) {
+        return NULL;
+    }
+
+    if (info == NULL) {
         return &ffi_type_sint;
+    }
 #if defined(MS_WIN32) && !defined(_WIN32_WCE)
     /* This little trick works correctly with MSVC.
        It returns small structures in registers
     */
-    if (dict->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
-        if (can_return_struct_as_int(dict->ffi_type_pointer.size))
+    if (info->ffi_type_pointer.type == FFI_TYPE_STRUCT) {
+        if (can_return_struct_as_int(info->ffi_type_pointer.size))
             return &ffi_type_sint32;
-        else if (can_return_struct_as_sint64 (dict->ffi_type_pointer.size))
+        else if (can_return_struct_as_sint64 (info->ffi_type_pointer.size))
             return &ffi_type_sint64;
     }
 #endif
-    return &dict->ffi_type_pointer;
+    return &info->ffi_type_pointer;
 }
 
 
@@ -983,7 +995,6 @@ static int _call_function_pointer(int flags,
  */
 static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
 {
-    StgDictObject *dict;
     PyObject *retval, *v;
 
     if (restype == NULL)
@@ -993,17 +1004,22 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
         Py_RETURN_NONE;
     }
 
-    dict = PyType_stgdict(restype);
-    if (dict == NULL)
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, restype, &info) < 0) {
+        return NULL;
+    }
+    if (info == NULL) {
         return PyObject_CallFunction(restype, "i", *(int *)result);
+    }
 
-    if (dict->getfunc && !_ctypes_simple_instance(restype)) {
-        retval = dict->getfunc(result, dict->size);
+    if (info->getfunc && !_ctypes_simple_instance(restype)) {
+        retval = info->getfunc(result, info->size);
         /* If restype is py_object (detected by comparing getfunc with
            O_get), we have to call Py_DECREF because O_get has already
            called Py_INCREF.
         */
-        if (dict->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
+        if (info->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
             Py_DECREF(retval);
         }
     } else
@@ -1239,6 +1255,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
         rtype = &ffi_type_void;
     } else {
         rtype = _ctypes_get_ffi_type(restype);
+    }
+    if (!rtype) {
+        goto cleanup;
     }
 
     resbuf = alloca(max(rtype->size, sizeof(ffi_arg)));
@@ -1683,13 +1702,16 @@ PyDoc_STRVAR(sizeof_doc,
 static PyObject *
 sizeof_func(PyObject *self, PyObject *obj)
 {
-    StgDictObject *dict;
-
-    dict = PyType_stgdict(obj);
-    if (dict) {
-        return PyLong_FromSsize_t(dict->size);
-    }
     ctypes_state *st = GLOBAL_STATE();
+
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, obj, &info) < 0) {
+        return NULL;
+    }
+    if (info) {
+        return PyLong_FromSsize_t(info->size);
+    }
+
     if (CDataObject_Check(st, obj)) {
         return PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
     }
@@ -1706,16 +1728,14 @@ PyDoc_STRVAR(alignment_doc,
 static PyObject *
 align_func(PyObject *self, PyObject *obj)
 {
-    StgDictObject *dict;
-
-    dict = PyType_stgdict(obj);
-    if (dict)
-        return PyLong_FromSsize_t(dict->align);
-
-    dict = PyObject_stgdict(obj);
-    if (dict)
-        return PyLong_FromSsize_t(dict->align);
-
+   ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromAny(st, obj, &info) < 0) {
+        return NULL;
+    }
+    if (info) {
+        return PyLong_FromSsize_t(info->align);
+    }
     PyErr_SetString(PyExc_TypeError,
                     "no alignment info");
     return NULL;
@@ -1824,7 +1844,6 @@ static PyObject *
 resize(PyObject *self, PyObject *args)
 {
     CDataObject *obj;
-    StgDictObject *dict;
     Py_ssize_t size;
 
     if (!PyArg_ParseTuple(args,
@@ -1832,16 +1851,21 @@ resize(PyObject *self, PyObject *args)
                           &obj, &size))
         return NULL;
 
-    dict = PyObject_stgdict((PyObject *)obj);
-    if (dict == NULL) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    int result = PyStgInfo_FromObject(st, (PyObject *)obj, &info);
+    if (result < 0) {
+        return NULL;
+    }
+    if (info == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "expected ctypes instance");
         return NULL;
     }
-    if (size < dict->size) {
+    if (size < info->size) {
         PyErr_Format(PyExc_ValueError,
                      "minimum size is %zd",
-                     dict->size);
+                     info->size);
         return NULL;
     }
     if (obj->b_needsfree == 0) {
@@ -2004,28 +2028,30 @@ create_pointer_inst(PyObject *module, PyObject *arg)
 static PyObject *
 buffer_info(PyObject *self, PyObject *arg)
 {
-    StgDictObject *dict = PyType_stgdict(arg);
     PyObject *shape;
     Py_ssize_t i;
 
-    if (dict == NULL)
-        dict = PyObject_stgdict(arg);
-    if (dict == NULL) {
+    ctypes_state *st = GLOBAL_STATE();
+    StgInfo *info;
+    if (PyStgInfo_FromAny(st, arg, &info) < 0) {
+        return NULL;
+    }
+    if (info == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctypes type or object");
         return NULL;
     }
-    shape = PyTuple_New(dict->ndim);
+    shape = PyTuple_New(info->ndim);
     if (shape == NULL)
         return NULL;
-    for (i = 0; i < (int)dict->ndim; ++i)
-        PyTuple_SET_ITEM(shape, i, PyLong_FromSsize_t(dict->shape[i]));
+    for (i = 0; i < (int)info->ndim; ++i)
+        PyTuple_SET_ITEM(shape, i, PyLong_FromSsize_t(info->shape[i]));
 
     if (PyErr_Occurred()) {
         Py_DECREF(shape);
         return NULL;
     }
-    return Py_BuildValue("siN", dict->format, dict->ndim, shape);
+    return Py_BuildValue("siN", info->format, info->ndim, shape);
 }
 
 
