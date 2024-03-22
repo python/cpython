@@ -606,26 +606,8 @@ if sys.platform == 'darwin':
 # Platform support for iOS
 #
 if sys.platform == "ios":
-    try:
-        from ctypes import cdll, c_void_p, c_char_p, c_ulong, util
-    except ImportError:
-        # If ctypes isn't available, we can't trigger the browser
-        objc = None
-    else:
-        # ctypes is available. Load the ObjC library, and wrap the
-        # objc_getClass, sel_registerName and objc_msgSend methods
-        objc = cdll.LoadLibrary(util.find_library("objc"))
-        if objc._name:
-            objc.objc_getClass.restype = c_void_p
-            objc.objc_getClass.argtypes = [c_char_p]
-            objc.sel_registerName.restype = c_void_p
-            objc.sel_registerName.argtypes = [c_char_p]
-            # The return type of objc_msgSend is always c_void_p; but the
-            # argument types vary with the specific call.
-            objc.objc_msgSend.restype = c_void_p
-        else:
-            # Failed to load the objc library
-            objc = None
+    from _ios_support import objc
+    from ctypes import c_void_p, c_char_p, c_ulong
 
     class IOSBrowser(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
@@ -633,6 +615,9 @@ if sys.platform == "ios":
             # If ctypes isn't available, we can't open a browser
             if objc is None:
                 return False
+
+            # All the messages in this call return object references.
+            objc.objc_msgSend.restype = c_void_p
 
             # This is the equivalent of:
             #    NSString url_string =
@@ -673,6 +658,7 @@ if sys.platform == "ios":
             objc.objc_msgSend.argtypes = [
                 c_void_p, c_void_p, c_void_p, c_void_p, c_void_p
             ]
+            # Method returns void
             objc.objc_msgSend.restype = None
             objc.objc_msgSend(shared_app, openURL_, ns_url, None, None)
 
