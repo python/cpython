@@ -447,7 +447,7 @@ class _EnumTests:
     def test_bad_new_super(self):
         with self.assertRaisesRegex(
                 TypeError,
-                'has no members defined',
+                'do not use .super...__new__;',
             ):
             class BadSuper(self.enum_type):
                 def __new__(cls, value):
@@ -3409,6 +3409,36 @@ class TestSpecial(unittest.TestCase):
         self.assertIs(Types(2), Types.NetList)
         self.assertIs(Types('nl'), Types.NetList)
 
+    def test_second_tuple_item_is_falsey(self):
+        class Cardinal(Enum):
+            RIGHT = (1, 0)
+            UP = (0, 1)
+            LEFT = (-1, 0)
+            DOWN = (0, -1)
+        self.assertIs(Cardinal(1, 0), Cardinal.RIGHT)
+        self.assertIs(Cardinal(-1, 0), Cardinal.LEFT)
+
+    def test_no_members(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Enum(7)
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Flag(7)
+
+    def test_empty_names(self):
+        for nothing in '', [], {}:
+            for e_type in None, int:
+                empty_enum = Enum('empty_enum', nothing, type=e_type)
+                self.assertEqual(len(empty_enum), 0)
+                self.assertRaisesRegex(TypeError, 'has no members', empty_enum, 0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
+
 
 class TestOrder(unittest.TestCase):
     "test usage of the `_order_` attribute"
@@ -4033,6 +4063,8 @@ class OldTestIntFlag(unittest.TestCase):
 
     @reraise_if_not_enum(NoName)
     def test_global_enum_str(self):
+        self.assertEqual(repr(NoName.ONE), 'test_enum.ONE')
+        self.assertEqual(repr(NoName(0)), 'test_enum.NoName(0)')
         self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
         self.assertEqual(str(NoName(0)), 'NoName(0)')
 

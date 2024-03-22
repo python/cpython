@@ -132,25 +132,23 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
 PyAPI_FUNC(PyTime_t) _PyTime_FromSeconds(int seconds);
 
 // Create a timestamp from a number of seconds in double.
-// Export for '_socket' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round);
+extern int _PyTime_FromSecondsDouble(
+    double seconds,
+    _PyTime_round_t round,
+    PyTime_t *result);
 
 // Macro to create a timestamp from a number of seconds, no integer overflow.
 // Only use the macro for small values, prefer _PyTime_FromSeconds().
 #define _PYTIME_FROMSECONDS(seconds) \
             ((PyTime_t)(seconds) * (1000 * 1000 * 1000))
 
-// Create a timestamp from a number of nanoseconds.
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(PyTime_t) _PyTime_FromNanoseconds(PyTime_t ns);
-
 // Create a timestamp from a number of microseconds.
 // Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
 extern PyTime_t _PyTime_FromMicrosecondsClamp(PyTime_t us);
 
-// Create a timestamp from nanoseconds (Python int).
+// Create a timestamp from a Python int object (number of nanoseconds).
 // Export for '_lsprof' shared extension.
-PyAPI_FUNC(int) _PyTime_FromNanosecondsObject(PyTime_t *t,
+PyAPI_FUNC(int) _PyTime_FromLong(PyTime_t *t,
     PyObject *obj);
 
 // Convert a number of seconds (Python float or int) to a timestamp.
@@ -183,10 +181,9 @@ extern PyTime_t _PyTime_As100Nanoseconds(PyTime_t t,
     _PyTime_round_t round);
 #endif
 
-// Convert timestamp to a number of nanoseconds (10^-9 seconds) as a Python int
-// object.
+// Convert a timestamp (number of nanoseconds) as a Python int object.
 // Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(PyObject*) _PyTime_AsNanosecondsObject(PyTime_t t);
+PyAPI_FUNC(PyObject*) _PyTime_AsLong(PyTime_t t);
 
 #ifndef MS_WINDOWS
 // Create a timestamp from a timeval structure.
@@ -318,10 +315,6 @@ extern int _PyTime_PerfCounterWithInfo(
     PyTime_t *t,
     _Py_clock_info_t *info);
 
-// Alias for backward compatibility
-#define _PyTime_MIN PyTime_MIN
-#define _PyTime_MAX PyTime_MAX
-
 
 // --- _PyDeadline -----------------------------------------------------------
 
@@ -352,7 +345,7 @@ extern int _PyTimeFraction_Set(
     PyTime_t denom);
 
 // Compute ticks * frac.numer / frac.denom.
-// Clamp to [_PyTime_MIN; _PyTime_MAX] on overflow.
+// Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
 extern PyTime_t _PyTimeFraction_Mul(
     PyTime_t ticks,
     const _PyTimeFraction *frac);

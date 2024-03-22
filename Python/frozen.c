@@ -66,34 +66,6 @@
 #include "frozen_modules/frozen_only.h"
 /* End includes */
 
-#define GET_CODE(name) _Py_get_##name##_toplevel
-
-/* Start extern declarations */
-extern PyObject *_Py_get_importlib__bootstrap_toplevel(void);
-extern PyObject *_Py_get_importlib__bootstrap_external_toplevel(void);
-extern PyObject *_Py_get_zipimport_toplevel(void);
-extern PyObject *_Py_get_abc_toplevel(void);
-extern PyObject *_Py_get_codecs_toplevel(void);
-extern PyObject *_Py_get_io_toplevel(void);
-extern PyObject *_Py_get__collections_abc_toplevel(void);
-extern PyObject *_Py_get__sitebuiltins_toplevel(void);
-extern PyObject *_Py_get_genericpath_toplevel(void);
-extern PyObject *_Py_get_ntpath_toplevel(void);
-extern PyObject *_Py_get_posixpath_toplevel(void);
-extern PyObject *_Py_get_os_toplevel(void);
-extern PyObject *_Py_get_site_toplevel(void);
-extern PyObject *_Py_get_stat_toplevel(void);
-extern PyObject *_Py_get_importlib_util_toplevel(void);
-extern PyObject *_Py_get_importlib_machinery_toplevel(void);
-extern PyObject *_Py_get_runpy_toplevel(void);
-extern PyObject *_Py_get___hello___toplevel(void);
-extern PyObject *_Py_get___phello___toplevel(void);
-extern PyObject *_Py_get___phello___ham_toplevel(void);
-extern PyObject *_Py_get___phello___ham_eggs_toplevel(void);
-extern PyObject *_Py_get___phello___spam_toplevel(void);
-extern PyObject *_Py_get_frozen_only_toplevel(void);
-/* End extern declarations */
-
 static const struct _frozen bootstrap_modules[] = {
     {"_frozen_importlib", _Py_M__importlib__bootstrap, (int)sizeof(_Py_M__importlib__bootstrap), false},
     {"_frozen_importlib_external", _Py_M__importlib__bootstrap_external, (int)sizeof(_Py_M__importlib__bootstrap_external), false},

@@ -34,7 +34,7 @@ represented by objects.)
 
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
-memory.  The ':keyword:`is`' operator compares the identity of two objects; the
+memory.  The :keyword:`is` operator compares the identity of two objects; the
 :func:`id` function returns an integer representing its identity.
 
 .. impl-detail::
@@ -81,7 +81,7 @@ are still reachable.
 
 Note that the use of the implementation's tracing or debugging facilities may
 keep objects alive that would normally be collectable. Also note that catching
-an exception with a ':keyword:`try`...\ :keyword:`except`' statement may keep
+an exception with a :keyword:`try`...\ :keyword:`except` statement may keep
 objects alive.
 
 Some objects contain references to "external" resources such as open files or
@@ -89,8 +89,8 @@ windows.  It is understood that these resources are freed when the object is
 garbage-collected, but since garbage collection is not guaranteed to happen,
 such objects also provide an explicit way to release the external resource,
 usually a :meth:`!close` method. Programs are strongly recommended to explicitly
-close such objects.  The ':keyword:`try`...\ :keyword:`finally`' statement
-and the ':keyword:`with`' statement provide convenient ways to do this.
+close such objects.  The :keyword:`try`...\ :keyword:`finally` statement
+and the :keyword:`with` statement provide convenient ways to do this.
 
 .. index:: single: container
 
@@ -159,7 +159,7 @@ NotImplemented
 .. index:: pair: object; NotImplemented
 
 This type has a single value.  There is a single object with this value. This
-object is accessed through the built-in name ``NotImplemented``. Numeric methods
+object is accessed through the built-in name :data:`NotImplemented`. Numeric methods
 and rich comparison methods should return this value if they do not implement the
 operation for the operands provided.  (The interpreter will then try the
 reflected operation, or some other fallback, depending on the operator.)  It
@@ -170,7 +170,7 @@ See
 for more details.
 
 .. versionchanged:: 3.9
-   Evaluating ``NotImplemented`` in a boolean context is deprecated. While
+   Evaluating :data:`NotImplemented` in a boolean context is deprecated. While
    it currently evaluates as true, it will emit a :exc:`DeprecationWarning`.
    It will raise a :exc:`TypeError` in a future version of Python.
 
@@ -1787,7 +1787,7 @@ Basic customization
    ``x.__ne__(y)``, ``x>y`` calls ``x.__gt__(y)``, and ``x>=y`` calls
    ``x.__ge__(y)``.
 
-   A rich comparison method may return the singleton ``NotImplemented`` if it does
+   A rich comparison method may return the singleton :data:`NotImplemented` if it does
    not implement the operation for a given pair of arguments. By convention,
    ``False`` and ``True`` are returned for a successful comparison. However, these
    methods can return any value, so if the comparison operator is used in a Boolean
@@ -1795,10 +1795,10 @@ Basic customization
    :func:`bool` on the value to determine if the result is true or false.
 
    By default, ``object`` implements :meth:`__eq__` by using ``is``, returning
-   ``NotImplemented`` in the case of a false comparison:
+   :data:`NotImplemented` in the case of a false comparison:
    ``True if x is y else NotImplemented``. For :meth:`__ne__`, by default it
    delegates to :meth:`__eq__` and inverts the result unless it is
-   ``NotImplemented``.  There are no other implied relationships among the
+   :data:`!NotImplemented`.  There are no other implied relationships among the
    comparison operators or default implementations; for example, the truth of
    ``(x<y or x==y)`` does not imply ``x<=y``. To automatically generate ordering
    operations from a single root operation, see :func:`functools.total_ordering`.
@@ -1812,11 +1812,14 @@ Basic customization
    rather, :meth:`__lt__` and :meth:`__gt__` are each other's reflection,
    :meth:`__le__` and :meth:`__ge__` are each other's reflection, and
    :meth:`__eq__` and :meth:`__ne__` are their own reflection.
-   If the operands are of different types, and right operand's type is
+   If the operands are of different types, and the right operand's type is
    a direct or indirect subclass of the left operand's type,
    the reflected method of the right operand has priority, otherwise
    the left operand's method has priority.  Virtual subclassing is
    not considered.
+
+   When no appropriate method returns any value other than :data:`NotImplemented`, the
+   ``==`` and ``!=`` operators will fall back to ``is`` and ``is not``, respectively.
 
 .. method:: object.__hash__(self)
 
@@ -2828,7 +2831,7 @@ through the object's keys; for sequences, it should iterate through the values.
    Called to implement :func:`operator.length_hint`. Should return an estimated
    length for the object (which may be greater or less than the actual length).
    The length must be an integer ``>=`` 0. The return value may also be
-   :const:`NotImplemented`, which is treated the same as if the
+   :data:`NotImplemented`, which is treated the same as if the
    ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
 
@@ -2980,7 +2983,7 @@ left undefined.
    function is to be supported.
 
    If one of those methods does not support the operation with the supplied
-   arguments, it should return ``NotImplemented``.
+   arguments, it should return :data:`NotImplemented`.
 
 
 .. method:: object.__radd__(self, other)
@@ -3010,7 +3013,7 @@ left undefined.
    types. [#]_ For instance, to evaluate the expression ``x - y``, where *y* is
    an instance of a class that has an :meth:`__rsub__` method,
    ``type(y).__rsub__(y, x)`` is called if ``type(x).__sub__(x, y)`` returns
-   *NotImplemented*.
+   :data:`NotImplemented`.
 
    .. index:: pair: built-in function; pow
 
@@ -3044,10 +3047,12 @@ left undefined.
    (``+=``, ``-=``, ``*=``, ``@=``, ``/=``, ``//=``, ``%=``, ``**=``, ``<<=``,
    ``>>=``, ``&=``, ``^=``, ``|=``).  These methods should attempt to do the
    operation in-place (modifying *self*) and return the result (which could be,
-   but does not have to be, *self*).  If a specific method is not defined, the
+   but does not have to be, *self*).  If a specific method is not defined, or if
+   that method returns :data:`NotImplemented`, the
    augmented assignment falls back to the normal methods.  For instance, if *x*
    is an instance of a class with an :meth:`__iadd__` method, ``x += y`` is
-   equivalent to ``x = x.__iadd__(y)`` . Otherwise, ``x.__add__(y)`` and
+   equivalent to ``x = x.__iadd__(y)`` . If :meth:`__iadd__` does not exist, or if ``x.__iadd__(y)``
+   returns :data:`!NotImplemented`, ``x.__add__(y)`` and
    ``y.__radd__(x)`` are considered, as with the evaluation of ``x + y``. In
    certain situations, augmented assignment can result in unexpected errors (see
    :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in fact
@@ -3503,7 +3508,7 @@ An example of an asynchronous context manager class::
    the behavior that ``None`` is not callable.
 
 .. [#] "Does not support" here means that the class has no such method, or
-   the method returns ``NotImplemented``.  Do not set the method to
+   the method returns :data:`NotImplemented`.  Do not set the method to
    ``None`` if you want to force fallback to the right operand's reflected
    method—that will instead have the opposite effect of explicitly
    *blocking* such fallback.

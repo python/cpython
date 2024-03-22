@@ -95,6 +95,10 @@
 #endif
 #endif
 
+/* Thread sanitizer doesn't currently support sem_clockwait */
+#ifdef _Py_THREAD_SANITIZER
+#undef HAVE_SEM_CLOCKWAIT
+#endif
 
 /* Whether or not to use semaphores directly rather than emulating them with
  * mutexes and condition variables:
@@ -486,16 +490,16 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     if (microseconds >= 0) {
         // bpo-41710: PyThread_acquire_lock_timed() cannot report timeout
         // overflow to the caller, so clamp the timeout to
-        // [_PyTime_MIN, _PyTime_MAX].
+        // [PyTime_MIN, PyTime_MAX].
         //
-        // _PyTime_MAX nanoseconds is around 292.3 years.
+        // PyTime_MAX nanoseconds is around 292.3 years.
         //
         // _thread.Lock.acquire() and _thread.RLock.acquire() raise an
         // OverflowError if microseconds is greater than PY_TIMEOUT_MAX.
         timeout = _PyTime_FromMicrosecondsClamp(microseconds);
     }
     else {
-        timeout = _PyTime_FromNanoseconds(-1);
+        timeout = -1;
     }
 
 #ifdef HAVE_SEM_CLOCKWAIT

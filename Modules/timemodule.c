@@ -76,7 +76,8 @@ static int pysleep(PyTime_t timeout);
 
 typedef struct {
     PyTypeObject *struct_time_type;
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
     // times() clock frequency in hertz
     _PyTimeFraction times_base;
 #endif
@@ -127,7 +128,7 @@ time_time_ns(PyObject *self, PyObject *unused)
     if (PyTime_Time(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(time_ns_doc,
@@ -164,8 +165,7 @@ py_clock(time_module_state *state, PyTime_t *tp, _Py_clock_info_t *info)
                         "or its value cannot be represented");
         return -1;
     }
-    PyTime_t ns = _PyTimeFraction_Mul(ticks, base);
-    *tp = _PyTime_FromNanoseconds(ns);
+    *tp = _PyTimeFraction_Mul(ticks, base);
     return 0;
 }
 #endif /* HAVE_CLOCK */
@@ -259,7 +259,7 @@ time_clock_gettime_ns_impl(PyObject *module, clockid_t clk_id)
     if (_PyTime_FromTimespec(&t, &ts) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 #endif   /* HAVE_CLOCK_GETTIME */
 
@@ -308,7 +308,7 @@ time_clock_settime_ns(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (_PyTime_FromNanosecondsObject(&t, obj) < 0) {
+    if (_PyTime_FromLong(&t, obj) < 0) {
         return NULL;
     }
     if (_PyTime_AsTimespec(t, &ts) == -1) {
@@ -1170,7 +1170,7 @@ time_monotonic_ns(PyObject *self, PyObject *unused)
     if (PyTime_Monotonic(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(monotonic_ns_doc,
@@ -1202,7 +1202,7 @@ time_perf_counter_ns(PyObject *self, PyObject *unused)
     if (PyTime_PerfCounter(&t) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(perf_counter_ns_doc,
@@ -1211,7 +1211,8 @@ PyDoc_STRVAR(perf_counter_ns_doc,
 Performance counter for benchmarking as nanoseconds.");
 
 
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
 static int
 process_time_times(time_module_state *state, PyTime_t *tp,
                    _Py_clock_info_t *info)
@@ -1233,7 +1234,7 @@ process_time_times(time_module_state *state, PyTime_t *tp,
     PyTime_t ns;
     ns = _PyTimeFraction_Mul(process.tms_utime, base);
     ns += _PyTimeFraction_Mul(process.tms_stime, base);
-    *tp = _PyTime_FromNanoseconds(ns);
+    *tp = ns;
     return 1;
 }
 #endif
@@ -1247,7 +1248,7 @@ py_process_time(time_module_state *state, PyTime_t *tp,
     HANDLE process;
     FILETIME creation_time, exit_time, kernel_time, user_time;
     ULARGE_INTEGER large;
-    PyTime_t ktime, utime, t;
+    PyTime_t ktime, utime;
     BOOL ok;
 
     process = GetCurrentProcess();
@@ -1274,14 +1275,15 @@ py_process_time(time_module_state *state, PyTime_t *tp,
     utime = large.QuadPart;
 
     /* ktime and utime have a resolution of 100 nanoseconds */
-    t = _PyTime_FromNanoseconds((ktime + utime) * 100);
-    *tp = t;
+    *tp = (ktime + utime) * 100;
     return 0;
 #else
 
     /* clock_gettime */
+// gh-115714: Don't use CLOCK_PROCESS_CPUTIME_ID on WASI.
 #if defined(HAVE_CLOCK_GETTIME) \
-    && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF))
+    && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF)) \
+    && !defined(__wasi__)
     struct timespec ts;
 
     if (HAVE_CLOCK_GETTIME_RUNTIME) {
@@ -1343,7 +1345,8 @@ py_process_time(time_module_state *state, PyTime_t *tp,
 #endif
 
     /* times() */
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
     int res = process_time_times(state, tp, info);
     if (res < 0) {
         return -1;
@@ -1383,7 +1386,7 @@ time_process_time_ns(PyObject *module, PyObject *unused)
     if (py_process_time(state, &t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(process_time_ns_doc,
@@ -1401,7 +1404,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
     HANDLE thread;
     FILETIME creation_time, exit_time, kernel_time, user_time;
     ULARGE_INTEGER large;
-    PyTime_t ktime, utime, t;
+    PyTime_t ktime, utime;
     BOOL ok;
 
     thread =  GetCurrentThread();
@@ -1428,8 +1431,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
     utime = large.QuadPart;
 
     /* ktime and utime have a resolution of 100 nanoseconds */
-    t = _PyTime_FromNanoseconds((ktime + utime) * 100);
-    *tp = t;
+    *tp = (ktime + utime) * 100;
     return 0;
 }
 
@@ -1453,7 +1455,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
         info->adjustable = 0;
         info->resolution = 1e-9;
     }
-    *tp = _PyTime_FromNanoseconds(tc.stime + tc.utime);
+    *tp = (tc.stime + tc.utime);
     return 0;
 }
 
@@ -1470,7 +1472,7 @@ _PyTime_GetThreadTimeWithInfo(PyTime_t *tp, _Py_clock_info_t *info)
         info->monotonic = 1;
         info->adjustable = 0;
     }
-    *tp = _PyTime_FromNanoseconds(gethrvtime());
+    *tp = gethrvtime();
     return 0;
 }
 
@@ -1550,7 +1552,7 @@ time_thread_time_ns(PyObject *self, PyObject *unused)
     if (_PyTime_GetThreadTimeWithInfo(&t, NULL) < 0) {
         return NULL;
     }
-    return _PyTime_AsNanosecondsObject(t);
+    return _PyTime_AsLong(t);
 }
 
 PyDoc_STRVAR(thread_time_ns_doc,
@@ -1926,20 +1928,20 @@ time_exec(PyObject *module)
             return -1;
         }
 
-        if (PyDict_DelItemString(dct, "clock_gettime") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_gettime", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_gettime_ns") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_gettime_ns", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_settime") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_settime", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_settime_ns") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_settime_ns", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_getres") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_getres", NULL) < 0) {
+            return -1;
         }
     }
 #endif
@@ -1949,11 +1951,11 @@ time_exec(PyObject *module)
     } else {
         PyObject* dct = PyModule_GetDict(module);
 
-        if (PyDict_DelItemString(dct, "thread_time") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "thread_time", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "thread_time_ns") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "thread_time_ns", NULL) < 0) {
+            return -1;
         }
     }
 #endif
@@ -2071,7 +2073,8 @@ time_exec(PyObject *module)
     }
 #endif
 
-#ifdef HAVE_TIMES
+// gh-115714: Don't use times() on WASI.
+#if defined(HAVE_TIMES) && !defined(__wasi__)
     long ticks_per_second;
     if (_Py_GetTicksPerSecond(&ticks_per_second) < 0) {
         PyErr_SetString(PyExc_RuntimeError,
