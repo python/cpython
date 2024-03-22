@@ -281,11 +281,11 @@ However, for reading convenience, most of the examples show sorted sequences.
    as much as the more influential bandwidth smoothing parameter.
 
    Kernels that give some weight to every sample point include
-   *normal* or *gauss*, *logistic*, and *sigmoid*.
+   *normal* (*gauss*), *logistic*, and *sigmoid*.
 
    Kernels that only give weight to sample points within the bandwidth
-   include *rectangular* or *uniform*, *triangular*, *parabolic* or
-   *epanechnikov*, *quartic* or *biweight*, *triweight*, and *cosine*.
+   include *rectangular* (*uniform*), *triangular*, *parabolic*
+   (*epanechnikov*), *quartic* (*biweight*), *triweight*, and *cosine*.
 
    If *cumulative* is true, will return a cumulative distribution function.
 

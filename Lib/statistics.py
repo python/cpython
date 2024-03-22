@@ -820,17 +820,17 @@ def kde(data, h, kernel='normal', *, cumulative=False):
 
     Kernels that give some weight to every sample point:
 
-       normal or gauss
+       normal (gauss)
        logistic
        sigmoid
 
     Kernels that only give weight to sample points within
     the bandwidth:
 
-       rectangular or uniform
+       rectangular (uniform)
        triangular
-       parabolic or epanechnikov
-       quartic or biweight
+       parabolic (epanechnikov)
+       quartic (biweight)
        triweight
        cosine
 
@@ -879,7 +879,7 @@ def kde(data, h, kernel='normal', *, cumulative=False):
         10: 0.002 x
 
     Estimate P(4.5 < X <= 7.5), the probability that a new sample value
-    would be between 4.5 and 7.5:
+    will be between 4.5 and 7.5:
 
         >>> cdf = kde(sample, h=1.5, cumulative=True)
         >>> round(cdf(7.5) - cdf(4.5), 2)

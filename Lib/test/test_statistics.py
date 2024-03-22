@@ -2417,7 +2417,7 @@ class TestKDE(unittest.TestCase):
         f_hat = kde(sample, h, kernel)
         self.assertEqual(f_hat.__name__, 'pdf')
         self.assertIn(kernel, f_hat.__doc__)
-        self.assertIn(str(h), f_hat.__doc__)
+        self.assertIn(repr(h), f_hat.__doc__)
 
         # Test closed interval for the support boundaries.
         # In particular, 'uniform' should non-zero at the boundaries.
