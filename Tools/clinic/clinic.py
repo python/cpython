@@ -1988,7 +1988,7 @@ def parse_file(
     libclinic.write_file(output, cooked)
 
 
-def create_parser_namespace() -> dict[str, Any]:
+def _create_parser_namespace() -> dict[str, Any]:
     ns = dict(
         CConverter=CConverter,
         CReturnConverter=CReturnConverter,
@@ -2002,16 +2002,21 @@ def create_parser_namespace() -> dict[str, Any]:
     for name, return_converter in return_converters.items():
         ns[f'{name}_return_converter'] = return_converter
     return ns
+_BASE_PARSER_NAMESPACE = _create_parser_namespace()
+
+
+def create_parser_namespace() -> dict[str, Any]:
+    return _BASE_PARSER_NAMESPACE.copy()
 
 
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
-        self.namespace = create_parser_namespace()
+        pass
 
     def parse(self, block: Block) -> None:
-        ns = dict(self.namespace)
+        namespace = create_parser_namespace()
         with contextlib.redirect_stdout(io.StringIO()) as s:
-            exec(block.input, ns)
+            exec(block.input, namespace)
             block.output = s.getvalue()
 
 
@@ -3477,8 +3482,9 @@ def eval_ast_expr(
         node = node.value
 
     expr = ast.Expression(node)
+    namespace = create_parser_namespace()
     co = compile(expr, filename, 'eval')
-    fn = FunctionType(co, globals)
+    fn = FunctionType(co, namespace)
     return fn()
 
 
@@ -5001,18 +5007,17 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error(
                 "can't specify --converters and a filename at the same time"
             )
-        converter_list: list[tuple[str, str, ConverterType]] = []
-        return_converter_list: list[tuple[str, str, ReturnConverterType]] = []
+        any_converter_type = ConverterType | ReturnConverterType
+        converter_list: list[tuple[str, any_converter_type]] = []
+        return_converter_list: list[tuple[str, any_converter_type]] = []
 
         for name, converter in converters.items():
             converter_list.append((
-                f'{name}_converter',
                 name,
                 converter,
             ))
         for name, return_converter in return_converters.items():
             return_converter_list.append((
-                f'{name}_return_converter',
                 name,
                 return_converter
             ))
@@ -5030,10 +5035,13 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             ("Return converters", 'return_converter_init', return_converter_list),
         ):
             print(title + ":")
+
+            ids.sort(key=lambda item: item[0].lower())
             longest = -1
-            for name, short_name, converter in ids:
-                longest = max(longest, len(short_name))
-            for name, short_name, cls in sorted(ids, key=lambda x: x[1].lower()):
+            for name, _ in ids:
+                longest = max(longest, len(name))
+
+            for name, cls in ids:
                 callable = getattr(cls, attribute, None)
                 if not callable:
                     continue
@@ -5046,7 +5054,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                         else:
                             s = parameter_name
                         parameters.append(s)
-                print('    {}({})'.format(short_name, ', '.join(parameters)))
+                print('    {}({})'.format(name, ', '.join(parameters)))
             print()
         print("All converters also accept (c_default=None, py_default=None, annotation=None).")
         print("All return converters also accept (py_default=None).")
