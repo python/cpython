@@ -401,6 +401,8 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
+  and ``IPv6Network``.
 
 itertools
 ---------
