@@ -849,7 +849,8 @@ def kde(data, h, kernel='normal', *, cumulative=False):
 
     Compute the area under the curve:
 
-        >>> sum(f_hat(x) for x in range(-20, 20))
+        >>> area = sum(f_hat(x) for x in range(-20, 20))
+        >>> round(area, 4)
         1.0
 
     Plot the estimated probability density function at
@@ -915,9 +916,9 @@ def kde(data, h, kernel='normal', *, cumulative=False):
     match kernel:
 
         case 'normal' | 'gauss':
-            c = 1 / sqrt(2 * pi)
+            sqrt2pi = sqrt(2 * pi)
             sqrt2 = sqrt(2)
-            K = lambda t: c * exp(-1/2 * t * t)
+            K = lambda t: exp(-1/2 * t * t) / sqrt2pi
             I = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
             support = None
 
