@@ -2263,7 +2263,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_network(
                 '127.42.0.0/16').is_loopback)
         self.assertEqual(False, ipaddress.ip_network('128.0.0.0').is_loopback)
-        self.assertEqual(True,
+        self.assertEqual(False,
                          ipaddress.ip_network('100.64.0.0/10').is_private)
         self.assertEqual(False, ipaddress.ip_network('100.64.0.0/10').is_global)
 
