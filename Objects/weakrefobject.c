@@ -92,7 +92,8 @@
 _PyWeakRefClearState *
 _PyWeakRefClearState_New(void)
 {
-    _PyWeakRefClearState *self = (_PyWeakRefClearState *)PyMem_RawCalloc(1, sizeof(_PyWeakRefClearState));
+    _PyWeakRefClearState *self = (_PyWeakRefClearState *)PyMem_RawCalloc(
+        1, sizeof(_PyWeakRefClearState));
     if (self == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -223,7 +224,8 @@ gc_clear_weakref(PyWeakReference *self)
 }
 
 static void
-do_clear_weakref(_PyWeakRefClearState *clear_state, PyObject *obj, PyWeakReference *weakref, PyObject **callback)
+do_clear_weakref(_PyWeakRefClearState *clear_state, PyObject *obj,
+                 PyWeakReference *weakref, PyObject **callback)
 {
     Py_BEGIN_CRITICAL_SECTION2_MU(WEAKREF_LIST_LOCK(obj), clear_state->mutex);
     // We can only be sure that the memory backing weakref has not been freed
@@ -528,15 +530,14 @@ new_weakref_lock_held(PyTypeObject *type, PyObject *ob, PyObject *callback)
     get_basic_refs(*list, &ref, &proxy);
     if (callback == NULL && type == &_PyWeakref_RefType) {
 #ifdef Py_GIL_DISABLED
-        if (ref != NULL &&
-            _Py_TryIncref((PyObject**)&ref, (PyObject*)ref)) {
+        if (ref != NULL && _Py_TryIncref((PyObject **)&ref, (PyObject *)ref)) {
             /* We can re-use an existing reference. */
             return ref;
         }
 #else
         if (ref != NULL) {
             /* We can re-use an existing reference. */
-            return (PyWeakReference *) Py_NewRef(ref);
+            return (PyWeakReference *)Py_NewRef(ref);
         }
 #endif
     }
