@@ -6522,18 +6522,18 @@ dictvalues_reversed(PyObject *self, PyObject *Py_UNUSED(ignored))
 /* Returns NULL if cannot allocate a new PyDictKeysObject,
    but does not set an error */
 PyDictKeysObject *
-_PyDict_NewKeysForClass(Py_ssize_t keys_size)
+_PyDict_NewKeysForClass(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyDictKeysObject *keys = new_keys_object(
-            interp, estimate_log2_keysize(keys_size), 1);
+            interp, NEXT_LOG2_SHARED_KEYS_MAX_SIZE, 1);
     if (keys == NULL) {
         PyErr_Clear();
     }
     else {
         assert(keys->dk_nentries == 0);
         /* Set to max size+1 as it will shrink by one before each new object */
-        keys->dk_usable = keys_size;
+        keys->dk_usable = SHARED_KEYS_MAX_SIZE;
         keys->dk_kind = DICT_KEYS_SPLIT;
     }
     return keys;
