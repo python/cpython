@@ -17,6 +17,8 @@ from opcode import (
     _specialized_opmap,
 )
 
+from _opcode import get_executor
+
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
            "get_instructions", "Instruction", "Bytecode"] + _opcodes_all
@@ -205,7 +207,27 @@ def _deoptop(op):
     return _all_opmap[deoptmap[name]] if name in deoptmap else op
 
 def _get_code_array(co, adaptive):
-    return co._co_code_adaptive if adaptive else co.co_code
+    if adaptive:
+        code = co._co_code_adaptive
+        res = []
+        found = False
+        for i in range(0, len(code), 2):
+            op, arg = code[i], code[i+1]
+            if op == ENTER_EXECUTOR:
+                try:
+                    ex = get_executor(co, i)
+                except ValueError:
+                    ex = None
+
+                if ex:
+                    op, arg = ex.get_opcode(), ex.get_oparg()
+                    found = True
+
+            res.append(op.to_bytes())
+            res.append(arg.to_bytes())
+        return code if not found else b''.join(res)
+    else:
+        return co.co_code
 
 def code_info(x):
     """Formatted details of methods, functions, or code."""
@@ -514,8 +536,6 @@ class ArgResolver:
             argval = offset + 2 + signed_arg*2
             caches = _get_cache_size(_all_opname[deop])
             argval += 2 * caches
-            if deop == ENTER_EXECUTOR:
-                argval += 2
             return argval
         return None
 
@@ -680,8 +700,7 @@ def _parse_exception_table(code):
 
 def _is_backward_jump(op):
     return opname[op] in ('JUMP_BACKWARD',
-                          'JUMP_BACKWARD_NO_INTERRUPT',
-                          'ENTER_EXECUTOR')
+                          'JUMP_BACKWARD_NO_INTERRUPT')
 
 def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
                             original_code=None, arg_resolver=None):
