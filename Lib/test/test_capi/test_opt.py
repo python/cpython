@@ -955,6 +955,32 @@ class TestUopsOptimization(unittest.TestCase):
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNone(ex)
 
+    def test_many_nested(self):
+        # overflow the trace_stack
+        def dummy_a(x):
+            return x
+        def dummy_b(x):
+            return dummy_a(x)
+        def dummy_c(x):
+            return dummy_b(x)
+        def dummy_d(x):
+            return dummy_c(x)
+        def dummy_e(x):
+            return dummy_d(x)
+        def dummy_f(x):
+            return dummy_e(x)
+        def dummy_g(x):
+            return dummy_f(x)
+        def dummy_h(x):
+            return dummy_g(x)
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a += dummy_h(n)
+            return a
+
+        self._run_with_optimizer(testfunc, 32)
+
 
 if __name__ == "__main__":
     unittest.main()
