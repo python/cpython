@@ -58,13 +58,17 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
         goto end;
     }
 
+#if !defined(Py_GIL_DISABLED)
     if (_is_dead(obj)) {
         goto end;
     }
-#if !defined(Py_GIL_DISABLED)
     assert(Py_REFCNT(obj) > 0);
-#endif
     ret = Py_NewRef(obj);
+#else
+    if (_Py_TryIncref(&obj, obj)) {
+        ret = obj;
+    }
+#endif
 end:
     Py_END_CRITICAL_SECTION();
     return ret;
