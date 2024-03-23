@@ -85,7 +85,7 @@ get_module_state(PyObject *module) {
 }
 
 static inline ctypes_state *
-get_module_state_by_cls(PyTypeObject *cls)
+get_module_state_by_class(PyTypeObject *cls)
 {
     ctypes_state *state = (ctypes_state *)_PyType_GetModuleState(cls);
     assert(state != NULL);
