@@ -527,8 +527,7 @@ class ComplexTest(unittest.TestCase):
                 return None
 
         self.assertEqual(complex(complex0(1j)), 42j)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(complex(complex1(1j)), 2j)
+        self.assertRaises(TypeError, complex, complex1(1j))
         self.assertRaises(TypeError, complex, complex2(1j))
 
     def test___complex__(self):
