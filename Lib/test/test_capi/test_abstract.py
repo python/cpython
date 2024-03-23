@@ -994,6 +994,12 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
 
+    def test_object_generichash(self):
+        # Test PyObject_GenericHash()
+        generichash = _testcapi.object_generichash
+        for obj in object(), 1, 'string', []:
+            self.assertEqual(generichash(obj), object.__hash__(obj))
+
 
 if __name__ == "__main__":
     unittest.main()

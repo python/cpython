@@ -182,6 +182,7 @@ _PyGC_Init(PyInterpreterState *interp)
     if (gcstate->callbacks == NULL) {
         return _PyStatus_NO_MEMORY();
     }
+    gcstate->heap_size = 0;
 
     return _PyStatus_OK();
 }
@@ -1232,7 +1233,7 @@ gc_collect_region(PyThreadState *tstate,
                   struct gc_collection_stats *stats);
 
 static inline Py_ssize_t
-gc_list_set_space(PyGC_Head *list, uintptr_t space)
+gc_list_set_space(PyGC_Head *list, int space)
 {
     Py_ssize_t size = 0;
     PyGC_Head *gc;
@@ -1258,9 +1259,9 @@ gc_list_set_space(PyGC_Head *list, uintptr_t space)
  * N == 1.4 (1 + 4/threshold)
  */
 
-/* Multiply by 4 so that the default incremental threshold of 10
- * scans objects at 20% the rate of object creation */
-#define SCAN_RATE_MULTIPLIER 2
+/* Divide by 10, so that the default incremental threshold of 10
+ * scans objects at 1% of the heap size */
+#define SCAN_RATE_DIVISOR 10
 
 static void
 add_stats(GCState *gcstate, int gen, struct gc_collection_stats *stats)
@@ -1313,7 +1314,7 @@ gc_collect_young(PyThreadState *tstate,
     if (scale_factor < 1) {
         scale_factor = 1;
     }
-    gcstate->work_to_do += survivor_count + survivor_count * SCAN_RATE_MULTIPLIER / scale_factor;
+    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     add_stats(gcstate, 0, stats);
 }
 
@@ -1384,12 +1385,12 @@ expand_region_transitively_reachable(PyGC_Head *container, PyGC_Head *gc, GCStat
 static void
 completed_cycle(GCState *gcstate)
 {
+#ifdef Py_DEBUG
     PyGC_Head *not_visited = &gcstate->old[gcstate->visited_space^1].head;
     assert(gc_list_is_empty(not_visited));
+#endif
     gcstate->visited_space = flip_old_space(gcstate->visited_space);
-    if (gcstate->work_to_do > 0) {
-        gcstate->work_to_do = 0;
-    }
+    gcstate->work_to_do = 0;
 }
 
 static void
@@ -1404,13 +1405,13 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     if (scale_factor < 1) {
         scale_factor = 1;
     }
-    Py_ssize_t increment_size = 0;
     gc_list_merge(&gcstate->young.head, &increment);
     gcstate->young.count = 0;
     if (gcstate->visited_space) {
         /* objects in visited space have bit set, so we set it here */
         gc_list_set_space(&increment, 1);
     }
+    Py_ssize_t increment_size = 0;
     while (increment_size < gcstate->work_to_do) {
         if (gc_list_is_empty(not_visited)) {
             break;
@@ -1425,14 +1426,11 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
     PyGC_Head survivors;
     gc_list_init(&survivors);
     gc_collect_region(tstate, &increment, &survivors, UNTRACK_TUPLES, stats);
-    Py_ssize_t survivor_count = gc_list_size(&survivors);
     gc_list_merge(&survivors, visited);
     assert(gc_list_is_empty(&increment));
-    gcstate->work_to_do += survivor_count + survivor_count * SCAN_RATE_MULTIPLIER / scale_factor;
+    gcstate->work_to_do += gcstate->heap_size / SCAN_RATE_DIVISOR / scale_factor;
     gcstate->work_to_do -= increment_size;
-    if (gcstate->work_to_do < 0) {
-        gcstate->work_to_do = 0;
-    }
+
     validate_old(gcstate);
     add_stats(gcstate, 1, stats);
     if (gc_list_is_empty(not_visited)) {
@@ -1678,7 +1676,7 @@ _PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs)
 }
 
 PyObject *
-_PyGC_GetObjects(PyInterpreterState *interp, Py_ssize_t generation)
+_PyGC_GetObjects(PyInterpreterState *interp, int generation)
 {
     assert(generation >= -1 && generation < NUM_GENERATIONS);
     GCState *gcstate = &interp->gc;
@@ -1974,6 +1972,7 @@ _PyObject_GC_Link(PyObject *op)
     gc->_gc_next = 0;
     gc->_gc_prev = 0;
     gcstate->young.count++; /* number of allocated GC objects */
+    gcstate->heap_size++;
     if (gcstate->young.count > gcstate->young.threshold &&
         gcstate->enabled &&
         gcstate->young.threshold &&
@@ -2095,6 +2094,7 @@ PyObject_GC_Del(void *op)
     if (gcstate->young.count > 0) {
         gcstate->young.count--;
     }
+    gcstate->heap_size--;
     PyObject_Free(((char *)op)-presize);
 }
 

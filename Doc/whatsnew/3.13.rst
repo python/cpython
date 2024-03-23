@@ -401,6 +401,8 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
+  and ``IPv6Network``.
 
 itertools
 ---------
@@ -1699,6 +1701,10 @@ New Features
 
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
+
+* Add :c:func:`PyObject_GenericHash` function that implements the default
+  hashing function of a Python object.
+  (Contributed by Serhiy Storchaka in :gh:`113024`.)
 
 * Add PyTime C API:
 
