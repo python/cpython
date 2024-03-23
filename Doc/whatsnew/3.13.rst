@@ -797,6 +797,11 @@ Deprecated
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
 
+* :mod:`logging`: Support for custom logging handlers with the *strm* argument
+  is deprecated and scheduled for removal in Python 3.15. Define handlers with
+  the *stream* argument instead.
+  (Contributed by Mariusz Felisiak in :gh:`115032`.)
+
 * :mod:`pathlib`:
   :meth:`pathlib.PurePath.is_reserved` is deprecated and scheduled for
   removal in Python 3.15. Use :func:`os.path.isreserved` to detect reserved
