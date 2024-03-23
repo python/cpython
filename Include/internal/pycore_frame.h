@@ -64,10 +64,10 @@ typedef struct {
 #ifdef Py_GIL_DISABLED
 #define Py_CLEAR_TAG(tagged) ((PyObject *)(tagged.bits & ~(Py_OBJECT_TAG)))
 #else
-#define Py_CLEAR_TAG(tagged) (tagged.obj)
+#define Py_CLEAR_TAG(tagged) ((tagged).obj)
 #endif
 
-#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)obj})
+#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)(obj)})
 
 typedef struct _PyInterpreterFrame {
     PyObject *f_executable; /* Strong reference (code object or None) */

@@ -44,17 +44,17 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                     type = var.type if var.type else "PyObject *"
                     variables.add(var.name)
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type} {var.name} = NULL;\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        out.emit(f"{type} {var.name};\n")
             for var in uop.stack.outputs:
                 if var.name not in variables:
                     variables.add(var.name)
                     type = var.type if var.type else "PyObject *"
                     if var.condition:
-                        out.emit(f"{type}{var.name} = NULL;\n")
+                        out.emit(f"{type} {var.name} = NULL;\n")
                     else:
-                        out.emit(f"{type}{var.name};\n")
+                        out.emit(f"{type} {var.name};\n")
 
 
 def write_uop(

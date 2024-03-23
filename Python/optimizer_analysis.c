@@ -330,6 +330,9 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
 
+#define Py_CLEAR_TAG(unused) (unused)
+#define Py_OBJ_PACK(unused) (unused)
+
 static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,

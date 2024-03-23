@@ -2069,8 +2069,8 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
 */
 
 int
-_PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
-                       int argcnt, int argcntafter, PyObject **sp)
+_PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
+                       int argcnt, int argcntafter, _Py_TaggedObject *sp)
 {
     int i = 0, j = 0;
     Py_ssize_t ll = 0;
@@ -2112,7 +2112,7 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
             }
             goto Error;
         }
-        *--sp = w;
+        *--sp = Py_OBJ_PACK(w);
     }
 
     if (argcntafter == -1) {
@@ -2134,7 +2134,7 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
     l = PySequence_List(it);
     if (l == NULL)
         goto Error;
-    *--sp = l;
+    *--sp = Py_OBJ_PACK(l);
     i++;
 
     ll = PyList_GET_SIZE(l);
@@ -2147,7 +2147,7 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
 
     /* Pop the "after-variable" args off the list. */
     for (j = argcntafter; j > 0; j--, i++) {
-        *--sp = PyList_GET_ITEM(l, ll - j);
+        *--sp = Py_OBJ_PACK(PyList_GET_ITEM(l, ll - j));
     }
     /* Resize the list. */
     Py_SET_SIZE(l, ll - argcntafter);
@@ -2155,8 +2155,9 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
     return 1;
 
 Error:
-    for (; i > 0; i--, sp++)
-        Py_DECREF(*sp);
+    for (; i > 0; i--, sp++) {
+        Py_DECREF(Py_CLEAR_TAG(*sp));
+    }
     Py_XDECREF(it);
     return 0;
 }

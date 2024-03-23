@@ -116,7 +116,7 @@ def replace_decrefs(
             continue
         if var.size != "1":
             out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-            out.emit(f"Py_DECREF({var.name}[_i]);\n")
+            out.emit(f"Py_DECREF(Py_CLEAR_TAG({var.name}[_i]));\n")
             out.emit("}\n")
         elif var.condition:
             if var.condition == "1":
