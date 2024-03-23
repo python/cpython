@@ -39,7 +39,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "object Lock can't be used in 'await' expression"
+            "'Lock' object can't be awaited"
         ):
             await lock
 
@@ -77,7 +77,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(lock.locked())
             with self.assertRaisesRegex(
                 TypeError,
-                r"object \w+ can't be used in 'await' expression"
+                r"'\w+' object can't be awaited"
             ):
                 with await lock:
                     pass
@@ -941,7 +941,7 @@ class SemaphoreTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(
             TypeError,
-            "object Semaphore can't be used in 'await' expression",
+            "'Semaphore' object can't be awaited",
         ):
             await sem
 
@@ -1270,7 +1270,7 @@ class BarrierTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("filling", repr(barrier))
         with self.assertRaisesRegex(
             TypeError,
-            "object Barrier can't be used in 'await' expression",
+            "'Barrier' object can't be awaited",
         ):
             await barrier
 
