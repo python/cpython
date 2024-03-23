@@ -44,7 +44,7 @@ static void pymem_destructor(PyObject *ptr)
  * prev_desc points to the type of the previous bitfield, if any.
  */
 PyObject *
-PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
+PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int big_endian)
@@ -60,7 +60,6 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    ctypes_state *st = GLOBAL_STATE();
     PyTypeObject *tp = st->PyCField_Type;
     self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL)

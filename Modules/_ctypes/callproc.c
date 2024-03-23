@@ -474,10 +474,9 @@ check_hresult(PyObject *self, PyObject *args)
 /**************************************************************/
 
 PyCArgObject *
-PyCArgObject_new(void)
+PyCArgObject_new(ctypes_state *st)
 {
     PyCArgObject *p;
-    ctypes_state *st = GLOBAL_STATE();
     p = PyObject_GC_New(PyCArgObject, st->PyCArg_Type);
     if (p == NULL)
         return NULL;
@@ -663,10 +662,10 @@ struct argument {
 /*
  * Convert a single Python object into a PyCArgObject and return it.
  */
-static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
+static int ConvParam(ctypes_state *st,
+                     PyObject *obj, Py_ssize_t index, struct argument *pa)
 {
     pa->keep = NULL; /* so we cannot forget it later */
-    ctypes_state *st = GLOBAL_STATE();
 
     StgInfo *info;
     int result = PyStgInfo_FromObject(st, obj, &info);
@@ -678,7 +677,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         PyCArgObject *carg;
         assert(info->paramfunc);
         /* If it has an stginfo, it is a CDataObject */
-        carg = info->paramfunc((CDataObject *)obj);
+        carg = info->paramfunc(st, (CDataObject *)obj);
         if (carg == NULL)
             return -1;
         pa->ffi_type = carg->pffi_type;
@@ -749,7 +748,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         */
         if (arg) {
             int result;
-            result = ConvParam(arg, index, pa);
+            result = ConvParam(st, arg, index, pa);
             Py_DECREF(arg);
             return result;
         }
@@ -784,13 +783,12 @@ int can_return_struct_as_sint64(size_t s)
 
 
 // returns NULL with exception set on error
-ffi_type *_ctypes_get_ffi_type(PyObject *obj)
+ffi_type *_ctypes_get_ffi_type(ctypes_state *st, PyObject *obj)
 {
     if (obj == NULL) {
         return &ffi_type_sint;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, obj, &info) < 0) {
         return NULL;
@@ -826,7 +824,8 @@ ffi_type *_ctypes_get_ffi_type(PyObject *obj)
  *
  * void ffi_call(ffi_cif *cif, void *fn, void *rvalue, void **avalues);
  */
-static int _call_function_pointer(int flags,
+static int _call_function_pointer(ctypes_state *st,
+                                  int flags,
                                   PPROC pProc,
                                   void **avalues,
                                   ffi_type **atypes,
@@ -927,7 +926,7 @@ static int _call_function_pointer(int flags,
     }
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
-        error_object = _ctypes_get_errobj(&space);
+        error_object = _ctypes_get_errobj(st, &space);
         if (error_object == NULL)
             return -1;
     }
@@ -994,7 +993,8 @@ static int _call_function_pointer(int flags,
  * - If restype is another ctypes type, return an instance of that.
  * - Otherwise, call restype and return the result.
  */
-static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
+static PyObject *GetResult(ctypes_state *st,
+                           PyObject *restype, void *result, PyObject *checker)
 {
     PyObject *retval, *v;
 
@@ -1005,7 +1005,6 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
         Py_RETURN_NONE;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
     StgInfo *info;
     if (PyStgInfo_FromType(st, restype, &info) < 0) {
         return NULL;
@@ -1014,7 +1013,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
         return PyObject_CallFunction(restype, "i", *(int *)result);
     }
 
-    if (info->getfunc && !_ctypes_simple_instance(restype)) {
+    if (info->getfunc && !_ctypes_simple_instance(st, restype)) {
         retval = info->getfunc(result, info->size);
         /* If restype is py_object (detected by comparing getfunc with
            O_get), we have to call Py_DECREF because O_get has already
@@ -1024,7 +1023,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
             Py_DECREF(retval);
         }
     } else
-        retval = PyCData_FromBaseObj(restype, NULL, 0, result);
+        retval = PyCData_FromBaseObj(st, restype, NULL, 0, result);
 
     if (!checker || !retval)
         return retval;
@@ -1087,7 +1086,7 @@ error:
 #ifdef MS_WIN32
 
 static PyObject *
-GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
+GetComError(ctypes_state *st, HRESULT errcode, GUID *riid, IUnknown *pIunk)
 {
     HRESULT hr;
     ISupportErrorInfo *psei = NULL;
@@ -1139,7 +1138,6 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
         descr, source, helpfile, helpcontext,
         progid);
     if (obj) {
-        ctypes_state *st = GLOBAL_STATE();
         PyErr_SetObject((PyObject *)st->PyComError_Type, obj);
         Py_DECREF(obj);
     }
@@ -1298,7 +1296,7 @@ PyObject *_ctypes_callproc(ctypes_state *st,
             avalues[i] = (void *)&args[i].value;
     }
 
-    if (-1 == _call_function_pointer(flags, pProc, avalues, atypes,
+    if (-1 == _call_function_pointer(st, flags, pProc, avalues, atypes,
                                      rtype, resbuf,
                                      Py_SAFE_DOWNCAST(argcount, Py_ssize_t, int),
                                      Py_SAFE_DOWNCAST(argtype_count, Py_ssize_t, int)))
@@ -1326,7 +1324,7 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 #ifdef MS_WIN32
     if (iid && pIunk) {
         if (*(int *)resbuf & 0x80000000)
-            retval = GetComError(*(HRESULT *)resbuf, iid, pIunk);
+            retval = GetComError(st, *(HRESULT *)resbuf, iid, pIunk);
         else
             retval = PyLong_FromLong(*(int *)resbuf);
     } else if (flags & FUNCFLAG_HRESULT) {
@@ -1336,7 +1334,7 @@ PyObject *_ctypes_callproc(ctypes_state *st,
             retval = PyLong_FromLong(*(int *)resbuf);
     } else
 #endif
-        retval = GetResult(restype, resbuf, checker);
+        retval = GetResult(st, restype, resbuf, checker);
   cleanup:
     for (i = 0; i < argcount; ++i)
         Py_XDECREF(args[i].keep);

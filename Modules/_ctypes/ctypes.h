@@ -103,7 +103,7 @@ typedef struct tagPyCArgObject PyCArgObject;
 typedef struct tagCDataObject CDataObject;
 typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
 typedef PyObject *(* SETFUNC)(void *, PyObject *value, Py_ssize_t size);
-typedef PyCArgObject *(* PARAMFUNC)(CDataObject *obj);
+typedef PyCArgObject *(* PARAMFUNC)(ctypes_state *st, CDataObject *obj);
 
 /* A default buffer in CDataObject, which can be used for small C types.  If
 this buffer is too small, PyMem_Malloc will be called to create a larger one,
@@ -205,13 +205,13 @@ extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
 
 
 extern PyObject *
-PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
+PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
                 Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
                 Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
                 int pack, int is_big_endian);
 
-extern PyObject *PyCData_AtAddress(PyObject *type, void *buf);
-extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length);
+extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
+extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
 
 #define PyCArrayTypeObject_Check(st, v)   PyObject_TypeCheck((v), (st)->PyCArrayType_Type)
 #define ArrayObject_Check(st, v)          PyObject_TypeCheck((v), (st)->PyCArray_Type)
@@ -222,11 +222,12 @@ extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length
 #define PyCStructTypeObject_Check(st, v)  PyObject_TypeCheck((v), (st)->PyCStructType_Type)
 
 extern PyObject *
-PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length);
+PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length);
 
 extern PyMethodDef _ctypes_module_methods[];
 
-extern CThunkObject *_ctypes_alloc_callback(PyObject *callable,
+extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
+                                           PyObject *callable,
                                            PyObject *converters,
                                            PyObject *restype,
                                            int flags);
@@ -336,7 +337,8 @@ extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 
 typedef int(* PPROC)(void);
 
-PyObject *_ctypes_callproc(PPROC pProc,
+PyObject *_ctypes_callproc(ctypes_state *st,
+                    PPROC pProc,
                     PyObject *arguments,
 #ifdef MS_WIN32
                     IUnknown *pIUnk,
@@ -383,14 +385,15 @@ struct tagPyCArgObject {
 };
 
 #define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
-extern PyCArgObject *PyCArgObject_new(void);
+extern PyCArgObject *PyCArgObject_new(ctypes_state *st);
 
 extern PyObject *
-PyCData_get(PyObject *type, GETFUNC getfunc, PyObject *src,
+PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
           Py_ssize_t index, Py_ssize_t size, char *ptr);
 
 extern int
-PyCData_set(PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
+PyCData_set(ctypes_state *st,
+          PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
           Py_ssize_t index, Py_ssize_t size, char *ptr);
 
 extern void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...);
@@ -403,7 +406,7 @@ struct basespec {
 
 extern char basespec_string[];
 
-extern ffi_type *_ctypes_get_ffi_type(PyObject *obj);
+extern ffi_type *_ctypes_get_ffi_type(ctypes_state *st, PyObject *obj);
 
 extern char *_ctypes_conversion_encoding;
 extern char *_ctypes_conversion_errors;
@@ -412,15 +415,16 @@ extern char *_ctypes_conversion_errors;
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
 
-extern PyObject *PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr);
+extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
+                                     PyObject *base, Py_ssize_t index, char *adr);
 extern char *_ctypes_alloc_format_string(const char *prefix, const char *suffix);
 extern char *_ctypes_alloc_format_string_with_shape(int ndim,
                                                 const Py_ssize_t *shape,
                                                 const char *prefix, const char *suffix);
 
-extern int _ctypes_simple_instance(PyObject *obj);
+extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
-PyObject *_ctypes_get_errobj(int **pspace);
+PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
