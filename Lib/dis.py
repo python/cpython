@@ -17,6 +17,8 @@ from opcode import (
     _specialized_opmap,
 )
 
+from _opcode import get_executor
+
 __all__ = ["code_info", "dis", "disassemble", "distb", "disco",
            "findlinestarts", "findlabels", "show_code",
            "get_instructions", "Instruction", "Bytecode"] + _opcodes_all
@@ -204,7 +206,6 @@ def _deoptop(op):
     name = _all_opname[op]
     return _all_opmap[deoptmap[name]] if name in deoptmap else op
 
-import _testinternalcapi
 def _get_code_array(co, adaptive):
     if adaptive:
         code = co._co_code_adaptive
@@ -214,12 +215,14 @@ def _get_code_array(co, adaptive):
             op, arg = code[i], code[i+1]
             if op == ENTER_EXECUTOR:
                 try:
-                    ex = _testinternalcapi.get_executor(co, i)
+                    ex = get_executor(co, i)
                 except ValueError:
                     ex = None
+
                 if ex:
                     op, arg = ex.get_opcode(), ex.get_oparg()
                     found = True
+
             res.append(op.to_bytes())
             res.append(arg.to_bytes())
         return code if not found else b''.join(res)
