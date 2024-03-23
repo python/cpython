@@ -7760,18 +7760,9 @@ type_ready_set_new(PyTypeObject *type, int rerunbuiltin)
     return 0;
 }
 
-Py_ssize_t
-_PyType_SharedKeysMaxSize(PyTypeObject *type)
+static Py_ssize_t
+expected_number_of_shared_keys(PyTypeObject *type)
 {
-    if (PyObject_HasAttr((PyObject*)type, &_Py_ID(__expected_attributes__))) {
-        PyObject *attrs = PyObject_GetAttr((PyObject*)type, &_Py_ID(__expected_attributes__));
-        if (attrs != NULL && PyTuple_Check(attrs)) {
-            Py_ssize_t num_keys = PyTuple_GET_SIZE(attrs);
-            if (num_keys > SHARED_KEYS_MAX_SIZE) {
-                return 1 + num_keys;
-            }
-        }
-    }
     return SHARED_KEYS_MAX_SIZE;
 }
 
@@ -7790,7 +7781,7 @@ type_ready_managed_dict(PyTypeObject *type)
     }
     PyHeapTypeObject* et = (PyHeapTypeObject*)type;
     if (et->ht_cached_keys == NULL) {
-        et->ht_cached_keys = _PyDict_NewKeysForClass(_PyType_SharedKeysMaxSize(type));
+        et->ht_cached_keys = _PyDict_NewKeysForClass(expected_number_of_shared_keys(type));
         if (et->ht_cached_keys == NULL) {
             PyErr_NoMemory();
             return -1;

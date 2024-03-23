@@ -256,7 +256,7 @@ PyAPI_FUNC(PyObject *)_PyDict_FromItems(
 static inline void
 _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
 {
-    // assert(ix < SHARED_KEYS_MAX_SIZE);
+    assert(ix < SHARED_KEYS_MAX_SIZE);
     uint8_t *size_ptr = ((uint8_t *)values)-2;
     int size = *size_ptr;
     assert(size+2 < DICT_VALUES_SIZE(values));

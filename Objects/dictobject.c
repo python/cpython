@@ -623,7 +623,7 @@ static PyDictKeysObject empty_keys_struct = {
 static inline int
 get_index_from_order(PyDictObject *mp, Py_ssize_t i)
 {
-    // assert(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
+    assert(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
     assert(i < (((char *)mp->ma_values)[-2]));
     return ((char *)mp->ma_values)[-3-i];
 }
@@ -671,7 +671,7 @@ _PyDict_CheckConsistency(PyObject *op, int check_content)
     }
     else {
         CHECK(keys->dk_kind == DICT_KEYS_SPLIT);
-        // CHECK(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
+        CHECK(mp->ma_used <= SHARED_KEYS_MAX_SIZE);
     }
 
     if (check_content) {
@@ -1615,7 +1615,7 @@ insert_into_splitdictkeys(PyDictKeysObject *keys, PyObject *name, Py_hash_t hash
         ep->me_key = Py_NewRef(name);
         split_keys_entry_added(keys);
     }
-    // assert (ix < SHARED_KEYS_MAX_SIZE);
+    assert (ix < SHARED_KEYS_MAX_SIZE);
     return ix;
 }
 
