@@ -6233,7 +6233,7 @@ int.to_bytes
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.  Default is to use 'big'.
+        'sys.byteorder' as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Determines whether two's complement is used to represent the integer.
@@ -6297,7 +6297,7 @@ int.from_bytes
         the most significant byte is at the beginning of the byte array.  If
         byteorder is 'little', the most significant byte is at the end of the
         byte array.  To request the native byte order of the host system, use
-        `sys.byteorder' as the byte order value.  Default is to use 'big'.
+        'sys.byteorder' as the byte order value.  Default is to use 'big'.
     *
     signed as is_signed: bool = False
         Indicates whether two's complement is used to represent the integer.

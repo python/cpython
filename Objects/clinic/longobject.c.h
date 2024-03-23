@@ -267,7 +267,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    \'sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the integer.\n"
 "    If signed is False and a negative integer is given, an OverflowError\n"
@@ -380,7 +380,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    \'sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the integer.");
 
