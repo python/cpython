@@ -1,11 +1,11 @@
 import contextlib
-import opcode
 import sys
 import textwrap
 import unittest
 import gc
 import os
 
+import _opcode
 import _testinternalcapi
 
 from test.support import script_helper, requires_specialization
@@ -115,13 +115,11 @@ class TestOptimizerAPI(unittest.TestCase):
 def get_first_executor(func):
     code = func.__code__
     co_code = code.co_code
-    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
     for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD:
-            try:
-                return _testinternalcapi.get_executor(code, i)
-            except ValueError:
-                pass
+        try:
+            return _opcode.get_executor(code, i)
+        except ValueError:
+            pass
     return None
 
 
@@ -760,17 +758,16 @@ class TestUopsOptimization(unittest.TestCase):
         result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import _testinternalcapi
         import opcode
+        import _opcode
 
         def get_first_executor(func):
             code = func.__code__
             co_code = code.co_code
-            JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
             for i in range(0, len(co_code), 2):
-                if co_code[i] == JUMP_BACKWARD:
-                    try:
-                        return _testinternalcapi.get_executor(code, i)
-                    except ValueError:
-                        pass
+                try:
+                    return _opcode.get_executor(code, i)
+                except ValueError:
+                    pass
             return None
 
         def get_opnames(ex):

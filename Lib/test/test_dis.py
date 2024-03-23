@@ -1201,19 +1201,10 @@ class DisTests(DisTestBase):
     @cpython_only
     @requires_specialization
     def test_loop_quicken(self):
-        import _testinternalcapi
         # Loop can trigger a quicken where the loop is located
-        self.code_quicken(loop_test, 1)
+        self.code_quicken(loop_test, 4)
         got = self.get_disassembly(loop_test, adaptive=True)
         expected = dis_loop_test_quickened_code
-        if _testinternalcapi.get_optimizer():
-            # We *may* see ENTER_EXECUTOR in the disassembly. This is a
-            # temporary hack to keep the test working until dis is able to
-            # handle the instruction correctly (GH-112383):
-            got = got.replace(
-                "ENTER_EXECUTOR          16",
-                "JUMP_BACKWARD           16 (to L1)",
-            )
         self.do_disassembly_compare(got, expected)
 
     @cpython_only

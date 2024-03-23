@@ -992,26 +992,6 @@ get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-get_executor(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-
-    if (!_PyArg_CheckPositional("get_executor", nargs, 2, 2)) {
-        return NULL;
-    }
-    PyObject *code = args[0];
-    PyObject *offset = args[1];
-    long ioffset = PyLong_AsLong(offset);
-    if (ioffset == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    if (!PyCode_Check(code)) {
-         PyErr_SetString(PyExc_TypeError, "first argument must be a code object");
-        return NULL;
-    }
-    return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, ioffset);
-}
-
-static PyObject *
 add_executor_dependency(PyObject *self, PyObject *args)
 {
     PyObject *exec;
@@ -1836,7 +1816,6 @@ static PyMethodDef module_functions[] = {
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
     {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
     {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
