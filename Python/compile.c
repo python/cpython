@@ -699,7 +699,6 @@ static struct compiler_unit *
 get_class_compiler_unit(struct compiler *c)
 {
     Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
-    assert(stack_size >= 1);
     for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
         PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
         struct compiler_unit *u = (struct compiler_unit *)PyCapsule_GetPointer(
