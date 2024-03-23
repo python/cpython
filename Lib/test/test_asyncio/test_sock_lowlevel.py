@@ -565,7 +565,6 @@ if sys.platform == 'win32':
 
         async def _basetest_datagram_send_to_non_listening_address(self,
                                                                    recvfrom):
-            await asyncio.sleep(0)
             # see:
             #   https://github.com/python/cpython/issues/91227
             #   https://github.com/python/cpython/issues/88906
