@@ -303,8 +303,10 @@ static void closure_fcn(ffi_cif *cif,
                         void *userdata)
 {
     CThunkObject *p = (CThunkObject *)userdata;
+    ctypes_state *st = _PyType_GetModuleState(Py_TYPE(p));
 
-    _CallPythonObject(resp,
+    _CallPythonObject(st,
+                      resp,
                       p->ffi_restype,
                       p->setfunc,
                       p->callable,

@@ -217,7 +217,7 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = _PyType_GetModuleState(Py_TYPE(self));
     if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
@@ -230,7 +230,7 @@ PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
                         "can't delete attribute");
         return -1;
     }
-    return PyCData_set(inst, self->proto, self->setfunc, value,
+    return PyCData_set(st, inst, self->proto, self->setfunc, value,
                      self->index, self->size, ptr);
 }
 
@@ -241,14 +241,14 @@ PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
     if (inst == NULL) {
         return Py_NewRef(self);
     }
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = _PyType_GetModuleState(Py_TYPE(self));
     if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return NULL;
     }
     src = (CDataObject *)inst;
-    return PyCData_get(self->proto, self->getfunc, inst,
+    return PyCData_get(st, self->proto, self->getfunc, inst,
                      self->index, self->size, src->b_ptr + self->offset);
 }
 
