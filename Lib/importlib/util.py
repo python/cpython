@@ -178,12 +178,11 @@ class _LazyModule(types.ModuleType):
             # Only the first thread to get the lock should trigger the load
             # and reset the module's class. The rest can now getattr().
             if object.__getattribute__(self, '__class__') is _LazyModule:
-                # The first thread comes here multiple times as it descends the
-                # call stack. The first time, it sets is_loading and triggers
-                # exec_module(), which will access module.__dict__, module.__name__,
-                # and/or module.__spec__, reentering this method. These accesses
-                # need to be allowed to proceed without triggering the load again.
-                if loader_state['is_loading'] and attr.startswith('__') and attr.endswith('__'):
+                # Reentrant calls from the same thread must be allowed to proceed without
+                # triggering the load again.
+                # exec_module() and self-referential imports are the primary ways this can
+                # happen, but in any case we must return something to avoid deadlock.
+                if loader_state['is_loading']:
                     return object.__getattribute__(self, attr)
                 loader_state['is_loading'] = True
 
