@@ -8,6 +8,7 @@ if sys.platform != 'win32':  # pragma: no cover
 import _overlapped
 import _winapi
 import errno
+from functools import partial
 import math
 import msvcrt
 import socket
@@ -468,16 +469,15 @@ class IocpProactor:
                 raise
 
     @classmethod
-    def _finish_recvfrom(cls, trans, key, ov):
+    def _finish_recvfrom(cls, trans, key, ov, *, empty_result):
         try:
             return cls.finish_socket_func(trans, key, ov)
         except OSError as exc:
-            raise
             # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the
             # same socket is used to send to an address that is not
             # listening.
             if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
-                return b'', None
+                return empty_result, None
             else:
                 raise
 
@@ -515,7 +515,7 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((b'', None))
 
-        return self._register(ov, conn, self._finish_recvfrom)
+        return self._register(ov, conn, partial(self._finish_recvfrom, empty_result=b''))
 
     def recvfrom_into(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -525,7 +525,7 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((0, None))
 
-        return self._register(ov, conn, self._finish_recvfrom)
+        return self._register(ov, conn, partial(self._finish_recvfrom, empty_result=0))
 
     def sendto(self, conn, buf, flags=0, addr=None):
         self._register_with_iocp(conn)
