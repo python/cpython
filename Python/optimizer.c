@@ -475,8 +475,11 @@ BRANCH_TO_GUARD[4][2] = {
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
-        OPT_STAT_INC(trace_stack_overflow); \
-        ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
+        OPT_STAT_INC(trace_stack_overflow);      \
+        /* Remove the call sequence */           \
+        for (int x = 0; x < i; x++) {            \
+           trace[trace_length-x].opcode = _NOP;  \
+        } \
         goto done; \
     } \
     assert(func == NULL || func->func_code == (PyObject *)code); \
