@@ -567,6 +567,7 @@ class TestTranforms(BytecodeTestCase):
         self.assertEqual(format('x = %s%% %%%%', 1234), 'x = 1234% %%')
         self.assertEqual(format('x = %s!', '%% %s'), 'x = %% %s!')
         self.assertEqual(format('x = %s, y = %d', 12, 34), 'x = 12, y = 34')
+        self.assertEqual(format('x = %x', 1234.56), 'x = 1.34a3d70a3d70ap+10')
 
     def test_format_errors(self):
         with self.assertRaisesRegex(TypeError,
@@ -586,9 +587,7 @@ class TestTranforms(BytecodeTestCase):
             eval("'%s%z' % (x, 5)", {'x': 1234})
         with self.assertRaisesRegex(TypeError, 'a real number is required, not str'):
             eval("'%d' % (x,)", {'x': '1234'})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not float'):
-            eval("'%x' % (x,)", {'x': 1234.56})
-        with self.assertRaisesRegex(TypeError, 'an integer is required, not str'):
+        with self.assertRaisesRegex(TypeError, 'an integer or float is required, not str'):
             eval("'%x' % (x,)", {'x': '1234'})
         with self.assertRaisesRegex(TypeError, 'must be real number, not str'):
             eval("'%f' % (x,)", {'x': '1234'})

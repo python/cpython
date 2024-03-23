@@ -16,6 +16,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 const char *Py_hexdigits = "0123456789abcdef";
+const char *Py_hexdigits_upper = "0123456789ABCDEF";
 
 /* --- Codec Registry ----------------------------------------------------- */
 

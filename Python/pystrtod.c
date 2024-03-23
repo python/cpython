@@ -2,6 +2,7 @@
 
 #include <Python.h>
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
+#include "pycore_floatobject.h"   // _Py_dg_dtoa_hex()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 
 #include <locale.h>               // localeconv()
@@ -771,6 +772,7 @@ char * PyOS_double_to_string(double val,
     case 'e':          /* exponent */
     case 'f':          /* fixed */
     case 'g':          /* general */
+    case 'x':          /* double in hexadecimal */
         break;
     case 'E':
         upper = 1;
@@ -783,6 +785,10 @@ char * PyOS_double_to_string(double val,
     case 'G':
         upper = 1;
         format_code = 'g';
+        break;
+    case 'X':
+        upper = 1;
+        format_code = 'x';
         break;
     case 'r':          /* repr format */
         /* Supplied precision is unused, must be 0. */
@@ -873,6 +879,14 @@ char * PyOS_double_to_string(double val,
         t = Py_DTST_FINITE;
         if (flags & Py_DTSF_ADD_DOT_0)
             format_code = 'Z';
+
+        /* Use own helper for hexadecimal notation, because the 'a' format
+           type of the stdlib behaves differently wrt the '#' option. */
+        if (format_code == 'x') {
+            PyMem_Free(buf);
+            return _Py_dg_dtoa_hex(val, precision, flags & Py_DTSF_SIGN,
+                                   flags & Py_DTSF_ALT, upper, 0);
+        }
 
         PyOS_snprintf(format, sizeof(format), "%%%s.%i%c",
                       (flags & Py_DTSF_ALT ? "#" : ""), precision,
@@ -978,6 +992,13 @@ format_float_short(double d, char format_code,
     char *digits, *digits_end;
     int decpt_as_int, sign, exp_len, exp = 0, use_exp = 0;
     Py_ssize_t decpt, digits_len, vdigits_start, vdigits_end;
+
+    if (format_code == 'x' && Py_IS_FINITE(d)) {
+        return _Py_dg_dtoa_hex(d, precision, always_add_sign,
+                               use_alt_formatting,
+                               float_strings == uc_float_strings, 0);
+    }
+
     _Py_SET_53BIT_PRECISION_HEADER;
 
     /* _Py_dg_dtoa returns a digit string (no decimal point or exponent).
@@ -1230,6 +1251,14 @@ char * PyOS_double_to_string(double val,
     /* Validate format_code, and map upper and lower case. Compute the
        mode and make any adjustments as needed. */
     switch (format_code) {
+    /* hexadecimal floats */
+    case 'X':
+        float_strings = uc_float_strings;
+        /* Fall through. */
+    case 'x':
+        format_code = 'x';
+        mode = 2;
+        break;
     /* exponent */
     case 'E':
         float_strings = uc_float_strings;

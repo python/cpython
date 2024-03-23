@@ -1134,14 +1134,7 @@ float_conjugate_impl(PyObject *self)
     return float_float(self);
 }
 
-/* turn ASCII hex characters into integer values and vice versa */
-
-static char
-char_from_hex(int x)
-{
-    assert(0 <= x && x < 16);
-    return Py_hexdigits[x];
-}
+/* turn ASCII hex characters into integer values */
 
 static int
 hex_from_char(char c) {
@@ -1208,11 +1201,116 @@ hex_from_char(char c) {
     return x;
 }
 
-/* convert a float to a hexadecimal string */
+/* Convert a float to a hexadecimal string [±][0x]h[.hhhhhhhh]p±d,
+   where the fractional part either is exact (precision < 0) or the
+   number of digits after the dot is equal to the precision.
 
-/* TOHEX_NBITS is DBL_MANT_DIG rounded up to the next integer
-   of the form 4k+1. */
-#define TOHEX_NBITS DBL_MANT_DIG + 3 - (DBL_MANT_DIG+2)%4
+   The exponent d is written in decimal, it always contains at least one digit,
+   and it gives the power of 2 by which to multiply the coefficient.
+
+   x - the double to be converted
+   precision - the desired precision
+   always_add_sign - nonzero if a '+' sign should be included for x > 0
+   use_alt_formatting - nonzero if the hexadecimal prefix should be added.
+   upper - nonzero, if uppercase letters should be used for hexadecimal
+           numbers, prefix and the exponent separator.
+   _hex - private flag to keep float.hex() behaviour
+ */
+
+char *
+_Py_dg_dtoa_hex(double x, int precision, int always_add_sign,
+                int use_alt_formatting, int upper, int _hex)
+{
+    int e, autoprec = precision < 0;
+    double m = frexp(fabs(x), &e);
+
+    if (autoprec) {
+        precision = (DBL_MANT_DIG + 2 - (DBL_MANT_DIG+2)%4)/4;
+        if (!x && _hex) {
+            /* for compatibility with float.hex(), we keep just one
+               digit of zero */
+            precision = 1;
+        }
+    }
+
+    /* normalization */
+    if (m) {
+        int shift = 1 - Py_MAX(DBL_MIN_EXP - e, 0);
+        m = ldexp(m, shift);
+        e -= shift;
+    }
+
+    /* round to precision digits */
+    if (!autoprec) {
+        do {
+            double frac = ldexp(m, 4*precision);
+            frac -= floor(frac);
+            frac *= 16.0;
+            m += ldexp(frac >= 8.0, -4*precision);
+            if ((int)(m) & 0x2) {
+                m /= 2.0;
+                e += 1;
+            }
+            else {
+                break;
+            }
+        } while (1);
+    }
+
+    /* Allocate space for [±][0x]  h[.] [hhhhhhhh]   p±  d            '\0' */
+    char *s = PyMem_Malloc(1 + 2 + 2 +   precision + 2 + DBL_MAX_EXP + 1);
+
+    /* sign and prefix */
+    int si = 0;
+    if (copysign(1.0, x) == -1.0) {
+        s[si] = '-';
+        si++;
+    }
+    else if (always_add_sign) {
+        s[si] = '+';
+        si++;
+    }
+    if (use_alt_formatting) {
+        s[si] = '0';
+        si++;
+        s[si] = upper ? 'X' : 'x';
+        si++;
+    }
+
+    /* mantissa */
+    const char *hexmap = upper ? Py_hexdigits_upper : Py_hexdigits;
+    assert(0 <= (int)m && (int)m < 16);
+    s[si] = hexmap[(int)m];
+    si++;
+    m -= (int)m;
+    s[si] = '.';
+    for (int i = 0; i < precision; i++) {
+        si++;
+        m *= 16.0;
+        assert(0 <= (int)m && (int)m < 16);
+        s[si] = hexmap[(int)m];
+        m -= (int)m;
+    }
+
+    /* clear trailing zeros from mantissa */
+    if (autoprec && !_hex) {
+        while (s[si] == '0') {
+            si--;
+        }
+    }
+
+    /* clear trailing dot */
+    if (s[si] != '.') {
+        si++;
+    }
+
+    /* exponent */
+    s[si] = upper ? 'P' : 'p';
+    si++;
+    si += snprintf(s + si, DBL_MAX_EXP + 1, "%+d", e) + 1;
+
+    return PyMem_Realloc(s, si);
+}
 
 /*[clinic input]
 float.hex
@@ -1229,54 +1327,24 @@ static PyObject *
 float_hex_impl(PyObject *self)
 /*[clinic end generated code: output=0ebc9836e4d302d4 input=bec1271a33d47e67]*/
 {
-    double x, m;
-    int e, shift, i, si, esign;
-    /* Space for 1+(TOHEX_NBITS-1)/4 digits, a decimal point, and the
-       trailing NUL byte. */
-    char s[(TOHEX_NBITS-1)/4+3];
+    PyObject *result = NULL;
+    double x = PyFloat_AS_DOUBLE(self);
 
-    CONVERT_TO_DOUBLE(self, x);
-
-    if (Py_IS_NAN(x) || Py_IS_INFINITY(x))
+    if (Py_IS_NAN(x) || Py_IS_INFINITY(x)) {
         return float_repr((PyFloatObject *)self);
-
-    if (x == 0.0) {
-        if (copysign(1.0, x) == -1.0)
-            return PyUnicode_FromString("-0x0.0p+0");
-        else
-            return PyUnicode_FromString("0x0.0p+0");
     }
 
-    m = frexp(fabs(x), &e);
-    shift = 1 - Py_MAX(DBL_MIN_EXP - e, 0);
-    m = ldexp(m, shift);
-    e -= shift;
+    char *buf = _Py_dg_dtoa_hex(x, -1, 0, 1, 0, 1);
 
-    si = 0;
-    s[si] = char_from_hex((int)m);
-    si++;
-    m -= (int)m;
-    s[si] = '.';
-    si++;
-    for (i=0; i < (TOHEX_NBITS-1)/4; i++) {
-        m *= 16.0;
-        s[si] = char_from_hex((int)m);
-        si++;
-        m -= (int)m;
+    if (buf) {
+        result = PyUnicode_FromString(buf);
+        PyMem_Free(buf);
     }
-    s[si] = '\0';
-
-    if (e < 0) {
-        esign = (int)'-';
-        e = -e;
+    else {
+        PyErr_NoMemory();
     }
-    else
-        esign = (int)'+';
 
-    if (x < 0.0)
-        return PyUnicode_FromFormat("-0x%sp%c%d", s, esign, e);
-    else
-        return PyUnicode_FromFormat("0x%sp%c%d", s, esign, e);
+    return result;
 }
 
 /* Convert a hexadecimal string to a float. */

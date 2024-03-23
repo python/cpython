@@ -1,0 +1,2 @@
+Support formatting floats (using "x" and "X" format types) in hexadecimal
+notation, like ``0x1.2efp-2``.  Patch by Sergey B Kirpichev.

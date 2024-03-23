@@ -124,7 +124,7 @@ The following functions provide locale-independent string to number conversions.
    *format_code*, *precision*, and *flags*.
 
    *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``,
-   ``'g'``, ``'G'`` or ``'r'``.  For ``'r'``, the supplied *precision*
+   ``'g'``, ``'G'``, ``'x'``, ``'X'`` or ``'r'``.  For ``'r'``, the supplied *precision*
    must be 0 and is ignored.  The ``'r'`` format code specifies the
    standard :func:`repr` format.
 
@@ -150,6 +150,9 @@ The following functions provide locale-independent string to number conversions.
    returned string by calling :c:func:`PyMem_Free`.
 
    .. versionadded:: 3.1
+
+.. versionchanged:: 3.13
+   Support ``'x'`` and ``'X'`` format types for :class:`float`.
 
 
 .. c:function:: int PyOS_stricmp(const char *s1, const char *s2)

@@ -168,6 +168,7 @@ PyAPI_FUNC(PyObject *) PyCodec_NameReplaceErrors(PyObject *exc);
 
 #ifndef Py_LIMITED_API
 PyAPI_DATA(const char *) Py_hexdigits;
+PyAPI_DATA(const char *) Py_hexdigits_upper;
 #endif
 
 #ifdef __cplusplus
