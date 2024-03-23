@@ -1,1 +1,1 @@
-Added posix implementation for isdevdrive.
+Added POSIX implementation for :func:`os.path.isdevdrive`.
