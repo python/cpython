@@ -1557,28 +1557,6 @@ interpreter_refcount_linked(PyObject *self, PyObject *idobj)
     Py_RETURN_FALSE;
 }
 
-static PyObject *
-interpreter_incref(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
-    if (interp == NULL) {
-        return NULL;
-    }
-    _PyInterpreterState_IDIncref(interp);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-interpreter_decref(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
-    if (interp == NULL) {
-        return NULL;
-    }
-    _PyInterpreterState_IDDecref(interp);
-    Py_RETURN_NONE;
-}
-
 
 static void
 _xid_capsule_destructor(PyObject *capsule)
@@ -1827,8 +1805,6 @@ static PyMethodDef module_functions[] = {
     {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
     {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"interpreter_refcount_linked", interpreter_refcount_linked, METH_O},
-    {"interpreter_incref", interpreter_incref, METH_O},
-    {"interpreter_decref", interpreter_decref, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
