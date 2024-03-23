@@ -2776,14 +2776,14 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
 {
     CDataObject *self = (CDataObject *)myself;
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(myself)));
     StgInfo *info;
     if (PyStgInfo_FromObject(st, myself, &info) < 0) {
         return -1;
     }
     assert(info);
 
-    PyObject *item_type = PyCData_item_type((PyObject*)Py_TYPE(myself));
+    PyObject *item_type = PyCData_item_type(st, (PyObject*)Py_TYPE(myself));
     if (item_type == NULL) {
         return 0;
     }
@@ -2826,7 +2826,7 @@ PyCData_reduce(PyObject *myself, PyObject *args)
 {
     CDataObject *self = (CDataObject *)myself;
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(myself)));
     StgInfo *info;
     if (PyStgInfo_FromObject(st, myself, &info) < 0) {
         return NULL;
@@ -2842,7 +2842,7 @@ PyCData_reduce(PyObject *myself, PyObject *args)
     if (dict == NULL) {
         return NULL;
     }
-    return Py_BuildValue("O(O(NN))", _unpickle, Py_TYPE(myself), dict,
+    return Py_BuildValue("O(O(NN))", st->_unpickle, Py_TYPE(myself), dict,
                          PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
 }
 
@@ -3276,7 +3276,7 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ign
         Py_XDECREF(oldchecker);
         return 0;
     }
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
     if (PyStgInfo_FromType(st, ob, &info) < 0) {
         return -1;
@@ -3303,7 +3303,7 @@ PyCFuncPtr_get_restype(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
     if (self->restype) {
         return Py_NewRef(self->restype);
     }
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return NULL;
@@ -3325,7 +3325,8 @@ PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ig
         Py_CLEAR(self->converters);
         Py_CLEAR(self->argtypes);
     } else {
-        converters = converters_from_argtypes(ob);
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
+        converters = converters_from_argtypes(st, ob);
         if (!converters)
             return -1;
         Py_XSETREF(self->converters, converters);
@@ -3341,7 +3342,7 @@ PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
     if (self->argtypes) {
         return Py_NewRef(self->argtypes);
     }
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return NULL;
@@ -4129,7 +4130,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     int outmask;
     unsigned int numretvals;
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return NULL;
@@ -4523,7 +4524,7 @@ Array_item(PyObject *myself, Py_ssize_t index)
         return NULL;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return NULL;
@@ -4535,7 +4536,7 @@ Array_item(PyObject *myself, Py_ssize_t index)
     size = stginfo->size / stginfo->length;
     offset = index * size;
 
-    return PyCData_get(stginfo->proto, stginfo->getfunc, (PyObject *)self,
+    return PyCData_get(st, stginfo->proto, stginfo->getfunc, (PyObject *)self,
                      index, size, self->b_ptr + offset);
 }
 
@@ -4564,7 +4565,7 @@ Array_subscript(PyObject *myself, PyObject *item)
         }
         slicelen = PySlice_AdjustIndices(self->b_length, &start, &stop, step);
 
-        ctypes_state *st = GLOBAL_STATE();
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
         StgInfo *stginfo;
         if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
             return NULL;
@@ -4665,7 +4666,7 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
         return -1;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return -1;
@@ -4681,7 +4682,7 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     offset = index * size;
     ptr = self->b_ptr + offset;
 
-    return PyCData_set((PyObject *)self, stginfo->proto, stginfo->setfunc, value,
+    return PyCData_set(st, (PyObject *)self, stginfo->proto, stginfo->setfunc, value,
                      index, size, ptr);
 }
 
@@ -4868,7 +4869,7 @@ Simple_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return -1;
@@ -4898,7 +4899,7 @@ Simple_init(CDataObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 Simple_get_value(CDataObject *self, void *Py_UNUSED(ignored))
 {
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return NULL;
@@ -4917,7 +4918,8 @@ static PyGetSetDef Simple_getsets[] = {
 static PyObject *
 Simple_from_outparm(PyObject *self, PyObject *args)
 {
-    if (_ctypes_simple_instance((PyObject *)Py_TYPE(self))) {
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
+    if (_ctypes_simple_instance(st, (PyObject *)Py_TYPE(self))) {
         return Py_NewRef(self);
     }
     /* call stginfo->getfunc */
@@ -4939,7 +4941,7 @@ static PyObject *
 Simple_repr(CDataObject *self)
 {
     PyObject *val, *result;
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
 
     if (Py_TYPE(self)->tp_base != st->Simple_Type) {
         return PyUnicode_FromFormat("<%s object at %p>",
@@ -4994,7 +4996,7 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
         return NULL;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(myself)));
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return NULL;
@@ -5014,7 +5016,7 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
     size = iteminfo->size;
     offset = index * iteminfo->size;
 
-    return PyCData_get(proto, stginfo->getfunc, (PyObject *)self,
+    return PyCData_get(st, proto, stginfo->getfunc, (PyObject *)self,
                      index, size, (*(char **)self->b_ptr) + offset);
 }
 
@@ -5038,7 +5040,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
         return -1;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(myself)));
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return -1;
@@ -5058,7 +5060,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
     size = iteminfo->size;
     offset = index * iteminfo->size;
 
-    return PyCData_set((PyObject *)self, proto, stginfo->setfunc, value,
+    return PyCData_set(st, (PyObject *)self, proto, stginfo->setfunc, value,
                      index, size, (*(char **)self->b_ptr) + offset);
 }
 
@@ -5071,14 +5073,14 @@ Pointer_get_contents(CDataObject *self, void *closure)
         return NULL;
     }
 
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return NULL;
     }
     assert(stginfo); /* Cannot be NULL for pointer instances */
 
-    return PyCData_FromBaseObj(stginfo->proto,
+    return PyCData_FromBaseObj(st, stginfo->proto,
                              (PyObject *)self, 0,
                              *(void **)self->b_ptr);
 }
@@ -5094,7 +5096,7 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
                         "Pointer does not support item deletion");
         return -1;
     }
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *stginfo;
     if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
         return -1;
@@ -5236,7 +5238,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         else
             len = (stop - start + 1) / step + 1;
 
-        ctypes_state *st = GLOBAL_STATE();
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(myself)));
         StgInfo *stginfo;
         if (PyStgInfo_FromObject(st, (PyObject *)self, &stginfo) < 0) {
             return NULL;
