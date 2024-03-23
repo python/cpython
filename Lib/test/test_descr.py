@@ -5079,7 +5079,7 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = list(it)
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__expected_attributes__',
+        self.assertEqual(keys, ['__dict__', '__doc__', '__static_attributes__',
                                 '__module__', '__weakref__', 'meth'])
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
@@ -5099,7 +5099,7 @@ class DictProxyTests(unittest.TestCase):
         self.assertNotIsInstance(it, list)
         keys = [item[0] for item in it]
         keys.sort()
-        self.assertEqual(keys, ['__dict__', '__doc__', '__expected_attributes__',
+        self.assertEqual(keys, ['__dict__', '__doc__', '__static_attributes__',
                                 '__module__', '__weakref__', 'meth'])
 
     def test_dict_type_with_metaclass(self):

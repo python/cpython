@@ -1967,8 +1967,8 @@ class TestExpectedAttributes(unittest.TestCase):
             def f(self):
                 self.a = self.b = 42
 
-        self.assertIsInstance(C.__expected_attributes__, tuple)
-        self.assertEqual(sorted(C.__expected_attributes__), ['a', 'b'])
+        self.assertIsInstance(C.__static_attributes__, tuple)
+        self.assertEqual(sorted(C.__static_attributes__), ['a', 'b'])
 
     def test_nested_function(self):
         class C:
@@ -1987,7 +1987,7 @@ class TestExpectedAttributes(unittest.TestCase):
 
                 obj.self = 8
 
-        self.assertEqual(sorted(C.__expected_attributes__), ['u', 'v', 'x', 'y', 'z'])
+        self.assertEqual(sorted(C.__static_attributes__), ['u', 'v', 'x', 'y', 'z'])
 
     def test_nested_class(self):
         class C:
@@ -2000,8 +2000,8 @@ class TestExpectedAttributes(unittest.TestCase):
                     self.y = 42
                     self.z = 42
 
-        self.assertEqual(sorted(C.__expected_attributes__), ['x', 'y'])
-        self.assertEqual(sorted(C.D.__expected_attributes__), ['y', 'z'])
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(C.D.__static_attributes__), ['y', 'z'])
 
     def test_subclass(self):
         class C:
@@ -2014,8 +2014,8 @@ class TestExpectedAttributes(unittest.TestCase):
                 self.y = 42
                 self.z = 42
 
-        self.assertEqual(sorted(C.__expected_attributes__), ['x', 'y'])
-        self.assertEqual(sorted(D.__expected_attributes__), ['y', 'z'])
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(D.__static_attributes__), ['y', 'z'])
 
 
 class TestExpressionStackSize(unittest.TestCase):
