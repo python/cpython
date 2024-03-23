@@ -796,7 +796,7 @@ PyDoc_STRVAR(from_buffer_copy_doc,
 
 static inline PyObject *
 _GenericPyCData_new(ctypes_state *st,
-                   PyTypeObject *type, PyObject *args, PyObject *kwds);
+                    PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
 GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds);

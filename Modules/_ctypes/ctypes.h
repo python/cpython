@@ -74,7 +74,7 @@ typedef struct {
 } ctypes_state;
 
 
-extern PyModuleDef _ctypesmodule;
+extern struct PyModuleDef _ctypesmodule;
 
 
 static inline ctypes_state *
