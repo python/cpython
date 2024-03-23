@@ -981,5 +981,6 @@ class TestUopsOptimization(unittest.TestCase):
 
         self._run_with_optimizer(testfunc, 32)
 
+
 if __name__ == "__main__":
     unittest.main()
