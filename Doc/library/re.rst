@@ -94,6 +94,9 @@ repetition to an inner repetition, parentheses may be used. For example,
 the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
 
 
+Special Characters
+^^^^^^^^^^^^^^^^^^
+
 The special characters are:
 
 .. index:: single: . (dot); in regular expressions
@@ -869,6 +872,40 @@ Flags
    Corresponds to the inline flag ``(?x)``.
 
 
+String Indexing Arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following functions and related ``Pattern`` methods support optional string
+index ``pos`` & ``endpos`` parameters:
+
+    * ``re.match()`` & ``Pattern.match()``
+    * ``re.fullmatch()`` & ``Pattern.fullmatch()``
+    * ``re.search()`` & ``Pattern.search()``
+    * ``re.findall()`` & ``Pattern.findall()``
+    * ``re.finditer()`` & ``Pattern.finditer()``
+
+The optional parameter *pos* gives an index in the string where the search is
+to start; it defaults to ``0``.  This is not completely equivalent to slicing
+the string; the ``'^'`` pattern character matches at the real beginning of the
+string and at positions just after a newline, but not necessarily at the index
+where the search is to start.
+
+The optional parameter *endpos* limits how far the string will be searched; it
+will be as if the string is *endpos* characters long, so only the characters
+from *pos* to ``endpos - 1`` will be searched for a match.  If *endpos* is less
+than *pos*, no match will be found; otherwise, if *rx* is a compiled regular
+expression object, ``rx.search(string, 0, 50)`` is equivalent to
+``rx.search(string[:50], 0)``.::
+
+   >>> pattern = re.compile("d")
+   >>> pattern.search("dog")     # Match at index 0
+   <re.Match object; span=(0, 1), match='d'>
+   >>> pattern.search("dog", 1)  # No match; search doesn't include the "d"
+
+.. versionchanged:: 3.13
+   Top-level module functions now support ``pos`` and ``endpos``.
+
+
 Functions
 ^^^^^^^^^
 
@@ -904,15 +941,18 @@ Functions
       about compiling regular expressions.
 
 
-.. function:: search(pattern, string, flags=0)
+.. function:: search(pattern, string, flags=0, pos=0, endpos=sys.maxsize)
 
    Scan through *string* looking for the first location where the regular expression
    *pattern* produces a match, and return a corresponding :class:`~re.Match`. Return
    ``None`` if no position in the string matches the pattern; note that this is
    different from finding a zero-length match at some point in the string.
 
+   .. versionchanged:: 3.13
+      Now supports ``pos`` and ``endpos``.
 
-.. function:: match(pattern, string, flags=0)
+
+.. function:: match(pattern, string, flags=0, pos=0, endpos=sys.maxsize)
 
    If zero or more characters at the beginning of *string* match the regular
    expression *pattern*, return a corresponding :class:`~re.Match`.  Return
@@ -925,14 +965,20 @@ Functions
    If you want to locate a match anywhere in *string*, use :func:`search`
    instead (see also :ref:`search-vs-match`).
 
+   .. versionchanged:: 3.13
+      Now supports ``pos`` and ``endpos``.
 
-.. function:: fullmatch(pattern, string, flags=0)
+
+.. function:: fullmatch(pattern, string, flags=0, pos=0, endpos=sys.maxsize)
 
    If the whole *string* matches the regular expression *pattern*, return a
    corresponding :class:`~re.Match`.  Return ``None`` if the string does not match
    the pattern; note that this is different from a zero-length match.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.13
+      Now supports ``pos`` and ``endpos``.
 
 
 .. function:: split(pattern, string, maxsplit=0, flags=0)
@@ -986,7 +1032,7 @@ Functions
       :ref:`keyword-only parameters <keyword-only_parameter>`.
 
 
-.. function:: findall(pattern, string, flags=0)
+.. function:: findall(pattern, string, flags=0, pos=0, endpos=sys.maxsize)
 
    Return all non-overlapping matches of *pattern* in *string*, as a list of
    strings or tuples.  The *string* is scanned left-to-right, and matches
@@ -1007,8 +1053,11 @@ Functions
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
 
+   .. versionchanged:: 3.13
+      Now supports ``pos`` and ``endpos``.
 
-.. function:: finditer(pattern, string, flags=0)
+
+.. function:: finditer(pattern, string, flags=0, pos=0, endpos=sys.maxsize)
 
    Return an :term:`iterator` yielding :class:`~re.Match` objects over
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
@@ -1017,6 +1066,9 @@ Functions
 
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
+
+   .. versionchanged:: 3.13
+      Now supports ``pos`` and ``endpos``.
 
 
 .. function:: sub(pattern, repl, string, count=0, flags=0)
@@ -1194,7 +1246,7 @@ Regular Expression Objects
       :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
       See :ref:`types-genericalias`.
 
-.. method:: Pattern.search(string[, pos[, endpos]])
+.. method:: Pattern.search(string, pos=0, endpos=sys.maxsize)
 
    Scan through *string* looking for the first location where this regular
    expression produces a match, and return a corresponding :class:`~re.Match`.
@@ -1220,7 +1272,7 @@ Regular Expression Objects
       >>> pattern.search("dog", 1)  # No match; search doesn't include the "d"
 
 
-.. method:: Pattern.match(string[, pos[, endpos]])
+.. method:: Pattern.match(string, pos=0, endpos=sys.maxsize)
 
    If zero or more characters at the *beginning* of *string* match this regular
    expression, return a corresponding :class:`~re.Match`. Return ``None`` if the
@@ -1239,7 +1291,7 @@ Regular Expression Objects
    :meth:`~Pattern.search` instead (see also :ref:`search-vs-match`).
 
 
-.. method:: Pattern.fullmatch(string[, pos[, endpos]])
+.. method:: Pattern.fullmatch(string, pos=0, endpos=sys.maxsize)
 
    If the whole *string* matches this regular expression, return a corresponding
    :class:`~re.Match`.  Return ``None`` if the string does not match the pattern;
@@ -1262,14 +1314,14 @@ Regular Expression Objects
    Identical to the :func:`split` function, using the compiled pattern.
 
 
-.. method:: Pattern.findall(string[, pos[, endpos]])
+.. method:: Pattern.findall(string, pos=0, endpos=sys.maxsize)
 
    Similar to the :func:`findall` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
    region like for :meth:`search`.
 
 
-.. method:: Pattern.finditer(string[, pos[, endpos]])
+.. method:: Pattern.finditer(string, pos=0, endpos=sys.maxsize)
 
    Similar to the :func:`finditer` function, using the compiled pattern, but
    also accepts optional *pos* and *endpos* parameters that limit the search
