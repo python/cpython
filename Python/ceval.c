@@ -929,7 +929,7 @@ exception_unwind:
                 so a program can emulate the
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(exc);
+            PUSH(Py_OBJ_PACK(exc));
             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {

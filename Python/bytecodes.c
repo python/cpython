@@ -526,7 +526,7 @@ dummy_func(
             _Py_DECREF_NO_DEALLOC(left);
             PyUnicode_Append(target_local, right);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            ERROR_IF(*target_local == NULL, error);
+            ERROR_IF(Py_CLEAR_TAG(*target_local) == NULL, error);
             // The STORE_FAST is already done.
             assert(next_instr->op.code == STORE_FAST);
             SKIP_OVER(1);
@@ -651,7 +651,7 @@ dummy_func(
             ERROR_IF(rc <= 0, error); // not found or error
         }
 
-        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub -- unused)) {
+        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub: _Py_TaggedObject -- unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
@@ -669,7 +669,7 @@ dummy_func(
             Py_INCREF(getitem);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, getitem, 2);
             STACK_SHRINK(2);
-            new_frame->localsplus[0] = container;
+            new_frame->localsplus[0] = Py_OBJ_PACK(container);
             new_frame->localsplus[1] = sub;
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
@@ -826,7 +826,7 @@ dummy_func(
         inst(INSTRUMENTED_RETURN_VALUE, (retval: _Py_TaggedObject --)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, this_instr, retval);
+                    frame, this_instr, Py_CLEAR_TAG(retval));
             if (err) GOTO_ERROR(error);
             STACK_SHRINK(1);
             assert(EMPTY());
@@ -988,7 +988,7 @@ dummy_func(
 
         op(_SEND, (receiver_packed: _Py_TaggedObject, v_packed: _Py_TaggedObject -- receiver_packed: _Py_TaggedObject, retval)) {
             PyObject *receiver = Py_CLEAR_TAG(receiver_packed);
-            PyObject *v = Py_CLEAR_TAG(v);
+            PyObject *v = Py_CLEAR_TAG(v_packed);
 
             assert(frame != &entry_frame);
             if ((tstate->interp->eval_frame == NULL) &&
@@ -1057,7 +1057,7 @@ dummy_func(
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, this_instr, retval);
+                    frame, this_instr, Py_CLEAR_TAG(retval));
             if (err) GOTO_ERROR(error);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
@@ -2024,7 +2024,7 @@ dummy_func(
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
 
-            PyTypeObject *cls = Py_TYPE(owner);
+            PyTypeObject *cls = Py_TYPE(Py_CLEAR_TAG(owner));
             assert(type_version != 0);
             DEOPT_IF(cls->tp_version_tag != type_version);
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
@@ -2047,7 +2047,7 @@ dummy_func(
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner: _Py_TaggedObject -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
-            PyTypeObject *cls = Py_TYPE(owner);
+            PyTypeObject *cls = Py_TYPE(Py_CLEAR_TAG(owner));
             assert(type_version != 0);
             DEOPT_IF(cls->tp_version_tag != type_version);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
@@ -2594,10 +2594,10 @@ dummy_func(
 
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
             _Py_CODEUNIT *target;
-            PyObject *iter = TOP();
+            PyObject *iter = Py_CLEAR_TAG(TOP());
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
-                PUSH(next);
+                PUSH(Py_OBJ_PACK(next));
                 target = next_instr;
             }
             else {
@@ -2997,11 +2997,11 @@ dummy_func(
             _LOAD_ATTR_METHOD_LAZY_DICT;
 
         inst(INSTRUMENTED_CALL, (unused/3 -- )) {
-            int is_meth = PEEK(oparg + 1) != NULL;
+            int is_meth = Py_CLEAR_TAG(PEEK(oparg + 1)) != NULL;
             int total_args = oparg + is_meth;
-            PyObject *function = PEEK(oparg + 2);
+            PyObject *function = Py_CLEAR_TAG(PEEK(oparg + 2));
             PyObject *arg = total_args == 0 ?
-                &_PyInstrumentation_MISSING : PEEK(total_args);
+                &_PyInstrumentation_MISSING : Py_CLEAR_TAG(PEEK(total_args));
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
@@ -3310,13 +3310,13 @@ dummy_func(
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
-            shim->localsplus[0] = self;
+            shim->localsplus[0] = Py_OBJ_PACK(self);
             Py_INCREF(init);
             _PyInterpreterFrame *init_frame = _PyFrame_PushUnchecked(tstate, init, oparg+1);
             /* Copy self followed by args to __init__ frame */
             init_frame->localsplus[0] = Py_OBJ_PACK(self);
             for (int i = 0; i < oparg; i++) {
-                init_frame->localsplus[i+1] = Py_OBJ_PACK(args[i]);
+                init_frame->localsplus[i+1] = args[i];
             }
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             STACK_SHRINK(oparg+2);
@@ -3669,11 +3669,11 @@ dummy_func(
             _CHECK_PERIODIC;
 
         inst(INSTRUMENTED_CALL_KW, ( -- )) {
-            int is_meth = PEEK(oparg + 2) != NULL;
+            int is_meth = Py_CLEAR_TAG(PEEK(oparg + 2)) != NULL;
             int total_args = oparg + is_meth;
-            PyObject *function = PEEK(oparg + 3);
+            PyObject *function = Py_CLEAR_TAG(PEEK(oparg + 3));
             PyObject *arg = total_args == 0 ? &_PyInstrumentation_MISSING
-                                            : PEEK(total_args + 1);
+                                            : Py_CLEAR_TAG(PEEK(total_args + 1));
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
@@ -3823,7 +3823,7 @@ dummy_func(
                 result = PyObject_Call(func, callargs, kwargs);
             }
             DECREF_INPUTS();
-            assert(PEEK(2 + (oparg & 1)) == NULL);
+            assert(Py_CLEAR_TAG(PEEK(2 + (oparg & 1))) == NULL);
             ERROR_IF(result == NULL, error);
             CHECK_EVAL_BREAKER();
         }
@@ -3986,7 +3986,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
-            PyObject *cond = POP();
+            PyObject *cond = Py_CLEAR_TAG(POP());
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             int offset = flag * oparg;
@@ -3997,7 +3997,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
-            PyObject *cond = POP();
+            PyObject *cond = Py_CLEAR_TAG(POP());
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             int offset = flag * oparg;
@@ -4008,7 +4008,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
-            PyObject *value = POP();
+            PyObject *value = Py_CLEAR_TAG(POP());
             int flag = Py_IsNone(value);
             int offset;
             if (flag) {
@@ -4025,7 +4025,7 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
-            PyObject *value = POP();
+            PyObject *value = Py_CLEAR_TAG(POP());
             int offset;
             int nflag = Py_IsNone(value);
             if (nflag) {

@@ -107,7 +107,7 @@ def write_uop(
         is_override = override is not None
         out.start_line()
         for var in reversed(prototype.stack.inputs):
-            res = stack.pop(var)
+            res = stack.pop(var, clear_tag=False)
             if not skip_inputs:
                 out.emit(res)
         if not prototype.properties.stores_sp:
@@ -144,7 +144,7 @@ def write_uop(
                 if not var.peek or is_override:
                     out.emit(stack.push(var))
         out.start_line()
-        stack.flush(out, cast_type="_Py_UopsSymbol *")
+        stack.flush(out, cast_type="_Py_UopsSymbol *", pack=False)
     except SizeMismatch as ex:
         raise analysis_error(ex.args[0], uop.body[0])
 

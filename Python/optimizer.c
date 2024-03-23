@@ -209,7 +209,7 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
 int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
-    PyObject **stack_pointer, _PyExecutorObject **executor_ptr)
+    _Py_TaggedObject *stack_pointer, _PyExecutorObject **executor_ptr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));

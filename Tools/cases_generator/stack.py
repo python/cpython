@@ -124,12 +124,12 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem) -> str:
+    def pop(self, var: StackItem, clear_tag: bool = True) -> str:
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
         indirect = "&" if var.is_array() else ""
-        clear = "Py_CLEAR_TAG" if var.type.strip() != "_Py_TaggedObject" else ""
+        clear = "Py_CLEAR_TAG" if clear_tag and var.type.strip() != "_Py_TaggedObject" else ""
         if self.variables:
             popped = self.variables.pop()
             if popped.size != var.size:
@@ -188,7 +188,7 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *") -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *", pack: bool=True) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
@@ -199,7 +199,7 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    pack = "Py_OBJ_PACK" if var.type.strip() != "_Py_TaggedObject" else ""
+                    pack = "Py_OBJ_PACK" if pack and var.type.strip() != "_Py_TaggedObject" else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {pack}({cast}{var.name});\n"
                     )
