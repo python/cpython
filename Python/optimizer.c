@@ -475,7 +475,7 @@ BRANCH_TO_GUARD[4][2] = {
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
-        OPT_STAT_INC(trace_stack_overflow);      \
+        OPT_STAT_INC(trace_stack_overflow); \
         ADD_TO_TRACE(uop, oparg, operand, target); \
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
         goto done; \
