@@ -1976,32 +1976,32 @@ static PyMethodDef c_void_p_method = { "from_param", c_void_p_from_param, METH_O
 static PyMethodDef c_char_p_method = { "from_param", c_char_p_from_param, METH_O };
 static PyMethodDef c_wchar_p_method = { "from_param", c_wchar_p_from_param, METH_O };
 
-static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject *kwds,
+static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
+                                   PyObject *args, PyObject *kwds,
                                    PyObject *proto, struct fielddesc *fmt)
 {
     PyTypeObject *result;
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     PyObject *newname;
     PyObject *swapped_args;
-    static PyObject *suffix;
     Py_ssize_t i;
 
     swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
     if (!swapped_args)
         return NULL;
 
-    if (suffix == NULL)
+    if (st->swapped_suffix == NULL)
 #ifdef WORDS_BIGENDIAN
-        suffix = PyUnicode_InternFromString("_le");
+        st->swapped_suffix = PyUnicode_InternFromString("_le");
 #else
-        suffix = PyUnicode_InternFromString("_be");
+        st->swapped_suffix = PyUnicode_InternFromString("_be");
 #endif
-    if (suffix == NULL) {
+    if (st->swapped_suffix == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
     }
 
-    newname = PyUnicode_Concat(name, suffix);
+    newname = PyUnicode_Concat(name, st->swapped_suffix);
     if (newname == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
@@ -2020,8 +2020,6 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     Py_DECREF(swapped_args);
     if (result == NULL)
         return NULL;
-
-    ctypes_state *st = GLOBAL_STATE();
 
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
@@ -2350,7 +2348,7 @@ static PyType_Spec pycsimple_type_spec = {
  */
 
 static PyObject *
-converters_from_argtypes(PyObject *ob)
+converters_from_argtypes(ctypes_state *st, PyObject *ob)
 {
     PyObject *converters;
     Py_ssize_t i;
@@ -2365,7 +2363,7 @@ converters_from_argtypes(PyObject *ob)
     Py_ssize_t nArgs = PyTuple_GET_SIZE(ob);
     if (nArgs > CTYPES_MAX_ARGCOUNT) {
         Py_DECREF(ob);
-        PyErr_Format(PyExc_ArgError,
+        PyErr_Format(st->PyExc_ArgError,
                      "_argtypes_ has too many arguments (%zi), maximum is %i",
                      nArgs, CTYPES_MAX_ARGCOUNT);
         return NULL;
@@ -4806,16 +4804,15 @@ static PyType_Spec pycarray_spec = {
 };
 
 PyObject *
-PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
+PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
 {
-    static PyObject *cache;
     PyObject *key;
     char name[256];
     PyObject *len;
 
-    if (cache == NULL) {
-        cache = PyDict_New();
-        if (cache == NULL)
+    if (st->array_cache == NULL) {
+        st->array_cache = PyDict_New();
+        if (st->array_cache == NULL)
             return NULL;
     }
     len = PyLong_FromSsize_t(length);
@@ -4827,7 +4824,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         return NULL;
 
     PyObject *result;
-    if (_PyDict_GetItemProxy(cache, key, &result) != 0) {
+    if (_PyDict_GetItemProxy(st->array_cache, key, &result) != 0) {
         // found or error
         Py_DECREF(key);
         return result;
@@ -4846,7 +4843,6 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     sprintf(name, "%.200s_Array_%ld",
         ((PyTypeObject *)itemtype)->tp_name, (long)length);
 #endif
-    ctypes_state *st = GLOBAL_STATE();
     result = PyObject_CallFunction((PyObject *)st->PyCArrayType_Type,
                                    "s(O){s:n,s:O}",
                                    name,
@@ -4860,7 +4856,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         Py_DECREF(key);
         return NULL;
     }
-    if (-1 == PyDict_SetItemProxy(cache, key, result)) {
+    if (-1 == PyDict_SetItemProxy(st, st->array_cache, key, result)) {
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;

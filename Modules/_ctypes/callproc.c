@@ -153,22 +153,21 @@ static void pymem_destructor(PyObject *ptr)
   kept alive in the thread state dictionary as long as the thread itself.
 */
 PyObject *
-_ctypes_get_errobj(int **pspace)
+_ctypes_get_errobj(ctypes_state *st, int **pspace)
 {
     PyObject *dict = PyThreadState_GetDict();
     PyObject *errobj;
-    static PyObject *error_object_name;
     if (dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot get thread state");
         return NULL;
     }
-    if (error_object_name == NULL) {
-        error_object_name = PyUnicode_InternFromString("ctypes.error_object");
-        if (error_object_name == NULL)
+    if (st->error_object_name == NULL) {
+        st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
+        if (st->error_object_name == NULL)
             return NULL;
     }
-    if (PyDict_GetItemRef(dict, error_object_name, &errobj) < 0) {
+    if (PyDict_GetItemRef(dict, st->error_object_name, &errobj) < 0) {
         return NULL;
     }
     if (errobj) {
@@ -188,7 +187,7 @@ _ctypes_get_errobj(int **pspace)
             PyMem_Free(space);
             return NULL;
         }
-        if (-1 == PyDict_SetItem(dict, error_object_name,
+        if (-1 == PyDict_SetItem(dict, st->error_object_name,
                                  errobj)) {
             Py_DECREF(errobj);
             return NULL;
@@ -1171,7 +1170,8 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
  *
  * - XXX various requirements for restype, not yet collected
  */
-PyObject *_ctypes_callproc(PPROC pProc,
+PyObject *_ctypes_callproc(ctypes_state *st,
+                    PPROC pProc,
                     PyObject *argtuple,
 #ifdef MS_WIN32
                     IUnknown *pIunk,
@@ -1201,7 +1201,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
 
     if (argcount > CTYPES_MAX_ARGCOUNT)
     {
-        PyErr_Format(PyExc_ArgError, "too many arguments (%zi), maximum is %i",
+        PyErr_Format(st->PyExc_ArgError, "too many arguments (%zi), maximum is %i",
                      argcount, CTYPES_MAX_ARGCOUNT);
         return NULL;
     }
@@ -1234,20 +1234,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
             converter = PyTuple_GET_ITEM(argtypes, i);
             v = PyObject_CallOneArg(converter, arg);
             if (v == NULL) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
+                _ctypes_extend_error(st->PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
 
-            err = ConvParam(v, i+1, pa);
+            err = ConvParam(st, v, i+1, pa);
             Py_DECREF(v);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
+                _ctypes_extend_error(st->PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
         } else {
-            err = ConvParam(arg, i+1, pa);
+            err = ConvParam(st, arg, i+1, pa);
             if (-1 == err) {
-                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
+                _ctypes_extend_error(st->PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup; /* leaking ? */
             }
         }
@@ -1256,7 +1256,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
     if (restype == Py_None) {
         rtype = &ffi_type_void;
     } else {
-        rtype = _ctypes_get_ffi_type(restype);
+        rtype = _ctypes_get_ffi_type(st, restype);
     }
     if (!rtype) {
         goto cleanup;
