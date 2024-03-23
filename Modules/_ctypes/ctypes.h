@@ -2,6 +2,9 @@
 #   include <alloca.h>
 #endif
 
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -42,6 +45,7 @@ typedef struct {
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
     PyTypeObject *StructParam_Type;
+    PyTypeObject *PyCType_Type;
     PyTypeObject *PyCStructType_Type;
     PyTypeObject *UnionType_Type;
     PyTypeObject *PyCPointerType_Type;
@@ -58,12 +62,38 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
-    PyTypeObject *PyCType_Type;
+    /* This dict maps ctypes types to POINTER types */
+    PyObject *_ctypes_ptrtype_cache;
+    /* a callable object used for unpickling:
+       strong reference to _ctypes._unpickle() function */
+    PyObject *_unpickle;
+    PyObject *array_cache;
+    PyObject *error_object_name;  // callproc.c
+    PyObject *PyExc_ArgError;
+    PyObject *swapped_suffix;
 } ctypes_state;
 
-extern ctypes_state global_state;
 
-#define GLOBAL_STATE() (&global_state)
+extern PyModuleDef _ctypesmodule;
+
+
+static inline ctypes_state *
+get_module_state(PyObject *module) {
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (ctypes_state *)state;
+}
+
+static inline ctypes_state *
+get_module_state_by_def(PyTypeObject *cls)
+{
+    // NOTE: class's tp_mro slot can be cleared by the GC during a module
+    // finalization, which PyType_GetModuleByDef() does not expect.
+    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
 
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
