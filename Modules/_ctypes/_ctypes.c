@@ -128,6 +128,16 @@ bytes(cdata)
 
 ctypes_state global_state = {0};
 
+PyObject *PyExc_ArgError = NULL;
+
+/* This dict maps ctypes types to POINTER types */
+PyObject *_ctypes_ptrtype_cache = NULL;
+
+/* a callable object used for unpickling:
+   strong reference to _ctypes._unpickle() function */
+static PyObject *_unpickle;
+
+
 /****************************************************************/
 
 typedef struct {
@@ -537,6 +547,35 @@ CType_Type_sizeof(PyObject *self)
     return PyLong_FromSsize_t(size);
 }
 
+static PyObject *
+CType_Type_repeat(PyObject *self, Py_ssize_t length);
+
+
+static PyMethodDef ctype_methods[] = {
+    {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
+     METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
+    {0},
+};
+
+static PyType_Slot ctype_type_slots[] = {
+    {Py_tp_traverse, CType_Type_traverse},
+    {Py_tp_clear, CType_Type_clear},
+    {Py_tp_dealloc, CType_Type_dealloc},
+    {Py_tp_methods, ctype_methods},
+    // Sequence protocol.
+    {Py_sq_repeat, CType_Type_repeat},
+    {0, NULL},
+};
+
+static PyType_Spec pyctype_type_spec = {
+    .name = "_ctypes.CType_Type",
+    .basicsize = -(Py_ssize_t)sizeof(StgInfo),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
+              Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_BASETYPE ),
+    .slots = ctype_type_slots,
+};
+
 /*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
   __metaclass__ will call the constructor StructUnionType_new.
@@ -686,7 +725,7 @@ PyDoc_STRVAR(from_address_doc,
 "C.from_address(integer) -> C instance\naccess a C instance at the specified address");
 
 static PyObject *
-CTypeType_from_address(PyObject *type, PyObject *value)
+CDataType_from_address(PyObject *type, PyObject *value)
 {
     void *buf;
     if (!PyLong_Check(value)) {
@@ -707,7 +746,7 @@ static int
 KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep);
 
 static PyObject *
-CTypeType_from_buffer(PyObject *type, PyObject *args)
+CDataType_from_buffer(PyObject *type, PyObject *args)
 {
     PyObject *obj;
     PyObject *mv;
@@ -791,7 +830,7 @@ static PyObject *
 GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
-CTypeType_from_buffer_copy(PyObject *type, PyObject *args)
+CDataType_from_buffer_copy(PyObject *type, PyObject *args)
 {
     Py_buffer buffer;
     Py_ssize_t offset = 0;
@@ -844,7 +883,7 @@ PyDoc_STRVAR(in_dll_doc,
 "C.in_dll(dll, name) -> C instance\naccess a C instance in a dll");
 
 static PyObject *
-CTypeType_in_dll(PyObject *type, PyObject *args)
+CDataType_in_dll(PyObject *type, PyObject *args)
 {
     PyObject *dll;
     char *name;
@@ -906,7 +945,7 @@ PyDoc_STRVAR(from_param_doc,
 "Convert a Python object into a function call parameter.");
 
 static PyObject *
-CTypeType_from_param(PyObject *type, PyObject *value)
+CDataType_from_param(PyObject *type, PyObject *value)
 {
     PyObject *as_parameter;
     int res = PyObject_IsInstance(value, type);
@@ -945,7 +984,7 @@ CTypeType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
-        value = CTypeType_from_param(type, as_parameter);
+        value = CDataType_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
         return value;
     }
@@ -956,8 +995,17 @@ CTypeType_from_param(PyObject *type, PyObject *value)
     return NULL;
 }
 
+static PyMethodDef CDataType_methods[] = {
+    { "from_param", CDataType_from_param, METH_O, from_param_doc },
+    { "from_address", CDataType_from_address, METH_O, from_address_doc },
+    { "from_buffer", CDataType_from_buffer, METH_VARARGS, from_buffer_doc, },
+    { "from_buffer_copy", CDataType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
+    { "in_dll", CDataType_in_dll, METH_VARARGS, in_dll_doc },
+    { NULL, NULL },
+};
+
 static PyObject *
-CTypeType_repeat(PyObject *self, Py_ssize_t length)
+CType_Type_repeat(PyObject *self, Py_ssize_t length)
 {
     if (length < 0)
         return PyErr_Format(PyExc_ValueError,
@@ -965,38 +1013,6 @@ CTypeType_repeat(PyObject *self, Py_ssize_t length)
                             length);
     return PyCArrayType_from_ctype(self, length);
 }
-
-static PyMethodDef ctype_methods[] = {
-    {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
-         METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
-    { "from_param", CTypeType_from_param, METH_O, from_param_doc },
-    { "from_address", CTypeType_from_address, METH_O, from_address_doc },
-    { "from_buffer", CTypeType_from_buffer, METH_VARARGS, from_buffer_doc, },
-    { "from_buffer_copy", CTypeType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
-    { "in_dll", CTypeType_in_dll, METH_VARARGS, in_dll_doc },
-    { NULL, NULL },
-};
-
-static PyType_Slot ctype_type_slots[] = {
-    {Py_tp_traverse, CType_Type_traverse},
-    {Py_tp_clear, CType_Type_clear},
-    {Py_tp_dealloc, CType_Type_dealloc},
-    {Py_tp_methods, ctype_methods},
-
-    // Sequence protocol.
-    {Py_sq_repeat, CTypeType_repeat},
-    {0, NULL},
-};
-
-static PyType_Spec pyctype_type_spec = {
-    .name = "_ctypes.CType_Type",
-    .basicsize = -(Py_ssize_t)sizeof(StgInfo),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE |
-              Py_TPFLAGS_HAVE_GC |
-              Py_TPFLAGS_BASETYPE ),
-    .slots = ctype_type_slots,
-};
-
 
 static int
 PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
@@ -1028,7 +1044,7 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 static PyType_Slot pycstruct_type_slots[] = {
     {Py_tp_setattro, PyCStructType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
-    {Py_tp_methods, ctype_methods},
+    {Py_tp_methods, CDataType_methods},
     {Py_tp_init, PyCStructType_init},
     {0, NULL},
 };
@@ -1043,7 +1059,7 @@ static PyType_Spec pycstruct_type_spec = {
 static PyType_Slot union_type_slots[] = {
     {Py_tp_setattro, UnionType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the Union Objects")},
-    {Py_tp_methods, ctype_methods},
+    {Py_tp_methods, CDataType_methods},
     {Py_tp_init, UnionType_init},
     {0, NULL},
 };
@@ -1262,14 +1278,14 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
             return Py_NewRef(value);
         }
     }
-    return CTypeType_from_param(type, value);
+    return CDataType_from_param(type, value);
 }
 
 static PyMethodDef PyCPointerType_methods[] = {
-    { "from_address", CTypeType_from_address, METH_O, from_address_doc },
-    { "from_buffer", CTypeType_from_buffer, METH_VARARGS, from_buffer_doc, },
-    { "from_buffer_copy", CTypeType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
-    { "in_dll", CTypeType_in_dll, METH_VARARGS, in_dll_doc},
+    { "from_address", CDataType_from_address, METH_O, from_address_doc },
+    { "from_buffer", CDataType_from_buffer, METH_VARARGS, from_buffer_doc, },
+    { "from_buffer_copy", CDataType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
+    { "in_dll", CDataType_in_dll, METH_VARARGS, in_dll_doc},
     { "from_param", (PyCFunction)PyCPointerType_from_param, METH_O, from_param_doc},
     { "set_type", (PyCFunction)PyCPointerType_set_type, METH_O },
     { NULL, NULL },
@@ -1607,7 +1623,7 @@ error:
 
 static PyType_Slot pycarray_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
-    {Py_tp_methods, ctype_methods},
+    {Py_tp_methods, CDataType_methods},
     {Py_tp_init, PyCArrayType_init},
     {0, NULL},
 };
@@ -1932,26 +1948,25 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     PyObject *newname;
     PyObject *swapped_args;
+    static PyObject *suffix;
     Py_ssize_t i;
 
     swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
     if (!swapped_args)
         return NULL;
 
-    ctypes_state *st = GLOBAL_STATE();
-    if (st->swapped_suffix == NULL) {
+    if (suffix == NULL)
 #ifdef WORDS_BIGENDIAN
-        st->swapped_suffix = PyUnicode_InternFromString("_le");
+        suffix = PyUnicode_InternFromString("_le");
 #else
-        st->swapped_suffix = PyUnicode_InternFromString("_be");
+        suffix = PyUnicode_InternFromString("_be");
 #endif
-    }
-    if (st->swapped_suffix == NULL) {
+    if (suffix == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
     }
 
-    newname = PyUnicode_Concat(name, st->swapped_suffix);
+    newname = PyUnicode_Concat(name, suffix);
     if (newname == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
@@ -1970,6 +1985,8 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     Py_DECREF(swapped_args);
     if (result == NULL)
         return NULL;
+
+    ctypes_state *st = GLOBAL_STATE();
 
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
@@ -2266,10 +2283,10 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
 
 static PyMethodDef PyCSimpleType_methods[] = {
     { "from_param", PyCSimpleType_from_param, METH_O, from_param_doc },
-    { "from_address", CTypeType_from_address, METH_O, from_address_doc },
-    { "from_buffer", CTypeType_from_buffer, METH_VARARGS, from_buffer_doc, },
-    { "from_buffer_copy", CTypeType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
-    { "in_dll", CTypeType_in_dll, METH_VARARGS, in_dll_doc},
+    { "from_address", CDataType_from_address, METH_O, from_address_doc },
+    { "from_buffer", CDataType_from_buffer, METH_VARARGS, from_buffer_doc, },
+    { "from_buffer_copy", CDataType_from_buffer_copy, METH_VARARGS, from_buffer_copy_doc, },
+    { "in_dll", CDataType_in_dll, METH_VARARGS, in_dll_doc},
     { NULL, NULL },
 };
 
@@ -2308,8 +2325,7 @@ converters_from_argtypes(PyObject *ob)
     Py_ssize_t nArgs = PyTuple_GET_SIZE(ob);
     if (nArgs > CTYPES_MAX_ARGCOUNT) {
         Py_DECREF(ob);
-        ctypes_state *st = GLOBAL_STATE();
-        PyErr_Format(st->PyExc_ArgError,
+        PyErr_Format(PyExc_ArgError,
                      "_argtypes_ has too many arguments (%zi), maximum is %i",
                      nArgs, CTYPES_MAX_ARGCOUNT);
         return NULL;
@@ -2529,7 +2545,7 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 static PyType_Slot pycfuncptr_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for C function pointers")},
-    {Py_tp_methods, ctype_methods},
+    {Py_tp_methods, CDataType_methods},
     {Py_tp_init, PyCFuncPtrType_init},
     {0, NULL},
 };
@@ -2789,7 +2805,7 @@ PyCData_reduce(PyObject *myself, PyObject *args)
     if (dict == NULL) {
         return NULL;
     }
-    return Py_BuildValue("O(O(NN))", st->_unpickle, Py_TYPE(myself), dict,
+    return Py_BuildValue("O(O(NN))", _unpickle, Py_TYPE(myself), dict,
                          PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
 }
 
@@ -4737,14 +4753,14 @@ static PyType_Spec pycarray_spec = {
 PyObject *
 PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
 {
+    static PyObject *cache;
     PyObject *key;
     char name[256];
     PyObject *len;
 
-    ctypes_state *st = GLOBAL_STATE();
-    if (st->array_cache == NULL) {
-        st->array_cache = PyDict_New();
-        if (st->array_cache == NULL)
+    if (cache == NULL) {
+        cache = PyDict_New();
+        if (cache == NULL)
             return NULL;
     }
     len = PyLong_FromSsize_t(length);
@@ -4756,7 +4772,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         return NULL;
 
     PyObject *result;
-    if (_PyDict_GetItemProxy(st->array_cache, key, &result) != 0) {
+    if (_PyDict_GetItemProxy(cache, key, &result) != 0) {
         // found or error
         Py_DECREF(key);
         return result;
@@ -4775,6 +4791,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     sprintf(name, "%.200s_Array_%ld",
         ((PyTypeObject *)itemtype)->tp_name, (long)length);
 #endif
+    ctypes_state *st = GLOBAL_STATE();
     result = PyObject_CallFunction((PyObject *)st->PyCArrayType_Type,
                                    "s(O){s:n,s:O}",
                                    name,
@@ -4788,7 +4805,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         Py_DECREF(key);
         return NULL;
     }
-    if (PyDict_SetItemProxy(st->array_cache, key, result) < 0) {
+    if (-1 == PyDict_SetItemProxy(cache, key, result)) {
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;
@@ -5480,6 +5497,15 @@ wstring_at(const wchar_t *ptr, int size)
 }
 
 
+static struct PyModuleDef _ctypesmodule = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_ctypes",
+    .m_doc = _ctypes__doc__,
+    .m_size = -1,
+    .m_methods = _ctypes_module_methods,
+};
+
+
 static int
 _ctypes_add_types(PyObject *mod)
 {
@@ -5588,10 +5614,10 @@ _ctypes_add_objects(PyObject *mod)
         } \
     } while (0)
 
-    ctypes_state *st = GLOBAL_STATE();
-    MOD_ADD("_pointer_type_cache", Py_NewRef(st->_ctypes_ptrtype_cache));
+    MOD_ADD("_pointer_type_cache", Py_NewRef(_ctypes_ptrtype_cache));
 
 #ifdef MS_WIN32
+    ctypes_state *st = GLOBAL_STATE();
     MOD_ADD("COMError", Py_NewRef(st->PyComError_Type));
     MOD_ADD("FUNCFLAG_HRESULT", PyLong_FromLong(FUNCFLAG_HRESULT));
     MOD_ADD("FUNCFLAG_STDCALL", PyLong_FromLong(FUNCFLAG_STDCALL));
@@ -5621,7 +5647,7 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
     MOD_ADD("RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
     MOD_ADD("CTYPES_MAX_ARGCOUNT", PyLong_FromLong(CTYPES_MAX_ARGCOUNT));
-    MOD_ADD("ArgumentError", Py_NewRef(st->PyExc_ArgError));
+    MOD_ADD("ArgumentError", Py_NewRef(PyExc_ArgError));
     MOD_ADD("SIZEOF_TIME_T", PyLong_FromSsize_t(SIZEOF_TIME_T));
     return 0;
 #undef MOD_ADD
@@ -5631,19 +5657,18 @@ _ctypes_add_objects(PyObject *mod)
 static int
 _ctypes_mod_exec(PyObject *mod)
 {
-    ctypes_state *st = GLOBAL_STATE();
-    st->_unpickle = PyObject_GetAttrString(mod, "_unpickle");
-    if (st->_unpickle == NULL) {
+    _unpickle = PyObject_GetAttrString(mod, "_unpickle");
+    if (_unpickle == NULL) {
         return -1;
     }
 
-    st->_ctypes_ptrtype_cache = PyDict_New();
-    if (st->_ctypes_ptrtype_cache == NULL) {
+    _ctypes_ptrtype_cache = PyDict_New();
+    if (_ctypes_ptrtype_cache == NULL) {
         return -1;
     }
 
-    st->PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
-    if (!st->PyExc_ArgError) {
+    PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
+    if (!PyExc_ArgError) {
         return -1;
     }
 
@@ -5658,104 +5683,19 @@ _ctypes_mod_exec(PyObject *mod)
 }
 
 
-static int
-module_traverse(PyObject *module, visitproc visit, void *arg) {
-    ctypes_state *st = GLOBAL_STATE();
-    Py_VISIT(st->_ctypes_ptrtype_cache);
-    Py_VISIT(st->_unpickle);
-    Py_VISIT(st->array_cache);
-    Py_VISIT(st->error_object_name);
-    Py_VISIT(st->PyExc_ArgError);
-    Py_VISIT(st->swapped_suffix);
-
-    Py_VISIT(st->DictRemover_Type);
-    Py_VISIT(st->PyCArg_Type);
-    Py_VISIT(st->PyCField_Type);
-    Py_VISIT(st->PyCThunk_Type);
-    Py_VISIT(st->StructParam_Type);
-    Py_VISIT(st->PyCStructType_Type);
-    Py_VISIT(st->UnionType_Type);
-    Py_VISIT(st->PyCPointerType_Type);
-    Py_VISIT(st->PyCArrayType_Type);
-    Py_VISIT(st->PyCSimpleType_Type);
-    Py_VISIT(st->PyCFuncPtrType_Type);
-    Py_VISIT(st->PyCData_Type);
-    Py_VISIT(st->Struct_Type);
-    Py_VISIT(st->Union_Type);
-    Py_VISIT(st->PyCArray_Type);
-    Py_VISIT(st->Simple_Type);
-    Py_VISIT(st->PyCPointer_Type);
-    Py_VISIT(st->PyCFuncPtr_Type);
-#ifdef MS_WIN32
-    Py_VISIT(st->PyComError_Type);
-#endif
-    Py_VISIT(st->PyCType_Type);
-    return 0;
-}
-
-static int
-module_clear(PyObject *module) {
-    ctypes_state *st = GLOBAL_STATE();
-    Py_CLEAR(st->_ctypes_ptrtype_cache);
-    Py_CLEAR(st->_unpickle);
-    Py_CLEAR(st->array_cache);
-    Py_CLEAR(st->error_object_name);
-    Py_CLEAR(st->PyExc_ArgError);
-    Py_CLEAR(st->swapped_suffix);
-
-    Py_CLEAR(st->DictRemover_Type);
-    Py_CLEAR(st->PyCArg_Type);
-    Py_CLEAR(st->PyCField_Type);
-    Py_CLEAR(st->PyCThunk_Type);
-    Py_CLEAR(st->StructParam_Type);
-    Py_CLEAR(st->PyCStructType_Type);
-    Py_CLEAR(st->UnionType_Type);
-    Py_CLEAR(st->PyCPointerType_Type);
-    Py_CLEAR(st->PyCArrayType_Type);
-    Py_CLEAR(st->PyCSimpleType_Type);
-    Py_CLEAR(st->PyCFuncPtrType_Type);
-    Py_CLEAR(st->PyCData_Type);
-    Py_CLEAR(st->Struct_Type);
-    Py_CLEAR(st->Union_Type);
-    Py_CLEAR(st->PyCArray_Type);
-    Py_CLEAR(st->Simple_Type);
-    Py_CLEAR(st->PyCPointer_Type);
-    Py_CLEAR(st->PyCFuncPtr_Type);
-#ifdef MS_WIN32
-    Py_CLEAR(st->PyComError_Type);
-#endif
-    Py_CLEAR(st->PyCType_Type);
-    return 0;
-}
-
-static void
-module_free(void *module)
-{
-    (void)module_clear((PyObject *)module);
-}
-
-static PyModuleDef_Slot module_slots[] = {
-    {Py_mod_exec, _ctypes_mod_exec},
-    // {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
-    {0, NULL}
-};
-
-static struct PyModuleDef _ctypesmodule = {
-    PyModuleDef_HEAD_INIT,
-    .m_name = "_ctypes",
-    .m_doc = _ctypes__doc__,
-    .m_size = 0,
-    .m_methods = _ctypes_module_methods,
-    .m_slots = module_slots,
-    .m_traverse = module_traverse,
-    .m_clear = module_clear,
-    .m_free = module_free,
-};
-
 PyMODINIT_FUNC
 PyInit__ctypes(void)
 {
-    return PyModuleDef_Init(&_ctypesmodule);
+    PyObject *mod = PyModule_Create(&_ctypesmodule);
+    if (!mod) {
+        return NULL;
+    }
+
+    if (_ctypes_mod_exec(mod) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
 }
 
 /*

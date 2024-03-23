@@ -157,18 +157,18 @@ _ctypes_get_errobj(int **pspace)
 {
     PyObject *dict = PyThreadState_GetDict();
     PyObject *errobj;
+    static PyObject *error_object_name;
     if (dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot get thread state");
         return NULL;
     }
-    ctypes_state *st = GLOBAL_STATE();
-    if (st->error_object_name == NULL) {
-        st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
-        if (st->error_object_name == NULL)
+    if (error_object_name == NULL) {
+        error_object_name = PyUnicode_InternFromString("ctypes.error_object");
+        if (error_object_name == NULL)
             return NULL;
     }
-    if (PyDict_GetItemRef(dict, st->error_object_name, &errobj) < 0) {
+    if (PyDict_GetItemRef(dict, error_object_name, &errobj) < 0) {
         return NULL;
     }
     if (errobj) {
@@ -188,7 +188,8 @@ _ctypes_get_errobj(int **pspace)
             PyMem_Free(space);
             return NULL;
         }
-        if (PyDict_SetItem(dict, st->error_object_name, errobj) < 0) {
+        if (-1 == PyDict_SetItem(dict, error_object_name,
+                                 errobj)) {
             Py_DECREF(errobj);
             return NULL;
         }
@@ -1196,10 +1197,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
         ++argcount;
 #endif
 
-    ctypes_state *st = GLOBAL_STATE();
     if (argcount > CTYPES_MAX_ARGCOUNT)
     {
-        PyErr_Format(st->PyExc_ArgError, "too many arguments (%zi), maximum is %i",
+        PyErr_Format(PyExc_ArgError, "too many arguments (%zi), maximum is %i",
                      argcount, CTYPES_MAX_ARGCOUNT);
         return NULL;
     }
@@ -1232,20 +1232,20 @@ PyObject *_ctypes_callproc(PPROC pProc,
             converter = PyTuple_GET_ITEM(argtypes, i);
             v = PyObject_CallOneArg(converter, arg);
             if (v == NULL) {
-                _ctypes_extend_error(st->PyExc_ArgError, "argument %zd: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
 
             err = ConvParam(v, i+1, pa);
             Py_DECREF(v);
             if (-1 == err) {
-                _ctypes_extend_error(st->PyExc_ArgError, "argument %zd: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup;
             }
         } else {
             err = ConvParam(arg, i+1, pa);
             if (-1 == err) {
-                _ctypes_extend_error(st->PyExc_ArgError, "argument %zd: ", i+1);
+                _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
                 goto cleanup; /* leaking ? */
             }
         }
@@ -1949,11 +1949,11 @@ create_pointer_type(PyObject *module, PyObject *cls)
     PyTypeObject *typ;
     PyObject *key;
 
-    ctypes_state *st = GLOBAL_STATE();
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, cls, &result) != 0) {
+    if (PyDict_GetItemRef(_ctypes_ptrtype_cache, cls, &result) != 0) {
         // found or error
         return result;
     }
+    ctypes_state *st = GLOBAL_STATE();
     // not found
     if (PyUnicode_CheckExact(cls)) {
         PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
@@ -1983,7 +1983,7 @@ create_pointer_type(PyObject *module, PyObject *cls)
         PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
         return NULL;
     }
-    if (PyDict_SetItem(st->_ctypes_ptrtype_cache, key, result) < 0) {
+    if (-1 == PyDict_SetItem(_ctypes_ptrtype_cache, key, result)) {
         Py_DECREF(result);
         Py_DECREF(key);
         return NULL;
@@ -2012,12 +2012,11 @@ create_pointer_inst(PyObject *module, PyObject *arg)
     PyObject *result;
     PyObject *typ;
 
-    ctypes_state *st = GLOBAL_STATE();
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg), &typ) < 0) {
+    if (PyDict_GetItemRef(_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg), &typ) < 0) {
         return NULL;
     }
     if (typ == NULL) {
-        typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
+        typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
         if (typ == NULL)
             return NULL;
     }
