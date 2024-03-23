@@ -1,0 +1,5 @@
+:func:`ctypes.memoryview_at` now exists to create a
+:class:`memoryview` object that refers to the supplied pointer and
+length. Works just like :func:`ctypes.string_at` except it avoids a
+buffer copy. Useful when implementing callback functions in Python
+that are passed dynamically-sized buffers.

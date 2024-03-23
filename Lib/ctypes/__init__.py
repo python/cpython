@@ -551,6 +551,14 @@ else:
         Return the string at addr."""
         return _wstring_at(ptr, size)
 
+from _ctypes import _memoryview_at_addr
+
+_memoryview_at = PYFUNCTYPE(py_object, c_void_p, c_ssize_t, c_int)(_memoryview_at_addr)
+def memoryview_at(ptr, size, readonly=False):
+    """memoryview_at(addr, size[, readonly]) -> memoryview
+
+    Return a memoryview representing the memory at addr."""
+    return _memoryview_at(ptr, size, bool(readonly))
 
 if _os.name == "nt": # COM stuff
     def DllGetClassObject(rclsid, riid, ppv):
