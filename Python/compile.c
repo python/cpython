@@ -2553,6 +2553,7 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         return ERROR;
     }
     ADDOP_LOAD_CONST(c, NO_LOCATION, expected_attributes);
+    Py_CLEAR(expected_attributes);
     if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__expected_attributes__), Store) < 0) {
         compiler_exit_scope(c);
         return ERROR;
