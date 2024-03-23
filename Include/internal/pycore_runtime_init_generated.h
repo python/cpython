@@ -866,6 +866,7 @@ extern "C" {
     INIT_ID(d), \
     INIT_ID(data), \
     INIT_ID(database), \
+    INIT_ID(day), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
     INIT_ID(default), \
@@ -935,6 +936,7 @@ extern "C" {
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
+    INIT_ID(fold), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(frequency), \
@@ -964,6 +966,7 @@ extern "C" {
     INIT_ID(headers), \
     INIT_ID(hi), \
     INIT_ID(hook), \
+    INIT_ID(hour), \
     INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(ignore), \
@@ -1044,11 +1047,14 @@ extern "C" {
     INIT_ID(metaclass), \
     INIT_ID(metadata), \
     INIT_ID(method), \
+    INIT_ID(microsecond), \
+    INIT_ID(minute), \
     INIT_ID(mod), \
     INIT_ID(mode), \
     INIT_ID(module), \
     INIT_ID(module_globals), \
     INIT_ID(modules), \
+    INIT_ID(month), \
     INIT_ID(mro), \
     INIT_ID(msg), \
     INIT_ID(mycmp), \
@@ -1153,6 +1159,7 @@ extern "C" {
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
+    INIT_ID(second), \
     INIT_ID(seek), \
     INIT_ID(seekable), \
     INIT_ID(selectors), \
@@ -1230,6 +1237,7 @@ extern "C" {
     INIT_ID(type), \
     INIT_ID(type_params), \
     INIT_ID(tz), \
+    INIT_ID(tzinfo), \
     INIT_ID(tzname), \
     INIT_ID(uid), \
     INIT_ID(unlink), \
