@@ -54,6 +54,21 @@ enum _frameowner {
     FRAME_OWNED_BY_CSTACK = 3,
 };
 
+typedef struct {
+    PyObject *obj;
+    uintptr_t bits;
+} _Py_TaggedObject;
+
+#define Py_OBJECT_TAG (0b0)
+
+#ifdef Py_GIL_DISABLED
+#define Py_CLEAR_TAG(tagged) ((PyObject *)(tagged.bits & ~(Py_OBJECT_TAG)))
+#else
+#define Py_CLEAR_TAG(tagged) (tagged.obj)
+#endif
+
+#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)obj})
+
 typedef struct _PyInterpreterFrame {
     PyObject *f_executable; /* Strong reference (code object or None) */
     struct _PyInterpreterFrame *previous;
@@ -67,7 +82,7 @@ typedef struct _PyInterpreterFrame {
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
     /* Locals and stack */
-    PyObject *localsplus[1];
+    _Py_TaggedObject localsplus[1];
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
@@ -78,23 +93,23 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)f->f_executable;
 }
 
-static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus;
+static inline _Py_TaggedObject *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
+    return (_Py_TaggedObject *)(f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
-static inline PyObject *_PyFrame_StackPeek(_PyInterpreterFrame *f) {
+static inline _Py_TaggedObject _PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(f->localsplus[f->stacktop-1] != NULL);
+    assert(f->localsplus[f->stacktop-1].obj != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
-static inline PyObject *_PyFrame_StackPop(_PyInterpreterFrame *f) {
+static inline _Py_TaggedObject _PyFrame_StackPop(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
     f->stacktop--;
     return f->localsplus[f->stacktop];
 }
 
-static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, PyObject *value) {
+static inline void _PyFrame_StackPush(_PyInterpreterFrame *f, _Py_TaggedObject value) {
     f->localsplus[f->stacktop] = value;
     f->stacktop++;
 }
@@ -133,14 +148,14 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = NULL;
+        frame->localsplus[i] = Py_OBJ_PACK(NULL);
     }
 }
 
 /* Gets the pointer to the locals array
  * that precedes this frame.
  */
-static inline PyObject**
+static inline _Py_TaggedObject*
 _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
 {
     return frame->localsplus;
@@ -150,16 +165,16 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
    Having stacktop <= 0 ensures that invalid
    values are not visible to the cycle GC.
    We choose -1 rather than 0 to assist debugging. */
-static inline PyObject**
+static inline _Py_TaggedObject*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
-    PyObject **sp = frame->localsplus + frame->stacktop;
+    _Py_TaggedObject *sp = frame->localsplus + frame->stacktop;
     frame->stacktop = -1;
     return sp;
 }
 
 static inline void
-_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, PyObject **stack_pointer)
+_PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _Py_TaggedObject *stack_pointer)
 {
     frame->stacktop = (int)(stack_pointer - frame->localsplus);
 }
