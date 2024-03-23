@@ -207,26 +207,29 @@ If you need an attribute setting on your mock, just do it:
     >>> mock.x
     3
 
-Sometimes you want to mock up a more complex situation, like for example
-``mock.connection.cursor().execute("SELECT 1")``. If we wanted this call to
-return a list, then we have to configure the result of the nested call.
+Sometimes you want to mock up a more complex expression, such as
+``db.connection.cursor().execute("SELECT 1")``. If we wanted this
+call to return a list, e.g. ``['foo']``, we'd have to specify the return value
+for both of the calls:
 
-We can use :data:`call` to construct the set of calls in a "chained call" like
-this for easy assertion afterwards:
+   >>> db = Mock()
+   >>> db.connection.cursor.return_value.execute.return_value = ['foo']
 
-    >>> mock = Mock()
-    >>> cursor = mock.connection.cursor.return_value
-    >>> cursor.execute.return_value = ['foo']
-    >>> mock.connection.cursor().execute("SELECT 1")
-    ['foo']
-    >>> expected = call.connection.cursor().execute("SELECT 1").call_list()
-    >>> mock.mock_calls
-    [call.connection.cursor(), call.connection.cursor().execute('SELECT 1')]
-    >>> mock.mock_calls == expected
-    True
+Since we haven't specified a ``return_value`` for ``mock.connection.cursor()``,
+a regular new mock object will be created by default.  When calling ``execute``
+on the new mock, this previously non-existant method will be created for the mock
+(which is an inherent feature of mocks) and will return ``['foo']`` when called::
 
-It is the call to ``.call_list()`` that turns our call object into a list of
-calls representing the chained calls.
+   >>> cursor = db.connection.cursor()
+   >>> cursor  # check that the cursor is a new mock with an execute method
+   <Mock name='db.connection.cursor()' id='...'>
+   >>> cursor.execute("SELECT 1")
+   ['foo']
+
+This is equivalent to executing the initial expression::
+
+   >>> db.connection.cursor().execute("SELECT 1")
+   ['foo']
 
 
 Raising exceptions with mocks
@@ -302,26 +305,43 @@ Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
 By default, ``__aenter__`` and ``__aexit__`` are ``AsyncMock`` instances that
 return an async function.
 
-    >>> class AsyncContextManager:
+Let's assume we have the following context manager in our code:
+
+    >>> class MyAsyncContextManager:
     ...     async def __aenter__(self):
+    ...         print('I am MyAsyncContextManager')
     ...         return self
     ...     async def __aexit__(self, exc_type, exc, tb):
-    ...         pass
+    ...         print('I, MyAsyncContextManager, am exiting!')
     ...
-    >>> mock_instance = MagicMock(AsyncContextManager())  # AsyncMock also works here
+
+To mock the above example in tests, we can do:
+
+    >>> mocked_context_manager = MagicMock(MyAsyncContextManager)
     >>> async def main():
-    ...     async with mock_instance as result:
-    ...         pass
+    ...     async with mocked_context_manager: # AsyncMock works here too
+    ...         print('Inside async context manager')
     ...
     >>> asyncio.run(main())
-    >>> mock_instance.__aenter__.assert_awaited_once()
-    >>> mock_instance.__aexit__.assert_awaited_once()
+    Inside async context manager
+
+This would not work with Mock class, though, because it doesn't
+have the pre-assigned ``__aexit__`` and ``__aenter__`` methods.
+
+    >>> async def main():
+    ...     async with Mock(MyAsyncContextManager) as context_manager:
+    ...         print('Inside async context manager')
+    ...
+    >>> asyncio.run(main())
+    Traceback (most recent call last):
+      ...
+    AttributeError: __aexit__
 
 
 Creating a Mock from an Existing Object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One problem with over use of mocking is that it couples your tests to the
+One problem with overuse of mocking is that it couples your tests to the
 implementation of your mocks rather than your real code. Suppose you have a
 class that implements ``some_method``. In a test for another class, you
 provide a mock of this object that *also* provides ``some_method``. If later
