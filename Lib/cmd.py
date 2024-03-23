@@ -240,7 +240,7 @@ class Cmd:
         returns.
 
         """
-        self.stdout.write('*** Unknown syntax: %s\n'%line)
+        self.stdout.write(f'*** Unknown syntax: {line}\n')
 
     def completedefault(self, *ignored):
         """Method called to complete an input line when no command-specific
@@ -252,7 +252,7 @@ class Cmd:
         return []
 
     def completenames(self, text, *ignored):
-        dotext = 'do_'+text
+        dotext = f'do_{text}'
         return [a[3:] for a in self.get_names() if a.startswith(dotext)]
 
     def complete(self, text, state):
@@ -274,7 +274,7 @@ class Cmd:
                     compfunc = self.completedefault
                 else:
                     try:
-                        compfunc = getattr(self, 'complete_' + cmd)
+                        compfunc = getattr(self, f'complete_{cmd}')
                     except AttributeError:
                         compfunc = self.completedefault
             else:
@@ -293,7 +293,7 @@ class Cmd:
     def complete_help(self, *args):
         commands = set(self.completenames(*args))
         topics = set(a[5:] for a in self.get_names()
-                     if a.startswith('help_' + args[0]))
+                     if a.startswith(f'help_{args[0]}'))
         return list(commands | topics)
 
     def do_help(self, arg):
@@ -301,13 +301,13 @@ class Cmd:
         if arg:
             # XXX check arg syntax
             try:
-                func = getattr(self, 'help_' + arg)
+                func = getattr(self, f'help_{arg}')
             except AttributeError:
                 try:
-                    doc=getattr(self, 'do_' + arg).__doc__
+                    doc=getattr(self, f'do_{arg}').__doc__
                     doc = inspect.cleandoc(doc)
                     if doc:
-                        self.stdout.write("%s\n"%str(doc))
+                        self.stdout.write(f"{doc}\n")
                         return
                 except AttributeError:
                     pass
@@ -338,16 +338,16 @@ class Cmd:
                         cmds_doc.append(cmd)
                     else:
                         cmds_undoc.append(cmd)
-            self.stdout.write("%s\n"%str(self.doc_leader))
+            self.stdout.write(f"{self.doc_leader}\n")
             self.print_topics(self.doc_header,   cmds_doc,   15,80)
             self.print_topics(self.misc_header,  sorted(topics),15,80)
             self.print_topics(self.undoc_header, cmds_undoc, 15,80)
 
     def print_topics(self, header, cmds, cmdlen, maxcol):
         if cmds:
-            self.stdout.write("%s\n"%str(header))
+            self.stdout.write(f"{header}\n")
             if self.ruler:
-                self.stdout.write("%s\n"%str(self.ruler * len(header)))
+                self.stdout.write(f"{self.ruler * len(header)}\n")
             self.columnize(cmds, maxcol-1)
             self.stdout.write("\n")
 
@@ -368,7 +368,7 @@ class Cmd:
                             % ", ".join(map(str, nonstrings)))
         size = len(list)
         if size == 1:
-            self.stdout.write('%s\n'%str(list[0]))
+            self.stdout.write(f'{list[0]}\n')
             return
         # Try every row count from 1 upwards
         for nrows in range(1, len(list)):
