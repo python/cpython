@@ -69,6 +69,12 @@ Copyright (C) 1994 Steen Lumholt.
 #define USE_DEPRECATED_TOMMATH_API 1
 #endif
 
+// As suggested by https://core.tcl-lang.org/tcl/wiki?name=Migrating+C+extensions+to+Tcl+9
+#ifndef TCL_SIZE_MAX
+typedef int Tcl_Size;
+#define TCL_SIZE_MAX INT_MAX
+#endif
+
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
 #endif
@@ -487,7 +493,7 @@ unicodeFromTclString(const char *s)
 static PyObject *
 unicodeFromTclObj(Tcl_Obj *value)
 {
-    int len;
+    Tcl_Size len;
 #if USE_TCL_UNICODE
     int byteorder = NATIVE_BYTEORDER;
     const Tcl_UniChar *u = Tcl_GetUnicodeFromObj(value, &len);
@@ -1113,7 +1119,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 
     if (value->typePtr == tkapp->ByteArrayType) {
-        int size;
+        Tcl_Size size;
         char *data = (char*)Tcl_GetByteArrayFromObj(value, &size);
         return PyBytes_FromStringAndSize(data, size);
     }
@@ -1147,8 +1153,8 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     }
 
     if (value->typePtr == tkapp->ListType) {
-        int size;
-        int i, status;
+        Tcl_Size i, size;
+        int status;
         PyObject *elem;
         Tcl_Obj *tcl_elem;
 
@@ -1209,9 +1215,9 @@ typedef struct Tkapp_CallEvent {
 } Tkapp_CallEvent;
 
 static void
-Tkapp_CallDeallocArgs(Tcl_Obj** objv, Tcl_Obj** objStore, int objc)
+Tkapp_CallDeallocArgs(Tcl_Obj** objv, Tcl_Obj** objStore, Tcl_Size objc)
 {
-    int i;
+    Tcl_Size i;
     for (i = 0; i < objc; i++)
         Tcl_DecrRefCount(objv[i]);
     if (objv != objStore)
@@ -1222,7 +1228,7 @@ Tkapp_CallDeallocArgs(Tcl_Obj** objv, Tcl_Obj** objStore, int objc)
    interpreter thread, which may or may not be the calling thread. */
 
 static Tcl_Obj**
-Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
+Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, Tcl_Size *pobjc)
 {
     Tcl_Obj **objv = objStore;
     Py_ssize_t objc = 0, i;
@@ -1270,10 +1276,10 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
             Tcl_IncrRefCount(objv[i]);
         }
     }
-    *pobjc = (int)objc;
+    *pobjc = (Tcl_Size)objc;
     return objv;
 finally:
-    Tkapp_CallDeallocArgs(objv, objStore, (int)objc);
+    Tkapp_CallDeallocArgs(objv, objStore, (Tcl_Size)objc);
     return NULL;
 }
 
@@ -1317,7 +1323,7 @@ Tkapp_CallProc(Tcl_Event *evPtr, int flags)
     Tkapp_CallEvent *e = (Tkapp_CallEvent *)evPtr;
     Tcl_Obj *objStore[ARGSZ];
     Tcl_Obj **objv;
-    int objc;
+    Tcl_Size objc;
     int i;
     ENTER_PYTHON
     objv = Tkapp_CallArgs(e->args, objStore, &objc);
@@ -1368,7 +1374,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
 {
     Tcl_Obj *objStore[ARGSZ];
     Tcl_Obj **objv = NULL;
-    int objc, i;
+    Tcl_Size objc;
     PyObject *res = NULL;
     TkappObject *self = (TkappObject*)selfptr;
     int flags = TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL;
@@ -1414,6 +1420,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
     else
     {
 
+        int i;
         objv = Tkapp_CallArgs(args, objStore, &objc);
         if (!objv)
             return NULL;
@@ -2087,13 +2094,12 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
 /*[clinic end generated code: output=13b51d34386d36fb input=2b2e13351e3c0b53]*/
 {
     char *list;
-    int argc;
+    Tcl_Size argc, i;
     const char **argv;
     PyObject *v;
-    int i;
 
     if (PyTclObject_Check(arg)) {
-        int objc;
+        Tcl_Size objc;
         Tcl_Obj **objv;
         if (Tcl_ListObjGetElements(Tkapp_Interp(self),
                                    ((PyTclObject*)arg)->value,
