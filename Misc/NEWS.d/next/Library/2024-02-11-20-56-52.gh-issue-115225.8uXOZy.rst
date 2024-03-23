@@ -1,0 +1,2 @@
+ISO8601 Format recommends "a decimal fraction may be added to the lowest order time element present."
+Thus "T0314.15" should be valid and yield "03:14:09", but currently yields "03:14:00.150000". Due to deliberate choice, such an expression would now throw a ValueError because such a string is more likely a typo than an actual fractional value.
