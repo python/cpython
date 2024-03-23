@@ -5435,10 +5435,8 @@ string_at(const char *ptr, int size)
 }
 
 static int
-cast_check_pointertype(PyObject *arg)
+cast_check_pointertype(ctypes_state *st, PyObject *arg)
 {
-    ctypes_state *st = GLOBAL_STATE();
-
     if (PyCPointerTypeObject_Check(st, arg)) {
         return 1;
     }
@@ -5467,8 +5465,16 @@ cast_check_pointertype(PyObject *arg)
 static PyObject *
 cast(void *ptr, PyObject *src, PyObject *ctype)
 {
+    PyObject *mod = PyType_GetModuleByDef(Py_TYPE(ctype), &_ctypesmodule);
+    if (!mod) {
+        PyErr_SetString(PyExc_TypeError,
+                        "cast() argument 2 must be a pointer type");
+        return NULL;
+    }
+    ctypes_state *st = get_module_state(mod);
+
     CDataObject *result;
-    if (0 == cast_check_pointertype(ctype))
+    if (0 == cast_check_pointertype(st, ctype))
         return NULL;
     result = (CDataObject *)_PyObject_CallNoArgs(ctype);
     if (result == NULL)
@@ -5480,7 +5486,6 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
       It must certainly contain the source objects one.
       It must contain the source object itself.
      */
-    ctypes_state *st = GLOBAL_STATE();
     if (CDataObject_Check(st, src)) {
         CDataObject *obj = (CDataObject *)src;
         CDataObject *container;
