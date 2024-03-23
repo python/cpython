@@ -266,6 +266,16 @@ def k(x):
     OP         '='           (1, 2) (1, 3)
     NUMBER     '3.14e159'    (1, 4) (1, 12)
     """)
+        self.check_tokenize("x = 0x1p1", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '0x1p1'       (1, 4) (1, 9)
+    """)
+        self.check_tokenize("x = 0x.1p1", """\
+    NAME       'x'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    NUMBER     '0x.1p1'      (1, 4) (1, 10)
+    """)
 
     def test_underscore_literals(self):
         def number_token(s):

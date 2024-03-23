@@ -107,11 +107,11 @@ class Stencil:
             f"{base + 4 * 4:x}: d61f0100      br      x8",
         ]
         for code in [
-            0xD2800008.to_bytes(4, sys.byteorder),
-            0xF2A00008.to_bytes(4, sys.byteorder),
-            0xF2C00008.to_bytes(4, sys.byteorder),
-            0xF2E00008.to_bytes(4, sys.byteorder),
-            0xD61F0100.to_bytes(4, sys.byteorder),
+            (0xD2800008).to_bytes(4, sys.byteorder),
+            (0xF2A00008).to_bytes(4, sys.byteorder),
+            (0xF2C00008).to_bytes(4, sys.byteorder),
+            (0xF2E00008).to_bytes(4, sys.byteorder),
+            (0xD61F0100).to_bytes(4, sys.byteorder),
         ]:
             self.body.extend(code)
         for i, kind in enumerate(

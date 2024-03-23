@@ -210,7 +210,7 @@ the float value exactly:
 
 .. doctest::
 
-    >>> x == float.fromhex('0x1.921f9f01b866ep+1')
+    >>> x == 0x1.921f9f01b866ep+1
     True
 
 Since the representation is exact, it is useful for reliably porting values

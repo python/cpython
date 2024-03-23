@@ -55,6 +55,7 @@ extern PyObject* _Py_string_to_number_with_underscores(
 
 extern double _Py_parse_inf_or_nan(const char *p, char **endptr);
 
+extern double _Py_dg_strtod_hex(const char *str, char **ptr);
 
 #ifdef __cplusplus
 }

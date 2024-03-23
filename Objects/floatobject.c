@@ -1301,11 +1301,64 @@ float_fromhex(PyTypeObject *type, PyObject *string)
 /*[clinic end generated code: output=46c0274d22b78e82 input=0407bebd354bca89]*/
 {
     PyObject *result;
+    Py_ssize_t length;
+    const char *s, *end, *last;
+    double x;
+
+    s = PyUnicode_AsUTF8AndSize(string, &length);
+    if (s == NULL) {
+        return NULL;
+    }
+    last = s + length;
+
+    while (Py_ISSPACE(*s)) {
+        s++;
+    }
+    while (s < last - 1 && Py_ISSPACE(last[-1])) {
+        last--;
+    }
+
+    errno = 0;
+    x = _Py_dg_strtod_hex(s, (char **)&end);
+
+    if (errno == ERANGE) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "hexadecimal value too large to represent as a float");
+        return NULL;
+    }
+
+    if (end != last) {
+        if (end != s && (*end && !Py_ISSPACE(*end))) {
+            PyErr_SetString(PyExc_ValueError,
+                            "hexadecimal string too long to convert");
+            return NULL;
+        }
+        /* Nothing parsed, maybe inf/nan? */
+        x = _Py_parse_inf_or_nan(s, (char **)&end);
+    }
+    if (end != last || end == s) {
+        PyErr_SetString(PyExc_ValueError,
+                        "invalid hexadecimal floating-point string");
+        return NULL;
+    }
+
+    result = PyFloat_FromDouble(x);
+    if (type != &PyFloat_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
+    }
+    return result;
+}
+
+double
+_Py_dg_strtod_hex(const char *s00, char **se)
+{
     double x;
     long exp, top_exp, lsb, key_digit;
-    const char *s, *coeff_start, *s_store, *coeff_end, *exp_start, *s_end;
+    const char *coeff_start, *s_store, *coeff_end, *exp_start, *s = s00;
     int half_eps, digit, round_up, negate=0;
-    Py_ssize_t length, ndigits, fdigits, i;
+    Py_ssize_t ndigits, fdigits, i;
+
+    *se = (char *)s00;
 
     /*
      * For the sake of simplicity and correctness, we impose an artificial
@@ -1352,11 +1405,6 @@ float_fromhex(PyTypeObject *type, PyObject *string)
      * exp+4*ndigits and exp-4*ndigits are within the range of a long.
      */
 
-    s = PyUnicode_AsUTF8AndSize(string, &length);
-    if (s == NULL)
-        return NULL;
-    s_end = s + length;
-
     /********************
      * Parse the string *
      ********************/
@@ -1364,13 +1412,6 @@ float_fromhex(PyTypeObject *type, PyObject *string)
     /* leading whitespace */
     while (Py_ISSPACE(*s))
         s++;
-
-    /* infinities and nans */
-    x = _Py_parse_inf_or_nan(s, (char **)&coeff_end);
-    if (coeff_end != s) {
-        s = coeff_end;
-        goto finished;
-    }
 
     /* optional sign */
     if (*s == '-') {
@@ -1410,8 +1451,10 @@ float_fromhex(PyTypeObject *type, PyObject *string)
     if (ndigits == 0)
         goto parse_error;
     if (ndigits > Py_MIN(DBL_MIN_EXP - DBL_MANT_DIG - LONG_MIN/2,
-                         LONG_MAX/2 + 1 - DBL_MAX_EXP)/4)
+                         LONG_MAX/2 + 1 - DBL_MAX_EXP)/4) {
+        *se = (char*)coeff_end;
         goto insane_length_error;
+    }
 
     /* [p <exponent>] */
     if (*s == 'p' || *s == 'P') {
@@ -1510,31 +1553,20 @@ float_fromhex(PyTypeObject *type, PyObject *string)
     x = ldexp(x, (int)(exp+4*key_digit));
 
   finished:
-    /* optional trailing whitespace leading to the end of the string */
-    while (Py_ISSPACE(*s))
-        s++;
-    if (s != s_end)
+    if (*s && !Py_ISSPACE(*s))
         goto parse_error;
-    result = PyFloat_FromDouble(negate ? -x : x);
-    if (type != &PyFloat_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
-    }
-    return result;
+    *se = (char *)s;
+    errno = 0;
+    return negate ? -x : x;
 
   overflow_error:
-    PyErr_SetString(PyExc_OverflowError,
-                    "hexadecimal value too large to represent as a float");
-    return NULL;
+    errno = ERANGE;
+    return HUGE_VAL;
 
   parse_error:
-    PyErr_SetString(PyExc_ValueError,
-                    "invalid hexadecimal floating-point string");
-    return NULL;
-
   insane_length_error:
-    PyErr_SetString(PyExc_ValueError,
-                    "hexadecimal string too long to convert");
-    return NULL;
+    errno = 0;
+    return 0.0;
 }
 
 /*[clinic input]
