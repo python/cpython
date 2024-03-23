@@ -473,9 +473,8 @@ class IocpProactor:
         try:
             return cls.finish_socket_func(trans, key, ov)
         except OSError as exc:
-            # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the
-            # same socket is used to send to an address that is not
-            # listening.
+            # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the same
+            # socket is used to send to an address that is not listening.
             if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
                 return empty_result, None
             else:
@@ -515,7 +514,8 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((b'', None))
 
-        return self._register(ov, conn, partial(self._finish_recvfrom, empty_result=b''))
+        return self._register(ov, conn, partial(self._finish_recvfrom,
+                                                empty_result=b''))
 
     def recvfrom_into(self, conn, buf, flags=0):
         self._register_with_iocp(conn)
@@ -525,7 +525,8 @@ class IocpProactor:
         except BrokenPipeError:
             return self._result((0, None))
 
-        return self._register(ov, conn, partial(self._finish_recvfrom, empty_result=0))
+        return self._register(ov, conn, partial(self._finish_recvfrom,
+                                                empty_result=0))
 
     def sendto(self, conn, buf, flags=0, addr=None):
         self._register_with_iocp(conn)

@@ -563,15 +563,16 @@ if sys.platform == 'win32':
             return asyncio.ProactorEventLoop()
 
 
-        async def _basetest_datagram_send_to_non_listening_address(self, recvfrom):
+        async def _basetest_datagram_send_to_non_listening_address(self,
+                                                                   recvfrom):
             await asyncio.sleep(0)
             # see:
             #   https://github.com/python/cpython/issues/91227
             #   https://github.com/python/cpython/issues/88906
             #   https://bugs.python.org/issue47071
             #   https://bugs.python.org/issue44743
-            # The Proactor event loop would fail to receive datagram messages after
-            # sending a message to an address that wasn't listening.
+            # The Proactor event loop would fail to receive datagram messages
+            # after sending a message to an address that wasn't listening.
 
             def create_socket():
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -585,8 +586,8 @@ if sys.platform == 'win32':
             socket_2 = create_socket()
             addr_2 = socket_2.getsockname()
 
-            # creating and immediately closing this to try to get an address that
-            # is not listening
+            # creating and immediately closing this to try to get an address
+            # that is not listening
             socket_3 = create_socket()
             addr_3 = socket_3.getsockname()
             socket_3.shutdown(socket.SHUT_RDWR)
@@ -610,8 +611,8 @@ if sys.platform == 'win32':
             socket_1_recv_task = self.loop.create_task(recvfrom(socket_1))
             await asyncio.sleep(0)
 
-            # socket 1 should still be able to receive messages after sending to
-            # an address that wasn't listening
+            # socket 1 should still be able to receive messages after sending
+            # to an address that wasn't listening
             socket_2.sendto(b'd', addr_1)
             self.assertEqual(await socket_1_recv_task, b'd')
 
@@ -627,17 +628,20 @@ if sys.platform == 'win32':
                 return data
 
             self.loop.run_until_complete(
-                self._basetest_datagram_send_to_non_listening_address(recvfrom))
+                self._basetest_datagram_send_to_non_listening_address(
+                    recvfrom))
 
 
         def test_datagram_send_to_non_listening_address_recvfrom_into(self):
             async def recvfrom_into(socket):
                 buf = bytearray(4096)
-                length, _ = await self.loop.sock_recvfrom_into(socket, buf, 4096)
+                length, _ = await self.loop.sock_recvfrom_into(socket, buf,
+                                                               4096)
                 return buf[:length]
 
             self.loop.run_until_complete(
-                self._basetest_datagram_send_to_non_listening_address(recvfrom_into))
+                self._basetest_datagram_send_to_non_listening_address(
+                    recvfrom_into))
 
 else:
     import selectors
