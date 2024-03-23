@@ -1,5 +1,4 @@
 import contextlib
-import opcode
 import sys
 import textwrap
 import unittest
