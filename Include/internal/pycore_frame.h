@@ -54,20 +54,6 @@ enum _frameowner {
     FRAME_OWNED_BY_CSTACK = 3,
 };
 
-typedef struct {
-    PyObject *obj;
-    uintptr_t bits;
-} _Py_TaggedObject;
-
-#define Py_OBJECT_TAG (0b0)
-
-#ifdef Py_GIL_DISABLED
-#define Py_CLEAR_TAG(tagged) ((PyObject *)(tagged.bits & ~(Py_OBJECT_TAG)))
-#else
-#define Py_CLEAR_TAG(tagged) ((tagged).obj)
-#endif
-
-#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)(obj)})
 
 typedef struct _PyInterpreterFrame {
     PyObject *f_executable; /* Strong reference (code object or None) */
@@ -94,7 +80,7 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
 }
 
 static inline _Py_TaggedObject *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return (_Py_TaggedObject *)(f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
 }
 
 static inline _Py_TaggedObject _PyFrame_StackPeek(_PyInterpreterFrame *f) {

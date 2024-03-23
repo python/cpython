@@ -247,7 +247,7 @@ static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
+                        PyObject *locals, _Py_TaggedObject const* args,
                         size_t argcount, PyObject *kwnames);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
@@ -1724,7 +1724,7 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 /* Consumes references to func, locals and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
+                        PyObject *locals, _Py_TaggedObject const* args,
                         size_t argcount, PyObject *kwnames)
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
@@ -1743,12 +1743,12 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 fail:
     /* Consume the references */
     for (size_t i = 0; i < argcount; i++) {
-        Py_DECREF(args[i]);
+        Py_DECREF(Py_CLEAR_TAG(args[i]));
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            Py_DECREF(args[i+argcount]);
+            Py_DECREF(Py_CLEAR_TAG(args[i+argcount]));
         }
     }
     PyErr_NoMemory();

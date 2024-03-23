@@ -524,7 +524,9 @@ dummy_func(
              */
             assert(Py_REFCNT(left) >= 2);
             _Py_DECREF_NO_DEALLOC(left);
-            PyUnicode_Append(target_local, right);
+            PyObject *temp = Py_CLEAR_TAG(*target_local);
+            PyUnicode_Append(&temp, right);
+            *target_local = Py_OBJ_PACK(temp);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             ERROR_IF(Py_CLEAR_TAG(*target_local) == NULL, error);
             // The STORE_FAST is already done.

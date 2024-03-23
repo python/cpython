@@ -228,6 +228,21 @@ struct _object {
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
+typedef union {
+    PyObject *obj;
+    uintptr_t bits;
+} _Py_TaggedObject;
+
+#define Py_OBJECT_TAG (0b0)
+
+#ifdef Py_GIL_DISABLED
+#define Py_CLEAR_TAG(tagged) ((PyObject *)((tagged).bits & ~(Py_OBJECT_TAG)))
+#else
+#define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
+#endif
+
+#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)(obj)})
+
 typedef struct {
     PyObject ob_base;
     Py_ssize_t ob_size; /* Number of items in variable part */
