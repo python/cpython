@@ -362,7 +362,9 @@ _opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
 /*[clinic end generated code: output=c035c7a47b16648f input=85eff93ea7aac282]*/
 {
     if (!PyCode_Check(code)) {
-         PyErr_SetString(PyExc_TypeError, "first argument must be a code object");
+        PyErr_Format(PyExc_TypeError,
+                     "expected a code object, not '%.100s'",
+                     Py_TYPE(code)->tp_name);
         return NULL;
     }
     return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, offset);
