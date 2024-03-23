@@ -85,6 +85,14 @@ get_module_state(PyObject *module) {
 }
 
 static inline ctypes_state *
+get_module_state_by_cls(PyTypeObject *cls)
+{
+    ctypes_state *state = (ctypes_state *)_PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return state;
+}
+
+static inline ctypes_state *
 get_module_state_by_def(PyTypeObject *cls)
 {
     // NOTE: class's tp_mro slot can be cleared by the GC during a module
