@@ -2264,7 +2264,9 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
 
     module = None
     module_dict = {}
-    module_name = getattr(obj, '__module__', None)
+    module_name = (getattr(obj, '__module__', None) or
+                   getattr(getattr(obj, '__objclass__', None),
+                           '__module__', None))
     if module_name:
         module = sys.modules.get(module_name, None)
         if module:
@@ -2272,10 +2274,20 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
     sys_module_dict = sys.modules.copy()
 
     def parse_name(node):
-        assert isinstance(node, ast.arg)
-        if node.annotation is not None:
-            raise ValueError("Annotations are not currently supported")
         return node.arg
+
+    def parse_annotation(annotation):
+        if annotation:
+            expr = ast.unparse(annotation)
+            try:
+                value = eval(expr, module_dict)
+            except NameError:
+                try:
+                    value = eval(expr, sys_module_dict)
+                except NameError:
+                    raise ValueError
+            return value
+        return empty
 
     def wrap_value(s):
         try:
@@ -2324,6 +2336,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             raise ValueError
 
     def p(name_node, default_node, default=empty):
+        assert isinstance(name_node, ast.arg)
         name = parse_name(name_node)
         if default_node and default_node is not _empty:
             try:
@@ -2331,7 +2344,11 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 default = ast.literal_eval(default_node)
             except ValueError:
                 raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
-        parameters.append(Parameter(name, kind, default=default, annotation=empty))
+        try:
+            annotation = parse_annotation(name_node.annotation)
+        except ValueError:
+            raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
+        parameters.append(Parameter(name, kind, default=default, annotation=annotation))
 
     # non-keyword-only parameters
     total_non_kw_args = len(f.args.posonlyargs) + len(f.args.args)
@@ -2378,7 +2395,12 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
             p = parameters[0].replace(kind=Parameter.POSITIONAL_ONLY)
             parameters[0] = p
 
-    return cls(parameters, return_annotation=cls.empty)
+    try:
+        return_annotation = parse_annotation(f.returns)
+    except ValueError:
+        raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
+
+    return cls(parameters, return_annotation=return_annotation)
 
 
 def _signature_from_builtin(cls, func, skip_bound_arg=True):
@@ -2552,18 +2574,10 @@ def _signature_from_callable(obj, *,
         pass
     else:
         if sig is not None:
-            # since __text_signature__ is not writable on classes, __signature__
-            # may contain text (or be a callable that returns text);
-            # if so, convert it
-            o_sig = sig
-            if not isinstance(sig, (Signature, str)) and callable(sig):
-                sig = sig()
-            if isinstance(sig, str):
-                sig = _signature_fromstr(sigcls, obj, sig)
             if not isinstance(sig, Signature):
                 raise TypeError(
                     'unexpected object {!r} in __signature__ '
-                    'attribute'.format(o_sig))
+                    'attribute'.format(sig))
             return sig
 
     try:

@@ -4591,38 +4591,6 @@ class TestSignatureObject(unittest.TestCase):
                 self.assertEqual(signature_func(foo), inspect.Signature())
         self.assertEqual(inspect.get_annotations(foo), {})
 
-    def test_signature_as_str(self):
-        self.maxDiff = None
-        class S:
-            __signature__ = '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-    def test_signature_as_callable(self):
-        # __signature__ should be either a staticmethod or a bound classmethod
-        class S:
-            @classmethod
-            def __signature__(cls):
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
-        class S:
-            @staticmethod
-            def __signature__():
-                return '(a, b=2)'
-
-        self.assertEqual(self.signature(S),
-                         ((('a', ..., ..., 'positional_or_keyword'),
-                           ('b', 2, ..., 'positional_or_keyword')),
-                          ...))
-
     def test_signature_on_derived_classes(self):
         # gh-105080: Make sure that signatures are consistent on derived classes
 
@@ -5314,6 +5282,40 @@ class TestSignatureDefinitions(unittest.TestCase):
         self.assertEqual(text_signature, '(raw, buffer_size=DEFAULT_BUFFER_SIZE)')
         sig = inspect.signature(MyBufferedReader)
         self.assertEqual(str(sig), '(raw, buffer_size=8192)')
+
+    def test_annotations_in_text_signature(self):
+        import fractions
+
+        def func(*args, **kwargs):
+            pass
+
+        func.__text_signature__ = '($self, a: int) -> list'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, a: int) -> list')
+
+        func.__text_signature__ = '($self, a: int | float)'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, a: int | float)')
+
+        func.__text_signature__ = '($self, a: tuple[int, ...])'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, a: tuple[int, ...])')
+
+        func.__text_signature__ = '($self, x: spam)'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
+
+        func.__text_signature__ = '($self, x) -> spam'
+        with self.assertRaises(ValueError):
+            inspect.signature(func)
+
+        func.__text_signature__ = '($self, x) -> fractions.Fraction'
+        sig = inspect.signature(func)
+        self.assertIsNotNone(sig)
+        self.assertEqual(str(sig), '(self, /, x) -> fractions.Fraction')
 
 
 class NTimesUnwrappable:

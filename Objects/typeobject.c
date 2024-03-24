@@ -558,8 +558,8 @@ find_signature(const char *name, const char *doc)
     return doc;
 }
 
-#define SIGNATURE_END_MARKER         ")\n--\n\n"
-#define SIGNATURE_END_MARKER_LENGTH  6
+#define SIGNATURE_END_MARKER         "\n--\n\n"
+#define SIGNATURE_END_MARKER_LENGTH  5
 /*
  * skips past the end of the docstring's introspection signature.
  * (assumes doc starts with a valid signature prefix.)
@@ -676,11 +676,12 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
         Py_RETURN_NONE;
     }
 
-    /* back "end" up until it points just past the final ')' */
-    end -= SIGNATURE_END_MARKER_LENGTH - 1;
+    /* back "end" up until it points just to the end marker */
+    end -= SIGNATURE_END_MARKER_LENGTH;
     assert((end - start) >= 2); /* should be "()" at least */
-    assert(end[-1] == ')');
     assert(end[0] == '\n');
+    assert(end[1] == '-');
+    assert(end[2] == '-');
     return PyUnicode_FromStringAndSize(start, end - start);
 }
 
@@ -5564,7 +5565,7 @@ static PyMethodDef type_methods[] = {
     TYPE___SUBCLASSES___METHODDEF
     {"__prepare__", _PyCFunction_CAST(type_prepare),
      METH_FASTCALL | METH_KEYWORDS | METH_CLASS,
-     PyDoc_STR("__prepare__($cls, name, bases, /, **kwds)\n"
+     PyDoc_STR("__prepare__($type, name, bases, /, **kwds)\n"
                "--\n"
                "\n"
                "Create the namespace for the class statement")},
@@ -6948,7 +6949,10 @@ type_add_method(PyTypeObject *type, PyMethodDef *meth)
         descr = PyDescr_NewClassMethod(type, meth);
     }
     else if (meth->ml_flags & METH_STATIC) {
-        PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, NULL);
+        PyObject *mod = PyObject_GetAttr((PyObject*)type, &_Py_ID(__module__));
+        PyErr_Clear();
+        PyObject *cfunc = PyCFunction_NewEx(meth, (PyObject*)type, mod);
+        Py_XDECREF(mod);
         if (cfunc == NULL) {
             return -1;
         }
