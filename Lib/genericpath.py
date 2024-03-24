@@ -7,8 +7,8 @@ import os
 import stat
 
 __all__ = ['commonprefix', 'exists', 'getatime', 'getctime', 'getmtime',
-           'getsize', 'isdir', 'isfile', 'islink', 'samefile', 'sameopenfile',
-           'samestat','lexists']
+           'getsize', 'isdevdrive', 'isdir', 'isfile', 'isjunction', 'islink',
+           'lexists', 'samefile', 'sameopenfile', 'samestat']
 
 
 # Does a path exist?
@@ -64,6 +64,21 @@ def islink(path):
     except (OSError, ValueError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
+
+
+# Is a path a junction?
+def isjunction(path):
+    """Test whether a path is a junction
+    Junctions are not supported on the current platform"""
+    os.fspath(path)
+    return False
+
+
+def isdevdrive(path):
+    """Determines whether the specified path is on a Windows Dev Drive.
+    Dev Drives are not supported on the current platform"""
+    os.fspath(path)
+    return False
 
 
 def getsize(filename):

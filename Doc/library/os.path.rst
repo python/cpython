@@ -324,9 +324,12 @@ the :mod:`glob` module.)
    Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
    for information on enabling and creating Dev Drives.
 
-   .. availability:: Windows.
+   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      The function is now available on all platforms, and will always return ``False`` on those that have no support for Dev Drives
 
 
 .. function:: isreserved(path)

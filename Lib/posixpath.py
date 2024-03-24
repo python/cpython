@@ -187,20 +187,6 @@ def dirname(p):
     return head
 
 
-# Is a path a junction?
-
-def isjunction(path):
-    """Test whether a path is a junction
-    Junctions are not a part of posix semantics"""
-    os.fspath(path)
-    return False
-
-
-def isdevdrive(path):
-    """Determines whether the specified path is on a Dev Drive.
-    Dev Drives are not a part of posix semantics"""
-    return False
-
 # Is a path a mount point?
 # (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
 
