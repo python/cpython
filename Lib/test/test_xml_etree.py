@@ -1707,11 +1707,10 @@ class XMLPullParserTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ET.XMLPullParser(events=('start', 'end', 'bogus'))
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
     def test_flush_reparse_deferral_enabled(self):
-        if pyexpat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {pyexpat.version_info} does not '
-                          'support reparse deferral')
-
         parser = ET.XMLPullParser(events=('start', 'end'))
 
         for chunk in ("<doc", ">"):
