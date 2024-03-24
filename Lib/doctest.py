@@ -1568,22 +1568,22 @@ class DocTestRunner:
         """
         if verbose is None:
             verbose = self._verbose
-        notests = []
-        passed = []
-        failed = []
+
+        notests, passed, failed = [], [], []
         total_tries = total_failures = total_skips = 0
-        for item in self._stats.items():
-            name, (failures, tries, skips) = item
+
+        for name, (failures, tries, skips) in self._stats.items():
             assert failures <= tries
             total_tries += tries
             total_failures += failures
             total_skips += skips
+
             if tries == 0:
                 notests.append(name)
             elif failures == 0:
                 passed.append((name, tries))
             else:
-                failed.append(item)
+                failed.append((name, (failures, tries, skips)))
 
         if verbose:
             if notests:
@@ -1594,16 +1594,14 @@ class DocTestRunner:
 
             if passed:
                 print(f"{_n_items(passed)} passed all tests:")
-                passed.sort()
-                for name, count in passed:
+                for name, count in sorted(passed):
                     s = "" if count == 1 else "s"
                     print(f" {count:3d} test{s} in {name}")
 
         if failed:
             print(self.DIVIDER)
             print(f"{_n_items(failed)} had failures:")
-            failed.sort()
-            for name, (failures, tries, skips) in failed:
+            for name, (failures, tries, skips) in sorted(failed):
                 print(f" {failures:3d} of {tries:3d} in {name}")
 
         if verbose:
