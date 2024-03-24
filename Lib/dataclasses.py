@@ -666,7 +666,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         return_type=None)
 
 
-def _frozen_get_del_attr(cls, fields, globals):
+def _frozen_get_del_attr(cls, fields, func_builder):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
     condition = 'type(self) is cls'
