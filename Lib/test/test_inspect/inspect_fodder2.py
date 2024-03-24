@@ -310,3 +310,8 @@ else:
     class cls310:
         def g():
             pass
+
+# line 314
+class ClassWithCodeObject:
+    import sys
+    code = sys._getframe(0).f_code

@@ -266,6 +266,49 @@ _pickle_PicklerMemoProxy___reduce__(PicklerMemoProxyObject *self, PyObject *Py_U
     return _pickle_PicklerMemoProxy___reduce___impl(self);
 }
 
+PyDoc_STRVAR(_pickle_Unpickler_persistent_load__doc__,
+"persistent_load($self, pid, /)\n"
+"--\n"
+"\n");
+
+#define _PICKLE_UNPICKLER_PERSISTENT_LOAD_METHODDEF    \
+    {"persistent_load", _PyCFunction_CAST(_pickle_Unpickler_persistent_load), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _pickle_Unpickler_persistent_load__doc__},
+
+static PyObject *
+_pickle_Unpickler_persistent_load_impl(UnpicklerObject *self,
+                                       PyTypeObject *cls, PyObject *pid);
+
+static PyObject *
+_pickle_Unpickler_persistent_load(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "persistent_load",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *pid;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = args[0];
+    return_value = _pickle_Unpickler_persistent_load_impl(self, cls, pid);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
 "load($self, /)\n"
 "--\n"
@@ -285,7 +328,7 @@ _pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls);
 static PyObject *
 _pickle_Unpickler_load(UnpicklerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "load() takes no arguments");
         return NULL;
     }
@@ -1034,4 +1077,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7f0564b5fb5410a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd63c85a8737b0aa input=a9049054013a1b77]*/

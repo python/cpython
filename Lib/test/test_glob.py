@@ -41,6 +41,11 @@ class GlobTests(unittest.TestCase):
             os.symlink(self.norm('broken'), self.norm('sym1'))
             os.symlink('broken', self.norm('sym2'))
             os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
+        self.open_dirfd()
+
+    def open_dirfd(self):
+        if self.dir_fd is not None:
+            os.close(self.dir_fd)
         if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
             self.dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
         else:
@@ -333,6 +338,33 @@ class GlobTests(unittest.TestCase):
             eq(glob.glob('**', recursive=True, include_hidden=True),
                [join(*i) for i in full+rec])
 
+    def test_glob_non_directory(self):
+        eq = self.assertSequencesEqual_noorder
+        eq(self.rglob('EF'), self.joins(('EF',)))
+        eq(self.rglob('EF', ''), [])
+        eq(self.rglob('EF', '*'), [])
+        eq(self.rglob('EF', '**'), [])
+        eq(self.rglob('nonexistent'), [])
+        eq(self.rglob('nonexistent', ''), [])
+        eq(self.rglob('nonexistent', '*'), [])
+        eq(self.rglob('nonexistent', '**'), [])
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_glob_named_pipe(self):
+        path = os.path.join(self.tempdir, 'mypipe')
+        os.mkfifo(path)
+
+        # gh-117127: Reopen self.dir_fd to pick up directory changes
+        self.open_dirfd()
+
+        self.assertEqual(self.rglob('mypipe'), [path])
+        self.assertEqual(self.rglob('mypipe*'), [path])
+        self.assertEqual(self.rglob('mypipe', ''), [])
+        self.assertEqual(self.rglob('mypipe', 'sub'), [])
+        self.assertEqual(self.rglob('mypipe', '*'), [])
+
     def test_glob_many_open_files(self):
         depth = 30
         base = os.path.join(self.tempdir, 'deep')
@@ -429,9 +461,9 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('?'), r'(?s:[^/])\Z')
         self.assertEqual(fn('**'), r'(?s:.*)\Z')
         self.assertEqual(fn('**/**'), r'(?s:.*)\Z')
-        self.assertRaises(ValueError, fn, '***')
-        self.assertRaises(ValueError, fn, 'a**')
-        self.assertRaises(ValueError, fn, '**b')
+        self.assertEqual(fn('***'), r'(?s:[^/]*)\Z')
+        self.assertEqual(fn('a**'), r'(?s:a[^/]*)\Z')
+        self.assertEqual(fn('**b'), r'(?s:[^/]*b)\Z')
         self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/[^/]*\.[^/]*/.*)\Z')
 
     def test_translate_seps(self):

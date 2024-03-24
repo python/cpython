@@ -835,6 +835,11 @@ class ProcessTestCase(BaseTestCase):
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
 
+    @unittest.skipIf(sysconfig.get_config_var('Py_ENABLE_SHARED') == 1,
+                     'The Python shared library cannot be loaded '
+                     'without some system environments.')
+    @unittest.skipIf(check_sanitizer(address=True),
+                     'AddressSanitizer adds to the environment.')
     def test_one_environment_variable(self):
         newenv = {'fruit': 'orange'}
         cmd = [sys.executable, '-c',
@@ -842,9 +847,13 @@ class ProcessTestCase(BaseTestCase):
                                'sys.stdout.write("fruit="+os.getenv("fruit"))']
         if sys.platform == "win32":
             cmd = ["CMD", "/c", "SET", "fruit"]
-        with subprocess.Popen(cmd, stdout=subprocess.PIPE, env=newenv) as p:
-            stdout, _ = p.communicate()
-            self.assertTrue(stdout.startswith(b"fruit=orange"))
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newenv) as p:
+            stdout, stderr = p.communicate()
+            if p.returncode and support.verbose:
+                print("STDOUT:", stdout.decode("ascii", "replace"))
+                print("STDERR:", stderr.decode("ascii", "replace"))
+            self.assertEqual(p.returncode, 0)
+            self.assertEqual(stdout.strip(), b"fruit=orange")
 
     def test_invalid_cmd(self):
         # null character in the command name
@@ -1598,6 +1607,22 @@ class ProcessTestCase(BaseTestCase):
         self.assertIsInstance(subprocess.Popen[bytes], types.GenericAlias)
         self.assertIsInstance(subprocess.CompletedProcess[str], types.GenericAlias)
 
+    @unittest.skipUnless(hasattr(subprocess, '_winapi'),
+                         'need subprocess._winapi')
+    def test_wait_negative_timeout(self):
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
+        with proc:
+            patch = mock.patch.object(
+                subprocess._winapi,
+                'WaitForSingleObject',
+                return_value=subprocess._winapi.WAIT_OBJECT_0)
+            with patch as mock_wait:
+                proc.wait(-1)  # negative timeout
+                mock_wait.assert_called_once_with(proc._handle, 0)
+                proc.returncode = None
+
+            self.assertEqual(proc.wait(), 0)
+
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -1982,9 +2007,9 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
     def test_user(self):
-        # For code coverage of the user parameter.  We don't care if we get an
-        # EPERM error from it depending on the test execution environment, that
-        # still indicates that it was called.
+        # For code coverage of the user parameter.  We don't care if we get a
+        # permission error from it depending on the test execution environment,
+        # that still indicates that it was called.
 
         uid = os.geteuid()
         test_users = [65534 if uid != 65534 else 65533, uid]
@@ -2008,11 +2033,11 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getuid())"],
                                 user=user,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
-                    except OSError as e:
-                        if e.errno not in (errno.EACCES, errno.EPERM):
-                            raise
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        if e.errno == errno.EACCES:
+                            self.assertEqual(e.filename, sys.executable)
+                        else:
+                            self.assertIsNone(e.filename)
                     else:
                         if isinstance(user, str):
                             user_uid = pwd.getpwnam(user).pw_uid
@@ -2056,8 +2081,8 @@ class POSIXProcessTestCase(BaseTestCase):
                                  "import os; print(os.getgid())"],
                                 group=group,
                                 close_fds=close_fds)
-                    except PermissionError:  # (EACCES, EPERM)
-                        pass
+                    except PermissionError as e:  # (EACCES, EPERM)
+                        self.assertIsNone(e.filename)
                     else:
                         if isinstance(group, str):
                             group_gid = grp.getgrnam(group).gr_gid
@@ -2105,7 +2130,8 @@ class POSIXProcessTestCase(BaseTestCase):
                     [sys.executable, "-c",
                      "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
                     extra_groups=group_list)
-        except PermissionError:
+        except PermissionError as e:
+            self.assertIsNone(e.filename)
             self.skipTest("setgroup() EPERM; this test may require root.")
         else:
             parent_groups = os.getgroups()
@@ -3372,14 +3398,15 @@ class POSIXProcessTestCase(BaseTestCase):
         def dummy():
             pass
 
-        def exit_handler():
-            subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
-            print("shouldn't be printed")
-
-        atexit.register(exit_handler)
+        class AtFinalization:
+            def __del__(self):
+                print("OK")
+                subprocess.Popen({ZERO_RETURN_CMD}, preexec_fn=dummy)
+                print("shouldn't be printed")
+        at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"preexec_fn not supported at interpreter shutdown", err)
 
     @unittest.skipIf(not sysconfig.get_config_var("HAVE_VFORK"),

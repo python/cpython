@@ -166,6 +166,11 @@ data but would still like to have incremental parsing capabilities, take a look
 at :func:`iterparse`.  It can be useful when you're reading a large XML document
 and don't want to hold it wholly in memory.
 
+Where *immediate* feedback through events is wanted, calling method
+:meth:`XMLPullParser.flush` can help reduce delay;
+please make sure to study the related security notes.
+
+
 Finding interesting elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -625,6 +630,8 @@ Functions
    target. Returns an :term:`iterator` providing ``(event, elem)`` pairs;
    it has a ``root`` attribute that references the root element of the
    resulting XML tree once *source* is fully read.
+   The iterator has the :meth:`!close` method that closes the internal
+   file object if *source* is a filename.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
@@ -647,6 +654,9 @@ Functions
    .. versionchanged:: 3.8
       The ``comment`` and ``pi`` events were added.
 
+   .. versionchanged:: 3.13
+      Added the :meth:`!close` method.
+
 
 .. function:: parse(source, parser=None)
 
@@ -664,7 +674,7 @@ Functions
    given.  Returns an element instance, representing a processing instruction.
 
    Note that :class:`XMLParser` skips over processing instructions
-   in the input instead of creating comment objects for them. An
+   in the input instead of creating PI objects for them. An
    :class:`ElementTree` will only contain processing instruction nodes if
    they have been inserted into to the tree using one of the
    :class:`Element` methods.
@@ -705,11 +715,11 @@ Functions
    meaning as in :meth:`ElementTree.write`. Returns an (optionally) encoded string
    containing the XML data.
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
 
    .. versionchanged:: 3.8
       The :func:`tostring` function now preserves the attribute order
@@ -732,11 +742,11 @@ Functions
 
    .. versionadded:: 3.2
 
-   .. versionadded:: 3.4
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.4
+      Added the *short_empty_elements* parameter.
 
-   .. versionadded:: 3.8
-      The *xml_declaration* and *default_namespace* parameters.
+   .. versionchanged:: 3.8
+      Added the *xml_declaration* and *default_namespace* parameters.
 
    .. versionchanged:: 3.8
       The :func:`tostringlist` function now preserves the attribute order
@@ -858,8 +868,8 @@ Functions
    this is a Unicode string.  If the loader fails, it can return None or
    raise an exception.
 
-   .. versionadded:: 3.9
-      The *base_url* and *max_depth* parameters.
+   .. versionchanged:: 3.9
+      Added the *base_url* and *max_depth* parameters.
 
 
 .. _elementtree-element-objects:
@@ -1189,8 +1199,8 @@ ElementTree Objects
       :term:`file object`; make sure you do not try to write a string to a
       binary stream and vice versa.
 
-      .. versionadded:: 3.4
-         The *short_empty_elements* parameter.
+      .. versionchanged:: 3.4
+         Added the *short_empty_elements* parameter.
 
       .. versionchanged:: 3.8
          The :meth:`write` method now preserves the attribute order specified
@@ -1302,8 +1312,8 @@ TreeBuilder Objects
 
    .. method:: pi(target, text)
 
-      Creates a comment with the given *target* name and *text*.  If
-      ``insert_pis`` is true, this will also add it to the tree.
+      Creates a process instruction with the given *target* name and *text*.
+      If ``insert_pis`` is true, this will also add it to the tree.
 
       .. versionadded:: 3.8
 
@@ -1382,6 +1392,24 @@ XMLParser Objects
 
       Feeds data to the parser.  *data* is encoded data.
 
+
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      Note that :meth:`flush` has been backported to some prior releases of
+      CPython as a security fix.  Check for availability of :meth:`flush`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
+
+      .. versionadded:: 3.13
+
+
    :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
    for each opening tag, its ``end(tag)`` method for each closing tag, and data
    is processed by method ``data(data)``.  For further supported callback
@@ -1442,6 +1470,22 @@ XMLPullParser Objects
    .. method:: feed(data)
 
       Feed the given bytes data to the parser.
+
+   .. method:: flush()
+
+      Triggers parsing of any previously fed unparsed data, which can be
+      used to ensure more immediate feedback, in particular with Expat >=2.6.0.
+      The implementation of :meth:`flush` temporarily disables reparse deferral
+      with Expat (if currently enabled) and triggers a reparse.
+      Disabling reparse deferral has security consequences; please see
+      :meth:`xml.parsers.expat.xmlparser.SetReparseDeferralEnabled` for details.
+
+      Note that :meth:`flush` has been backported to some prior releases of
+      CPython as a security fix.  Check for availability of :meth:`flush`
+      using :func:`hasattr` if used in code running across a variety of Python
+      versions.
+
+      .. versionadded:: 3.13
 
    .. method:: close()
 

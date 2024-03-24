@@ -6,7 +6,6 @@
 #endif
 
 #include "Python.h"
-#include "interpreteridobject.h"
 #include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 
@@ -16,6 +15,12 @@
 #elif defined(HAVE_SCHED_H)
 #include <sched.h>          // sched_yield()
 #endif
+
+#define REGISTERS_HEAP_TYPES
+#define RETURNS_INTERPID_OBJECT
+#include "_interpreters_common.h"
+#undef RETURNS_INTERPID_OBJECT
+#undef REGISTERS_HEAP_TYPES
 
 
 /*
@@ -80,7 +85,9 @@ channel's queue, which are safely managed via the _PyCrossInterpreterData_*()
 API..  The module does not create any objects that are shared globally.
 */
 
-#define MODULE_NAME "_xxinterpchannels"
+#define MODULE_NAME _xxinterpchannels
+#define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
+#define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
 
 #define GLOBAL_MALLOC(TYPE) \
@@ -88,38 +95,6 @@ API..  The module does not create any objects that are shared globally.
 #define GLOBAL_FREE(VAR) \
     PyMem_RawFree(VAR)
 
-
-struct xid_class_registry {
-    size_t count;
-#define MAX_XID_CLASSES 5
-    struct {
-        PyTypeObject *cls;
-    } added[MAX_XID_CLASSES];
-};
-
-static int
-register_xid_class(PyTypeObject *cls, crossinterpdatafunc shared,
-                   struct xid_class_registry *classes)
-{
-    int res = _PyCrossInterpreterData_RegisterClass(cls, shared);
-    if (res == 0) {
-        assert(classes->count < MAX_XID_CLASSES);
-        // The class has refs elsewhere, so we need to incref here.
-        classes->added[classes->count].cls = cls;
-        classes->count += 1;
-    }
-    return res;
-}
-
-static void
-clear_xid_class_registry(struct xid_class_registry *classes)
-{
-    while (classes->count > 0) {
-        classes->count -= 1;
-        PyTypeObject *cls = classes->added[classes->count].cls;
-        _PyCrossInterpreterData_UnregisterClass(cls);
-    }
-}
 
 #define XID_IGNORE_EXC 1
 #define XID_FREE 2
@@ -167,7 +142,7 @@ _get_current_interp(void)
 static PyObject *
 _get_current_module(void)
 {
-    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    PyObject *name = PyUnicode_FromString(MODULE_NAME_STR);
     if (name == NULL) {
         return NULL;
     }
@@ -217,29 +192,7 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 }
 
 #define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
-    add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
-
-static PyTypeObject *
-add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
-             struct xid_class_registry *classes)
-{
-    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
-                mod, spec, NULL);
-    if (cls == NULL) {
-        return NULL;
-    }
-    if (PyModule_AddType(mod, cls) < 0) {
-        Py_DECREF(cls);
-        return NULL;
-    }
-    if (shared != NULL) {
-        if (register_xid_class(cls, shared, classes)) {
-            Py_DECREF(cls);
-            return NULL;
-        }
-    }
-    return cls;
-}
+    add_new_exception(MOD, MODULE_NAME_STR "." Py_STRINGIFY(NAME), BASE)
 
 static int
 wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
@@ -265,8 +218,6 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
 /* module state *************************************************************/
 
 typedef struct {
-    struct xid_class_registry xid_classes;
-
     /* Added at runtime by interpreters module. */
     PyTypeObject *send_channel_type;
     PyTypeObject *recv_channel_type;
@@ -299,7 +250,7 @@ _get_current_module_state(void)
     if (mod == NULL) {
         // XXX import it?
         PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME " module not imported yet");
+                        MODULE_NAME_STR " module not imported yet");
         return NULL;
     }
     module_state *state = get_module_state(mod);
@@ -328,19 +279,33 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
     return 0;
 }
 
+static void
+clear_xid_types(module_state *state)
+{
+    /* external types */
+    if (state->send_channel_type != NULL) {
+        (void)clear_xid_class(state->send_channel_type);
+        Py_CLEAR(state->send_channel_type);
+    }
+    if (state->recv_channel_type != NULL) {
+        (void)clear_xid_class(state->recv_channel_type);
+        Py_CLEAR(state->recv_channel_type);
+    }
+
+    /* heap types */
+    if (state->ChannelIDType != NULL) {
+        (void)clear_xid_class(state->ChannelIDType);
+        Py_CLEAR(state->ChannelIDType);
+    }
+}
+
 static int
 clear_module_state(module_state *state)
 {
-    /* external types */
-    Py_CLEAR(state->send_channel_type);
-    Py_CLEAR(state->recv_channel_type);
+    clear_xid_types(state);
 
     /* heap types */
     Py_CLEAR(state->ChannelInfoType);
-    if (state->ChannelIDType != NULL) {
-        (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
-    }
-    Py_CLEAR(state->ChannelIDType);
 
     /* exceptions */
     Py_CLEAR(state->ChannelError);
@@ -784,7 +749,7 @@ _channelqueue_clear_interpreter(_channelqueue *queue, int64_t interpid)
     while (next != NULL) {
         _channelitem *item = next;
         next = item->next;
-        if (item->data->interpid == interpid) {
+        if (_PyCrossInterpreterData_INTERPID(item->data) == interpid) {
             if (prev == NULL) {
                 queue->first = item->next;
             }
@@ -2126,7 +2091,7 @@ static PyStructSequence_Field channel_info_fields[] = {
 };
 
 static PyStructSequence_Desc channel_info_desc = {
-    .name = MODULE_NAME ".ChannelInfo",
+    .name = MODULE_NAME_STR ".ChannelInfo",
     .doc = channel_info_doc,
     .fields = channel_info_fields,
     .n_in_sequence = 8,
@@ -2154,7 +2119,7 @@ new_channel_info(PyObject *mod, struct channel_info *info)
     do { \
         PyObject *obj = PyLong_FromLongLong(val); \
         if (obj == NULL) { \
-            Py_CLEAR(info); \
+            Py_CLEAR(self); \
             return NULL; \
         } \
         PyStructSequence_SET_ITEM(self, pos++, obj); \
@@ -2474,10 +2439,11 @@ struct _channelid_xid {
 static PyObject *
 _channelid_from_xid(_PyCrossInterpreterData *data)
 {
-    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    struct _channelid_xid *xid = \
+                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
 
     // It might not be imported yet, so we can't use _get_current_module().
-    PyObject *mod = PyImport_ImportModule(MODULE_NAME);
+    PyObject *mod = PyImport_ImportModule(MODULE_NAME_STR);
     if (mod == NULL) {
         return NULL;
     }
@@ -2530,7 +2496,8 @@ _channelid_shared(PyThreadState *tstate, PyObject *obj,
     {
         return -1;
     }
-    struct _channelid_xid *xid = (struct _channelid_xid *)data->data;
+    struct _channelid_xid *xid = \
+                (struct _channelid_xid *)_PyCrossInterpreterData_DATA(data);
     xid->cid = ((channelid *)obj)->cid;
     xid->end = ((channelid *)obj)->end;
     xid->resolve = ((channelid *)obj)->resolve;
@@ -2601,12 +2568,31 @@ static PyType_Slot channelid_typeslots[] = {
 };
 
 static PyType_Spec channelid_typespec = {
-    .name = MODULE_NAME ".ChannelID",
+    .name = MODULE_NAME_STR ".ChannelID",
     .basicsize = sizeof(channelid),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = channelid_typeslots,
 };
+
+static PyTypeObject *
+add_channelid_type(PyObject *mod)
+{
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
+                mod, &channelid_typespec, NULL);
+    if (cls == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddType(mod, cls) < 0) {
+        Py_DECREF(cls);
+        return NULL;
+    }
+    if (ensure_xid_class(cls, _channelid_shared) < 0) {
+        Py_DECREF(cls);
+        return NULL;
+    }
+    return cls;
+}
 
 
 /* SendChannel and RecvChannel classes */
@@ -2680,7 +2666,7 @@ _channelend_shared(PyThreadState *tstate, PyObject *obj,
     if (res < 0) {
         return -1;
     }
-    data->new_object = _channelend_from_xid;
+    _PyCrossInterpreterData_SET_NEW_OBJECT(data, _channelend_from_xid);
     return 0;
 }
 
@@ -2691,21 +2677,29 @@ set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     if (state == NULL) {
         return -1;
     }
-    struct xid_class_registry *xid_classes = &state->xid_classes;
 
-    if (state->send_channel_type != NULL
-        || state->recv_channel_type != NULL)
-    {
-        PyErr_SetString(PyExc_TypeError, "already registered");
-        return -1;
+    // Clear the old values if the .py module was reloaded.
+    if (state->send_channel_type != NULL) {
+        (void)clear_xid_class(state->send_channel_type);
+        Py_CLEAR(state->send_channel_type);
     }
+    if (state->recv_channel_type != NULL) {
+        (void)clear_xid_class(state->recv_channel_type);
+        Py_CLEAR(state->recv_channel_type);
+    }
+
+    // Add and register the types.
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
-
-    if (register_xid_class(send, _channelend_shared, xid_classes)) {
+    if (ensure_xid_class(send, _channelend_shared) < 0) {
+        Py_CLEAR(state->send_channel_type);
+        Py_CLEAR(state->recv_channel_type);
         return -1;
     }
-    if (register_xid_class(recv, _channelend_shared, xid_classes)) {
+    if (ensure_xid_class(recv, _channelend_shared) < 0) {
+        (void)clear_xid_class(state->send_channel_type);
+        Py_CLEAR(state->send_channel_type);
+        Py_CLEAR(state->recv_channel_type);
         return -1;
     }
 
@@ -2915,7 +2909,7 @@ channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            interpid_obj = PyInterpreterState_GetIDObject(interp);
+            interpid_obj = get_interpid_obj(interp);
             if (interpid_obj == NULL) {
                 goto except;
             }
@@ -3288,13 +3282,11 @@ module_exec(PyObject *mod)
     if (_globals_init() != 0) {
         return -1;
     }
-    struct xid_class_registry *xid_classes = NULL;
 
     module_state *state = get_module_state(mod);
     if (state == NULL) {
         goto error;
     }
-    xid_classes = &state->xid_classes;
 
     /* Add exception types */
     if (exceptions_init(mod) != 0) {
@@ -3313,8 +3305,7 @@ module_exec(PyObject *mod)
     }
 
     // ChannelID
-    state->ChannelIDType = add_new_type(
-            mod, &channelid_typespec, _channelid_shared, xid_classes);
+    state->ChannelIDType = add_channelid_type(mod);
     if (state->ChannelIDType == NULL) {
         goto error;
     }
@@ -3326,8 +3317,8 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
-    if (xid_classes != NULL) {
-        clear_xid_class_registry(xid_classes);
+    if (state != NULL) {
+        clear_xid_types(state);
     }
     _globals_fini();
     return -1;
@@ -3354,9 +3345,6 @@ module_clear(PyObject *mod)
     module_state *state = get_module_state(mod);
     assert(state != NULL);
 
-    // Before clearing anything, we unregister the various XID types. */
-    clear_xid_class_registry(&state->xid_classes);
-
     // Now we clear the module state.
     clear_module_state(state);
     return 0;
@@ -3368,9 +3356,6 @@ module_free(void *mod)
     module_state *state = get_module_state(mod);
     assert(state != NULL);
 
-    // Before clearing anything, we unregister the various XID types. */
-    clear_xid_class_registry(&state->xid_classes);
-
     // Now we clear the module state.
     clear_module_state(state);
 
@@ -3379,7 +3364,7 @@ module_free(void *mod)
 
 static struct PyModuleDef moduledef = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = MODULE_NAME,
+    .m_name = MODULE_NAME_STR,
     .m_doc = module_doc,
     .m_size = sizeof(module_state),
     .m_methods = module_functions,
@@ -3390,7 +3375,7 @@ static struct PyModuleDef moduledef = {
 };
 
 PyMODINIT_FUNC
-PyInit__xxinterpchannels(void)
+MODINIT_FUNC_NAME(void)
 {
     return PyModuleDef_Init(&moduledef);
 }

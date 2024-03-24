@@ -298,6 +298,13 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
             self->fd = -1;
     }
 
+    if (PyBool_Check(nameobj)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return -1;
+        }
+    }
     fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
@@ -391,9 +398,9 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         }
 
         if (self->writable)
-            self->fd = _Py_open_osfhandle_noraise(handle, _O_WRONLY | _O_BINARY);
+            self->fd = _Py_open_osfhandle_noraise(handle, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
         else
-            self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY);
+            self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY | _O_NOINHERIT);
         if (self->fd < 0) {
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
             CloseHandle(handle);

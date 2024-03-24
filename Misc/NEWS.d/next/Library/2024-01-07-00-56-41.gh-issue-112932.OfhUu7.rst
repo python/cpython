@@ -1,3 +1,0 @@
-Restore the ability for :mod:`zipfile` to ``extractall`` from zip files with
-a "/" directory entry in them as is commonly added to zips by some wiki or
-bug tracker data exporters.
