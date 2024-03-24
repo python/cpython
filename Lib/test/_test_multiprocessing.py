@@ -5343,6 +5343,27 @@ class TestForkAwareThreadLock(unittest.TestCase):
         self.assertLessEqual(new_size, old_size)
 
 #
+# Issue #26180: ForkAwareLocal
+#
+
+class TestForkAwareLocal(unittest.TestCase):
+    # Issue #26180 meant that with each new thread using an instance of
+    # ForkAwareLocal, fork registry would get a duplicate entry for that
+    # instance.
+
+    def test_registry_after_thread_spawn(self):
+        v = util.ForkAwareLocal()
+        # v cleanup handler is now registered.
+        old_size = len(util._afterfork_registry)
+        # Setting an attr on v from a new thread will call v.__init__.
+        t = threading.Thread(target=setattr, args=(v, 'x', 0))
+        t.start()
+        t.join()
+        # Ensure that v.__init__ did not register a new handler.
+        new_size = len(util._afterfork_registry)
+        self.assertEqual(new_size, old_size)
+
+#
 # Check that non-forked child processes do not inherit unneeded fds/handles
 #
 
