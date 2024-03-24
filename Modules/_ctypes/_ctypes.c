@@ -1972,7 +1972,6 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
     PyObject *name = PyTuple_GET_ITEM(args, 0);
     PyObject *newname;
     PyObject *swapped_args;
-    static PyObject *suffix;
     Py_ssize_t i;
 
     swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
