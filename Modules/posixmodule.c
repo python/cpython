@@ -598,6 +598,11 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
+    status = _PyRuntimeState_ReInitThreads(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto fatal_error;
+    }
+
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -616,11 +621,6 @@ PyOS_AfterFork_Child(void)
     }
 
     _PySignal_AfterFork();
-
-    status = _PyRuntimeState_ReInitThreads(runtime);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto fatal_error;
-    }
 
     status = _PyInterpreterState_DeleteExceptMain(runtime);
     if (_PyStatus_EXCEPTION(status)) {
