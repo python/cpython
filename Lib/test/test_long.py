@@ -1639,6 +1639,13 @@ class LongTest(unittest.TestCase):
                     MyInt.__basicsize__ + MyInt.__itemsize__ * ndigits
                 )
 
+    def test_long_add_overallocate(self):
+        # see gh-100688
+        x = (MASK//2) * (MASK+1)
+        x2 = (MASK//2 + 1) * (MASK+1)
+        z = x + x2
+        self.assertEqual(x + x2, MASK * (MASK + 1))
+
 
 if __name__ == "__main__":
     unittest.main()
