@@ -1,0 +1,2 @@
+The tarfile module now excludes '.' directory entries when adding
+a directory to a tar archive.  Patch by Jeffrey Kintscher.
