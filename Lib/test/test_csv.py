@@ -1319,6 +1319,8 @@ abc\0def
 ghijkl\0mno
 ghi\0jkl
 """
+    sample15 = 'time,title\r\n2020-10-01,"Pocket - Save news, videos, stories and more"\r\n'
+
 
     def test_issue43625(self):
         sniffer = csv.Sniffer()
@@ -1390,6 +1392,9 @@ ghi\0jkl
         self.assertEqual(dialect.quotechar, "'")
         dialect = sniffer.sniff(self.sample14)
         self.assertEqual(dialect.delimiter, '\0')
+        dialect = sniffer.sniff(self.sample15)
+        self.assertEqual(dialect.delimiter, ',')
+        self.assertEqual(dialect.quotechar, '"')
 
     def test_doublequote(self):
         sniffer = csv.Sniffer()
