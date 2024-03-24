@@ -43,7 +43,11 @@ class TestMakefile(unittest.TestCase):
         used = [idle_test]
         for dirpath, _, _ in os.walk(support.TEST_HOME_DIR):
             dirname = os.path.basename(dirpath)
-            if dirname == '__pycache__':
+            if (
+                dirname == '__pycache__'
+                or dirname.startswith('.')
+                or not os.listdir(dirpath)
+            ):
                 continue
 
             relpath = os.path.relpath(dirpath, support.STDLIB_DIR)
