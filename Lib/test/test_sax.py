@@ -1251,8 +1251,8 @@ class ExpatReaderTest(XmlTestBase):
 
         if pyexpat.version_info >= (2, 6, 0):
             parser._parser.SetReparseDeferralEnabled(False)
+            self.assertEqual(result.getvalue(), start)  # i.e. no elements started
 
-        self.assertEqual(result.getvalue(), start)  # i.e. no elements started
         self.assertFalse(parser._parser.GetReparseDeferralEnabled())
 
         parser.flush()

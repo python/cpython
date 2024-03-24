@@ -1742,8 +1742,8 @@ class XMLPullParserTest(unittest.TestCase):
                 self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled '
                               'methods not available in C')
             parser._parser._parser.SetReparseDeferralEnabled(False)
+            self.assert_event_tags(parser, [])  # i.e. no elements started
 
-        self.assert_event_tags(parser, [])  # i.e. no elements started
         if ET is pyET:
             self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
 
