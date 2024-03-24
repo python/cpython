@@ -485,7 +485,7 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     @unittest.skipIf(is_apple_mobile,
-                     f"{sys.platform} doesn't distribute config.h in the runtime environment")
+                     f"{sys.platform} doesn't include config folder at runtime")
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
@@ -567,7 +567,7 @@ class MakefileTests(unittest.TestCase):
                      'Test is not Windows compatible')
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     @unittest.skipIf(is_apple_mobile,
-                     f"{sys.platform} doesn't distribute config.h in the runtime environment")
+                     f"{sys.platform} doesn't include config folder at runtime")
     def test_get_makefile_filename(self):
         makefile = sysconfig.get_makefile_filename()
         self.assertTrue(os.path.isfile(makefile), makefile)

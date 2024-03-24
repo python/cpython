@@ -148,8 +148,9 @@ Cross Platform
    Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
    ``'Windows'``. An empty string is returned if the value cannot be determined.
 
-   On iOS, this returns the OS name (i.e, ``'iOS``` or ``'iPadOS'``), rather than
-   the kernel name (``'Darwin'``).
+   On iOS and Android, this returns the user-facing OS name (i.e, ``'iOS``, 
+   ``'iPadOS'`` or ``'Android'``). To obtain the kernel name (``'Darwin'`` or 
+   ``'Linux'``), use :func:`os.uname()`.
 
 .. function:: system_alias(system, release, version)
 
@@ -163,8 +164,8 @@ Cross Platform
    Returns the system's release version, e.g. ``'#3 on degas'``. An empty string is
    returned if the value cannot be determined.
 
-   On iOS, this is the iOS version, not the Darwin kernel version. To obtain
-   the Darwin kernel version, use :func:`os.uname()`.
+   On iOS and Android, this is the user-facing OS version. To obtain the 
+   Darwin or Linux kernel version, use :func:`os.uname()`.
 
 .. function:: uname()
 

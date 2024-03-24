@@ -221,7 +221,7 @@ class PlatformTest(unittest.TestCase):
 
         if sys.platform == "ios":
             self.assertIn(res.system, {"iOS", "iPadOS"})
-            self.assertIn(res.release, platform.ios_ver().release)
+            self.assertEqual(res.release, platform.ios_ver().release)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_without_wmi(self):
