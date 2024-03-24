@@ -284,7 +284,7 @@ asyncio
   (Contributed by Pierre Ossman in :gh:`113538`.)
 
 base64
----
+------
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding z85 data.
