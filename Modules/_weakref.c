@@ -32,6 +32,7 @@ _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
     return _PyWeakref_GetWeakrefCountThreadsafe(object);
 }
 
+#ifndef Py_GIL_DISABLED
 
 static int
 is_dead_weakref(PyObject *value)
@@ -42,6 +43,8 @@ is_dead_weakref(PyObject *value)
     }
     return _PyWeakref_IS_DEAD(value);
 }
+
+#endif
 
 /*[clinic input]
 
@@ -59,6 +62,11 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
                                    PyObject *key)
 /*[clinic end generated code: output=d9ff53061fcb875c input=19fc91f257f96a1d]*/
 {
+#ifdef Py_GIL_DISABLED
+    if (_PyDict_DelItemIfDeadWeakref(dct, key) < 0) {
+        return NULL;
+    }
+#else
     if (_PyDict_DelItemIf(dct, key, is_dead_weakref) < 0) {
         if (PyErr_ExceptionMatches(PyExc_KeyError))
             /* This function is meant to allow safe weak-value dicts
@@ -69,6 +77,7 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
         else
             return NULL;
     }
+#endif
     Py_RETURN_NONE;
 }
 

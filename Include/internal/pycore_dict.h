@@ -18,6 +18,9 @@ extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 
 extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                              int (*predicate)(PyObject *value));
+#ifdef Py_GIL_DISABLED
+extern int _PyDict_DelItemIfDeadWeakref(PyObject *mp, PyObject *key);
+#endif
 
 // "KnownHash" variants
 // Export for '_asyncio' shared extension
