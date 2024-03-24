@@ -124,7 +124,10 @@ Raising exceptions
 
 These functions help you set the current thread's error indicator.
 For convenience, some of these functions will always return a
-``NULL`` pointer for use in a ``return`` statement.
+``NULL`` pointer for use in a ``return`` statement. Also, for all of the
+functions in this subsection, if an exception has already been caught,
+that exception will be implicitly chained (i.e. the last caught exception
+will become the new exception's :attr:`~BaseException.__context__`).
 
 
 .. c:function:: void PyErr_SetString(PyObject *type, const char *message)
