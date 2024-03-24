@@ -93,7 +93,13 @@ yet another way to substitute values into strings, using placeholders like
 ``$x`` and replacing them with values from a dictionary, but offers much less
 control of the formatting.
 
-
+.. index::
+   single: formatted string literal
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: f-string
+   single: fstring
 .. _tut-f-strings:
 
 Formatted String Literals
