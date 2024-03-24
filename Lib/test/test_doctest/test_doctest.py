@@ -2628,7 +2628,7 @@ We don't want `-v` in sys.argv for these tests.
         ...
         NameError: name 'favorite_color' is not defined
     **********************************************************************
-    1 items had failures:
+    1 item had failures:
        1 of   2 in test_doctest.txt
     ***Test Failed*** 1 failures.
     TestResults(failed=1, attempted=2)
@@ -2657,7 +2657,7 @@ Globals may be specified with the `globs` and `extraglobs` parameters:
     Got:
         'red'
     **********************************************************************
-    1 items had failures:
+    1 item had failures:
        1 of   2 in test_doctest.txt
     ***Test Failed*** 1 failures.
     TestResults(failed=1, attempted=2)
@@ -2689,9 +2689,9 @@ Verbosity can be increased with the optional `verbose` parameter:
         <BLANKLINE>
         b
     ok
-    1 items passed all tests:
+    1 item passed all tests:
        2 tests in test_doctest.txt
-    2 tests in 1 items.
+    2 tests in 1 item.
     2 passed.
     Test passed.
     TestResults(failed=0, attempted=2)
@@ -2749,7 +2749,7 @@ using the optional keyword argument `encoding`:
     **********************************************************************
     ...
     **********************************************************************
-    1 items had failures:
+    1 item had failures:
        2 of   2 in test_doctest4.txt
     ***Test Failed*** 2 failures.
     TestResults(failed=2, attempted=2)
@@ -2772,9 +2772,9 @@ Test the verbose output:
     Expecting:
         'b\u0105r'
     ok
-    1 items passed all tests:
+    1 item passed all tests:
        2 tests in test_doctest4.txt
-    2 tests in 1 items.
+    2 tests in 1 item.
     2 passed.
     Test passed.
     TestResults(failed=0, attempted=2)
@@ -2997,9 +2997,9 @@ With the verbose flag, we should see the test output, but no error output:
     Expecting:
         'a'
     ok
-    1 items passed all tests:
+    1 item passed all tests:
        2 tests in myfile.doc
-    2 tests in 1 items.
+    2 tests in 1 item.
     2 passed.
     Test passed.
 
@@ -3074,7 +3074,7 @@ not stderr:
     Got:
         'ajkml'
     **********************************************************************
-    1 items had failures:
+    1 item had failures:
        2 of   3 in myfile.doc
     ***Test Failed*** 2 failures.
 
@@ -3101,7 +3101,7 @@ The fourth run uses FAIL_FAST, so we should see only one error:
     Got:
         'abcdef'
     **********************************************************************
-    1 items had failures:
+    1 item had failures:
        1 of   2 in myfile.doc
     ***Test Failed*** 1 failures.
 
@@ -3126,9 +3126,9 @@ success output for the tests in both files:
     Expecting:
         'a...l'
     ok
-    1 items passed all tests:
+    1 item passed all tests:
        3 tests in myfile.doc
-    3 tests in 1 items.
+    3 tests in 1 item.
     3 passed.
     Test passed.
     Trying:
@@ -3141,9 +3141,9 @@ success output for the tests in both files:
     Expecting:
         'abc def'
     ok
-    1 items had no tests:
+    1 item had no tests:
         myfile2
-    1 items passed all tests:
+    1 item passed all tests:
        2 tests in myfile2.test_func
     2 tests in 2 items.
     2 passed.
