@@ -236,6 +236,34 @@ class PrettyPrinter:
 
     _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
 
+    def _pprint_dict_view(self, object, stream, indent, allowance, context, level, items=False):
+        key = _safe_tuple if items else _safe_key
+        write = stream.write
+        write(object.__class__.__name__ + '([')
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * ' ')
+        length = len(object)
+        if length:
+            if self._sort_dicts:
+                entries = sorted(object, key=key)
+            else:
+                entries = object
+            self._format_items(entries, stream, indent, allowance + 1,
+                               context, level)
+        write('])')
+
+    _dict_keys_view = type({}.keys())
+    _dispatch[_dict_keys_view.__repr__] = _pprint_dict_view
+
+    _dict_values_view = type({}.values())
+    _dispatch[_dict_values_view.__repr__] = _pprint_dict_view
+
+    def _pprint_dict_items_view(self, object, stream, indent, allowance, context, level):
+        self._pprint_dict_view(object, stream, indent, allowance, context, level, items=True)
+
+    _dict_items_view = type({}.items())
+    _dispatch[_dict_items_view.__repr__] = _pprint_dict_items_view
+
     def _pprint_list(self, object, stream, indent, allowance, context, level):
         stream.write('[')
         self._format_items(object, stream, indent, allowance + 1,
@@ -594,6 +622,18 @@ class PrettyPrinter:
                     recursive = True
             del context[objid]
             return "{%s}" % ", ".join(components), readable, recursive
+
+        views = self._dict_keys_view, self._dict_values_view, self._dict_items_view
+        view_reprs = {cls.__repr__ for cls in views}
+        if issubclass(typ, views) and r in view_reprs:
+            key = _safe_key
+            if isinstance(typ, self._dict_items_view):
+                key = _safe_tuple
+            if self._sort_dicts:
+                object = sorted(object, key=key)
+            format = typ.__name__ + '([%s])'
+            # TODO: Figure out whether we need to handle recursion here
+            return format % ', '.join(repr(x) for x in object), True, False
 
         if (issubclass(typ, list) and r is list.__repr__) or \
            (issubclass(typ, tuple) and r is tuple.__repr__):
