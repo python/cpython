@@ -489,7 +489,7 @@ class _FuncBuilder:
         #  def __init__(self, x, y):
         #   self.x = x
         #   self.y = y
-        #  @_recursive_repr
+        #  @recursive_repr
         #  def __repr__(self):
         #   return f"cls(x={self.x!r},y={self.y!r})"
         # return __init__,__repr__
@@ -664,17 +664,6 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         body_lines,
                         locals=locals,
                         return_type=None)
-
-
-def _repr_fn(fields, globals):
-    fn = _create_fn('__repr__',
-                    ('self',),
-                    ['return f"{self.__class__.__qualname__}(' +
-                     ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                for f in fields]) +
-                     ')"'],
-                     globals=globals)
-    return recursive_repr()(fn)
 
 
 def _frozen_get_del_attr(cls, fields, globals):
@@ -1114,7 +1103,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             ['return f"{self.__class__.__qualname__}(' +
                              ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                         for f in flds]) + ')"'],
-                            locals={'__dataclasses_recursive_repr': _recursive_repr},
+                            locals={'__dataclasses_recursive_repr': recursive_repr},
                             decorator="@__dataclasses_recursive_repr")
 
     if eq:
