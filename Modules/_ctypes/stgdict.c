@@ -488,7 +488,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            prop = PyCField_FromDesc(desc, i,
+            prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian);
@@ -542,7 +542,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             size = 0;
             offset = 0;
             align = 0;
-            prop = PyCField_FromDesc(desc, i,
+            prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian);
