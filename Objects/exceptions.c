@@ -1797,9 +1797,53 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
     }
     self->myerrno = Py_XNewRef(myerrno);
     self->strerror = Py_XNewRef(strerror);
+    self->cwd = Py_None;
 #ifdef MS_WINDOWS
     self->winerror = Py_XNewRef(winerror);
 #endif
+
+    /* If the error contains a filename, capture the current working
+     * directory ("cwd"), too. This is needed for relative paths to
+     * form the full path, but it may change before the exception is
+     * logged or handled, so we include it as context here. */
+    if (self->filename != Py_None) {
+        size_t cwd_len = 100;
+        char* cwd = NULL;
+
+        // fetch exception state in order to restore it later
+        PyObject *exc = PyErr_GetRaisedException();
+
+        while (true) {
+            char* tmp = realloc(cwd, cwd_len);
+            if (!tmp) {
+                // out of memory
+                break;
+            }
+            cwd = tmp;
+
+            if (getcwd(cwd, cwd_len)) {
+                /* Try to convert to a string. If this fails, it means that
+                 * the working dir is just not encoded as UTF-8, which is
+                 * unfortunate, but nothing we can change here. */
+                PyObject* py_cwd = PyUnicode_FromString(cwd);
+                if (py_cwd) {
+                    self->cwd = py_cwd;
+                }
+                break;
+            }
+            // some error happened, check if getcwd() just needs more space
+            if (errno != ERANGE) {
+                break;
+            }
+
+            // increase allocation size and try again
+            cwd_len *= 2;
+        }
+        free(cwd);
+
+        // restore exception state
+        PyErr_SetRaisedException(exc);
+    }
 
     /* Steals the reference to args */
     Py_XSETREF(self->args, args);
@@ -1947,6 +1991,7 @@ OSError_clear(PyOSErrorObject *self)
     Py_CLEAR(self->strerror);
     Py_CLEAR(self->filename);
     Py_CLEAR(self->filename2);
+    Py_CLEAR(self->cwd);
 #ifdef MS_WINDOWS
     Py_CLEAR(self->winerror);
 #endif
@@ -2098,6 +2143,9 @@ static PyMemberDef OSError_members[] = {
         PyDoc_STR("exception filename")},
     {"filename2", _Py_T_OBJECT, offsetof(PyOSErrorObject, filename2), 0,
         PyDoc_STR("second exception filename")},
+    {"cwd", _Py_T_OBJECT, offsetof(PyOSErrorObject, cwd), 0,
+        PyDoc_STR("optional working directory")},
+
 #ifdef MS_WINDOWS
     {"winerror", _Py_T_OBJECT, offsetof(PyOSErrorObject, winerror), 0,
         PyDoc_STR("Win32 exception code")},
