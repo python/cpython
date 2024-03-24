@@ -138,7 +138,7 @@ from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
-from math import isfinite, isinf, pi, cos, cosh
+from math import isfinite, isinf, pi, cos, sin, cosh, atan
 from functools import reduce
 from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
@@ -803,9 +803,9 @@ def multimode(data):
     return [value for value, count in counts.items() if count == maxcount]
 
 
-def kde(data, h, kernel='normal'):
-    """Kernel Density Estimation:  Create a continuous probability
-    density function from discrete samples.
+def kde(data, h, kernel='normal', *, cumulative=False):
+    """Kernel Density Estimation:  Create a continuous probability density
+    function or cumulative distribution function from discrete samples.
 
     The basic idea is to smooth the data using a kernel function
     to help draw inferences about a population from a sample.
@@ -820,19 +820,21 @@ def kde(data, h, kernel='normal'):
 
     Kernels that give some weight to every sample point:
 
-       normal or gauss
+       normal (gauss)
        logistic
        sigmoid
 
     Kernels that only give weight to sample points within
     the bandwidth:
 
-       rectangular or uniform
+       rectangular (uniform)
        triangular
-       parabolic or epanechnikov
-       quartic or biweight
+       parabolic (epanechnikov)
+       quartic (biweight)
        triweight
        cosine
+
+    If *cumulative* is true, will return a cumulative distribution function.
 
     A StatisticsError will be raised if the data sequence is empty.
 
@@ -847,7 +849,8 @@ def kde(data, h, kernel='normal'):
 
     Compute the area under the curve:
 
-        >>> sum(f_hat(x) for x in range(-20, 20))
+        >>> area = sum(f_hat(x) for x in range(-20, 20))
+        >>> round(area, 4)
         1.0
 
     Plot the estimated probability density function at
@@ -876,6 +879,13 @@ def kde(data, h, kernel='normal'):
          9: 0.009    x
         10: 0.002 x
 
+    Estimate P(4.5 < X <= 7.5), the probability that a new sample value
+    will be between 4.5 and 7.5:
+
+        >>> cdf = kde(sample, h=1.5, cumulative=True)
+        >>> round(cdf(7.5) - cdf(4.5), 2)
+        0.22
+
     References
     ----------
 
@@ -887,6 +897,9 @@ def kde(data, h, kernel='normal'):
 
     Interactive graphical demonstration and exploration:
     https://demonstrations.wolfram.com/KernelDensityEstimation/
+
+    Kernel estimation of cumulative distribution function of a random variable with bounded support
+    https://www.econstor.eu/bitstream/10419/207829/1/10.21307_stattrans-2016-037.pdf
 
     """
 
@@ -903,45 +916,56 @@ def kde(data, h, kernel='normal'):
     match kernel:
 
         case 'normal' | 'gauss':
-            c = 1 / sqrt(2 * pi)
-            K = lambda t: c * exp(-1/2 * t * t)
+            sqrt2pi = sqrt(2 * pi)
+            sqrt2 = sqrt(2)
+            K = lambda t: exp(-1/2 * t * t) / sqrt2pi
+            I = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
             support = None
 
         case 'logistic':
             # 1.0 / (exp(t) + 2.0 + exp(-t))
             K = lambda t: 1/2 / (1.0 + cosh(t))
+            I = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
             support = None
 
         case 'sigmoid':
             # (2/pi) / (exp(t) + exp(-t))
-            c = 1 / pi
-            K = lambda t: c / cosh(t)
+            c1 = 1 / pi
+            c2 = 2 / pi
+            K = lambda t: c1 / cosh(t)
+            I = lambda t: c2 * atan(exp(t))
             support = None
 
         case 'rectangular' | 'uniform':
             K = lambda t: 1/2
+            I = lambda t: 1/2 * t + 1/2
             support = 1.0
 
         case 'triangular':
             K = lambda t: 1.0 - abs(t)
+            I = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
             support = 1.0
 
         case 'parabolic' | 'epanechnikov':
             K = lambda t: 3/4 * (1.0 - t * t)
+            I = lambda t: -1/4 * t**3 + 3/4 * t + 1/2
             support = 1.0
 
         case 'quartic' | 'biweight':
             K = lambda t: 15/16 * (1.0 - t * t) ** 2
+            I = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2
             support = 1.0
 
         case 'triweight':
             K = lambda t: 35/32 * (1.0 - t * t) ** 3
+            I = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2
             support = 1.0
 
         case 'cosine':
             c1 = pi / 4
             c2 = pi / 2
             K = lambda t: c1 * cos(c2 * t)
+            I = lambda t: 1/2 * sin(c2 * t) + 1/2
             support = 1.0
 
         case _:
@@ -951,6 +975,9 @@ def kde(data, h, kernel='normal'):
 
         def pdf(x):
             return sum(K((x - x_i) / h) for x_i in data) / (n * h)
+
+        def cdf(x):
+            return sum(I((x - x_i) / h) for x_i in data) / n
 
     else:
 
@@ -963,9 +990,19 @@ def kde(data, h, kernel='normal'):
             supported = sample[i : j]
             return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
 
-    pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
+        def cdf(x):
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum((I((x - x_i) / h) for x_i in supported), i) / n
 
-    return pdf
+    if cumulative:
+        cdf.__doc__ = f'CDF estimate with {h=!r} and {kernel=!r}'
+        return cdf
+
+    else:
+        pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
+        return pdf
 
 
 # Notes on methods for computing quantiles
