@@ -545,38 +545,36 @@ def relpath(path, start=None):
 
 def commonpath(paths):
     """Given a sequence of path names, returns the longest common sub-path."""
-
-    paths = tuple(map(os.fspath, paths))
-
     if not paths:
         raise ValueError('commonpath() arg is an empty sequence')
 
-    if isinstance(paths[0], bytes):
+    try:
+        _, roots, tails = zip(*map(splitroot, paths))
+        prefix = min(roots)
+    except (TypeError, AttributeError):
+        genericpath._check_arg_types('commonpath', *paths)
+        raise
+
+    if not prefix and max(roots):
+        raise ValueError("Can't mix absolute and relative paths")
+
+    if isinstance(prefix, bytes):
         sep = b'/'
         curdir = b'.'
     else:
         sep = '/'
         curdir = '.'
 
-    try:
-        split_paths = [path.split(sep) for path in paths]
-
-        try:
-            isabs, = set(p[:1] == sep for p in paths)
-        except ValueError:
-            raise ValueError("Can't mix absolute and relative paths") from None
-
-        split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
-        s1 = min(split_paths)
-        s2 = max(split_paths)
+    split_paths = [
+        [c for c in tail.split(sep) if c and c != curdir] for tail in tails
+    ]
+    s1 = min(split_paths)
+    s2 = max(split_paths)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            common = s1[:i]
+            break
+    else:
         common = s1
-        for i, c in enumerate(s1):
-            if c != s2[i]:
-                common = s1[:i]
-                break
 
-        prefix = sep if isabs else sep[:0]
-        return prefix + sep.join(common)
-    except (TypeError, AttributeError):
-        genericpath._check_arg_types('commonpath', *paths)
-        raise
+    return prefix + sep.join(common)

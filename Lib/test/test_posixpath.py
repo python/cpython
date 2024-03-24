@@ -749,6 +749,9 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(TypeError, posixpath.commonpath,
                           ['usr/lib/', b'/usr/lib/python3'])
 
+        # gh-117201: `posixpath.commonpath` doesn't handle leading `//` properly
+        check(['//foo/bar', '//foo/baz'], '//foo')
+
 
 class PosixCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = posixpath
