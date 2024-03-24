@@ -205,7 +205,7 @@ static void _CallPythonObject(void *mem,
     }
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
-        error_object = _ctypes_get_errobj(&space);
+        error_object = _ctypes_get_errobj(st, &space);
         if (error_object == NULL)
             goto Done;
         if (flags & FUNCFLAG_USE_ERRNO) {

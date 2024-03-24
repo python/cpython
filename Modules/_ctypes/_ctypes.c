@@ -128,15 +128,6 @@ bytes(cdata)
 
 ctypes_state global_state = {0};
 
-PyObject *PyExc_ArgError = NULL;
-
-/* This dict maps ctypes types to POINTER types */
-PyObject *_ctypes_ptrtype_cache = NULL;
-
-/* a callable object used for unpickling:
-   strong reference to _ctypes._unpickle() function */
-static PyObject *_unpickle;
-
 
 /****************************************************************/
 
@@ -208,14 +199,13 @@ static PyType_Spec dictremover_spec = {
 };
 
 int
-PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
+PyDict_SetItemProxy(ctypes_state *st, PyObject *dict, PyObject *key, PyObject *item)
 {
     PyObject *obj;
     DictRemoverObject *remover;
     PyObject *proxy;
     int result;
 
-    ctypes_state *st = GLOBAL_STATE();
     obj = _PyObject_CallNoArgs((PyObject *)st->DictRemover_Type);
     if (obj == NULL)
         return -1;
@@ -990,7 +980,8 @@ CDataType_repeat(PyObject *self, Py_ssize_t length)
         return PyErr_Format(PyExc_ValueError,
                             "Array length must be >= 0, not %zd",
                             length);
-    return PyCArrayType_from_ctype(self, length);
+    ctypes_state *st = GLOBAL_STATE();
+    return PyCArrayType_from_ctype(st, self, length);
 }
 
 static int
@@ -1969,7 +1960,8 @@ static PyMethodDef c_void_p_method = { "from_param", c_void_p_from_param, METH_O
 static PyMethodDef c_char_p_method = { "from_param", c_char_p_from_param, METH_O };
 static PyMethodDef c_wchar_p_method = { "from_param", c_wchar_p_from_param, METH_O };
 
-static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject *kwds,
+static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
+                                   PyObject *args, PyObject *kwds,
                                    PyObject *proto, struct fielddesc *fmt)
 {
     PyTypeObject *result;
@@ -1983,18 +1975,18 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     if (!swapped_args)
         return NULL;
 
-    if (suffix == NULL)
+    if (st->swapped_suffix == NULL)
 #ifdef WORDS_BIGENDIAN
-        suffix = PyUnicode_InternFromString("_le");
+        st->swapped_suffix = PyUnicode_InternFromString("_le");
 #else
-        suffix = PyUnicode_InternFromString("_be");
+        st->swapped_suffix = PyUnicode_InternFromString("_be");
 #endif
-    if (suffix == NULL) {
+    if (st->swapped_suffix == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
     }
 
-    newname = PyUnicode_Concat(name, suffix);
+    newname = PyUnicode_Concat(name, st->swapped_suffix);
     if (newname == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
@@ -2013,8 +2005,6 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     Py_DECREF(swapped_args);
     if (result == NULL)
         return NULL;
-
-    ctypes_state *st = GLOBAL_STATE();
 
     StgInfo *stginfo = PyStgInfo_Init(st, result);
     if (!stginfo) {
@@ -2198,7 +2188,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         && fmt->setfunc_swapped
         && fmt->getfunc_swapped)
     {
-        PyObject *swapped = CreateSwappedType(type, args, kwds,
+        PyObject *swapped = CreateSwappedType(st, type, args, kwds,
                                               proto, fmt);
         if (swapped == NULL) {
             return -1;
@@ -2343,7 +2333,7 @@ static PyType_Spec pycsimple_type_spec = {
  */
 
 static PyObject *
-converters_from_argtypes(PyObject *ob)
+converters_from_argtypes(ctypes_state *st, PyObject *ob)
 {
     PyObject *converters;
     Py_ssize_t i;
@@ -2358,7 +2348,7 @@ converters_from_argtypes(PyObject *ob)
     Py_ssize_t nArgs = PyTuple_GET_SIZE(ob);
     if (nArgs > CTYPES_MAX_ARGCOUNT) {
         Py_DECREF(ob);
-        PyErr_Format(PyExc_ArgError,
+        PyErr_Format(st->PyExc_ArgError,
                      "_argtypes_ has too many arguments (%zi), maximum is %i",
                      nArgs, CTYPES_MAX_ARGCOUNT);
         return NULL;
@@ -2472,8 +2462,9 @@ make_funcptrtype_dict(PyObject *attrdict, StgInfo *stginfo)
     if (PyDict_GetItemRef((PyObject *)attrdict, &_Py_ID(_argtypes_), &ob) < 0) {
         return -1;
     }
+    ctypes_state *st = GLOBAL_STATE();
     if (ob) {
-        converters = converters_from_argtypes(ob);
+        converters = converters_from_argtypes(st, ob);
         if (!converters) {
             Py_DECREF(ob);
             return -1;
@@ -2487,7 +2478,6 @@ make_funcptrtype_dict(PyObject *attrdict, StgInfo *stginfo)
     }
     if (ob) {
         StgInfo *info;
-        ctypes_state *st = GLOBAL_STATE();
         if (PyStgInfo_FromType(st, ob, &info) < 0) {
             return -1;
         }
@@ -2843,7 +2833,7 @@ PyCData_reduce(PyObject *myself, PyObject *args)
     if (dict == NULL) {
         return NULL;
     }
-    return Py_BuildValue("O(O(NN))", _unpickle, Py_TYPE(myself), dict,
+    return Py_BuildValue("O(O(NN))", st->_unpickle, Py_TYPE(myself), dict,
                          PyBytes_FromStringAndSize(self->b_ptr, self->b_size));
 }
 
@@ -3326,7 +3316,8 @@ PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ig
         Py_CLEAR(self->converters);
         Py_CLEAR(self->argtypes);
     } else {
-        converters = converters_from_argtypes(ob);
+        ctypes_state *st = GLOBAL_STATE();
+        converters = converters_from_argtypes(st, ob);
         if (!converters)
             return -1;
         Py_XSETREF(self->converters, converters);
@@ -4789,16 +4780,15 @@ static PyType_Spec pycarray_spec = {
 };
 
 PyObject *
-PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
+PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
 {
-    static PyObject *cache;
     PyObject *key;
     char name[256];
     PyObject *len;
 
-    if (cache == NULL) {
-        cache = PyDict_New();
-        if (cache == NULL)
+    if (st->array_cache == NULL) {
+        st->array_cache = PyDict_New();
+        if (st->array_cache == NULL)
             return NULL;
     }
     len = PyLong_FromSsize_t(length);
@@ -4810,7 +4800,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         return NULL;
 
     PyObject *result;
-    if (_PyDict_GetItemProxy(cache, key, &result) != 0) {
+    if (_PyDict_GetItemProxy(st->array_cache, key, &result) != 0) {
         // found or error
         Py_DECREF(key);
         return result;
@@ -4829,7 +4819,6 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
     sprintf(name, "%.200s_Array_%ld",
         ((PyTypeObject *)itemtype)->tp_name, (long)length);
 #endif
-    ctypes_state *st = GLOBAL_STATE();
     result = PyObject_CallFunction((PyObject *)st->PyCArrayType_Type,
                                    "s(O){s:n,s:O}",
                                    name,
@@ -4843,7 +4832,7 @@ PyCArrayType_from_ctype(PyObject *itemtype, Py_ssize_t length)
         Py_DECREF(key);
         return NULL;
     }
-    if (-1 == PyDict_SetItemProxy(cache, key, result)) {
+    if (-1 == PyDict_SetItemProxy(st, st->array_cache, key, result)) {
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;
@@ -5652,10 +5641,10 @@ _ctypes_add_objects(PyObject *mod)
         } \
     } while (0)
 
-    MOD_ADD("_pointer_type_cache", Py_NewRef(_ctypes_ptrtype_cache));
+    ctypes_state *st = GLOBAL_STATE();
+    MOD_ADD("_pointer_type_cache", Py_NewRef(st->_ctypes_ptrtype_cache));
 
 #ifdef MS_WIN32
-    ctypes_state *st = GLOBAL_STATE();
     MOD_ADD("COMError", Py_NewRef(st->PyComError_Type));
     MOD_ADD("FUNCFLAG_HRESULT", PyLong_FromLong(FUNCFLAG_HRESULT));
     MOD_ADD("FUNCFLAG_STDCALL", PyLong_FromLong(FUNCFLAG_STDCALL));
@@ -5685,7 +5674,7 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("RTLD_LOCAL", PyLong_FromLong(RTLD_LOCAL));
     MOD_ADD("RTLD_GLOBAL", PyLong_FromLong(RTLD_GLOBAL));
     MOD_ADD("CTYPES_MAX_ARGCOUNT", PyLong_FromLong(CTYPES_MAX_ARGCOUNT));
-    MOD_ADD("ArgumentError", Py_NewRef(PyExc_ArgError));
+    MOD_ADD("ArgumentError", Py_NewRef(st->PyExc_ArgError));
     MOD_ADD("SIZEOF_TIME_T", PyLong_FromSsize_t(SIZEOF_TIME_T));
     return 0;
 #undef MOD_ADD
@@ -5695,18 +5684,19 @@ _ctypes_add_objects(PyObject *mod)
 static int
 _ctypes_mod_exec(PyObject *mod)
 {
-    _unpickle = PyObject_GetAttrString(mod, "_unpickle");
-    if (_unpickle == NULL) {
+    ctypes_state *st = GLOBAL_STATE();
+    st->_unpickle = PyObject_GetAttrString(mod, "_unpickle");
+    if (st->_unpickle == NULL) {
         return -1;
     }
 
-    _ctypes_ptrtype_cache = PyDict_New();
-    if (_ctypes_ptrtype_cache == NULL) {
+    st->_ctypes_ptrtype_cache = PyDict_New();
+    if (st->_ctypes_ptrtype_cache == NULL) {
         return -1;
     }
 
-    PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
-    if (!PyExc_ArgError) {
+    st->PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
+    if (!st->PyExc_ArgError) {
         return -1;
     }
 
