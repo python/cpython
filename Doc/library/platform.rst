@@ -148,8 +148,8 @@ Cross Platform
    Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
    ``'Windows'``. An empty string is returned if the value cannot be determined.
 
-   On iOS and Android, this returns the user-facing OS name (i.e, ``'iOS``, 
-   ``'iPadOS'`` or ``'Android'``). To obtain the kernel name (``'Darwin'`` or 
+   On iOS and Android, this returns the user-facing OS name (i.e, ``'iOS``,
+   ``'iPadOS'`` or ``'Android'``). To obtain the kernel name (``'Darwin'`` or
    ``'Linux'``), use :func:`os.uname()`.
 
 .. function:: system_alias(system, release, version)
@@ -164,7 +164,7 @@ Cross Platform
    Returns the system's release version, e.g. ``'#3 on degas'``. An empty string is
    returned if the value cannot be determined.
 
-   On iOS and Android, this is the user-facing OS version. To obtain the 
+   On iOS and Android, this is the user-facing OS version. To obtain the
    Darwin or Linux kernel version, use :func:`os.uname()`.
 
 .. function:: uname()
@@ -260,10 +260,10 @@ iOS Platform
    Get iOS version information and return it as a
    :func:`~collections.namedtuple` with the following attributes:
 
-   * ``system`` is the OS name; either ``iOS`` or ``iPadOS``.
+   * ``system`` is the OS name; either ``'iOS'`` or ``'iPadOS'``.
    * ``release`` is the iOS version number as a string (e.g., ``'17.2'``).
    * ``model`` is the device model identifier; this will be a string like
-     ``iPhone13,2`` for a physical device, or ``'iPhone'`` on a simulator.
+     ``'iPhone13,2'`` for a physical device, or ``'iPhone'`` on a simulator.
    * ``is_simulator`` is a boolean describing if the app is running on a
      simulator or a physical device.
 
