@@ -179,6 +179,7 @@ new_weakref(PyObject *ob, PyObject *callback)
     result = PyObject_GC_New(PyWeakReference, &_PyWeakref_RefType);
     if (result) {
         if (init_weakref(result, ob, callback) < 0) {
+            Py_DECREF(result);
             return NULL;
         }
         PyObject_GC_Track(result);
