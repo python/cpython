@@ -1104,7 +1104,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                              ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                         for f in flds]) + ')"'],
                             locals={'__dataclasses_recursive_repr': recursive_repr},
-                            decorator="@__dataclasses_recursive_repr")
+                            decorator="@__dataclasses_recursive_repr()")
 
     if eq:
         # Create __eq__ method.  There's no need for a __ne__ method,
