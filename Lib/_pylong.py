@@ -37,8 +37,9 @@ def int_to_decimal(n):
     mem = {}
 
     def w2pow(w):
-        """Return D(2)**w and store the result. Also possibly save some
-        intermediate results. In context, these are likely to be reused
+        """Return D(2)**w and store the result.
+        Also, possibly save some intermediate results.
+        In context, these are likely to be reused
         across various levels of the conversion to Decimal."""
         if (result := mem.get(w)) is None:
             if w <= BITLIM:
@@ -47,7 +48,7 @@ def int_to_decimal(n):
                 result = (t := mem[w - 1]) + t
             else:
                 w2 = w >> 1
-                # If w happens to be odd, w-w2 is one larger then w2
+                # If w happens to be odd, w-w2 is one larger than w2
                 # now. Recurse on the smaller first (w2), so that it's
                 # in the cache and the larger (w-w2) can be handled by
                 # the cheaper `w-1 in mem` branch instead.
@@ -104,9 +105,9 @@ def _str_to_int_inner(s):
 
     def w5pow(w):
         """Return 5**w and store the result.
-        Also possibly save some intermediate results. In context, these
-        are likely to be reused across various levels of the conversion
-        to 'int'.
+        Also, possibly save some intermediate results.
+        In context, these are likely to be reused across
+        various levels of the conversion to 'int'.
         """
         if (result := mem.get(w)) is None:
             if w <= DIGLIM:
@@ -115,7 +116,7 @@ def _str_to_int_inner(s):
                 result = mem[w - 1] * 5
             else:
                 w2 = w >> 1
-                # If w happens to be odd, w-w2 is one larger then w2
+                # If w happens to be odd, w-w2 is one larger than w2
                 # now. Recurse on the smaller first (w2), so that it's
                 # in the cache and the larger (w-w2) can be handled by
                 # the cheaper `w-1 in mem` branch instead.
@@ -216,7 +217,7 @@ def _int2digits(a, n):
       List of the digits of a in base 2**n in little-endian order,
       meaning the most significant digit is last. The most
       significant digit is guaranteed to be non-zero.
-      If a is 0 then the output is an empty list.
+      If a is 0, then the output is an empty list.
 
     """
     a_digits = [0] * ((a.bit_length() + n - 1) // n)
