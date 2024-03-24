@@ -8,10 +8,8 @@
 
 #include "Python.h"
 
-#if __cplusplus >= 201103
-#  define NAME _testcpp11ext
-#else
-#  define NAME _testcpp03ext
+#ifndef MODULE_NAME
+#  error "MODULE_NAME macro must be defined"
 #endif
 
 #define _STR(NAME) #NAME
@@ -160,7 +158,7 @@ PyType_Slot VirtualPyObject_Slots[] = {
 };
 
 PyType_Spec VirtualPyObject_Spec = {
-    /* .name */ STR(NAME) ".VirtualPyObject",
+    /* .name */ STR(MODULE_NAME) ".VirtualPyObject",
     /* .basicsize */ sizeof(VirtualPyObject),
     /* .itemsize */ 0,
     /* .flags */ Py_TPFLAGS_DEFAULT,
@@ -240,7 +238,7 @@ PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 
 static struct PyModuleDef _testcppext_module = {
     PyModuleDef_HEAD_INIT,  // m_base
-    STR(NAME),  // m_name
+    STR(MODULE_NAME),  // m_name
     _testcppext_doc,  // m_doc
     0,  // m_size
     _testcppext_methods,  // m_methods
@@ -254,7 +252,7 @@ static struct PyModuleDef _testcppext_module = {
 #define FUNC_NAME(NAME) _FUNC_NAME(NAME)
 
 PyMODINIT_FUNC
-FUNC_NAME(NAME)(void)
+FUNC_NAME(MODULE_NAME)(void)
 {
     return PyModuleDef_Init(&_testcppext_module);
 }

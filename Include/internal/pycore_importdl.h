@@ -31,7 +31,7 @@ typedef FARPROC dl_funcptr;
 #  define PYD_DEBUG_SUFFIX ""
 #endif
 
-#ifdef Py_NOGIL
+#ifdef Py_GIL_DISABLED
 #  define PYD_THREADING_TAG "t"
 #else
 #  define PYD_THREADING_TAG ""

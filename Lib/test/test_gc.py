@@ -1,11 +1,11 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test,
-                          cpython_only, requires_subprocess)
+                          cpython_only, requires_subprocess, Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
-from test.support import threading_helper
+from test.support import threading_helper, gc_threshold
 
 import gc
 import sys
@@ -363,6 +363,7 @@ class GCTests(unittest.TestCase):
     # To minimize variations, though, we first store the get_count() results
     # and check them at the end.
     @refcount_test
+    @unittest.skipIf(Py_GIL_DISABLED, 'needs precise allocation counts')
     def test_get_count(self):
         gc.collect()
         a, b, c = gc.get_count()
@@ -383,19 +384,11 @@ class GCTests(unittest.TestCase):
         # each call to collect(N)
         x = []
         gc.collect(0)
-        # x is now in gen 1
+        # x is now in the old gen
         a, b, c = gc.get_count()
-        gc.collect(1)
-        # x is now in gen 2
-        d, e, f = gc.get_count()
-        gc.collect(2)
-        # x is now in gen 3
-        g, h, i = gc.get_count()
-        # We don't check a, d, g since their exact values depends on
+        # We don't check a since its exact values depends on
         # internal implementation details of the interpreter.
         self.assertEqual((b, c), (1, 0))
-        self.assertEqual((e, f), (0, 1))
-        self.assertEqual((h, i), (0, 0))
 
     def test_trashcan(self):
         class Ouch:
@@ -819,6 +812,15 @@ class GCTests(unittest.TestCase):
         l = []
         l.append(l)
         self.assertTrue(
+                any(l is element for element in gc.get_objects())
+        )
+
+    @unittest.skipIf(Py_GIL_DISABLED, 'need generational GC')
+    def test_get_objects_generations(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=0))
         )
         self.assertFalse(
@@ -835,16 +837,6 @@ class GCTests(unittest.TestCase):
                 any(l is element for element in  gc.get_objects(generation=1))
         )
         self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=2))
-        )
-        gc.collect(generation=1)
-        self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=0))
-        )
-        self.assertFalse(
-                any(l is element for element in  gc.get_objects(generation=1))
-        )
-        self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=2))
         )
         gc.collect(generation=2)
@@ -1067,6 +1059,71 @@ class GCTests(unittest.TestCase):
         gc.enable()
 
 
+class IncrementalGCTests(unittest.TestCase):
+
+    def setUp(self):
+        # Reenable GC as it is disabled module-wide
+        gc.enable()
+
+    def tearDown(self):
+        gc.disable()
+
+    @unittest.skipIf(Py_GIL_DISABLED, "Free threading does not support incremental GC")
+    # Use small increments to emulate longer running process in a shorter time
+    @gc_threshold(200, 10)
+    def test_incremental_gc_handles_fast_cycle_creation(self):
+
+        class LinkedList:
+
+            #Use slots to reduce number of implicit objects
+            __slots__ = "next", "prev", "surprise"
+
+            def __init__(self, next=None, prev=None):
+                self.next = next
+                if next is not None:
+                    next.prev = self
+                self.prev = prev
+                if prev is not None:
+                    prev.next = self
+
+        def make_ll(depth):
+            head = LinkedList()
+            for i in range(depth):
+                head = LinkedList(head, head.prev)
+            return head
+
+        head = make_ll(1000)
+        count = 1000
+
+        # There will be some objects we aren't counting,
+        # e.g. the gc stats dicts. This test checks
+        # that the counts don't grow, so we try to
+        # correct for the uncounted objects
+        # This is just an estimate.
+        CORRECTION = 20
+
+        enabled = gc.isenabled()
+        gc.enable()
+        olds = []
+        for i in range(20_000):
+            newhead = make_ll(20)
+            count += 20
+            newhead.surprise = head
+            olds.append(newhead)
+            if len(olds) == 20:
+                stats = gc.get_stats()
+                young = stats[0]
+                incremental = stats[1]
+                old = stats[2]
+                collected = young['collected'] + incremental['collected'] + old['collected']
+                count += CORRECTION
+                live = count - collected
+                self.assertLess(live, 25000)
+                del olds[:]
+        if not enabled:
+            gc.disable()
+
+
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
         # Save gc state and disable it.
@@ -1225,7 +1282,7 @@ class GCCallbackTests(unittest.TestCase):
         p.stderr.close()
         # Verify that stderr has a useful error message:
         self.assertRegex(stderr,
-            br'gcmodule\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+            br'gc.*\.c:[0-9]+: .*: Assertion "gc_get_refs\(.+\) .*" failed.')
         self.assertRegex(stderr,
             br'refcount is too small')
         # "address : 0x7fb5062efc18"
@@ -1320,6 +1377,7 @@ class GCTogglingTests(unittest.TestCase):
             # with an empty __dict__.
             self.assertEqual(x, None)
 
+    @gc_threshold(1000, 0, 0)
     def test_bug1055820d(self):
         # Corresponds to temp2d.py in the bug report.  This is very much like
         # test_bug1055820c, but uses a __del__ method instead of a weakref
@@ -1386,6 +1444,32 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
+
+    @gc_threshold(1000, 0, 0)
+    def test_indirect_calls_with_gc_disabled(self):
+        junk = []
+        i = 0
+        detector = GC_Detector()
+        while not detector.gc_happened:
+            i += 1
+            if i > 10000:
+                self.fail("gc didn't happen after 10000 iterations")
+            junk.append([])  # this will eventually trigger gc
+
+        try:
+            gc.disable()
+            junk = []
+            i = 0
+            detector = GC_Detector()
+            while not detector.gc_happened:
+                i += 1
+                if i > 10000:
+                    break
+                junk.append([])  # this may eventually trigger gc (if it is enabled)
+
+            self.assertEqual(i, 10001)
+        finally:
+            gc.enable()
 
 
 class PythonFinalizationTests(unittest.TestCase):

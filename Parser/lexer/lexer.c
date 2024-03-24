@@ -59,6 +59,10 @@ tok_nextc(struct tok_state *tok)
     int rc;
     for (;;) {
         if (tok->cur != tok->inp) {
+            if ((unsigned int) tok->col_offset >= (unsigned int) INT_MAX) {
+                tok->done = E_COLUMNOVERFLOW;
+                return EOF;
+            }
             tok->col_offset++;
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
@@ -112,13 +116,56 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
     if (!tok_mode->f_string_debug || token->metadata) {
         return 0;
     }
+    PyObject *res = NULL;
 
-    PyObject *res = PyUnicode_DecodeUTF8(
-        tok_mode->last_expr_buffer,
-        tok_mode->last_expr_size - tok_mode->last_expr_end,
-        NULL
-    );
-    if (!res) {
+    // Check if there is a # character in the expression
+    int hash_detected = 0;
+    for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
+        if (tok_mode->last_expr_buffer[i] == '#') {
+            hash_detected = 1;
+            break;
+        }
+    }
+
+    if (hash_detected) {
+        Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
+        char *result = (char *)PyMem_Malloc((input_length + 1) * sizeof(char));
+        if (!result) {
+            return -1;
+        }
+
+        Py_ssize_t i = 0;
+        Py_ssize_t j = 0;
+
+        for (i = 0, j = 0; i < input_length; i++) {
+            if (tok_mode->last_expr_buffer[i] == '#') {
+                // Skip characters until newline or end of string
+                while (tok_mode->last_expr_buffer[i] != '\0' && i < input_length) {
+                    if (tok_mode->last_expr_buffer[i] == '\n') {
+                        result[j++] = tok_mode->last_expr_buffer[i];
+                        break;
+                    }
+                    i++;
+                }
+            } else {
+                result[j++] = tok_mode->last_expr_buffer[i];
+            }
+        }
+
+        result[j] = '\0';  // Null-terminate the result string
+        res = PyUnicode_DecodeUTF8(result, j, NULL);
+        PyMem_Free(result);
+    } else {
+        res = PyUnicode_DecodeUTF8(
+            tok_mode->last_expr_buffer,
+            tok_mode->last_expr_size - tok_mode->last_expr_end,
+            NULL
+        );
+
+    }
+
+
+   if (!res) {
         return -1;
     }
     token->metadata = res;
@@ -968,6 +1015,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         int quote = c;
         int quote_size = 1;             /* 1 or 3 */
         int end_quote_size = 0;
+        int has_escaped_quote = 0;
 
         /* Nodes of type STRING, especially multi line strings
            must be handled differently in order to get both
@@ -1033,8 +1081,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
                 else {
-                    _PyTokenizer_syntaxerror(tok, "unterminated string literal (detected at"
-                                     " line %d)", start);
+                    if (has_escaped_quote) {
+                        _PyTokenizer_syntaxerror(
+                            tok,
+                            "unterminated string literal (detected at line %d); "
+                            "perhaps you escaped the end quote?",
+                            start
+                        );
+                    } else {
+                        _PyTokenizer_syntaxerror(
+                            tok, "unterminated string literal (detected at line %d)", start
+                        );
+                    }
                     if (c != '\n') {
                         tok->done = E_EOLS;
                     }
@@ -1048,6 +1106,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 end_quote_size = 0;
                 if (c == '\\') {
                     c = tok_nextc(tok);  /* skip escaped char */
+                    if (c == quote) {  /* but record whether the escaped char was a quote */
+                        has_escaped_quote = 1;
+                    }
                     if (c == '\r') {
                         c = tok_nextc(tok);
                     }
@@ -1294,9 +1355,13 @@ f_string_middle:
             tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                _PyTokenizer_syntaxerror(tok,
                                     "unterminated triple-quoted f-string literal"
-                                    " (detected at line %d)", start));
+                                    " (detected at line %d)", start);
+                if (c != '\n') {
+                    tok->done = E_EOFS;
+                }
+                return MAKE_TOKEN(ERRORTOKEN);
             }
             else {
                 return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,

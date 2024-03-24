@@ -1,6 +1,7 @@
 # Python WebAssembly (WASM) build
 
-**WARNING: WASM support is work-in-progress! Lots of features are not working yet.**
+**WASI support is [tier 2](https://peps.python.org/pep-0011/#tier-2).**
+**Emscripten is NOT officially supported as of Python 3.13.**
 
 This directory contains configuration and helpers to facilitate cross
 compilation of CPython to WebAssembly (WASM). Python supports Emscripten
@@ -83,7 +84,7 @@ embuilder --pic build zlib bzip2 MINIMAL_PIC
 ```
 
 
-#### Compile a build Python interpreter
+### Compile and build Python interpreter
 
 From within the container, run the following command:
 
@@ -298,102 +299,9 @@ AddType application/wasm wasm
 
 ## WASI (wasm32-wasi)
 
-WASI builds require the [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
-See `.devcontainer/Dockerfile` for an example of how to download and
-install the WASI SDK.
+See [the devguide on how to build and run for WASI](https://devguide.python.org/getting-started/setup-building/#wasi).
 
-### Build
-
-The script ``wasi-env`` sets necessary compiler and linker flags as well as
-``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
-``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
-
-There are two scripts you can use to do a WASI build from a source checkout. You can either use:
-
-```shell
-./Tools/wasm/wasm_build.py wasi build
-```
-
-or:
-```shell
-./Tools/wasm/build_wasi.sh
-```
-
-The commands are equivalent to the following steps:
-
-- Make sure `Modules/Setup.local` exists
-- Make sure the necessary build tools are installed:
-  - [WASI SDK](https://github.com/WebAssembly/wasi-sdk) (which ships with `clang`)
-  - `make`
-  - `pkg-config` (on Linux)
-- Create the build Python
-  - `mkdir -p builddir/build`
-  - `pushd builddir/build`
-  - Get the build platform
-    - Python: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
-    - Shell: `../../config.guess`
-  - `../../configure -C`
-  - `make all`
-  - ```PYTHON_VERSION=`./python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'` ```
-  - `popd`
-- Create the host/WASI Python
-  - `mkdir builddir/wasi`
-  - `pushd builddir/wasi`
-  - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$(../../config.guess) --with-build-python=../build/python`
-    - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
-    - `HOSTRUNNER="wasmtime run --mapdir /::$(dirname $(dirname $(pwd))) --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION $(pwd)/python.wasm --"`
-      - Maps the source checkout to `/` in the WASI runtime
-      - Stdlib gets loaded from `/Lib`
-      - Gets `_sysconfigdata__wasi_wasm32-wasi.py` on to `sys.path` via `PYTHONPATH`
-    - Set by `wasi-env`
-      - `WASI_SDK_PATH`
-      - `WASI_SYSROOT`
-      - `CC`
-      - `CPP`
-      - `CXX`
-      - `LDSHARED`
-      - `AR`
-      - `RANLIB`
-      - `CFLAGS`
-      - `LDFLAGS`
-      - `PKG_CONFIG_PATH`
-      - `PKG_CONFIG_LIBDIR`
-      - `PKG_CONFIG_SYSROOT_DIR`
-      - `PATH`
-  - `make all`
-
-
-### Running
-
-If you followed the instructions above, you can run the interpreter via e.g., `wasmtime` from within the `Tools/wasi` directory (make sure to set/change `$PYTHON_VERSION` and do note the paths are relative to running in`builddir/wasi` for simplicity only):
-
-```shell
-wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm -- <args>
-```
-
-There are also helpers provided by `Tools/wasm/wasm_build.py` as listed below. Also, if you used `Tools/wasm/build_wasi.sh`, a `run_wasi.sh` file will be created in `builddir/wasi` which will run the above command for you (it also uses absolute paths, so it can be executed from anywhere).
-
-#### REPL
-
-```shell
-./Tools/wasm/wasm_build.py wasi repl
-```
-
-#### Tests
-
-```shell
-./Tools/wasm/wasm_build.py wasi test
-```
-
-### Debugging
-
-* ``wasmtime run -g`` generates debugging symbols for gdb and lldb. The
-  feature is currently broken, see
-  https://github.com/bytecodealliance/wasmtime/issues/4669 .
-* The environment variable ``RUST_LOG=wasi_common`` enables debug and
-  trace logging.
-
-## Detect WebAssembly builds
+## Detecting WebAssembly builds
 
 ### Python code
 
@@ -402,15 +310,17 @@ import os, sys
 
 if sys.platform == "emscripten":
     # Python on Emscripten
+    ...
 if sys.platform == "wasi":
     # Python on WASI
+    ...
 
 if os.name == "posix":
     # WASM platforms identify as POSIX-like.
     # Windows does not provide os.uname().
     machine = os.uname().machine
     if machine.startswith("wasm"):
-        # WebAssembly (wasm32, wasm64 in the future)
+        # WebAssembly (wasm32, wasm64 potentially in the future)
 ```
 
 ```python
