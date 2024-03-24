@@ -74,7 +74,7 @@ allows a binary extension module to be loaded from any location on
 post-process any Python packages, converting ``.so`` binary modules into
 individual standalone frameworks with appropriate metadata and signing. For
 details on how to perform this post-processing, see the guide for :ref:`adding
-iOS to your project <adding-ios>`.
+Python to your project <adding-ios>`.
 
 To help Python discover binaries in their new location, the original ``.so``
 file on ``sys.path`` is replaced with a ``.fwork`` file. This file is a text
@@ -148,8 +148,8 @@ Platform by selecting from the Platforms tab of the Xcode Settings panel.
 
 .. _adding-ios:
 
-Adding iOS to an Xcode project
-------------------------------
+Adding Python to an iOS project
+-------------------------------
 
 Python can be added to any iOS project, using either Swift or Objective C. The
 following examples will use Objective C; if you are using Swift, you may find a
