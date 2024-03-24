@@ -1358,7 +1358,23 @@ def getargs(co):
     Three things are returned: (args, varargs, varkw), where
     'args' is the list of argument names. Keyword-only arguments are
     appended. 'varargs' and 'varkw' are the names of the * and **
-    arguments or None."""
+    arguments or None.
+
+    Deprecated in Python 3.13; slated for removal in Python 3.15.
+    ``inspect.signature`` is the most accurate way to obtain the signature
+    of a callable. If you only have access to a code object, however,
+    ``inspect.signature(types.FunctionType(co, {}))`` can be used as a
+    direct replacement for ``inspect.getargs()``.
+    """
+    import warnings
+    warnings._deprecated(
+        "getargs",
+        (
+            "{name!r} is deprecated and slated for removal in Python {remove}; "
+            "use `inspect.signature` instead."
+        ),
+        remove=(3, 15),
+    )
     if not iscode(co):
         raise TypeError('{!r} is not a code object'.format(co))
 
@@ -1484,7 +1500,10 @@ def getargvalues(frame):
     'args' is a list of the argument names.
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'locals' is the locals dictionary of the given frame."""
-    args, varargs, varkw = getargs(frame.f_code)
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DeprecationWarning)
+        args, varargs, varkw = getargs(frame.f_code)
     return ArgInfo(args, varargs, varkw, frame.f_locals)
 
 def formatannotation(annotation, base_module=None):

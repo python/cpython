@@ -5536,6 +5536,17 @@ class TestRepl(unittest.TestCase):
         self.assertIn(expected, output)
 
 
+class TestGetArgs(unittest.TestCase):
+    def test_getargs_deprecated(self):
+        import re
+
+        def func(a, b): ...
+
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            re.escape("'getargs' is deprecated and slated for removal in Python 3.15"),
+        ):
+            inspect.getargs(func.__code__)
 
 
 if __name__ == "__main__":
