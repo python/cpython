@@ -23,6 +23,8 @@ typedef struct {
     PyObject *evaluate_bound;
     PyObject *constraints;
     PyObject *evaluate_constraints;
+    PyObject *default_;
+    PyObject *evaluate_default;
     bool covariant;
     bool contravariant;
     bool infer_variance;
@@ -31,12 +33,16 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     PyObject *name;
+    PyObject *default_;
+    PyObject *evaluate_default;
 } typevartupleobject;
 
 typedef struct {
     PyObject_HEAD
     PyObject *name;
     PyObject *bound;
+    PyObject *default_;
+    PyObject *evaluate_default;
     bool covariant;
     bool contravariant;
     bool infer_variance;
@@ -200,6 +206,8 @@ typevar_dealloc(PyObject *self)
     Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
     Py_XDECREF(tv->evaluate_constraints);
+    Py_XDECREF(tv->default_);
+    Py_XDECREF(tv->evaluate_default);
     PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
@@ -216,6 +224,8 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
     Py_VISIT(tv->evaluate_constraints);
+    Py_VISIT(tv->default_);
+    Py_VISIT(tv->evaluate_default);
     PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -227,6 +237,8 @@ typevar_clear(typevarobject *self)
     Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->constraints);
     Py_CLEAR(self->evaluate_constraints);
+    Py_CLEAR(self->default_);
+    Py_CLEAR(self->evaluate_default);
     PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
@@ -267,6 +279,23 @@ typevar_bound(typevarobject *self, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
+typevar_default(typevarobject *self, void *unused)
+{
+    if (self->default_ != NULL) {
+        return Py_NewRef(self->default_);
+    }
+    if (self->evaluate_default == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *default_ = PyObject_CallNoArgs(self->evaluate_default);
+    if (Py_IsNone(default_)) {
+        default_ = (PyObject *)Py_TYPE(default_);
+    }
+    self->default_ = Py_XNewRef(default_);
+    return default_;
+}
+
+static PyObject *
 typevar_constraints(typevarobject *self, void *Py_UNUSED(ignored))
 {
     if (self->constraints != NULL) {
@@ -283,12 +312,14 @@ typevar_constraints(typevarobject *self, void *Py_UNUSED(ignored))
 static PyGetSetDef typevar_getset[] = {
     {"__bound__", (getter)typevar_bound, NULL, NULL, NULL},
     {"__constraints__", (getter)typevar_constraints, NULL, NULL, NULL},
+    {"__default__", (getter)typevar_default, NULL, NULL, NULL},
     {0}
 };
 
 static typevarobject *
 typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
               PyObject *constraints, PyObject *evaluate_constraints,
+              PyObject *default_,
               bool covariant, bool contravariant, bool infer_variance,
               PyObject *module)
 {
@@ -305,6 +336,8 @@ typevar_alloc(PyObject *name, PyObject *bound, PyObject *evaluate_bound,
     tv->evaluate_bound = Py_XNewRef(evaluate_bound);
     tv->constraints = Py_XNewRef(constraints);
     tv->evaluate_constraints = Py_XNewRef(evaluate_constraints);
+    tv->default_ = Py_XNewRef(default_);
+    tv->evaluate_default = NULL;
 
     tv->covariant = covariant;
     tv->contravariant = contravariant;
@@ -328,6 +361,7 @@ typevar.__new__ as typevar_new
     name: object(subclass_of="&PyUnicode_Type")
     *constraints: object
     bound: object = None
+    default as default_: object = None
     covariant: bool = False
     contravariant: bool = False
     infer_variance: bool = False
@@ -337,9 +371,9 @@ Create a TypeVar.
 
 static PyObject *
 typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
-                 PyObject *bound, int covariant, int contravariant,
-                 int infer_variance)
-/*[clinic end generated code: output=1d200450ee99226d input=41ae33a916bfe76f]*/
+                 PyObject *bound, PyObject *default_, int covariant,
+                 int contravariant, int infer_variance)
+/*[clinic end generated code: output=74ee963663330604 input=7c2c5d1317165573]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError,
@@ -383,9 +417,13 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
         Py_XDECREF(bound);
         return NULL;
     }
+    if (Py_IsNone(default_)) {
+        default_ = (PyObject *)Py_TYPE(default_);
+    }
 
     PyObject *tv = (PyObject *)typevar_alloc(name, bound, NULL,
                                              constraints, NULL,
+                                             default_,
                                              covariant, contravariant,
                                              infer_variance, module);
     Py_XDECREF(bound);
@@ -739,6 +777,8 @@ paramspec_dealloc(PyObject *self)
 
     Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
+    Py_XDECREF(ps->default_);
+    Py_XDECREF(ps->evaluate_default);
     PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
@@ -752,6 +792,8 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     paramspecobject *ps = (paramspecobject *)self;
     Py_VISIT(ps->bound);
+    Py_VISIT(ps->default_);
+    Py_VISIT(ps->evaluate_default);
     PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -760,6 +802,8 @@ static int
 paramspec_clear(paramspecobject *self)
 {
     Py_CLEAR(self->bound);
+    Py_CLEAR(self->default_);
+    Py_CLEAR(self->evaluate_default);
     PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
@@ -800,14 +844,32 @@ paramspec_kwargs(PyObject *self, void *unused)
     return (PyObject *)paramspecattr_new(tp, self);
 }
 
+static PyObject *
+paramspec_default(paramspecobject *self, void *unused)
+{
+    if (self->default_ != NULL) {
+        return Py_NewRef(self->default_);
+    }
+    if (self->evaluate_default == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *default_ = PyObject_CallNoArgs(self->evaluate_default);
+    if (Py_IsNone(default_)) {
+        default_ = Py_XNewRef(Py_TYPE(default_));
+    }
+    self->default_ = Py_XNewRef(default_);
+    return default_;
+}
+
 static PyGetSetDef paramspec_getset[] = {
     {"args", (getter)paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
     {"kwargs", (getter)paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
+    {"__default__", (getter)paramspec_default, NULL, "The default value for this ParamSpec.", NULL},
     {0},
 };
 
 static paramspecobject *
-paramspec_alloc(PyObject *name, PyObject *bound, bool covariant,
+paramspec_alloc(PyObject *name, PyObject *bound, PyObject *default_, bool covariant,
                 bool contravariant, bool infer_variance, PyObject *module)
 {
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.paramspec_type;
@@ -820,6 +882,8 @@ paramspec_alloc(PyObject *name, PyObject *bound, bool covariant,
     ps->covariant = covariant;
     ps->contravariant = contravariant;
     ps->infer_variance = infer_variance;
+    ps->default_ = default_;
+    ps->evaluate_default = NULL;
     _PyObject_GC_TRACK(ps);
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)ps, "__module__", module) < 0) {
@@ -837,6 +901,7 @@ paramspec.__new__ as paramspec_new
     name: object(subclass_of="&PyUnicode_Type")
     *
     bound: object = None
+    default as default_: object = None
     covariant: bool = False
     contravariant: bool = False
     infer_variance: bool = False
@@ -846,8 +911,9 @@ Create a ParamSpec object.
 
 static PyObject *
 paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
-                   int covariant, int contravariant, int infer_variance)
-/*[clinic end generated code: output=fd2daab79cba62da input=57c49c581979b952]*/
+                   PyObject *default_, int covariant, int contravariant,
+                   int infer_variance)
+/*[clinic end generated code: output=b6be5856624d7b5d input=d95d455b87d263d6]*/
 {
     if (covariant && contravariant) {
         PyErr_SetString(PyExc_ValueError, "Bivariant types are not supported.");
@@ -868,8 +934,11 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
         Py_XDECREF(bound);
         return NULL;
     }
+    if (Py_IsNone(default_)) {
+        default_ = Py_NewRef(Py_TYPE(default_));
+    }
     PyObject *ps = (PyObject *)paramspec_alloc(
-        name, bound, covariant, contravariant, infer_variance, module);
+        name, bound, default_, covariant, contravariant, infer_variance, module);
     Py_XDECREF(bound);
     Py_DECREF(module);
     return ps;
@@ -1021,6 +1090,8 @@ typevartuple_dealloc(PyObject *self)
     typevartupleobject *tvt = (typevartupleobject *)self;
 
     Py_DECREF(tvt->name);
+    Py_XDECREF(tvt->default_);
+    Py_XDECREF(tvt->evaluate_default);
     PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
@@ -1060,7 +1131,7 @@ static PyMemberDef typevartuple_members[] = {
 };
 
 static typevartupleobject *
-typevartuple_alloc(PyObject *name, PyObject *module)
+typevartuple_alloc(PyObject *name, PyObject *module, PyObject *default_)
 {
     PyTypeObject *tp = _PyInterpreterState_GET()->cached_objects.typevartuple_type;
     typevartupleobject *tvt = PyObject_GC_New(typevartupleobject, tp);
@@ -1068,6 +1139,8 @@ typevartuple_alloc(PyObject *name, PyObject *module)
         return NULL;
     }
     tvt->name = Py_NewRef(name);
+    tvt->default_ = Py_XNewRef(default_);
+    tvt->evaluate_default = NULL;
     _PyObject_GC_TRACK(tvt);
     if (module != NULL) {
         if (PyObject_SetAttrString((PyObject *)tvt, "__module__", module) < 0) {
@@ -1083,19 +1156,24 @@ typevartuple_alloc(PyObject *name, PyObject *module)
 typevartuple.__new__
 
     name: object(subclass_of="&PyUnicode_Type")
+    *
+    default as default_: object = None
 
 Create a new TypeVarTuple with the given name.
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_impl(PyTypeObject *type, PyObject *name)
-/*[clinic end generated code: output=09d417a28f976202 input=00d28abcf1fc96bb]*/
+typevartuple_impl(PyTypeObject *type, PyObject *name, PyObject *default_)
+/*[clinic end generated code: output=eb847fe0acd69560 input=701651f2d692f6ae]*/
 {
     PyObject *module = caller();
     if (module == NULL) {
         return NULL;
     }
-    PyObject *result = (PyObject *)typevartuple_alloc(name, module);
+    if (Py_IsNone(default_)) {
+        default_ = (PyObject *)Py_TYPE(default_);
+    }
+    PyObject *result = (PyObject *)typevartuple_alloc(name, module, default_);
     Py_DECREF(module);
     return result;
 }
@@ -1160,6 +1238,8 @@ static int
 typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(((typevartupleobject *)self)->default_);
+    Py_VISIT(((typevartupleobject *)self)->evaluate_default);
     PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
@@ -1167,9 +1247,33 @@ typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 typevartuple_clear(PyObject *self)
 {
+    Py_CLEAR(((typevartupleobject *)self)->default_);
+    Py_CLEAR(((typevartupleobject *)self)->evaluate_default);
     PyObject_ClearManagedDict(self);
     return 0;
 }
+
+static PyObject *
+typevartuple_default(typevartupleobject *self, void *unused)
+{
+    if (self->default_ != NULL) {
+        return Py_NewRef(self->default_);
+    }
+    if (self->evaluate_default == NULL) {
+        Py_RETURN_NONE;
+    }
+    PyObject *default_ = PyObject_CallNoArgs(self->evaluate_default);
+    if (Py_IsNone(default_)) {
+        default_ = (PyObject *)Py_TYPE(default_);
+    }
+    self->default_ = Py_XNewRef(default_);
+    return default_;
+}
+
+static PyGetSetDef typevartuple_getset[] = {
+    {"__default__", (getter)typevartuple_default, NULL, "The default value for this TypeVarTuple.", NULL},
+    {0},
+};
 
 static PyMethodDef typevartuple_methods[] = {
     TYPEVARTUPLE_TYPING_SUBST_METHODDEF
@@ -1218,6 +1322,7 @@ PyType_Slot typevartuple_slots[] = {
     {Py_tp_doc, (void *)typevartuple_doc},
     {Py_tp_members, typevartuple_members},
     {Py_tp_methods, typevartuple_methods},
+    {Py_tp_getset, typevartuple_getset},
     {Py_tp_new, typevartuple},
     {Py_tp_iter, typevartuple_iter},
     {Py_tp_repr, typevartuple_repr},
@@ -1241,21 +1346,21 @@ PyObject *
 _Py_make_typevar(PyObject *name, PyObject *evaluate_bound, PyObject *evaluate_constraints)
 {
     return (PyObject *)typevar_alloc(name, NULL, evaluate_bound, NULL, evaluate_constraints,
-                                     false, false, true, NULL);
+                                     NULL, false, false, true, NULL);
 }
 
 PyObject *
 _Py_make_paramspec(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return (PyObject *)paramspec_alloc(v, NULL, false, false, true, NULL);
+    return (PyObject *)paramspec_alloc(v, NULL, NULL, false, false, true, NULL);
 }
 
 PyObject *
 _Py_make_typevartuple(PyThreadState *Py_UNUSED(ignored), PyObject *v)
 {
     assert(PyUnicode_Check(v));
-    return (PyObject *)typevartuple_alloc(v, NULL);
+    return (PyObject *)typevartuple_alloc(v, NULL, NULL);
 }
 
 static void
@@ -1686,4 +1791,25 @@ void _Py_clear_generic_types(PyInterpreterState *interp)
     Py_CLEAR(interp->cached_objects.paramspec_type);
     Py_CLEAR(interp->cached_objects.paramspecargs_type);
     Py_CLEAR(interp->cached_objects.paramspeckwargs_type);
+}
+
+PyObject *
+_Py_set_typeparam_default(PyThreadState *ts, PyObject *typeparam, PyObject *evaluate_default)
+{
+    if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevar_type)) {
+        Py_XSETREF(((typevarobject *)typeparam)->evaluate_default, Py_NewRef(evaluate_default));
+        return Py_NewRef(typeparam);
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.paramspec_type)) {
+        Py_XSETREF(((paramspecobject *)typeparam)->evaluate_default, Py_NewRef(evaluate_default));
+        return Py_NewRef(typeparam);
+    }
+    else if (Py_IS_TYPE(typeparam, ts->interp->cached_objects.typevartuple_type)) {
+        Py_XSETREF(((typevartupleobject *)typeparam)->evaluate_default, Py_NewRef(evaluate_default));
+        return Py_NewRef(typeparam);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "Expected a type param, got %R", typeparam);
+        return NULL;
+    }
 }

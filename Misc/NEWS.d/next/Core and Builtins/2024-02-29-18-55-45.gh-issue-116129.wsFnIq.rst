@@ -1,0 +1,2 @@
+Add grammar support for defaults on type parameters, as specified in
+:pep:`696`. Patch by Jelle Zijlstra.

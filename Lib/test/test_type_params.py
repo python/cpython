@@ -412,6 +412,14 @@ class TypeParamsAccessTest(unittest.TestCase):
         func, = T.__bound__
         self.assertEqual(func(), 1)
 
+    def test_comprehension_03(self):
+        def F[T: [lambda: T for T in (T, [1])[1]]](): return [lambda: T for T in T.__name__]
+        func, = F()
+        self.assertEqual(func(), "T")
+        T, = F.__type_params__
+        func, = T.__bound__
+        self.assertEqual(func(), 1)
+
     def test_gen_exp_in_nested_class(self):
         code = """
             from test.test_type_params import make_base
@@ -535,10 +543,12 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
         self.assertEqual(type_params[0].__name__, "T")
         self.assertIs(type_params[0].__bound__, Foo)
         self.assertEqual(type_params[0].__constraints__, ())
+        self.assertIs(type_params[0].__default__, None)
 
         self.assertEqual(type_params[1].__name__, "U")
         self.assertIs(type_params[1].__bound__, None)
         self.assertEqual(type_params[1].__constraints__, (Foo, Foo))
+        self.assertIs(type_params[1].__default__, None)
 
     def test_evaluation_error(self):
         class Foo[T: Undefined, U: (Undefined,)]:
@@ -549,6 +559,8 @@ class TypeParamsLazyEvaluationTest(unittest.TestCase):
             type_params[0].__bound__
         self.assertEqual(type_params[0].__constraints__, ())
         self.assertIs(type_params[1].__bound__, None)
+        self.assertIs(type_params[0].__default__, None)
+        self.assertIs(type_params[1].__default__, None)
         with self.assertRaises(NameError):
             type_params[1].__constraints__
 
@@ -1102,3 +1114,76 @@ class TypeParamsRuntimeTest(unittest.TestCase):
         """
         with self.assertRaises(RuntimeError):
             run_code(code)
+
+
+class DefaultsTest(unittest.TestCase):
+    def test_defaults_on_func(self):
+        def func[T=int, *U=float, **V=None]():
+            pass
+
+        T, U, V = func.__type_params__
+        self.assertIs(T.__default__, int)
+        self.assertIs(U.__default__, float)
+        self.assertIs(V.__default__, type(None))
+
+    def test_defaults_on_class(self):
+        class C[T=int, *U=float, **V=None]:
+            pass
+
+        T, U, V = C.__type_params__
+        self.assertIs(T.__default__, int)
+        self.assertIs(U.__default__, float)
+        self.assertIs(V.__default__, type(None))
+
+    def test_defaults_on_type_alias(self):
+        type Alias[T = int, *U = float, **V = None] = int
+
+        T, U, V = Alias.__type_params__
+        self.assertIs(T.__default__, int)
+        self.assertIs(U.__default__, float)
+        self.assertIs(V.__default__, type(None))
+
+    def test_nondefault_after_default(self):
+        check_syntax_error(self, "def func[T=int, U](): pass", "non-default type parameter 'U' follows default type parameter")
+        check_syntax_error(self, "class C[T=int, U]: pass", "non-default type parameter 'U' follows default type parameter")
+        check_syntax_error(self, "type A[T=int, U] = int", "non-default type parameter 'U' follows default type parameter")
+
+    def test_lazy_evaluation(self):
+        type Alias[T = Undefined, *U = Undefined, **V = Undefined] = int
+
+        T, U, V = Alias.__type_params__
+
+        with self.assertRaises(NameError):
+            T.__default__
+        with self.assertRaises(NameError):
+            U.__default__
+        with self.assertRaises(NameError):
+            V.__default__
+
+        Undefined = "defined"
+        self.assertEqual(T.__default__, "defined")
+        self.assertEqual(U.__default__, "defined")
+        self.assertEqual(V.__default__, "defined")
+
+        # Now it is cached
+        Undefined = "redefined"
+        self.assertEqual(T.__default__, "defined")
+        self.assertEqual(U.__default__, "defined")
+        self.assertEqual(V.__default__, "defined")
+
+    def test_symtable_key_regression_default(self):
+        # Test against the bugs that would happen if we used .default_
+        # as the key in the symtable.
+        type X[T = [T for T in [T]]] = T
+        T, = X.__type_params__
+        self.assertEqual(T.__default__, [T])
+
+    def test_symtable_key_regression_name(self):
+        # Test against the bugs that would happen if we used .name
+        # as the key in the symtable.
+        type X1[T = A] = T
+        type X2[T = B] = T
+        A = "A"
+        B = "B"
+        self.assertEqual(X1.__type_params__[0].__default__, "A")
+        self.assertEqual(X2.__type_params__[0].__default__, "B")
