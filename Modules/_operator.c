@@ -727,6 +727,20 @@ _operator_is_not_impl(PyObject *module, PyObject *a, PyObject *b)
     return Py_NewRef(result);
 }
 
+/*[clinic input]
+_operator.is_none = _operator.neg
+
+Same as a is None.
+[clinic start generated code]*/
+
+static PyObject *
+_operator_is_none(PyObject *module, PyObject *a)
+/*[clinic end generated code: output=07159cc102261dec input=0448b38af7b8533d]*/
+{
+    PyObject *result = Py_IsNone(a) ? Py_True : Py_False;
+    return Py_NewRef(result);
+}
+
 /* compare_digest **********************************************************/
 
 /*
@@ -915,6 +929,7 @@ static struct PyMethodDef operator_methods[] = {
     _OPERATOR_COUNTOF_METHODDEF
     _OPERATOR_IS__METHODDEF
     _OPERATOR_IS_NOT_METHODDEF
+    _OPERATOR_IS_NONE_METHODDEF
     _OPERATOR_INDEX_METHODDEF
     _OPERATOR_ADD_METHODDEF
     _OPERATOR_SUB_METHODDEF
