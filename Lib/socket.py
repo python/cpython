@@ -56,6 +56,13 @@ import os, sys, io, selectors
 from enum import IntEnum, IntFlag
 
 try:
+    import _overlapped
+    import msvcrt
+except ImportError:
+    _overlapped = None
+    msvcrt = None
+
+try:
     import errno
 except ImportError:
     errno = None
@@ -451,6 +458,39 @@ class socket(_socket.socket):
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset + total_sent)
 
+    if _overlapped and msvcrt:
+        def _sendfile_use_transmitfile(self, file, offset=0, count=None):
+            self._check_sendfile_params(file, offset, count)
+            timeout = self.gettimeout()
+            if timeout == 0:
+                raise ValueError("non-blocking sockets are not supported")
+            ov = _overlapped.Overlapped()
+            offset_low = offset & 0xffff_ffff
+            offset_high = (offset >> 32) & 0xffff_ffff
+            count = count or 0
+            try:
+                fileno = file.fileno()
+            except (AttributeError, io.UnsupportedOperation) as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            try:
+                os.fstat(fileno)
+            except OSError as err:
+                raise _GiveupOnSendfile(err)  # not a regular file
+            ov.TransmitFile(self.fileno(), msvcrt.get_osfhandle(fileno),
+                            offset_low, offset_high, count, 0, 0)
+            timeout_ms = _overlapped.INFINITE
+            if timeout is not None:
+                timeout_ms = int(timeout * 1000)
+            try:
+                sent = ov.getresultex(timeout_ms, False)
+            except WindowsError as e:
+                if e.winerror == 258:
+                    raise TimeoutError('timed out')
+                raise
+            if sent > 0 and hasattr(file, 'seek'):
+                file.seek(offset + sent)
+            return sent
+
     def _check_sendfile_params(self, file, offset, count):
         if 'b' not in getattr(file, 'mode', 'b'):
             raise ValueError("file should be opened in binary mode")
@@ -483,6 +523,8 @@ class socket(_socket.socket):
         Non-blocking sockets are not supported.
         """
         try:
+            if sys.platform == "win32":
+                return self._sendfile_use_transmitfile(file, offset, count)
             return self._sendfile_use_sendfile(file, offset, count)
         except _GiveupOnSendfile:
             return self._sendfile_use_send(file, offset, count)
