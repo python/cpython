@@ -1,0 +1,2 @@
+Speed up handling of non-wildcard pattern segments in
+:meth:`pathlib.Path.glob`.
