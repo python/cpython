@@ -581,6 +581,9 @@ dataclass5(a=dataclass6(c=...,
     def test_set_reprs(self):
         self.assertEqual(pprint.pformat(set()), 'set()')
         self.assertEqual(pprint.pformat(set(range(3))), '{0, 1, 2}')
+        self.assertEqual(pprint.pformat(set([-1, 0, 1])), "{-1, 0, 1}")
+        self.assertEqual(pprint.pformat(set("0123")), "{'0', '1', '2', '3'}")
+        self.assertEqual(pprint.pformat(set("abcd")), "{'a', 'b', 'c', 'd'}")
         self.assertEqual(pprint.pformat(set(range(7)), width=20), '''\
 {0,
  1,
@@ -589,6 +592,11 @@ dataclass5(a=dataclass6(c=...,
  4,
  5,
  6}''')
+        self.assertEqual(pprint.pformat(set2([-1, 0, 1])), "set2({-1, 0, 1})")
+        self.assertEqual(pprint.pformat(set2("0123")),
+                         "set2({'0', '1', '2', '3'})")
+        self.assertEqual(pprint.pformat(set2("abcd")),
+                         "set2({'a', 'b', 'c', 'd'})")
         self.assertEqual(pprint.pformat(set2(range(7)), width=20), '''\
 set2({0,
       1,
@@ -603,6 +611,12 @@ set2({0,
         self.assertEqual(pprint.pformat(frozenset()), 'frozenset()')
         self.assertEqual(pprint.pformat(frozenset(range(3))),
                          'frozenset({0, 1, 2})')
+        self.assertEqual(pprint.pformat(frozenset([-1, 0, 1])),
+                         "frozenset({-1, 0, 1})")
+        self.assertEqual(pprint.pformat(frozenset("0123")),
+                         "frozenset({'0', '1', '2', '3'})")
+        self.assertEqual(pprint.pformat(frozenset("abcd")),
+                         "frozenset({'a', 'b', 'c', 'd'})")
         self.assertEqual(pprint.pformat(frozenset(range(7)), width=20), '''\
 frozenset({0,
            1,
@@ -611,6 +625,12 @@ frozenset({0,
            4,
            5,
            6})''')
+        self.assertEqual(pprint.pformat(frozenset2([-1, 0, 1])),
+                         "frozenset2({-1, 0, 1})")
+        self.assertEqual(pprint.pformat(frozenset2("0123")),
+                         "frozenset2({'0', '1', '2', '3'})")
+        self.assertEqual(pprint.pformat(frozenset2("abcd")),
+                         "frozenset2({'a', 'b', 'c', 'd'})")
         self.assertEqual(pprint.pformat(frozenset2(range(7)), width=20), '''\
 frozenset2({0,
             1,
