@@ -2692,7 +2692,7 @@ Verbosity can be increased with the optional `verbose` parameter:
     1 items passed all tests:
        2 tests in test_doctest.txt
     2 tests in 1 items.
-    2 passed and 0 failed.
+    2 passed.
     Test passed.
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
@@ -2775,7 +2775,7 @@ Test the verbose output:
     1 items passed all tests:
        2 tests in test_doctest4.txt
     2 tests in 1 items.
-    2 passed and 0 failed.
+    2 passed.
     Test passed.
     TestResults(failed=0, attempted=2)
     >>> doctest.master = None  # Reset master.
@@ -3000,7 +3000,7 @@ With the verbose flag, we should see the test output, but no error output:
     1 items passed all tests:
        2 tests in myfile.doc
     2 tests in 1 items.
-    2 passed and 0 failed.
+    2 passed.
     Test passed.
 
 Now we'll write a couple files, one with three tests, the other a python module
@@ -3129,7 +3129,7 @@ success output for the tests in both files:
     1 items passed all tests:
        3 tests in myfile.doc
     3 tests in 1 items.
-    3 passed and 0 failed.
+    3 passed.
     Test passed.
     Trying:
         1 + 1
@@ -3146,7 +3146,7 @@ success output for the tests in both files:
     1 items passed all tests:
        2 tests in myfile2.test_func
     2 tests in 2 items.
-    2 passed and 0 failed.
+    2 passed.
     Test passed.
 
 We should also check some typical error cases.

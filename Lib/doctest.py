@@ -1193,7 +1193,7 @@ class DocTestRunner:
            2 tests in _TestClass.get
            1 tests in _TestClass.square
         7 tests in 4 items.
-        7 passed and 0 failed.
+        7 passed.
         Test passed.
         TestResults(failed=0, attempted=7)
 
@@ -1603,7 +1603,8 @@ class DocTestRunner:
                 print(f" {failures:3d} of {tries:3d} in {name}")
         if verbose:
             print(f"{total_tries} tests in {len(self._stats)} items.")
-            print(f"{total_tries - total_failures} passed and {total_failures} failed.")
+            and_f = f" and {total_failures} failed" if total_failures else ""
+            print(f"{total_tries - total_failures} passed{and_f}.")
         if total_failures:
             msg = f"***Test Failed*** {total_failures} failures"
             if total_skips:
