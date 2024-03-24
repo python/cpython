@@ -1129,7 +1129,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                               ' return True',
                               'if other.__class__ is self.__class__:',
                              f' return {field_comparisons}',
-                             'return NotImplemented']
+                              'return NotImplemented'])
 
     if order:
         # Create and set the ordering methods.
