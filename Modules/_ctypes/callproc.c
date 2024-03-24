@@ -164,8 +164,9 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
     }
     if (st->error_object_name == NULL) {
         st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
-        if (st->error_object_name == NULL)
+        if (st->error_object_name == NULL) {
             return NULL;
+        }
     }
     if (PyDict_GetItemRef(dict, st->error_object_name, &errobj) < 0) {
         return NULL;
@@ -187,8 +188,7 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
             PyMem_Free(space);
             return NULL;
         }
-        if (-1 == PyDict_SetItem(dict, st->error_object_name,
-                                 errobj)) {
+        if (PyDict_SetItem(dict, st->error_object_name, errobj) < 0) {
             Py_DECREF(errobj);
             return NULL;
         }
@@ -1022,9 +1022,10 @@ static PyObject *GetResult(ctypes_state *st,
         if (info->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
             Py_DECREF(retval);
         }
-    } else
+    }
+    else {
         retval = PyCData_FromBaseObj(st, restype, NULL, 0, result);
-
+    }
     if (!checker || !retval)
         return retval;
 
@@ -1464,8 +1465,9 @@ copy_com_pointer(PyObject *self, PyObject *args)
     a.keep = b.keep = NULL;
 
     ctypes_state *st = GLOBAL_STATE();
-    if (-1 == ConvParam(st, p1, 0, &a) || -1 == ConvParam(st, p2, 1, &b))
+    if (ConvParam(st, p1, 0, &a) < 0 || ConvParam(st, p2, 1, &b) < 0) {
         goto done;
+    }
     src = (IUnknown *)a.value.p;
     pdst = (IUnknown **)b.value.p;
 
@@ -1988,7 +1990,7 @@ create_pointer_type(PyObject *module, PyObject *cls)
         PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
         return NULL;
     }
-    if (-1 == PyDict_SetItem(st->_ctypes_ptrtype_cache, key, result)) {
+    if (PyDict_SetItem(st->_ctypes_ptrtype_cache, key, result) < 0) {
         Py_DECREF(result);
         Py_DECREF(key);
         return NULL;

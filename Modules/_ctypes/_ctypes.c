@@ -1170,7 +1170,7 @@ PyCPointerType_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
     if (proto) {
         const char *current_format;
-        if (-1 == PyCPointerType_SetProto(st, stginfo, proto)) {
+        if (PyCPointerType_SetProto(st, stginfo, proto) < 0) {
             Py_DECREF(proto);
             return -1;
         }
@@ -1224,7 +1224,7 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
         return NULL;
     }
 
-    if (-1 == PyCPointerType_SetProto(st, info, type)) {
+    if (PyCPointerType_SetProto(st, info, type) < 0) {
         Py_DECREF(attrdict);
         return NULL;
     }
@@ -1978,12 +1978,13 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
     if (!swapped_args)
         return NULL;
 
-    if (st->swapped_suffix == NULL)
+    if (st->swapped_suffix == NULL) {
 #ifdef WORDS_BIGENDIAN
         st->swapped_suffix = PyUnicode_InternFromString("_le");
 #else
         st->swapped_suffix = PyUnicode_InternFromString("_be");
 #endif
+    }
     if (st->swapped_suffix == NULL) {
         Py_DECREF(swapped_args);
         return NULL;
@@ -2558,7 +2559,7 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
     stginfo->flags |= TYPEFLAG_ISPOINTER;
 
-    if (-1 == make_funcptrtype_dict(st, attrdict, stginfo)) {
+    if (make_funcptrtype_dict(st, attrdict, stginfo) < 0) {
         Py_DECREF(attrdict);
         return -1;
     }
@@ -3042,8 +3043,9 @@ PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
     if (PyStgInfo_FromType(st, type, &info) < 0) {
         return NULL;
     }
-    if (info && info->getfunc && !_ctypes_simple_instance(st, type))
+    if (info && info->getfunc && !_ctypes_simple_instance(st, type)) {
         return info->getfunc(adr, size);
+    }
     return PyCData_FromBaseObj(st, type, src, index, adr);
 }
 
@@ -3676,9 +3678,9 @@ PyCFuncPtr_FromVtblIndex(PyTypeObject *type, PyObject *args, PyObject *kwds)
         paramflags = NULL;
 
     ctypes_state *st = GLOBAL_STATE();
-    if (!_validate_paramflags(st, type, paramflags))
+    if (!_validate_paramflags(st, type, paramflags)) {
         return NULL;
-
+    }
     self = (PyCFuncPtrObject *)_GenericPyCData_new(st, type, args, kwds);
     self->index = index + 0x1000;
     self->paramflags = Py_XNewRef(paramflags);
@@ -4790,8 +4792,9 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
 
     if (st->array_cache == NULL) {
         st->array_cache = PyDict_New();
-        if (st->array_cache == NULL)
+        if (st->array_cache == NULL) {
             return NULL;
+        }
     }
     len = PyLong_FromSsize_t(length);
     if (len == NULL)
@@ -4834,7 +4837,7 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
         Py_DECREF(key);
         return NULL;
     }
-    if (-1 == PyDict_SetItemProxy(st, st->array_cache, key, result)) {
+    if (PyDict_SetItemProxy(st, st->array_cache, key, result) < 0) {
         Py_DECREF(key);
         Py_DECREF(result);
         return NULL;
@@ -5461,8 +5464,9 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
     ctypes_state *st = GLOBAL_STATE();
 
     CDataObject *result;
-    if (0 == cast_check_pointertype(st, ctype))
+    if (cast_check_pointertype(st, ctype) == 0) {
         return NULL;
+    }
     result = (CDataObject *)_PyObject_CallNoArgs(ctype);
     if (result == NULL)
         return NULL;
