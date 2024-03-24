@@ -607,7 +607,9 @@ if sys.platform == 'darwin':
 #
 if sys.platform == "ios":
     from _ios_support import objc
-    from ctypes import c_void_p, c_char_p, c_ulong
+    if objc:
+        # If objc exists, we know ctypes is also importable.
+        from ctypes import c_void_p, c_char_p, c_ulong
 
     class IOSBrowser(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
