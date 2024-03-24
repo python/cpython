@@ -14,7 +14,6 @@ module _weakref
 #include "clinic/_weakref.c.h"
 
 /*[clinic input]
-@critical_section object
 _weakref.getweakrefcount -> Py_ssize_t
 
   object: object
@@ -25,7 +24,7 @@ Return the number of weak references to 'object'.
 
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=301806d59558ff3e input=6535a580f1d0ebdc]*/
+/*[clinic end generated code: output=301806d59558ff3e input=7d4d04fcaccf64d5]*/
 {
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         return 0;
@@ -75,7 +74,6 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
 
 
 /*[clinic input]
-@critical_section object
 _weakref.getweakrefs
     object: object
     /
@@ -84,8 +82,8 @@ Return a list of all weak reference objects pointing to 'object'.
 [clinic start generated code]*/
 
 static PyObject *
-_weakref_getweakrefs_impl(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=5ec268989fb8f035 input=3dea95b8f5b31bbb]*/
+_weakref_getweakrefs(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=25c7731d8e011824 input=00c6d0e5d3206693]*/
 {
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         return PyList_New(0);
