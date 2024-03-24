@@ -545,11 +545,11 @@ def relpath(path, start=None):
 
 def commonpath(paths):
     """Given a sequence of path names, returns the longest common sub-path."""
-    if not paths:
+    _, roots, tails = zip(*map(splitroot, paths))
+    if not roots:
         raise ValueError('commonpath() arg is an empty sequence')
 
     try:
-        _, roots, tails = zip(*map(splitroot, paths))
         prefix = min(roots)
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
