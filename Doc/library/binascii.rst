@@ -77,6 +77,79 @@ The :mod:`binascii` module defines the following functions:
       Added the *newline* parameter.
 
 
+.. function:: a2b_ascii85(string, /, *, fold_spaces=False, wrap=False, ignore=b"")
+
+   Convert Ascii85 data back to binary and return the binary data.
+
+   Valid Ascii85 data contains characters from the Ascii85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive. The special character ``z`` is
+   accepted as a short form of the group ``!!!!!``, which encodes four
+   consecutive null bytes.
+
+   If *fold_spaces* is true, the special character ``y`` is also accepted as a
+   short form of the group ``+<VdL``, which encodes four consecutive spaces.
+   Note that neither short form is permitted if it occurs in the middle of
+   another group.
+
+   If *wrap* is true, the input begins with ``<~`` and ends with ``~>``, as in
+   the Adobe Ascii85 format.
+
+   *ignore* is an optional bytes-like object that specifies characters to
+   ignore in the input.
+
+   Invalid Ascii85 data will raise :exc:`binascii.Error`.
+
+
+.. function:: b2a_ascii85(data, /, *, fold_spaces=False, wrap=False, width=0, pad=False)
+
+   Convert binary data to a formatted sequence of ASCII characters in Ascii85
+   coding. The return value is the converted data.
+
+   If *fold_spaces* is true, four consecutive spaces are encoded as the
+   special character ``y`` instead of the sequence ``+<VdL``.
+
+   If *wrap* is true, the output begins with ``<~`` and ends with ``~>``, as
+   in the Adobe Ascii85 format.
+
+   If *width* is provided and greater than 0, the output is split into lines
+   of no more than the specified width separated by the ASCII newline
+   character.
+
+   If *pad* is true, the input is padded to a multiple of 4 before encoding.
+
+
+.. function:: a2b_base85(string, /, *, strict_mode=False, z85=False)
+
+   Convert base85 data back to binary and return the binary data.
+   More than one line may be passed at a time.
+
+   If *strict_mode* is true, only valid base85 data will be converted.
+   Invalid base85 data will raise :exc:`binascii.Error`.
+
+   If *z85* is true, the base85 data uses the Z85 alphabet.
+   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+   Valid base85 data contains characters from the base85 alphabet in groups
+   of five (except for the final group, which may have from two to five
+   characters). Each group encodes 32 bits of binary data in the range from
+   ``0`` to ``2 ** 32 - 1``, inclusive.
+
+
+.. function:: b2a_base85(data, /, *, pad=False, newline=True, z85=False)
+
+   Convert binary data to a line of ASCII characters in base85 coding.
+   The return value is the converted line.
+
+   If *pad* is true, the input is padded to a multiple of 4 before encoding.
+
+   If *newline* is true, a newline char is appended to the result.
+
+   If *z85* is true, the Z85 alphabet is used for conversion.
+   See `Z85 specification <https://rfc.zeromq.org/spec/32/>`_ for more information.
+
+
 .. function:: a2b_qp(data, header=False)
 
    Convert a block of quoted-printable data back to binary and return the binary

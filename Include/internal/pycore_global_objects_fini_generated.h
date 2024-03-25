@@ -951,6 +951,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flags));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flush));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fold));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fold_spaces));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(follow_symlinks));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(from_param));
@@ -1129,6 +1130,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(overlapped));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(owner));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(p));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pad));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pages));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(parent));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(password));
@@ -1281,12 +1283,15 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(weekday));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(which));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(who));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(width));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(withdata));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(wrap));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(writable));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(write_through));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(x));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(year));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(z85));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(zdict));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(strings).ascii[0]);
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_SINGLETON(strings).ascii[1]);
