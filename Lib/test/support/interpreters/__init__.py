@@ -79,13 +79,18 @@ def create():
 
 def list_all():
     """Return all existing interpreters."""
+    mainid = _interpreters.get_main()
     return [Interpreter(id, _owned=owned)
-            for id, owned in _interpreters.list_all()]
+            for id, owned in _interpreters.list_all()
+            if owned or id == mainid]
 
 
 def get_current():
     """Return the currently running interpreter."""
     id, owned = _interpreters.get_current()
+    if not owned and id != _interpreters.get_main():
+        # XXX Support this?
+        raise InterpreterError('current interpreter was created externally')
     return Interpreter(id, _owned=owned)
 
 
