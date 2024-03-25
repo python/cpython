@@ -73,7 +73,7 @@ _PyInterpreterConfig_AsDict(PyInterpreterConfig *config)
             if (STR == NULL) {                                      \
                 goto error;                                         \
             }                                                       \
-            PyObject *obj = PyUnicode_FromString(STR);           \
+            PyObject *obj = PyUnicode_FromString(STR);              \
             if (obj == NULL) {                                      \
                 goto error;                                         \
             }                                                       \
