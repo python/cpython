@@ -79,18 +79,13 @@ def create():
 
 def list_all():
     """Return all existing interpreters."""
-    mainid = _interpreters.get_main()
     return [Interpreter(id, _owned=owned)
-            for id, owned in _interpreters.list_all()
-            if owned or id == mainid]
+            for id, owned in _interpreters.list_all()]
 
 
 def get_current():
     """Return the currently running interpreter."""
     id, owned = _interpreters.get_current()
-    if not owned and id != _interpreters.get_main():
-        # XXX Support this?
-        raise InterpreterError('current interpreter was created externally')
     return Interpreter(id, _owned=owned)
 
 
@@ -168,6 +163,7 @@ class Interpreter:
     def id(self):
         return self._id
 
+    # XXX Is this the right name?
     @property
     def owned(self):
         return self._owned
