@@ -491,83 +491,116 @@ _run_in_interpreter(PyInterpreterState *interp,
 
 /* "owned" interpreters *****************************************************/
 
-typedef _Py_hashtable_t owned_ids;
+struct owned_id {
+    int64_t id;
+    struct owned_id *next;
+};
 
-static Py_uhash_t
-hash_int64(const void *key)
-{
-#if sizeof(int64_t) <= sizeof(Py_uhash_t)
-    return (Py_uhash_t)key;
-#else
-    int64_t val = *(int64_t *)key;
-    return val % sizeof(Py_uhash_t);
-#endif
-}
-
-static int
-compare_int64(const void *key1, const void *key2)
-{
-#if sizeof(int64_t) <= sizeof(Py_uhash_t)
-    return (int64_t)key1 == (int64_t)key2;
-#else
-    int64_t val1 = *(int64_t *)key1;
-    int64_t val2 = *(int64_t *)key2;
-    return val1 == val2;
-#endif
-}
+typedef struct {
+    PyMutex mutex;
+    struct owned_id *head;
+    Py_ssize_t count;
+} owned_ids;
 
 static int
 init_owned(owned_ids *owned)
 {
-    _Py_hashtable_allocator_t alloc = (_Py_hashtable_allocator_t){
-        .malloc = PyMem_RawMalloc,
-        .free = PyMem_RawFree,
-    };
-    _globals.owned = _Py_hashtable_new_full(
-            hash_int64, compare_int64, NULL, NULL, &alloc);
-    if (_globals.owned == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
     return 0;
 }
 
 static void
 clear_owned(owned_ids *owned)
 {
-    _Py_hashtable_destroy(owned);
+    PyMutex_Lock(&owned->mutex);
+    struct owned_id *cur = owned->head;
+    Py_ssize_t count = 0;
+    while (cur != NULL) {
+        struct owned_id *next = cur->next;
+        PyMem_RawFree(cur);
+        cur = next;
+        count += 1;
+    }
+    assert(count == owned->count);
+    owned->head = NULL;
+    owned->count = 0;
+    PyMutex_Unlock(&owned->mutex);
 }
 
-static int
+static struct owned_id *
+_find_owned(owned_ids *owned, int64_t interpid, struct owned_id **p_prev)
+{
+    // The caller must manage the lock.
+    if (owned->head == NULL) {
+        return NULL;
+    }
+
+    struct owned_id *prev = NULL;
+    struct owned_id *cur = owned->head;
+    while (cur != NULL) {
+        if (cur->id == interpid) {
+            break;
+        }
+        prev = cur;
+        cur = cur->next;
+    }
+    if (cur == NULL) {
+        return NULL;
+    }
+
+    if (p_prev != NULL) {
+        *p_prev = prev;
+    }
+    return cur;
+}
+
+static void
 add_owned(owned_ids *owned, PyInterpreterState *interp)
 {
+    PyMutex_Lock(&owned->mutex);
     int64_t id = PyInterpreterState_GetID(interp);
-#if sizeof(int64_t) <= sizeof(Py_uhash_t)
-    return _Py_hashtable_set(owned_ids, (const void *)id, 1);
-#else
-    assert(0);
-#endif
+    struct owned_id *new = PyMem_RawMalloc(sizeof(struct owned_id));
+    assert(new != NULL);
+    new->id = id;
+    new->next = owned->head;
+    owned->head = new;
+    owned->count += 1;
+    PyMutex_Unlock(&owned->mutex);
 }
 
 static void
 drop_owned(owned_ids *owned, int64_t interpid)
 {
-#if sizeof(int64_t) <= sizeof(Py_uhash_t)
-    _Py_hashtable_steal(owned_ids, (const void *)id);
-#else
-    assert(0);
-#endif
+    PyMutex_Lock(&owned->mutex);
+
+    struct owned_id *prev;
+    struct owned_id *found = _find_owned(owned, interpid, &prev);
+    if (found != NULL) {
+        if (prev == NULL) {
+            assert(found == owned->head);
+            owned->head = found->next;
+        }
+        else {
+            assert(found != owned->head);
+            prev->next = found->next;
+        }
+        PyMem_RawFree(found);
+        owned->count -= 1;
+    }
+
+    PyMutex_Unlock(&owned->mutex);
 }
 
 static int
 is_owned(owned_ids *owned, PyInterpreterState *interp)
 {
-    int64_t id = PyInterpreterState_GetID(interp);
-#if sizeof(int64_t) <= sizeof(Py_uhash_t)
-    return _Py_hashtable_get_entry(owned_ids, (const void *)id) != NULL;
-#else
-    assert(0);
-#endif
+    int64_t interpid = PyInterpreterState_GetID(interp);
+    PyMutex_Lock(&owned->mutex);
+
+    struct owned_id *found = _find_owned(owned, interpid, NULL);
+    int res = found != NULL;
+
+    PyMutex_Unlock(&owned->mutex);
+    return res;
 }
 
 
@@ -579,7 +612,7 @@ is_owned(owned_ids *owned, PyInterpreterState *interp)
 static struct globals {
     PyMutex mutex;
     int module_count;
-    _Py_hashtable_t *owned;
+    owned_ids owned;
 } _globals = {0};
 
 static int
