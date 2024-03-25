@@ -121,7 +121,12 @@ class MimeTypes:
         """
         url = os.fspath(url)
         p = urllib.parse.urlparse(url)
-        scheme, url = p.scheme, p.path
+        if p.scheme and len(p.scheme) > 1:
+            scheme = p.scheme
+            url = p.path
+        else:
+            scheme = None
+            url = os.path.splitdrive(url)[1]
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
