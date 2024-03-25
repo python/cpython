@@ -544,13 +544,10 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
 
 
 AndroidVer = collections.namedtuple(
-    "AndroidVer",
-    "release api_level min_api_level manufacturer model device")
+    "AndroidVer", "release api_level manufacturer model device")
 
-def android_ver(release="", api_level=0, min_api_level=0,
-                manufacturer="", model="", device=""):
+def android_ver(release="", api_level=0, manufacturer="", model="", device=""):
     if sys.platform == "android":
-        min_api_level = sys.getandroidapilevel()
         try:
             from ctypes import CDLL, c_char_p, create_string_buffer
         except ImportError:
@@ -577,8 +574,7 @@ def android_ver(release="", api_level=0, min_api_level=0,
             model = getprop("ro.product.model", model)
             device = getprop("ro.product.device", device)
 
-    return AndroidVer(
-        release, api_level, min_api_level, manufacturer, model, device)
+    return AndroidVer(release, api_level, manufacturer, model, device)
 
 
 ### System name aliasing

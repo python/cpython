@@ -446,7 +446,7 @@ class PlatformTest(unittest.TestCase):
     def test_android_ver(self):
         res = platform.android_ver()
         self.assertIsInstance(res, tuple)
-        self.assertEqual(res, (res.release, res.api_level, res.min_api_level,
+        self.assertEqual(res, (res.release, res.api_level,
                                res.manufacturer, res.model, res.device))
 
         if sys.platform == "android":
@@ -456,29 +456,21 @@ class PlatformTest(unittest.TestCase):
                     self.assertIsInstance(value, str)
                     self.assertGreater(len(value), 0)
 
-            for name in ["api_level", "min_api_level"]:
-                with self.subTest(name):
-                    value = getattr(res, name)
-                    self.assertIsInstance(value, int)
-                    self.assertGreater(value, 0)
-
-            self.assertEqual(res.min_api_level, sys.getandroidapilevel())
-            self.assertGreaterEqual(res.api_level, res.min_api_level)
+            self.assertIsInstance(res.api_level, int)
+            self.assertGreaterEqual(res.api_level, sys.getandroidapilevel())
 
         # When not running on Android, it should return the default values.
         else:
             self.assertEqual(res.release, "")
             self.assertEqual(res.api_level, 0)
-            self.assertEqual(res.min_api_level, 0)
             self.assertEqual(res.manufacturer, "")
             self.assertEqual(res.model, "")
             self.assertEqual(res.device, "")
 
             # Default values may also be overridden using parameters.
-            res = platform.android_ver("alpha", 1, 2, "bravo", "charlie", "delta")
+            res = platform.android_ver("alpha", 1, "bravo", "charlie", "delta")
             self.assertEqual(res.release, "alpha")
             self.assertEqual(res.api_level, 1)
-            self.assertEqual(res.min_api_level, 2)
             self.assertEqual(res.manufacturer, "bravo")
             self.assertEqual(res.model, "charlie")
             self.assertEqual(res.device, "delta")

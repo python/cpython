@@ -306,7 +306,7 @@ Linux Platforms
 Android Platform
 ----------------
 
-.. function:: android_ver(release="", api_level=0, min_api_level=0, \
+.. function:: android_ver(release="", api_level=0, \
                           manufacturer="", model="", device="")
 
    Get Android device information. Returns a :func:`~collections.namedtuple`
@@ -316,9 +316,6 @@ Android Platform
    * ``release`` - Android version, as a string (e.g. ``"14"``)
 
    * ``api_level`` - API level, as an integer (e.g. ``34``)
-
-   * ``min_api_level`` - Minimum API level this build of Python can run on, as
-     an integer (e.g. ``21``)
 
    * ``manufacturer`` - `manufacturer name
      <https://developer.android.com/reference/android/os/Build#MANUFACTURER>`__
