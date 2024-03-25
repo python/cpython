@@ -29,7 +29,8 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "ismount","isreserved","expanduser","expandvars","normpath",
            "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction"]
+           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
+           "isdevdrive"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -280,21 +281,9 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
             return False
         return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
 else:
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        os.fspath(path)
-        return False
+    # Use genericpath.isjunction as imported above
+    pass
 
-
-# Being true for dangling symbolic links is also useful.
-
-def lexists(path):
-    """Test whether a path exists.  Returns True for broken symbolic links"""
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError):
-        return False
-    return True
 
 # Is a path a mount point?
 # Any drive letter root (eg c:\)
@@ -916,15 +905,12 @@ except ImportError:
 
 try:
     from nt import _path_isdevdrive
-except ImportError:
-    def isdevdrive(path):
-        """Determines whether the specified path is on a Windows Dev Drive."""
-        # Never a Dev Drive
-        return False
-else:
     def isdevdrive(path):
         """Determines whether the specified path is on a Windows Dev Drive."""
         try:
             return _path_isdevdrive(abspath(path))
         except OSError:
             return False
+except ImportError:
+    # Use genericpath.isdevdrive as imported above
+    pass
