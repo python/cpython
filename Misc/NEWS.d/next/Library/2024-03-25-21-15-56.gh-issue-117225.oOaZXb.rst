@@ -1,0 +1,2 @@
+doctest: only print "and X failed" when non-zero, don't pluralise "1 items".
+Patch by Hugo van Kemenade.
