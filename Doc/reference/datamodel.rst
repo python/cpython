@@ -296,14 +296,26 @@ Sequences
    single: item selection
    single: subscription
 
-These represent finite ordered sets indexed by non-negative numbers. The
+These represent finite ordered sets indexed by integer numbers. The
 built-in function :func:`len` returns the number of items of a sequence. When
-the length of a sequence is *n*, the index set contains the numbers 0,
-1, 2, ..., *n*-1.
+the length of a sequence is *n*, the index set contains the numbers -*n*,
+-*n*+1, -*n*+2, ..., 0, 1, ..., *n*-1.
 
-Sequences are instances of a :ref:`container class <sequence-types>`, so they
-support the :ref:`subscription <subscriptions>` and :ref:`slicing <slicings>`
-operations.
+For non-negative numbers, the item *i* of sequence *a* is selected by ``a[i]``.
+
+For negative numbers, -1 is the last item and -2 is the penultimate (next to
+last) item and so forth. Think of ``seq[-n]`` as the same as ``seq[len(seq)-n]``.
+
+.. index:: single: slicing
+
+Sequences also support slicing: ``a[i:j]`` selects all items with index *k* such
+that *i* ``<=`` *k* ``<`` *j*.  When used as an expression, a slice is a
+sequence of the same type.  This implies that the index set is renumbered so
+that it starts at 0.
+
+Some sequences also support "extended slicing" with a third "step" parameter:
+``a[i:j:k]`` selects all items of *a* with index *x* where ``x = i + n*k``, *n*
+``>=`` ``0`` and *i* ``<=`` *x* ``<`` *j*.
 
 Sequences are distinguished according to their mutability:
 
