@@ -1285,7 +1285,6 @@ gc_collect_young(PyThreadState *tstate,
         for (gc = GC_NEXT(young); gc != young; gc = GC_NEXT(gc)) {
             count++;
         }
-        GC_STAT_ADD(0, objects_queued, count);
     }
 #endif
 
@@ -1422,7 +1421,6 @@ gc_collect_increment(PyThreadState *tstate, struct gc_collection_stats *stats)
         gc_set_old_space(gc, gcstate->visited_space);
         increment_size += expand_region_transitively_reachable(&increment, gc, gcstate);
     }
-    GC_STAT_ADD(1, objects_queued, region_size);
     PyGC_Head survivors;
     gc_list_init(&survivors);
     gc_collect_region(tstate, &increment, &survivors, UNTRACK_TUPLES, stats);
@@ -1805,10 +1803,10 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     _PyErr_SetRaisedException(tstate, exc);
     GC_STAT_ADD(generation, objects_collected, stats.collected);
 #ifdef Py_STATS
-    if (_py_stats) {
+    if (_Py_stats) {
         GC_STAT_ADD(generation, object_visits,
-            _py_stats->object_stats.object_visits);
-        _py_stats->object_stats.object_visits = 0;
+            _Py_stats->object_stats.object_visits);
+        _Py_stats->object_stats.object_visits = 0;
     }
 #endif
     validate_old(gcstate);
