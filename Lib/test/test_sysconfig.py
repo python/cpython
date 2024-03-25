@@ -1,3 +1,5 @@
+import platform
+import re
 import unittest
 import sys
 import os
@@ -154,17 +156,21 @@ class TestSysConfig(unittest.TestCase):
                                'python%d.%d' % sys.version_info[:2],
                                'site-packages')
 
-        # Resolve the paths in prefix
-        binpath = os.path.join(sys.prefix, binpath)
-        incpath = os.path.join(sys.prefix, incpath)
-        libpath = os.path.join(sys.prefix, libpath)
+        # Resolve the paths in an imaginary venv/ directory
+        binpath = os.path.join('venv', binpath)
+        incpath = os.path.join('venv', incpath)
+        libpath = os.path.join('venv', libpath)
 
-        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv'))
-        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv'))
+        # Mimic the venv module, set all bases to the venv directory
+        bases = ('base', 'platbase', 'installed_base', 'installed_platbase')
+        vars = {base: 'venv' for base in bases}
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv', vars=vars))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv', vars=vars))
 
         # The include directory on POSIX isn't exactly the same as before,
         # but it is "within"
-        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv')
+        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv', vars=vars)
         self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
 
     def test_nt_venv_scheme(self):
@@ -174,14 +180,19 @@ class TestSysConfig(unittest.TestCase):
         incpath = 'Include'
         libpath = os.path.join('Lib', 'site-packages')
 
-        # Resolve the paths in prefix
-        binpath = os.path.join(sys.prefix, binpath)
-        incpath = os.path.join(sys.prefix, incpath)
-        libpath = os.path.join(sys.prefix, libpath)
+        # Resolve the paths in an imaginary venv\ directory
+        venv = 'venv'
+        binpath = os.path.join(venv, binpath)
+        incpath = os.path.join(venv, incpath)
+        libpath = os.path.join(venv, libpath)
 
-        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv'))
-        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv'))
-        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv'))
+        # Mimic the venv module, set all bases to the venv directory
+        bases = ('base', 'platbase', 'installed_base', 'installed_platbase')
+        vars = {base: 'venv' for base in bases}
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv', vars=vars))
+        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv', vars=vars))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv', vars=vars))
 
     def test_venv_scheme(self):
         if sys.platform == 'win32':
@@ -507,12 +518,9 @@ class TestSysConfig(unittest.TestCase):
         vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
-    @unittest.skipUnless(sys.platform == 'linux' and
-                         hasattr(sys.implementation, '_multiarch'),
-                         'multiarch-specific test')
-    def test_triplet_in_ext_suffix(self):
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux-specific test')
+    def test_linux_ext_suffix(self):
         ctypes = import_module('ctypes')
-        import platform, re
         machine = platform.machine()
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         if re.match('(aarch64|arm|mips|ppc|powerpc|s390|sparc)', machine):
@@ -524,6 +532,19 @@ class TestSysConfig(unittest.TestCase):
                 expected_suffixes = 'x86_64-linux-gnu.so', 'x86_64-linux-musl.so'
             self.assertTrue(suffix.endswith(expected_suffixes),
                             f'unexpected suffix {suffix!r}')
+
+    @unittest.skipUnless(sys.platform == 'android', 'Android-specific test')
+    def test_android_ext_suffix(self):
+        machine = platform.machine()
+        suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        expected_triplet = {
+            "x86_64": "x86_64-linux-android",
+            "i686": "i686-linux-android",
+            "aarch64": "aarch64-linux-android",
+            "armv7l": "arm-linux-androideabi",
+        }[machine]
+        self.assertTrue(suffix.endswith(f"-{expected_triplet}.so"),
+                        f"{machine=}, {suffix=}")
 
     @unittest.skipUnless(sys.platform == 'darwin', 'OS X-specific test')
     def test_osx_ext_suffix(self):

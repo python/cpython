@@ -1344,7 +1344,8 @@ when there is no match, you can test whether there was a match with a simple
    Escapes such as ``\n`` are converted to the appropriate characters,
    and numeric backreferences (``\1``, ``\2``) and named backreferences
    (``\g<1>``, ``\g<name>``) are replaced by the contents of the
-   corresponding group.
+   corresponding group. The backreference ``\g<0>`` will be
+   replaced by the entire match.
 
    .. versionchanged:: 3.5
       Unmatched groups are replaced with an empty string.
@@ -1597,7 +1598,7 @@ To find out what card the pair consists of, one could use the
 Simulating scanf()
 ^^^^^^^^^^^^^^^^^^
 
-.. index:: single: scanf()
+.. index:: single: scanf (C function)
 
 Python does not currently have an equivalent to :c:func:`!scanf`.  Regular
 expressions are generally more powerful, though also more verbose, than

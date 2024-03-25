@@ -97,17 +97,47 @@ class Restart(Exception):
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
+
+def find_first_executable_line(code):
+    """ Try to find the first executable line of the code object.
+
+    Equivalently, find the line number of the instruction that's
+    after RESUME
+
+    Return code.co_firstlineno if no executable line is found.
+    """
+    prev = None
+    for instr in dis.get_instructions(code):
+        if prev is not None and prev.opname == 'RESUME':
+            if instr.positions.lineno is not None:
+                return instr.positions.lineno
+            return code.co_firstlineno
+        prev = instr
+    return code.co_firstlineno
+
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
         return None
+    funcdef = ""
+    funcstart = None
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
             if cre.match(line):
-                return funcname, filename, lineno
+                funcstart, funcdef = lineno, line
+            elif funcdef:
+                funcdef += line
+
+            if funcdef:
+                try:
+                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                except SyntaxError:
+                    continue
+                lineno_offset = find_first_executable_line(funccode)
+                return funcname, filename, funcstart + lineno_offset - 1
     return None
 
 def lasti2lineno(code, lasti):
@@ -158,6 +188,7 @@ class _ScriptTarget(str):
             __name__='__main__',
             __file__=self,
             __builtins__=__builtins__,
+            __spec__=None,
         )
 
     @property
@@ -232,6 +263,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Limit the maximum depth of chained exceptions, we should be handling cycles,
     # but in case there are recursions, we stop at 999.
     MAX_CHAINED_EXCEPTION_DEPTH = 999
+
+    _file_mtime_table = {}
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
@@ -330,26 +363,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self._chained_exceptions[self._chained_exception_index],
             )
 
-        return self.execRcLines()
-
-    # Can be executed earlier than 'setup' if desired
-    def execRcLines(self):
-        if not self.rcLines:
-            return
-        # local copy because of recursion
-        rcLines = self.rcLines
-        rcLines.reverse()
-        # execute every line only once
-        self.rcLines = []
-        while rcLines:
-            line = rcLines.pop().strip()
-            if line and line[0] != '#':
-                if self.onecmd(line):
-                    # if onecmd returns True, the command wants to exit
-                    # from the interaction, save leftover rc lines
-                    # to execute before next interaction
-                    self.rcLines += reversed(rcLines)
-                    return True
+        if self.rcLines:
+            self.cmdqueue = [
+                line for line in self.rcLines
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            self.rcLines = []
 
     # Override Bdb methods
 
@@ -436,6 +455,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 break
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
+
+    def _validate_file_mtime(self):
+        """Check if the source file of the current frame has been modified since
+        the last time we saw it. If so, give a warning."""
+        try:
+            filename = self.curframe.f_code.co_filename
+            mtime = os.path.getmtime(filename)
+        except Exception:
+            return
+        if (filename in self._file_mtime_table and
+            mtime != self._file_mtime_table[filename]):
+            self.message(f"*** WARNING: file '{filename}' was edited, "
+                         "running stale code until the program is rerun")
+        self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -524,12 +557,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if isinstance(tb_or_exc, BaseException):
             assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
-            if self.setup(frame, tb):
-                # no interaction desired at this time (happens if .pdbrc contains
-                # a command like "continue")
-                self.forget()
-                return
-            self.print_stack_entry(self.stack[self.curindex])
+            self.setup(frame, tb)
+            # if we have more commands to process, do not show the stack entry
+            if not self.cmdqueue:
+                self.print_stack_entry(self.stack[self.curindex])
             self._cmdloop()
             self.forget()
 
@@ -665,7 +696,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if marker >= 0:
                 # queue up everything after marker
                 next = line[marker+2:].lstrip()
-                self.cmdqueue.append(next)
+                self.cmdqueue.insert(0, next)
                 line = line[:marker].rstrip()
 
         # Replace all the convenience variables
@@ -681,6 +712,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            self._validate_file_mtime()
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -689,13 +721,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Handles one command line during command list definition."""
         cmd, arg, line = self.parseline(line)
         if not cmd:
-            return
+            return False
         if cmd == 'silent':
             self.commands_silent[self.commands_bnum] = True
-            return # continue to handle other cmd def in the cmd list
+            return False  # continue to handle other cmd def in the cmd list
         elif cmd == 'end':
-            self.cmdqueue = []
-            return 1 # end of cmd list
+            return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if arg:
             cmdlist.append(cmd+' '+arg)
@@ -709,9 +740,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
             self.commands_doprompt[self.commands_bnum] = False
-            self.cmdqueue = []
-            return 1
-        return
+            return True
+        return False
 
     # interface abstraction functions
 
@@ -958,7 +988,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
-                    lineno = self._find_first_executable_line(code)
+                    lineno = find_first_executable_line(code)
                     filename = code.co_filename
                 except:
                     # last thing to try
@@ -1060,23 +1090,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error('Blank or comment')
             return 0
         return lineno
-
-    def _find_first_executable_line(self, code):
-        """ Try to find the first executable line of the code object.
-
-        Equivalently, find the line number of the instruction that's
-        after RESUME
-
-        Return code.co_firstlineno if no executable line is found.
-        """
-        prev = None
-        for instr in dis.get_instructions(code):
-            if prev is not None and prev.opname == 'RESUME':
-                if instr.positions.lineno is not None:
-                    return instr.positions.lineno
-                return code.co_firstlineno
-            prev = instr
-        return code.co_firstlineno
 
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
@@ -2020,6 +2033,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update(target.namespace)
+
+        # Clear the mtime table for program reruns, assume all the files
+        # are up to date.
+        self._file_mtime_table.clear()
 
         self.run(target.code)
 

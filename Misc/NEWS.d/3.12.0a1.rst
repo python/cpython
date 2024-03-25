@@ -2722,7 +2722,7 @@ on future on an error - e.g. TimeoutError or KeyboardInterrupt.
 Fix a :mod:`sqlite3` regression where ``*args`` and ``**kwds`` were
 incorrectly relayed from :py:func:`~sqlite3.connect` to the
 :class:`~sqlite3.Connection` factory. The regression was introduced in
-3.11a1 with PR 24421 (:gh:`85128`). Patch by Erlend E. Aasland.`
+3.11a1 with PR 24421 (:gh:`85128`). Patch by Erlend E. Aasland.
 
 ..
 
@@ -2988,7 +2988,7 @@ Kumar Aditya.
 .. section: Library
 
 Fix crash in :class:`struct.Struct` when it was not completely initialized
-by initializing it in :meth:`~object.__new__``.  Patch by Kumar Aditya.
+by initializing it in :meth:`~object.__new__`.  Patch by Kumar Aditya.
 
 ..
 

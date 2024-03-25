@@ -229,6 +229,7 @@ struct _typeobject {
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+    uint16_t tp_versions_used;
 };
 
 /* This struct is used by the specializer

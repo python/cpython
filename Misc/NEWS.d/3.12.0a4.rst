@@ -13,8 +13,8 @@ Fix misleading default value in :func:`input`'s ``__text_signature__``.
 .. nonce: cmGwxv
 .. section: Core and Builtins
 
-Remove :opcode:`UNARY_POSITIVE`, :opcode:`ASYNC_GEN_WRAP` and
-:opcode:`LIST_TO_TUPLE`, replacing them with intrinsics.
+Remove :opcode:`!UNARY_POSITIVE`, :opcode:`!ASYNC_GEN_WRAP` and
+:opcode:`!LIST_TO_TUPLE`, replacing them with intrinsics.
 
 ..
 

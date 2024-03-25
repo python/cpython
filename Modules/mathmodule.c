@@ -2074,11 +2074,6 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (!_PyType_IsReady(Py_TYPE(x))) {
-        if (PyType_Ready(Py_TYPE(x)) < 0)
-            return NULL;
-    }
-
     math_module_state *state = get_math_module_state(module);
     trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
@@ -2327,6 +2322,48 @@ math_log10(PyObject *module, PyObject *x)
 
 
 /*[clinic input]
+math.fma
+
+    x: double
+    y: double
+    z: double
+    /
+
+Fused multiply-add operation.
+
+Compute (x * y) + z with a single round.
+[clinic start generated code]*/
+
+static PyObject *
+math_fma_impl(PyObject *module, double x, double y, double z)
+/*[clinic end generated code: output=4fc8626dbc278d17 input=e3ad1f4a4c89626e]*/
+{
+    double r = fma(x, y, z);
+
+    /* Fast path: if we got a finite result, we're done. */
+    if (Py_IS_FINITE(r)) {
+        return PyFloat_FromDouble(r);
+    }
+
+    /* Non-finite result. Raise an exception if appropriate, else return r. */
+    if (Py_IS_NAN(r)) {
+        if (!Py_IS_NAN(x) && !Py_IS_NAN(y) && !Py_IS_NAN(z)) {
+            /* NaN result from non-NaN inputs. */
+            PyErr_SetString(PyExc_ValueError, "invalid operation in fma");
+            return NULL;
+        }
+    }
+    else if (Py_IS_FINITE(x) && Py_IS_FINITE(y) && Py_IS_FINITE(z)) {
+        /* Infinite result from finite inputs. */
+        PyErr_SetString(PyExc_OverflowError, "overflow in fma");
+        return NULL;
+    }
+
+    return PyFloat_FromDouble(r);
+}
+
+
+/*[clinic input]
 math.fmod
 
     x: double
@@ -2570,7 +2607,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
         goto error_exit;
     }
     if (n > NUM_STACK_ELEMS) {
-        diffs = (double *) PyObject_Malloc(n * sizeof(double));
+        diffs = (double *) PyMem_Malloc(n * sizeof(double));
         if (diffs == NULL) {
             PyErr_NoMemory();
             goto error_exit;
@@ -2590,7 +2627,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     }
     result = vector_norm(n, diffs, max, found_nan);
     if (diffs != diffs_on_stack) {
-        PyObject_Free(diffs);
+        PyMem_Free(diffs);
     }
     if (p_allocated) {
         Py_DECREF(p);
@@ -2602,7 +2639,7 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
 
   error_exit:
     if (diffs != diffs_on_stack) {
-        PyObject_Free(diffs);
+        PyMem_Free(diffs);
     }
     if (p_allocated) {
         Py_DECREF(p);
@@ -2626,7 +2663,7 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     double *coordinates = coord_on_stack;
 
     if (nargs > NUM_STACK_ELEMS) {
-        coordinates = (double *) PyObject_Malloc(nargs * sizeof(double));
+        coordinates = (double *) PyMem_Malloc(nargs * sizeof(double));
         if (coordinates == NULL) {
             return PyErr_NoMemory();
         }
@@ -2643,13 +2680,13 @@ math_hypot(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     result = vector_norm(nargs, coordinates, max, found_nan);
     if (coordinates != coord_on_stack) {
-        PyObject_Free(coordinates);
+        PyMem_Free(coordinates);
     }
     return PyFloat_FromDouble(result);
 
   error_exit:
     if (coordinates != coord_on_stack) {
-        PyObject_Free(coordinates);
+        PyMem_Free(coordinates);
     }
     return NULL;
 }
@@ -4099,6 +4136,7 @@ static PyMethodDef math_methods[] = {
     {"fabs",            math_fabs,      METH_O,         math_fabs_doc},
     MATH_FACTORIAL_METHODDEF
     MATH_FLOOR_METHODDEF
+    MATH_FMA_METHODDEF
     MATH_FMOD_METHODDEF
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
