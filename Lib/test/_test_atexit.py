@@ -135,6 +135,34 @@ class GeneralTest(unittest.TestCase):
         finally:
             atexit.unregister(func)
 
+    def test_eq_unregister_clear(self):
+        # Issue #112127: callback's __eq__ may call unregister or _clear
+        cnt = 0
+        class Func:
+            def __init__(self, action, eq_ret_val):
+                self.action = action
+                self.eq_ret_val = eq_ret_val
+
+            def __call__(self):
+                return
+
+            def __eq__(self, o):
+                cnt += 1
+                if cnt == 1:
+                    self.action(o)
+                return self.eq_ret_val(o)
+
+        for action in lambda o: atexit.unregister(self), \
+                lambda o: atexit.unregister(o), lambda o: atexit._clear():
+            for eq_ret_val in NotImplemented, True:
+                with self.subTest(action=action, eq_ret_val=eq_ret_val):
+                    cnt = 0
+                    f1 = Func(action, eq_ret_val)
+                    f2 = Func(action, eq_ret_val)
+                    atexit.register(f1)
+                    atexit.register(f2)
+                    atexit._run_exitfuncs()
+
 
 if __name__ == "__main__":
     unittest.main()
