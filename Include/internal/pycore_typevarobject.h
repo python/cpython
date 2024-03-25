@@ -17,6 +17,8 @@ extern int _Py_initialize_generic(PyInterpreterState *);
 extern void _Py_clear_generic_types(PyInterpreterState *);
 
 extern PyTypeObject _PyTypeAlias_Type;
+extern PyObject *_PyTypeAlias_GetValue(PyObject *ta);
+#define _PyTypeAlias_Check(op) Py_IS_TYPE((op), &_PyTypeAlias_Type)
 
 #ifdef __cplusplus
 }

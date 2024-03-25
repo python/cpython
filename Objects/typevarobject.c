@@ -1504,6 +1504,12 @@ PyTypeObject _PyTypeAlias_Type = {
 };
 
 PyObject *
+_PyTypeAlias_GetValue(PyObject *ta)
+{
+    return typealias_get_value((typealiasobject *)ta);
+}
+
+PyObject *
 _Py_make_typealias(PyThreadState* unused, PyObject *args)
 {
     assert(PyTuple_Check(args));

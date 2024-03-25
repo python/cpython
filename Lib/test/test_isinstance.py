@@ -226,7 +226,33 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         with self.assertRaises(TypeError):
             isinstance(2, float | str | list[int] | int)
 
+    def test_isinstance_with_type_alias(self):
+        type A = int
+        type B = int | str
+        type C = list[int]
+        type D = list[int] | int
 
+        self.assertTrue(isinstance(1, A))
+        self.assertTrue(isinstance(1, B))
+        with self.assertRaises(TypeError):
+            isinstance(1, C)
+        with self.assertRaises(TypeError):
+            isinstance(1, D)
+
+        self.assertFalse(isinstance(None, A))
+        self.assertFalse(isinstance(None, B))
+        with self.assertRaises(TypeError):
+            isinstance(None, C)
+        with self.assertRaises(TypeError):
+            isinstance(None, D)
+
+        # Forward refenrece:
+        type F = NotDefined
+        with self.assertRaises(NameError):
+            isinstance(1, F)
+        NotDefined = int
+        self.assertTrue(isinstance(1, F))
+        self.assertFalse(isinstance('a', F))
 
     def test_subclass_normal(self):
         # normal classes
