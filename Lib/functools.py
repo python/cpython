@@ -862,7 +862,7 @@ def singledispatch(func):
         return (_is_union_type(cls) and
                 all(isinstance(arg, type) for arg in get_args(cls)))
 
-    def register(cls, func=None):
+    def register(cls, func=None, _arg_index=0):
         """generic_func.register(cls, func) -> func
 
         Registers a new implementation for the given *cls* on a *generic_func*.
@@ -878,8 +878,13 @@ def singledispatch(func):
                     f"Invalid first argument to `register()`. "
                     f"{cls!r} is not a class or union type."
                 )
+            import inspect
+            try:
+                args = list(inspect.signature(cls).parameters.keys())
+            except TypeError:
+                args = []
             ann = getattr(cls, '__annotations__', {})
-            if not ann:
+            if len(args) <= _arg_index or args[_arg_index] not in ann:
                 raise TypeError(
                     f"Invalid first argument to `register()`: {cls!r}. "
                     f"Use either `@register(some_class)` or plain `@register` "
@@ -953,7 +958,7 @@ class singledispatchmethod:
 
         Registers a new implementation for the given *cls* on a *generic_method*.
         """
-        return self.dispatcher.register(cls, func=method)
+        return self.dispatcher.register(cls, func=method, _arg_index=1)
 
     def __get__(self, obj, cls=None):
         if self._method_cache is not None:
