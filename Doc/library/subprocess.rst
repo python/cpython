@@ -50,10 +50,10 @@ underlying :class:`Popen` interface can be used directly.
    this function are passed through to that interface. (*timeout*,  *input*,
    *check*, and *capture_output* are not.)
 
-   If *capture_output* is true, stdout and stderr will be captured.
-   When used, the internal :class:`Popen` object is automatically created with
-   ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be supplied at the same time as *capture_output*.  If you wish to capture
+   If *capture_output* is true, stdout and stderr will be captured. In this
+   scenario, the internal :class:`Popen` object is automatically created with
+   ``stdout=PIPE`` and ``stderr=PIPE``. You must not specify any values for
+   *stdout* and *stderr* arguments in this case. If you wish to capture
    and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
    instead of *capture_output*.
 
