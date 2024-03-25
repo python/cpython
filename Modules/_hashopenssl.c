@@ -47,7 +47,9 @@
 #define PY_OPENSSL_HAS_SCRYPT 1
 #define PY_OPENSSL_HAS_SHA3 1
 #define PY_OPENSSL_HAS_SHAKE 1
+#if defined(NID_blake2s256) || defined(NID_blake2b512)
 #define PY_OPENSSL_HAS_BLAKE2 1
+#endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #define PY_EVP_MD EVP_MD
@@ -102,8 +104,12 @@ typedef struct {
 #define Py_hash_sha3_512 "sha3_512"
 #define Py_hash_shake_128 "shake_128"
 #define Py_hash_shake_256 "shake_256"
+#if defined(NID_blake2s256)
 #define Py_hash_blake2s "blake2s"
+#endif
+#if defined(NID_blake2b512)
 #define Py_hash_blake2b "blake2b"
+#endif
 
 #define PY_HASH_ENTRY(py_name, py_alias, ossl_name, ossl_nid) \
     {py_name, py_alias, ossl_name, ossl_nid, 0, NULL, NULL}
@@ -130,8 +136,12 @@ static const py_hashentry_t py_hashes[] = {
     PY_HASH_ENTRY(Py_hash_shake_128, NULL, SN_shake128, NID_shake128),
     PY_HASH_ENTRY(Py_hash_shake_256, NULL, SN_shake256, NID_shake256),
     /* blake2 digest */
+#if defined(NID_blake2s256)
     PY_HASH_ENTRY(Py_hash_blake2s, "blake2s256", SN_blake2s256, NID_blake2s256),
+#endif
+#if defined(NID_blake2s256)
     PY_HASH_ENTRY(Py_hash_blake2b, "blake2b512", SN_blake2b512, NID_blake2b512),
+#endif
     PY_HASH_ENTRY(NULL, NULL, NULL, 0),
 };
 
