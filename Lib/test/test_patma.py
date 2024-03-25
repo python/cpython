@@ -2957,6 +2957,14 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_len1_tuple_sequence_pattern_comma(self):
+        # correct syntax would be `case(*x,):`
+        self.assert_syntax_error("""
+        match ...:
+            case (*x):
+                pass
+        """)
+
     def test_mapping_pattern_keys_may_only_match_literals_and_attribute_lookups(self):
         self.assert_syntax_error("""
         match ...:
