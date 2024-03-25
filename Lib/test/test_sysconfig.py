@@ -351,7 +351,7 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     @unittest.skipIf(is_apple_mobile,
-                     f"{sys.platform} doesn't distribute config.h in the runtime environment")
+                     f"{sys.platform} doesn't distribute header files in the runtime environment")
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
         self.assertTrue(os.path.isfile(config_h), config_h)

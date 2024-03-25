@@ -510,9 +510,6 @@ def _init_config_vars():
         import _osx_support
         _osx_support.customize_config_vars(_CONFIG_VARS)
 
-    if sys.platform in {'ios', 'tvos', 'watchos'}:
-        _CONFIG_VARS['installed_base'] = sys.executable
-
     global _CONFIG_VARS_INITIALIZED
     _CONFIG_VARS_INITIALIZED = True
 
