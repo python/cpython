@@ -632,4 +632,4 @@ def displayhook(value):
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_rpc', verbosity=2,)
+    main('test.test_idle.test_rpc', verbosity=2,)

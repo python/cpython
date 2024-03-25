@@ -1,8 +1,10 @@
 import unittest
-from test.support.import_helper import import_module
-from test.support import check_sanitizer
+import os
 
-if check_sanitizer(address=True, memory=True):
+from test import support
+from test.support.import_helper import import_module
+
+if support.check_sanitizer(address=True, memory=True):
     # See gh-90791 for details
     raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")
 
@@ -14,12 +16,6 @@ idlelib = import_module('idlelib')
 # tell IDLE to avoid changing the environment.
 idlelib.testing = True
 
-# Unittest.main and test.libregrtest.runtest.runtest_inner
-# call load_tests, when present here, to discover tests to run.
-from idlelib.idle_test import load_tests
 
-if __name__ == '__main__':
-    tk.NoDefaultRoot()
-    unittest.main(exit=False)
-    tk._support_default_root = True
-    tk._default_root = None
+def load_tests(*args):
+    return support.load_package_tests(os.path.dirname(__file__), *args)

@@ -423,4 +423,4 @@ class Rstrip:  # 'Strip Trailing Whitespace" on "Format" menu.
 
 if __name__ == "__main__":
     from unittest import main
-    main('idlelib.idle_test.test_format', verbosity=2, exit=False)
+    main('test.test_idle.test_format', verbosity=2, exit=False)

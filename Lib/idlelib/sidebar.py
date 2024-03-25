@@ -514,7 +514,7 @@ class ShellSidebar(BaseSideBar):
 
 
 def _sidebar_number_scrolling(parent):  # htest #
-    from idlelib.idle_test.test_sidebar import Dummy_editwin
+    from test.test_idle.test_sidebar import Dummy_editwin
 
     top = tk.Toplevel(parent)
     text_frame = tk.Frame(top)
@@ -537,7 +537,7 @@ def _sidebar_number_scrolling(parent):  # htest #
 
 if __name__ == '__main__':
     from unittest import main
-    main('idlelib.idle_test.test_sidebar', verbosity=2, exit=False)
+    main('test.test_idle.test_sidebar', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_sidebar_number_scrolling)
