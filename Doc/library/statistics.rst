@@ -1150,20 +1150,20 @@ The final prediction goes to the largest posterior. This is known as the
 Sampling from an estimated kernel density function
 **************************************************
 
-The *kde()* function creates a continuous probability density function
-from discrete samples.  Some applications need a way to make random
-selections from that distribution.
+The :func:`kde()` function creates a continuous probability density
+function from discrete samples.  Some applications need a way to make
+random selections from that distribution.
 
-Since the estimated function is just the sum of kernels centered
-at each data point, the problem can be reduced to sampling the
-kernel function and recentering the result around a randomly chosen
-data point.  This works for kernels that have a known or accurately
-approximated inverse cumulative distribution functions.
+Since the estimated function is just the sum of kernels centered at each
+data point, the problem can be reduced to sampling the kernel function
+and recentering the result around a randomly chosen data point.  This
+works for kernels that have a known or accurately approximated inverse
+cumulative distribution functions.
 
 .. testcode::
 
-   from math import log, tan, sqrt, asin
    from random import choice, random, seed
+   from math import log, tan, sqrt, asin
 
    kernel_invcdfs = {
        'normal': NormalDist().inv_cdf,
