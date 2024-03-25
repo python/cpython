@@ -225,7 +225,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     """
     # cached encoder
     if (not skipkeys and ensure_ascii and
-        check_circular and allow_nan and
+        check_circular and allow_nan is True and
         cls is None and indent is None and separators is None and
         default is None and not sort_keys and not kw):
         return _default_encoder.encode(obj)

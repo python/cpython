@@ -1,0 +1,2 @@
+Add support for ``allow_nan='null'`` when encoding an object to a JSON
+string. This converts floating-point infinities and NaNs to a JSON ``null``.
