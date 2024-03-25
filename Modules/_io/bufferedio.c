@@ -2092,7 +2092,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
         self->raw_pos = 0;
     }
     avail = Py_SAFE_DOWNCAST(self->buffer_size - self->pos, Py_off_t, Py_ssize_t);
-    if (buffer->len <= avail) {
+    if (buffer->len <= avail && buffer->len < self->buffer_size) {
         memcpy(self->buffer + self->pos, buffer->buf, buffer->len);
         if (!VALID_WRITE_BUFFER(self) || self->write_pos > self->pos) {
             self->write_pos = self->pos;
@@ -2161,7 +2161,7 @@ _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer)
     /* Then write buf itself. At this point the buffer has been emptied. */
     remaining = buffer->len;
     written = 0;
-    while (remaining > self->buffer_size) {
+    while (remaining >= self->buffer_size) {
         Py_ssize_t n = _bufferedwriter_raw_write(
             self, (char *) buffer->buf + written, buffer->len - written);
         if (n == -1) {
