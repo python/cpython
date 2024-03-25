@@ -6,7 +6,7 @@ import sys
 from functools import cmp_to_key
 
 from test import seq_tests
-from test.support import ALWAYS_EQ, NEVER_EQ
+from test.support import ALWAYS_EQ, NEVER_EQ, Py_C_RECURSION_LIMIT
 
 
 class CommonTest(seq_tests.CommonTest):
@@ -61,7 +61,7 @@ class CommonTest(seq_tests.CommonTest):
 
     def test_repr_deep(self):
         a = self.type2test([])
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(Py_C_RECURSION_LIMIT + 1):
             a = self.type2test([a])
         self.assertRaises(RecursionError, repr, a)
 
@@ -562,3 +562,8 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(list(exhit), [])
         self.assertEqual(list(empit), [9])
         self.assertEqual(a, self.type2test([1, 2, 3, 9]))
+
+        # gh-115733: Crash when iterating over exhausted iterator
+        exhit = iter(self.type2test([1, 2, 3]))
+        for _ in exhit:
+            next(exhit, 1)

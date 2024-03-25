@@ -57,7 +57,7 @@ class LineNumbersTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.editwin.per.close()
-        cls.root.update()
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.text, cls.text_frame, cls.editwin, cls.root
 
@@ -328,7 +328,7 @@ class LineNumbersTest(unittest.TestCase):
         self.assertEqual(self.linenumber.sidebar_text.index('@0,0'), '11.0')
 
         # Generate a mouse-wheel event and make sure it scrolled up or down.
-        # The meaning of the "delta" is OS-dependant, so this just checks for
+        # The meaning of the "delta" is OS-dependent, so this just checks for
         # any change.
         self.linenumber.sidebar_text.event_generate('<MouseWheel>',
                                                     x=0, y=0,
@@ -690,15 +690,22 @@ class ShellSidebarTest(unittest.TestCase):
         last_lineno = get_end_linenumber(text)
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-        # Scroll up using the <MouseWheel> event.
-        # The meaning delta is platform-dependant.
-        delta = -1 if sys.platform == 'darwin' else 120
-        sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
+        # Delta for <MouseWheel>, whose meaning is platform-dependent.
+        delta = 1 if sidebar.canvas._windowingsystem == 'aqua' else 120
+
+        # Scroll up.
+        if sidebar.canvas._windowingsystem == 'x11':
+            sidebar.canvas.event_generate('<Button-4>', x=0, y=0)
+        else:
+            sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
         yield
         self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
-        # Scroll back down using the <Button-5> event.
-        sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        # Scroll back down.
+        if sidebar.canvas._windowingsystem == 'x11':
+            sidebar.canvas.event_generate('<Button-5>', x=0, y=0)
+        else:
+            sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=-delta)
         yield
         self.assertIsNotNone(text.dlineinfo(text.index(f'{last_lineno}.0')))
 
