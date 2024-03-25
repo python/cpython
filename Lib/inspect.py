@@ -1484,6 +1484,15 @@ def getargvalues(frame):
     'args' is a list of the argument names.
     'varargs' and 'varkw' are the names of the * and ** arguments or None.
     'locals' is the locals dictionary of the given frame."""
+    import warnings
+    warnings._deprecated(
+        "getargvalues",
+        (
+            '{name!r} is deprecated and slated for removal in Python {remove}; '
+            'use `inspect.Singature.from_frame` instead'
+        ),
+        remove=(3, 15),
+    )
     args, varargs, varkw = getargs(frame.f_code)
     return ArgInfo(args, varargs, varkw, frame.f_locals)
 
@@ -1519,6 +1528,15 @@ def formatargvalues(args, varargs, varkw, locals,
     next four arguments are the corresponding optional formatting functions
     that are called to turn names and values into strings.  The ninth
     argument is an optional function to format the sequence of arguments."""
+    import warnings
+    warnings._deprecated(
+        "formatargvalues",
+        (
+            '{name!r} is deprecated and slated for removal in Python {remove}; '
+            'use `inspect.Singature.__str__` instead'
+        ),
+        remove=(3, 15),
+    )
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
         return formatarg(name) + formatvalue(locals[name])
@@ -3090,6 +3108,29 @@ class Signature:
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
                                         globals=globals, locals=locals, eval_str=eval_str)
+
+    @classmethod
+    def from_frame(cls, frame):
+        """Constructs Signature from a given frame object."""
+        func_code = frame.f_code
+        pos_count = func_code.co_argcount
+        arg_names = func_code.co_varnames
+        keyword_only_count = func_code.co_kwonlyargcount
+
+        defaults = []
+        for name in arg_names[:pos_count]:
+            if frame.f_locals and name in frame.f_locals:
+                defaults.append(frame.f_locals[name])
+
+        kwdefaults = {}
+        for name in arg_names[pos_count : pos_count + keyword_only_count]:
+            if frame.f_locals and name in frame.f_locals:
+                kwdefaults.update({name: frame.f_locals[name]})
+
+        func = types.FunctionType(func_code, {})
+        func.__defaults__ = tuple(defaults)
+        func.__kwdefaults__ = kwdefaults
+        return cls.from_callable(func)
 
     @property
     def parameters(self):

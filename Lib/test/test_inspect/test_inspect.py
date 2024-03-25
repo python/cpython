@@ -472,6 +472,16 @@ class TestInterpreterStack(IsTestBase):
 
         git.abuse(7, 8, 9)
 
+    def assertDeprecated(self, name):
+        import re
+        return self.assertWarnsRegex(
+            DeprecationWarning,
+            re.escape(
+                f"{name!r} is deprecated and slated "
+                "for removal in Python 3.15",
+            ),
+        )
+
     def test_abuse_done(self):
         self.istest(inspect.istraceback, 'git.ex.__traceback__')
         self.istest(inspect.isframe, 'mod.fr')
@@ -518,21 +528,45 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(frame3.positions, dis.Positions(18, 18, 8, 13))
 
     def test_frame(self):
-        args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
+        with self.assertDeprecated('getargvalues'):
+            args, varargs, varkw, locals = inspect.getargvalues(mod.fr)
         self.assertEqual(args, ['x', 'y'])
         self.assertEqual(varargs, None)
         self.assertEqual(varkw, None)
         self.assertEqual(locals, {'x': 11, 'p': 11, 'y': 14})
-        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
-                         '(x=11, y=14)')
+        with self.assertDeprecated('formatargvalues'):
+            format = inspect.formatargvalues(args, varargs, varkw, locals)
+        self.assertEqual(format, '(x=11, y=14)')
 
     def test_previous_frame(self):
-        args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
+        with self.assertDeprecated('getargvalues'):
+            args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
         self.assertEqual(args, ['a', 'b', 'c', 'd', 'e', 'f'])
         self.assertEqual(varargs, 'g')
         self.assertEqual(varkw, 'h')
-        self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
-             '(a=7, b=8, c=9, d=3, e=4, f=5, *g=(), **h={})')
+        with self.assertDeprecated('formatargvalues'):
+            format = inspect.formatargvalues(args, varargs, varkw, locals)
+        self.assertEqual(format,
+            '(a=7, b=8, c=9, d=3, e=4, f=5, *g=(), **h={})')
+
+    def test_frame_with_argument_override(self):
+        # This tests shows that the current implementation of `getargvalues`:
+        # 1. Does not render `/` correctly
+        # 2. Uses not real default values, but can also show redefined values
+        def inner(a=1, /, c=5, *, b=2):
+            global fr
+            a = 3
+            fr = inspect.currentframe()
+            b = 4
+
+        inner()
+        with self.assertDeprecated('getargvalues'):
+            args, varargs, varkw, locals = inspect.getargvalues(fr)
+        with self.assertDeprecated('formatargvalues'):
+            format = inspect.formatargvalues(args, varargs, varkw, locals)
+        self.assertEqual(format,
+                         '(a=3, c=5, b=4)')
+
 
 class GetSourceBase(unittest.TestCase):
     # Subclasses must override.
@@ -4640,6 +4674,42 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         self.assertEqual(inspect.signature(D2), inspect.signature(D1))
+
+
+class TestSignatureFromFrame(unittest.TestCase):
+    def test_signature_from_frame(self):
+        def inner(a=1, /, b=2, *e, c: int = 3, d, **f) -> None:
+            global fr
+            fr = inspect.currentframe()
+
+        inner(d=4)
+        self.assertEqual(str(inspect.Signature.from_frame(fr)),
+                         '(a=1, /, b=2, *e, c=3, d=4, **f)')
+
+        def inner(a, /, b, *e, c: int = 3, d, **f) -> None:
+            global fr
+            fr = inspect.currentframe()
+
+        inner(1, 2, d=4)
+        self.assertEqual(str(inspect.Signature.from_frame(fr)),
+                         '(a=1, /, b=2, *e, c=3, d=4, **f)')
+
+    def test_signature_from_frame_defaults_change(self):
+        def inner(a=1, /, c=5, *, b=2):
+            global fr
+            a = 3
+            fr = inspect.currentframe()
+            b = 4
+
+        inner()
+        self.assertEqual(str(inspect.Signature.from_frame(fr)),
+                         '(a=3, /, c=5, *, b=4)')
+
+    def test_signature_from_frame_mod(self):
+        self.assertEqual(str(inspect.Signature.from_frame(mod.fr)),
+                         '(x=11, y=14)')
+        self.assertEqual(str(inspect.Signature.from_frame(mod.fr.f_back)),
+                         '(a=7, /, b=8, c=9, d=3, e=4, f=5, *g, **h)')
 
 
 class TestParameterObject(unittest.TestCase):
