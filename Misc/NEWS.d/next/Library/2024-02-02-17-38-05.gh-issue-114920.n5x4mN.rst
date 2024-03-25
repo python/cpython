@@ -1,0 +1,1 @@
+Make iterable the Namespace object in argparse lib

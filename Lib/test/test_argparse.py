@@ -5963,6 +5963,39 @@ class TestExitOnError(TestCase):
             self.parser.parse_args('--integers a'.split())
 
 
+class TestIterationOnNS(TestCase):
+
+    def setUp(self):
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument('--test_1', action="store_true")
+        self.parser.add_argument('--test_2', type=str, default="a")
+        self.parser.add_argument('--test_3', type=int, default=0)
+
+    def test_iteration_ns(self):
+        local_ns = self.parser.parse_args('--test_1 --test_2 b --test_3 1'.split())
+        for key, value in local_ns:
+            self.assertIn(key, ["test_1", "test_2", "test_3"])
+            self.assertIn(value, [True, "b", 1])
+
+    def test_known_args_iteration_ns(self):
+        local_ns = self.parser.parse_known_args('--test_2 b --test_3 1 --test_4'.split())
+        # The parse_known_args returns tuple where the Namespace object is placed first
+        # then the unknown args in a list.
+        for key, value in local_ns[0]:
+            self.assertIn(key, ['test_1', 'test_2', 'test_3'])
+            self.assertIn(value, [False, 'b', 1])
+
+
+class TestSubscriptableNS(TestCase):
+    def setUp(self):
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument('--test', type=str, default="a")
+        self.local_ns = self.parser.parse_args('--test b'.split())
+
+    def test_subscriptable_ns(self):
+        self.assertEqual(self.local_ns["test"], "b")
+
+
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}

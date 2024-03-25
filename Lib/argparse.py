@@ -1357,6 +1357,7 @@ class FileType(object):
 # Optional and Positional Parsing
 # ===========================
 
+
 class Namespace(_AttributeHolder):
     """Simple object for storing attributes.
 
@@ -1375,6 +1376,12 @@ class Namespace(_AttributeHolder):
 
     def __contains__(self, key):
         return key in self.__dict__
+
+    def __iter__(self):
+        yield from self.__dict__.items()
+
+    def __getitem__(self, item):
+        return getattr(self, item)
 
 
 class _ActionsContainer(object):
