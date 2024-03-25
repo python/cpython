@@ -1,0 +1,2 @@
+Add :c:func:`PyType_GetModuleByDef` to the limited C API. Patch by Victor
+Stinner.
