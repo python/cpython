@@ -463,7 +463,7 @@ class _FuncBuilder:
         else:
             return_annotation = ''
         args = ','.join(args)
-        body = '\n'.join(f'  {b}' for b in body)
+        body = '\n'.join(body)
 
         # Compute the text of the entire function, add it to the text we're generating.
         self.src.append(f'{f' {decorator}\n' if decorator else ''} def {name}({args}){return_annotation}:\n{body}')
@@ -525,8 +525,8 @@ def _field_assign(frozen, name, value, self_name):
     # self_name is what "self" is called in this function: don't
     # hard-code "self", since that might be a field name.
     if frozen:
-        return f'__dataclass_builtins_object__.__setattr__({self_name},{name!r},{value})'
-    return f'{self_name}.{name}={value}'
+        return f'  __dataclass_builtins_object__.__setattr__({self_name},{name!r},{value})'
+    return f'  {self_name}.{name}={value}'
 
 
 def _field_init(f, frozen, globals, self_name, slots):
@@ -646,11 +646,11 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     if has_post_init:
         params_str = ','.join(f.name for f in fields
                               if f._field_type is _FIELD_INITVAR)
-        body_lines.append(f'{self_name}.{_POST_INIT_NAME}({params_str})')
+        body_lines.append(f'  {self_name}.{_POST_INIT_NAME}({params_str})')
 
     # If no body lines, use 'pass'.
     if not body_lines:
-        body_lines = ['pass']
+        body_lines = ['  pass']
 
     _init_params = [_init_param(f) for f in std_fields]
     if kw_only_fields:
@@ -675,16 +675,16 @@ def _frozen_get_del_attr(cls, fields, func_builder):
 
     func_builder.add_fn('__setattr__',
                         ('self', 'name', 'value'),
-                        (f'if {condition}:',
-                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
-                         f'super(cls, self).__setattr__(name, value)'),
+                        (f'  if {condition}:',
+                          '   raise FrozenInstanceError(f"cannot assign to field {name!r}")',
+                         f'  super(cls, self).__setattr__(name, value)'),
                         locals=locals,
                         overwrite_error=True)
     func_builder.add_fn('__delattr__',
                         ('self', 'name'),
-                        (f'if {condition}:',
-                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
-                         f'super(cls, self).__delattr__(name)'),
+                        (f'  if {condition}:',
+                          '   raise FrozenInstanceError(f"cannot delete field {name!r}")',
+                         f'  super(cls, self).__delattr__(name)'),
                         locals=locals,
                         overwrite_error=True)
 
@@ -889,7 +889,7 @@ def _hash_add(cls, fields, func_builder):
     self_tuple = _tuple_str('self', flds)
     func_builder.add_fn('__hash__',
                         ('self',),
-                        [f'return hash({self_tuple})'],
+                        [f'  return hash({self_tuple})'],
                         unconditional_add=True)
 
 def _hash_exception(cls, fields, func_builder):
@@ -1100,7 +1100,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         flds = [f for f in field_list if f.repr]
         func_builder.add_fn('__repr__',
                             ('self',),
-                            ['return f"{self.__class__.__qualname__}(' +
+                            ['  return f"{self.__class__.__qualname__}(' +
                              ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                         for f in flds]) + ')"'],
                             locals={'__dataclasses_recursive_repr': recursive_repr},
@@ -1114,11 +1114,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         field_comparisons = ' and '.join(terms) or 'True'
         func_builder.add_fn('__eq__',
                             ('self', 'other'),
-                            [ 'if self is other:',
-                              ' return True',
-                              'if other.__class__ is self.__class__:',
-                             f' return {field_comparisons}',
-                              'return NotImplemented'])
+                            [ '  if self is other:',
+                              '   return True',
+                              '  if other.__class__ is self.__class__:',
+                             f'   return {field_comparisons}',
+                              '  return NotImplemented'])
 
     if order:
         # Create and set the ordering methods.
@@ -1136,9 +1136,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             # '(other.x,other.y)'.
             func_builder.add_fn(name,
                             ('self', 'other'),
-                            [ 'if other.__class__ is self.__class__:',
-                             f' return {self_tuple}{op}{other_tuple}',
-                              'return NotImplemented'],
+                            [ '  if other.__class__ is self.__class__:',
+                             f'   return {self_tuple}{op}{other_tuple}',
+                              '  return NotImplemented'],
                             overwrite_error='Consider using functools.total_ordering')
 
     if frozen:
