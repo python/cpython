@@ -1147,6 +1147,53 @@ The final prediction goes to the largest posterior. This is known as the
   'female'
 
 
+Sampling from an estimated kernel density function
+**************************************************
+
+The *kde()* function creates a continuous probability density function
+from discrete samples.  Some applications need a way to make random
+selections from that distribution.
+
+Since the estimated function is just the sum of kernels centered
+at each data point, the problem can be reduced to sampling the
+kernel function and recentering the result around a randomly chosen
+data point.  This works for kernels that have a known or accurately
+approximated inverse cumulative distribution functions.
+
+.. testcode::
+
+   from math import log, tan, sqrt, asin
+   from random import choice, random, seed
+
+   kernel_invcdfs = {
+       'normal': NormalDist().inv_cdf,
+       'logisitic': lambda p: log(p / (1 - p)),
+       'sigmoid': lambda p: log(tan(p * pi/2)),
+       'rectangular': lambda p: 2*p - 1,
+       'triangular': lambda p: sqrt(2*p) - 1 if p < 0.5 else 1 - sqrt(2 - 2*p),
+       'cosine': lambda p: 2*asin(2*p - 1)/pi,
+   }
+   kernel_invcdfs['gauss'] = kernel_invcdfs['normal']
+   kernel_invcdfs['uniform'] = kernel_invcdfs['rectangular']
+
+   def kde_random(data, h, kernel='normal'):
+       'Generate random a sample from an estimated kernel density function.'
+       kernel_invcdf = kernel_invcdfs[kernel]
+       def rand():
+           return choice(data) + h * kernel_invcdf(random())
+       return rand
+
+For example:
+
+.. doctest::
+
+   >>> discrete_samples = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+   >>> rand = kde_random(discrete_samples, h=1.5)
+   >>> seed(8675309)
+   >>> [round(rand(), 1) for i in range(10)]
+   [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
+
+
 ..
    # This modelines must appear within the last ten lines of the file.
    kate: indent-width 3; remove-trailing-space on; replace-tabs on; encoding utf-8;
