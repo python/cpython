@@ -1,6 +1,7 @@
 import enum
 import unittest
 from test.support import import_helper
+from test.support import os_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -53,9 +54,6 @@ class GetConstantTest(unittest.TestCase):
 
 class PrintTest(unittest.TestCase):
     def testPyObjectPrintObject(self):
-        import os
-        import test.support.os_helper as os_helper
-        from test.support import import_helper
 
         class PrintableObject:
 
@@ -67,54 +65,43 @@ class PrintTest(unittest.TestCase):
 
         obj = PrintableObject()
         output_filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, output_filename)
+
         # Test repr printing
         _testcapi.call_pyobject_print(obj, output_filename, False)
         with open(output_filename, 'r') as output_file:
             self.assertEqual(output_file.read(), repr(obj))
+
         # Test str printing
         _testcapi.call_pyobject_print(obj, output_filename, True)
         with open(output_filename, 'r') as output_file:
             self.assertEqual(output_file.read(), str(obj))
 
-        os.remove(output_filename)
-
     def testPyObjectPrintNULL(self):
-        import os
-        import test.support.os_helper as os_helper
-        from test.support import import_helper
-
         output_filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, output_filename)
+
         # Test repr printing
         _testcapi.pyobject_print_null(output_filename)
         with open(output_filename, 'r') as output_file:
             self.assertEqual(output_file.read(), '<nil>')
 
-        os.remove(output_filename)
-
     def testPyObjectPrintNoRefObject(self):
-        import os
-        import test.support.os_helper as os_helper
-        from test.support import import_helper
-
         output_filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, output_filename)
+
         # Test repr printing
         correct_output = _testcapi.pyobject_print_noref_object(output_filename)
         with open(output_filename, 'r') as output_file:
             self.assertEqual(output_file.read(), correct_output)
 
-        os.remove(output_filename)
-
     def testPyObjectPrintOSError(self):
-        import os
-        import test.support.os_helper as os_helper
-        from test.support import import_helper
-
         output_filename = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, output_filename)
+
         open(output_filename, "w+").close()
         with self.assertRaises(OSError):
             _testcapi.pyobject_print_os_error(output_filename)
-
-        os.remove(output_filename)
 
 if __name__ == "__main__":
     unittest.main()

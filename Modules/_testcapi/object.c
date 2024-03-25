@@ -10,7 +10,8 @@ call_pyobject_print(PyObject *self, PyObject * args)
     FILE *fp;
     int flags = 0;
 
-    if (!PyArg_UnpackTuple(args, "call_pyobject_print", 3, 3, &object, &filename, &print_raw)) {
+    if (!PyArg_UnpackTuple(args, "call_pyobject_print", 3, 3,
+                           &object, &filename, &print_raw)) {
         return NULL;
     }
 
@@ -62,9 +63,10 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
 
     test_string = PyUnicode_FromString("Spam spam spam");
 
-    test_string -> ob_refcnt = 0;
+    test_string->ob_refcnt = 0;
 
-    snprintf(correct_string, 100, "<refcnt %zd at %p>", Py_REFCNT(test_string), (void *)test_string);
+    PyOS_snprintf(correct_string, 100, "<refcnt %zd at %p>",
+                  Py_REFCNT(test_string), (void *)test_string);
 
     if (!PyArg_UnpackTuple(args, "call_pyobject_print", 1, 1, &filename)) {
         return NULL;
@@ -79,7 +81,7 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
 
     fclose(fp);
 
-    test_string -> ob_refcnt = 1;
+    test_string->ob_refcnt = 1;
     Py_DECREF(test_string);
 
     return PyUnicode_FromString(correct_string);
