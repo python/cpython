@@ -509,6 +509,14 @@ class TestBase(unittest.TestCase):
         else:
             return text
 
+    def interp_exists(self, interpid):
+        try:
+            _interpreters.is_owned(interpid)
+        except _interpreters.InterpreterNotFoundError:
+            return False
+        else:
+            return True
+
     @requires_test_modules
     @contextlib.contextmanager
     def interpreter_from_capi(self, config=None, whence=None):

@@ -106,6 +106,10 @@ class Interpreter:
     "id" - the unique process-global ID number for the interpreter
     "owned" - indicates whether or not the interpreter was created
               by interpreters.create()
+
+    If interp.owned is false then any method that modifies the
+    interpreter will fail, i.e. .close(), .prepare_main(), .exec(),
+    and .call()
     """
 
     def __new__(cls, id, /, _owned=None):
@@ -165,7 +169,11 @@ class Interpreter:
 
     def is_running(self):
         """Return whether or not the identified interpreter is running."""
-        return _interpreters.is_running(self._id)
+        # require_owned is okay since this doesn't modify the interpreter.
+        return _interpreters.is_running(self._id, require_owned=False)
+
+    # Everything past here is available only to interpreters created by
+    # interpreters.create().
 
     def close(self):
         """Finalize and destroy the interpreter.
@@ -173,7 +181,7 @@ class Interpreter:
         Attempting to destroy the current interpreter results
         in an InterpreterError.
         """
-        return _interpreters.destroy(self._id)
+        return _interpreters.destroy(self._id, require_owned=True)
 
     def prepare_main(self, ns=None, /, **kwargs):
         """Bind the given values into the interpreter's __main__.
@@ -181,7 +189,7 @@ class Interpreter:
         The values must be shareable.
         """
         ns = dict(ns, **kwargs) if ns is not None else kwargs
-        _interpreters.set___main___attrs(self._id, ns)
+        _interpreters.set___main___attrs(self._id, ns, require_owned=True)
 
     def exec(self, code, /):
         """Run the given source code in the interpreter.
@@ -201,7 +209,7 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        excinfo = _interpreters.exec(self._id, code)
+        excinfo = _interpreters.exec(self._id, code, require_owned=True)
         if excinfo is not None:
             raise ExecutionFailed(excinfo)
 
@@ -221,7 +229,7 @@ class Interpreter:
         # XXX Support args and kwargs.
         # XXX Support arbitrary callables.
         # XXX Support returning the return value (e.g. via pickle).
-        excinfo = _interpreters.call(self._id, callable)
+        excinfo = _interpreters.call(self._id, callable, require_owned=True)
         if excinfo is not None:
             raise ExecutionFailed(excinfo)
 
