@@ -489,21 +489,138 @@ _run_in_interpreter(PyInterpreterState *interp,
 }
 
 
-/* global state *************************************************************/
+/* "owned" interpreters *****************************************************/
 
-static void
-set_owned(PyInterpreterState *interp)
+typedef _Py_hashtable_t owned_ids;
+
+static Py_uhash_t
+hash_int64(const void *key)
 {
+#if sizeof(int64_t) <= sizeof(Py_uhash_t)
+    return (Py_uhash_t)key;
+#else
+    int64_t val = *(int64_t *)key;
+    return val % sizeof(Py_uhash_t);
+#endif
 }
 
 static int
-is_owned(PyInterpreterState *interp)
+compare_int64(const void *key1, const void *key2)
 {
-    // XXX
-    if (_Py_IsMainInterpreter(interp)) {
-        return 0;
+#if sizeof(int64_t) <= sizeof(Py_uhash_t)
+    return (int64_t)key1 == (int64_t)key2;
+#else
+    int64_t val1 = *(int64_t *)key1;
+    int64_t val2 = *(int64_t *)key2;
+    return val1 == val2;
+#endif
+}
+
+static int
+init_owned(owned_ids *owned)
+{
+    _Py_hashtable_allocator_t alloc = (_Py_hashtable_allocator_t){
+        .malloc = PyMem_RawMalloc,
+        .free = PyMem_RawFree,
+    };
+    _globals.owned = _Py_hashtable_new_full(
+            hash_int64, compare_int64, NULL, NULL, &alloc);
+    if (_globals.owned == NULL) {
+        PyErr_NoMemory();
+        return -1;
     }
-    return 1;
+    return 0;
+}
+
+static void
+clear_owned(owned_ids *owned)
+{
+    _Py_hashtable_destroy(owned);
+}
+
+static int
+add_owned(owned_ids *owned, PyInterpreterState *interp)
+{
+    int64_t id = PyInterpreterState_GetID(interp);
+#if sizeof(int64_t) <= sizeof(Py_uhash_t)
+    return _Py_hashtable_set(owned_ids, (const void *)id, 1);
+#else
+    assert(0);
+#endif
+}
+
+static void
+drop_owned(owned_ids *owned, PyInterpreterState *interp)
+{
+    int64_t id = PyInterpreterState_GetID(interp);
+#if sizeof(int64_t) <= sizeof(Py_uhash_t)
+    _Py_hashtable_steal(owned_ids, (const void *)id);
+#else
+    assert(0);
+#endif
+}
+
+static int
+is_owned(owned_ids *owned, PyInterpreterState *interp)
+{
+    int64_t id = PyInterpreterState_GetID(interp);
+#if sizeof(int64_t) <= sizeof(Py_uhash_t)
+    return _Py_hashtable_get_entry(owned_ids, (const void *)id) != NULL;
+#else
+    assert(0);
+#endif
+}
+
+
+/* global state *************************************************************/
+
+/* globals is the process-global state for the module.  It holds all
+   the data that we need to share between interpreters, so it cannot
+   hold PyObject values. */
+static struct globals {
+    PyMutex mutex;
+    int module_count;
+    _Py_hashtable_t *owned;
+} _globals = {0};
+
+static int
+_globals_init(void)
+{
+    int res = -1;
+    PyMutex_Lock(&_globals.mutex);
+
+    _globals.module_count++;
+    if (_globals.module_count > 1) {
+        // Already initialized.
+        res = 0;
+        goto finally;
+    }
+
+    if (init_owned(&_globals.owned) < 0) {
+        goto finally;
+    }
+
+    res = 0;
+
+finally:
+    PyMutex_Unlock(&_globals.mutex);
+    return res;
+}
+
+static void
+_globals_fini(void)
+{
+    PyMutex_Lock(&_globals.mutex);
+
+    _globals.module_count--;
+    if (_globals.module_count > 0) {
+        goto finally;
+    }
+
+    clear_owned(&_globals.owned);
+
+finally:
+    PyMutex_Unlock(&_globals.mutex);
 }
 
 
@@ -516,7 +633,7 @@ get_summary(PyInterpreterState *interp)
     if (idobj == NULL) {
         return NULL;
     }
-    PyObject *owned = is_owned(interp) ? Py_True : Py_False;
+    PyObject *owned = is_owned(&_globals.owned, interp) ? Py_True : Py_False;
     PyObject *res = PyTuple_Pack(2, idobj, owned);
     Py_DECREF(idobj);
     return res;
@@ -599,7 +716,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    set_owned(interp);
+    add_owned(&_globals.owned, interp);
 
     if (reqrefs) {
         // Decref to 0 will destroy the interpreter.
@@ -660,6 +777,8 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         PyErr_Format(PyExc_InterpreterError, "interpreter running");
         return NULL;
     }
+
+    drop_owned(&_globals.owned, interp);
 
     // Destroy the interpreter.
     _PyXI_EndInterpreter(interp, NULL, NULL);
@@ -1214,7 +1333,7 @@ interp_is_owned(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    return is_owned(interp) ? Py_True : Py_False;
+    return is_owned(&_globals.owned, interp) ? Py_True : Py_False;
 }
 
 PyDoc_STRVAR(is_owned_doc,
@@ -1401,6 +1520,10 @@ module_exec(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
 
+    if (_globals_init() != 0) {
+        return -1;
+    }
+
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
                                 _PyInterpreterState_WHENCE_##NAME) < 0) \
@@ -1434,6 +1557,7 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
+    _globals_fini();
     return -1;
 }
 
@@ -1467,6 +1591,8 @@ module_free(void *mod)
     module_state *state = get_module_state(mod);
     assert(state != NULL);
     clear_module_state(state);
+
+    _globals_fini();
 }
 
 static struct PyModuleDef moduledef = {
