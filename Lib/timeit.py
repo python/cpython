@@ -204,7 +204,7 @@ class Timer:
         vector and apply common sense rather than statistics.
         """
         r = []
-        for i in range(repeat):
+        for _ in range(repeat):
             t = self.timeit(number)
             r.append(t)
         return r
