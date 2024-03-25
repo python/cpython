@@ -131,7 +131,6 @@ _PyEval_SetOpcodeTrace(
 ) {
     assert(frame != NULL);
     assert(PyCode_Check(frame->f_frame->f_executable));
-
     PyCodeObject *code = (PyCodeObject *)frame->f_frame->f_executable;
     _PyMonitoringEventSet events = 0;
 
@@ -582,7 +581,6 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
         return -1;
     }
-
     assert(tstate->interp->sys_tracing_threads >= 0);
     // needs to be decref'd outside of the lock
     PyObject *old_traceobj;
