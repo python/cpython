@@ -211,7 +211,7 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     PyObject **stack_pointer, _PyExecutorObject **executor_ptr)
 {
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, start)) {
@@ -476,11 +476,13 @@ BRANCH_TO_GUARD[4][2] = {
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
         OPT_STAT_INC(trace_stack_overflow); \
+        ADD_TO_TRACE(uop, oparg, operand, target); \
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0); \
         goto done; \
     } \
-    assert(func->func_code == (PyObject *)code); \
+    assert(func == NULL || func->func_code == (PyObject *)code); \
     trace_stack[trace_stack_depth].func = func; \
+    trace_stack[trace_stack_depth].code = code; \
     trace_stack[trace_stack_depth].instr = instr; \
     trace_stack_depth++;
 #define TRACE_STACK_POP() \
@@ -489,7 +491,8 @@ BRANCH_TO_GUARD[4][2] = {
     } \
     trace_stack_depth--; \
     func = trace_stack[trace_stack_depth].func; \
-    code = (PyCodeObject *)trace_stack[trace_stack_depth].func->func_code; \
+    code = trace_stack[trace_stack_depth].code; \
+    assert(func == NULL || func->func_code == (PyObject *)code); \
     instr = trace_stack[trace_stack_depth].instr;
 
 /* Returns 1 on success,
@@ -505,7 +508,7 @@ translate_bytecode_to_trace(
     _PyBloomFilter *dependencies)
 {
     bool progress_needed = true;
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
     assert(PyFunction_Check(func));
     PyCodeObject *initial_code = code;
@@ -515,6 +518,7 @@ translate_bytecode_to_trace(
     int max_length = buffer_size;
     struct {
         PyFunctionObject *func;
+        PyCodeObject *code;
         _Py_CODEUNIT *instr;
     } trace_stack[TRACE_STACK_SIZE];
     int trace_stack_depth = 0;
@@ -719,9 +723,19 @@ top:  // Jump here after _PUSH_FRAME or likely branches
 
                         if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
-                            /* Set the operand to the function object returned to,
-                             * to assist optimization passes */
-                            ADD_TO_TRACE(uop, oparg, (uintptr_t)func, target);
+                            /* Set the operand to the function or code object returned to,
+                             * to assist optimization passes. (See _PUSH_FRAME below.)
+                             */
+                            if (func != NULL) {
+                                operand = (uintptr_t)func;
+                            }
+                            else if (code != NULL) {
+                                operand = (uintptr_t)code | 1;
+                            }
+                            else {
+                                operand = 0;
+                            }
+                            ADD_TO_TRACE(uop, oparg, operand, target);
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
                                 PyUnicode_AsUTF8(code->co_qualname),
@@ -738,10 +752,12 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 // Add one to account for the actual opcode/oparg pair:
                                 + 1;
                             uint32_t func_version = read_u32(&instr[func_version_offset].cache);
-                            PyFunctionObject *new_func = _PyFunction_LookupByVersion(func_version);
-                            DPRINTF(2, "Function: version=%#x; object=%p\n", (int)func_version, new_func);
-                            if (new_func != NULL) {
-                                PyCodeObject *new_code = (PyCodeObject *)PyFunction_GET_CODE(new_func);
+                            PyCodeObject *new_code = NULL;
+                            PyFunctionObject *new_func =
+                                _PyFunction_LookupByVersion(func_version, (PyObject **) &new_code);
+                            DPRINTF(2, "Function: version=%#x; new_func=%p, new_code=%p\n",
+                                    (int)func_version, new_func, new_code);
+                            if (new_code != NULL) {
                                 if (new_code == code) {
                                     // Recursive call, bail (we could be here forever).
                                     DPRINTF(2, "Bailing on recursive call to %s (%s:%d)\n",
@@ -766,9 +782,22 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
                                 _Py_BloomFilter_Add(dependencies, new_code);
-                                /* Set the operand to the callee's function object,
-                                 * to assist optimization passes */
-                                ADD_TO_TRACE(uop, oparg, (uintptr_t)new_func, target);
+                                /* Set the operand to the callee's function or code object,
+                                 * to assist optimization passes.
+                                 * We prefer setting it to the function (for remove_globals())
+                                 * but if that's not available but the code is available,
+                                 * use the code, setting the low bit so the optimizer knows.
+                                 */
+                                if (new_func != NULL) {
+                                    operand = (uintptr_t)new_func;
+                                }
+                                else if (new_code != NULL) {
+                                    operand = (uintptr_t)new_code | 1;
+                                }
+                                else {
+                                    operand = 0;
+                                }
+                                ADD_TO_TRACE(uop, oparg, operand, target);
                                 code = new_code;
                                 func = new_func;
                                 instr = _PyCode_CODE(code);
@@ -780,8 +809,8 @@ top:  // Jump here after _PUSH_FRAME or likely branches
                                     2 * INSTR_IP(instr, code));
                                 goto top;
                             }
-                            DPRINTF(2, "Bail, new_func == NULL\n");
-                            ADD_TO_TRACE(uop, oparg, operand, target);
+                            DPRINTF(2, "Bail, new_code == NULL\n");
+                            ADD_TO_TRACE(uop, oparg, 0, target);
                             ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                             goto done;
                         }
@@ -1116,7 +1145,7 @@ counter_optimize(
     int Py_UNUSED(curr_stackentries)
 )
 {
-    PyCodeObject *code = (PyCodeObject *)frame->f_executable;
+    PyCodeObject *code = _PyFrame_GetCode(frame);
     int oparg = instr->op.arg;
     while (instr->op.code == EXTENDED_ARG) {
         instr++;

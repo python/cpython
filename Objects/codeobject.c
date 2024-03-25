@@ -1710,6 +1710,7 @@ code_dealloc(PyCodeObject *co)
     }
     Py_SET_REFCNT(co, 0);
 
+    _PyFunction_ClearCodeByVersion(co->co_version);
     if (co->co_extra != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         _PyCodeObjectExtra *co_extra = co->co_extra;
@@ -2348,49 +2349,3 @@ _PyCode_ConstantKey(PyObject *op)
     }
     return key;
 }
-
-void
-_PyStaticCode_Fini(PyCodeObject *co)
-{
-    if (co->co_executors != NULL) {
-        clear_executors(co);
-    }
-    deopt_code(co, _PyCode_CODE(co));
-    PyMem_Free(co->co_extra);
-    if (co->_co_cached != NULL) {
-        Py_CLEAR(co->_co_cached->_co_code);
-        Py_CLEAR(co->_co_cached->_co_cellvars);
-        Py_CLEAR(co->_co_cached->_co_freevars);
-        Py_CLEAR(co->_co_cached->_co_varnames);
-        PyMem_Free(co->_co_cached);
-        co->_co_cached = NULL;
-    }
-    co->co_extra = NULL;
-    if (co->co_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *)co);
-        co->co_weakreflist = NULL;
-    }
-    free_monitoring_data(co->_co_monitoring);
-    co->_co_monitoring = NULL;
-}
-
-int
-_PyStaticCode_Init(PyCodeObject *co)
-{
-    int res = intern_strings(co->co_names);
-    if (res < 0) {
-        return -1;
-    }
-    res = intern_string_constants(co->co_consts, NULL);
-    if (res < 0) {
-        return -1;
-    }
-    res = intern_strings(co->co_localsplusnames);
-    if (res < 0) {
-        return -1;
-    }
-    _PyCode_Quicken(co);
-    return 0;
-}
-
-#define MAX_CODE_UNITS_PER_LOC_ENTRY 8
