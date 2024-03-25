@@ -1647,7 +1647,7 @@ call_function(PyObject *self, PyObject *args)
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    result =  _ctypes_callproc(st,
+    result = _ctypes_callproc(st,
                         (PPROC)func,
                         arguments,
 #ifdef MS_WIN32
@@ -1684,7 +1684,7 @@ call_cdeclfunction(PyObject *self, PyObject *args)
     }
 
     ctypes_state *st = GLOBAL_STATE();
-    result =  _ctypes_callproc(st,
+    result = _ctypes_callproc(st,
                         (PPROC)func,
                         arguments,
 #ifdef MS_WIN32
