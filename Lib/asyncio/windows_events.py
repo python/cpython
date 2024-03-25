@@ -513,6 +513,10 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
+                # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the same
+                # socket is used to send to an address that is not listening.
+                if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
+                    return b'', None
                 if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
                                     _overlapped.ERROR_OPERATION_ABORTED):
                     raise ConnectionResetError(*exc.args)
@@ -533,6 +537,10 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
+                # WSARecvFrom will report ERROR_PORT_UNREACHABLE when the same
+                # socket is used to send to an address that is not listening.
+                if exc.winerror == _overlapped.ERROR_PORT_UNREACHABLE:
+                    return 0, None
                 if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
                                     _overlapped.ERROR_OPERATION_ABORTED):
                     raise ConnectionResetError(*exc.args)
