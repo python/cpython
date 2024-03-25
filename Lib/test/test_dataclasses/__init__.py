@@ -3135,6 +3135,36 @@ class TestFrozen(unittest.TestCase):
             hash(C({}))
 
 
+    # Can't be local to test_frozen_pickle_with_derived_slots.
+    class SlotNonDataclass:
+        __slots__ = ("foo",)
+
+        def __init__(self, foo: str):
+            # To support frozen derived classes.
+            object.__setattr__(self, "foo", foo)
+
+    @dataclass(frozen=True)
+    class FrozenDerivingSlotsClass(SlotNonDataclass):
+        bar: int
+
+        def __init__(self, foo: str, bar: int):
+            # super() without arguments does not work with slots=True,
+            # as the actual class is different from the one we have here.
+            super(TestFrozen.FrozenDerivingSlotsClass, self).__init__(foo)
+            object.__setattr__(self, "bar", bar)
+
+    def test_frozen_pickle_with_derived_slots(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                obj = self.FrozenDerivingSlotsClass("a", 1)
+                p = pickle.loads(pickle.dumps(obj, protocol=proto))
+
+                self.assertIsNot(obj, p)
+                self.assertEqual(obj, p)
+
+                self.assertEqual(obj.foo, p.foo)
+                self.assertEqual(obj.bar, p.bar)
+
 class TestSlots(unittest.TestCase):
     def test_simple(self):
         @dataclass
