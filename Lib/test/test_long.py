@@ -1640,7 +1640,7 @@ class LongTest(unittest.TestCase):
                 )
 
         # GC-117195 -- This shouldn't crash
-        object.__sizeof(1)
+        object.__sizeof__(1)
 
 if __name__ == "__main__":
     unittest.main()
