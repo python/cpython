@@ -1,0 +1,1 @@
+Added `Py_COVERAGE` macro in coverage build and reduce c stack limit in coverage build.
