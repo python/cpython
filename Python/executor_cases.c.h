@@ -3760,10 +3760,7 @@
         }
 
         case _ERROR_POP_N: {
-            PyObject **values;
             oparg = CURRENT_OPARG();
-            values = &stack_pointer[-oparg];
-            (void)values;
             stack_pointer += -oparg;
             GOTO_UNWIND();
             break;

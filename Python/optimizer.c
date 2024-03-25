@@ -159,7 +159,10 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 static int
 init_cold_exit_executor(_PyExecutorObject *executor, int oparg);
 
-/* The maximum number of exits in a trace cannot reach 1/4 of its length */
+/* It is impossible for the number of exits to reach 1/4 of the total length,
+ * as the number of exits cannot reach 1/3 of the number of non-exits, due to
+ * the presence of CHECK_VALIDITY checks and instructions to produce the values
+ * being checked in exits. */
 #define COLD_EXIT_COUNT (UOP_MAX_TRACE_LENGTH/4)
 
 static int cold_exits_initialized = 0;
