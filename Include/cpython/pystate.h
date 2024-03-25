@@ -209,6 +209,8 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 500
 #elif defined(__s390x__)
 #  define Py_C_RECURSION_LIMIT 800
+#elif defined(_WIN32) && defined(_M_ARM64)
+#  define Py_C_RECURSION_LIMIT 1000
 #elif defined(_WIN32)
 #  define Py_C_RECURSION_LIMIT 3000
 #elif defined(__ANDROID__)

@@ -513,6 +513,7 @@ add_to_trace(
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
         OPT_STAT_INC(trace_stack_overflow); \
+        trace_length = 0; \
         goto done; \
     } \
     assert(func == NULL || func->func_code == (PyObject *)code); \
