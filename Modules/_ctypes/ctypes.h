@@ -292,6 +292,7 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *module;
     int flags;                  /* calling convention and such */
 
     /* pep3118 fields, pointers need PyMem_Free */
@@ -473,6 +474,12 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
                      type->tp_name);
         return NULL;
     }
+    PyObject *module = PyType_GetModule(state->PyCType_Type);
+    if (!module) {
+        return NULL;
+    }
+    info->module = Py_NewRef(module);
+
     info->initialized = 1;
     return info;
 }
