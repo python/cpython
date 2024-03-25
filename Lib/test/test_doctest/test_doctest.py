@@ -2630,7 +2630,7 @@ We don't want `-v` in sys.argv for these tests.
     **********************************************************************
     1 item had failures:
        1 of   2 in test_doctest.txt
-    ***Test Failed*** 1 failures.
+    ***Test Failed*** 1 failure.
     TestResults(failed=1, attempted=2)
     >>> doctest.master = None  # Reset master.
 
@@ -2659,7 +2659,7 @@ Globals may be specified with the `globs` and `extraglobs` parameters:
     **********************************************************************
     1 item had failures:
        1 of   2 in test_doctest.txt
-    ***Test Failed*** 1 failures.
+    ***Test Failed*** 1 failure.
     TestResults(failed=1, attempted=2)
     >>> doctest.master = None  # Reset master.
 
@@ -3103,7 +3103,7 @@ The fourth run uses FAIL_FAST, so we should see only one error:
     **********************************************************************
     1 item had failures:
        1 of   2 in myfile.doc
-    ***Test Failed*** 1 failures.
+    ***Test Failed*** 1 failure.
 
 The fifth test uses verbose with the two options, so we should get verbose
 success output for the tests in both files:
