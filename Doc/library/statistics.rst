@@ -1000,8 +1000,8 @@ of applications in statistics.
     .. versionadded:: 3.8
 
 
-:class:`NormalDist` Examples and Recipes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Examples and Recipes
+--------------------
 
 
 Classic probability problems
@@ -1036,7 +1036,7 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
 Monte Carlo inputs for simulations
 **********************************
 
-To estimate the distribution for a model than isn't easy to solve
+To estimate the distribution for a model that isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
 
