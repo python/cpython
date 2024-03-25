@@ -451,13 +451,11 @@ static PyType_Spec structparam_spec = {
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    Py_VISIT(Py_TYPE(self));
-
     ctypes_state *st = GLOBAL_STATE();
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, self, &info) < 0) {
-            return -1;
+            PyErr_WriteUnraisable(self);
         }
         if (info) {
             Py_VISIT(info->proto);
@@ -467,6 +465,7 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
             Py_VISIT(info->checker);
         }
     }
+    Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse(self, visit, arg);
 }
 
@@ -488,7 +487,7 @@ CType_Type_clear(PyObject *self)
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, self, &info) < 0) {
-            return -1;
+            PyErr_WriteUnraisable(self);
         }
         if (info) {
             _ctype_clear_stginfo(info);
