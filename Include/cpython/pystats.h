@@ -118,7 +118,7 @@ typedef struct _optimization_stats {
     uint64_t recursive_call;
     uint64_t low_confidence;
     uint64_t executors_invalidated;
-    UOpStats opcode[MAX_UOP_ID];
+    UOpStats opcode[MAX_UOP_ID+1];
     uint64_t unsupported_opcode[256];
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];
@@ -128,7 +128,7 @@ typedef struct _optimization_stats {
     uint64_t optimizer_failure_reason_no_memory;
     uint64_t remove_globals_builtins_changed;
     uint64_t remove_globals_incorrect_keys;
-    uint64_t error_in_opcode[MAX_UOP_ID];
+    uint64_t error_in_opcode[MAX_UOP_ID+1];
 } OptimizationStats;
 
 typedef struct _rare_event_stats {
