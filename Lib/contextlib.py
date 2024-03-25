@@ -807,7 +807,12 @@ class chdir(AbstractContextManager):
         self._old_cwd = []
 
     def __enter__(self):
-        self._old_cwd.append(os.getcwd())
+        # try to chdir to the current cwd so that we preemptively fail if we are
+        # unnable to chdir back to it, see bpo-45545
+        old_cwd = os.getcwd()
+        os.chdir(old_cwd)
+
+        self._old_cwd.append(old_cwd)
         os.chdir(self.path)
 
     def __exit__(self, *excinfo):
