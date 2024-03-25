@@ -390,7 +390,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    The *data* can be any iterable of numeric data with each value being
    exactly the midpoint of a bin.  At least one value must be present.
 
-   The *interval* is width of each bin.
+   The *interval* is the width of each bin.
 
    For example, demographic information may have been summarized into
    consecutive ten-year age groups with each group being represented
