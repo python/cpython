@@ -39,9 +39,10 @@ The :mod:`urllib.request` module defines the following functions:
    Open *url*, which can be either a string containing a valid, properly
    encoded URL, or a :class:`Request` object.
 
-   *data* must be an object specifying additional data to be sent to the
-   server, or ``None`` if no such data is needed.  See :class:`Request`
-   for details.
+   *data* must be an iterable object without Content-Length like file or
+   :term:`bytes-like object <bytes-like object>` specifying additional data to
+   be sent to the server, or ``None`` if no such data is needed.  See
+   :class:`Request` for details.
 
    urllib.request module uses HTTP/1.1 and includes ``Connection:close`` header
    in its HTTP requests.

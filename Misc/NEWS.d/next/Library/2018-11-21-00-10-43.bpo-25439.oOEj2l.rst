@@ -1,0 +1,3 @@
+Add additional type checks in urllib.request.Request to ensure URL is of
+type str, POST data and it's keys are of type bytes.  Origial patch by Nan
+Wu.  Enhanced by Sanyam Khurana.

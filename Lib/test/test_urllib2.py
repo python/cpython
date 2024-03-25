@@ -920,10 +920,6 @@ class HandlerTests(unittest.TestCase):
         http.raise_on_endheaders = True
         self.assertRaises(urllib.error.URLError, h.do_open, http, req)
 
-        # Check for TypeError on POST data which is str.
-        req = Request("http://example.com/","badpost")
-        self.assertRaises(TypeError, h.do_request_, req)
-
         # check adding of standard headers
         o.addheaders = [("Spam", "eggs")]
         for data in b"", None:  # POST, GET
@@ -1222,7 +1218,7 @@ class HandlerTests(unittest.TestCase):
 
         # ordinary redirect behaviour
         for code in 301, 302, 303, 307, 308:
-            for data in None, "blah\nblah\n":
+            for data in None, b"blah\nblah\n":
                 method = getattr(h, "http_error_%s" % code)
                 req = Request(from_url, data)
                 req.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
@@ -1957,7 +1953,7 @@ class RequestTests(unittest.TestCase):
     def setUp(self):
         self.get = Request("http://www.python.org/~jeremy/")
         self.post = Request("http://www.python.org/~jeremy/",
-                            "data",
+                            b"data",  # data should be either bytes-like object or None
                             headers={"X-Test": "test"})
         self.head = Request("http://www.python.org/~jeremy/", method='HEAD')
         self.put = self.PutRequest("http://www.python.org/~jeremy/")
@@ -1974,7 +1970,7 @@ class RequestTests(unittest.TestCase):
     def test_data(self):
         self.assertFalse(self.get.data)
         self.assertEqual("GET", self.get.get_method())
-        self.get.data = "spam"
+        self.get.data = b"spam"
         self.assertTrue(self.get.data)
         self.assertEqual("POST", self.get.get_method())
 
@@ -1985,13 +1981,13 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("Content-length", self.get.unredirected_hdrs)
         self.get.add_unredirected_header("Content-length", 42)
         self.assertEqual(42, self.get.unredirected_hdrs["Content-length"])
-        self.get.data = "spam"
+        self.get.data = b"spam"
         self.assertNotIn("Content-length", self.get.unredirected_hdrs)
 
     # issue 17485 same for deleting data.
     def test_deleting_data_should_remove_content_length(self):
         self.assertNotIn("Content-length", self.get.unredirected_hdrs)
-        self.get.data = 'foo'
+        self.get.data = b'foo'
         self.get.add_unredirected_header("Content-length", 3)
         self.assertEqual(3, self.get.unredirected_hdrs["Content-length"])
         del self.get.data

@@ -312,6 +312,8 @@ class Request:
 
     @full_url.setter
     def full_url(self, url):
+        if not isinstance(url, str):
+            raise TypeError("URL should be of type str")
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self._full_url = unwrap(url)
         self._full_url, self.fragment = _splittag(self._full_url)
@@ -329,6 +331,18 @@ class Request:
 
     @data.setter
     def data(self, data):
+        if isinstance(data, str):
+            raise TypeError(
+                "POST data cannot be of type str. "
+                "It should be bytes-like object"
+            )
+
+        if type(data) is dict:
+            if any(
+                    not (isinstance(k, bytes) or isinstance(k, memoryview))
+                    for k in data.keys()):
+                raise TypeError("Key should be of type bytes in POST data")
+
         if data != self._data:
             self._data = data
             # issue 16464
@@ -1243,10 +1257,6 @@ class AbstractHTTPHandler(BaseHandler):
 
         if request.data is not None:  # POST
             data = request.data
-            if isinstance(data, str):
-                msg = "POST data should be bytes, an iterable of bytes, " \
-                      "or a file object. It cannot be of type str."
-                raise TypeError(msg)
             if not request.has_header('Content-type'):
                 request.add_unredirected_header(
                     'Content-type',
