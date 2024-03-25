@@ -1,0 +1,3 @@
+:c:func:`_PyBytes_Resize` can now be called for bytes objects with reference
+count > 1, including 1-byte bytes objects. It creates a new bytes object and
+destroys the old one if it has reference count > 1.

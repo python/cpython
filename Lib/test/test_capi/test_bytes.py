@@ -2,6 +2,7 @@ import unittest
 from test.support import import_helper
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+_testcapi = import_helper.import_module('_testcapi')
 from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
 
 NULL = None
@@ -216,6 +217,35 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES decodeescape(b'abc', NULL, -1)
         # CRASHES decodeescape(NULL, NULL, 1)
+
+    def test_resize(self):
+        """Test _PyBytes_Resize()"""
+        resize = _testcapi.bytes_resize
+
+        for new in True, False:
+            self.assertEqual(resize(b'abc', 0, new), b'')
+            self.assertEqual(resize(b'abc', 1, new), b'a')
+            self.assertEqual(resize(b'abc', 2, new), b'ab')
+            self.assertEqual(resize(b'abc', 3, new), b'abc')
+            b = resize(b'abc', 4, new)
+            self.assertEqual(len(b), 4)
+            self.assertEqual(b[:3], b'abc')
+
+            self.assertEqual(resize(b'a', 0, new), b'')
+            self.assertEqual(resize(b'a', 1, new), b'a')
+            b = resize(b'a', 2, new)
+            self.assertEqual(len(b), 2)
+            self.assertEqual(b[:1], b'a')
+
+            self.assertEqual(resize(b'', 0, new), b'')
+            self.assertEqual(len(resize(b'', 1, new)), 1)
+            self.assertEqual(len(resize(b'', 2, new)), 2)
+
+        self.assertRaises(SystemError, resize, b'abc', -1, False)
+        self.assertRaises(SystemError, resize, bytearray(b'abc'), 3, False)
+
+        # CRASHES resize(NULL, 0, False)
+        # CRASHES resize(NULL, 3, False)
 
 
 if __name__ == "__main__":

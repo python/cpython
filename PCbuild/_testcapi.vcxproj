@@ -98,6 +98,7 @@
     <ClCompile Include="..\Modules\_testcapi\vectorcall.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
     <ClCompile Include="..\Modules\_testcapi\abstract.c" />
+    <ClCompile Include="..\Modules\_testcapi\bytes.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testcapi\dict.c" />
     <ClCompile Include="..\Modules\_testcapi\set.c" />
