@@ -491,7 +491,7 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     // needs to be decref'd outside of the lock
     PyObject *old_profileobj;
     LOCK_SETUP();
-    int profiling_threads = setup_profile(tstate, func, arg, &old_profileobj);
+    Py_ssize_t profiling_threads = setup_profile(tstate, func, arg, &old_profileobj);
     UNLOCK_SETUP();
     Py_XDECREF(old_profileobj);
 
@@ -582,7 +582,6 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
         return -1;
     }
-
     assert(tstate->interp->sys_tracing_threads >= 0);
     // needs to be decref'd outside of the lock
     PyObject *old_traceobj;

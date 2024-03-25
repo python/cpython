@@ -49,7 +49,7 @@ class InstrumentationMultiThreadedMixin:
         """Runs once after the test is done"""
         pass
 
-    def test_instrumention(self):
+    def test_instrumentation(self):
         # Setup a bunch of functions which will need instrumentation...
         funcs = []
         for i in range(self.func_count):
