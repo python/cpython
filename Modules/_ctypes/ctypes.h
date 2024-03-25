@@ -303,6 +303,7 @@ typedef struct {
 } StgInfo;
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
+extern void ctype_clear_stginfo(StgInfo *info);
 
 typedef int(* PPROC)(void);
 

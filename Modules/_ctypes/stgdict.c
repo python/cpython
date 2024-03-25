@@ -25,6 +25,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
     Py_ssize_t size;
 
+    ctype_clear_stginfo(dst_info);
     PyMem_Free(dst_info->ffi_type_pointer.elements);
     PyMem_Free(dst_info->format);
     dst_info->format = NULL;

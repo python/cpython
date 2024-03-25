@@ -469,8 +469,8 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
     return PyType_Type.tp_traverse(self, visit, arg);
 }
 
-static void
-_ctype_clear_stginfo(StgInfo *info)
+void
+ctype_clear_stginfo(StgInfo *info)
 {
     assert(info);
     Py_CLEAR(info->proto);
@@ -490,7 +490,7 @@ CType_Type_clear(PyObject *self)
             PyErr_WriteUnraisable(self);
         }
         if (info) {
-            _ctype_clear_stginfo(info);
+            ctype_clear_stginfo(info);
         }
     }
     return PyType_Type.tp_clear(self);
@@ -513,7 +513,7 @@ CType_Type_dealloc(PyObject *self)
             info->format = NULL;
             PyMem_Free(info->shape);
             info->shape = NULL;
-            _ctype_clear_stginfo(info);
+            ctype_clear_stginfo(info);
         }
     }
 
