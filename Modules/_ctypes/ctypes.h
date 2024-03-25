@@ -41,7 +41,6 @@ typedef struct {
     PyTypeObject *PyCArg_Type;
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
-    PyTypeObject *PyCStgDict_Type;
     PyTypeObject *StructParam_Type;
     PyTypeObject *PyCStructType_Type;
     PyTypeObject *UnionType_Type;
@@ -59,6 +58,7 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
+    PyTypeObject *PyCType_Type;
 } ctypes_state;
 
 extern ctypes_state global_state;
@@ -144,7 +144,7 @@ typedef struct {
     CThunkObject *thunk;
     PyObject *callable;
 
-    /* These two fields will override the ones in the type's stgdict if
+    /* These two fields will override the ones in the type's stginfo if
        they are set */
     PyObject *converters;
     PyObject *argtypes;
@@ -158,17 +158,12 @@ typedef struct {
     PyObject *paramflags;
 } PyCFuncPtrObject;
 
-extern PyTypeObject PyCStgDict_Type;
-#define PyCStgDict_CheckExact(st, v)        Py_IS_TYPE((v), (st)->PyCStgDict_Type)
-#define PyCStgDict_Check(st, v)     PyObject_TypeCheck((v), (st)->PyCStgDict_Type)
-
-extern int PyCStructUnionType_update_stgdict(PyObject *fields, PyObject *type, int isStruct);
+extern int PyCStructUnionType_update_stginfo(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 
 
 
-extern PyTypeObject PyCData_Type;
 #define CDataObject_CheckExact(st, v)  Py_IS_TYPE((v), (st)->PyCData_Type)
 #define CDataObject_Check(st, v)       PyObject_TypeCheck((v), (st)->PyCData_Type)
 #define _CDataObject_HasExternalBuffer(v)  ((v)->b_ptr != (char *)&(v)->b_value)
@@ -187,10 +182,6 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 
 extern PyObject *PyCData_AtAddress(PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(PyObject *type, char *data, Py_ssize_t length);
-
-extern PyTypeObject PyCArray_Type;
-extern PyTypeObject PyCPointer_Type;
-extern PyTypeObject PyCFuncPtr_Type;
 
 #define PyCArrayTypeObject_Check(st, v)   PyObject_TypeCheck((v), (st)->PyCArrayType_Type)
 #define ArrayObject_Check(st, v)          PyObject_TypeCheck((v), (st)->PyCArray_Type)
@@ -231,45 +222,22 @@ typedef struct {
     int anonymous;
 } CFieldObject;
 
-/* A subclass of PyDictObject, used as the instance dictionary of ctypes
-   metatypes */
-typedef struct {
-    PyDictObject dict;          /* first part identical to PyDictObject */
-/* The size and align fields are unneeded, they are in ffi_type as well.  As
-   an experiment shows, it's trivial to get rid of them, the only thing to
-   remember is that in PyCArrayType_new the ffi_type fields must be filled in -
-   so far it was unneeded because libffi doesn't support arrays at all
-   (because they are passed as pointers to function calls anyway).  But it's
-   too much risk to change that now, and there are other fields which doesn't
-   belong into this structure anyway.  Maybe in ctypes 2.0... (ctypes 2000?)
-*/
-    Py_ssize_t size;            /* number of bytes */
-    Py_ssize_t align;           /* alignment requirements */
-    Py_ssize_t length;          /* number of fields */
-    ffi_type ffi_type_pointer;
-    PyObject *proto;            /* Only for Pointer/ArrayObject */
-    SETFUNC setfunc;            /* Only for simple objects */
-    GETFUNC getfunc;            /* Only for simple objects */
-    PARAMFUNC paramfunc;
-
-    /* Following fields only used by PyCFuncPtrType_Type instances */
-    PyObject *argtypes;         /* tuple of CDataObjects */
-    PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
-    PyObject *restype;          /* CDataObject or NULL */
-    PyObject *checker;
-    int flags;                  /* calling convention and such */
-
-    /* pep3118 fields, pointers need PyMem_Free */
-    char *format;
-    int ndim;
-    Py_ssize_t *shape;
-/*      Py_ssize_t *strides;    */ /* unused in ctypes */
-/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
-
-} StgDictObject;
-
 /****************************************************************
- StgDictObject fields
+ StgInfo
+
+ Since Python 3.13, ctypes-specific type information is stored in the
+ corresponding type object, in a `StgInfo` struct accessed by the helpers
+ below.
+ Before that, each type's `tp_dict` was set to a dict *subclass* that included
+ the fields that are now in StgInfo. The mechanism was called "StgDict"; a few
+ references to that name might remain.
+
+ Functions for accessing StgInfo are `static inline` for performance;
+ see later in this file.
+
+ ****************************************************************
+
+ StgInfo fields
 
  setfunc and getfunc is only set for simple data types, it is copied from the
  corresponding fielddesc entry.  These are functions to set and get the value
@@ -280,11 +248,11 @@ typedef struct {
  object.
 
  Probably all the magic ctypes methods (like from_param) should have C
- callable wrappers in the StgDictObject.  For simple data type, for example,
+ callable wrappers in the StgInfo.  For simple data type, for example,
  the fielddesc table could have entries for C codec from_param functions or
  other methods as well, if a subtype overrides this method in Python at
  construction time, or assigns to it later, tp_setattro should update the
- StgDictObject function to a generic one.
+ StgInfo function to a generic one.
 
  Currently, PyCFuncPtr types have 'converters' and 'checker' entries in their
  type dict.  They are only used to cache attributes from other entries, which
@@ -308,13 +276,33 @@ typedef struct {
 
 *****************************************************************/
 
-/* May return NULL, but does not set an exception! */
-extern StgDictObject *PyType_stgdict(PyObject *obj);
+typedef struct {
+    int initialized;
+    Py_ssize_t size;            /* number of bytes */
+    Py_ssize_t align;           /* alignment requirements */
+    Py_ssize_t length;          /* number of fields */
+    ffi_type ffi_type_pointer;
+    PyObject *proto;            /* Only for Pointer/ArrayObject */
+    SETFUNC setfunc;            /* Only for simple objects */
+    GETFUNC getfunc;            /* Only for simple objects */
+    PARAMFUNC paramfunc;
 
-/* May return NULL, but does not set an exception! */
-extern StgDictObject *PyObject_stgdict(PyObject *self);
+    /* Following fields only used by PyCFuncPtrType_Type instances */
+    PyObject *argtypes;         /* tuple of CDataObjects */
+    PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
+    PyObject *restype;          /* CDataObject or NULL */
+    PyObject *checker;
+    int flags;                  /* calling convention and such */
 
-extern int PyCStgDict_clone(StgDictObject *src, StgDictObject *dst);
+    /* pep3118 fields, pointers need PyMem_Free */
+    char *format;
+    int ndim;
+    Py_ssize_t *shape;
+/*      Py_ssize_t *strides;    */ /* unused in ctypes */
+/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
+} StgInfo;
+
+extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 
 typedef int(* PPROC)(void);
 
@@ -416,8 +404,74 @@ void *Py_ffi_closure_alloc(size_t size, void** codeloc);
 #define Py_ffi_closure_alloc ffi_closure_alloc
 #endif
 
-/*
- Local Variables:
- compile-command: "python setup.py -q build install --home ~"
- End:
-*/
+
+/****************************************************************
+ * Accessing StgInfo -- these are inlined for performance reasons.
+ */
+
+// `PyStgInfo_From**` functions get a PyCTypeDataObject.
+// These return -1 on error, 0 if "not found", 1 on OK.
+// (Currently, these do not return -1 in practice. This might change
+// in the future.)
+
+//
+// Common helper:
+static inline int
+_stginfo_from_type(ctypes_state *state, PyTypeObject *type, StgInfo **result)
+{
+    *result = NULL;
+    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
+        // not a ctypes class.
+        return 0;
+    }
+    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
+    assert(info != NULL);
+    if (!info->initialized) {
+        // StgInfo is not initialized. This happens in abstract classes.
+        return 0;
+    }
+    *result = info;
+    return 1;
+}
+// from a type:
+static inline int
+PyStgInfo_FromType(ctypes_state *state, PyObject *type, StgInfo **result)
+{
+    return _stginfo_from_type(state, (PyTypeObject *)type, result);
+}
+// from an instance:
+static inline int
+PyStgInfo_FromObject(ctypes_state *state, PyObject *obj, StgInfo **result)
+{
+    return _stginfo_from_type(state, Py_TYPE(obj), result);
+}
+// from either a type or an instance:
+static inline int
+PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
+{
+    if (PyType_Check(obj)) {
+        return _stginfo_from_type(state, (PyTypeObject *)obj, result);
+    }
+    return _stginfo_from_type(state, Py_TYPE(obj), result);
+}
+
+// Initialize StgInfo on a newly created type
+static inline StgInfo *
+PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
+{
+    if (!PyObject_IsInstance((PyObject *)type, (PyObject *)state->PyCType_Type)) {
+        PyErr_Format(PyExc_SystemError,
+                     "'%s' is not a ctypes class.",
+                     type->tp_name);
+        return NULL;
+    }
+    StgInfo *info = PyObject_GetTypeData((PyObject *)type, state->PyCType_Type);
+    if (info->initialized) {
+        PyErr_Format(PyExc_SystemError,
+                     "StgInfo of '%s' is already initialized.",
+                     type->tp_name);
+        return NULL;
+    }
+    info->initialized = 1;
+    return info;
+}
