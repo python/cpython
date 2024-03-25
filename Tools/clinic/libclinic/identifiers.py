@@ -24,7 +24,7 @@ typedef typeof union unsigned void volatile while
 def ensure_legal_c_identifier(identifier: str) -> str:
     # For now, just complain if what we're given isn't legal.
     if not is_legal_c_identifier(identifier):
-        raise ClinicError(f"Illegal C identifier: {identifier}")
+        raise ClinicError(f"Expected a legal C identifier; got {identifier!r}")
     # But if we picked a C keyword, pick something else.
     if identifier in _c_keywords:
         return identifier + "_value"

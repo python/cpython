@@ -265,7 +265,8 @@ class ClinicWholeFileTest(TestCase):
         self.expect_failure(raw, err)
 
     def test_clone_mismatch(self):
-        err = "'kind' of function and cloned function don't match!"
+        err = ("'kind' of function and cloned function don't match: "
+               "STATIC_METHOD != CLASS_METHOD")
         block = """
             /*[clinic input]
             module m
@@ -574,7 +575,7 @@ class ClinicWholeFileTest(TestCase):
             C.__init__ = C.meth
             [clinic start generated code]*/
         """
-        err = "'__init__' must be a normal method; got 'FunctionKind.CLASS_METHOD'!"
+        err = "'__init__' must be an instance method; got 'FunctionKind.CLASS_METHOD'"
         self.expect_failure(block, err, lineno=8)
 
     def test_validate_cloned_new(self):
@@ -1906,7 +1907,9 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err)
 
     def test_parameters_no_more_than_one_vararg(self):
-        err = "Too many var args"
+        err = ("Cannot specify multiple vararg parameters: "
+               "'vararg2' is a vararg, but "
+               "'vararg1' was already provided")
         block = """
             module foo
             foo.bar
@@ -2039,6 +2042,15 @@ class ClinicParserTest(TestCase):
             with self.subTest(block=block):
                 self.expect_failure(block, err, lineno=2)
 
+    def test_str_converter_invalid_format_unit(self):
+        block = """
+            module foo
+            foo.bar
+              a: str(encoding='foo', zeroes=True, accept={})
+        """
+        err = "unsupported combination of str converter arguments"
+        self.expect_failure(block, err, lineno=2)
+
     def test_other_bizarre_things_in_annotations_fail(self):
         err = "Annotations must be either a name, a function call, or a string"
         dataset = (
@@ -2120,7 +2132,7 @@ class ClinicParserTest(TestCase):
             self.parse_function(block)
 
     def test_new_must_be_a_class_method(self):
-        err = "'__new__' must be a class method!"
+        err = "'__new__' must be a class method; got 'FunctionKind.CALLABLE'"
         block = """
             module foo
             class Foo "" ""
@@ -2129,7 +2141,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
-        err_template = "'__init__' must be a normal method; got 'FunctionKind.{}'!"
+        err_template = "'__init__' must be an instance method; got 'FunctionKind.{}'"
         annotations = {
             "@classmethod": "CLASS_METHOD",
             "@staticmethod": "STATIC_METHOD",
@@ -2317,7 +2329,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(stdout.getvalue(), expected)
 
     def test_illegal_c_identifier(self):
-        err = "Illegal C identifier: 17a"
+        err = "Expected a legal C identifier; got '17a'"
         block = """
             module test
             test.fn

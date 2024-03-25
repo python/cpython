@@ -2797,14 +2797,27 @@ class buffer: pass
 class rwbuffer: pass
 class robuffer: pass
 
-StrConverterKeyType = tuple[frozenset[type[object]], bool, bool]
+@dc.dataclass
+class StrConverterKey:
+    accept: frozenset[type[object]]
+    encoding: bool
+    zeroes: bool
+
+    def __hash__(self) -> int:
+        return hash((self.accept, self.encoding, self.zeroes))
+
+    def __str__(self) -> str:
+        accept = "{" + ", ".join([tp.__name__ for tp in self.accept]) + "}"
+        encoding = 'encodingname' if self.encoding else None
+        zeroes = self.zeroes
+        return f"{accept=!r}, {encoding=!r}, {zeroes=!r}"
 
 def str_converter_key(
     types: TypeSet, encoding: bool | str | None, zeroes: bool
-) -> StrConverterKeyType:
-    return (frozenset(types), bool(encoding), bool(zeroes))
+) -> StrConverterKey:
+    return StrConverterKey(frozenset(types), bool(encoding), bool(zeroes))
 
-str_converter_argument_map: dict[StrConverterKeyType, str] = {}
+str_converter_argument_map: dict[StrConverterKey, str] = {}
 
 class str_converter(CConverter):
     type = 'const char *'
@@ -2822,7 +2835,10 @@ class str_converter(CConverter):
         key = str_converter_key(accept, encoding, zeroes)
         format_unit = str_converter_argument_map.get(key)
         if not format_unit:
-            fail("str_converter: illegal combination of arguments", key)
+            allowed = "\n".join([str(k) for k in str_converter_argument_map.keys()])
+            fail("unsupported combination of str converter arguments: "
+                 f"{accept=!r}, {encoding=!r}, {zeroes=!r}; "
+                 f"allowed combinations are:\n\n{allowed}")
 
         self.format_unit = format_unit
         self.length = bool(zeroes)
@@ -3749,12 +3765,14 @@ class DSLParser:
 
     def at_classmethod(self) -> None:
         if self.kind is not CALLABLE:
-            fail("Can't set @classmethod, function is not a normal callable")
+            fail("Can't set @classmethod, "
+                 f"function is not a normal callable; got: {self.kind!r}")
         self.kind = CLASS_METHOD
 
     def at_critical_section(self, *args: str) -> None:
         if len(args) > 2:
-            fail("Up to 2 critical section variables are supported")
+            fail("Only 2 critical section variables are supported; "
+                 f"{len(args)} were given")
         self.target_critical_section.extend(args)
         self.critical_section = True
 
@@ -3778,7 +3796,8 @@ class DSLParser:
 
     def at_staticmethod(self) -> None:
         if self.kind is not CALLABLE:
-            fail("Can't set @staticmethod, function is not a normal callable")
+            fail("Can't set @staticmethod, "
+                 f"function is not a normal callable; got: {self.kind!r}")
         self.kind = STATIC_METHOD
 
     def at_coexist(self) -> None:
@@ -3892,9 +3911,9 @@ class DSLParser:
         if name in unsupported_special_methods:
             fail(f"{name!r} is a special method and cannot be converted to Argument Clinic!")
         if name == '__init__' and (self.kind is not CALLABLE or not cls):
-            fail(f"{name!r} must be a normal method; got '{self.kind}'!")
+            fail(f"{name!r} must be an instance method; got '{self.kind}'!")
         if name == '__new__' and (self.kind is not CLASS_METHOD or not cls):
-            fail("'__new__' must be a class method!")
+            fail(f"'__new__' must be a class method; got '{self.kind}'")
         if self.kind in {GETTER, SETTER} and not cls:
             fail("@getter and @setter must be methods")
 
@@ -3968,8 +3987,8 @@ class DSLParser:
                 # Future enhancement: allow custom return converters
                 overrides["return_converter"] = CReturnConverter()
             else:
-                fail("'kind' of function and cloned function don't match! "
-                     "(@classmethod/@staticmethod/@coexist)")
+                fail("'kind' of function and cloned function don't match: "
+                     f"{self.kind.name} != {existing_function.kind.name}")
         function = existing_function.copy(**overrides)
         self.function = function
         self.block.signatures.append(function)
@@ -4247,10 +4266,13 @@ class DSLParser:
                  f"invalid parameter declaration (**kwargs?): {line!r}")
 
         if function_args.vararg:
-            if any(p.is_vararg() for p in self.function.parameters.values()):
-                fail("Too many var args")
             is_vararg = True
             parameter = function_args.vararg
+            for p in self.function.parameters.values():
+                if p.is_vararg():
+                    fail("Cannot specify multiple vararg parameters: "
+                         f"{parameter.arg!r} is a vararg, but "
+                         f"{p.name!r} was already provided as a vararg")
         else:
             is_vararg = False
             parameter = function_args.args[0]
