@@ -713,45 +713,123 @@ Optimizations
   FreeBSD and Solaris.  See the ``subprocess`` section above for details.
   (Contributed by Jakub Kulik in :gh:`113117`.)
 
+
+
 .. _whatsnew313-jit-compiler:
+
 
 Experimental JIT Compiler
 =========================
 
-When CPython is configured using the ``--enable-experimental-jit`` option,
-a just-in-time compiler is added which can speed up some Python programs.
+:Editor: Guido van Rossum, Ken Jin
 
-The internal architecture is roughly as follows.
+When CPython is configured using the ``--enable-experimental-jit`` build-time
+option, a just-in-time compiler is added which can speed up some Python
+programs. The internal architecture is roughly as follows.
 
-* We start with specialized *Tier 1 bytecode*.
-  See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
 
-* When the Tier 1 bytecode gets hot enough, it gets translated
-  to a new, purely internal *Tier 2 IR*, a.k.a. micro-ops ("uops").
+Intermediate Representation
+---------------------------
 
-* The Tier 2 IR uses the same stack-based VM as Tier 1, but the
-  instruction format is better suited to translation to machine code.
+We start with specialized *Tier 1 bytecode*.
+See :ref:`What's new in 3.11 <whatsnew311-pep659>` for details.
 
-* We have several optimization passes for Tier 2 IR, which are applied
-  before it is interpreted or translated to machine code.
+When the Tier 1 bytecode gets hot enough, the interpreter creates
+straight-line sequences of bytecode known as "traces", and translates that
+to a new, purely internal *Tier 2 IR*, a.k.a. micro-ops ("uops").
+These straight-line sequences can cross function call boundaries,
+allowing more effective optimizations, listed in the next section.
 
-* There is a Tier 2 interpreter, but it is mostly intended for debugging
-  the earlier stages of the optimization pipeline. If the JIT is not
-  enabled, the Tier 2 interpreter can be invoked by passing Python the
-  ``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
-  variable to ``1``.
+The Tier 2 IR uses the same stack-based VM as Tier 1, but the
+instruction format is better suited to translation to machine code.
 
-* When the ``--enable-experimental-jit`` option is used, the optimized
-  Tier 2 IR is translated to machine code, which is then executed.
-  This does not require additional runtime options.
+(Tier 2 IR contributed by Mark Shannon and Guido van Rossum.)
 
-* The machine code translation process uses an architecture called
-  *copy-and-patch*. It has no runtime dependencies, but there is a new
-  build-time dependency on LLVM.
 
-(JIT by Brandt Bucher, inspired by a paper by Haoran Xu and Fredrik Kjolstad.
-Tier 2 IR by Mark Shannon and Guido van Rossum.
-Tier 2 optimizer by Ken Jin.)
+Optimizations
+-------------
+
+We have several optimization and analysis passes for Tier 2 IR, which
+are applied before Tier 2 IR is interpreted or translated to machine code.
+These optimizations take unoptimized Tier 2 IR and produce optimized Tier 2
+IR:
+
+* This section is non-exhaustive and will be updated with further
+  optimizations, until CPython 3.13's beta release.
+
+* Type propagation -- through forward
+  `data-flow analysis <https://clang.llvm.org/docs/DataFlowAnalysisIntro.html>`_,
+  we infer and deduce information about types.
+
+* Constant propagation -- through forward data-flow analysis, we can
+  evaluate in advance bytecode which we know operate on constants.
+
+* Guard elimination -- through a combination of constant and type information,
+  we can eliminate type checks and other guards associated with operations.
+  These guards validate specialized operations, but add a slight bit of
+  overhead. For example, integer addition needs a type check that checks
+  both operands are integers. If we know that a integer guards' operands
+  are guaranteed to be integers, we can safely eliminate it.
+
+* Loop splitting -- after the first iteration, we gain a lot more type
+  information. Thus, we peel the first iteration of loops to produce
+  an optimized body that exploits this additional type information.
+  This also achieves a similar effect to an optimization called
+  loop-invariant code motion, but only for guards.
+
+* Globals to constant promotion -- global value loads become constant
+  loads, speeding them up and also allowing for more constant propagation.
+  This work relies on dictionary watchers, implemented in 3.12.
+  (Contributed by Mark Shannon in :gh:`113710`.)
+
+(Tier 2 optimizer contributed by Ken Jin and Mark Shannon,
+with implementation help by Guido van Rossum. Special thanks
+to Manuel Rigger.)
+
+
+Execution Engine
+----------------
+
+There are two execution engines for Tier 2 IR:
+the Tier 2 interpreter and the Just-in-Time (JIT) compiler.
+
+The Tier 2 interpreter is mostly intended for debugging
+the earlier stages of the optimization pipeline. If the JIT is not
+enabled, the Tier 2 interpreter can be invoked by passing Python the
+``-X uops`` option or by setting the ``PYTHON_UOPS`` environment
+variable to ``1``.
+
+The second is the JIT compiler. When the ``--enable-experimental-jit``
+build-time option is used, the optimized Tier 2 IR is translated to machine
+code, which is then executed. This does not require additional
+runtime options.
+
+The machine code translation process uses a technique called
+*copy-and-patch*. It has no runtime dependencies, but there is a new
+build-time dependency on `LLVM <https://llvm.org>`_.
+The main benefit of this technique is
+fast compilation, reported as orders of magnitudes faster versus
+traditional compilation techniques in the paper linked below. The code
+produced is slightly less optimized, but suitable for a baseline JIT
+compiler. Fast compilation is critical to reduce the runtime overhead
+of the JIT compiler.
+
+(Copy-and-patch JIT compiler contributed by Brandt Bucher,
+directly inspired by the paper
+`Copy-and-Patch Compilation <https://fredrikbk.com/publications/copy-and-patch.pdf>`_
+by Haoran Xu and Fredrik Kjolstad. For more information,
+`a talk <https://youtu.be/HxSHIpEQRjs?si=RwC78FcXrThIgFmY>`_ by Brandt Bucher
+is available.)
+
+
+Results and Future Work
+-----------------------
+
+The final performance results will be published here before
+CPython 3.13's beta release.
+
+The JIT compiler is rather unoptimized, and serves as the foundation
+for significant optimizations in future releases.
 
 
 
