@@ -1,0 +1,3 @@
+The :class:`types.SimpleNamespace` now accepts an optional positional
+argument which specifies initial values of attributes as a dict or an
+iterable of key-value pairs.
