@@ -1,0 +1,2 @@
+:program:`configure` now uses :program:`pkg-config` to detect :mod:`decimal`
+dependencies if the :option:`--with-system-libmpdec` option is given.
