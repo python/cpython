@@ -142,18 +142,11 @@ Cross Platform
    Returns the system's release, e.g. ``'2.2.0'`` or ``'NT'``. An empty string is
    returned if the value cannot be determined.
 
-   .. versionchanged:: 3.13
-      On Android, this now returns the Android version rather than the Linux
-      kernel version.
-
 
 .. function:: system()
 
    Returns the system/OS name, such as ``'Linux'``, ``'Darwin'``, ``'Java'``,
    ``'Windows'``. An empty string is returned if the value cannot be determined.
-
-   .. versionchanged:: 3.13
-      On Android, this now returns ``'Android'`` rather than ``'Linux'``.
 
 
 .. function:: system_alias(system, release, version)
@@ -329,18 +322,16 @@ Android Platform
 
    * ``manufacturer`` - `manufacturer name
      <https://developer.android.com/reference/android/os/Build#MANUFACTURER>`__
-     (e.g. ``"Google"``)
 
    * ``model`` - `model name
-     <https://developer.android.com/reference/android/os/Build#MODEL>`__
-     (e.g. ``"Pixel 7"``)
+     <https://developer.android.com/reference/android/os/Build#MODEL>`__ –
+     typically the marketing name or model number
 
    * ``device`` - `device name
-     <https://developer.android.com/reference/android/os/Build#DEVICE>`__
-     (e.g. ``"panther"``)
+     <https://developer.android.com/reference/android/os/Build#DEVICE>`__ –
+     typically the model number or a codename
 
-   Which one of ``model`` and ``device`` is more likely to distinguish different
-   device variants, and which one is more likely to resemble the marketing name,
-   varies between different manufacturers.
+   For a list of known model and device names, see `here
+   <https://storage.googleapis.com/play_public/supported_devices.html>`__.
 
    .. versionadded:: 3.13
