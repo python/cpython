@@ -389,7 +389,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
 
-    def check_ci_mode(self, args, use_resources, rerun=True):
+    def create_regrtest(self, args):
         ns = cmdline._parse_args(args)
 
         # Check Regrtest attributes which are more reliable than Namespace
@@ -401,6 +401,10 @@ class ParseArgsTestCase(unittest.TestCase):
 
             regrtest = main.Regrtest(ns)
 
+        return regrtest
+
+    def check_ci_mode(self, args, use_resources, rerun=True):
+        regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
@@ -445,6 +449,29 @@ class ParseArgsTestCase(unittest.TestCase):
         args = ['--dont-add-python-opts']
         ns = cmdline._parse_args(args)
         self.assertFalse(ns._add_python_opts)
+
+    def test_bisect(self):
+        args = ['--bisect']
+        regrtest = self.create_regrtest(args)
+        self.assertTrue(regrtest.want_bisect)
+
+    def test_verbose3_huntrleaks(self):
+        args = ['-R', '3:10', '--verbose3']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.hunt_refleak)
+        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
+        self.assertEqual(regrtest.hunt_refleak.runs, 10)
+        self.assertFalse(regrtest.output_on_failure)
+
+    def test_xml_huntrleaks(self):
+        args = ['-R', '3:12', '--junit-xml', 'output.xml']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.hunt_refleak)
+        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
+        self.assertEqual(regrtest.hunt_refleak.runs, 12)
+        self.assertIsNone(regrtest.junit_filename)
 
 
 @dataclasses.dataclass(slots=True)
@@ -1148,8 +1175,8 @@ class ArgsTestCase(BaseTestCase):
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
 
-        line = 'beginning 6 repetitions\n123456\n......\n'
-        self.check_line(output, re.escape(line))
+        line = r'beginning 6 repetitions. .*\n123:456\n[.0-9X]{3} 111\n'
+        self.check_line(output, line)
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
         self.assertIn(line2, output)
@@ -1177,6 +1204,47 @@ class ArgsTestCase(BaseTestCase):
 
     def test_huntrleaks_mp(self):
         self.check_huntrleaks(run_workers=True)
+
+    @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
+    def test_huntrleaks_bisect(self):
+        # test --huntrleaks --bisect
+        code = textwrap.dedent("""
+            import unittest
+
+            GLOBAL_LIST = []
+
+            class RefLeakTest(unittest.TestCase):
+                def test1(self):
+                    pass
+
+                def test2(self):
+                    pass
+
+                def test3(self):
+                    GLOBAL_LIST.append(object())
+
+                def test4(self):
+                    pass
+        """)
+
+        test = self.create_test('huntrleaks', code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(os_helper.unlink, filename)
+        cmd = ['--huntrleaks', '3:3:', '--bisect', test]
+        output = self.run_tests(*cmd,
+                                exitcode=EXITCODE_BAD_TEST,
+                                stderr=subprocess.STDOUT)
+
+        self.assertIn(f"Bisect {test}", output)
+        self.assertIn(f"Bisect {test}: exit code 0", output)
+
+        # test3 is the one which leaks
+        self.assertIn("Bisection completed in", output)
+        self.assertIn(
+            "Tests (1):\n"
+            f"* {test}.RefLeakTest.test3\n",
+            output)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
