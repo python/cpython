@@ -538,21 +538,24 @@ def relpath(path, start=None):
         raise
 
 
-# Return the longest common sub-path of the sequence of paths given as input.
+# Return the longest common sub-path of the iterable of paths given as input.
 # The paths are not normalized before comparing them (this is the
 # responsibility of the caller). Any trailing separator is stripped from the
 # returned path.
 
 def commonpath(paths):
-    """Given a sequence of path names, returns the longest common sub-path."""
+    """Given a iterable of path names, returns the longest common sub-path."""
     _, roots, tails = zip(*map(splitroot, paths))
     if not roots:
-        raise ValueError('commonpath() arg is an empty sequence')
+        raise ValueError('commonpath() arg is an empty iterable')
 
     try:
         prefix = min(roots)
     except (TypeError, AttributeError):
-        genericpath._check_arg_types('commonpath', *paths)
+        genericpath._check_arg_types('commonpath', *(
+            # Can't use paths, can be an iterable
+            root + tail for root, tail in zip(roots, tails)
+        ))
         raise
 
     if not prefix and max(roots):
