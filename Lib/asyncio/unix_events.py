@@ -1,6 +1,8 @@
 """Selector event loop for Unix with signal handling."""
 
 import errno
+
+import functools
 import io
 import itertools
 import os
@@ -65,6 +67,12 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         super().__init__(selector)
         self._signal_handlers = {}
         self._unix_server_sockets = {}
+
+        if not hasattr(socket.socket, 'sendmsg'):
+            delattr(self, 'sock_sendmsg')
+
+        if not hasattr(socket.socket, 'recvmsg'):
+            delattr(self, 'sock_recvmsg')
 
     def close(self):
         super().close()
@@ -490,6 +498,104 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             except OSError as err:
                 logger.error('Unable to clean up listening UNIX socket '
                              '%r: %r', path, err)
+
+    async def sock_sendmsg(self, sock, data, ancdata=[], flags=0, address=None):
+        """Send datagram (data) and ancillary data to the socket (sock).
+
+        The provided ancillary data is a list of zero or more tuples (data, ancdata,
+        msg_flags, address). flags represent various conditions and have the same
+        meaning as for send(). If address is supplied and not None, it sets a destination
+        address for the message it is the address of the sending socket.
+        """
+        base_events._check_ssl_socket(sock)
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+        try:
+            n = sock.sendmsg([data], ancdata, flags, address)
+        except (BlockingIOError, InterruptedError):
+            n = 0
+
+        if n == len(data):
+            # all data sent
+            return
+
+        fut = self.create_future()
+        fd = sock.fileno()
+        self._ensure_fd_no_transport(fd)
+        # use a trick with a list in closure to store a mutable state
+        handle = self._add_writer(fd, self._sock_sendmsg, fut, sock,
+                                  memoryview(data), [n], ancdata, flags, address)
+        fut.add_done_callback(
+            functools.partial(self._sock_write_done, fd, handle=handle))
+        return await fut
+
+    def _sock_sendmsg(self, fut, sock, view, pos, ancdata, flags, address):
+        if fut.done():
+            # Future cancellation can be scheduled on previous loop iteration
+            return
+        start = pos[0]
+        try:
+            n = sock.sendmsg([view[start:]], ancdata, flags, address)
+        except (BlockingIOError, InterruptedError):
+            return
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
+            fut.set_exception(exc)
+            return
+
+        start += n
+
+        if start == len(view):
+            fut.set_result(None)
+        else:
+            pos[0] = start
+
+    async def sock_recvmsg(self, sock, bufsize, ancbufsize=0, flags=0):
+        """Receive normal data (up to bufsize bytes) and ancillary data from
+        the socket (sock). The socket must be non-blocking.
+
+        The return value is a tuple of (data, ancdata, msg_flags, address).
+        data represents the datagram received. ancdata are the ancillary data
+        (control messages) as a list of tuples (cmsg_level, cmsg_type, cmsg_data),
+        where cmsg_level and cmsg_type are integers specifying the protocol level
+        and protocol-specific type respectively, and cmsg_data is a bytes object
+        holding the associated ancillary data. flags represent various conditions
+        (bitwise OR) on the received data.
+        The address is only specified if the receiving socket is unconnected.
+        Then it is the address of the sending socket.
+        """
+        base_events._check_ssl_socket(sock)
+        if self._debug and sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+        try:
+            return sock.recvmsg(bufsize)
+        except (BlockingIOError, InterruptedError):
+            pass
+        fut = self.create_future()
+        fd = sock.fileno()
+        self._ensure_fd_no_transport(fd)
+        handle = self._add_reader(fd, self._sock_recvmsg, fut, sock, bufsize, ancbufsize, flags)
+        fut.add_done_callback(
+            functools.partial(self._sock_read_done, fd, handle=handle))
+        return await fut
+
+    def _sock_recvmsg(self, fut, sock, bufsize, ancbufsize, flags):
+        # _sock_recvmsg() can add itself as an I/O callback if the operation
+        # can't be done immediately. Don't use it directly, call
+        # sock_recvmsg().
+        if fut.done():
+            return
+        try:
+            result = sock.recvmsg(bufsize, ancbufsize, flags)
+        except (BlockingIOError, InterruptedError):
+            return  # try again next time
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as exc:
+            fut.set_exception(exc)
+        else:
+            fut.set_result(result)
 
 
 class _UnixReadPipeTransport(transports.ReadTransport):
