@@ -1,0 +1,3 @@
+:meth:`unittest.TestLoader.discover` now saves the original value of
+``unittest.TestLoader._top_level_dir`` and restores it at the end of the
+call.
