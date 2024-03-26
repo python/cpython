@@ -1,3 +1,4 @@
+import itertools
 import operator
 import unittest
 import sys
@@ -96,28 +97,21 @@ class CAPITest(unittest.TestCase):
                    '__invert__': _testcapi.number_invert}  # PyNumber_Invert()
 
         for name, func in methmap.items():
-            class HasAdd(WithDunder):
-                methname = '__add__'
-            class HasMeth(WithDunder):
-                methname = name
-            class BadMeth(HasBadAttr):
-                methname = name
-
             # Generic object, has no tp_as_number structure
             self.assertRaises(TypeError, func, object())
 
-            # Has tp_as_number, but not the given unary op slot
-            self.assertRaises(TypeError, func, HasAdd.with_val("don't care about"))
-
-            # Dunder method triggers an error
-            self.assertRaises(SomeError, func, HasMeth.with_exc(SomeError))
-
-            # Finally, it returns something
-            self.assertEqual(func(HasMeth.with_val(42)), 42)
-            self.assertEqual(func(HasMeth.with_val(NotImplemented)), NotImplemented)
-
             # C-API function accepts NULL
             self.assertRaises(SystemError, func, NULL)
+
+            # Behave as corresponding unary operation
+            op = getattr(operator, name)
+            for x in [0, 42, -1, 3.14, 1+2j]:
+                try:
+                    op(x)
+                except TypeError:
+                    self.assertRaises(TypeError, func, x)
+                else:
+                    self.assertEqual(func(x), op(x))
 
     def test_binary_ops(self):
         methmap = {'__add__': _testcapi.number_add,   # PyNumber_Add()
@@ -134,121 +128,7 @@ class CAPITest(unittest.TestCase):
                    '__xor__': _testcapi.number_xor,  # PyNumber_Xor()
                    '__or__': _testcapi.number_or,  # PyNumber_Or()
                    '__pow__': _testcapi.number_power,  # PyNumber_Power()
-                   }
-
-        for name, func in methmap.items():
-            rname = '__r' + name[2:]
-            class HasPos(WithDunder):
-                methname = '__pos__'
-            class HasMeth(WithDunder):
-                methname = name
-            class HasRMeth(WithDunder):
-                methname = rname
-
-            # First argument has no tp_as_number structure
-            x = object()
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 42)
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, x, HasRMeth.with_val(NotImplemented))
-
-            # Has tp_as_number, but not the given binary op slot
-            x = HasPos.with_val("don't care about")
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 42)
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, x, HasRMeth.with_val(NotImplemented))
-
-            # First argument has dunder/rdunder method, but it triggers an error
-            x = HasMeth.with_exc(SomeError)
-            self.assertRaises(SomeError, func, x, object())
-            self.assertRaises(SomeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(SomeError, func, x, HasMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_val(NotImplemented))
-            x = HasRMeth.with_exc(SomeError)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(OtherError))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_exc(OtherError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-
-            # First argument has dunder/rdunder method, but it returns NotImplemented
-            x = HasMeth.with_val(NotImplemented)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 42)
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-            x = HasRMeth.with_val(NotImplemented)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-
-            # First argument has dunder/rdunder method and it returns something
-            x = HasMeth.with_val(123)
-            self.assertEqual(func(x, object()), 123)
-            self.assertEqual(func(x, HasPos.with_val("don't care about")), 123)
-            self.assertEqual(func(x, HasMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasRMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasMeth.with_val(NotImplemented)), 123)
-            self.assertEqual(func(x, HasRMeth.with_val(NotImplemented)), 123)
-            x = HasRMeth.with_val(123)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-
-            class IntSubclsWithRMeth2(WithDunder, int):
-                methname = rname
-            class FloatSubclsWithRMeth2(WithDunder, float):
-                methname = rname
-
-            # Test subtype with overloaded rdunder method (slotv != slotw)
-            if hasattr(int, name):
-                op = getattr(operator, name, divmod)
-                try:
-                    self.assertEqual(func(123, IntSubclsWithRMeth2.with_val(NotImplemented)), op(123, 0))
-                except ZeroDivisionError:
-                    self.assertRaises(ZeroDivisionError, func, 123, IntSubclsWithRMeth2.with_val(NotImplemented))
-                    self.assertRaises(ZeroDivisionError, op, 123, 0)
-
-                self.assertEqual(func(123, IntSubclsWithRMeth2.with_val(42)), 42)
-                self.assertEqual(func(123, FloatSubclsWithRMeth2.with_val(0.5)), 0.5)
-
-            # CRASHES func(NULL, object())
-            # CRASHES func(object(), NULL)
-
-    def test_inplace_binary_ops(self):
-        methmap = {'__iadd__': _testcapi.number_inplaceadd,   # PyNumber_InPlaceAdd()
+                   '__iadd__': _testcapi.number_inplaceadd,   # PyNumber_InPlaceAdd()
                    '__isub__': _testcapi.number_inplacesubtract,  # PyNumber_InPlaceSubtract()
                    '__imul__': _testcapi.number_inplacemultiply,  # PyNumber_InPlaceMultiply()
                    '__imatmul__': _testcapi.number_inplacematrixmultiply,  # PyNumber_InPlaceMatrixMultiply()
@@ -263,159 +143,23 @@ class CAPITest(unittest.TestCase):
                    '__ipow__': _testcapi.number_inplacepower,  # PyNumber_InPlacePower()
                    }
 
-        for iname, func in methmap.items():
-            name = '__' + iname[3:]
-            rname = '__r' + name[2:]
-            class HasPos(WithDunder):
-                methname = '__pos__'
-            class HasMeth(WithDunder):
-                methname = name
-            class HasRMeth(WithDunder):
-                methname = rname
-            class HasIMeth(WithDunder):
-                methname = iname
+        for name, func in methmap.items():
+            cases = [0, 42, 3.14, -1, 123, 1+2j]
 
-            # First argument has no tp_as_number structure
-            x = object()
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 42)
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, x, HasIMeth.with_val(NotImplemented))
+            # Generic object, has no tp_as_number structure
+            for x in cases:
+                self.assertRaises(TypeError, func, object(), x)
+                self.assertRaises(TypeError, func, x, object())
 
-            # Has tp_as_number, but not the given binary op slot
-            x = HasPos.with_val("don't care about")
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 42)
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, x, HasIMeth.with_val(NotImplemented))
-
-            # First argument has dunder/rdunder/idunder method, but it triggers an error
-            x = HasMeth.with_exc(SomeError)
-            self.assertRaises(SomeError, func, x, object())
-            self.assertRaises(SomeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(SomeError, func, x, HasMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasIMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(SomeError, func, x, HasIMeth.with_val(NotImplemented))
-            x = HasRMeth.with_exc(SomeError)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(OtherError))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_exc(OtherError))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_exc(OtherError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(NotImplemented))
-            x = HasIMeth.with_exc(SomeError)
-            self.assertRaises(SomeError, func, x, object())
-            self.assertRaises(SomeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(SomeError, func, x, HasMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasIMeth.with_exc(OtherError))
-            self.assertRaises(SomeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(SomeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(SomeError, func, x, HasIMeth.with_val(NotImplemented))
-
-            # First argument has dunder/rdunder/idunder method, but it returns NotImplemented
-            x = HasMeth.with_val(NotImplemented)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 42)
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(NotImplemented))
-            x = HasRMeth.with_val(NotImplemented)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(NotImplemented))
-            x = HasIMeth.with_val(NotImplemented)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(SomeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 42)
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(NotImplemented))
-
-            # First argument has dunder/rdunder/idunder method and it returns something
-            x = HasMeth.with_val(123)
-            self.assertEqual(func(x, object()), 123)
-            self.assertEqual(func(x, HasPos.with_val("don't care about")), 123)
-            self.assertEqual(func(x, HasMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasRMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasIMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasIMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasMeth.with_val(NotImplemented)), 123)
-            self.assertEqual(func(x, HasRMeth.with_val(NotImplemented)), 123)
-            self.assertEqual(func(x, HasIMeth.with_val(NotImplemented)), 123)
-            x = HasRMeth.with_val(123)
-            self.assertRaises(TypeError, func, x, object())
-            self.assertRaises(TypeError, func, x, HasPos.with_val("don't care about"))
-            self.assertRaises(TypeError, func, x, HasMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_exc(SomeError))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(42))
-            self.assertRaises(TypeError, func, x, HasMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasRMeth.with_val(NotImplemented))
-            self.assertRaises(TypeError, func, x, HasIMeth.with_val(NotImplemented))
-            x = HasIMeth.with_val(123)
-            self.assertEqual(func(x, object()), 123)
-            self.assertEqual(func(x, HasPos.with_val("don't care about")), 123)
-            self.assertEqual(func(x, HasMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasRMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasIMeth.with_exc(SomeError)), 123)
-            self.assertEqual(func(x, HasMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasRMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasIMeth.with_val(42)), 123)
-            self.assertEqual(func(x, HasMeth.with_val(NotImplemented)), 123)
-            self.assertEqual(func(x, HasRMeth.with_val(NotImplemented)), 123)
-            self.assertEqual(func(x, HasIMeth.with_val(NotImplemented)), 123)
+            # Behave as corresponding binary operation
+            op = getattr(operator, name, divmod)
+            for x, y in itertools.combinations(cases, 2):
+                try:
+                    op(x, y)
+                except (TypeError, ValueError, ZeroDivisionError) as exc:
+                    self.assertRaises(exc.__class__, func, x, y)
+                else:
+                    self.assertEqual(func(x, y), op(x, y))
 
             # CRASHES func(NULL, object())
             # CRASHES func(object(), NULL)
@@ -519,7 +263,8 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(long(HasTrunc.with_val(IndexLike.with_val(42))), 42)
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, long, HasTrunc.with_val(1.25))
-        self.assertRaises(RuntimeError, long, HasTrunc.with_exc(RuntimeError))
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(RuntimeError, long, HasTrunc.with_exc(RuntimeError))
         self.assertRaises(RuntimeError, long, HasBadTrunc())
 
         self.assertRaises(TypeError, long, 1j)
