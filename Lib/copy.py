@@ -121,6 +121,11 @@ def deepcopy(x, memo=None, _nil=[]):
     See the module's __doc__ string for more info.
     """
 
+    cls = type(x)
+
+    if cls in _atomic_types:
+        return x
+
     d = id(x)
     if memo is None:
         memo = {}
@@ -129,14 +134,12 @@ def deepcopy(x, memo=None, _nil=[]):
         if y is not _nil:
             return y
 
-    cls = type(x)
-
     copier = _deepcopy_dispatch.get(cls)
     if copier is not None:
         y = copier(x, memo)
     else:
         if issubclass(cls, type):
-            y = _deepcopy_atomic(x, memo)
+            y = x # atomic copy
         else:
             copier = getattr(x, "__deepcopy__", None)
             if copier is not None:
@@ -167,26 +170,12 @@ def deepcopy(x, memo=None, _nil=[]):
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
+_atomic_types =  {types.NoneType, types.EllipsisType, types.NotImplementedType,
+          int, float, bool, complex, bytes, str, types.CodeType, type, range,
+          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property}
+
 _deepcopy_dispatch = d = {}
 
-def _deepcopy_atomic(x, memo):
-    return x
-d[types.NoneType] = _deepcopy_atomic
-d[types.EllipsisType] = _deepcopy_atomic
-d[types.NotImplementedType] = _deepcopy_atomic
-d[int] = _deepcopy_atomic
-d[float] = _deepcopy_atomic
-d[bool] = _deepcopy_atomic
-d[complex] = _deepcopy_atomic
-d[bytes] = _deepcopy_atomic
-d[str] = _deepcopy_atomic
-d[types.CodeType] = _deepcopy_atomic
-d[type] = _deepcopy_atomic
-d[range] = _deepcopy_atomic
-d[types.BuiltinFunctionType] = _deepcopy_atomic
-d[types.FunctionType] = _deepcopy_atomic
-d[weakref.ref] = _deepcopy_atomic
-d[property] = _deepcopy_atomic
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
