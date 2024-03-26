@@ -897,7 +897,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         ext = ext.lower()
         if ext in self.extensions_map:
             return self.extensions_map[ext]
-        guess, _ = mimetypes.guess_type(path)
+        guess, _ = mimetypes.guess_file_type(path)
         if guess:
             return guess
         return 'application/octet-stream'
