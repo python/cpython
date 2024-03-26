@@ -609,8 +609,10 @@ combine_stack_space_checks(
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _CHECK_STACK_SPACE_OPERAND: {
+#ifdef Py_DEBUG
                 assert(expecting_push == false);
                 assert(saw_check_stack_space == false);
+#endif
                 if (first_check_stack == NULL) {
                     first_check_stack = &buffer[pc];
                 }
@@ -629,8 +631,10 @@ combine_stack_space_checks(
                 break;
             }
             case _POP_FRAME: {
+#ifdef Py_DEBUG
                 assert(expecting_push == false);
                 assert(saw_check_stack_space == false);
+#endif
                 depth--;
                 assert(depth >= 0);
                 curr_space -= space_at_depth[depth];

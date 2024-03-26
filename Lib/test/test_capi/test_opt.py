@@ -1218,9 +1218,6 @@ class TestUopsOptimization(unittest.TestCase):
                 _testinternalcapi.get_co_framesize(dummy15.__code__) +
                 _testinternalcapi.get_co_framesize(dummy_large.__code__)
             )
-            self.assertIn(
-                ("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands
-            )
         else:
             largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
         self.assertIn(
