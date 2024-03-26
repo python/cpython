@@ -489,7 +489,7 @@
             _Py_TaggedObject sub;
             PyObject *container;
             /* Skip 1 cache entry */
-            sub = (_Py_TaggedObject)(stack_pointer[-1]);
+            sub = (stack_pointer[-1]);
             container = Py_CLEAR_TAG(stack_pointer[-2]);
             DEOPT_IF(tstate->interp->eval_frame, BINARY_SUBSCR);
             PyTypeObject *tp = Py_TYPE(container);
@@ -1024,7 +1024,7 @@
             // _CALL_BUILTIN_CLASS
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
+            callable = (stack_pointer[-2 - oparg]);
             {
                 int total_args = oparg;
                 if (self_or_null != NULL) {
@@ -1118,7 +1118,7 @@
             // _CALL_BUILTIN_FAST_WITH_KEYWORDS
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
+            callable = (stack_pointer[-2 - oparg]);
             {
                 /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
                 int total_args = oparg;
@@ -3339,7 +3339,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RETURN_VALUE);
             _Py_TaggedObject retval;
-            retval = (_Py_TaggedObject)(stack_pointer[-1]);
+            retval = (stack_pointer[-1]);
             int err = _Py_call_instrumentation_arg(
                 tstate, PY_MONITORING_EVENT_PY_RETURN,
                 frame, this_instr, Py_CLEAR_TAG(retval));
@@ -3364,7 +3364,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_YIELD_VALUE);
             _Py_TaggedObject retval;
-            retval = (_Py_TaggedObject)(stack_pointer[-1]);
+            retval = (stack_pointer[-1]);
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
@@ -3650,7 +3650,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _Py_TaggedObject owner;
             /* Skip 1 cache entry */
-            owner = (_Py_TaggedObject)(stack_pointer[-1]);
+            owner = (stack_pointer[-1]);
             uint32_t type_version = read_u32(&this_instr[2].cache);
             uint32_t func_version = read_u32(&this_instr[4].cache);
             PyObject *getattribute = read_obj(&this_instr[6].cache);
@@ -3963,7 +3963,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _Py_TaggedObject owner;
             /* Skip 1 cache entry */
-            owner = (_Py_TaggedObject)(stack_pointer[-1]);
+            owner = (stack_pointer[-1]);
             uint32_t type_version = read_u32(&this_instr[2].cache);
             uint32_t func_version = read_u32(&this_instr[4].cache);
             PyObject *fget = read_obj(&this_instr[6].cache);
@@ -5069,7 +5069,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_VALUE);
             _Py_TaggedObject retval;
-            retval = (_Py_TaggedObject)(stack_pointer[-1]);
+            retval = (stack_pointer[-1]);
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -5104,7 +5104,7 @@
             _Py_TaggedObject v_packed;
             PyObject *retval;
             // _SPECIALIZE_SEND
-            receiver_packed = (_Py_TaggedObject)(stack_pointer[-2]);
+            receiver_packed = (stack_pointer[-2]);
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
                 (void)counter;
@@ -5172,7 +5172,7 @@
             _Py_TaggedObject v;
             PyObject *receiver;
             /* Skip 1 cache entry */
-            v = (_Py_TaggedObject)(stack_pointer[-1]);
+            v = (stack_pointer[-1]);
             receiver = Py_CLEAR_TAG(stack_pointer[-2]);
             DEOPT_IF(tstate->interp->eval_frame, SEND);
             PyGenObject *gen = (PyGenObject *)receiver;
@@ -5470,7 +5470,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST);
             _Py_TaggedObject value;
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             DISPATCH();
@@ -5482,7 +5482,7 @@
             INSTRUCTION_STATS(STORE_FAST_LOAD_FAST);
             _Py_TaggedObject value1;
             _Py_TaggedObject value2;
-            value1 = (_Py_TaggedObject)(stack_pointer[-1]);
+            value1 = (stack_pointer[-1]);
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -5498,8 +5498,8 @@
             INSTRUCTION_STATS(STORE_FAST_STORE_FAST);
             _Py_TaggedObject value1;
             _Py_TaggedObject value2;
-            value1 = (_Py_TaggedObject)(stack_pointer[-1]);
-            value2 = (_Py_TaggedObject)(stack_pointer[-2]);
+            value1 = (stack_pointer[-1]);
+            value2 = (stack_pointer[-2]);
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -6046,7 +6046,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(YIELD_VALUE);
             _Py_TaggedObject retval;
-            retval = (_Py_TaggedObject)(stack_pointer[-1]);
+            retval = (stack_pointer[-1]);
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.

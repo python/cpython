@@ -159,7 +159,7 @@ class Stack:
             return ""
         else:
             self.defined.add(var.name)
-        cast = f"({var.type})" if (not indirect and var.type) else ""
+        cast = f"({var.type})" if (not indirect and var.type and var.type != "_Py_TaggedObject") else ""
         if indirect:
             assign = (
                 f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"

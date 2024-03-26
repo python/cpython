@@ -176,7 +176,7 @@
             _Py_TaggedObject value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -186,7 +186,7 @@
             _Py_TaggedObject value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -196,7 +196,7 @@
             _Py_TaggedObject value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -206,7 +206,7 @@
             _Py_TaggedObject value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -216,7 +216,7 @@
             _Py_TaggedObject value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -226,7 +226,7 @@
             _Py_TaggedObject value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -236,7 +236,7 @@
             _Py_TaggedObject value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -246,7 +246,7 @@
             _Py_TaggedObject value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -255,7 +255,7 @@
         case _STORE_FAST: {
             _Py_TaggedObject value;
             oparg = CURRENT_OPARG();
-            value = (_Py_TaggedObject)(stack_pointer[-1]);
+            value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
@@ -838,7 +838,7 @@
 
         case _POP_FRAME: {
             _Py_TaggedObject retval;
-            retval = (_Py_TaggedObject)(stack_pointer[-1]);
+            retval = (stack_pointer[-1]);
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -3013,7 +3013,7 @@
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
+            callable = (stack_pointer[-2 - oparg]);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3118,7 +3118,7 @@
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
+            callable = (stack_pointer[-2 - oparg]);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
