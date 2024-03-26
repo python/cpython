@@ -545,7 +545,7 @@ dummy_func(void) {
 
         PyCodeObject *co = NULL;
         assert((this_instr + 2)->opcode == _PUSH_FRAME);
-        uintptr_t push_operand = (this_instr + 2)->operand;
+        uint64_t push_operand = (this_instr + 2)->operand;
         if (push_operand & 1) {
             co = (PyCodeObject *)(push_operand & ~1);
             DPRINTF(3, "code=%p ", co);

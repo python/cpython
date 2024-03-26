@@ -8,7 +8,8 @@ from typing import Optional
 @dataclass
 class Properties:
     escapes: bool
-    infallible: bool
+    error_with_pop: bool
+    error_without_pop: bool
     deopts: bool
     oparg: bool
     jumps: bool
@@ -37,7 +38,8 @@ class Properties:
     def from_list(properties: list["Properties"]) -> "Properties":
         return Properties(
             escapes=any(p.escapes for p in properties),
-            infallible=all(p.infallible for p in properties),
+            error_with_pop=any(p.error_with_pop for p in properties),
+            error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
@@ -55,10 +57,16 @@ class Properties:
             passthrough=all(p.passthrough for p in properties),
         )
 
+    @property
+    def infallible(self) -> bool:
+        return not self.error_with_pop and not self.error_without_pop
+
+
 
 SKIP_PROPERTIES = Properties(
     escapes=False,
-    infallible=True,
+    error_with_pop=False,
+    error_without_pop=False,
     deopts=False,
     oparg=False,
     jumps=False,
@@ -157,20 +165,32 @@ class Uop:
             self._size = sum(c.size for c in self.caches)
         return self._size
 
-    def is_viable(self) -> bool:
+    def why_not_viable(self) -> str | None:
         if self.name == "_SAVE_RETURN_OFFSET":
-            return True  # Adjusts next_instr, but only in tier 1 code
-        if self.properties.needs_this:
-            return False
+            return None  # Adjusts next_instr, but only in tier 1 code
         if "INSTRUMENTED" in self.name:
-            return False
+            return "is instrumented"
         if "replaced" in self.annotations:
-            return False
+            return "is replaced"
         if self.name in ("INTERPRETER_EXIT", "JUMP_BACKWARD"):
-            return False
+            return "has tier 1 control flow"
+        if self.properties.needs_this:
+            return "uses the 'this_instr' variable"
         if len([c for c in self.caches if c.name != "unused"]) > 1:
-            return False
-        return True
+            return "has unused cache entries"
+        if self.properties.error_with_pop and self.properties.error_without_pop:
+            return "has both popping and not-popping errors"
+        if self.properties.eval_breaker:
+            if self.properties.error_with_pop or self.properties.error_without_pop:
+                return "has error handling and eval-breaker check"
+            if self.properties.side_exit:
+                return "exits and eval-breaker check"
+            if self.properties.deopts:
+                return "deopts and eval-breaker check"
+        return None
+
+    def is_viable(self) -> bool:
+        return self.why_not_viable() is None
 
     def is_super(self) -> bool:
         for tkn in self.body:
@@ -320,10 +340,17 @@ def tier_variable(node: parser.InstDef) -> int | None:
                 return int(token.text[-1])
     return None
 
-def is_infallible(op: parser.InstDef) -> bool:
-    return not (
+def has_error_with_pop(op: parser.InstDef) -> bool:
+    return (
         variable_used(op, "ERROR_IF")
-        or variable_used(op, "error")
+        or variable_used(op, "pop_1_error")
+        or variable_used(op, "exception_unwind")
+        or variable_used(op, "resume_with_error")
+    )
+
+def has_error_without_pop(op: parser.InstDef) -> bool:
+    return (
+        variable_used(op, "ERROR_NO_POP")
         or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
         or variable_used(op, "resume_with_error")
@@ -507,12 +534,15 @@ def compute_properties(op: parser.InstDef) -> Properties:
             tkn.column,
             op.name,
         )
-    infallible = is_infallible(op)
+    error_with_pop = has_error_with_pop(op)
+    error_without_pop = has_error_without_pop(op)
+    infallible = not error_with_pop and not error_without_pop
     passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
-        infallible=infallible,
-        deopts=deopts_if or exits_if,
+        error_with_pop=error_with_pop,
+        error_without_pop=error_without_pop,
+        deopts=deopts_if,
         side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
