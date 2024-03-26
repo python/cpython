@@ -129,7 +129,7 @@ class Stack:
         if not var.peek:
             self.peek_offset.pop(var)
         indirect = "&" if var.is_array() else ""
-        clear = "Py_CLEAR_TAG" if clear_tag and var.type.strip() != "_Py_TaggedObject" else ""
+        clear = "Py_CLEAR_TAG" if clear_tag and (var.type or "").strip() != "_Py_TaggedObject" else ""
         if self.variables:
             popped = self.variables.pop()
             if popped.size != var.size:
