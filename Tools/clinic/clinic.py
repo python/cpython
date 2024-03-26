@@ -1988,11 +1988,8 @@ def parse_file(
     libclinic.write_file(output, cooked)
 
 
-def create_parser_namespace() -> dict[str, Any]:
-    global _BASE_PARSER_NAMESPACE
-    if _BASE_PARSER_NAMESPACE is not None:
-        return _BASE_PARSER_NAMESPACE.copy()
-
+@functools.cache
+def _create_parser_base_namespace() -> dict[str, Any]:
     ns = dict(
         CConverter=CConverter,
         CReturnConverter=CReturnConverter,
@@ -2006,10 +2003,13 @@ def create_parser_namespace() -> dict[str, Any]:
         ns[f'{name}_converter'] = converter
     for name, return_converter in return_converters.items():
         ns[f'{name}_return_converter'] = return_converter
+    return ns
 
-    _BASE_PARSER_NAMESPACE = ns
-    return _BASE_PARSER_NAMESPACE.copy()
-_BASE_PARSER_NAMESPACE = None
+
+def create_parser_namespace() -> dict[str, Any]:
+    base_namespace = _create_parser_base_namespace()
+    return base_namespace.copy()
+
 
 
 class PythonParser:
