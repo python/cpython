@@ -1,0 +1,2 @@
+In :mod:`subprocess`, raise a more informative message when
+``stdout=STDOUT``.
