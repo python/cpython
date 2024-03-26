@@ -1155,11 +1155,11 @@ The :func:`kde()` function creates a continuous probability density
 function from discrete samples.  Some applications need a way to make
 random selections from that distribution.
 
-Since the smoothed probability density function is just the sum of kernels centered at each
-data point, the problem can be reduced to sampling the kernel function
-and recentering the result around a randomly chosen data point.  This
-works for kernels that have known or accurately approximated inverse
-cumulative distribution functions.
+The technique is to pick a sample from the kernel function, scale the
+result by the bandwidth, and then recenter the result our around a
+randomly chosen point from the input data.  This can be done with any
+kernel that has a known or accurately approximated inverse cumulative
+distribution function.
 
 .. testcode::
 
@@ -1180,7 +1180,7 @@ cumulative distribution functions.
        'Generate a random sample from a smoothed probability density function.'
        kernel_invcdf = kernel_invcdfs[kernel]
        def rand():
-           return choice(data) + h * kernel_invcdf(random())
+           return kernel_invcdf(random()) * h + choice(data)
        return rand
 
 For example:
