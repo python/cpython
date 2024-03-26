@@ -1742,6 +1742,9 @@ New Features
   :term:`strong reference` to the constant zero.
   (Contributed by Victor Stinner in :gh:`115754`.)
 
+* Add :c:func:`PyType_GetModuleByDef` to the limited C API
+  (Contributed by Victor Stinner in :gh:`116936`.)
+
 
 Porting to Python 3.13
 ----------------------
