@@ -37,21 +37,16 @@ extern "C" {
 
 #include "../Hacl_Hash_SHA1.h"
 
-void Hacl_Hash_Core_SHA1_legacy_init(uint32_t *s);
+void Hacl_Hash_SHA1_init(uint32_t *s);
 
-void Hacl_Hash_Core_SHA1_legacy_finish(uint32_t *s, uint8_t *dst);
+void Hacl_Hash_SHA1_finish(uint32_t *s, uint8_t *dst);
 
-void Hacl_Hash_SHA1_legacy_update_multi(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
+void Hacl_Hash_SHA1_update_multi(uint32_t *s, uint8_t *blocks, uint32_t n_blocks);
 
 void
-Hacl_Hash_SHA1_legacy_update_last(
-  uint32_t *s,
-  uint64_t prev_len,
-  uint8_t *input,
-  uint32_t input_len
-);
+Hacl_Hash_SHA1_update_last(uint32_t *s, uint64_t prev_len, uint8_t *input, uint32_t input_len);
 
-void Hacl_Hash_SHA1_legacy_hash(uint8_t *input, uint32_t input_len, uint8_t *dst);
+void Hacl_Hash_SHA1_hash_oneshot(uint8_t *output, uint8_t *input, uint32_t input_len);
 
 #if defined(__cplusplus)
 }
