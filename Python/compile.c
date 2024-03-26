@@ -358,7 +358,8 @@ struct compiler_unit {
 
     int u_scope_type;
 
-    PyObject *u_private;        /* for private name mangling */
+    PyObject *u_private;            /* for private name mangling */
+    PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
 
     instr_sequence u_instr_sequence; /* codegen output */
 
@@ -690,7 +691,24 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_metadata.u_cellvars);
     Py_CLEAR(u->u_metadata.u_fasthidden);
     Py_CLEAR(u->u_private);
+    Py_CLEAR(u->u_static_attributes);
     PyMem_Free(u);
+}
+
+static struct compiler_unit *
+get_class_compiler_unit(struct compiler *c)
+{
+    Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
+    for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
+        struct compiler_unit *u = (struct compiler_unit *)PyCapsule_GetPointer(
+                                                              capsule, CAPSULE_NAME);
+        assert(u);
+        if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
+            return u;
+        }
+    }
+    return NULL;
 }
 
 static int
@@ -1336,6 +1354,16 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_private = NULL;
+    if (scope_type == COMPILER_SCOPE_CLASS) {
+        u->u_static_attributes = PySet_New(0);
+        if (!u->u_static_attributes) {
+            compiler_unit_free(u);
+            return ERROR;
+        }
+    }
+    else {
+        u->u_static_attributes = NULL;
+    }
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -2517,6 +2545,18 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         compiler_exit_scope(c);
         return ERROR;
     }
+    assert(c->u->u_static_attributes);
+    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    if (static_attributes == NULL) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    ADDOP_LOAD_CONST(c, NO_LOCATION, static_attributes);
+    Py_CLEAR(static_attributes);
+    if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__static_attributes__), Store) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
     /* The following code is artificial */
     /* Set __classdictcell__ if necessary */
     if (c->u->u_ste->ste_needs_classdict) {
@@ -2657,6 +2697,7 @@ compiler_class(struct compiler *c, stmt_ty s)
                                                          s->v.ClassDef.keywords));
 
         PyCodeObject *co = optimize_and_assemble(c, 0);
+
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
@@ -6245,6 +6286,17 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             loc = update_start_location_to_match_attr(c, loc, e);
             ADDOP(c, loc, NOP);
             return SUCCESS;
+        }
+        if (e->v.Attribute.value->kind == Name_kind &&
+            _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
+        {
+            struct compiler_unit *class_u = get_class_compiler_unit(c);
+            if (class_u != NULL) {
+                assert(class_u->u_scope_type == COMPILER_SCOPE_CLASS);
+                assert(class_u->u_static_attributes);
+                RETURN_IF_ERROR(
+                    PySet_Add(class_u->u_static_attributes, e->v.Attribute.attr));
+            }
         }
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);

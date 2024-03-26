@@ -1717,7 +1717,7 @@ _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
     '__subclasshook__', '__weakref__', '__class_getitem__',
-    '__match_args__',
+    '__match_args__', '__static_attributes__',
 })
 
 # These special attributes will be not collected as protocol members.

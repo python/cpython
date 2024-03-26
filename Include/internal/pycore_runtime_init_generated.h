@@ -722,6 +722,7 @@ extern "C" {
     INIT_ID(__slotnames__), \
     INIT_ID(__slots__), \
     INIT_ID(__spec__), \
+    INIT_ID(__static_attributes__), \
     INIT_ID(__str__), \
     INIT_ID(__sub__), \
     INIT_ID(__subclasscheck__), \

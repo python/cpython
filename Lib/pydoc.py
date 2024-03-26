@@ -313,7 +313,8 @@ def visiblename(name, all=None, obj=None):
     if name in {'__author__', '__builtins__', '__cached__', '__credits__',
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
-                '__path__', '__qualname__', '__slots__', '__version__'}:
+                '__path__', '__qualname__', '__slots__', '__version__',
+                '__static_attributes__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1

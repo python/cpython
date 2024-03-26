@@ -1160,7 +1160,7 @@ class APIMismatchTest(unittest.TestCase):
     def test_RawIOBase_io_in_pyio_match(self):
         """Test that pyio RawIOBase class has all c RawIOBase methods"""
         mismatch = support.detect_api_mismatch(pyio.RawIOBase, io.RawIOBase,
-                                               ignore=('__weakref__',))
+                                               ignore=('__weakref__', '__static_attributes__'))
         self.assertEqual(mismatch, set(), msg='Python RawIOBase does not have all C RawIOBase methods')
 
     def test_RawIOBase_pyio_in_io_match(self):
