@@ -87,12 +87,10 @@ extern "C" {
 #define _Py_CRITICAL_SECTION_MASK           0x3
 
 #ifdef Py_GIL_DISABLED
-# define Py_BEGIN_CRITICAL_SECTION_MU(mu)                               \
+# define Py_BEGIN_CRITICAL_SECTION(op)                                  \
     {                                                                   \
         _PyCriticalSection _cs;                                         \
-        _PyCriticalSection_Begin(&_cs, &mu)
-
-# define Py_BEGIN_CRITICAL_SECTION(op) Py_BEGIN_CRITICAL_SECTION_MU(_PyObject_CAST(op)->ob_mutex)
+        _PyCriticalSection_Begin(&_cs, &_PyObject_CAST(op)->ob_mutex)
 
 # define Py_END_CRITICAL_SECTION()                                      \
         _PyCriticalSection_End(&_cs);                                   \
@@ -107,13 +105,10 @@ extern "C" {
         _PyCriticalSection_XEnd(&_cs_opt);                              \
     }
 
-# define Py_BEGIN_CRITICAL_SECTION2_MU(a, b)                            \
+# define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
     {                                                                   \
         _PyCriticalSection2 _cs2;                                       \
-        _PyCriticalSection2_Begin(&_cs2, &a, &b)
-
-# define Py_BEGIN_CRITICAL_SECTION2(a, b)                               \
-    Py_BEGIN_CRITICAL_SECTION2_MU(_PyObject_CAST(a)->ob_mutex, _PyObject_CAST(b)->ob_mutex)
+        _PyCriticalSection2_Begin(&_cs2, &_PyObject_CAST(a)->ob_mutex, &_PyObject_CAST(b)->ob_mutex)
 
 # define Py_END_CRITICAL_SECTION2()                                     \
         _PyCriticalSection2_End(&_cs2);                                 \
@@ -143,12 +138,10 @@ extern "C" {
 
 #else  /* !Py_GIL_DISABLED */
 // The critical section APIs are no-ops with the GIL.
-# define Py_BEGIN_CRITICAL_SECTION_MU(mu)
 # define Py_BEGIN_CRITICAL_SECTION(op)
 # define Py_END_CRITICAL_SECTION()
 # define Py_XBEGIN_CRITICAL_SECTION(op)
 # define Py_XEND_CRITICAL_SECTION()
-# define Py_BEGIN_CRITICAL_SECTION2_MU(a, b)
 # define Py_BEGIN_CRITICAL_SECTION2(a, b)
 # define Py_END_CRITICAL_SECTION2()
 # define _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(mutex)

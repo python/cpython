@@ -12,7 +12,7 @@ import sys
 import sysconfig
 import test.support
 from test import support
-from test.support import os_helper, Py_GIL_DISABLED
+from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
@@ -1707,15 +1707,11 @@ class SizeofTest(unittest.TestCase):
         # TODO: add check that forces layout of unicodefields
         # weakref
         import weakref
-        if Py_GIL_DISABLED:
-            expected_size = size('2Pn4P')
-        else:
-            expected_size = size('2Pn3P')
-        check(weakref.ref(int), expected_size)
+        check(weakref.ref(int), size('2Pn3P'))
         # weakproxy
         # XXX
         # weakcallableproxy
-        check(weakref.proxy(int), expected_size)
+        check(weakref.proxy(int), size('2Pn3P'))
 
     def check_slots(self, obj, base, extra):
         expected = sys.getsizeof(base) + struct.calcsize(extra)

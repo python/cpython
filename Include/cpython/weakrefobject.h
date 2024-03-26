@@ -22,11 +22,6 @@ struct _PyWeakReference {
      */
     Py_hash_t hash;
 
-#ifdef Py_GIL_DISABLED
-    /* Used in free-threaded builds to protect wr_object and wr_callback. */
-    struct _PyWeakRefClearState *clear_state;
-#endif
-
     /* If wr_object is weakly referenced, wr_object has a doubly-linked NULL-
      * terminated list of weak references to it.  These are the list pointers.
      * If wr_object goes away, wr_object is set to Py_None, and these pointers

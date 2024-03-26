@@ -32,8 +32,6 @@ _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
     return _PyWeakref_GetWeakrefCountThreadsafe(object);
 }
 
-#ifndef Py_GIL_DISABLED
-
 static int
 is_dead_weakref(PyObject *value)
 {
@@ -43,8 +41,6 @@ is_dead_weakref(PyObject *value)
     }
     return _PyWeakref_IS_DEAD(value);
 }
-
-#endif
 
 /*[clinic input]
 
@@ -62,11 +58,6 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
                                    PyObject *key)
 /*[clinic end generated code: output=d9ff53061fcb875c input=19fc91f257f96a1d]*/
 {
-#ifdef Py_GIL_DISABLED
-    if (_PyDict_DelItemIfDeadWeakref(dct, key) < 0) {
-        return NULL;
-    }
-#else
     if (_PyDict_DelItemIf(dct, key, is_dead_weakref) < 0) {
         if (PyErr_ExceptionMatches(PyExc_KeyError))
             /* This function is meant to allow safe weak-value dicts
@@ -77,7 +68,6 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
         else
             return NULL;
     }
-#endif
     Py_RETURN_NONE;
 }
 
@@ -108,7 +98,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
 
 #ifdef Py_GIL_DISABLED
     Py_ssize_t num_added = 0;
-    Py_BEGIN_CRITICAL_SECTION_MU(WEAKREF_LIST_LOCK(object));
+    LOCK_WEAKREFS(object);
     PyWeakReference *current = *list;
     // Weakrefs may be added or removed since the count was computed.
     while (num_added < count && current != NULL) {
@@ -118,7 +108,8 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
         }
         current = current->wr_next;
     }
-    Py_END_CRITICAL_SECTION();
+    UNLOCK_WEAKREFS(object);
+
     // Don't return an incomplete list
     if (num_added != count) {
         PyObject *new_list = PyList_New(num_added);
