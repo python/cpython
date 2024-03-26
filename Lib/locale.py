@@ -1461,7 +1461,7 @@ locale_alias = {
 #
 # NOTE: this mapping is incomplete.  If your language is missing, please
 # submit a bug report as detailed in the Python devguide at:
-#    https://devguide.python.org/tracker/
+#    https://devguide.python.org/triage/issue-tracker/
 # Make sure you include the missing language identifier and the suggested
 # locale code.
 #

@@ -9,9 +9,9 @@
 
 """
 #    This module is maintained by Marc-Andre Lemburg <mal@egenix.com>.
-#    If you find problems, please submit bug reports/patches as detailed
-#    in the Python devguide (https://devguide.python.org/tracker/) and
-#    assign them to "malemburg".
+#    If you find problems, please submit bug reports/patches via the
+#    Python bug tracker (https://github.com/python/cpython/issues) and
+#    mention "@malemburg".
 #
 #    Still needed:
 #    * support for MS-DOS (PythonDX ?)
