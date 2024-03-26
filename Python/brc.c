@@ -119,6 +119,8 @@ _Py_brc_merge_refcounts(PyThreadState *tstate)
     struct _brc_thread_state *brc = &((_PyThreadStateImpl *)tstate)->brc;
     struct _brc_bucket *bucket = get_bucket(tstate->interp, brc->tid);
 
+    assert(brc->tid == _Py_ThreadId());
+
     // Append all objects into a local stack. We don't want to hold the lock
     // while calling destructors.
     PyMutex_Lock(&bucket->mutex);
