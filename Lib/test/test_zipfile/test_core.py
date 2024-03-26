@@ -2937,6 +2937,22 @@ class TestWithDirectory(unittest.TestCase):
         os.mkdir(os.path.join(TESTFN2, "a"))
         self.test_extract_dir()
 
+    def test_extract_dir_backslash(self):
+        zfname = findfile("zipdir_backslash.zip", subdir="archivetestdata")
+        with zipfile.ZipFile(zfname) as zipf:
+            zipf.extractall(TESTFN2)
+        if os.name == 'nt':
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a")))
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "a", "b")))
+            self.assertTrue(os.path.isfile(os.path.join(TESTFN2, "a", "b", "c")))
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "d")))
+            self.assertTrue(os.path.isdir(os.path.join(TESTFN2, "d", "e")))
+        else:
+            self.assertTrue(os.path.isfile(os.path.join(TESTFN2, "a\\b\\c")))
+            self.assertTrue(os.path.isfile(os.path.join(TESTFN2, "d\\e\\")))
+            self.assertFalse(os.path.exists(os.path.join(TESTFN2, "a")))
+            self.assertFalse(os.path.exists(os.path.join(TESTFN2, "d")))
+
     def test_write_dir(self):
         dirpath = os.path.join(TESTFN2, "x")
         os.mkdir(dirpath)
@@ -3032,6 +3048,17 @@ class TestWithDirectory(unittest.TestCase):
             zf.extractall(target)
 
             self.assertEqual(set(os.listdir(target)), {"directory", "directory2"})
+
+    def test_root_folder_in_zipfile(self):
+        """
+        gh-112795: Some tools or self constructed codes will add '/' folder to
+        the zip file, this is a strange behavior, but we should support it.
+        """
+        in_memory_file = io.BytesIO()
+        zf = zipfile.ZipFile(in_memory_file, "w")
+        zf.mkdir('/')
+        zf.writestr('./a.txt', 'aaa')
+        zf.extractall(TESTFN2)
 
     def tearDown(self):
         rmtree(TESTFN2)

@@ -1,11 +1,11 @@
 import contextlib
-import opcode
 import sys
 import textwrap
 import unittest
 import gc
 import os
 
+import _opcode
 import _testinternalcapi
 
 from test.support import script_helper, requires_specialization
@@ -115,13 +115,11 @@ class TestOptimizerAPI(unittest.TestCase):
 def get_first_executor(func):
     code = func.__code__
     co_code = code.co_code
-    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
     for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD:
-            try:
-                return _testinternalcapi.get_executor(code, i)
-            except ValueError:
-                pass
+        try:
+            return _opcode.get_executor(code, i)
+        except ValueError:
+            pass
     return None
 
 
@@ -331,7 +329,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_NOT_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
@@ -347,7 +346,8 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NONE_POP", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
     def test_pop_jump_if_true(self):
         def testfunc(n):
@@ -758,17 +758,16 @@ class TestUopsOptimization(unittest.TestCase):
         result = script_helper.run_python_until_end('-c', textwrap.dedent("""
         import _testinternalcapi
         import opcode
+        import _opcode
 
         def get_first_executor(func):
             code = func.__code__
             co_code = code.co_code
-            JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
             for i in range(0, len(co_code), 2):
-                if co_code[i] == JUMP_BACKWARD:
-                    try:
-                        return _testinternalcapi.get_executor(code, i)
-                    except ValueError:
-                        pass
+                try:
+                    return _opcode.get_executor(code, i)
+                except ValueError:
+                    pass
             return None
 
         def get_opnames(ex):
@@ -952,6 +951,32 @@ class TestUopsOptimization(unittest.TestCase):
         ns['_test_global'] = 3.14
         _, ex = self._run_with_optimizer(testfunc, 16)
         self.assertIsNone(ex)
+
+    def test_many_nested(self):
+        # overflow the trace_stack
+        def dummy_a(x):
+            return x
+        def dummy_b(x):
+            return dummy_a(x)
+        def dummy_c(x):
+            return dummy_b(x)
+        def dummy_d(x):
+            return dummy_c(x)
+        def dummy_e(x):
+            return dummy_d(x)
+        def dummy_f(x):
+            return dummy_e(x)
+        def dummy_g(x):
+            return dummy_f(x)
+        def dummy_h(x):
+            return dummy_g(x)
+        def testfunc(n):
+            a = 0
+            for _ in range(n):
+                a += dummy_h(n)
+            return a
+
+        self._run_with_optimizer(testfunc, 32)
 
 
 if __name__ == "__main__":

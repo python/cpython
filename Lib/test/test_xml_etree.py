@@ -329,7 +329,7 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value" />') # 5
         with self.assertRaises(ValueError) as cm:
             element.remove(subelement)
-        self.assertIn('not in list', str(cm.exception))
+        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')
@@ -1707,11 +1707,10 @@ class XMLPullParserTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ET.XMLPullParser(events=('start', 'end', 'bogus'))
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
     def test_flush_reparse_deferral_enabled(self):
-        if pyexpat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {pyexpat.version_info} does not '
-                          'support reparse deferral')
-
         parser = ET.XMLPullParser(events=('start', 'end'))
 
         for chunk in ("<doc", ">"):
@@ -1743,8 +1742,8 @@ class XMLPullParserTest(unittest.TestCase):
                 self.skipTest(f'XMLParser.(Get|Set)ReparseDeferralEnabled '
                               'methods not available in C')
             parser._parser._parser.SetReparseDeferralEnabled(False)
+            self.assert_event_tags(parser, [])  # i.e. no elements started
 
-        self.assert_event_tags(parser, [])  # i.e. no elements started
         if ET is pyET:
             self.assertFalse(parser._parser._parser.GetReparseDeferralEnabled())
 

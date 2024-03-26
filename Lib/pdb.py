@@ -87,6 +87,7 @@ import traceback
 import linecache
 
 from contextlib import contextmanager
+from rlcompleter import Completer
 from typing import Union
 
 
@@ -363,26 +364,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self._chained_exceptions[self._chained_exception_index],
             )
 
-        return self.execRcLines()
-
-    # Can be executed earlier than 'setup' if desired
-    def execRcLines(self):
-        if not self.rcLines:
-            return
-        # local copy because of recursion
-        rcLines = self.rcLines
-        rcLines.reverse()
-        # execute every line only once
-        self.rcLines = []
-        while rcLines:
-            line = rcLines.pop().strip()
-            if line and line[0] != '#':
-                if self.onecmd(line):
-                    # if onecmd returns True, the command wants to exit
-                    # from the interaction, save leftover rc lines
-                    # to execute before next interaction
-                    self.rcLines += reversed(rcLines)
-                    return True
+        if self.rcLines:
+            self.cmdqueue = [
+                line for line in self.rcLines
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            self.rcLines = []
 
     # Override Bdb methods
 
@@ -571,12 +558,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if isinstance(tb_or_exc, BaseException):
             assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
-            if self.setup(frame, tb):
-                # no interaction desired at this time (happens if .pdbrc contains
-                # a command like "continue")
-                self.forget()
-                return
-            self.print_stack_entry(self.stack[self.curindex])
+            self.setup(frame, tb)
+            # if we have more commands to process, do not show the stack entry
+            if not self.cmdqueue:
+                self.print_stack_entry(self.stack[self.curindex])
             self._cmdloop()
             self.forget()
 
@@ -589,20 +574,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     @contextmanager
-    def _disable_tab_completion(self):
-        if self.use_rawinput and self.completekey == 'tab':
-            try:
-                import readline
-            except ImportError:
-                yield
-                return
-            try:
-                readline.parse_and_bind('tab: self-insert')
-                yield
-            finally:
-                readline.parse_and_bind('tab: complete')
-        else:
+    def _disable_command_completion(self):
+        completenames = self.completenames
+        try:
+            self.completenames = self.completedefault
             yield
+        finally:
+            self.completenames = completenames
+        return
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
@@ -611,7 +590,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                with self._disable_tab_completion():
+                with self._disable_command_completion():
                     buffer = line
                     continue_prompt = "...   "
                     while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
@@ -712,7 +691,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if marker >= 0:
                 # queue up everything after marker
                 next = line[marker+2:].lstrip()
-                self.cmdqueue.append(next)
+                self.cmdqueue.insert(0, next)
                 line = line[:marker].rstrip()
 
         # Replace all the convenience variables
@@ -737,13 +716,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Handles one command line during command list definition."""
         cmd, arg, line = self.parseline(line)
         if not cmd:
-            return
+            return False
         if cmd == 'silent':
             self.commands_silent[self.commands_bnum] = True
-            return # continue to handle other cmd def in the cmd list
+            return False  # continue to handle other cmd def in the cmd list
         elif cmd == 'end':
-            self.cmdqueue = []
-            return 1 # end of cmd list
+            return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if arg:
             cmdlist.append(cmd+' '+arg)
@@ -757,9 +735,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
             self.commands_doprompt[self.commands_bnum] = False
-            self.cmdqueue = []
-            return 1
-        return
+            return True
+        return False
 
     # interface abstraction functions
 
@@ -789,7 +766,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if commands:
             return commands
         else:
-            return self._complete_expression(text, line, begidx, endidx)
+            expressions = self._complete_expression(text, line, begidx, endidx)
+            if expressions:
+                return expressions
+            return self.completedefault(text, line, begidx, endidx)
 
     def _complete_location(self, text, line, begidx, endidx):
         # Complete a file/module/function location for break/tbreak/clear.
@@ -845,6 +825,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    def completedefault(self, text, line, begidx, endidx):
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
+
+        # Use rlcompleter to do the completion
+        state = 0
+        matches = []
+        completer = Completer(self.curframe.f_globals | self.curframe_locals)
+        while (match := completer.complete(text, state)) is not None:
+            matches.append(match)
+            state += 1
+        return matches
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
