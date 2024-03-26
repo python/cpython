@@ -527,8 +527,14 @@ class _QueueShutdownTestMixin:
 
     @staticmethod
     async def _ping_awaitable(a):
+        async def swallow(a_):
+            try:
+                return await a_
+            except Exception:
+                pass
+
         try:
-            await asyncio.wait_for(asyncio.shield(a), 0.01)
+            await asyncio.wait_for(asyncio.shield(swallow(a)), 0.01)
         except TimeoutError:
             pass
 
@@ -550,6 +556,7 @@ class _QueueShutdownTestMixin:
 
         await self._ping_awaitable(join_task)
         self.assertTrue(join_task.done())
+        await join_task
 
         with self.assertRaisesShutdown():
             await q.put("data")
@@ -561,16 +568,25 @@ class _QueueShutdownTestMixin:
         with self.assertRaisesShutdown():
             q.get_nowait()
 
-        await join_task
-
     async def test_shutdown_nonempty(self):
-        q = self.q_class()
+        q = self.q_class(maxsize=1)
         loop = asyncio.get_running_loop()
+
         q.put_nowait("data")
         join_task = loop.create_task(q.join())
+        put_task = loop.create_task(q.put("data2"))
+
+        await self._ping_awaitable(put_task)
+        self.assertFalse(put_task.done())
+
         q.shutdown(immediate=False)  # unfinished tasks: 1 -> 1
 
         self.assertEqual(q.qsize(), 1)
+
+        await self._ping_awaitable(put_task)
+        self.assertTrue(put_task.done())
+        with self.assertRaisesShutdown():
+            await put_task
 
         self.assertEqual(await q.get(), "data")
 
@@ -604,6 +620,7 @@ class _QueueShutdownTestMixin:
 
         await self._ping_awaitable(join_task)
         self.assertTrue(join_task.done())
+        await join_task
 
         with self.assertRaisesShutdown():
             await q.put("data")
@@ -620,8 +637,6 @@ class _QueueShutdownTestMixin:
         ):
             q.task_done()
 
-        await join_task
-
     async def test_shutdown_immediate_with_unfinished(self):
         q = self.q_class()
         loop = asyncio.get_running_loop()
@@ -630,6 +645,8 @@ class _QueueShutdownTestMixin:
         join_task = loop.create_task(q.join())
         self.assertEqual(await q.get(), "data")
         q.shutdown(immediate=True)  # unfinished tasks: 2 -> 1
+
+        self.assertEqual(q.qsize(), 0)
 
         await self._ping_awaitable(join_task)
         self.assertFalse(join_task.done())
