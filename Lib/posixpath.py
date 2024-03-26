@@ -572,9 +572,6 @@ def commonpath(paths):
     s2 = max(split_paths)
     for i, c in enumerate(s1):
         if c != s2[i]:
-            common = s1[:i]
-            break
-    else:
-        common = s1
+            return prefix + sep.join(s1[:i])
 
-    return prefix + sep.join(common)
+    return prefix + sep.join(s1)
