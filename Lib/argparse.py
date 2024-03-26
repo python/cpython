@@ -337,8 +337,11 @@ class HelpFormatter(object):
                 pos_usage = format(positionals, groups)
                 opt_parts = _re.findall(part_regexp, opt_usage)
                 pos_parts = _re.findall(part_regexp, pos_usage)
-                assert ' '.join(opt_parts) == opt_usage
-                assert ' '.join(pos_parts) == pos_usage
+
+                # ignore extra whitespace differences
+                # can happen if metavar='', '\n', or '\t'
+                assert ' '.join(opt_parts).split() == opt_usage.split()
+                assert ' '.join(pos_parts).split() == pos_usage.split()
 
                 # helper for wrapping lines
                 def get_lines(parts, indent, prefix=None):
