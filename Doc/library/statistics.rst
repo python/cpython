@@ -1163,11 +1163,12 @@ cumulative distribution functions.
 .. testcode::
 
    from random import choice, random, seed
-   from math import log, tan, sqrt, asin
+   from math import sqrt, log, pi, tan, asin
+   from statistics import NormalDist
 
    kernel_invcdfs = {
        'normal': NormalDist().inv_cdf,
-       'logisitic': lambda p: log(p / (1 - p)),
+       'logistic': lambda p: log(p / (1 - p)),
        'sigmoid': lambda p: log(tan(p * pi/2)),
        'rectangular': lambda p: 2*p - 1,
        'triangular': lambda p: sqrt(2*p) - 1 if p < 0.5 else 1 - sqrt(2 - 2*p),
@@ -1191,6 +1192,18 @@ For example:
    >>> [round(rand(), 1) for i in range(10)]
    [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
 
+.. testcode::
+    :hide:
+
+    from statistics import kde
+    from math import isclose
+
+    # Verify that cdf / invcdf will round trip
+    xarr = [i/100 for i in range(-100, 101)]
+    for kernel, invcdf in kernel_invcdfs.items():
+        cdf = kde([0], h=1.0, kernel=kernel, cumulative=True)
+        for x in xarr:
+            assert isclose(invcdf(cdf(x)), x, abs_tol=1E-9)
 
 ..
    # This modelines must appear within the last ten lines of the file.
