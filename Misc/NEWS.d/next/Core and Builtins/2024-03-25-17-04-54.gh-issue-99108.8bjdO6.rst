@@ -1,0 +1,6 @@
+Updated the :mod:`hashlib` built-in `HACL\* project`_ C code from upstream
+that we use for many implementations when they are not present via OpenSSL
+in a given build.  This also avoids the rare potential for a C symbol name
+one definition rule linking issue.
+
+.. _HACL\* project: https://github.com/hacl-star/hacl-star

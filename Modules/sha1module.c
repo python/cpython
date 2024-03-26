@@ -52,7 +52,7 @@ typedef struct {
     bool use_mutex;
     PyMutex mutex;
     PyThread_type_lock lock;
-    Hacl_Streaming_SHA1_state *hash_state;
+    Hacl_Hash_SHA1_state_t *hash_state;
 } SHA1object;
 
 #include "clinic/sha1module.c.h"
@@ -95,7 +95,7 @@ SHA1_traverse(PyObject *ptr, visitproc visit, void *arg)
 static void
 SHA1_dealloc(SHA1object *ptr)
 {
-    Hacl_Streaming_SHA1_legacy_free(ptr->hash_state);
+    Hacl_Hash_SHA1_free(ptr->hash_state);
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -124,7 +124,7 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
         return NULL;
 
     ENTER_HASHLIB(self);
-    newobj->hash_state = Hacl_Streaming_SHA1_legacy_copy(self->hash_state);
+    newobj->hash_state = Hacl_Hash_SHA1_copy(self->hash_state);
     LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
@@ -141,7 +141,7 @@ SHA1Type_digest_impl(SHA1object *self)
 {
     unsigned char digest[SHA1_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Streaming_SHA1_legacy_finish(self->hash_state, digest);
+    Hacl_Hash_SHA1_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest, SHA1_DIGESTSIZE);
 }
@@ -158,20 +158,20 @@ SHA1Type_hexdigest_impl(SHA1object *self)
 {
     unsigned char digest[SHA1_DIGESTSIZE];
     ENTER_HASHLIB(self);
-    Hacl_Streaming_SHA1_legacy_finish(self->hash_state, digest);
+    Hacl_Hash_SHA1_digest(self->hash_state, digest);
     LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest, SHA1_DIGESTSIZE);
 }
 
-static void update(Hacl_Streaming_SHA1_state *state, uint8_t *buf, Py_ssize_t len) {
+static void update(Hacl_Hash_SHA1_state_t *state, uint8_t *buf, Py_ssize_t len) {
 #if PY_SSIZE_T_MAX > UINT32_MAX
   while (len > UINT32_MAX) {
-    Hacl_Streaming_SHA1_legacy_update(state, buf, UINT32_MAX);
+    Hacl_Hash_SHA1_update(state, buf, UINT32_MAX);
     len -= UINT32_MAX;
     buf += UINT32_MAX;
   }
 #endif
-  Hacl_Streaming_SHA1_legacy_update(state, buf, (uint32_t) len);
+  Hacl_Hash_SHA1_update(state, buf, (uint32_t) len);
 }
 
 /*[clinic input]
@@ -295,7 +295,7 @@ _sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
         return NULL;
     }
 
-    new->hash_state = Hacl_Streaming_SHA1_legacy_create_in();
+    new->hash_state = Hacl_Hash_SHA1_malloc();
 
     if (PyErr_Occurred()) {
         Py_DECREF(new);
