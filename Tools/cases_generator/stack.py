@@ -188,7 +188,7 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *", pack: bool=True) -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *", should_pack: bool=True) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
@@ -199,7 +199,7 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    pack = "Py_OBJ_PACK" if pack and (var.type or "").strip() != "_Py_TaggedObject" else ""
+                    pack = "Py_OBJ_PACK" if should_pack and ((var.type or "").strip() != "_Py_TaggedObject") else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {pack}({cast}{var.name});\n"
                     )
