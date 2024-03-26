@@ -1201,7 +1201,7 @@ For example:
     # Verify that cdf / invcdf will round trip
     xarr = [i/100 for i in range(-100, 101)]
     for kernel, invcdf in kernel_invcdfs.items():
-        cdf = kde([0], h=1.0, kernel=kernel, cumulative=True)
+        cdf = kde([0.0], h=1.0, kernel=kernel, cumulative=True)
         for x in xarr:
             assert isclose(invcdf(cdf(x)), x, abs_tol=1E-9)
 
