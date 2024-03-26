@@ -1,1 +1,1 @@
-Allow CLI arguments to pdb -m
+:mod:`pdb` now allows CLI arguments to ``pdb -m``.

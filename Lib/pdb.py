@@ -2216,7 +2216,7 @@ def main():
             opts.args = [opts.pyfile] + opts.args
     else:
         if not opts.pyfile:
-            parser.error("one of the arguments -m pyfile is required")
+            parser.error("no module or script to run")
         file = opts.pyfile
         target = _ScriptTarget(file)
 
