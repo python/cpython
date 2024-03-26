@@ -29,6 +29,13 @@ class TestDecode:
                 self.loads(constant, parse_constant=str.upper), expected
             )
 
+    def test_constant_invalid_case(self):
+        for constant in [
+            "nan", "NAN", "naN", "infinity", "INFINITY", "inFiniTy"
+        ]:
+            with self.assertRaises(self.JSONDecodeError):
+                self.loads(constant)
+
     def test_empty_objects(self):
         self.assertEqual(self.loads('{}'), {})
         self.assertEqual(self.loads('[]'), [])
