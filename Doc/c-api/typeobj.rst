@@ -883,6 +883,10 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash`, when the subtype's
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both ``NULL``.
 
+   **Default:**
+
+   :c:data:`PyBaseObject_Type` uses :c:func:`PyObject_GenericHash`.
+
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
 

@@ -29,6 +29,12 @@ class CFuncPtrTestCase(unittest.TestCase):
                 self.assertTrue(_CFuncPtr.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(_CFuncPtr.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
+    def test_metaclass_details(self):
+        # Cannot call the metaclass __init__ more than once
+        CdeclCallback = CFUNCTYPE(c_int, c_int, c_int)
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCFuncPtrType.__init__(CdeclCallback, 'ptr', (), {})
+
     def test_basic(self):
         X = WINFUNCTYPE(c_int, c_int, c_int)
 

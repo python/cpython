@@ -4,7 +4,7 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+**Source code:** :source:`Lib/genericpath.py`, :source:`Lib/posixpath.py` (for POSIX) and
 :source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
@@ -84,8 +84,6 @@ the :mod:`glob` module.)
    and relative pathnames, the *paths* are on the different drives or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
    valid path.
-
-   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.5
 
@@ -324,9 +322,10 @@ the :mod:`glob` module.)
    Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
    for information on enabling and creating Dev Drives.
 
-   .. availability:: Windows.
-
    .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      The function is now available on all platforms, and will always return ``False`` on those that have no support for Dev Drives
 
 
 .. function:: isreserved(path)
@@ -442,8 +441,6 @@ the :mod:`glob` module.)
 
    *start* defaults to :data:`os.curdir`.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -453,8 +450,6 @@ the :mod:`glob` module.)
    Return ``True`` if both pathname arguments refer to the same file or directory.
    This is determined by the device number and i-node number and raises an
    exception if an :func:`os.stat` call on either pathname fails.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -470,8 +465,6 @@ the :mod:`glob` module.)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.2
       Added Windows support.
 
@@ -485,8 +478,6 @@ the :mod:`glob` module.)
    These structures may have been returned by :func:`os.fstat`,
    :func:`os.lstat`, or :func:`os.stat`.  This function implements the
    underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Added Windows support.

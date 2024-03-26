@@ -1215,10 +1215,10 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), start + b"<doc>text</doc>")
 
+    @unittest.skipIf(pyexpat.version_info < (2, 6, 0),
+                     f'Expat {pyexpat.version_info} does not '
+                     'support reparse deferral')
     def test_flush_reparse_deferral_enabled(self):
-        if pyexpat.version_info < (2, 6, 0):
-            self.skipTest(f'Expat {pyexpat.version_info} does not support reparse deferral')
-
         result = BytesIO()
         xmlgen = XMLGenerator(result)
         parser = create_parser()
@@ -1251,8 +1251,8 @@ class ExpatReaderTest(XmlTestBase):
 
         if pyexpat.version_info >= (2, 6, 0):
             parser._parser.SetReparseDeferralEnabled(False)
+            self.assertEqual(result.getvalue(), start)  # i.e. no elements started
 
-        self.assertEqual(result.getvalue(), start)  # i.e. no elements started
         self.assertFalse(parser._parser.GetReparseDeferralEnabled())
 
         parser.flush()

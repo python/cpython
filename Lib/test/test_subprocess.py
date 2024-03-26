@@ -1763,6 +1763,13 @@ class RunFuncTestCase(BaseTestCase):
         self.assertIn(b'BDFL', cp.stdout)
         self.assertIn(b'FLUFL', cp.stderr)
 
+    def test_stdout_stdout(self):
+        # run() refuses to accept stdout=STDOUT
+        with self.assertRaises(ValueError,
+                msg=("STDOUT can only be used for stderr")):
+            self.run_python("print('will not be run')",
+                            stdout=subprocess.STDOUT)
+
     def test_stdout_with_capture_output_arg(self):
         # run() refuses to accept 'stdout' with 'capture_output'
         tf = tempfile.TemporaryFile()

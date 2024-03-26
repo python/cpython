@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=521af282fdf6d60227335120f18ae9309a4b8e8c
+expected_hacl_star_rev=bb3d0dc8d9d15a5cd51094d5b69e70aa09005ff0
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -127,7 +127,7 @@ $sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_SHA2.h
+$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_*.h
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.

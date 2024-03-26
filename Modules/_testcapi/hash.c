@@ -59,9 +59,20 @@ hash_pointer(PyObject *Py_UNUSED(module), PyObject *arg)
 }
 
 
+static PyObject *
+object_generichash(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    NULLABLE(arg);
+    Py_hash_t hash = PyObject_GenericHash(arg);
+    Py_BUILD_ASSERT(sizeof(long long) >= sizeof(hash));
+    return PyLong_FromLongLong(hash);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"hash_getfuncdef", hash_getfuncdef, METH_NOARGS},
     {"hash_pointer", hash_pointer, METH_O},
+    {"object_generichash", object_generichash, METH_O},
     {NULL},
 };
 
