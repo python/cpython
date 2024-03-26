@@ -4094,7 +4094,7 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as s:
                 with self.assertRaises(ssl.SSLError) as e:
                     s.connect((HOST, server.port))
-                self.assertRegex("(alert|ALERT)", str(e.exception))
+                self.assertRegex(str(e.exception), "(alert|ALERT)")
 
     @requires_tls_version('SSLv3')
     def test_min_max_version_sslv3(self):
