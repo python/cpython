@@ -544,14 +544,23 @@ class _QueueShutdownTestMixin:
         q = self.q_class()
         loop = asyncio.get_running_loop()
         join_task = loop.create_task(q.join())
-        q.shutdown()
+        q.shutdown(immediate=False)  # unfinished tasks: 0 -> 0
+
+        self.assertEqual(q.qsize(), 0)
 
         await self._ping_awaitable(join_task)
         self.assertTrue(join_task.done())
+
         with self.assertRaisesShutdown():
             await q.put("data")
         with self.assertRaisesShutdown():
+            q.put_nowait("data")
+
+        with self.assertRaisesShutdown():
             await q.get()
+        with self.assertRaisesShutdown():
+            q.get_nowait()
+
         await join_task
 
     async def test_shutdown_nonempty(self):
@@ -559,7 +568,9 @@ class _QueueShutdownTestMixin:
         loop = asyncio.get_running_loop()
         q.put_nowait("data")
         join_task = loop.create_task(q.join())
-        q.shutdown()
+        q.shutdown(immediate=False)  # unfinished tasks: 1 -> 1
+
+        self.assertEqual(q.qsize(), 1)
 
         self.assertEqual(await q.get(), "data")
 
@@ -587,7 +598,9 @@ class _QueueShutdownTestMixin:
         loop = asyncio.get_running_loop()
         q.put_nowait("data")
         join_task = loop.create_task(q.join())
-        q.shutdown(immediate=True)
+        q.shutdown(immediate=True)  # unfinished tasks: 1 -> 0
+
+        self.assertEqual(q.qsize(), 0)
 
         await self._ping_awaitable(join_task)
         self.assertTrue(join_task.done())
@@ -607,8 +620,6 @@ class _QueueShutdownTestMixin:
         ):
             q.task_done()
 
-        await self._ping_awaitable(join_task)
-        self.assertTrue(join_task.done())
         await join_task
 
     async def test_shutdown_immediate_with_unfinished(self):
@@ -618,7 +629,7 @@ class _QueueShutdownTestMixin:
         q.put_nowait("data")
         join_task = loop.create_task(q.join())
         self.assertEqual(await q.get(), "data")
-        q.shutdown(immediate=True)
+        q.shutdown(immediate=True)  # unfinished tasks: 2 -> 1
 
         await self._ping_awaitable(join_task)
         self.assertFalse(join_task.done())
