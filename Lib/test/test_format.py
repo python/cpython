@@ -619,6 +619,8 @@ class FormatTest(unittest.TestCase):
         error_msg = re.escape("unsupported format character 'z'")
         with self.assertRaisesRegex(ValueError, error_msg):
             "%z.1f" % 0  # not allowed in old style string interpolation
+        with self.assertRaisesRegex(ValueError, error_msg):
+            b"%z.1f" % 0
 
 
 if __name__ == "__main__":

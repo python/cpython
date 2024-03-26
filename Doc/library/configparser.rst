@@ -33,13 +33,17 @@ can be customized by end users easily.
 
 .. seealso::
 
+   Module :mod:`tomllib`
+      TOML is a well-specified format for application configuration files.
+      It is specifically designed to be an improved version of INI.
+
    Module :mod:`shlex`
-      Support for creating Unix shell-like mini-languages which can be used as
-      an alternate format for application configuration files.
+      Support for creating Unix shell-like mini-languages which can also
+      be used for application configuration files.
 
    Module :mod:`json`
-      The json module implements a subset of JavaScript syntax which can also
-      be used for this purpose.
+      The ``json`` module implements a subset of JavaScript syntax which is
+      sometimes used for configuration, but does not support comments.
 
 
 .. testsetup::
@@ -65,10 +69,10 @@ Let's take a very basic configuration file that looks like this:
    CompressionLevel = 9
    ForwardX11 = yes
 
-   [bitbucket.org]
+   [forge.example]
    User = hg
 
-   [topsecret.server.com]
+   [topsecret.server.example]
    Port = 50022
    ForwardX11 = no
 
@@ -85,10 +89,10 @@ creating the above configuration file programmatically.
    >>> config['DEFAULT'] = {'ServerAliveInterval': '45',
    ...                      'Compression': 'yes',
    ...                      'CompressionLevel': '9'}
-   >>> config['bitbucket.org'] = {}
-   >>> config['bitbucket.org']['User'] = 'hg'
-   >>> config['topsecret.server.com'] = {}
-   >>> topsecret = config['topsecret.server.com']
+   >>> config['forge.example'] = {}
+   >>> config['forge.example']['User'] = 'hg'
+   >>> config['topsecret.server.example'] = {}
+   >>> topsecret = config['topsecret.server.example']
    >>> topsecret['Port'] = '50022'     # mutates the parser
    >>> topsecret['ForwardX11'] = 'no'  # same here
    >>> config['DEFAULT']['ForwardX11'] = 'yes'
@@ -111,28 +115,28 @@ back and explore the data it holds.
    >>> config.read('example.ini')
    ['example.ini']
    >>> config.sections()
-   ['bitbucket.org', 'topsecret.server.com']
-   >>> 'bitbucket.org' in config
+   ['forge.example', 'topsecret.server.example']
+   >>> 'forge.example' in config
    True
-   >>> 'bytebong.com' in config
+   >>> 'python.org' in config
    False
-   >>> config['bitbucket.org']['User']
+   >>> config['forge.example']['User']
    'hg'
    >>> config['DEFAULT']['Compression']
    'yes'
-   >>> topsecret = config['topsecret.server.com']
+   >>> topsecret = config['topsecret.server.example']
    >>> topsecret['ForwardX11']
    'no'
    >>> topsecret['Port']
    '50022'
-   >>> for key in config['bitbucket.org']:  # doctest: +SKIP
+   >>> for key in config['forge.example']:  # doctest: +SKIP
    ...     print(key)
    user
    compressionlevel
    serveraliveinterval
    compression
    forwardx11
-   >>> config['bitbucket.org']['ForwardX11']
+   >>> config['forge.example']['ForwardX11']
    'yes'
 
 As we can see above, the API is pretty straightforward.  The only bit of magic
@@ -150,15 +154,15 @@ configuration while the previously existing keys are retained.
    >>> another_config = configparser.ConfigParser()
    >>> another_config.read('example.ini')
    ['example.ini']
-   >>> another_config['topsecret.server.com']['Port']
+   >>> another_config['topsecret.server.example']['Port']
    '50022'
-   >>> another_config.read_string("[topsecret.server.com]\nPort=48484")
-   >>> another_config['topsecret.server.com']['Port']
+   >>> another_config.read_string("[topsecret.server.example]\nPort=48484")
+   >>> another_config['topsecret.server.example']['Port']
    '48484'
-   >>> another_config.read_dict({"topsecret.server.com": {"Port": 21212}})
-   >>> another_config['topsecret.server.com']['Port']
+   >>> another_config.read_dict({"topsecret.server.example": {"Port": 21212}})
+   >>> another_config['topsecret.server.example']['Port']
    '21212'
-   >>> another_config['topsecret.server.com']['ForwardX11']
+   >>> another_config['topsecret.server.example']['ForwardX11']
    'no'
 
 This behaviour is equivalent to a :meth:`ConfigParser.read` call with several
@@ -191,9 +195,9 @@ recognizes Boolean values from ``'yes'``/``'no'``, ``'on'``/``'off'``,
 
    >>> topsecret.getboolean('ForwardX11')
    False
-   >>> config['bitbucket.org'].getboolean('ForwardX11')
+   >>> config['forge.example'].getboolean('ForwardX11')
    True
-   >>> config.getboolean('bitbucket.org', 'Compression')
+   >>> config.getboolean('forge.example', 'Compression')
    True
 
 Apart from :meth:`~ConfigParser.getboolean`, config parsers also
@@ -204,7 +208,7 @@ converters and customize the provided ones. [1]_
 Fallback Values
 ---------------
 
-As with a dictionary, you can use a section's :meth:`get` method to
+As with a dictionary, you can use a section's :meth:`~ConfigParser.get` method to
 provide fallback values:
 
 .. doctest::
@@ -220,7 +224,7 @@ provide fallback values:
 Please note that default values have precedence over fallback values.
 For instance, in our example the ``'CompressionLevel'`` key was
 specified only in the ``'DEFAULT'`` section.  If we try to get it from
-the section ``'topsecret.server.com'``, we will always get the default,
+the section ``'topsecret.server.example'``, we will always get the default,
 even if we specify a fallback:
 
 .. doctest::
@@ -228,14 +232,14 @@ even if we specify a fallback:
    >>> topsecret.get('CompressionLevel', '3')
    '9'
 
-One more thing to be aware of is that the parser-level :meth:`get` method
+One more thing to be aware of is that the parser-level :meth:`~ConfigParser.get` method
 provides a custom, more complex interface, maintained for backwards
 compatibility.  When using this method, a fallback value can be provided via
 the ``fallback`` keyword-only argument:
 
 .. doctest::
 
-   >>> config.get('bitbucket.org', 'monster',
+   >>> config.get('forge.example', 'monster',
    ...            fallback='No such things as monsters')
    'No such things as monsters'
 
@@ -267,7 +271,7 @@ out.  Values can also span multiple lines, as long as they are indented deeper
 than the first line of the value.  Depending on the parser's mode, blank lines
 may be treated as parts of multiline values or ignored.
 
-By default,  a valid section name can be any string that does not contain '\\n' or ']'.
+By default, a valid section name can be any string that does not contain '\\n'.
 To change this, see :attr:`ConfigParser.SECTCRE`.
 
 Configuration files may include comments, prefixed by specific
@@ -477,7 +481,7 @@ historical background and it's very likely that you will want to customize some
 of the features.
 
 The most common way to change the way a specific config parser works is to use
-the :meth:`__init__` options:
+the :meth:`!__init__` options:
 
 * *defaults*, default value: ``None``
 
@@ -487,7 +491,7 @@ the :meth:`__init__` options:
   the documented default.
 
   Hint: if you want to specify default values for a specific section, use
-  :meth:`read_dict` before you read the actual file.
+  :meth:`~ConfigParser.read_dict` before you read the actual file.
 
 * *dict_type*, default value: :class:`dict`
 
@@ -631,8 +635,8 @@ the :meth:`__init__` options:
 * *strict*, default value: ``True``
 
   When set to ``True``, the parser will not allow for any section or option
-  duplicates while reading from a single source (using :meth:`read_file`,
-  :meth:`read_string` or :meth:`read_dict`).  It is recommended to use strict
+  duplicates while reading from a single source (using :meth:`~ConfigParser.read_file`,
+  :meth:`~ConfigParser.read_string` or :meth:`~ConfigParser.read_dict`).  It is recommended to use strict
   parsers in new applications.
 
   .. versionchanged:: 3.2
@@ -693,7 +697,7 @@ the :meth:`__init__` options:
   desirable, users may define them in a subclass or pass a dictionary where each
   key is a name of the converter and each value is a callable implementing said
   conversion.  For instance, passing ``{'decimal': decimal.Decimal}`` would add
-  :meth:`getdecimal` on both the parser object and all section proxies.  In
+  :meth:`!getdecimal` on both the parser object and all section proxies.  In
   other words, it will be possible to write both
   ``parser_instance.getdecimal('section', 'key', fallback=0)`` and
   ``parser_instance['section'].getdecimal('key', 0)``.
@@ -931,8 +935,10 @@ ConfigParser Objects
 
    When *default_section* is given, it specifies the name for the special
    section holding default values for other sections and interpolation purposes
-   (normally named ``"DEFAULT"``).  This value can be retrieved and changed on
-   runtime using the ``default_section`` instance attribute.
+   (normally named ``"DEFAULT"``).  This value can be retrieved and changed at
+   runtime using the ``default_section`` instance attribute. This won't
+   re-evaluate an already parsed config file, but will be used when writing
+   parsed settings to a new config file.
 
    Interpolation behaviour may be customized by providing a custom handler
    through the *interpolation* argument. ``None`` can be used to turn off
@@ -949,7 +955,7 @@ ConfigParser Objects
    When *converters* is given, it should be a dictionary where each key
    represents the name of a type converter and each value is a callable
    implementing the conversion from string to the desired datatype.  Every
-   converter gets its own corresponding :meth:`get*()` method on the parser
+   converter gets its own corresponding :meth:`!get*()` method on the parser
    object and section proxies.
 
    .. versionchanged:: 3.1
@@ -971,6 +977,10 @@ ConfigParser Objects
    .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
+
+   .. versionchanged:: 3.13
+      Raise a :exc:`MultilineContinuationError` when *allow_no_value* is
+      ``True``, and a key without a value is continued with an indented line.
 
    .. method:: defaults()
 
@@ -1039,14 +1049,14 @@ ConfigParser Objects
          config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')],
                      encoding='cp1250')
 
-      .. versionadded:: 3.2
-         The *encoding* parameter.  Previously, all files were read using the
-         default encoding for :func:`open`.
+      .. versionchanged:: 3.2
+         Added the *encoding* parameter.
+         Previously, all files were read using the default encoding for :func:`open`.
 
-      .. versionadded:: 3.6.1
+      .. versionchanged:: 3.6.1
          The *filenames* parameter accepts a :term:`path-like object`.
 
-      .. versionadded:: 3.7
+      .. versionchanged:: 3.7
          The *filenames* parameter accepts a :class:`bytes` object.
 
 
@@ -1056,11 +1066,11 @@ ConfigParser Objects
       yielding Unicode strings (for example files opened in text mode).
 
       Optional argument *source* specifies the name of the file being read.  If
-      not given and *f* has a :attr:`name` attribute, that is used for
+      not given and *f* has a :attr:`!name` attribute, that is used for
       *source*; the default is ``'<???>'``.
 
       .. versionadded:: 3.2
-         Replaces :meth:`readfp`.
+         Replaces :meth:`!readfp`.
 
    .. method:: read_string(string, source='<string>')
 
@@ -1206,31 +1216,9 @@ ConfigParser Objects
       names is stripped before :meth:`optionxform` is called.
 
 
-   .. method:: readfp(fp, filename=None)
-
-      .. deprecated:: 3.2
-         Use :meth:`read_file` instead.
-
-      .. versionchanged:: 3.2
-         :meth:`readfp` now iterates on *fp* instead of calling ``fp.readline()``.
-
-      For existing code calling :meth:`readfp` with arguments which don't
-      support iteration, the following generator may be used as a wrapper
-      around the file-like object::
-
-         def readline_generator(fp):
-             line = fp.readline()
-             while line:
-                 yield line
-                 line = fp.readline()
-
-      Instead of ``parser.readfp(fp)`` use
-      ``parser.read_file(readline_generator(fp))``.
-
-
 .. data:: MAX_INTERPOLATION_DEPTH
 
-   The maximum depth for recursive interpolation for :meth:`get` when the *raw*
+   The maximum depth for recursive interpolation for :meth:`~configparser.ConfigParser.get` when the *raw*
    parameter is false.  This is relevant only when the default *interpolation*
    is used.
 
@@ -1303,13 +1291,13 @@ Exceptions
 
 .. exception:: DuplicateSectionError
 
-   Exception raised if :meth:`add_section` is called with the name of a section
+   Exception raised if :meth:`~ConfigParser.add_section` is called with the name of a section
    that is already present or in strict parsers when a section if found more
    than once in a single input file, string or dictionary.
 
-   .. versionadded:: 3.2
-      Optional ``source`` and ``lineno`` attributes and arguments to
-      :meth:`__init__` were added.
+   .. versionchanged:: 3.2
+      Added the optional *source* and *lineno* attributes and parameters to
+      :meth:`!__init__`.
 
 
 .. exception:: DuplicateOptionError
@@ -1361,10 +1349,16 @@ Exceptions
 
    Exception raised when errors occur attempting to parse a file.
 
-   .. versionchanged:: 3.2
-      The ``filename`` attribute and :meth:`__init__` argument were renamed to
-      ``source`` for consistency.
+   .. versionchanged:: 3.12
+      The ``filename`` attribute and :meth:`!__init__` constructor argument were
+      removed.  They have been available using the name ``source`` since 3.2.
 
+.. exception:: MultilineContinuationError
+
+   Exception raised when a key without a corresponding value is continued with
+   an indented line.
+
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 

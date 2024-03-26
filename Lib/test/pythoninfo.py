@@ -1,12 +1,10 @@
 """
 Collect various information about Python to help debugging test failures.
 """
-from __future__ import print_function
 import errno
 import re
 import sys
 import traceback
-import unittest
 import warnings
 
 
@@ -79,6 +77,7 @@ def call_func(info_add, name, mod, func_name, *, formatter=None):
 
 def collect_sys(info_add):
     attributes = (
+        '_emscripten_info',
         '_framework',
         'abiflags',
         'api_version',
@@ -108,6 +107,7 @@ def collect_sys(info_add):
 
     call_func(info_add, 'sys.androidapilevel', sys, 'getandroidapilevel')
     call_func(info_add, 'sys.windowsversion', sys, 'getwindowsversion')
+    call_func(info_add, 'sys.getrecursionlimit', sys, 'getrecursionlimit')
 
     encoding = sys.getfilesystemencoding()
     if hasattr(sys, 'getfilesystemencodeerrors'):
@@ -126,13 +126,21 @@ def collect_sys(info_add):
             encoding = '%s/%s' % (encoding, errors)
         info_add('sys.%s.encoding' % name, encoding)
 
-    # Were we compiled --with-pydebug or with #define Py_DEBUG?
+    # Were we compiled --with-pydebug?
     Py_DEBUG = hasattr(sys, 'gettotalrefcount')
     if Py_DEBUG:
         text = 'Yes (sys.gettotalrefcount() present)'
     else:
         text = 'No (sys.gettotalrefcount() missing)'
-    info_add('Py_DEBUG', text)
+    info_add('build.Py_DEBUG', text)
+
+    # Were we compiled --with-trace-refs?
+    Py_TRACE_REFS = hasattr(sys, 'getobjects')
+    if Py_TRACE_REFS:
+        text = 'Yes (sys.getobjects() present)'
+    else:
+        text = 'No (sys.getobjects() missing)'
+    info_add('build.Py_TRACE_REFS', text)
 
 
 def collect_platform(info_add):
@@ -151,11 +159,31 @@ def collect_platform(info_add):
     if libc_ver:
         info_add('platform.libc_ver', libc_ver)
 
+    try:
+        os_release = platform.freedesktop_os_release()
+    except OSError:
+        pass
+    else:
+        for key in (
+            'ID',
+            'NAME',
+            'PRETTY_NAME'
+            'VARIANT',
+            'VARIANT_ID',
+            'VERSION',
+            'VERSION_CODENAME',
+            'VERSION_ID',
+        ):
+            if key not in os_release:
+                continue
+            info_add(f'platform.freedesktop_os_release[{key}]',
+                     os_release[key])
+
 
 def collect_locale(info_add):
     import locale
 
-    info_add('locale.encoding', locale.getpreferredencoding(False))
+    info_add('locale.getencoding', locale.getencoding())
 
 
 def collect_builtins(info_add):
@@ -211,6 +239,7 @@ def collect_os(info_add):
         'getresgid',
         'getresuid',
         'getuid',
+        'process_cpu_count',
         'uname',
     ):
         call_func(info_add, 'os.%s' % func, os, func)
@@ -240,6 +269,7 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
+        "BUILDPYTHON",
         "CC",
         "CFLAGS",
         "COLUMNS",
@@ -284,7 +314,6 @@ def collect_os(info_add):
         "TEMP",
         "TERM",
         "TILE_LIBRARY",
-        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
         "TRAVIS",
@@ -293,15 +322,24 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
+        "_PYTHON_HOSTRUNNER",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
         "__PYVENV_LAUNCHER__",
+
+        # Sanitizer options
+        "ASAN_OPTIONS",
+        "LSAN_OPTIONS",
+        "MSAN_OPTIONS",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS",
     ))
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
-           # Copy PYTHON* and LC_* variables
+           # Copy PYTHON* variables like PYTHONPATH
+           # Copy LC_* variables like LC_ALL
            or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
@@ -456,6 +494,8 @@ def collect_datetime(info_add):
 def collect_sysconfig(info_add):
     import sysconfig
 
+    info_add('sysconfig.is_python_build', sysconfig.is_python_build())
+
     for name in (
         'ABIFLAGS',
         'ANDROID_API_LEVEL',
@@ -464,6 +504,7 @@ def collect_sysconfig(info_add):
         'CFLAGS',
         'CFLAGSFORSHARED',
         'CONFIG_ARGS',
+        'HOSTRUNNER',
         'HOST_GNU_TYPE',
         'MACHDEP',
         'MULTIARCH',
@@ -476,9 +517,13 @@ def collect_sysconfig(info_add):
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
+        'Py_GIL_DISABLED',
         'SHELL',
         'SOABI',
+        'abs_builddir',
+        'abs_srcdir',
         'prefix',
+        'srcdir',
     ):
         value = sysconfig.get_config_var(name)
         if name == 'ANDROID_API_LEVEL' and not value:
@@ -486,6 +531,29 @@ def collect_sysconfig(info_add):
             continue
         value = normalize_text(value)
         info_add('sysconfig[%s]' % name, value)
+
+    PY_CFLAGS = sysconfig.get_config_var('PY_CFLAGS')
+    NDEBUG = (PY_CFLAGS and '-DNDEBUG' in PY_CFLAGS)
+    if NDEBUG:
+        text = 'ignore assertions (macro defined)'
+    else:
+        text= 'build assertions (macro not defined)'
+    info_add('build.NDEBUG',text)
+
+    for name in (
+        'WITH_DOC_STRINGS',
+        'WITH_DTRACE',
+        'WITH_FREELISTS',
+        'WITH_MIMALLOC',
+        'WITH_PYMALLOC',
+        'WITH_VALGRIND',
+    ):
+        value = sysconfig.get_config_var(name)
+        if value:
+            text = 'Yes'
+        else:
+            text = 'No'
+        info_add(f'build.{name}', text)
 
 
 def collect_ssl(info_add):
@@ -542,10 +610,19 @@ def collect_ssl(info_add):
 
 
 def collect_socket(info_add):
-    import socket
+    try:
+        import socket
+    except ImportError:
+        return
 
-    hostname = socket.gethostname()
-    info_add('socket.hostname', hostname)
+    try:
+        hostname = socket.gethostname()
+    except (OSError, AttributeError):
+        # WASI SDK 16.0 does not have gethostname(2).
+        if sys.platform != "wasi":
+            raise
+    else:
+        info_add('socket.hostname', hostname)
 
 
 def collect_sqlite(info_add):
@@ -554,7 +631,7 @@ def collect_sqlite(info_add):
     except ImportError:
         return
 
-    attributes = ('version', 'sqlite_version')
+    attributes = ('sqlite_version',)
     copy_attributes(info_add, sqlite3, 'sqlite3.%s', attributes)
 
 
@@ -594,8 +671,29 @@ def collect_testcapi(info_add):
     except ImportError:
         return
 
-    call_func(info_add, 'pymem.allocator', _testcapi, 'pymem_getallocatorsname')
-    copy_attr(info_add, 'pymem.with_pymalloc', _testcapi, 'WITH_PYMALLOC')
+    for name in (
+        'LONG_MAX',         # always 32-bit on Windows, 64-bit on 64-bit Unix
+        'PY_SSIZE_T_MAX',
+        'Py_C_RECURSION_LIMIT',
+        'SIZEOF_TIME_T',    # 32-bit or 64-bit depending on the platform
+        'SIZEOF_WCHAR_T',   # 16-bit or 32-bit depending on the platform
+    ):
+        copy_attr(info_add, f'_testcapi.{name}', _testcapi, name)
+
+
+def collect_testinternalcapi(info_add):
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return
+
+    call_func(info_add, 'pymem.allocator', _testinternalcapi, 'pymem_getallocatorsname')
+
+    for name in (
+        'SIZEOF_PYGC_HEAD',
+        'SIZEOF_PYOBJECT',
+    ):
+        copy_attr(info_add, f'_testinternalcapi.{name}', _testinternalcapi, name)
 
 
 def collect_resource(info_add):
@@ -614,6 +712,7 @@ def collect_resource(info_add):
 
 
 def collect_test_socket(info_add):
+    import unittest
     try:
         from test import test_socket
     except (ImportError, unittest.SkipTest):
@@ -625,17 +724,81 @@ def collect_test_socket(info_add):
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
 
 
-def collect_test_support(info_add):
+def collect_support(info_add):
     try:
         from test import support
     except ImportError:
         return
 
-    attributes = ('IPV6_ENABLED',)
-    copy_attributes(info_add, support, 'test_support.%s', attributes)
+    attributes = (
+        'MS_WINDOWS',
+        'has_fork_support',
+        'has_socket_support',
+        'has_strftime_extensions',
+        'has_subprocess_support',
+        'is_android',
+        'is_emscripten',
+        'is_jython',
+        'is_wasi',
+    )
+    copy_attributes(info_add, support, 'support.%s', attributes)
 
-    call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
-    call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+    call_func(info_add, 'support._is_gui_available', support, '_is_gui_available')
+    call_func(info_add, 'support.python_is_optimized', support, 'python_is_optimized')
+
+    info_add('support.check_sanitizer(address=True)',
+             support.check_sanitizer(address=True))
+    info_add('support.check_sanitizer(memory=True)',
+             support.check_sanitizer(memory=True))
+    info_add('support.check_sanitizer(ub=True)',
+             support.check_sanitizer(ub=True))
+
+
+def collect_support_os_helper(info_add):
+    try:
+        from test.support import os_helper
+    except ImportError:
+        return
+
+    for name in (
+        'can_symlink',
+        'can_xattr',
+        'can_chmod',
+        'can_dac_override',
+    ):
+        func = getattr(os_helper, name)
+        info_add(f'support_os_helper.{name}', func())
+
+
+def collect_support_socket_helper(info_add):
+    try:
+        from test.support import socket_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'IPV6_ENABLED',
+        'has_gethostname',
+    )
+    copy_attributes(info_add, socket_helper, 'support_socket_helper.%s', attributes)
+
+    for name in (
+        'tcp_blackhole',
+    ):
+        func = getattr(socket_helper, name)
+        info_add(f'support_socket_helper.{name}', func())
+
+
+def collect_support_threading_helper(info_add):
+    try:
+        from test.support import threading_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'can_start_thread',
+    )
+    copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
 def collect_cc(info_add):
@@ -702,26 +865,36 @@ def collect_subprocess(info_add):
 
 
 def collect_windows(info_add):
+    if sys.platform != "win32":
+        # Code specific to Windows
+        return
+
+    # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
+    # windows.is_admin: IsUserAnAdmin()
     try:
         import ctypes
+        if not hasattr(ctypes, 'WinDLL'):
+            raise ImportError
     except ImportError:
-        return
-
-    if not hasattr(ctypes, 'WinDLL'):
-        return
-
-    ntdll = ctypes.WinDLL('ntdll')
-    BOOLEAN = ctypes.c_ubyte
-
-    try:
-        RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
-    except AttributeError:
-        res = '<function not available>'
+        pass
     else:
-        RtlAreLongPathsEnabled.restype = BOOLEAN
-        RtlAreLongPathsEnabled.argtypes = ()
-        res = bool(RtlAreLongPathsEnabled())
-    info_add('windows.RtlAreLongPathsEnabled', res)
+        ntdll = ctypes.WinDLL('ntdll')
+        BOOLEAN = ctypes.c_ubyte
+        try:
+            RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+        except AttributeError:
+            res = '<function not available>'
+        else:
+            RtlAreLongPathsEnabled.restype = BOOLEAN
+            RtlAreLongPathsEnabled.argtypes = ()
+            res = bool(RtlAreLongPathsEnabled())
+        info_add('windows.RtlAreLongPathsEnabled', res)
+
+        shell32 = ctypes.windll.shell32
+        IsUserAnAdmin = shell32.IsUserAnAdmin
+        IsUserAnAdmin.restype = BOOLEAN
+        IsUserAnAdmin.argtypes = ()
+        info_add('windows.is_admin', IsUserAnAdmin())
 
     try:
         import _winapi
@@ -730,6 +903,7 @@ def collect_windows(info_add):
     except (ImportError, AttributeError):
         pass
 
+    # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess
     try:
         # When wmic.exe output is redirected to a pipe,
@@ -756,12 +930,15 @@ def collect_windows(info_add):
                 if line:
                     info_add('windows.version', line)
 
+    # windows.ver: "ver" command
     try:
         proc = subprocess.Popen(["ver"], shell=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 text=True)
         output = proc.communicate()[0]
+        if proc.returncode == 0xc0000142:
+            return
         if proc.returncode:
             output = ""
     except OSError:
@@ -771,6 +948,22 @@ def collect_windows(info_add):
         line = output.splitlines()[0]
         if line:
             info_add('windows.ver', line)
+
+    # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
+    import winreg
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock")
+        subkey = "AllowDevelopmentWithoutDevLicense"
+        try:
+            value, value_type = winreg.QueryValueEx(key, subkey)
+        finally:
+            winreg.CloseKey(key)
+    except OSError:
+        pass
+    else:
+        info_add('windows.developer_mode', "enabled" if value else "disabled")
 
 
 def collect_fips(info_add):
@@ -790,6 +983,21 @@ def collect_fips(info_add):
             info_add('fips.linux_crypto_fips_enabled', line)
     except OSError:
         pass
+
+
+def collect_tempfile(info_add):
+    import tempfile
+
+    info_add('tempfile.gettempdir', tempfile.gettempdir())
+
+
+def collect_libregrtest_utils(info_add):
+    try:
+        from test.libregrtest import utils
+    except ImportError:
+        return
+
+    info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
 
 
 def collect_info(info):
@@ -825,14 +1033,20 @@ def collect_info(info):
         collect_sys,
         collect_sysconfig,
         collect_testcapi,
+        collect_testinternalcapi,
+        collect_tempfile,
         collect_time,
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_libregrtest_utils,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
-        collect_test_support,
+        collect_support,
+        collect_support_os_helper,
+        collect_support_socket_helper,
+        collect_support_threading_helper,
     ):
         try:
             collect_func(info_add)
@@ -858,7 +1072,6 @@ def dump_info(info, file=None):
     for key, value in infos:
         value = value.replace("\n", " ")
         print("%s: %s" % (key, value))
-    print()
 
 
 def main():
@@ -867,6 +1080,7 @@ def main():
     dump_info(info)
 
     if error:
+        print()
         print("Collection failed: exit with error", file=sys.stderr)
         sys.exit(1)
 

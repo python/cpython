@@ -1,4 +1,5 @@
-#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
+#include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
+#include "pycore_time.h"          // _PyTime_AsMicroseconds()
 
 /* This code implemented by Dag.Gruneau@elsa.preseco.comm.se */
 /* Fast NonRecursiveMutex support by Yakov Markovitch, markovitch@iso.ru */
@@ -76,16 +77,16 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
         }
     } else if (milliseconds != 0) {
         /* wait at least until the deadline */
-        _PyTime_t nanoseconds = _PyTime_FromNanoseconds((_PyTime_t)milliseconds * 1000000);
-        _PyTime_t deadline = _PyTime_Add(_PyTime_GetPerfCounter(), nanoseconds);
+        PyTime_t nanoseconds = (PyTime_t)milliseconds * (1000 * 1000);
+        PyTime_t deadline = _PyTime_Add(_PyTime_PerfCounterUnchecked(), nanoseconds);
         while (mutex->locked) {
-            _PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
+            PyTime_t microseconds = _PyTime_AsMicroseconds(nanoseconds,
                                                             _PyTime_ROUND_TIMEOUT);
             if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, microseconds) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
-            nanoseconds = deadline - _PyTime_GetPerfCounter();
+            nanoseconds = deadline - _PyTime_PerfCounterUnchecked();
             if (nanoseconds <= 0) {
                 break;
             }
@@ -152,11 +153,12 @@ unsigned long PyThread_get_thread_native_id(void);
 #endif
 
 /*
- * Initialization of the C package, should not be needed.
+ * Initialization for the current runtime.
  */
 static void
 PyThread__init_thread(void)
 {
+    // Initialization of the C package should not be needed.
 }
 
 /*
@@ -181,21 +183,19 @@ bootstrap(void *call)
     return 0;
 }
 
-unsigned long
-PyThread_start_new_thread(void (*func)(void *), void *arg)
-{
+int
+PyThread_start_joinable_thread(void (*func)(void *), void *arg,
+                               PyThread_ident_t* ident, PyThread_handle_t* handle) {
     HANDLE hThread;
     unsigned threadID;
     callobj *obj;
 
-    dprintf(("%lu: PyThread_start_new_thread called\n",
-             PyThread_get_thread_ident()));
     if (!initialized)
         PyThread_init_thread();
 
     obj = (callobj*)HeapAlloc(GetProcessHeap(), 0, sizeof(*obj));
     if (!obj)
-        return PYTHREAD_INVALID_THREAD_ID;
+        return -1;
     obj->func = func;
     obj->arg = arg;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -208,32 +208,60 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         /* I've seen errno == EAGAIN here, which means "there are
          * too many threads".
          */
-        int e = errno;
-        dprintf(("%lu: PyThread_start_new_thread failed, errno %d\n",
-                 PyThread_get_thread_ident(), e));
-        threadID = (unsigned)-1;
         HeapFree(GetProcessHeap(), 0, obj);
+        return -1;
     }
-    else {
-        dprintf(("%lu: PyThread_start_new_thread succeeded: %p\n",
-                 PyThread_get_thread_ident(), (void*)hThread));
-        CloseHandle(hThread);
+    *ident = threadID;
+    // The cast is safe since HANDLE is pointer-sized
+    *handle = (PyThread_handle_t) hThread;
+    return 0;
+}
+
+unsigned long
+PyThread_start_new_thread(void (*func)(void *), void *arg) {
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    if (PyThread_start_joinable_thread(func, arg, &ident, &handle)) {
+        return PYTHREAD_INVALID_THREAD_ID;
     }
-    return threadID;
+    CloseHandle((HANDLE) handle);
+    // The cast is safe since the ident is really an unsigned int
+    return (unsigned long) ident;
+}
+
+int
+PyThread_join_thread(PyThread_handle_t handle) {
+    HANDLE hThread = (HANDLE) handle;
+    int errored = (WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0);
+    CloseHandle(hThread);
+    return errored;
+}
+
+int
+PyThread_detach_thread(PyThread_handle_t handle) {
+    HANDLE hThread = (HANDLE) handle;
+    return (CloseHandle(hThread) == 0);
 }
 
 /*
  * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system
  */
-unsigned long
-PyThread_get_thread_ident(void)
+PyThread_ident_t
+PyThread_get_thread_ident_ex(void)
 {
     if (!initialized)
         PyThread_init_thread();
 
     return GetCurrentThreadId();
 }
+
+unsigned long
+PyThread_get_thread_ident(void)
+{
+    return (unsigned long) PyThread_get_thread_ident_ex();
+}
+
 
 #ifdef PY_HAVE_THREAD_NATIVE_ID
 /*
@@ -257,7 +285,6 @@ PyThread_get_thread_native_id(void)
 void _Py_NO_RETURN
 PyThread_exit_thread(void)
 {
-    dprintf(("%lu: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
     if (!initialized)
         exit(0);
     _endthreadex(0);
@@ -271,24 +298,22 @@ PyThread_exit_thread(void)
 PyThread_type_lock
 PyThread_allocate_lock(void)
 {
-    PNRMUTEX aLock;
+    PNRMUTEX mutex;
 
-    dprintf(("PyThread_allocate_lock called\n"));
     if (!initialized)
         PyThread_init_thread();
 
-    aLock = AllocNonRecursiveMutex() ;
+    mutex = AllocNonRecursiveMutex() ;
 
-    dprintf(("%lu: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
+    PyThread_type_lock aLock = (PyThread_type_lock) mutex;
+    assert(aLock);
 
-    return (PyThread_type_lock) aLock;
+    return aLock;
 }
 
 void
 PyThread_free_lock(PyThread_type_lock aLock)
 {
-    dprintf(("%lu: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
-
     FreeNonRecursiveMutex(aLock) ;
 }
 
@@ -307,6 +332,8 @@ PyLockStatus
 PyThread_acquire_lock_timed(PyThread_type_lock aLock,
                             PY_TIMEOUT_T microseconds, int intr_flag)
 {
+    assert(aLock);
+
     /* Fow now, intr_flag does nothing on Windows, and lock acquires are
      * uninterruptible.  */
     PyLockStatus success;
@@ -333,19 +360,13 @@ PyThread_acquire_lock_timed(PyThread_type_lock aLock,
         milliseconds = INFINITE;
     }
 
-    dprintf(("%lu: PyThread_acquire_lock_timed(%p, %lld) called\n",
-             PyThread_get_thread_ident(), aLock, microseconds));
-
-    if (aLock && EnterNonRecursiveMutex((PNRMUTEX)aLock,
-                                        (DWORD)milliseconds) == WAIT_OBJECT_0) {
+    if (EnterNonRecursiveMutex((PNRMUTEX)aLock,
+                               (DWORD)milliseconds) == WAIT_OBJECT_0) {
         success = PY_LOCK_ACQUIRED;
     }
     else {
         success = PY_LOCK_FAILURE;
     }
-
-    dprintf(("%lu: PyThread_acquire_lock(%p, %lld) -> %d\n",
-             PyThread_get_thread_ident(), aLock, microseconds, success));
 
     return success;
 }
@@ -358,10 +379,8 @@ PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 void
 PyThread_release_lock(PyThread_type_lock aLock)
 {
-    dprintf(("%lu: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
-
-    if (!(aLock && LeaveNonRecursiveMutex((PNRMUTEX) aLock)))
-        dprintf(("%lu: Could not PyThread_release_lock(%p) error: %ld\n", PyThread_get_thread_ident(), aLock, GetLastError()));
+    assert(aLock);
+    (void)LeaveNonRecursiveMutex((PNRMUTEX) aLock);
 }
 
 /* minimum/maximum thread stack sizes supported */
@@ -422,16 +441,7 @@ PyThread_set_key_value(int key, void *value)
 void *
 PyThread_get_key_value(int key)
 {
-    /* because TLS is used in the Py_END_ALLOW_THREAD macro,
-     * it is necessary to preserve the windows error state, because
-     * it is assumed to be preserved across the call to the macro.
-     * Ideally, the macro should be fixed, but it is simpler to
-     * do it here.
-     */
-    DWORD error = GetLastError();
-    void *result = TlsGetValue(key);
-    SetLastError(error);
-    return result;
+    return TlsGetValue(key);
 }
 
 void
@@ -503,14 +513,10 @@ void *
 PyThread_tss_get(Py_tss_t *key)
 {
     assert(key != NULL);
-    /* because TSS is used in the Py_END_ALLOW_THREAD macro,
-     * it is necessary to preserve the windows error state, because
-     * it is assumed to be preserved across the call to the macro.
-     * Ideally, the macro should be fixed, but it is simpler to
-     * do it here.
-     */
-    DWORD error = GetLastError();
-    void *result = TlsGetValue(key->_key);
-    SetLastError(error);
-    return result;
+    int err = GetLastError();
+    void *r = TlsGetValue(key->_key);
+    if (r || !GetLastError()) {
+        SetLastError(err);
+    }
+    return r;
 }

@@ -127,28 +127,6 @@ Functions
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
-.. function:: find_loader(name, path=None)
-
-   Find the loader for a module, optionally within the specified *path*. If the
-   module is in :attr:`sys.modules`, then ``sys.modules[name].__loader__`` is
-   returned (unless the loader would be ``None`` or is not set, in which case
-   :exc:`ValueError` is raised). Otherwise a search using :attr:`sys.meta_path`
-   is done. ``None`` is returned if no loader is found.
-
-   A dotted name does not have its parents implicitly imported as that requires
-   loading them and that may not be desired. To properly import a submodule you
-   will need to import all parent packages of the submodule and use the correct
-   argument to *path*.
-
-   .. versionadded:: 3.3
-
-   .. versionchanged:: 3.4
-      If ``__loader__`` is not set, raise :exc:`ValueError`, just like when the
-      attribute is set to ``None``.
-
-   .. deprecated:: 3.4
-      Use :func:`importlib.util.find_spec` instead.
-
 .. function:: invalidate_caches()
 
    Invalidate the internal caches of finders stored at
@@ -247,9 +225,8 @@ are also provided to help in implementing the core ABCs.
 ABC hierarchy::
 
     object
-     +-- Finder (deprecated)
-     |    +-- MetaPathFinder
-     |    +-- PathEntryFinder
+     +-- MetaPathFinder
+     +-- PathEntryFinder
      +-- Loader
           +-- ResourceLoader --------+
           +-- InspectLoader          |
@@ -258,37 +235,14 @@ ABC hierarchy::
                                      +-- SourceLoader
 
 
-.. class:: Finder
-
-   An abstract base class representing a :term:`finder`.
-
-   .. deprecated:: 3.3
-      Use :class:`MetaPathFinder` or :class:`PathEntryFinder` instead.
-
-   .. abstractmethod:: find_module(fullname, path=None)
-
-      An abstract method for finding a :term:`loader` for the specified
-      module.  Originally specified in :pep:`302`, this method was meant
-      for use in :data:`sys.meta_path` and in the path-based import subsystem.
-
-      .. versionchanged:: 3.4
-         Returns ``None`` when called instead of raising
-         :exc:`NotImplementedError`.
-
-      .. deprecated:: 3.10
-         Implement :meth:`MetaPathFinder.find_spec` or
-         :meth:`PathEntryFinder.find_spec` instead.
-
-
 .. class:: MetaPathFinder
 
-   An abstract base class representing a :term:`meta path finder`. For
-   compatibility, this is a subclass of :class:`Finder`.
+   An abstract base class representing a :term:`meta path finder`.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, path, target=None)
 
@@ -304,25 +258,6 @@ ABC hierarchy::
 
       .. versionadded:: 3.4
 
-   .. method:: find_module(fullname, path)
-
-      A legacy method for finding a :term:`loader` for the specified
-      module.  If this is a top-level import, *path* will be ``None``.
-      Otherwise, this is a search for a subpackage or module and *path*
-      will be the value of :attr:`__path__` from the parent
-      package. If a loader cannot be found, ``None`` is returned.
-
-      If :meth:`find_spec` is defined, backwards-compatible functionality is
-      provided.
-
-      .. versionchanged:: 3.4
-         Returns ``None`` when called instead of raising
-         :exc:`NotImplementedError`. Can use :meth:`find_spec` to provide
-         functionality.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
-
    .. method:: invalidate_caches()
 
       An optional method which, when called, should invalidate any internal
@@ -330,7 +265,7 @@ ABC hierarchy::
       when invalidating the caches of all finders on :data:`sys.meta_path`.
 
       .. versionchanged:: 3.4
-         Returns ``None`` when called instead of ``NotImplemented``.
+         Returns ``None`` when called instead of :data:`NotImplemented`.
 
 
 .. class:: PathEntryFinder
@@ -343,7 +278,7 @@ ABC hierarchy::
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.10
-      No longer a subclass of :class:`Finder`.
+      No longer a subclass of :class:`!Finder`.
 
    .. method:: find_spec(fullname, target=None)
 
@@ -356,36 +291,6 @@ ABC hierarchy::
       may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
-
-   .. method:: find_loader(fullname)
-
-      A legacy method for finding a :term:`loader` for the specified
-      module.  Returns a 2-tuple of ``(loader, portion)`` where ``portion``
-      is a sequence of file system locations contributing to part of a namespace
-      package. The loader may be ``None`` while specifying ``portion`` to
-      signify the contribution of the file system locations to a namespace
-      package. An empty list can be used for ``portion`` to signify the loader
-      is not part of a namespace package. If ``loader`` is ``None`` and
-      ``portion`` is the empty list then no loader or location for a namespace
-      package were found (i.e. failure to find anything for the module).
-
-      If :meth:`find_spec` is defined then backwards-compatible functionality is
-      provided.
-
-      .. versionchanged:: 3.4
-         Returns ``(None, [])`` instead of raising :exc:`NotImplementedError`.
-         Uses :meth:`find_spec` when available to provide functionality.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
-
-   .. method:: find_module(fullname)
-
-      A concrete implementation of :meth:`Finder.find_module` which is
-      equivalent to ``self.find_loader(fullname)[0]``.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
@@ -402,7 +307,7 @@ ABC hierarchy::
 
     Loaders that wish to support resource reading should implement a
     :meth:`get_resource_reader` method as specified by
-    :class:`importlib.abc.ResourceReader`.
+    :class:`importlib.resources.abc.ResourceReader`.
 
     .. versionchanged:: 3.7
        Introduced the optional :meth:`get_resource_reader` method.
@@ -415,8 +320,8 @@ ABC hierarchy::
 
        .. versionadded:: 3.4
 
-       .. versionchanged:: 3.5
-          Starting in Python 3.6, this method will not be optional when
+       .. versionchanged:: 3.6
+          This method is no longer optional when
           :meth:`exec_module` is defined.
 
     .. method:: exec_module(module)
@@ -444,14 +349,14 @@ ABC hierarchy::
         from the import.  If the loader inserted a module and the load fails, it
         must be removed by the loader from :data:`sys.modules`; modules already
         in :data:`sys.modules` before the loader began execution should be left
-        alone (see :func:`importlib.util.module_for_loader`).
+        alone.
 
         The loader should set several attributes on the module
         (note that some of these attributes can change when a module is
         reloaded):
 
         - :attr:`__name__`
-            The module's fully-qualified name.
+            The module's fully qualified name.
             It is ``'__main__'`` for an executed module.
 
         - :attr:`__file__`
@@ -467,12 +372,12 @@ ABC hierarchy::
             The list of locations where the package's submodules will be found.
             Most of the time this is a single directory.
             The import system passes this attribute to ``__import__()`` and to finders
-            in the same way as :attr:`sys.path` but just for the package.
+            in the same way as :data:`sys.path` but just for the package.
             It is not set on non-package modules so it can be used
             as an indicator that the module is a package.
 
         - :attr:`__package__`
-            The fully-qualified name of the package the module is in (or the
+            The fully qualified name of the package the module is in (or the
             empty string for a top-level module).
             If the module is a package then this is the same as :attr:`__name__`.
 
@@ -494,22 +399,405 @@ ABC hierarchy::
            other responsibilities of :meth:`load_module` when
            :meth:`exec_module` is implemented.
 
-    .. method:: module_repr(module)
 
-        A legacy method which when implemented calculates and returns the given
-        module's representation, as a string.  The module type's default
-        :meth:`__repr__` will use the result of this method as appropriate.
+.. class:: ResourceLoader
+
+    An abstract base class for a :term:`loader` which implements the optional
+    :pep:`302` protocol for loading arbitrary resources from the storage
+    back-end.
+
+    .. deprecated:: 3.7
+       This ABC is deprecated in favour of supporting resource loading
+       through :class:`importlib.resources.abc.ResourceReader`.
+
+    .. abstractmethod:: get_data(path)
+
+        An abstract method to return the bytes for the data located at *path*.
+        Loaders that have a file-like storage back-end
+        that allows storing arbitrary data
+        can implement this abstract method to give direct access
+        to the data stored. :exc:`OSError` is to be raised if the *path* cannot
+        be found. The *path* is expected to be constructed using a module's
+        :attr:`__file__` attribute or an item from a package's :attr:`__path__`.
+
+        .. versionchanged:: 3.4
+           Raises :exc:`OSError` instead of :exc:`NotImplementedError`.
+
+
+.. class:: InspectLoader
+
+    An abstract base class for a :term:`loader` which implements the optional
+    :pep:`302` protocol for loaders that inspect modules.
+
+    .. method:: get_code(fullname)
+
+        Return the code object for a module, or ``None`` if the module does not
+        have a code object (as would be the case, for example, for a built-in
+        module).  Raise an :exc:`ImportError` if loader cannot find the
+        requested module.
+
+        .. note::
+           While the method has a default implementation, it is suggested that
+           it be overridden if possible for performance.
+
+        .. index::
+           single: universal newlines; importlib.abc.InspectLoader.get_source method
+
+        .. versionchanged:: 3.4
+           No longer abstract and a concrete implementation is provided.
+
+    .. abstractmethod:: get_source(fullname)
+
+        An abstract method to return the source of a module. It is returned as
+        a text string using :term:`universal newlines`, translating all
+        recognized line separators into ``'\n'`` characters.  Returns ``None``
+        if no source is available (e.g. a built-in module). Raises
+        :exc:`ImportError` if the loader cannot find the module specified.
+
+        .. versionchanged:: 3.4
+           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
+
+    .. method:: is_package(fullname)
+
+        An optional method to return a true value if the module is a package, a
+        false value otherwise. :exc:`ImportError` is raised if the
+        :term:`loader` cannot find the module.
+
+        .. versionchanged:: 3.4
+           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
+
+    .. staticmethod:: source_to_code(data, path='<string>')
+
+        Create a code object from Python source.
+
+        The *data* argument can be whatever the :func:`compile` function
+        supports (i.e. string or bytes). The *path* argument should be
+        the "path" to where the source code originated from, which can be an
+        abstract concept (e.g. location in a zip file).
+
+        With the subsequent code object one can execute it in a module by
+        running ``exec(code, module.__dict__)``.
+
+        .. versionadded:: 3.4
+
+        .. versionchanged:: 3.5
+           Made the method static.
+
+    .. method:: exec_module(module)
+
+       Implementation of :meth:`Loader.exec_module`.
+
+       .. versionadded:: 3.4
+
+    .. method:: load_module(fullname)
+
+       Implementation of :meth:`Loader.load_module`.
+
+       .. deprecated:: 3.4
+          use :meth:`exec_module` instead.
+
+
+.. class:: ExecutionLoader
+
+    An abstract base class which inherits from :class:`InspectLoader` that,
+    when implemented, helps a module to be executed as a script. The ABC
+    represents an optional :pep:`302` protocol.
+
+    .. abstractmethod:: get_filename(fullname)
+
+        An abstract method that is to return the value of :attr:`__file__` for
+        the specified module. If no path is available, :exc:`ImportError` is
+        raised.
+
+        If source code is available, then the method should return the path to
+        the source file, regardless of whether a bytecode was used to load the
+        module.
+
+        .. versionchanged:: 3.4
+           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
+
+
+.. class:: FileLoader(fullname, path)
+
+   An abstract base class which inherits from :class:`ResourceLoader` and
+   :class:`ExecutionLoader`, providing concrete implementations of
+   :meth:`ResourceLoader.get_data` and :meth:`ExecutionLoader.get_filename`.
+
+   The *fullname* argument is a fully resolved name of the module the loader is
+   to handle. The *path* argument is the path to the file for the module.
+
+   .. versionadded:: 3.3
+
+   .. attribute:: name
+
+      The name of the module the loader can handle.
+
+   .. attribute:: path
+
+      Path to the file of the module.
+
+   .. method:: load_module(fullname)
+
+      Calls super's ``load_module()``.
+
+      .. deprecated:: 3.4
+         Use :meth:`Loader.exec_module` instead.
+
+   .. abstractmethod:: get_filename(fullname)
+
+      Returns :attr:`path`.
+
+   .. abstractmethod:: get_data(path)
+
+      Reads *path* as a binary file and returns the bytes from it.
+
+
+.. class:: SourceLoader
+
+    An abstract base class for implementing source (and optionally bytecode)
+    file loading. The class inherits from both :class:`ResourceLoader` and
+    :class:`ExecutionLoader`, requiring the implementation of:
+
+    * :meth:`ResourceLoader.get_data`
+    * :meth:`ExecutionLoader.get_filename`
+          Should only return the path to the source file; sourceless
+          loading is not supported.
+
+    The abstract methods defined by this class are to add optional bytecode
+    file support. Not implementing these optional methods (or causing them to
+    raise :exc:`NotImplementedError`) causes the loader to
+    only work with source code. Implementing the methods allows the loader to
+    work with source *and* bytecode files; it does not allow for *sourceless*
+    loading where only bytecode is provided.  Bytecode files are an
+    optimization to speed up loading by removing the parsing step of Python's
+    compiler, and so no bytecode-specific API is exposed.
+
+    .. method:: path_stats(path)
+
+        Optional abstract method which returns a :class:`dict` containing
+        metadata about the specified path.  Supported dictionary keys are:
+
+        - ``'mtime'`` (mandatory): an integer or floating-point number
+          representing the modification time of the source code;
+        - ``'size'`` (optional): the size in bytes of the source code.
+
+        Any other keys in the dictionary are ignored, to allow for future
+        extensions. If the path cannot be handled, :exc:`OSError` is raised.
 
         .. versionadded:: 3.3
 
         .. versionchanged:: 3.4
-           Made optional instead of an abstractmethod.
+           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
 
-        .. deprecated:: 3.4
-           The import machinery now takes care of this automatically.
+    .. method:: path_mtime(path)
+
+        Optional abstract method which returns the modification time for the
+        specified path.
+
+        .. deprecated:: 3.3
+           This method is deprecated in favour of :meth:`path_stats`.  You don't
+           have to implement it, but it is still available for compatibility
+           purposes. Raise :exc:`OSError` if the path cannot be handled.
+
+        .. versionchanged:: 3.4
+           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
+
+    .. method:: set_data(path, data)
+
+        Optional abstract method which writes the specified bytes to a file
+        path. Any intermediate directories which do not exist are to be created
+        automatically.
+
+        When writing to the path fails because the path is read-only
+        (:const:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
+        exception.
+
+        .. versionchanged:: 3.4
+           No longer raises :exc:`NotImplementedError` when called.
+
+    .. method:: get_code(fullname)
+
+        Concrete implementation of :meth:`InspectLoader.get_code`.
+
+    .. method:: exec_module(module)
+
+       Concrete implementation of :meth:`Loader.exec_module`.
+
+       .. versionadded:: 3.4
+
+    .. method:: load_module(fullname)
+
+       Concrete implementation of :meth:`Loader.load_module`.
+
+       .. deprecated:: 3.4
+          Use :meth:`exec_module` instead.
+
+    .. method:: get_source(fullname)
+
+        Concrete implementation of :meth:`InspectLoader.get_source`.
+
+    .. method:: is_package(fullname)
+
+        Concrete implementation of :meth:`InspectLoader.is_package`. A module
+        is determined to be a package if its file path (as provided by
+        :meth:`ExecutionLoader.get_filename`) is a file named
+        ``__init__`` when the file extension is removed **and** the module name
+        itself does not end in ``__init__``.
 
 
-.. include:: importlib.resources.abc.rst
+.. class:: ResourceReader
+
+    *Superseded by TraversableResources*
+
+    An :term:`abstract base class` to provide the ability to read
+    *resources*.
+
+    From the perspective of this ABC, a *resource* is a binary
+    artifact that is shipped within a package. Typically this is
+    something like a data file that lives next to the ``__init__.py``
+    file of the package. The purpose of this class is to help abstract
+    out the accessing of such data files so that it does not matter if
+    the package and its data file(s) are stored in a e.g. zip file
+    versus on the file system.
+
+    For any of methods of this class, a *resource* argument is
+    expected to be a :term:`path-like object` which represents
+    conceptually just a file name. This means that no subdirectory
+    paths should be included in the *resource* argument. This is
+    because the location of the package the reader is for, acts as the
+    "directory". Hence the metaphor for directories and file
+    names is packages and resources, respectively. This is also why
+    instances of this class are expected to directly correlate to
+    a specific package (instead of potentially representing multiple
+    packages or a module).
+
+    Loaders that wish to support resource reading are expected to
+    provide a method called ``get_resource_reader(fullname)`` which
+    returns an object implementing this ABC's interface. If the module
+    specified by fullname is not a package, this method should return
+    :const:`None`. An object compatible with this ABC should only be
+    returned when the specified module is a package.
+
+    .. versionadded:: 3.7
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
+
+    .. abstractmethod:: open_resource(resource)
+
+        Returns an opened, :term:`file-like object` for binary reading
+        of the *resource*.
+
+        If the resource cannot be found, :exc:`FileNotFoundError` is
+        raised.
+
+    .. abstractmethod:: resource_path(resource)
+
+        Returns the file system path to the *resource*.
+
+        If the resource does not concretely exist on the file system,
+        raise :exc:`FileNotFoundError`.
+
+    .. abstractmethod:: is_resource(name)
+
+        Returns ``True`` if the named *name* is considered a resource.
+        :exc:`FileNotFoundError` is raised if *name* does not exist.
+
+    .. abstractmethod:: contents()
+
+        Returns an :term:`iterable` of strings over the contents of
+        the package. Do note that it is not required that all names
+        returned by the iterator be actual resources, e.g. it is
+        acceptable to return names for which :meth:`is_resource` would
+        be false.
+
+        Allowing non-resource names to be returned is to allow for
+        situations where how a package and its resources are stored
+        are known a priori and the non-resource names would be useful.
+        For instance, returning subdirectory names is allowed so that
+        when it is known that the package and resources are stored on
+        the file system then those subdirectory names can be used
+        directly.
+
+        The abstract method returns an iterable of no items.
+
+
+.. class:: Traversable
+
+    An object with a subset of :class:`pathlib.Path` methods suitable for
+    traversing directories and opening files.
+
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
+
+    .. versionadded:: 3.9
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.Traversable` instead.
+
+    .. attribute:: name
+
+       Abstract. The base name of this object without any parent references.
+
+    .. abstractmethod:: iterdir()
+
+       Yield ``Traversable`` objects in ``self``.
+
+    .. abstractmethod:: is_dir()
+
+       Return ``True`` if ``self`` is a directory.
+
+    .. abstractmethod:: is_file()
+
+       Return ``True`` if ``self`` is a file.
+
+    .. abstractmethod:: joinpath(child)
+
+       Return Traversable child in ``self``.
+
+    .. abstractmethod:: __truediv__(child)
+
+       Return ``Traversable`` child in ``self``.
+
+    .. abstractmethod:: open(mode='r', *args, **kwargs)
+
+       *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
+       suitable for reading (same as :attr:`pathlib.Path.open`).
+
+       When opening as text, accepts encoding parameters such as those
+       accepted by :attr:`io.TextIOWrapper`.
+
+    .. method:: read_bytes()
+
+       Read contents of ``self`` as bytes.
+
+    .. method:: read_text(encoding=None)
+
+       Read contents of ``self`` as text.
+
+
+.. class:: TraversableResources
+
+    An abstract base class for resource readers capable of serving
+    the :meth:`importlib.resources.files` interface. Subclasses
+    :class:`importlib.resources.abc.ResourceReader` and provides
+    concrete implementations of the :class:`importlib.resources.abc.ResourceReader`'s
+    abstract methods. Therefore, any loader supplying
+    :class:`importlib.abc.TraversableResources` also supplies ResourceReader.
+
+    Loaders that wish to support resource reading are expected to
+    implement this interface.
+
+    .. versionadded:: 3.9
+
+    .. deprecated-removed:: 3.12 3.14
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
+
+    .. abstractmethod:: files()
+
+       Returns a :class:`importlib.resources.abc.Traversable` object for the loaded
+       package.
+
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
@@ -653,13 +941,6 @@ find and load modules.
          is no longer valid then ``None`` is returned but no value is cached
          in :data:`sys.path_importer_cache`.
 
-   .. classmethod:: find_module(fullname, path=None)
-
-      A legacy wrapper around :meth:`find_spec`.
-
-      .. deprecated:: 3.4
-         Use :meth:`find_spec` instead.
-
    .. classmethod:: invalidate_caches()
 
       Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
@@ -710,20 +991,13 @@ find and load modules.
 
       .. versionadded:: 3.4
 
-   .. method:: find_loader(fullname)
-
-      Attempt to find the loader to handle *fullname* within :attr:`path`.
-
-      .. deprecated:: 3.10
-         Use :meth:`find_spec` instead.
-
    .. method:: invalidate_caches()
 
       Clear out the internal cache.
 
    .. classmethod:: path_hook(*loader_details)
 
-      A class method which returns a closure for use on :attr:`sys.path_hooks`.
+      A class method which returns a closure for use on :data:`sys.path_hooks`.
       An instance of :class:`FileFinder` is returned by the closure using the
       path argument given to the closure directly and *loader_details*
       indirectly.
@@ -821,7 +1095,14 @@ find and load modules.
    The *fullname* argument specifies the name of the module the loader is to
    support. The *path* argument is the path to the extension module's file.
 
+   Note that, by default, importing an extension module will fail
+   in subinterpreters if it doesn't implement multi-phase init
+   (see :pep:`489`), even if it would otherwise import successfully.
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.12
+      Multi-phase init is now required for use in subinterpreters.
 
    .. attribute:: name
 
@@ -864,7 +1145,7 @@ find and load modules.
       .. versionadded:: 3.4
 
 
-.. class:: NamespaceLoader(name, path, path_finder):
+.. class:: NamespaceLoader(name, path, path_finder)
 
    A concrete implementation of :class:`importlib.abc.InspectLoader` for
    namespace packages.  This is an alias for a private class and is only made
@@ -900,7 +1181,7 @@ find and load modules.
 
    (:attr:`__name__`)
 
-   The module's fully-qualified name.
+   The module's fully qualified name.
    The :term:`finder` should always set this attribute to a non-empty string.
 
    .. attribute:: loader
@@ -949,7 +1230,7 @@ find and load modules.
 
    (:attr:`__package__`)
 
-   (Read-only) The fully-qualified name of the package the module is in (or the
+   (Read-only) The fully qualified name of the package the module is in (or the
    empty string for a top-level module).
    If the module is a package then this is the same as :attr:`name`.
 
@@ -958,6 +1239,69 @@ find and load modules.
    ``True`` if the spec's :attr:`origin` refers to a loadable location,
     ``False`` otherwise.  This value impacts how :attr:`origin` is interpreted
     and how the module's :attr:`__file__` is populated.
+
+
+.. class:: AppleFrameworkLoader(name, path)
+
+   A specialization of :class:`importlib.machinery.ExtensionFileLoader` that
+   is able to load extension modules in Framework format.
+
+   For compatibility with the iOS App Store, *all* binary modules in an iOS app
+   must be dynamic libraries, contained in a framework with appropriate
+   metadata, stored in the ``Frameworks`` folder of the packaged app. There can
+   be only a single binary per framework, and there can be no executable binary
+   material outside the Frameworks folder.
+
+   To accomodate this requirement, when running on iOS, extension module
+   binaries are *not* packaged as ``.so`` files on ``sys.path``, but as
+   individual standalone frameworks. To discover those frameworks, this loader
+   is be registered against the ``.fwork`` file extension, with a ``.fwork``
+   file acting as a placeholder in the original location of the binary on
+   ``sys.path``. The ``.fwork`` file contains the path of the actual binary in
+   the ``Frameworks`` folder, relative to the app bundle. To allow for
+   resolving a framework-packaged binary back to the original location, the
+   framework is expected to contain a ``.origin`` file that contains the
+   location of the ``.fwork`` file, relative to the app bundle.
+
+   For example, consider the case of an import ``from foo.bar import _whiz``,
+   where ``_whiz`` is implemented with the binary module
+   ``sources/foo/bar/_whiz.abi3.so``, with ``sources`` being the location
+   registered on ``sys.path``, relative to the application bundle. This module
+   *must* be distributed as
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz`` (creating the framework
+   name from the full import path of the module), with an ``Info.plist`` file
+   in the ``.framework`` directory identifying the binary as a framework. The
+   ``foo.bar._whiz`` module would be represented in the original location with
+   a ``sources/foo/bar/_whiz.abi3.fwork`` marker file, containing the path
+   ``Frameworks/foo.bar._whiz/foo.bar._whiz``. The framework would also contain
+   ``Frameworks/foo.bar._whiz.framework/foo.bar._whiz.origin``, containing the
+   path to the ``.fwork`` file.
+
+   When a module is loaded with this loader, the ``__file__`` for the module
+   will report as the location of the ``.fwork`` file. This allows code to use
+   the ``__file__`` of a  module as an anchor for file system traveral.
+   However, the spec origin will reference the location of the *actual* binary
+   in the ``.framework`` folder.
+
+   The Xcode project building the app is responsible for converting any ``.so``
+   files from wherever they exist in the ``PYTHONPATH`` into frameworks in the
+   ``Frameworks`` folder (including stripping extensions from the module file,
+   the addition of framework metadata, and signing the resulting framework),
+   and creating the ``.fwork`` and ``.origin`` files. This will usually be done
+   with a build step in the Xcode project; see the iOS documentation for
+   details on how to construct this build step.
+
+   .. versionadded:: 3.13
+
+   .. availability:: iOS.
+
+   .. attribute:: name
+
+      Name of the module the loader supports.
+
+   .. attribute:: path
+
+      Path to the ``.fwork`` file for the extension module.
 
 
 :mod:`importlib.util` -- Utility code for importers
@@ -1064,10 +1408,10 @@ an :term:`importer`.
 .. function:: find_spec(name, package=None)
 
    Find the :term:`spec <module spec>` for a module, optionally relative to
-   the specified **package** name. If the module is in :attr:`sys.modules`,
+   the specified **package** name. If the module is in :data:`sys.modules`,
    then ``sys.modules[name].__spec__`` is returned (unless the spec would be
    ``None`` or is not set, in which case :exc:`ValueError` is raised).
-   Otherwise a search using :attr:`sys.meta_path` is done. ``None`` is
+   Otherwise a search using :data:`sys.meta_path` is done. ``None`` is
    returned if no spec is found.
 
    If **name** is for a submodule (contains a dot), the parent module is
@@ -1097,67 +1441,6 @@ an :term:`importer`.
    the module as possible.
 
    .. versionadded:: 3.5
-
-.. decorator:: module_for_loader
-
-    A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
-    to handle selecting the proper
-    module object to load with. The decorated method is expected to have a call
-    signature taking two positional arguments
-    (e.g. ``load_module(self, module)``) for which the second argument
-    will be the module **object** to be used by the loader.
-    Note that the decorator will not work on static methods because of the
-    assumption of two arguments.
-
-    The decorated method will take in the **name** of the module to be loaded
-    as expected for a :term:`loader`. If the module is not found in
-    :data:`sys.modules` then a new one is constructed. Regardless of where the
-    module came from, :attr:`__loader__` set to **self** and :attr:`__package__`
-    is set based on what :meth:`importlib.abc.InspectLoader.is_package` returns
-    (if available). These attributes are set unconditionally to support
-    reloading.
-
-    If an exception is raised by the decorated method and a module was added to
-    :data:`sys.modules`, then the module will be removed to prevent a partially
-    initialized module from being in left in :data:`sys.modules`. If the module
-    was already in :data:`sys.modules` then it is left alone.
-
-    .. versionchanged:: 3.3
-       :attr:`__loader__` and :attr:`__package__` are automatically set
-       (when possible).
-
-    .. versionchanged:: 3.4
-       Set :attr:`__name__`, :attr:`__loader__` :attr:`__package__`
-       unconditionally to support reloading.
-
-    .. deprecated:: 3.4
-       The import machinery now directly performs all the functionality
-       provided by this function.
-
-.. decorator:: set_loader
-
-   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
-   to set the :attr:`__loader__`
-   attribute on the returned module. If the attribute is already set the
-   decorator does nothing. It is assumed that the first positional argument to
-   the wrapped method (i.e. ``self``) is what :attr:`__loader__` should be set
-   to.
-
-   .. versionchanged:: 3.4
-      Set ``__loader__`` if set to ``None``, as if the attribute does not
-      exist.
-
-   .. deprecated:: 3.4
-      The import machinery takes care of this automatically.
-
-.. decorator:: set_package
-
-   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the
-   :attr:`__package__` attribute on the returned module. If :attr:`__package__`
-   is set and has a value other than ``None`` it will not be changed.
-
-   .. deprecated:: 3.4
-      The import machinery takes care of this automatically.
 
 .. function:: spec_from_loader(name, loader, *, origin=None, is_package=None)
 
@@ -1189,6 +1472,30 @@ an :term:`importer`.
 
    .. versionadded:: 3.7
 
+.. function:: _incompatible_extension_module_restrictions(*, disable_check)
+
+   A context manager that can temporarily skip the compatibility check
+   for extension modules.  By default the check is enabled and will fail
+   when a single-phase init module is imported in a subinterpreter.
+   It will also fail for a multi-phase init module that doesn't
+   explicitly support a per-interpreter GIL, when imported
+   in an interpreter with its own GIL.
+
+   Note that this function is meant to accommodate an unusual case;
+   one which is likely to eventually go away.  There's is a pretty good
+   chance this is not what you were looking for.
+
+   You can get the same effect as this function by implementing the
+   basic interface of multi-phase init (:pep:`489`) and lying about
+   support for multiple interpreters (or per-interpreter GIL).
+
+   .. warning::
+      Using this function to disable the check can lead to
+      unexpected behavior and even crashes.  It should only be used during
+      extension module development.
+
+   .. versionadded:: 3.12
+
 .. class:: LazyLoader(loader)
 
    A class which postpones the execution of the loader of a module until the
@@ -1200,7 +1507,7 @@ an :term:`importer`.
    :meth:`~importlib.abc.Loader.create_module` method must return ``None`` or a
    type for which its ``__class__`` attribute can be mutated along with not
    using :term:`slots <__slots__>`. Finally, modules which substitute the object
-   placed into :attr:`sys.modules` will not work as there is no way to properly
+   placed into :data:`sys.modules` will not work as there is no way to properly
    replace the module references throughout the interpreter safely;
    :exc:`ValueError` is raised if such a substitution is detected.
 
@@ -1220,7 +1527,7 @@ an :term:`importer`.
 
    .. classmethod:: factory(loader)
 
-      A static method which returns a callable that creates a lazy loader. This
+      A class method which returns a callable that creates a lazy loader. This
       is meant to be used in situations where the loader is passed by class
       instead of by instance.
       ::
@@ -1251,6 +1558,9 @@ Checking if a module can be imported
 
 If you need to find out if a module can be imported without actually doing the
 import, then you should use :func:`importlib.util.find_spec`.
+
+Note that if ``name`` is a submodule (contains a dot),
+:func:`importlib.util.find_spec` will import the parent module.
 ::
 
   import importlib.util
@@ -1274,8 +1584,7 @@ import, then you should use :func:`importlib.util.find_spec`.
 Importing a source file directly
 ''''''''''''''''''''''''''''''''
 
-To import a Python source file directly, use the following recipe
-(Python 3.5 and newer only)::
+To import a Python source file directly, use the following recipe::
 
   import importlib.util
   import sys
@@ -1322,9 +1631,9 @@ For deep customizations of import, you typically want to implement an
 :term:`importer`. This means managing both the :term:`finder` and :term:`loader`
 side of things. For finders there are two flavours to choose from depending on
 your needs: a :term:`meta path finder` or a :term:`path entry finder`. The
-former is what you would put on :attr:`sys.meta_path` while the latter is what
-you create using a :term:`path entry hook` on :attr:`sys.path_hooks` which works
-with :attr:`sys.path` entries to potentially create a finder. This example will
+former is what you would put on :data:`sys.meta_path` while the latter is what
+you create using a :term:`path entry hook` on :data:`sys.path_hooks` which works
+with :data:`sys.path` entries to potentially create a finder. This example will
 show you how to register your own importers so that import will use them (for
 creating an importer for yourself, read the documentation for the appropriate
 classes defined within this package)::
@@ -1356,9 +1665,7 @@ Import itself is implemented in Python code, making it possible to
 expose most of the import machinery through importlib. The following
 helps illustrate the various APIs that importlib exposes by providing an
 approximate implementation of
-:func:`importlib.import_module` (Python 3.4 and newer for the importlib usage,
-Python 3.6 and newer for other parts of the code).
-::
+:func:`importlib.import_module`::
 
   import importlib.util
   import sys

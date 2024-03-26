@@ -5,10 +5,8 @@ is not found, it will look down the module search path for a file by
 that name.
 """
 
-import functools
 import sys
 import os
-import tokenize
 
 __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
@@ -82,6 +80,8 @@ def updatecache(filename, module_globals=None):
     If something's wrong, print a message, discard the cache entry,
     and return an empty list."""
 
+    import tokenize
+
     if filename in cache:
         if len(cache[filename]) != 1:
             cache.pop(filename, None)
@@ -135,9 +135,11 @@ def updatecache(filename, module_globals=None):
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()
-    except OSError:
+    except (OSError, UnicodeDecodeError, SyntaxError):
         return []
-    if lines and not lines[-1].endswith('\n'):
+    if not lines:
+        lines = ['\n']
+    elif not lines[-1].endswith('\n'):
         lines[-1] += '\n'
     size, mtime = stat.st_size, stat.st_mtime
     cache[filename] = size, mtime, lines, fullname
@@ -166,17 +168,24 @@ def lazycache(filename, module_globals):
         return False
     # Try for a __loader__, if available
     if module_globals and '__name__' in module_globals:
-        name = module_globals['__name__']
-        if (loader := module_globals.get('__loader__')) is None:
-            if spec := module_globals.get('__spec__'):
-                try:
-                    loader = spec.loader
-                except AttributeError:
-                    pass
+        spec = module_globals.get('__spec__')
+        name = getattr(spec, 'name', None) or module_globals['__name__']
+        loader = getattr(spec, 'loader', None)
+        if loader is None:
+            loader = module_globals.get('__loader__')
         get_source = getattr(loader, 'get_source', None)
 
         if name and get_source:
-            get_lines = functools.partial(get_source, name)
+            def get_lines(name=name, *args, **kwargs):
+                return get_source(name, *args, **kwargs)
             cache[filename] = (get_lines,)
             return True
     return False
+
+
+def _register_code(code, string, name):
+    cache[code] = (
+            len(string),
+            None,
+            [line + '\n' for line in string.splitlines()],
+            name)

@@ -1,9 +1,8 @@
-# Adapted with permission from the EdgeDB project.
+# Adapted with permission from the EdgeDB project;
+# license: PSFL.
 
 
-__all__ = ["TaskGroup"]
-
-import weakref
+__all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions
@@ -11,7 +10,21 @@ from . import tasks
 
 
 class TaskGroup:
+    """Asynchronous context manager for managing groups of tasks.
 
+    Example use:
+
+        async with asyncio.TaskGroup() as group:
+            task1 = group.create_task(some_coroutine(...))
+            task2 = group.create_task(other_coroutine(...))
+        print("Both tasks have completed now.")
+
+    All tasks are awaited when the context manager exits.
+
+    Any exceptions other than `asyncio.CancelledError` raised within
+    a task will cancel all remaining tasks and wait for them to exit.
+    The exceptions are then combined and raised as an `ExceptionGroup`.
+    """
     def __init__(self):
         self._entered = False
         self._exiting = False
@@ -19,8 +32,7 @@ class TaskGroup:
         self._loop = None
         self._parent_task = None
         self._parent_cancel_requested = False
-        self._tasks = weakref.WeakSet()
-        self._unfinished_tasks = 0
+        self._tasks = set()
         self._errors = []
         self._base_error = None
         self._on_completed_fut = None
@@ -29,8 +41,6 @@ class TaskGroup:
         info = ['']
         if self._tasks:
             info.append(f'tasks={len(self._tasks)}')
-        if self._unfinished_tasks:
-            info.append(f'unfinished={self._unfinished_tasks}')
         if self._errors:
             info.append(f'errors={len(self._errors)}')
         if self._aborting:
@@ -44,36 +54,37 @@ class TaskGroup:
     async def __aenter__(self):
         if self._entered:
             raise RuntimeError(
-                f"TaskGroup {self!r} has been already entered")
-        self._entered = True
-
+                f"TaskGroup {self!r} has already been entered")
         if self._loop is None:
             self._loop = events.get_running_loop()
-
         self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
+        self._entered = True
 
         return self
 
     async def __aexit__(self, et, exc, tb):
         self._exiting = True
-        propagate_cancellation_error = None
 
         if (exc is not None and
                 self._is_base_error(exc) and
                 self._base_error is None):
             self._base_error = exc
 
-        if et is not None:
-            if et is exceptions.CancelledError:
-                if self._parent_cancel_requested and not self._parent_task.uncancel():
-                    # Do nothing, i.e. swallow the error.
-                    pass
-                else:
-                    propagate_cancellation_error = exc
+        if et is not None and issubclass(et, exceptions.CancelledError):
+            propagate_cancellation_error = exc
+        else:
+            propagate_cancellation_error = None
+        if self._parent_cancel_requested:
+            # If this flag is set we *must* call uncancel().
+            if self._parent_task.uncancel() == 0:
+                # If there are no pending cancellations left,
+                # don't propagate CancelledError.
+                propagate_cancellation_error = None
 
+        if et is not None:
             if not self._aborting:
                 # Our parent task is being cancelled:
                 #
@@ -93,7 +104,7 @@ class TaskGroup:
         # can be cancelled multiple times if our parent task
         # is being cancelled repeatedly (or even once, when
         # our own cancellation is already in progress)
-        while self._unfinished_tasks:
+        while self._tasks:
             if self._on_completed_fut is None:
                 self._on_completed_fut = self._loop.create_future()
 
@@ -114,43 +125,56 @@ class TaskGroup:
 
             self._on_completed_fut = None
 
-        assert self._unfinished_tasks == 0
+        assert not self._tasks
 
         if self._base_error is not None:
             raise self._base_error
 
-        if propagate_cancellation_error is not None:
-            # The wrapping task was cancelled; since we're done with
-            # closing all child tasks, just propagate the cancellation
-            # request now.
+        # Propagate CancelledError if there is one, except if there
+        # are other errors -- those have priority.
+        if propagate_cancellation_error is not None and not self._errors:
             raise propagate_cancellation_error
 
-        if et is not None and et is not exceptions.CancelledError:
+        if et is not None and not issubclass(et, exceptions.CancelledError):
             self._errors.append(exc)
 
         if self._errors:
             # Exceptions are heavy objects that can have object
             # cycles (bad for GC); let's not keep a reference to
             # a bunch of them.
-            errors = self._errors
-            self._errors = None
-
-            me = BaseExceptionGroup('unhandled errors in a TaskGroup', errors)
-            raise me from None
+            try:
+                me = BaseExceptionGroup('unhandled errors in a TaskGroup', self._errors)
+                raise me from None
+            finally:
+                self._errors = None
 
     def create_task(self, coro, *, name=None, context=None):
+        """Create a new task in this group and return it.
+
+        Similar to `asyncio.create_task`.
+        """
         if not self._entered:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} has not been entered")
-        if self._exiting and self._unfinished_tasks == 0:
+        if self._exiting and not self._tasks:
+            coro.close()
             raise RuntimeError(f"TaskGroup {self!r} is finished")
+        if self._aborting:
+            coro.close()
+            raise RuntimeError(f"TaskGroup {self!r} is shutting down")
         if context is None:
-            task = self._loop.create_task(coro)
+            task = self._loop.create_task(coro, name=name)
         else:
-            task = self._loop.create_task(coro, context=context)
-        tasks._set_task_name(task, name)
-        task.add_done_callback(self._on_task_done)
-        self._unfinished_tasks += 1
-        self._tasks.add(task)
+            task = self._loop.create_task(coro, name=name, context=context)
+
+        # optimization: Immediately call the done callback if the task is
+        # already done (e.g. if the coro was able to complete eagerly),
+        # and skip scheduling a done callback
+        if task.done():
+            self._on_task_done(task)
+        else:
+            self._tasks.add(task)
+            task.add_done_callback(self._on_task_done)
         return task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,
@@ -169,10 +193,9 @@ class TaskGroup:
                 t.cancel()
 
     def _on_task_done(self, task):
-        self._unfinished_tasks -= 1
-        assert self._unfinished_tasks >= 0
+        self._tasks.discard(task)
 
-        if self._on_completed_fut is not None and not self._unfinished_tasks:
+        if self._on_completed_fut is not None and not self._tasks:
             if not self._on_completed_fut.done():
                 self._on_completed_fut.set_result(True)
 
