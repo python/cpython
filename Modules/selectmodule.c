@@ -1857,7 +1857,7 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
                              "data", "udata", NULL};
     static const char fmt[] = "O|"
                 FILTER_FMT_UNIT FLAGS_FMT_UNIT FFLAGS_FMT_UNIT DATA_FMT_UNIT
-                _Py_PARSE_UINTPTRT ":kevent";
+                _Py_PARSE_UINTPTR ":kevent";
 
     EV_SET(&(self->e), 0, EVFILT_READ, EV_ADD, 0, 0, 0); /* defaults */
 
