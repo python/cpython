@@ -291,10 +291,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     }
 
 #define ADAPTIVE_COUNTER_IS_ZERO(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == 0)
-
-#define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
-    (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
+    backoff_counter_is_zero(forge_backoff_counter((COUNTER)))
 
 #ifdef Py_GIL_DISABLED
 #define DECREMENT_ADAPTIVE_COUNTER(COUNTER)                             \
@@ -305,14 +302,13 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #else
 #define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
     do {                                              \
-        assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
-        (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
+        (COUNTER) = decrement_backoff_counter(forge_backoff_counter((COUNTER))).counter; \
     } while (0);
 #endif
 
 #define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
     do {                                             \
-        (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
+        (COUNTER) = increment_backoff_counter(forge_backoff_counter((COUNTER))).counter; \
     } while (0);
 
 #define UNBOUNDLOCAL_ERROR_MSG \
