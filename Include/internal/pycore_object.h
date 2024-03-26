@@ -645,7 +645,6 @@ _PyObject_InlineValues(PyObject *obj)
 }
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
-extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension

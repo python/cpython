@@ -2215,12 +2215,8 @@ subtype_dealloc(PyObject *self)
     }
 
     /* If we added a dict, DECREF it, or free inline values. */
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        _PyObject_FreeInstanceAttributes(self);
-    }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(self);
-        Py_CLEAR(managed_dict->dict);
+        PyObject_ClearManagedDict(self);
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);
@@ -3171,26 +3167,24 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return func(descr, obj, value);
     }
     /* Almost like PyObject_GenericSetDict, but allow __dict__ to be deleted. */
-    dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "This object has no __dict__");
-        return -1;
-    }
     if (value != NULL && !PyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "__dict__ must be set to a dictionary, "
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
-    if (*dictptr) {
-        assert(PyDict_Check(*dictptr));
-        if (_PyDict_DetachFromObject((PyDictObject *)*dictptr, obj)) {
-            return -1;
-        }
-        Py_SETREF(*dictptr, Py_XNewRef(value));
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        PyObject_ClearManagedDict(obj);
+        _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)Py_XNewRef(value);
     }
     else {
+        dictptr = _PyObject_ComputedDictPointer(obj);
+        if (dictptr == NULL) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "This object has no __dict__");
+            return -1;
+        }
+        Py_CLEAR(*dictptr);
         *dictptr = Py_XNewRef(value);
     }
     return 0;

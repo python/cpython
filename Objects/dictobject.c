@@ -858,7 +858,7 @@ new_values(size_t size)
 static inline void
 free_values(PyDictValues *values, bool use_qsbr)
 {
-    assert(!values->embedded);
+    assert(values->embedded == 0);
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
         _PyMem_FreeDelayed(values);
@@ -1946,7 +1946,8 @@ dictresize(PyInterpreterState *interp, PyDictObject *mp,
         dictkeys_decref(interp, oldkeys, IS_DICT_SHARED(mp));
         set_values(mp, NULL);
         if (oldvalues->embedded) {
-            assert(oldvalues->valid);
+            assert(oldvalues->embedded == 1);
+            assert(oldvalues->valid == 1);
             oldvalues->valid = 0;
         }
         else {
@@ -3069,7 +3070,7 @@ dict_dealloc(PyObject *self)
     PyObject_GC_UnTrack(mp);
     Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
-        if (!values->embedded) {
+        if (values->embedded == 0) {
             for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
                 Py_XDECREF(values->values[i]);
             }
@@ -6802,29 +6803,6 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
     return ((PyDictObject *)dict)->ma_used == 0;
 }
 
-void
-_PyObject_FreeInstanceAttributes(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    assert(Py_TYPE(self)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-    PyDictObject *dict = _PyObject_ManagedDictPointer(self)->dict;
-    PyDictValues *values = _PyObject_InlineValues(self);
-    if (dict == NULL) {
-        if (values->valid) {
-            PyDictKeysObject *keys = CACHED_KEYS(tp);
-            for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-                Py_XDECREF(values->values[i]);
-            }
-        }
-    }
-    else {
-        if (_PyDict_DetachFromObject(dict, self)) {
-             PyErr_WriteUnraisable(self);
-        }
-        assert(!values->valid);
-    }
-}
-
 int
 PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 {
@@ -6848,16 +6826,28 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 void
 PyObject_ClearManagedDict(PyObject *obj)
 {
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     PyTypeObject *tp = Py_TYPE(obj);
-    Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        PyDictValues *values = _PyObject_InlineValues(obj);
-        if (values->valid) {
-            for (Py_ssize_t i = 0; i < values->capacity; i++) {
-                Py_CLEAR(values->values[i]);
+        PyDictObject *dict = _PyObject_ManagedDictPointer(obj)->dict;
+        if (dict) {
+            _PyDict_DetachFromObject(dict, obj);
+            _PyObject_ManagedDictPointer(obj)->dict = NULL;
+            Py_DECREF(dict);
+        }
+        else {
+            PyDictValues *values = _PyObject_InlineValues(obj);
+            if (values->valid) {
+                for (Py_ssize_t i = 0; i < values->capacity; i++) {
+                    Py_CLEAR(values->values[i]);
+                }
+                values->valid = 0;
             }
         }
+    }
+    else {
+        Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);
     }
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
 }
@@ -6865,19 +6855,21 @@ PyObject_ClearManagedDict(PyObject *obj)
 int
 _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 {
-
+    assert(_PyObject_ManagedDictPointer(obj)->dict == mp);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     if (mp->ma_values == NULL || mp->ma_values != _PyObject_InlineValues(obj)) {
         return 0;
     }
-    assert(mp->ma_values->embedded);
-    assert(mp->ma_values->valid);
+    assert(mp->ma_values->embedded == 1);
+    assert(mp->ma_values->valid == 1);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    Py_BEGIN_CRITICAL_SECTION(mp);
     mp->ma_values = copy_values(mp->ma_values);
+    _PyObject_InlineValues(obj)->valid = 0;
+    Py_END_CRITICAL_SECTION();
     if (mp->ma_values == NULL) {
         return -1;
     }
-    _PyObject_InlineValues(obj)->valid = 0;
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     ASSERT_CONSISTENT(mp);
     return 0;
@@ -7124,5 +7116,6 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
         _PyObject_InlineValues(obj)-> valid == 0) {
         return 1;
     }
+    assert(0);
     return 0;
 }
