@@ -1,0 +1,1 @@
+multiprocessing.Listener.accept() now raises an OSError if the listener was closed instead of blocking indefinitely.

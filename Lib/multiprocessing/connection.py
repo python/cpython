@@ -12,6 +12,7 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 import errno
 import io
 import os
+from queue import Empty, Queue
 import sys
 import socket
 import struct
@@ -30,10 +31,12 @@ try:
     import _multiprocessing
     import _winapi
     from _winapi import WAIT_OBJECT_0, WAIT_ABANDONED_0, WAIT_TIMEOUT, INFINITE
+    import _overlapped
 except ImportError:
     if sys.platform == 'win32':
         raise
     _winapi = None
+    _overlapped = None
 
 #
 #
@@ -659,13 +662,15 @@ if sys.platform == 'win32':
         '''
         def __init__(self, address, backlog=None):
             self._address = address
-            self._handle_queue = [self._new_handle(first=True)]
+            self._handle_queue = Queue()
+            self._handle_queue.put_nowait(self._new_handle(first=True))
+            self._close_event = _overlapped.CreateEvent(None, True, False, None)
 
             self._last_accepted = None
             util.sub_debug('listener created with address=%r', self._address)
             self.close = util.Finalize(
                 self, PipeListener._finalize_pipe_listener,
-                args=(self._handle_queue, self._address), exitpriority=0
+                args=(self._handle_queue, self._address, self._close_event), exitpriority=0
                 )
 
         def _new_handle(self, first=False):
@@ -681,8 +686,8 @@ if sys.platform == 'win32':
                 )
 
         def accept(self):
-            self._handle_queue.append(self._new_handle())
-            handle = self._handle_queue.pop(0)
+            self._handle_queue.put_nowait(self._new_handle())
+            handle = self._handle_queue.get_nowait()
             try:
                 ov = _winapi.ConnectNamedPipe(handle, overlapped=True)
             except OSError as e:
@@ -693,21 +698,30 @@ if sys.platform == 'win32':
             else:
                 try:
                     res = _winapi.WaitForMultipleObjects(
-                        [ov.event], False, INFINITE)
+                        [ov.event, self._close_event], False, INFINITE)
+                    if res == _winapi.WAIT_OBJECT_0 + 1:
+                        raise OSError("listener is closed")
                 except:
                     ov.cancel()
                     _winapi.CloseHandle(handle)
                     raise
-                finally:
+                else:
                     _, err = ov.GetOverlappedResult(True)
                     assert err == 0
             return PipeConnection(handle)
 
         @staticmethod
-        def _finalize_pipe_listener(queue, address):
+        def _finalize_pipe_listener(queue, address, close_event):
             util.sub_debug('closing listener with address=%r', address)
-            for handle in queue:
-                _winapi.CloseHandle(handle)
+            _overlapped.SetEvent(close_event)
+            while queue.qsize():
+                try:
+                    handle = queue.get_nowait()
+                    _winapi.CloseHandle(handle)
+                except (Empty, OSError):
+                    pass
+            _winapi.CloseHandle(close_event)
+
 
     def PipeClient(address):
         '''
