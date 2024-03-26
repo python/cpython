@@ -8,6 +8,7 @@ import logging
 import threading
 import time
 import types
+import weakref
 
 FIRST_COMPLETED = 'FIRST_COMPLETED'
 FIRST_EXCEPTION = 'FIRST_EXCEPTION'
@@ -569,6 +570,15 @@ class Future(object):
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
+    def __init__(self, max_workers=None):
+        """Initializes a new Executor instance.
+
+        Args:
+            max_workers: The maximum number of workers that can be used to
+                execute the given calls.
+        """
+        self._max_workers = max_workers
+
     def submit(self, fn, /, *args, **kwargs):
         """Submits a callable to be executed with the given arguments.
 
@@ -580,7 +590,7 @@ class Executor(object):
         """
         raise NotImplementedError()
 
-    def map(self, fn, *iterables, timeout=None, chunksize=1):
+    def map(self, fn, *iterables, timeout=None, chunksize=1, prefetch=None):
         """Returns an iterator equivalent to map(fn, iter).
 
         Args:
@@ -592,6 +602,8 @@ class Executor(object):
                 before being passed to a child process. This argument is only
                 used by ProcessPoolExecutor; it is ignored by
                 ThreadPoolExecutor.
+            prefetch: The number of chunks to queue beyond the number of
+                workers on the executor. If None, all chunks are queued.
 
         Returns:
             An iterator equivalent to: map(func, *iterables) but the calls may
@@ -604,25 +616,44 @@ class Executor(object):
         """
         if timeout is not None:
             end_time = timeout + time.monotonic()
+        if prefetch is not None and prefetch < 0:
+            raise ValueError("prefetch count may not be negative")
 
-        fs = [self.submit(fn, *args) for args in zip(*iterables)]
+        all_args = zip(*iterables)
+        if prefetch is None:
+            fs = collections.deque(self.submit(fn, *args) for args in all_args)
+        else:
+            fs = collections.deque()
+            for idx, args in enumerate(all_args):
+                if idx >= self._max_workers + prefetch:
+                    break
+                fs.append(self.submit(fn, *args))
 
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
-        def result_iterator():
+        def result_iterator(all_args, executor_ref):
             try:
-                # reverse to keep finishing order
-                fs.reverse()
                 while fs:
                     # Careful not to keep a reference to the popped future
                     if timeout is None:
-                        yield _result_or_cancel(fs.pop())
+                        yield _result_or_cancel(fs.popleft())
                     else:
-                        yield _result_or_cancel(fs.pop(), end_time - time.monotonic())
+                        yield _result_or_cancel(
+                            fs.popleft(), end_time - time.monotonic()
+                        )
+
+                    # Submit the next task if any and if the executor exists
+                    if executor_ref():
+                        try:
+                            args = next(all_args)
+                        except StopIteration:
+                            pass
+                        else:
+                            fs.append(executor_ref().submit(fn, *args))
             finally:
                 for future in fs:
                     future.cancel()
-        return result_iterator()
+        return result_iterator(all_args, weakref.ref(self))
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         """Clean-up the resources associated with the Executor.
