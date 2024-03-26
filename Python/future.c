@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 
@@ -96,22 +97,14 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 }
 
 
-PyFutureFeatures *
-_PyFuture_FromAST(mod_ty mod, PyObject *filename)
+int
+_PyFuture_FromAST(mod_ty mod, PyObject *filename, PyFutureFeatures *ff)
 {
-    PyFutureFeatures *ff;
-
-    ff = (PyFutureFeatures *)PyObject_Malloc(sizeof(PyFutureFeatures));
-    if (ff == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
     ff->ff_features = 0;
     ff->ff_location = (_PyCompilerSrcLocation){-1, -1, -1, -1};
 
     if (!future_parse(ff, mod, filename)) {
-        PyObject_Free(ff);
-        return NULL;
+        return 0;
     }
-    return ff;
+    return 1;
 }

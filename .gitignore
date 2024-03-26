@@ -23,6 +23,10 @@
 *.gc??
 *.profclang?
 *.profraw
+# Copies of binaries before BOLT optimizations.
+*.prebolt
+# BOLT profile data.
+*.fdata
 *.dyn
 .gdb_history
 .purify
@@ -38,10 +42,10 @@ gmon.out
 .coverage
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 .DS_Store
 
 *.exe
-!Lib/distutils/command/*.exe
 
 # Ignore core dumps... but not Tools/msi/core/ or the like.
 core
@@ -58,8 +62,6 @@ Doc/.venv/
 Doc/env/
 Doc/.env/
 Include/pydtrace_probes.h
-Lib/distutils/command/*.pdb
-Lib/lib2to3/*.pickle
 Lib/site-packages/*
 !Lib/site-packages/README.txt
 Lib/test/data/*
@@ -67,6 +69,17 @@ Lib/test/data/*
 /_bootstrap_python
 /Makefile
 /Makefile.pre
+/iOSTestbed.*
+iOS/Frameworks/
+iOS/Resources/Info.plist
+iOS/testbed/build
+iOS/testbed/Python.xcframework/ios-*/bin
+iOS/testbed/Python.xcframework/ios-*/include
+iOS/testbed/Python.xcframework/ios-*/lib
+iOS/testbed/Python.xcframework/ios-*/Python.framework
+iOS/testbed/iOSTestbed.xcodeproj/project.xcworkspace
+iOS/testbed/iOSTestbed.xcodeproj/xcuserdata
+iOS/testbed/iOSTestbed.xcodeproj/xcshareddata
 Mac/Makefile
 Mac/PythonLauncher/Info.plist
 Mac/PythonLauncher/Makefile
@@ -116,16 +129,19 @@ PCbuild/win32/
 Tools/unicode/data/
 /autom4te.cache
 /build/
+/builddir/
 /config.cache
 /config.log
 /config.status
 /config.status.lineno
 # hendrikmuhs/ccache-action@v1
 /.ccache
+/cross-build/
+/jit_stencils.h
 /platform
 /profile-clean-stamp
 /profile-run-stamp
-/Python/deepfreeze/*.c
+/profile-bolt-stamp
 /pybuilddir.txt
 /pyconfig.h
 /python-config
@@ -153,5 +169,5 @@ Python/frozen_modules/MANIFEST
 /python
 !/Python/
 
-# main branch only: ABI files are not checked/maintained
+# main branch only: ABI files are not checked/maintained.
 Doc/data/python*.abi

@@ -7,20 +7,24 @@ extern "C" {
 #endif
 
 
-PyAPI_DATA(PyTypeObject) PyBool_Type;
+// PyBool_Type is declared by object.h
 
 #define PyBool_Check(x) Py_IS_TYPE((x), &PyBool_Type)
 
-/* Py_False and Py_True are the only two bools in existence.
-Don't forget to apply Py_INCREF() when returning either!!! */
+/* Py_False and Py_True are the only two bools in existence. */
 
 /* Don't use these directly */
 PyAPI_DATA(PyLongObject) _Py_FalseStruct;
 PyAPI_DATA(PyLongObject) _Py_TrueStruct;
 
 /* Use these macros */
-#define Py_False _PyObject_CAST(&_Py_FalseStruct)
-#define Py_True _PyObject_CAST(&_Py_TrueStruct)
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_False Py_GetConstantBorrowed(Py_CONSTANT_FALSE)
+#  define Py_True Py_GetConstantBorrowed(Py_CONSTANT_TRUE)
+#else
+#  define Py_False _PyObject_CAST(&_Py_FalseStruct)
+#  define Py_True _PyObject_CAST(&_Py_TrueStruct)
+#endif
 
 // Test if an object is the True singleton, the same as "x is True" in Python.
 PyAPI_FUNC(int) Py_IsTrue(PyObject *x);
@@ -31,8 +35,8 @@ PyAPI_FUNC(int) Py_IsFalse(PyObject *x);
 #define Py_IsFalse(x) Py_Is((x), Py_False)
 
 /* Macros for returning Py_True or Py_False, respectively */
-#define Py_RETURN_TRUE return Py_NewRef(Py_True)
-#define Py_RETURN_FALSE return Py_NewRef(Py_False)
+#define Py_RETURN_TRUE return Py_True
+#define Py_RETURN_FALSE return Py_False
 
 /* Function to return a bool from a C long */
 PyAPI_FUNC(PyObject *) PyBool_FromLong(long);
