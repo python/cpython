@@ -199,7 +199,7 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    pack = "Py_OBJ_PACK" if pack and var.type.strip() != "_Py_TaggedObject" else ""
+                    pack = "Py_OBJ_PACK" if pack and (var.type or "").strip() != "_Py_TaggedObject" else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {pack}({cast}{var.name});\n"
                     )
