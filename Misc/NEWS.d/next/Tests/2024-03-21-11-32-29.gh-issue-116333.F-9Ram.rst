@@ -1,0 +1,3 @@
+Tests of TLS related things (error codes, etc) were updated to be more
+lenient about specific error message strings and behaviors as seen in the
+BoringSSL and AWS-LC forks of OpenSSL.

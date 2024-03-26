@@ -64,9 +64,17 @@ do {  \
     TYPE NAME = (TYPE)(uint64_t)&ALIAS;
 
 #define PATCH_JUMP(ALIAS)                                    \
+do {                                                         \
     PyAPI_DATA(void) ALIAS;                                  \
     __attribute__((musttail))                                \
-    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate);
+    return ((jit_func)&ALIAS)(frame, stack_pointer, tstate); \
+} while (0)
+
+#undef JUMP_TO_JUMP_TARGET
+#define JUMP_TO_JUMP_TARGET() PATCH_JUMP(_JIT_JUMP_TARGET)
+
+#undef JUMP_TO_ERROR
+#define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
 _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
@@ -79,6 +87,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
     PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
+    PATCH_VALUE(uint16_t, _exit_index, _JIT_EXIT_INDEX)
     // The actual instruction definitions (only one will be used):
     if (opcode == _JUMP_TO_TOP) {
         CHECK_EVAL_BREAKER();
@@ -91,28 +100,16 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     }
     PATCH_JUMP(_JIT_CONTINUE);
     // Labels that the instruction implementations expect to exist:
-unbound_local_error_tier_two:
-    _PyEval_FormatExcCheckArg(
-        tstate, PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG,
-        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg));
-    goto error_tier_two;
-pop_4_error_tier_two:
-    STACK_SHRINK(1);
-pop_3_error_tier_two:
-    STACK_SHRINK(1);
-pop_2_error_tier_two:
-    STACK_SHRINK(1);
-pop_1_error_tier_two:
-    STACK_SHRINK(1);
+
 error_tier_two:
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_ONE(NULL);
-deoptimize:
+exit_to_tier1:
     tstate->previous_executor = (PyObject *)current_executor;
     GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
-side_exit:
+exit_to_trace:
     {
-        _PyExitData *exit = &current_executor->exits[_target];
+        _PyExitData *exit = &current_executor->exits[_exit_index];
         Py_INCREF(exit->executor);
         tstate->previous_executor = (PyObject *)current_executor;
         GOTO_TIER_TWO(exit->executor);

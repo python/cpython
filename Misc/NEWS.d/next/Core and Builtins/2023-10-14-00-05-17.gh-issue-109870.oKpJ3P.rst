@@ -1,0 +1,3 @@
+Dataclasses now calls :func:`exec` once per dataclass, instead of once
+per method being added.  This can speed up dataclass creation by up to
+20%.
