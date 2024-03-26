@@ -643,6 +643,20 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
+#ifdef Py_GIL_DISABLED
+static void _Py_HOT_FUNCTION
+untag_stack(_Py_TaggedObject *start, int length) {
+    for (int i = 0; i < length; i++) {
+        start[i] = Py_TAG_CAST(Py_CLEAR_TAG(start[i]));
+    }
+}
+#else
+static void _Py_HOT_FUNCTION
+untag_stack(_Py_TaggedObject *start, int length) {
+    (void)start;
+    (void)length;
+}
+#endif
 
 static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
@@ -1431,7 +1445,7 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
 
 static int
 initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
-    _Py_TaggedObject *localsplus, PyObject *const *args,
+    _Py_TaggedObject *localsplus, _Py_TaggedObject const *args,
     Py_ssize_t argcount, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
@@ -1465,7 +1479,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        PyObject *x = args[j];
+        PyObject *x = Py_CLEAR_TAG(args[j]);
         assert(Py_CLEAR_TAG(localsplus[j]) == NULL);
         localsplus[j] = Py_OBJ_PACK(x);
     }
@@ -1478,7 +1492,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         else {
             assert(args != NULL);
-            u = _PyTuple_FromArraySteal(args + n, argcount - n);
+            u = _PyTuple_FromArraySteal((PyObject **)(args + n), argcount - n);
         }
         if (u == NULL) {
             goto fail_post_positional;
@@ -1489,7 +1503,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     else if (argcount > n) {
         /* Too many postional args. Error is reported later */
         for (j = n; j < argcount; j++) {
-            Py_DECREF(args[j]);
+            Py_DECREF(Py_CLEAR_TAG(args[j]));
         }
     }
 
@@ -1499,7 +1513,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         for (i = 0; i < kwcount; i++) {
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
-            PyObject *value = args[i+argcount];
+            PyObject *value = Py_CLEAR_TAG(args[i+argcount]);
             Py_ssize_t j;
 
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
@@ -1580,7 +1594,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
         kw_fail:
             for (;i < kwcount; i++) {
-                PyObject *value = args[i+argcount];
+                PyObject *value = Py_CLEAR_TAG(args[i+argcount]);
                 Py_DECREF(value);
             }
             goto fail_post_args;
@@ -1662,14 +1676,14 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
 fail_pre_positional:
     for (j = 0; j < argcount; j++) {
-        Py_DECREF(args[j]);
+        Py_DECREF(Py_CLEAR_TAG(args[j]));
     }
     /* fall through */
 fail_post_positional:
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (j = argcount; j < argcount+kwcount; j++) {
-            Py_DECREF(args[j]);
+            Py_DECREF(Py_CLEAR_TAG(args[j]));
         }
     }
     /* fall through */
@@ -1781,7 +1795,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     }
     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
         tstate, (PyFunctionObject *)func, locals,
-        newargs, nargs, kwnames
+        (_Py_TaggedObject const *)newargs, nargs, kwnames
     );
     if (has_dict) {
         _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
@@ -1818,7 +1832,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
-        tstate, func, locals, args, argcount, kwnames);
+        tstate, func, locals, (_Py_TaggedObject * const)args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }

@@ -13,9 +13,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BEFORE_ASYNC_WITH);
-            PyObject * mgr;
-            PyObject * exit;
-            PyObject * res;
+            PyObject *mgr;
+            PyObject *exit;
+            PyObject *res;
             mgr = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
             if (enter == NULL) {
@@ -56,9 +56,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BEFORE_WITH);
-            PyObject * mgr;
-            PyObject * exit;
-            PyObject * res;
+            PyObject *mgr;
+            PyObject *exit;
+            PyObject *res;
             mgr = Py_CLEAR_TAG(stack_pointer[-1]);
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
@@ -105,9 +105,9 @@
             PREDICTED(BINARY_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * rhs;
-            PyObject * lhs;
-            PyObject * res;
+            PyObject *rhs;
+            PyObject *lhs;
+            PyObject *res;
             // _SPECIALIZE_BINARY_OP
             rhs = Py_CLEAR_TAG(stack_pointer[-1]);
             lhs = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -144,9 +144,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_FLOAT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -173,9 +173,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_INT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -202,9 +202,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_UNICODE);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_UNICODE
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -231,8 +231,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_INPLACE_ADD_UNICODE);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
+            PyObject *right;
+            PyObject *left;
             // _GUARD_BOTH_UNICODE
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -278,9 +278,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_FLOAT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -307,9 +307,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_INT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -336,9 +336,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_FLOAT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -365,9 +365,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_INT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -393,10 +393,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BINARY_SLICE);
-            PyObject * stop;
-            PyObject * start;
-            PyObject * container;
-            PyObject * res;
+            PyObject *stop;
+            PyObject *start;
+            PyObject *container;
+            PyObject *res;
             stop = Py_CLEAR_TAG(stack_pointer[-1]);
             start = Py_CLEAR_TAG(stack_pointer[-2]);
             container = Py_CLEAR_TAG(stack_pointer[-3]);
@@ -424,9 +424,9 @@
             PREDICTED(BINARY_SUBSCR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * sub;
-            PyObject * container;
-            PyObject * res;
+            PyObject *sub;
+            PyObject *container;
+            PyObject *res;
             // _SPECIALIZE_BINARY_SUBSCR
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             container = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -460,9 +460,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_DICT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            PyObject * sub;
-            PyObject * dict;
-            PyObject * res;
+            PyObject *sub;
+            PyObject *dict;
+            PyObject *res;
             /* Skip 1 cache entry */
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             dict = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -487,7 +487,7 @@
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
             _Py_TaggedObject sub;
-            PyObject * container;
+            PyObject *container;
             /* Skip 1 cache entry */
             sub = (_Py_TaggedObject)(stack_pointer[-1]);
             container = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -519,9 +519,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_LIST_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            PyObject * sub;
-            PyObject * list;
-            PyObject * res;
+            PyObject *sub;
+            PyObject *list;
+            PyObject *res;
             /* Skip 1 cache entry */
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             list = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -547,9 +547,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_STR_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            PyObject * sub;
-            PyObject * str;
-            PyObject * res;
+            PyObject *sub;
+            PyObject *str;
+            PyObject *res;
             /* Skip 1 cache entry */
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             str = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -575,9 +575,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_TUPLE_INT);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            PyObject * sub;
-            PyObject * tuple;
-            PyObject * res;
+            PyObject *sub;
+            PyObject *tuple;
+            PyObject *res;
             /* Skip 1 cache entry */
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             tuple = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -602,9 +602,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_CONST_KEY_MAP);
-            PyObject * keys;
-            _Py_TaggedObject * values;
-            PyObject * map;
+            PyObject *keys;
+            _Py_TaggedObject *values;
+            PyObject *map;
             keys = Py_CLEAR_TAG(stack_pointer[-1]);
             values = &stack_pointer[-1 - oparg];
             if (!PyTuple_CheckExact(keys) ||
@@ -615,7 +615,7 @@
             }
             map = _PyDict_FromItems(
                                     &PyTuple_GET_ITEM(keys, 0), 1,
-                                    values, 1, oparg);
+                                    (PyObject **)(values), 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(values[_i]));
             }
@@ -630,10 +630,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_LIST);
-            _Py_TaggedObject * values;
-            PyObject * list;
+            _Py_TaggedObject *values;
+            PyObject *list;
             values = &stack_pointer[-oparg];
-            list = _PyList_FromTaggedArraySteal(values, oparg);
+            list = _PyList_FromArraySteal((PyObject **)values, oparg);
             if (list == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = Py_OBJ_PACK(list);
             stack_pointer += 1 - oparg;
@@ -644,12 +644,12 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_MAP);
-            _Py_TaggedObject * values;
-            PyObject * map;
+            _Py_TaggedObject *values;
+            PyObject *map;
             values = &stack_pointer[-oparg*2];
             map = _PyDict_FromItems(
-                                    values, 2,
-                                    values+1, 2,
+                                    (PyObject **)values, 2,
+                                    ((PyObject **)values)+1, 2,
                                     oparg);
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(values[_i]));
@@ -664,8 +664,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SET);
-            _Py_TaggedObject * values;
-            PyObject * set;
+            _Py_TaggedObject *values;
+            PyObject *set;
             values = &stack_pointer[-oparg];
             set = PySet_New(NULL);
             if (set == NULL)
@@ -690,10 +690,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SLICE);
-            PyObject * step = NULL;
-            PyObject * stop;
-            PyObject * start;
-            PyObject * slice;
+            PyObject *step = NULL;
+            PyObject *stop;
+            PyObject *start;
+            PyObject *slice;
             if (oparg == 3) { step = Py_CLEAR_TAG(stack_pointer[-((oparg == 3) ? 1 : 0)]); }
             stop = Py_CLEAR_TAG(stack_pointer[-1 - ((oparg == 3) ? 1 : 0)]);
             start = Py_CLEAR_TAG(stack_pointer[-2 - ((oparg == 3) ? 1 : 0)]);
@@ -711,10 +711,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_STRING);
-            _Py_TaggedObject * pieces;
-            PyObject * str;
+            _Py_TaggedObject *pieces;
+            PyObject *str;
             pieces = &stack_pointer[-oparg];
-            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), (PyObject **)pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(pieces[_i]));
             }
@@ -728,10 +728,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_TUPLE);
-            _Py_TaggedObject * values;
-            PyObject * tup;
+            _Py_TaggedObject *values;
+            PyObject *tup;
             values = &stack_pointer[-oparg];
-            tup = _PyTuple_FromTaggedArraySteal(values, oparg);
+            tup = _PyTuple_FromArraySteal((PyObject **)values, oparg);
             if (tup == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = Py_OBJ_PACK(tup);
             stack_pointer += 1 - oparg;
@@ -754,10 +754,10 @@
             PREDICTED(CALL);
             _Py_CODEUNIT *this_instr = next_instr - 4;
             (void)this_instr;
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             // _SPECIALIZE_CALL
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
@@ -815,9 +815,10 @@
                     frame->return_offset = (uint16_t)(next_instr - this_instr);
                     DISPATCH_INLINED(new_frame);
                 }
+                untag_stack(args, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET);
                 /* Callable is not a normal Python function */
                 res = PyObject_Vectorcall(
-                                      callable, args,
+                                      callable, (PyObject **)args,
                                       total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                       NULL);
                 if (opcode == INSTRUMENTED_CALL) {
@@ -840,7 +841,8 @@
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 Py_DECREF(callable);
                 for (int i = 0; i < total_args; i++) {
-                    Py_DECREF(Py_CLEAR_TAG(args[i]));
+                    // Note: untagged above
+                    Py_DECREF(args[i].obj);
                 }
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             }
@@ -858,9 +860,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * null;
-            PyObject * callable;
+            _Py_TaggedObject *args;
+            PyObject *null;
+            PyObject *callable;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
@@ -920,13 +922,13 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BOUND_METHOD_EXACT_ARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject * null;
-            PyObject * callable;
-            PyObject * func;
-            PyObject * self;
-            PyObject * self_or_null;
-            _Py_TaggedObject * args;
-            _PyInterpreterFrame * new_frame;
+            PyObject *null;
+            PyObject *callable;
+            PyObject *func;
+            PyObject *self;
+            PyObject *self_or_null;
+            _Py_TaggedObject *args;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
@@ -1017,32 +1019,34 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_CLASS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            _Py_TaggedObject callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_BUILTIN_CLASS
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
             {
                 int total_args = oparg;
                 if (self_or_null != NULL) {
                     args--;
                     total_args++;
                 }
-                DEOPT_IF(!PyType_Check(callable), CALL);
-                PyTypeObject *tp = (PyTypeObject *)callable;
+                DEOPT_IF(!PyType_Check(Py_CLEAR_TAG(callable)), CALL);
+                PyTypeObject *tp = (PyTypeObject *)Py_CLEAR_TAG(callable);
                 DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
                 STAT_INC(CALL, hit);
-                res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
+                untag_stack(args, total_args);
+                res = tp->tp_vectorcall((PyObject *)tp, (PyObject **)args, total_args, NULL);
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    Py_DECREF(Py_CLEAR_TAG(args[i]));
+                    // Note: untagged above
+                    Py_DECREF(args[i].obj);
                 }
-                Py_DECREF(tp);
+                Py_DECREF(Py_CLEAR_TAG(callable));
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             }
             // _CHECK_PERIODIC
@@ -1059,10 +1063,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_BUILTIN_FAST
@@ -1080,15 +1084,17 @@
                 DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL, CALL);
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+                untag_stack(args, total_args);
                 /* res = func(self, args, nargs) */
                 res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                     PyCFunction_GET_SELF(callable),
-                    args,
+                    (PyObject **)args,
                     total_args);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    Py_DECREF(Py_CLEAR_TAG(args[i]));
+                    // Note: unpacked above.
+                    Py_DECREF(args[i].obj);
                 }
                 Py_DECREF(callable);
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
@@ -1107,16 +1113,16 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            _Py_TaggedObject callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_BUILTIN_FAST_WITH_KEYWORDS
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
             {
                 /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
                 int total_args = oparg;
@@ -1124,20 +1130,23 @@
                     args--;
                     total_args++;
                 }
-                DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
-                DEOPT_IF(PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS), CALL);
+                PyObject *cb = Py_CLEAR_TAG(callable);
+                DEOPT_IF(!PyCFunction_CheckExact(cb), CALL);
+                DEOPT_IF(PyCFunction_GET_FLAGS(cb) != (METH_FASTCALL | METH_KEYWORDS), CALL);
                 STAT_INC(CALL, hit);
                 /* res = func(self, args, nargs, kwnames) */
                 PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))
-                PyCFunction_GET_FUNCTION(callable);
-                res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
+                PyCFunction_GET_FUNCTION(cb);
+                untag_stack(args, total_args);
+                res = cfunc(PyCFunction_GET_SELF(cb), (PyObject **)args, total_args, NULL);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    Py_DECREF(Py_CLEAR_TAG(args[i]));
+                    // Note: untagged above
+                    Py_DECREF(args[i].obj);
                 }
-                Py_DECREF(callable);
+                Py_DECREF(Py_CLEAR_TAG(callable));
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             }
             // _CHECK_PERIODIC
@@ -1154,10 +1163,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_BUILTIN_O
@@ -1203,10 +1212,10 @@
             PREDICTED(CALL_FUNCTION_EX);
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
-            PyObject * kwargs = NULL;
-            PyObject * callargs;
-            PyObject * func;
-            PyObject * result;
+            PyObject *kwargs = NULL;
+            PyObject *callargs;
+            PyObject *func;
+            PyObject *result;
             if (oparg & 1) { kwargs = Py_CLEAR_TAG(stack_pointer[-(oparg & 1)]); }
             callargs = Py_CLEAR_TAG(stack_pointer[-1 - (oparg & 1)]);
             func = Py_CLEAR_TAG(stack_pointer[-3 - (oparg & 1)]);
@@ -1286,8 +1295,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_INTRINSIC_1);
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
@@ -1301,9 +1310,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_INTRINSIC_2);
-            PyObject * value1;
-            PyObject * value2;
-            PyObject * res;
+            PyObject *value1;
+            PyObject *value2;
+            PyObject *res;
             value1 = Py_CLEAR_TAG(stack_pointer[-1]);
             value2 = Py_CLEAR_TAG(stack_pointer[-2]);
             assert(oparg <= MAX_INTRINSIC_2);
@@ -1321,10 +1330,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ISINSTANCE);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
@@ -1366,11 +1375,11 @@
             PREDICTED(CALL_KW);
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
-            PyObject * kwnames;
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            PyObject *kwnames;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             kwnames = Py_CLEAR_TAG(stack_pointer[-1]);
             args = &stack_pointer[-1 - oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
@@ -1415,9 +1424,10 @@
                 frame->return_offset = 1;
                 DISPATCH_INLINED(new_frame);
             }
+            untag_stack(args, positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET);
             /* Callable is not a normal Python function */
             res = PyObject_Vectorcall(
-                                      callable, args,
+                                      callable, (PyObject **)args,
                                       positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                                       kwnames);
             if (opcode == INSTRUMENTED_CALL_KW) {
@@ -1441,7 +1451,8 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                // Note: untagged above
+                Py_DECREF(args[i].obj);
             }
             if (res == NULL) { stack_pointer += -3 - oparg; goto error; }
             stack_pointer[-3 - oparg] = Py_OBJ_PACK(res);
@@ -1455,10 +1466,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LEN);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             args = &stack_pointer[-oparg];
@@ -1496,9 +1507,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LIST_APPEND);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject * arg;
-            PyObject * self;
-            PyObject * callable;
+            PyObject *arg;
+            PyObject *self;
+            PyObject *callable;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             arg = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -1527,10 +1538,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_METHOD_DESCRIPTOR_FAST
@@ -1554,11 +1565,13 @@
                 PyCFunctionFast cfunc =
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
                 int nargs = total_args - 1;
-                res = cfunc(self, args + 1, nargs);
+                untag_stack(args, total_args);
+                res = cfunc(self, (PyObject **)(args + 1), nargs);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Clear the stack of the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    Py_DECREF(Py_CLEAR_TAG(args[i]));
+                    // Note: untagged above.
+                    Py_DECREF(args[i].obj);
                 }
                 Py_DECREF(callable);
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
@@ -1577,10 +1590,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS
@@ -1604,11 +1617,13 @@
                 int nargs = total_args - 1;
                 PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-                res = cfunc(self, args + 1, nargs, NULL);
+                untag_stack(args, total_args);
+                res = cfunc(self, (PyObject **)(args + 1), nargs, NULL);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    Py_DECREF(Py_CLEAR_TAG(args[i]));
+                    // Note: untagged above
+                    Py_DECREF(args[i].obj);
                 }
                 Py_DECREF(callable);
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
@@ -1627,10 +1642,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_NOARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_METHOD_DESCRIPTOR_NOARGS
@@ -1677,10 +1692,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
-            PyObject * res;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_METHOD_DESCRIPTOR_O
@@ -1728,10 +1743,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_EXACT_ARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject * self_or_null;
-            PyObject * callable;
-            _Py_TaggedObject * args;
-            _PyInterpreterFrame * new_frame;
+            PyObject *self_or_null;
+            PyObject *callable;
+            _Py_TaggedObject *args;
+            _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
             {
@@ -1806,9 +1821,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_WITH_DEFAULTS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject * args;
-            PyObject * self_or_null;
-            PyObject * callable;
+            _Py_TaggedObject *args;
+            PyObject *self_or_null;
+            PyObject *callable;
             /* Skip 1 cache entry */
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
@@ -1852,10 +1867,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_STR_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject * arg;
-            PyObject * null;
-            PyObject * callable;
-            PyObject * res;
+            PyObject *arg;
+            PyObject *null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_STR_1
@@ -1885,10 +1900,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TUPLE_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject * arg;
-            PyObject * null;
-            PyObject * callable;
-            PyObject * res;
+            PyObject *arg;
+            PyObject *null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             // _CALL_TUPLE_1
@@ -1918,10 +1933,10 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TYPE_1);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            PyObject * arg;
-            PyObject * null;
-            PyObject * callable;
-            PyObject * res;
+            PyObject *arg;
+            PyObject *null;
+            PyObject *callable;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             arg = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -1942,10 +1957,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EG_MATCH);
-            PyObject * match_type;
-            PyObject * exc_value;
-            PyObject * rest;
-            PyObject * match;
+            PyObject *match_type;
+            PyObject *exc_value;
+            PyObject *rest;
+            PyObject *match;
             match_type = Py_CLEAR_TAG(stack_pointer[-1]);
             exc_value = Py_CLEAR_TAG(stack_pointer[-2]);
             if (_PyEval_CheckExceptStarTypeValid(tstate, match_type) < 0) {
@@ -1974,9 +1989,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EXC_MATCH);
-            PyObject * right;
-            PyObject * left;
-            PyObject * b;
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
             assert(PyExceptionInstance_Check(left));
@@ -1996,11 +2011,11 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CLEANUP_THROW);
-            PyObject * exc_value;
-            PyObject * last_sent_val;
-            PyObject * sub_iter;
-            PyObject * none;
-            PyObject * value;
+            PyObject *exc_value;
+            PyObject *last_sent_val;
+            PyObject *sub_iter;
+            PyObject *none;
+            PyObject *value;
             exc_value = Py_CLEAR_TAG(stack_pointer[-1]);
             last_sent_val = Py_CLEAR_TAG(stack_pointer[-2]);
             sub_iter = Py_CLEAR_TAG(stack_pointer[-3]);
@@ -2031,9 +2046,9 @@
             PREDICTED(COMPARE_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _SPECIALIZE_COMPARE_OP
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -2074,9 +2089,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_FLOAT);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_FLOAT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -2107,9 +2122,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_INT);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_INT
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -2144,9 +2159,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_STR);
             static_assert(INLINE_CACHE_ENTRIES_COMPARE_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * res;
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
             // _GUARD_BOTH_UNICODE
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -2180,9 +2195,9 @@
             PREDICTED(CONTAINS_OP);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * right;
-            PyObject * left;
-            PyObject * b;
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
             // _SPECIALIZE_CONTAINS_OP
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -2217,9 +2232,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP_DICT);
             static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * b;
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
             /* Skip 1 cache entry */
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -2240,9 +2255,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP_SET);
             static_assert(INLINE_CACHE_ENTRIES_CONTAINS_OP == 1, "incorrect cache size");
-            PyObject * right;
-            PyObject * left;
-            PyObject * b;
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
             /* Skip 1 cache entry */
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -2263,8 +2278,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CONVERT_VALUE);
-            PyObject * value;
-            PyObject * result;
+            PyObject *value;
+            PyObject *result;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
@@ -2280,8 +2295,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(COPY);
-            PyObject * bottom;
-            PyObject * top;
+            PyObject *bottom;
+            PyObject *top;
             bottom = Py_CLEAR_TAG(stack_pointer[-1 - (oparg-1)]);
             assert(oparg > 0);
             top = Py_NewRef(bottom);
@@ -2311,7 +2326,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_ATTR);
-            PyObject * owner;
+            PyObject *owner;
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_DelAttr(owner, name);
@@ -2393,8 +2408,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_SUBSCR);
-            PyObject * sub;
-            PyObject * container;
+            PyObject *sub;
+            PyObject *container;
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             container = Py_CLEAR_TAG(stack_pointer[-2]);
             /* del container[sub] */
@@ -2410,9 +2425,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_MERGE);
-            PyObject * update;
-            PyObject * dict;
-            PyObject * callable;
+            PyObject *update;
+            PyObject *dict;
+            PyObject *callable;
             update = Py_CLEAR_TAG(stack_pointer[-1]);
             dict = Py_CLEAR_TAG(stack_pointer[-2 - (oparg - 1)]);
             callable = Py_CLEAR_TAG(stack_pointer[-5 - (oparg - 1)]);
@@ -2430,8 +2445,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_UPDATE);
-            PyObject * update;
-            PyObject * dict;
+            PyObject *update;
+            PyObject *dict;
             update = Py_CLEAR_TAG(stack_pointer[-1]);
             dict = Py_CLEAR_TAG(stack_pointer[-2 - (oparg - 1)]);
             if (PyDict_Update(dict, update) < 0) {
@@ -2453,8 +2468,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_ASYNC_FOR);
-            PyObject * exc;
-            PyObject * awaitable;
+            PyObject *exc;
+            PyObject *awaitable;
             exc = Py_CLEAR_TAG(stack_pointer[-1]);
             awaitable = Py_CLEAR_TAG(stack_pointer[-2]);
             assert(exc && PyExceptionInstance_Check(exc));
@@ -2476,7 +2491,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
-            PyObject * value;
+            PyObject *value;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             Py_DECREF(value);
             stack_pointer += -1;
@@ -2487,8 +2502,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_SEND);
-            PyObject * value;
-            PyObject * receiver;
+            PyObject *value;
+            PyObject *receiver;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             receiver = Py_CLEAR_TAG(stack_pointer[-2]);
             Py_DECREF(receiver);
@@ -2518,7 +2533,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXIT_INIT_CHECK);
-            PyObject * should_be_none;
+            PyObject *should_be_none;
             should_be_none = Py_CLEAR_TAG(stack_pointer[-1]);
             assert(STACK_LEVEL() == 2);
             if (should_be_none != Py_None) {
@@ -2546,8 +2561,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(FORMAT_SIMPLE);
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             /* If value is a unicode object, then we know the result
              * of format(value) is value itself. */
@@ -2567,9 +2582,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(FORMAT_WITH_SPEC);
-            PyObject * fmt_spec;
-            PyObject * value;
-            PyObject * res;
+            PyObject *fmt_spec;
+            PyObject *value;
+            PyObject *res;
             fmt_spec = Py_CLEAR_TAG(stack_pointer[-1]);
             value = Py_CLEAR_TAG(stack_pointer[-2]);
             res = PyObject_Format(value, fmt_spec);
@@ -2588,8 +2603,8 @@
             PREDICTED(FOR_ITER);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * iter;
-            PyObject * next;
+            PyObject *iter;
+            PyObject *next;
             // _SPECIALIZE_FOR_ITER
             iter = Py_CLEAR_TAG(stack_pointer[-1]);
             {
@@ -2638,7 +2653,7 @@
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_GEN);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
-            PyObject * iter;
+            PyObject *iter;
             /* Skip 1 cache entry */
             iter = Py_CLEAR_TAG(stack_pointer[-1]);
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
@@ -2663,8 +2678,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_LIST);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
-            PyObject * iter;
-            PyObject * next;
+            PyObject *iter;
+            PyObject *next;
             /* Skip 1 cache entry */
             // _ITER_CHECK_LIST
             iter = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -2711,8 +2726,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_RANGE);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
-            PyObject * iter;
-            PyObject * next;
+            PyObject *iter;
+            PyObject *next;
             /* Skip 1 cache entry */
             // _ITER_CHECK_RANGE
             iter = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -2754,8 +2769,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_TUPLE);
             static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
-            PyObject * iter;
-            PyObject * next;
+            PyObject *iter;
+            PyObject *next;
             /* Skip 1 cache entry */
             // _ITER_CHECK_TUPLE
             iter = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -2798,8 +2813,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AITER);
-            PyObject * obj;
-            PyObject * iter;
+            PyObject *obj;
+            PyObject *iter;
             obj = Py_CLEAR_TAG(stack_pointer[-1]);
             unaryfunc getter = NULL;
             PyTypeObject *type = Py_TYPE(obj);
@@ -2834,8 +2849,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_ANEXT);
-            PyObject * aiter;
-            PyObject * awaitable;
+            PyObject *aiter;
+            PyObject *awaitable;
             aiter = Py_CLEAR_TAG(stack_pointer[-1]);
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
@@ -2884,8 +2899,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AWAITABLE);
-            PyObject * iterable;
-            PyObject * iter;
+            PyObject *iterable;
+            PyObject *iter;
             iterable = Py_CLEAR_TAG(stack_pointer[-1]);
             iter = _PyCoro_GetAwaitableIter(iterable);
             if (iter == NULL) {
@@ -2914,8 +2929,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_ITER);
-            PyObject * iterable;
-            PyObject * iter;
+            PyObject *iterable;
+            PyObject *iter;
             iterable = Py_CLEAR_TAG(stack_pointer[-1]);
             /* before: [obj]; after [getiter(obj)] */
             iter = PyObject_GetIter(iterable);
@@ -2929,8 +2944,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_LEN);
-            PyObject * obj;
-            PyObject * len_o;
+            PyObject *obj;
+            PyObject *len_o;
             obj = Py_CLEAR_TAG(stack_pointer[-1]);
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(obj);
@@ -2946,8 +2961,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_YIELD_FROM_ITER);
-            PyObject * iterable;
-            PyObject * iter;
+            PyObject *iterable;
+            PyObject *iter;
             iterable = Py_CLEAR_TAG(stack_pointer[-1]);
             /* before: [obj]; after [getiter(obj)] */
             if (PyCoro_CheckExact(iterable)) {
@@ -2981,8 +2996,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IMPORT_FROM);
-            PyObject * from;
-            PyObject * res;
+            PyObject *from;
+            PyObject *res;
             from = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_from(tstate, from, name);
@@ -2996,9 +3011,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IMPORT_NAME);
-            PyObject * fromlist;
-            PyObject * level;
-            PyObject * res;
+            PyObject *fromlist;
+            PyObject *level;
+            PyObject *res;
             fromlist = Py_CLEAR_TAG(stack_pointer[-1]);
             level = Py_CLEAR_TAG(stack_pointer[-2]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -3059,8 +3074,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_FOR);
-            PyObject * value;
-            PyObject * receiver;
+            PyObject *value;
+            PyObject *receiver;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             receiver = Py_CLEAR_TAG(stack_pointer[-2]);
             /* Need to create a fake StopIteration error here,
@@ -3082,8 +3097,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_END_SEND);
-            PyObject * value;
-            PyObject * receiver;
+            PyObject *value;
+            PyObject *receiver;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             receiver = Py_CLEAR_TAG(stack_pointer[-2]);
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
@@ -3376,7 +3391,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INTERPRETER_EXIT);
-            PyObject * retval;
+            PyObject *retval;
             retval = Py_CLEAR_TAG(stack_pointer[-1]);
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
@@ -3391,9 +3406,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IS_OP);
-            PyObject * right;
-            PyObject * left;
-            PyObject * b;
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
             right = Py_CLEAR_TAG(stack_pointer[-1]);
             left = Py_CLEAR_TAG(stack_pointer[-2]);
             int res = Py_Is(left, right) ^ oparg;
@@ -3480,8 +3495,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_APPEND);
-            PyObject * v;
-            PyObject * list;
+            PyObject *v;
+            PyObject *list;
             v = Py_CLEAR_TAG(stack_pointer[-1]);
             list = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) goto pop_1_error;
@@ -3493,8 +3508,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_EXTEND);
-            PyObject * iterable;
-            PyObject * list;
+            PyObject *iterable;
+            PyObject *list;
             iterable = Py_CLEAR_TAG(stack_pointer[-1]);
             list = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
@@ -3520,7 +3535,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_ASSERTION_ERROR);
-            PyObject * value;
+            PyObject *value;
             value = Py_NewRef(PyExc_AssertionError);
             stack_pointer[0] = Py_OBJ_PACK(value);
             stack_pointer += 1;
@@ -3534,9 +3549,9 @@
             PREDICTED(LOAD_ATTR);
             _Py_CODEUNIT *this_instr = next_instr - 10;
             (void)this_instr;
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * self_or_null = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self_or_null = NULL;
             // _SPECIALIZE_LOAD_ATTR
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             {
@@ -3598,9 +3613,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_CLASS);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
             /* Skip 1 cache entry */
             // _CHECK_ATTR_CLASS
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3666,9 +3681,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_INSTANCE_VALUE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3708,9 +3723,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_LAZY_DICT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * self = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self = NULL;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3750,9 +3765,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_NO_DICT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * self = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self = NULL;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3785,9 +3800,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_METHOD_WITH_VALUES);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * self = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self = NULL;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3832,9 +3847,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
             /* Skip 1 cache entry */
             // _CHECK_ATTR_MODULE
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3871,8 +3886,8 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_NO_DICT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
+            PyObject *owner;
+            PyObject *attr;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3902,8 +3917,8 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
+            PyObject *owner;
+            PyObject *attr;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -3977,9 +3992,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_SLOT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -4012,9 +4027,9 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_WITH_HINT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            PyObject * owner;
-            PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -4067,7 +4082,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_BUILD_CLASS);
-            PyObject * bc;
+            PyObject *bc;
             if (PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc) < 0) goto error;
             if (bc == NULL) {
                 _PyErr_SetString(tstate, PyExc_NameError,
@@ -4096,7 +4111,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_DEREF);
-            PyObject * value;
+            PyObject *value;
             PyObject *cell = Py_CLEAR_TAG(GETLOCAL(oparg));
             value = PyCell_GET(cell);
             if (value == NULL) {
@@ -4170,8 +4185,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_DEREF);
-            PyObject * class_dict;
-            PyObject * value;
+            PyObject *class_dict;
+            PyObject *value;
             class_dict = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *name;
             assert(class_dict);
@@ -4198,8 +4213,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_GLOBALS);
-            PyObject * mod_or_class_dict;
-            PyObject * v;
+            PyObject *mod_or_class_dict;
+            PyObject *v;
             mod_or_class_dict = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
@@ -4233,8 +4248,8 @@
             PREDICTED(LOAD_GLOBAL);
             _Py_CODEUNIT *this_instr = next_instr - 5;
             (void)this_instr;
-            PyObject * res;
-            PyObject * null = NULL;
+            PyObject *res;
+            PyObject *null = NULL;
             // _SPECIALIZE_LOAD_GLOBAL
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
@@ -4301,8 +4316,8 @@
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_BUILTIN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
-            PyObject * res;
-            PyObject * null = NULL;
+            PyObject *res;
+            PyObject *null = NULL;
             /* Skip 1 cache entry */
             // _GUARD_GLOBALS_VERSION
             {
@@ -4342,8 +4357,8 @@
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
-            PyObject * res;
-            PyObject * null = NULL;
+            PyObject *res;
+            PyObject *null = NULL;
             /* Skip 1 cache entry */
             // _GUARD_GLOBALS_VERSION
             {
@@ -4375,7 +4390,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_LOCALS);
-            PyObject * locals;
+            PyObject *locals;
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4392,7 +4407,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_NAME);
-            PyObject * v;
+            PyObject *v;
             PyObject *mod_or_class_dict = LOCALS();
             if (mod_or_class_dict == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4431,11 +4446,11 @@
             PREDICTED(LOAD_SUPER_ATTR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * class;
-            PyObject * global_super;
-            PyObject * self;
-            PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *class;
+            PyObject *global_super;
+            PyObject *self;
+            PyObject *attr;
+            PyObject *null = NULL;
             // _SPECIALIZE_LOAD_SUPER_ATTR
             class = Py_CLEAR_TAG(stack_pointer[-2]);
             global_super = Py_CLEAR_TAG(stack_pointer[-3]);
@@ -4504,10 +4519,10 @@
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_ATTR);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
-            PyObject * self;
-            PyObject * class;
-            PyObject * global_super;
-            PyObject * attr;
+            PyObject *self;
+            PyObject *class;
+            PyObject *global_super;
+            PyObject *attr;
             /* Skip 1 cache entry */
             self = Py_CLEAR_TAG(stack_pointer[-1]);
             class = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -4532,11 +4547,11 @@
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_METHOD);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR == 1, "incorrect cache size");
-            PyObject * self;
-            PyObject * class;
-            PyObject * global_super;
-            PyObject * attr;
-            PyObject * self_or_null;
+            PyObject *self;
+            PyObject *class;
+            PyObject *global_super;
+            PyObject *attr;
+            PyObject *self_or_null;
             /* Skip 1 cache entry */
             self = Py_CLEAR_TAG(stack_pointer[-1]);
             class = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -4587,8 +4602,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_FUNCTION);
-            PyObject * codeobj;
-            PyObject * func;
+            PyObject *codeobj;
+            PyObject *func;
             codeobj = Py_CLEAR_TAG(stack_pointer[-1]);
             PyFunctionObject *func_obj = (PyFunctionObject *)
             PyFunction_New(codeobj, GLOBALS());
@@ -4607,9 +4622,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAP_ADD);
-            PyObject * value;
-            PyObject * key;
-            PyObject * dict;
+            PyObject *value;
+            PyObject *key;
+            PyObject *dict;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             key = Py_CLEAR_TAG(stack_pointer[-2]);
             dict = Py_CLEAR_TAG(stack_pointer[-3 - (oparg - 1)]);
@@ -4625,10 +4640,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_CLASS);
-            PyObject * names;
-            PyObject * type;
-            PyObject * subject;
-            PyObject * attrs;
+            PyObject *names;
+            PyObject *type;
+            PyObject *subject;
+            PyObject *attrs;
             names = Py_CLEAR_TAG(stack_pointer[-1]);
             type = Py_CLEAR_TAG(stack_pointer[-2]);
             subject = Py_CLEAR_TAG(stack_pointer[-3]);
@@ -4656,9 +4671,9 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_KEYS);
-            PyObject * keys;
-            PyObject * subject;
-            PyObject * values_or_none;
+            PyObject *keys;
+            PyObject *subject;
+            PyObject *values_or_none;
             keys = Py_CLEAR_TAG(stack_pointer[-1]);
             subject = Py_CLEAR_TAG(stack_pointer[-2]);
             // On successful match, PUSH(values). Otherwise, PUSH(None).
@@ -4673,8 +4688,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_MAPPING);
-            PyObject * subject;
-            PyObject * res;
+            PyObject *subject;
+            PyObject *res;
             subject = Py_CLEAR_TAG(stack_pointer[-1]);
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? Py_True : Py_False;
@@ -4687,8 +4702,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_SEQUENCE);
-            PyObject * subject;
-            PyObject * res;
+            PyObject *subject;
+            PyObject *res;
             subject = Py_CLEAR_TAG(stack_pointer[-1]);
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
@@ -4708,7 +4723,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_EXCEPT);
-            PyObject * exc_value;
+            PyObject *exc_value;
             exc_value = Py_CLEAR_TAG(stack_pointer[-1]);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
@@ -4721,7 +4736,7 @@
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
-            PyObject * cond;
+            PyObject *cond;
             /* Skip 1 cache entry */
             cond = Py_CLEAR_TAG(stack_pointer[-1]);
             assert(PyBool_Check(cond));
@@ -4739,9 +4754,9 @@
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NONE);
-            PyObject * value;
-            PyObject * b;
-            PyObject * cond;
+            PyObject *value;
+            PyObject *b;
+            PyObject *cond;
             /* Skip 1 cache entry */
             // _IS_NONE
             value = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -4773,9 +4788,9 @@
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NOT_NONE);
-            PyObject * value;
-            PyObject * b;
-            PyObject * cond;
+            PyObject *value;
+            PyObject *b;
+            PyObject *cond;
             /* Skip 1 cache entry */
             // _IS_NONE
             value = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -4807,7 +4822,7 @@
             (void)this_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
-            PyObject * cond;
+            PyObject *cond;
             /* Skip 1 cache entry */
             cond = Py_CLEAR_TAG(stack_pointer[-1]);
             assert(PyBool_Check(cond));
@@ -4824,7 +4839,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_TOP);
-            PyObject * value;
+            PyObject *value;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             Py_DECREF(value);
             stack_pointer += -1;
@@ -4835,8 +4850,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(PUSH_EXC_INFO);
-            PyObject * new_exc;
-            PyObject * prev_exc;
+            PyObject *new_exc;
+            PyObject *prev_exc;
             new_exc = Py_CLEAR_TAG(stack_pointer[-1]);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             if (exc_info->exc_value != NULL) {
@@ -4857,7 +4872,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(PUSH_NULL);
-            PyObject * res;
+            PyObject *res;
             res = NULL;
             stack_pointer[0] = Py_OBJ_PACK(res);
             stack_pointer += 1;
@@ -4869,7 +4884,7 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RAISE_VARARGS);
-            _Py_TaggedObject * args;
+            _Py_TaggedObject *args;
             args = &stack_pointer[-oparg];
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
@@ -4899,8 +4914,8 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RERAISE);
-            PyObject * exc;
-            _Py_TaggedObject * values;
+            PyObject *exc;
+            _Py_TaggedObject *values;
             exc = Py_CLEAR_TAG(stack_pointer[-1]);
             values = &stack_pointer[-1 - oparg];
             assert(oparg >= 0 && oparg <= 2);
@@ -5079,7 +5094,7 @@
             (void)this_instr;
             _Py_TaggedObject receiver_packed;
             _Py_TaggedObject v_packed;
-            PyObject * retval;
+            PyObject *retval;
             // _SPECIALIZE_SEND
             receiver_packed = (_Py_TaggedObject)(stack_pointer[-2]);
             {
@@ -5147,7 +5162,7 @@
             INSTRUCTION_STATS(SEND_GEN);
             static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
             _Py_TaggedObject v;
-            PyObject * receiver;
+            PyObject *receiver;
             /* Skip 1 cache entry */
             v = (_Py_TaggedObject)(stack_pointer[-1]);
             receiver = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -5198,8 +5213,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_ADD);
-            PyObject * v;
-            PyObject * set;
+            PyObject *v;
+            PyObject *set;
             v = Py_CLEAR_TAG(stack_pointer[-1]);
             set = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
             int err = PySet_Add(set, v);
@@ -5213,8 +5228,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_FUNCTION_ATTRIBUTE);
-            PyObject * func;
-            PyObject * attr;
+            PyObject *func;
+            PyObject *attr;
             func = Py_CLEAR_TAG(stack_pointer[-1]);
             attr = Py_CLEAR_TAG(stack_pointer[-2]);
             assert(PyFunction_Check(func));
@@ -5250,8 +5265,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_UPDATE);
-            PyObject * iterable;
-            PyObject * set;
+            PyObject *iterable;
+            PyObject *set;
             iterable = Py_CLEAR_TAG(stack_pointer[-1]);
             set = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
             int err = _PySet_Update(set, iterable);
@@ -5268,8 +5283,8 @@
             PREDICTED(STORE_ATTR);
             _Py_CODEUNIT *this_instr = next_instr - 5;
             (void)this_instr;
-            PyObject * owner;
-            PyObject * v;
+            PyObject *owner;
+            PyObject *v;
             // _SPECIALIZE_STORE_ATTR
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             {
@@ -5305,8 +5320,8 @@
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_INSTANCE_VALUE);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
-            PyObject * owner;
-            PyObject * value;
+            PyObject *owner;
+            PyObject *value;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5348,8 +5363,8 @@
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_SLOT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
-            PyObject * owner;
-            PyObject * value;
+            PyObject *owner;
+            PyObject *value;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5379,8 +5394,8 @@
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR_WITH_HINT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_ATTR == 4, "incorrect cache size");
-            PyObject * owner;
-            PyObject * value;
+            PyObject *owner;
+            PyObject *value;
             /* Skip 1 cache entry */
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             value = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -5432,7 +5447,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_DEREF);
-            PyObject * v;
+            PyObject *v;
             v = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *cell = Py_CLEAR_TAG(GETLOCAL(oparg));
             PyObject *oldobj = PyCell_GET(cell);
@@ -5489,7 +5504,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_GLOBAL);
-            PyObject * v;
+            PyObject *v;
             v = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
@@ -5503,7 +5518,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_NAME);
-            PyObject * v;
+            PyObject *v;
             v = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
@@ -5528,10 +5543,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_SLICE);
-            PyObject * stop;
-            PyObject * start;
-            PyObject * container;
-            PyObject * v;
+            PyObject *stop;
+            PyObject *start;
+            PyObject *container;
+            PyObject *v;
             stop = Py_CLEAR_TAG(stack_pointer[-1]);
             start = Py_CLEAR_TAG(stack_pointer[-2]);
             container = Py_CLEAR_TAG(stack_pointer[-3]);
@@ -5559,9 +5574,9 @@
             PREDICTED(STORE_SUBSCR);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * sub;
-            PyObject * container;
-            PyObject * v;
+            PyObject *sub;
+            PyObject *container;
+            PyObject *v;
             // _SPECIALIZE_STORE_SUBSCR
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             container = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -5597,9 +5612,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_DICT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
-            PyObject * sub;
-            PyObject * dict;
-            PyObject * value;
+            PyObject *sub;
+            PyObject *dict;
+            PyObject *value;
             /* Skip 1 cache entry */
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             dict = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -5618,9 +5633,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_LIST_INT);
             static_assert(INLINE_CACHE_ENTRIES_STORE_SUBSCR == 1, "incorrect cache size");
-            PyObject * sub;
-            PyObject * list;
-            PyObject * value;
+            PyObject *sub;
+            PyObject *list;
+            PyObject *value;
             /* Skip 1 cache entry */
             sub = Py_CLEAR_TAG(stack_pointer[-1]);
             list = Py_CLEAR_TAG(stack_pointer[-2]);
@@ -5647,8 +5662,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SWAP);
-            PyObject * top;
-            PyObject * bottom;
+            PyObject *top;
+            PyObject *bottom;
             top = Py_CLEAR_TAG(stack_pointer[-1]);
             bottom = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-2)]);
             assert(oparg >= 2);
@@ -5664,8 +5679,8 @@
             PREDICTED(TO_BOOL);
             _Py_CODEUNIT *this_instr = next_instr - 4;
             (void)this_instr;
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             // _SPECIALIZE_TO_BOOL
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             {
@@ -5698,9 +5713,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_ALWAYS_TRUE);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
-            PyObject * owner;
-            PyObject * value;
-            PyObject * res;
+            PyObject *owner;
+            PyObject *value;
+            PyObject *res;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5725,7 +5740,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_BOOL);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
-            PyObject * value;
+            PyObject *value;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             value = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5739,8 +5754,8 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_INT);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             value = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5763,8 +5778,8 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_LIST);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             value = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5781,8 +5796,8 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_NONE);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             value = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5799,8 +5814,8 @@
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_STR);
             static_assert(INLINE_CACHE_ENTRIES_TO_BOOL == 3, "incorrect cache size");
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
             value = Py_CLEAR_TAG(stack_pointer[-1]);
@@ -5823,8 +5838,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_INVERT);
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             res = PyNumber_Invert(value);
             Py_DECREF(value);
@@ -5837,8 +5852,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_NEGATIVE);
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             res = PyNumber_Negative(value);
             Py_DECREF(value);
@@ -5851,8 +5866,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_NOT);
-            PyObject * value;
-            PyObject * res;
+            PyObject *value;
+            PyObject *res;
             value = Py_CLEAR_TAG(stack_pointer[-1]);
             assert(PyBool_Check(value));
             res = Py_IsFalse(value) ? Py_True : Py_False;
@@ -5864,7 +5879,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNPACK_EX);
-            PyObject * seq;
+            PyObject *seq;
             seq = Py_CLEAR_TAG(stack_pointer[-1]);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             _Py_TaggedObject *top = stack_pointer + totalargs - 1;
@@ -5882,7 +5897,7 @@
             PREDICTED(UNPACK_SEQUENCE);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            PyObject * seq;
+            PyObject *seq;
             // _SPECIALIZE_UNPACK_SEQUENCE
             seq = Py_CLEAR_TAG(stack_pointer[-1]);
             {
@@ -5916,8 +5931,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_LIST);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
-            PyObject * seq;
-            _Py_TaggedObject * values;
+            PyObject *seq;
+            _Py_TaggedObject *values;
             /* Skip 1 cache entry */
             seq = Py_CLEAR_TAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
@@ -5938,8 +5953,8 @@
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_TUPLE);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
-            PyObject * seq;
-            _Py_TaggedObject * values;
+            PyObject *seq;
+            _Py_TaggedObject *values;
             /* Skip 1 cache entry */
             seq = Py_CLEAR_TAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
@@ -5960,9 +5975,9 @@
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_TWO_TUPLE);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
-            PyObject * seq;
-            PyObject * val1;
-            PyObject * val0;
+            PyObject *seq;
+            PyObject *val1;
+            PyObject *val0;
             /* Skip 1 cache entry */
             seq = Py_CLEAR_TAG(stack_pointer[-1]);
             assert(oparg == 2);
@@ -5982,10 +5997,10 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(WITH_EXCEPT_START);
-            PyObject * val;
-            PyObject * lasti;
-            PyObject * exit_func;
-            PyObject * res;
+            PyObject *val;
+            PyObject *lasti;
+            PyObject *exit_func;
+            PyObject *res;
             val = Py_CLEAR_TAG(stack_pointer[-1]);
             lasti = Py_CLEAR_TAG(stack_pointer[-3]);
             exit_func = Py_CLEAR_TAG(stack_pointer[-4]);

@@ -1263,7 +1263,7 @@
 
         case _LOAD_GLOBAL: {
             PyObject * res;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
@@ -1325,7 +1325,7 @@
 
         case _LOAD_GLOBAL_MODULE: {
             PyObject * res;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)GLOBALS();
@@ -1343,7 +1343,7 @@
 
         case _LOAD_GLOBAL_BUILTINS: {
             PyObject * res;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictObject *bdict = (PyDictObject *)BUILTINS();
@@ -1468,7 +1468,7 @@
             PyObject * str;
             oparg = CURRENT_OPARG();
             pieces = &stack_pointer[-oparg];
-            str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
+            str = _PyUnicode_JoinArray(&_Py_STR(empty), (PyObject **)pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(pieces[_i]));
             }
@@ -1483,7 +1483,7 @@
             PyObject * tup;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            tup = _PyTuple_FromTaggedArraySteal(values, oparg);
+            tup = _PyTuple_FromArraySteal((PyObject **)values, oparg);
             if (tup == NULL) { stack_pointer += -oparg; goto error_tier_two; }
             stack_pointer[-oparg] = Py_OBJ_PACK(tup);
             stack_pointer += 1 - oparg;
@@ -1495,7 +1495,7 @@
             PyObject * list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
-            list = _PyList_FromTaggedArraySteal(values, oparg);
+            list = _PyList_FromArraySteal((PyObject **)values, oparg);
             if (list == NULL) { stack_pointer += -oparg; goto error_tier_two; }
             stack_pointer[-oparg] = Py_OBJ_PACK(list);
             stack_pointer += 1 - oparg;
@@ -1570,8 +1570,8 @@
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg*2];
             map = _PyDict_FromItems(
-                                    values, 2,
-                                    values+1, 2,
+                                    (PyObject **)values, 2,
+                                    ((PyObject **)values)+1, 2,
                                     oparg);
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(values[_i]));
@@ -1621,7 +1621,7 @@
             }
             map = _PyDict_FromItems(
                                     &PyTuple_GET_ITEM(keys, 0), 1,
-                                    values, 1, oparg);
+                                    (PyObject **)(values), 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(values[_i]));
             }
@@ -1752,7 +1752,7 @@
         case _LOAD_ATTR: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * self_or_null = NULL;
+            PyObject *self_or_null = NULL;
             oparg = CURRENT_OPARG();
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
@@ -1814,7 +1814,7 @@
         case _LOAD_ATTR_INSTANCE_VALUE_0: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             (void)null;
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
@@ -1832,7 +1832,7 @@
         case _LOAD_ATTR_INSTANCE_VALUE_1: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             (void)null;
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
@@ -1865,7 +1865,7 @@
         case _LOAD_ATTR_MODULE: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
@@ -1900,7 +1900,7 @@
         case _LOAD_ATTR_WITH_HINT: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             oparg = CURRENT_OPARG();
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
@@ -1932,7 +1932,7 @@
         case _LOAD_ATTR_SLOT_0: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             (void)null;
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
@@ -1950,7 +1950,7 @@
         case _LOAD_ATTR_SLOT_1: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             (void)null;
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
@@ -1982,7 +1982,7 @@
         case _LOAD_ATTR_CLASS_0: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             (void)null;
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
@@ -1998,7 +1998,7 @@
         case _LOAD_ATTR_CLASS_1: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * null = NULL;
+            PyObject *null = NULL;
             (void)null;
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
@@ -2718,7 +2718,7 @@
         case _LOAD_ATTR_METHOD_WITH_VALUES: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * self = NULL;
+            PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
@@ -2738,7 +2738,7 @@
         case _LOAD_ATTR_METHOD_NO_DICT: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * self = NULL;
+            PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
@@ -2800,7 +2800,7 @@
         case _LOAD_ATTR_METHOD_LAZY_DICT: {
             PyObject * owner;
             PyObject * attr;
-            PyObject * self = NULL;
+            PyObject *self = NULL;
             oparg = CURRENT_OPARG();
             owner = Py_CLEAR_TAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
@@ -3133,27 +3133,29 @@
         case _CALL_BUILTIN_CLASS: {
             _Py_TaggedObject * args;
             PyObject * self_or_null;
-            PyObject * callable;
+            _Py_TaggedObject callable;
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
-            if (!PyType_Check(callable)) goto deoptimize;
-            PyTypeObject *tp = (PyTypeObject *)callable;
+            if (!PyType_Check(Py_CLEAR_TAG(callable))) goto deoptimize;
+            PyTypeObject *tp = (PyTypeObject *)Py_CLEAR_TAG(callable);
             if (tp->tp_vectorcall == NULL) goto deoptimize;
             STAT_INC(CALL, hit);
-            res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
+            untag_stack(args, total_args);
+            res = tp->tp_vectorcall((PyObject *)tp, (PyObject **)args, total_args, NULL);
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                // Note: untagged above
+                Py_DECREF(args[i].obj);
             }
-            Py_DECREF(tp);
+            Py_DECREF(Py_CLEAR_TAG(callable));
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
             stack_pointer += -1 - oparg;
@@ -3214,15 +3216,17 @@
             if (PyCFunction_GET_FLAGS(callable) != METH_FASTCALL) goto deoptimize;
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            untag_stack(args, total_args);
             /* res = func(self, args, nargs) */
             res = ((PyCFunctionFast)(void(*)(void))cfunc)(
                 PyCFunction_GET_SELF(callable),
-                args,
+                (PyObject **)args,
                 total_args);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                // Note: unpacked above.
+                Py_DECREF(args[i].obj);
             }
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
@@ -3234,32 +3238,35 @@
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
             _Py_TaggedObject * args;
             PyObject * self_or_null;
-            PyObject * callable;
+            _Py_TaggedObject callable;
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            callable = (_Py_TaggedObject)(stack_pointer[-2 - oparg]);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
-            if (!PyCFunction_CheckExact(callable)) goto deoptimize;
-            if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) goto deoptimize;
+            PyObject *cb = Py_CLEAR_TAG(callable);
+            if (!PyCFunction_CheckExact(cb)) goto deoptimize;
+            if (PyCFunction_GET_FLAGS(cb) != (METH_FASTCALL | METH_KEYWORDS)) goto deoptimize;
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))
-            PyCFunction_GET_FUNCTION(callable);
-            res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
+            PyCFunction_GET_FUNCTION(cb);
+            untag_stack(args, total_args);
+            res = cfunc(PyCFunction_GET_SELF(cb), (PyObject **)args, total_args, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                // Note: untagged above
+                Py_DECREF(args[i].obj);
             }
-            Py_DECREF(callable);
+            Py_DECREF(Py_CLEAR_TAG(callable));
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
             stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
             stack_pointer += -1 - oparg;
@@ -3404,11 +3411,13 @@
             int nargs = total_args - 1;
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-            res = cfunc(self, args + 1, nargs, NULL);
+            untag_stack(args, total_args);
+            res = cfunc(self, (PyObject **)(args + 1), nargs, NULL);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                // Note: untagged above
+                Py_DECREF(args[i].obj);
             }
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
@@ -3480,11 +3489,13 @@
             PyCFunctionFast cfunc =
             (PyCFunctionFast)(void(*)(void))meth->ml_meth;
             int nargs = total_args - 1;
-            res = cfunc(self, args + 1, nargs);
+            untag_stack(args, total_args);
+            res = cfunc(self, (PyObject **)(args + 1), nargs);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                // Note: untagged above.
+                Py_DECREF(args[i].obj);
             }
             Py_DECREF(callable);
             if (res == NULL) { stack_pointer += -2 - oparg; goto error_tier_two; }
@@ -3554,7 +3565,7 @@
         }
 
         case _BUILD_SLICE: {
-            PyObject * step = NULL;
+            PyObject *step = NULL;
             PyObject * stop;
             PyObject * start;
             PyObject * slice;

@@ -9640,8 +9640,9 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     return res;
 }
 
+// Supports tagged pointers
 PyObject *
-_PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seqlen)
+_PyUnicode_JoinArray(PyObject *separator, PyObject *const *items_tagged, Py_ssize_t seqlen)
 {
     PyObject *res = NULL; /* the result */
     PyObject *sep = NULL;
@@ -9655,6 +9656,8 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     PyObject *last_obj;
     int kind = 0;
 
+    _Py_TaggedObject *const items = (_Py_TaggedObject *)items_tagged;
+
     /* If empty sequence, return u"". */
     if (seqlen == 0) {
         _Py_RETURN_UNICODE_EMPTY();
@@ -9663,8 +9666,8 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     /* If singleton sequence with an exact Unicode, return that. */
     last_obj = NULL;
     if (seqlen == 1) {
-        if (PyUnicode_CheckExact(items[0])) {
-            res = items[0];
+        if (PyUnicode_CheckExact(Py_CLEAR_TAG(items[0]))) {
+            res = Py_CLEAR_TAG(items[0]);
             return Py_NewRef(res);
         }
         seplen = 0;
@@ -9711,7 +9714,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
 #endif
     for (i = 0; i < seqlen; i++) {
         size_t add_sz;
-        item = items[i];
+        item = Py_CLEAR_TAG(items[i]);
         if (!PyUnicode_Check(item)) {
             PyErr_Format(PyExc_TypeError,
                          "sequence item %zd: expected str instance,"
@@ -9756,7 +9759,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     if (use_memcpy) {
         for (i = 0; i < seqlen; ++i) {
             Py_ssize_t itemlen;
-            item = items[i];
+            item = Py_CLEAR_TAG(items[i]);
 
             /* Copy item, and maybe the separator. */
             if (i && seplen != 0) {
@@ -9780,7 +9783,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     else {
         for (i = 0, res_offset = 0; i < seqlen; ++i) {
             Py_ssize_t itemlen;
-            item = items[i];
+            item = Py_CLEAR_TAG(items[i]);
 
             /* Copy item, and maybe the separator. */
             if (i && seplen != 0) {

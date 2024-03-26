@@ -2051,17 +2051,18 @@ _PyDict_NewPresized(Py_ssize_t minused)
     return dict_new_presized(interp, minused, false);
 }
 
+// Supports tagged input
 PyObject *
 _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
                   PyObject *const *values, Py_ssize_t values_offset,
                   Py_ssize_t length)
 {
     bool unicode = true;
-    PyObject *const *ks = keys;
+    _Py_TaggedObject const *ks = (_Py_TaggedObject const *)keys;
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        if (!PyUnicode_CheckExact(*ks)) {
+        if (!PyUnicode_CheckExact(Py_CLEAR_TAG(*ks))) {
             unicode = false;
             break;
         }
@@ -2073,11 +2074,11 @@ _PyDict_FromItems(PyObject *const *keys, Py_ssize_t keys_offset,
         return NULL;
     }
 
-    ks = keys;
+    ks = (_Py_TaggedObject const *)keys;
     PyObject *const *vs = values;
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        PyObject *key = *ks;
+        PyObject *key = Py_CLEAR_TAG(*ks);
         PyObject *value = *vs;
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);

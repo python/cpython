@@ -41,7 +41,8 @@ def declare_variable(
     type = var.type if var.type else "PyObject *"
     variables.add(var.name)
     if var.condition:
-        out.emit(f"{type} {var.name} = NULL;\n")
+        space = " " if type[-1] != "*" else ""
+        out.emit(f"{type}{space}{var.name} = NULL;\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use

@@ -16,11 +16,11 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->f_funcobj);
     Py_VISIT(_PyFrame_GetCode(frame));
    /* locals */
-    PyObject **locals = _PyFrame_GetLocalsArray(frame);
+    _Py_TaggedObject *locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {
-        Py_VISIT(locals[i]);
+        Py_VISIT(Py_CLEAR_TAG(locals[i]));
     }
     return 0;
 }

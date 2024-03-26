@@ -243,6 +243,8 @@ typedef union {
 
 #define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)(obj)})
 
+#define Py_TAG_CAST(o) ((_Py_TaggedObject){.obj = (o)})
+
 typedef struct {
     PyObject ob_base;
     Py_ssize_t ob_size; /* Number of items in variable part */
