@@ -54,8 +54,8 @@ the information :func:`init` sets up.
    .. versionchanged:: 3.8
       Added support for *url* being a :term:`path-like object`.
 
-   .. versionchanged:: 3.13
-      Passing a file path instead of URL is deprecated.
+   .. deprecated:: 3.13
+      Passing a file path instead of URL is :term:`soft deprecated`.
       Use :func:`guess_file_type` for this.
 
 
@@ -253,7 +253,7 @@ than one MIME-type database; it provides an interface similar to the one of the
       the object.
 
 
-   .. method:: MimeTypes.guess_type(url, strict=True)
+   .. method:: MimeTypes.guess_file_type(path, *, strict=True)
 
       Similar to the :func:`guess_file_type` function, using the tables stored
       as part of the object.
