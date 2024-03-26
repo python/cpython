@@ -306,8 +306,8 @@ Linux Platforms
 Android Platform
 ----------------
 
-.. function:: android_ver(release="", api_level=0, \
-                          manufacturer="", model="", device="")
+.. function:: android_ver(release="", api_level=0, manufacturer="", \
+                          model="", device="", is_emulator=False)
 
    Get Android device information. Returns a :func:`~collections.namedtuple`
    with the following attributes. Values which cannot be determined are set to
@@ -327,6 +327,9 @@ Android Platform
    * ``device`` - `device name
      <https://developer.android.com/reference/android/os/Build#DEVICE>`__ –
      typically the model number or a codename
+
+   * ``is_emulator`` - ``True`` if the device is an emulator; ``False`` if it's
+     a physical device
 
    For a list of known model and device names, see `here
    <https://storage.googleapis.com/play_public/supported_devices.html>`__.

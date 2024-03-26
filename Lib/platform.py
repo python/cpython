@@ -544,9 +544,10 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
 
 
 AndroidVer = collections.namedtuple(
-    "AndroidVer", "release api_level manufacturer model device")
+    "AndroidVer", "release api_level manufacturer model device is_emulator")
 
-def android_ver(release="", api_level=0, manufacturer="", model="", device=""):
+def android_ver(release="", api_level=0, manufacturer="", model="", device="",
+                is_emulator=False):
     if sys.platform == "android":
         try:
             from ctypes import CDLL, c_char_p, create_string_buffer
@@ -560,10 +561,13 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device=""):
             system_property_get.argtypes = (c_char_p, c_char_p)
 
             def getprop(name, default):
-                PROP_VALUE_MAX = 92  # From sys/system_properties.h
+                # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
+                PROP_VALUE_MAX = 92
                 buffer = create_string_buffer(PROP_VALUE_MAX)
                 length = system_property_get(name.encode("UTF-8"), buffer)
                 if length == 0:
+                    # This API doesn’t distinguish between an empty property and
+                    # a missing one.
                     return default
                 else:
                     return buffer.value.decode("UTF-8", "backslashreplace")
@@ -573,8 +577,10 @@ def android_ver(release="", api_level=0, manufacturer="", model="", device=""):
             manufacturer = getprop("ro.product.manufacturer", manufacturer)
             model = getprop("ro.product.model", model)
             device = getprop("ro.product.device", device)
+            is_emulator = getprop("ro.kernel.qemu", "0") == "1"
 
-    return AndroidVer(release, api_level, manufacturer, model, device)
+    return AndroidVer(
+        release, api_level, manufacturer, model, device, is_emulator)
 
 
 ### System name aliasing

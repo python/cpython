@@ -446,18 +446,20 @@ class PlatformTest(unittest.TestCase):
     def test_android_ver(self):
         res = platform.android_ver()
         self.assertIsInstance(res, tuple)
-        self.assertEqual(res, (res.release, res.api_level,
-                               res.manufacturer, res.model, res.device))
+        self.assertEqual(res, (res.release, res.api_level, res.manufacturer,
+                               res.model, res.device, res.is_emulator))
 
         if sys.platform == "android":
             for name in ["release", "manufacturer", "model", "device"]:
                 with self.subTest(name):
                     value = getattr(res, name)
                     self.assertIsInstance(value, str)
-                    self.assertGreater(len(value), 0)
+                    self.assertNotEqual(value, "")
 
             self.assertIsInstance(res.api_level, int)
             self.assertGreaterEqual(res.api_level, sys.getandroidapilevel())
+
+            self.assertIsInstance(res.is_emulator, bool)
 
         # When not running on Android, it should return the default values.
         else:
@@ -466,15 +468,17 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(res.manufacturer, "")
             self.assertEqual(res.model, "")
             self.assertEqual(res.device, "")
+            self.assertEqual(res.is_emulator, False)
 
             # Default values may also be overridden using parameters.
-            res = platform.android_ver("alpha", 1, "bravo", "charlie", "delta")
+            res = platform.android_ver(
+                "alpha", 1, "bravo", "charlie", "delta", True)
             self.assertEqual(res.release, "alpha")
             self.assertEqual(res.api_level, 1)
             self.assertEqual(res.manufacturer, "bravo")
             self.assertEqual(res.model, "charlie")
             self.assertEqual(res.device, "delta")
-
+            self.assertEqual(res.is_emulator, True)
 
     @support.cpython_only
     def test__comparable_version(self):
