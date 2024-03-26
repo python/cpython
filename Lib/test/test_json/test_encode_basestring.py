@@ -37,9 +37,7 @@ class TestEncodeBasestring:
             self.assertEqual(
                 result,
                 expect,
-                '{0!r} != {1!r} for {2}({3!r})'.format(
-                    result, expect, filename, input_string
-                ),
+                f'{result!r} != {expect!r} for {filename}({input_string!r})',
             )
 
 
