@@ -1,0 +1,3 @@
+The cycle GC now chooses the size of increments based on the total heap
+size, instead of the rate of object creation. This ensures that it can keep
+up with growing heaps.

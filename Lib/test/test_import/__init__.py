@@ -5,7 +5,11 @@ import json
 import importlib.util
 from importlib._bootstrap_external import _get_sourcefile
 from importlib.machinery import (
-    BuiltinImporter, ExtensionFileLoader, FrozenImporter, SourceFileLoader,
+    AppleFrameworkLoader,
+    BuiltinImporter,
+    ExtensionFileLoader,
+    FrozenImporter,
+    SourceFileLoader,
 )
 import marshal
 import os
@@ -25,7 +29,7 @@ import _imp
 
 from test.support import os_helper
 from test.support import (
-    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
+    STDLIB_DIR, swap_attr, swap_item, cpython_only, is_apple_mobile, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config, Py_TRACE_REFS)
 from test.support.import_helper import (
     forget, make_legacy_pyc, unlink, unload, ready_to_import,
@@ -66,6 +70,7 @@ def _require_loader(module, loader, skip):
     MODULE_KINDS = {
         BuiltinImporter: 'built-in',
         ExtensionFileLoader: 'extension',
+        AppleFrameworkLoader: 'framework extension',
         FrozenImporter: 'frozen',
         SourceFileLoader: 'pure Python',
     }
@@ -91,7 +96,12 @@ def require_builtin(module, *, skip=False):
     assert module.__spec__.origin == 'built-in', module.__spec__
 
 def require_extension(module, *, skip=False):
-    _require_loader(module, ExtensionFileLoader, skip)
+    # Apple extensions must be distributed as frameworks. This requires
+    # a specialist loader.
+    if is_apple_mobile:
+        _require_loader(module, AppleFrameworkLoader, skip)
+    else:
+        _require_loader(module, ExtensionFileLoader, skip)
 
 def require_frozen(module, *, skip=True):
     module = _require_loader(module, FrozenImporter, skip)
@@ -134,7 +144,8 @@ if _testsinglephase is not None:
         # it to its nominal state.
         sys.modules.pop('_testsinglephase', None)
         _orig._clear_globals()
-        _testinternalcapi.clear_extension('_testsinglephase', _orig.__file__)
+        origin = _orig.__spec__.origin
+        _testinternalcapi.clear_extension('_testsinglephase', origin)
         import _testsinglephase
 
 
@@ -360,7 +371,7 @@ class ImportTests(unittest.TestCase):
             self.assertEqual(cm.exception.path, _testcapi.__file__)
             self.assertRegex(
                 str(cm.exception),
-                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|pyd)\)"
+                r"cannot import name 'i_dont_exist' from '_testcapi' \(.*\.(so|fwork|pyd)\)"
             )
         else:
             self.assertEqual(
@@ -1689,6 +1700,14 @@ class SubinterpImportTests(unittest.TestCase):
             os.set_blocking(r, False)
         return (r, w)
 
+    def create_extension_loader(self, modname, filename):
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if is_apple_mobile:
+            return AppleFrameworkLoader(modname, filename)
+        else:
+            return ExtensionFileLoader(modname, filename)
+
     def import_script(self, name, fd, filename=None, check_override=None):
         override_text = ''
         if check_override is not None:
@@ -1697,12 +1716,19 @@ class SubinterpImportTests(unittest.TestCase):
                 _imp._override_multi_interp_extensions_check({check_override})
                 '''
         if filename:
+            # Apple extensions must be distributed as frameworks. This requires
+            # a specialist loader.
+            if is_apple_mobile:
+                loader = "AppleFrameworkLoader"
+            else:
+                loader = "ExtensionFileLoader"
+
             return textwrap.dedent(f'''
                 from importlib.util import spec_from_loader, module_from_spec
-                from importlib.machinery import ExtensionFileLoader
+                from importlib.machinery import {loader}
                 import os, sys
                 {override_text}
-                loader = ExtensionFileLoader({name!r}, {filename!r})
+                loader = {loader}({name!r}, {filename!r})
                 spec = spec_from_loader({name!r}, loader)
                 try:
                     module = module_from_spec(spec)
@@ -1883,7 +1909,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_non_isolated_compat(self):
         modname = '_test_non_isolated'
         filename = _testmultiphase.__file__
-        loader = ExtensionFileLoader(modname, filename)
+        loader = self.create_extension_loader(modname, filename)
         spec = importlib.util.spec_from_loader(modname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
@@ -1901,7 +1927,7 @@ class SubinterpImportTests(unittest.TestCase):
     def test_multi_init_extension_per_interpreter_gil_compat(self):
         modname = '_test_shared_gil_only'
         filename = _testmultiphase.__file__
-        loader = ExtensionFileLoader(modname, filename)
+        loader = self.create_extension_loader(modname, filename)
         spec = importlib.util.spec_from_loader(modname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
@@ -2034,10 +2060,25 @@ class SinglephaseInitTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         spec = importlib.util.find_spec(cls.NAME)
-        from importlib.machinery import ExtensionFileLoader
-        cls.FILE = spec.origin
         cls.LOADER = type(spec.loader)
-        assert cls.LOADER is ExtensionFileLoader
+
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader, and we need to differentiate between the
+        # spec.origin and the original file location.
+        if is_apple_mobile:
+            assert cls.LOADER is AppleFrameworkLoader
+
+            cls.ORIGIN = spec.origin
+            with open(spec.origin + ".origin", "r") as f:
+                cls.FILE = os.path.join(
+                    os.path.dirname(sys.executable),
+                    f.read().strip()
+                )
+        else:
+            assert cls.LOADER is ExtensionFileLoader
+
+            cls.ORIGIN = spec.origin
+            cls.FILE = spec.origin
 
         # Start fresh.
         cls.clean_up()
@@ -2053,14 +2094,15 @@ class SinglephaseInitTests(unittest.TestCase):
     @classmethod
     def clean_up(cls):
         name = cls.NAME
-        filename = cls.FILE
         if name in sys.modules:
             if hasattr(sys.modules[name], '_clear_globals'):
-                assert sys.modules[name].__file__ == filename
+                assert sys.modules[name].__file__ == cls.FILE, \
+                    f"{sys.modules[name].__file__} != {cls.FILE}"
+
                 sys.modules[name]._clear_globals()
             del sys.modules[name]
         # Clear all internally cached data for the extension.
-        _testinternalcapi.clear_extension(name, filename)
+        _testinternalcapi.clear_extension(name, cls.ORIGIN)
 
     #########################
     # helpers
@@ -2068,7 +2110,7 @@ class SinglephaseInitTests(unittest.TestCase):
     def add_module_cleanup(self, name):
         def clean_up():
             # Clear all internally cached data for the extension.
-            _testinternalcapi.clear_extension(name, self.FILE)
+            _testinternalcapi.clear_extension(name, self.ORIGIN)
         self.addCleanup(clean_up)
 
     def _load_dynamic(self, name, path):
@@ -2091,7 +2133,7 @@ class SinglephaseInitTests(unittest.TestCase):
         except AttributeError:
             already_loaded = self.already_loaded = {}
         assert name not in already_loaded
-        mod = self._load_dynamic(name, self.FILE)
+        mod = self._load_dynamic(name, self.ORIGIN)
         self.assertNotIn(mod, already_loaded.values())
         already_loaded[name] = mod
         return types.SimpleNamespace(
@@ -2103,7 +2145,7 @@ class SinglephaseInitTests(unittest.TestCase):
     def re_load(self, name, mod):
         assert sys.modules[name] is mod
         assert mod.__dict__ == mod.__dict__
-        reloaded = self._load_dynamic(name, self.FILE)
+        reloaded = self._load_dynamic(name, self.ORIGIN)
         return types.SimpleNamespace(
             name=name,
             module=reloaded,
@@ -2129,7 +2171,7 @@ class SinglephaseInitTests(unittest.TestCase):
                 name = {self.NAME!r}
                 if name in sys.modules:
                     sys.modules.pop(name)._clear_globals()
-                _testinternalcapi.clear_extension(name, {self.FILE!r})
+                _testinternalcapi.clear_extension(name, {self.ORIGIN!r})
                 '''))
             _interpreters.destroy(interpid)
         self.addCleanup(clean_up)
@@ -2146,7 +2188,7 @@ class SinglephaseInitTests(unittest.TestCase):
             postcleanup = f'''
                 {import_}
                 mod._clear_globals()
-                _testinternalcapi.clear_extension(name, {self.FILE!r})
+                _testinternalcapi.clear_extension(name, {self.ORIGIN!r})
                 '''
 
         try:
@@ -2184,7 +2226,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # mod.__name__  might not match, but the spec will.
         self.assertEqual(mod.__spec__.name, loaded.name)
         self.assertEqual(mod.__file__, self.FILE)
-        self.assertEqual(mod.__spec__.origin, self.FILE)
+        self.assertEqual(mod.__spec__.origin, self.ORIGIN)
         if not isolated:
             self.assertTrue(issubclass(mod.error, Exception))
         self.assertEqual(mod.int_const, 1969)
@@ -2578,7 +2620,7 @@ class SinglephaseInitTests(unittest.TestCase):
         # First, load in the main interpreter but then completely clear it.
         loaded_main = self.load(self.NAME)
         loaded_main.module._clear_globals()
-        _testinternalcapi.clear_extension(self.NAME, self.FILE)
+        _testinternalcapi.clear_extension(self.NAME, self.ORIGIN)
 
         # At this point:
         #  * alive in 0 interpreters

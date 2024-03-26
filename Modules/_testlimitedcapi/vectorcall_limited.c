@@ -182,7 +182,8 @@ static PyMethodDef TestMethods[] = {
 };
 
 int
-_PyTestCapi_Init_VectorcallLimited(PyObject *m) {
+_PyTestLimitedCAPI_Init_VectorcallLimited(PyObject *m)
+{
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
     }

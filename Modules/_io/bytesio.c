@@ -155,9 +155,6 @@ resize_buffer(bytesio *self, size_t size)
         alloc = size + 1;
     }
 
-    if (alloc > ((size_t)-1) / sizeof(char))
-        goto overflow;
-
     if (SHARED_BUF(self)) {
         if (unshare_buffer(self, alloc) < 0)
             return -1;

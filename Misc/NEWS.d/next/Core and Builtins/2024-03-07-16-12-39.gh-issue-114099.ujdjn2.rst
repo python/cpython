@@ -1,0 +1,2 @@
+Added a Loader that can discover extension modules in an iOS-style Frameworks
+folder.

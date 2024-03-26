@@ -1,0 +1,2 @@
+Starting new threads and process creation through :func:`os.fork` are now
+only prevented once all non-daemon threads exit.

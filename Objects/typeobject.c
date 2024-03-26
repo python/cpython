@@ -2062,6 +2062,10 @@ subtype_clear(PyObject *self)
         if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
             PyObject_ClearManagedDict(self);
         }
+        else {
+            assert((base->tp_flags & Py_TPFLAGS_INLINE_VALUES) ==
+                   (type->tp_flags & Py_TPFLAGS_INLINE_VALUES));
+        }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);
@@ -2211,12 +2215,8 @@ subtype_dealloc(PyObject *self)
     }
 
     /* If we added a dict, DECREF it, or free inline values. */
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
-        _PyObject_FreeInstanceAttributes(self);
-    }
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(self);
-        Py_CLEAR(managed_dict->dict);
+        PyObject_ClearManagedDict(self);
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
         PyObject **dictptr = _PyObject_ComputedDictPointer(self);
@@ -3168,12 +3168,6 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return func(descr, obj, value);
     }
     /* Almost like PyObject_GenericSetDict, but allow __dict__ to be deleted. */
-    dictptr = _PyObject_GetDictPtr(obj);
-    if (dictptr == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-                        "This object has no __dict__");
-        return -1;
-    }
     if (value != NULL && !PyDict_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "__dict__ must be set to a dictionary, "
@@ -3181,45 +3175,17 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
-        _PyObject_InlineValues(obj)->valid) {
-        PyObject *dict = _PyObject_MaterializeManagedDict(obj);
-        if (dict == NULL) {
-            return -1;
-        }
-
-        int res;
-        Py_BEGIN_CRITICAL_SECTION2(obj, dict);
-
-        res = _PyDict_DetachFromObject((PyDictObject *)*dictptr, obj);
-
-        if (res >= 0) {
-            Py_SETREF(*dictptr, Py_XNewRef(value));
-        }
-
-        Py_END_CRITICAL_SECTION2();
-
-        if (res < 0) {
-            return -1;
-        }
-        return 0;
-    }
-#endif
-
-    if (*dictptr) {
-        assert(PyDict_Check(*dictptr));
-
-#ifndef Py_GIL_DISABLED
-        if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
-            _PyDict_DetachFromObject((PyDictObject *)*dictptr, obj)) {
-            return -1;
-        }
-#endif
-
-        Py_SETREF(*dictptr, Py_XNewRef(value));
+    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        _PyObject_SetManagedDict(obj, value);
     }
     else {
+        dictptr = _PyObject_ComputedDictPointer(obj);
+        if (dictptr == NULL) {
+            PyErr_SetString(PyExc_AttributeError,
+                            "This object has no __dict__");
+            return -1;
+        }
+        Py_CLEAR(*dictptr);
         *dictptr = Py_XNewRef(value);
     }
 
@@ -6940,12 +6906,6 @@ PyDoc_STRVAR(object_doc,
 "When called, it accepts no arguments and returns a new featureless\n"
 "instance that has no instance attributes and cannot be given any.\n");
 
-static Py_hash_t
-object_hash(PyObject *obj)
-{
-    return _Py_HashPointer(obj);
-}
-
 PyTypeObject PyBaseObject_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "object",                                   /* tp_name */
@@ -6960,7 +6920,7 @@ PyTypeObject PyBaseObject_Type = {
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    object_hash,                                /* tp_hash */
+    PyObject_GenericHash,                       /* tp_hash */
     0,                                          /* tp_call */
     object_str,                                 /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
@@ -7967,7 +7927,7 @@ PyType_Ready(PyTypeObject *type)
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         type->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
         /* Static types must be immortal */
-        _Py_SetImmortal(type);
+        _Py_SetImmortalUntracked((PyObject *)type);
     }
 
     int res;
@@ -10938,7 +10898,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
 
     // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    int i = PyCode_GetFirstFree(co);
+    int i = PyUnstable_Code_GetFirstFree(co);
     for (; i < co->co_nlocalsplus; i++) {
         assert((_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);

@@ -1,0 +1,1 @@
+Make completion of :mod:`pdb` similar to Python REPL

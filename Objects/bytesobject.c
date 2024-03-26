@@ -3025,11 +3025,9 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
 
 
 /* The following function breaks the notion that bytes are immutable:
-   it changes the size of a bytes object.  We get away with this only if there
-   is only one module referencing the object.  You can also think of it
+   it changes the size of a bytes object.  You can think of it
    as creating a new bytes object and destroying the old one, only
-   more efficiently.  In any case, don't use this if the bytes object may
-   already be known to some other part of the code...
+   more efficiently.
    Note that if there's not enough memory to resize the bytes object, the
    original bytes object at *pv is deallocated, *pv is set to NULL, an "out of
    memory" exception is set, and -1 is returned.  Else (on success) 0 is
@@ -3045,28 +3043,40 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     PyBytesObject *sv;
     v = *pv;
     if (!PyBytes_Check(v) || newsize < 0) {
-        goto error;
+        *pv = 0;
+        Py_DECREF(v);
+        PyErr_BadInternalCall();
+        return -1;
     }
-    if (Py_SIZE(v) == newsize) {
+    Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
+    if (oldsize == newsize) {
         /* return early if newsize equals to v->ob_size */
         return 0;
     }
-    if (Py_SIZE(v) == 0) {
-        if (newsize == 0) {
-            return 0;
-        }
+    if (oldsize == 0) {
         *pv = _PyBytes_FromSize(newsize, 0);
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
-    }
-    if (Py_REFCNT(v) != 1) {
-        goto error;
     }
     if (newsize == 0) {
         *pv = bytes_get_empty();
         Py_DECREF(v);
         return 0;
     }
+    if (Py_REFCNT(v) != 1) {
+        if (oldsize < newsize) {
+            *pv = _PyBytes_FromSize(newsize, 0);
+            if (*pv) {
+                memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v), oldsize);
+            }
+        }
+        else {
+            *pv = PyBytes_FromStringAndSize(PyBytes_AS_STRING(v), newsize);
+        }
+        Py_DECREF(v);
+        return (*pv == NULL) ? -1 : 0;
+    }
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
 #endif
@@ -3089,11 +3099,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sv->ob_shash = -1;          /* invalidate cached hash value */
 _Py_COMP_DIAG_POP
     return 0;
-error:
-    *pv = 0;
-    Py_DECREF(v);
-    PyErr_BadInternalCall();
-    return -1;
 }
 
 

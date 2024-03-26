@@ -2251,16 +2251,25 @@ def _findwheel(pkgname):
 # and returns the path to the venv directory and the path to the python executable
 @contextlib.contextmanager
 def setup_venv_with_pip_setuptools_wheel(venv_dir):
+    import shlex
     import subprocess
     from .os_helper import temp_cwd
+
+    def run_command(cmd):
+        if verbose:
+            print()
+            print('Run:', ' '.join(map(shlex.quote, cmd)))
+            subprocess.run(cmd, check=True)
+        else:
+            subprocess.run(cmd,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           check=True)
 
     with temp_cwd() as temp_dir:
         # Create virtual environment to get setuptools
         cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
+        run_command(cmd)
 
         venv = os.path.join(temp_dir, venv_dir)
 
@@ -2275,10 +2284,7 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
                '-m', 'pip', 'install',
                _findwheel('setuptools'),
                _findwheel('wheel')]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
+        run_command(cmd)
 
         yield python
 

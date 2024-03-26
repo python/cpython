@@ -668,4 +668,64 @@ _opcode_get_intrinsic2_descs(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_intrinsic2_descs_impl(module);
 }
-/*[clinic end generated code: output=a1052bb1deffb7f2 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_opcode_get_executor__doc__,
+"get_executor($module, /, code, offset)\n"
+"--\n"
+"\n"
+"Return the executor object at offset in code if exists, None otherwise.");
+
+#define _OPCODE_GET_EXECUTOR_METHODDEF    \
+    {"get_executor", _PyCFunction_CAST(_opcode_get_executor), METH_FASTCALL|METH_KEYWORDS, _opcode_get_executor__doc__},
+
+static PyObject *
+_opcode_get_executor_impl(PyObject *module, PyObject *code, int offset);
+
+static PyObject *
+_opcode_get_executor(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(code), &_Py_ID(offset), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"code", "offset", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_executor",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject *code;
+    int offset;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    code = args[0];
+    offset = PyLong_AsInt(args[1]);
+    if (offset == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _opcode_get_executor_impl(module, code, offset);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=2dbb31b041b49c8f input=a9049054013a1b77]*/

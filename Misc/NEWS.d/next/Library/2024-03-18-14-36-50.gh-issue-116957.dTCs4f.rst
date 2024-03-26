@@ -1,0 +1,3 @@
+configparser: Don't leave ConfigParser values in an invalid state (stored as
+a list instead of a str) after an earlier read raised DuplicateSectionError
+or DuplicateOptionError.

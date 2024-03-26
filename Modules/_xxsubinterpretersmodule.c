@@ -16,10 +16,11 @@
 #include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
 
-#include "interpreteridobject.h"
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
+#define RETURNS_INTERPID_OBJECT
 #include "_interpreters_common.h"
+#undef RETURNS_INTERPID_OBJECT
 
 
 #define MODULE_NAME _xxsubinterpreters
@@ -35,96 +36,8 @@ _get_current_interp(void)
     return PyInterpreterState_Get();
 }
 
-static int64_t
-pylong_to_interpid(PyObject *idobj)
-{
-    assert(PyLong_CheckExact(idobj));
+#define look_up_interp _PyInterpreterState_LookUpIDObject
 
-    if (_PyLong_IsNegative((PyLongObject *)idobj)) {
-        PyErr_Format(PyExc_ValueError,
-                     "interpreter ID must be a non-negative int, got %R",
-                     idobj);
-        return -1;
-    }
-
-    int overflow;
-    long long id = PyLong_AsLongLongAndOverflow(idobj, &overflow);
-    if (id == -1) {
-        if (!overflow) {
-            assert(PyErr_Occurred());
-            return -1;
-        }
-        assert(!PyErr_Occurred());
-        // For now, we don't worry about if LLONG_MAX < INT64_MAX.
-        goto bad_id;
-    }
-#if LLONG_MAX > INT64_MAX
-    if (id > INT64_MAX) {
-        goto bad_id;
-    }
-#endif
-    return (int64_t)id;
-
-bad_id:
-    PyErr_Format(PyExc_RuntimeError,
-                 "unrecognized interpreter ID %O", idobj);
-    return -1;
-}
-
-static int64_t
-convert_interpid_obj(PyObject *arg)
-{
-    int64_t id = -1;
-    if (_PyIndex_Check(arg)) {
-        PyObject *idobj = PyNumber_Long(arg);
-        if (idobj == NULL) {
-            return -1;
-        }
-        id = pylong_to_interpid(idobj);
-        Py_DECREF(idobj);
-        if (id < 0) {
-            return -1;
-        }
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "interpreter ID must be an int, got %.100s",
-                     Py_TYPE(arg)->tp_name);
-        return -1;
-    }
-    return id;
-}
-
-static PyInterpreterState *
-look_up_interp(PyObject *arg)
-{
-    int64_t id = convert_interpid_obj(arg);
-    if (id < 0) {
-        return NULL;
-    }
-    return _PyInterpreterState_LookUpID(id);
-}
-
-
-static PyObject *
-interpid_to_pylong(int64_t id)
-{
-    assert(id < LLONG_MAX);
-    return PyLong_FromLongLong(id);
-}
-
-static PyObject *
-get_interpid_obj(PyInterpreterState *interp)
-{
-    if (_PyInterpreterState_IDInitref(interp) != 0) {
-        return NULL;
-    };
-    int64_t id = PyInterpreterState_GetID(interp);
-    if (id < 0) {
-        return NULL;
-    }
-    return interpid_to_pylong(id);
-}
 
 static PyObject *
 _get_current_module(void)
@@ -140,6 +53,24 @@ _get_current_module(void)
     }
     assert(mod != Py_None);
     return mod;
+}
+
+
+static int
+is_running_main(PyInterpreterState *interp)
+{
+    if (_PyInterpreterState_IsRunningMain(interp)) {
+        return 1;
+    }
+    // Unlike with the general C-API, we can be confident that someone
+    // using this module for the main interpreter is doing so through
+    // the main program.  Thus we can make this extra check.  This benefits
+    // applications that embed Python but haven't been updated yet
+    // to call_PyInterpreterState_SetRunningMain().
+    if (_Py_IsMainInterpreter(interp)) {
+        return 1;
+    }
+    return 0;
 }
 
 
@@ -596,7 +527,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     // Ensure the interpreter isn't running.
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
-    if (_PyInterpreterState_IsRunningMain(interp)) {
+    if (is_running_main(interp)) {
         PyErr_Format(PyExc_RuntimeError, "interpreter running");
         return NULL;
     }
@@ -699,7 +630,7 @@ interp_set___main___attrs(PyObject *self, PyObject *args)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -1064,7 +995,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
     if (interp == NULL) {
         return NULL;
     }
-    if (_PyInterpreterState_IsRunningMain(interp)) {
+    if (is_running_main(interp)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;

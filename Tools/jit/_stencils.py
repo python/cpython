@@ -124,7 +124,7 @@ class Stencil:
         ):
             self.holes.append(hole.replace(offset=base + 4 * i, kind=kind))
 
-    def remove_jump(self) -> None:
+    def remove_jump(self, *, alignment: int = 1) -> None:
         """Remove a zero-length continuation jump, if it exists."""
         hole = max(self.holes, key=lambda hole: hole.offset)
         match hole:
@@ -170,7 +170,7 @@ class Stencil:
                 offset -= 2
             case _:
                 return
-        if self.body[offset:] == jump:
+        if self.body[offset:] == jump and offset % alignment == 0:
             self.body = self.body[:offset]
             self.holes.remove(hole)
 
@@ -199,9 +199,8 @@ class StencilGroup:
             ):
                 self.code.pad(alignment)
                 self.code.emit_aarch64_trampoline(hole)
-                self.code.pad(alignment)
                 self.code.holes.remove(hole)
-        self.code.remove_jump()
+        self.code.remove_jump(alignment=alignment)
         self.code.pad(alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:

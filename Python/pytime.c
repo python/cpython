@@ -55,6 +55,14 @@
 #endif
 
 
+#ifdef MS_WINDOWS
+static _PyTimeFraction py_qpc_base = {0, 0};
+
+// Forward declaration
+static int py_win_perf_counter_frequency(_PyTimeFraction *base, int raise_exc);
+#endif
+
+
 static PyTime_t
 _PyTime_GCD(PyTime_t x, PyTime_t y)
 {
@@ -895,7 +903,7 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     FILETIME system_time;
     ULARGE_INTEGER large;
 
-    GetSystemTimeAsFileTime(&system_time);
+    GetSystemTimePreciseAsFileTime(&system_time);
     large.u.LowPart = system_time.dwLowDateTime;
     large.u.HighPart = system_time.dwHighDateTime;
     /* 11,644,473,600,000,000,000: number of nanoseconds between
@@ -904,18 +912,17 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     PyTime_t ns = large.QuadPart * 100 - 11644473600000000000;
     *tp = ns;
     if (info) {
-        DWORD timeAdjustment, timeIncrement;
-        BOOL isTimeAdjustmentDisabled, ok;
-
-        info->implementation = "GetSystemTimeAsFileTime()";
-        info->monotonic = 0;
-        ok = GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement,
-                                     &isTimeAdjustmentDisabled);
-        if (!ok) {
-            PyErr_SetFromWindowsErr(0);
-            return -1;
+        // GetSystemTimePreciseAsFileTime() is implemented using
+        // QueryPerformanceCounter() internally.
+        if (py_qpc_base.denom == 0) {
+            if (py_win_perf_counter_frequency(&py_qpc_base, raise_exc) < 0) {
+                return -1;
+            }
         }
-        info->resolution = timeIncrement * 1e-7;
+
+        info->implementation = "GetSystemTimePreciseAsFileTime()";
+        info->monotonic = 0;
+        info->resolution = _PyTimeFraction_Resolution(&py_qpc_base);
         info->adjustable = 1;
     }
 
@@ -1063,16 +1070,15 @@ py_get_win_perf_counter(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
 {
     assert(info == NULL || raise_exc);
 
-    static _PyTimeFraction base = {0, 0};
-    if (base.denom == 0) {
-        if (py_win_perf_counter_frequency(&base, raise_exc) < 0) {
+    if (py_qpc_base.denom == 0) {
+        if (py_win_perf_counter_frequency(&py_qpc_base, raise_exc) < 0) {
             return -1;
         }
     }
 
     if (info) {
         info->implementation = "QueryPerformanceCounter()";
-        info->resolution = _PyTimeFraction_Resolution(&base);
+        info->resolution = _PyTimeFraction_Resolution(&py_qpc_base);
         info->monotonic = 1;
         info->adjustable = 0;
     }
@@ -1088,7 +1094,7 @@ py_get_win_perf_counter(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
                   "LONGLONG is larger than PyTime_t");
     ticks = (PyTime_t)ticksll;
 
-    *tp = _PyTimeFraction_Mul(ticks, &base);
+    *tp = _PyTimeFraction_Mul(ticks, &py_qpc_base);
     return 0;
 }
 #endif  // MS_WINDOWS

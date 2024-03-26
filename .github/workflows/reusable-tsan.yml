@@ -1,0 +1,51 @@
+on:
+  workflow_call:
+    inputs:
+      config_hash:
+        required: true
+        type: string
+      options:
+        required: true
+        type: string
+
+jobs:
+  build_tsan_reusable:
+    name: 'Thread sanitizer'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4
+    - name: Runner image version
+      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+    - name: Restore config.cache
+      uses: actions/cache@v4
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+    - name: Install Dependencies
+      run: |
+        sudo ./.github/workflows/posix-deps-apt.sh
+        sudo apt install -y clang
+        # Reduce ASLR to avoid TSAN crashing
+        sudo sysctl -w vm.mmap_rnd_bits=28
+    - name: TSAN Option Setup
+      run: |
+        echo "TSAN_OPTIONS=suppressions=${GITHUB_WORKSPACE}/Tools/tsan/supressions.txt" >> $GITHUB_ENV
+        echo "CC=clang" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: ${{ github.event_name == 'push' }}
+        max-size: "200M"
+    - name: Configure CPython
+      run: ${{ inputs.options }}
+    - name: Build CPython
+      run: make -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: Tests
+      run: ./python -m test --tsan -j4

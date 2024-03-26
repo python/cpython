@@ -778,6 +778,7 @@ bitwise_and[expr_ty]:
 shift_expr[expr_ty]:
     | a=shift_expr '<<' b=sum { _PyAST_BinOp(a, LShift, b, EXTRA) }
     | a=shift_expr '>>' b=sum { _PyAST_BinOp(a, RShift, b, EXTRA) }
+    | invalid_arithmetic
     | sum
 
 # Arithmetic operators
@@ -794,6 +795,7 @@ term[expr_ty]:
     | a=term '//' b=factor { _PyAST_BinOp(a, FloorDiv, b, EXTRA) }
     | a=term '%' b=factor { _PyAST_BinOp(a, Mod, b, EXTRA) }
     | a=term '@' b=factor { CHECK_VERSION(expr_ty, 5, "The '@' operator is", _PyAST_BinOp(a, MatMult, b, EXTRA)) }
+    | invalid_factor
     | factor
 
 factor[expr_ty] (memo):
@@ -1415,3 +1417,8 @@ invalid_replacement_field:
 invalid_conversion_character:
     | '!' &(':' | '}') { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: missing conversion character") }
     | '!' !NAME { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: invalid conversion character") }
+
+invalid_arithmetic:
+    | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }
+invalid_factor:
+    | ('+' | '-' | '~') a='not' b=factor { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }

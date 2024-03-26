@@ -54,7 +54,6 @@ Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
-Objects/interpreteridobject.c	-	PyInterpreterID_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/iterobject.c	-	_PyAnextAwaitable_Type	-

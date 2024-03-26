@@ -1641,6 +1641,31 @@ Do not instantiate the :class:`Server` class directly.
       coroutine to wait until the server is closed (and no more
       connections are active).
 
+   .. method:: close_clients()
+
+      Close all existing incoming client connections.
+
+      Calls :meth:`~asyncio.BaseTransport.close` on all associated
+      transports.
+
+      :meth:`close` should be called before :meth:`close_clients` when
+      closing the server to avoid races with new clients connecting.
+
+      .. versionadded:: 3.13
+
+   .. method:: abort_clients()
+
+      Close all existing incoming client connections immediately,
+      without waiting for pending operations to complete.
+
+      Calls :meth:`~asyncio.WriteTransport.abort` on all associated
+      transports.
+
+      :meth:`close` should be called before :meth:`abort_clients` when
+      closing the server to avoid races with new clients connecting.
+
+      .. versionadded:: 3.13
+
    .. method:: get_loop()
 
       Return the event loop associated with the server object.

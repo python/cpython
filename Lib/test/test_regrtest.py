@@ -464,6 +464,24 @@ class ParseArgsTestCase(unittest.TestCase):
         regrtest = self.create_regrtest(args)
         self.assertTrue(regrtest.want_bisect)
 
+    def test_verbose3_huntrleaks(self):
+        args = ['-R', '3:10', '--verbose3']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.hunt_refleak)
+        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
+        self.assertEqual(regrtest.hunt_refleak.runs, 10)
+        self.assertFalse(regrtest.output_on_failure)
+
+    def test_xml_huntrleaks(self):
+        args = ['-R', '3:12', '--junit-xml', 'output.xml']
+        with support.captured_stderr():
+            regrtest = self.create_regrtest(args)
+        self.assertIsNotNone(regrtest.hunt_refleak)
+        self.assertEqual(regrtest.hunt_refleak.warmups, 3)
+        self.assertEqual(regrtest.hunt_refleak.runs, 12)
+        self.assertIsNone(regrtest.junit_filename)
+
 
 @dataclasses.dataclass(slots=True)
 class Rerun:

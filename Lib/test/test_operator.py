@@ -1,6 +1,8 @@
 import unittest
 import pickle
 import sys
+from decimal import Decimal
+from fractions import Fraction
 
 from test import support
 from test.support import import_helper
@@ -508,6 +510,44 @@ class OperatorTestCase:
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
 
+    def test_iconcat_without_getitem(self):
+        operator = self.module
+
+        msg = "'int' object can't be concatenated"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.iconcat(1, 0.5)
+
+    def test_index(self):
+        operator = self.module
+        class X:
+            def __index__(self):
+                return 1
+
+        self.assertEqual(operator.index(X()), 1)
+        self.assertEqual(operator.index(0), 0)
+        self.assertEqual(operator.index(1), 1)
+        self.assertEqual(operator.index(2), 2)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(1.5)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Fraction(3, 7))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Decimal(1))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(None)
+
+    def test_not_(self):
+        operator = self.module
+        class C:
+            def __bool__(self):
+                raise SyntaxError
+        self.assertRaises(TypeError, operator.not_)
+        self.assertRaises(SyntaxError, operator.not_, C())
+        self.assertFalse(operator.not_(5))
+        self.assertFalse(operator.not_([0]))
+        self.assertTrue(operator.not_(0))
+        self.assertTrue(operator.not_([]))
+
     def test_length_hint(self):
         operator = self.module
         class X(object):
@@ -532,6 +572,13 @@ class OperatorTestCase:
             operator.length_hint(X(-2))
         with self.assertRaises(LookupError):
             operator.length_hint(X(LookupError))
+
+        class Y: pass
+
+        msg = "'str' object cannot be interpreted as an integer"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.length_hint(X(2), "abc")
+        self.assertEqual(operator.length_hint(Y(), 10), 10)
 
     def test_call(self):
         operator = self.module

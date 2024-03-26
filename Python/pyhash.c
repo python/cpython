@@ -94,7 +94,7 @@ _Py_HashDouble(PyObject *inst, double v)
         if (Py_IS_INFINITY(v))
             return v > 0 ? _PyHASH_INF : -_PyHASH_INF;
         else
-            return _Py_HashPointer(inst);
+            return PyObject_GenericHash(inst);
     }
 
     m = frexp(v, &e);
@@ -137,6 +137,12 @@ Py_HashPointer(const void *ptr)
         hash = -2;
     }
     return hash;
+}
+
+Py_hash_t
+PyObject_GenericHash(PyObject *obj)
+{
+    return Py_HashPointer(obj);
 }
 
 Py_hash_t

@@ -2471,6 +2471,15 @@ class TestRepr(unittest.TestCase):
 
 
 class TestEq(unittest.TestCase):
+    def test_recursive_eq(self):
+        # Test a class with recursive child
+        @dataclass
+        class C:
+            recursive: object = ...
+        c = C()
+        c.recursive = c
+        self.assertEqual(c, c)
+
     def test_no_eq(self):
         # Test a class with no __eq__ and eq=False.
         @dataclass(eq=False)
@@ -3496,6 +3505,17 @@ class TestSlots(unittest.TestCase):
         a = A(1)
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
+
+
+    def test_dataclass_derived_weakref_slot(self):
+        class A:
+            pass
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B(A):
+            pass
+
+        B()
 
 
 class TestDescriptors(unittest.TestCase):
