@@ -180,7 +180,7 @@ def collect_platform(info_add):
                      os_release[key])
 
     if sys.platform == 'android':
-        info_add('platform.android_ver', platform.android_ver())
+        call_func(info_add, 'platform.android_ver', platform, 'android_ver')
 
 
 def collect_locale(info_add):

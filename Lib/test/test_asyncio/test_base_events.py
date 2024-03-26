@@ -1433,7 +1433,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     @patch_socket
     @unittest.skipIf(
         support.is_android and platform.android_ver().api_level < 23,
-        "Issue #26936: this fails on Android before API level 23"
+        "Issue gh-71123: this fails on Android before API level 23"
     )
     def test_create_connection_service_name(self, m_socket):
         m_socket.getaddrinfo = socket.getaddrinfo

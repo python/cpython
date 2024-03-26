@@ -1220,7 +1220,7 @@ class GeneralModuleTests(unittest.TestCase):
         else:
             raise OSError
         # Try same call with optional protocol omitted
-        # Issue #26936: this fails on Android before API level 23.
+        # Issue gh-71123: this fails on Android before API level 23.
         if not (support.is_android and platform.android_ver().api_level < 23):
             port2 = socket.getservbyname(service)
             eq(port, port2)
