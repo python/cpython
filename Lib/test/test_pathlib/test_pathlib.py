@@ -1103,15 +1103,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
 
     def test_is_char_device_true(self):
-        # Under Unix, /dev/null should generally be a char device.
-        P = self.cls('/dev/null')
+        # os.devnull should generally be a char device.
+        P = self.cls(os.devnull)
         if not P.exists():
-            self.skipTest("/dev/null required")
+            self.skipTest("null device required")
         self.assertTrue(P.is_char_device())
         self.assertFalse(P.is_block_device())
         self.assertFalse(P.is_file())
-        self.assertIs(self.cls('/dev/null\udfff').is_char_device(), False)
-        self.assertIs(self.cls('/dev/null\x00').is_char_device(), False)
+        self.assertIs(self.cls(f'{os.devnull}\udfff').is_char_device(), False)
+        self.assertIs(self.cls(f'{os.devnull}\x00').is_char_device(), False)
 
     def test_is_mount_root(self):
         if os.name == 'nt':
