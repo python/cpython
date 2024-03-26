@@ -99,6 +99,20 @@ def replace_error(
     out.emit(close)
 
 
+def replace_error_no_pop(
+    out: CWriter,
+    tkn: Token,
+    tkn_iter: Iterator[Token],
+    uop: Uop,
+    stack: Stack,
+    inst: Instruction | None,
+) -> None:
+    next(tkn_iter)  # LPAREN
+    next(tkn_iter)  # RPAREN
+    next(tkn_iter)  # Semi colon
+    out.emit_at("goto error;", tkn)
+
+
 def replace_decrefs(
     out: CWriter,
     tkn: Token,
@@ -160,6 +174,7 @@ REPLACEMENT_FUNCTIONS = {
     "EXIT_IF": replace_deopt,
     "DEOPT_IF": replace_deopt,
     "ERROR_IF": replace_error,
+    "ERROR_NO_POP": replace_error_no_pop,
     "DECREF_INPUTS": replace_decrefs,
     "CHECK_EVAL_BREAKER": replace_check_eval_breaker,
     "SYNC_SP": replace_sync_sp,
@@ -213,6 +228,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_EXIT_FLAG")
     if not p.infallible:
         flags.append("HAS_ERROR_FLAG")
+    if p.error_without_pop:
+        flags.append("HAS_ERROR_NO_POP_FLAG")
     if p.escapes:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
