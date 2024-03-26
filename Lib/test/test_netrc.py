@@ -1,5 +1,9 @@
-import netrc, os, unittest, sys, textwrap
-from test.support import os_helper
+import netrc
+import os
+import sys
+import textwrap
+import unittest
+from test.support import os_helper, run_unittest
 
 try:
     import pwd
@@ -7,6 +11,7 @@ except ImportError:
     pwd = None
 
 temp_filename = os_helper.TESTFN
+
 
 class NetrcTestCase(unittest.TestCase):
 
@@ -215,6 +220,14 @@ class NetrcTestCase(unittest.TestCase):
             machine bar.domain.com login foo password pass
             """)
 
+    def test_comment_after_new_line(self):
+        self._test_comment("""\
+            machine foo.domain.com login bar password pass
+
+            # TEST
+            machine bar.domain.com login foo password pass
+            """)
+
     def test_comment_after_machine_line(self):
         self._test_comment("""\
             machine foo.domain.com login bar password pass
@@ -249,6 +262,13 @@ class NetrcTestCase(unittest.TestCase):
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             #
+            """)
+
+    def test_comment_at_first_line(self):
+        self._test_comment("""
+            # TEST
+            machine foo.domain.com login bar password pass
+            machine bar.domain.com login foo password pass
             """)
 
     def test_comment_at_end_of_machine_line(self):
@@ -307,6 +327,10 @@ class NetrcTestCase(unittest.TestCase):
             os.chmod(fn, 0o622)
             self.assertEqual(nrc.hosts['foo.domain.com'],
                              ('anonymous', '', 'pass'))
+
+
+def test_main():
+    run_unittest(NetrcTestCase)
 
 
 if __name__ == "__main__":
