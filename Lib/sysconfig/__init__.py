@@ -337,7 +337,18 @@ def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
     # _sysconfigdata is generated at build time, see _generate_posix_vars()
     name = _get_sysconfigdata_name()
-    _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
+
+    # For cross builds, this value will be specified so sysconfigdata for the
+    # target can be imported. It cannot be in PYTHONPATH, as foreign modules in
+    # sys.path can cause crashes when loaded by the host interpreter.
+    if (path := os.environ.get('_PYTHON_SYSCONFIGDATA_PATH')) is not None:
+        from importlib.machinery import FileFinder, SourceFileLoader, SOURCE_SUFFIXES
+        from importlib.util import module_from_spec
+        spec = FileFinder(path, (SourceFileLoader, SOURCE_SUFFIXES)).find_spec(name)
+        _temp = module_from_spec(spec)
+        spec.loader.exec_module(_temp)
+    else:
+        _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
     build_time_vars = _temp.build_time_vars
     vars.update(build_time_vars)
 
