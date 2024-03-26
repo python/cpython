@@ -55,7 +55,7 @@ enum _frameowner {
 };
 
 typedef struct _PyInterpreterFrame {
-    PyObject *f_executable; /* Strong reference */
+    PyObject *f_executable; /* Strong reference (code object or None) */
     struct _PyInterpreterFrame *previous;
     PyObject *f_funcobj; /* Strong reference. Only valid if not on C stack */
     PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
