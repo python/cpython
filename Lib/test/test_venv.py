@@ -494,7 +494,7 @@ class BasicTest(BaseTest):
         envpy = os.path.join(os.path.realpath(self.env_dir),
                              self.bindir, self.exe)
         script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
-        subprocess.check_call([envpy, script])
+        subprocess.check_call([envpy, "-I", script])
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):
