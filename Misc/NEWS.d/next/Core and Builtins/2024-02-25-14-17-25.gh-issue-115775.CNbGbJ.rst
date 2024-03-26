@@ -1,0 +1,3 @@
+Compiler populates the new ``__static_attributes__`` field on a class with
+the names of attributes of this class which are accessed through self.X from
+any function in its body.

@@ -213,6 +213,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(__slotnames__)
         STRUCT_FOR_ID(__slots__)
         STRUCT_FOR_ID(__spec__)
+        STRUCT_FOR_ID(__static_attributes__)
         STRUCT_FOR_ID(__str__)
         STRUCT_FOR_ID(__sub__)
         STRUCT_FOR_ID(__subclasscheck__)
