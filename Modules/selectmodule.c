@@ -1817,7 +1817,7 @@ typedef struct kqueue_queue_Object {
 #   define DATA_TYPE        Py_T_INT64
 #   define DATA_FMT_UNIT    INT64_FMT_UNIT
 #else
-#   define DATA_TYPE        Py_T_INTPTRT
+#   define DATA_TYPE        Py_T_INTPTR
 #   define DATA_FMT_UNIT    _Py_PARSE_INTPTRT
 #endif
 
@@ -1828,12 +1828,12 @@ typedef struct kqueue_queue_Object {
 
 #define KQ_OFF(x) offsetof(kqueue_event_Object, x)
 static struct PyMemberDef kqueue_event_members[] = {
-    {"ident",           Py_T_UINTPTRT,  KQ_OFF(e.ident)},
+    {"ident",           Py_T_UINTPTR,   KQ_OFF(e.ident)},
     {"filter",          FILTER_TYPE,    KQ_OFF(e.filter)},
     {"flags",           FLAGS_TYPE,     KQ_OFF(e.flags)},
     {"fflags",          Py_T_UINT,      KQ_OFF(e.fflags)},
     {"data",            DATA_TYPE,      KQ_OFF(e.data)},
-    {"udata",           Py_T_UINTPTRT,  KQ_OFF(e.udata)},
+    {"udata",           Py_T_UINTPTR,   KQ_OFF(e.udata)},
     {NULL} /* Sentinel */
 };
 #undef KQ_OFF
