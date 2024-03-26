@@ -13,6 +13,7 @@ import itertools
 import locale
 import os
 import pickle
+import platform
 import select
 import selectors
 import shutil
@@ -4085,8 +4086,14 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # Tolerate a difference of 10 ms
-    CLOCK_RES_PLACES = 2
+    if sys.platform == "android" and platform.android_ver().is_emulator:
+        # Tolerate a difference of 10 ms (1 ms is not reliably achievable on
+        # slower machines).
+        CLOCK_RES_PLACES = 2
+    else:
+        # Tolerate a difference of 1 ms
+        CLOCK_RES_PLACES = 3
+
     CLOCK_RES = 10 ** -CLOCK_RES_PLACES
     CLOCK_RES_NS = 10 ** (9 - CLOCK_RES_PLACES)
 
