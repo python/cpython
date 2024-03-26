@@ -431,6 +431,17 @@ def _parse_isoformat_time(tstr):
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
+    hour, minute, second, microsecond = time_comps
+    became_next_day = False
+    error_from_components = False
+    if (hour == 24):
+        if all(time_comp == 0 for time_comp in time_comps[1:]):
+            hour = 0
+            time_comps[0] = hour
+            became_next_day = True
+        else:
+            error_from_components = True
+
     tzi = None
     if tz_pos == len_str and tstr[-1] == 'Z':
         tzi = timezone.utc
@@ -463,7 +474,7 @@ def _parse_isoformat_time(tstr):
 
     time_comps.append(tzi)
 
-    return time_comps
+    return time_comps, became_next_day, error_from_components
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
@@ -1554,7 +1565,7 @@ class time:
         time_string = time_string.removeprefix('T')
 
         try:
-            return cls(*_parse_isoformat_time(time_string))
+            return cls(*_parse_isoformat_time(time_string)[0])
         except Exception:
             raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
@@ -1868,10 +1879,27 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components = _parse_isoformat_time(tstr)
+                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
+            else:
+                if error_from_components:
+                    raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
+
+                if became_next_day:
+                    year, month, day = date_components
+                    # Only wrap day/month when it was previously valid
+                    if month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
+                        # Calculate midnight of the next day
+                        day += 1
+                        if day > days_in_month:
+                            day = 1
+                            month += 1
+                            if month > 12:
+                                month = 1
+                                year += 1
+                        date_components = [year, month, day]
         else:
             time_components = [0, 0, 0, 0, None]
 
