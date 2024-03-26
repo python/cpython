@@ -104,12 +104,15 @@ class JSONEncoder(object):
     key_separator = ': '
     def __init__(self, *, skipkeys=False, ensure_ascii=True,
             check_circular=True, allow_nan=True, sort_keys=False,
-            indent=None, separators=None, default=None):
+            indent=None, separators=None, default=None, convert_keys=False):
         """Constructor for JSONEncoder, with sensible defaults.
 
-        If skipkeys is false, then it is a TypeError to attempt
-        encoding of keys that are not str, int, float or None.  If
-        skipkeys is True, such items are simply skipped.
+        Dict keys in JSON must be str, int, float or None.  skipkeys and
+        convert_keys control how keys that are not one of these types are
+        handled.  If skipkeys is True, then those items are simply skipped.
+        Otherwise, if convert_keys is True, the keys will be passed to
+        ``.default()`` to be converted.  If convert_keys is False, or
+        ``.default()`` returns an unsupported type, TypeError is raised.
 
         If ensure_ascii is true, the output is guaranteed to be str
         objects with all incoming non-ASCII characters escaped.  If
@@ -157,6 +160,7 @@ class JSONEncoder(object):
             self.item_separator = ','
         if default is not None:
             self.default = default
+        self.convert_keys = convert_keys
 
     def default(self, o):
         """Implement this method in a subclass such that it returns
@@ -254,11 +258,12 @@ class JSONEncoder(object):
             _iterencode = _make_iterencode(
                 markers, self.default, _encoder, self.indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot)
+                self.skipkeys, self.convert_keys, _one_shot)
         return _iterencode(o, 0)
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
-        _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+        _key_separator, _item_separator, _sort_keys, _skipkeys, _convert_keys,
+        _one_shot,
         ## HACK: hand-optimized bytecode; turn globals into locals
         ValueError=ValueError,
         dict=dict,
@@ -373,6 +378,11 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 key = _intstr(key)
             elif _skipkeys:
                 continue
+            elif _convert_keys:
+                key = _default(key)
+                if not isinstance(key, (int, bool, float, str, None)):
+                    raise TypeError(f'keys must be str, int, float, bool '
+                                    f'or None, not {key.__class__.__name__}')
             else:
                 raise TypeError(f'keys must be str, int, float, bool or None, '
                                 f'not {key.__class__.__name__}')
