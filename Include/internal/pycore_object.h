@@ -318,8 +318,8 @@ static inline void _PyObject_GC_TRACK(
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    _PyGCHead_SET_NEXT(gc, generation0);
-    assert((gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1) == 0);
+    /* Young objects will be moved into the visited space during GC, so set the bit here */
+    gc->_gc_next = ((uintptr_t)generation0) | interp->gc.visited_space;
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }
@@ -715,6 +715,8 @@ PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
 // Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
 // Export for the stable ABI.
 PyAPI_DATA(int) _Py_SwappedOp[];
+
+extern void _Py_GetConstant_Init(void);
 
 #ifdef __cplusplus
 }

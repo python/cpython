@@ -29,6 +29,7 @@ int _PyTestLimitedCAPI_Init_Complex(PyObject *module);
 int _PyTestLimitedCAPI_Init_Dict(PyObject *module);
 int _PyTestLimitedCAPI_Init_Float(PyObject *module);
 int _PyTestLimitedCAPI_Init_HeaptypeRelative(PyObject *module);
+int _PyTestLimitedCAPI_Init_Object(PyObject *module);
 int _PyTestLimitedCAPI_Init_List(PyObject *module);
 int _PyTestLimitedCAPI_Init_Long(PyObject *module);
 int _PyTestLimitedCAPI_Init_PyOS(PyObject *module);
