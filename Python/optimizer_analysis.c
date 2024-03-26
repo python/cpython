@@ -387,9 +387,9 @@ optimize_uops(
     ctx->curr_frame_depth++;
     ctx->frame = frame;
 
-    for (_PyUOpInstruction *this_instr = trace;
-         this_instr < trace + trace_len && !op_is_end(this_instr->opcode);
-         this_instr++) {
+    _PyUOpInstruction *this_instr = NULL;
+    for (int i = 0; i < trace_len; i++) {
+        this_instr = &trace[i];
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
@@ -416,9 +416,8 @@ optimize_uops(
         ctx->frame->stack_pointer = stack_pointer;
         assert(STACK_LEVEL() >= 0);
     }
-
     _Py_uop_abstractcontext_fini(ctx);
-    return 1;
+    return trace_len;
 
 out_of_space:
     DPRINTF(3, "\n");
@@ -447,11 +446,11 @@ done:
     /* Cannot optimize further, but there would be no benefit
      * in retrying later */
     _Py_uop_abstractcontext_fini(ctx);
-    return 1;
+    return trace_len;
 }
 
 
-static void
+static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
     /* Remove _SET_IP and _CHECK_VALIDITY where possible.
@@ -506,7 +505,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
-                return;
+                return pc + 1;
             default:
             {
                 bool needs_ip = false;
@@ -530,6 +529,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
         }
     }
+    Py_FatalError("No terminating instruction");
+    Py_UNREACHABLE();
 }
 
 static void
@@ -582,43 +583,36 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
 
 //  0 - failure, no error raised, just fall back to Tier 1
 // -1 - failure, and raise error
-//  1 - optimizer success
+//  > 0 - length of optimized trace
 int
 _Py_uop_analyze_and_optimize(
     _PyInterpreterFrame *frame,
     _PyUOpInstruction *buffer,
-    int buffer_size,
+    int length,
     int curr_stacklen,
     _PyBloomFilter *dependencies
 )
 {
     OPT_STAT_INC(optimizer_attempts);
 
-    int err = remove_globals(frame, buffer, buffer_size, dependencies);
-    if (err == 0) {
-        goto not_ready;
-    }
-    if (err < 0) {
-        goto error;
+    int err = remove_globals(frame, buffer, length, dependencies);
+    if (err <= 0) {
+        return err;
     }
 
-    peephole_opt(frame, buffer, buffer_size);
+    peephole_opt(frame, buffer, length);
 
-    err = optimize_uops(
+    length = optimize_uops(
         _PyFrame_GetCode(frame), buffer,
-        buffer_size, curr_stacklen, dependencies);
+        length, curr_stacklen, dependencies);
 
-    if (err == 0) {
-        goto not_ready;
+    if (length <= 0) {
+        return length;
     }
-    assert(err == 1);
 
-    remove_unneeded_uops(buffer, buffer_size);
+    length = remove_unneeded_uops(buffer, length);
+    assert(length > 0);
 
     OPT_STAT_INC(optimizer_successes);
-    return 1;
-not_ready:
-    return 0;
-error:
-    return -1;
+    return length;
 }
