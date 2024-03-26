@@ -1684,10 +1684,6 @@ PyNumber_Float(PyObject *o)
         return PyFloat_FromDouble(val);
     }
 
-    /* A float subclass with nb_float == NULL */
-    if (PyFloat_Check(o)) {
-        return PyFloat_FromDouble(PyFloat_AS_DOUBLE(o));
-    }
     return PyFloat_FromString(o);
 }
 
