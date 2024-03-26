@@ -173,6 +173,7 @@ class Namespace(argparse.Namespace):
         self.fail_rerun = False
         self.tempdir = None
         self._add_python_opts = True
+        self.xmlpath = None
 
         super().__init__(**kwargs)
 
@@ -506,17 +507,28 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
     if ns.verbose:
         ns.header = True
+
     # When -jN option is used, a worker process does not use --verbose3
     # and so -R 3:3 -jN --verbose3 just works as expected: there is no false
     # alarm about memory leak.
     if ns.huntrleaks and ns.verbose3 and ns.use_mp is None:
-        ns.verbose3 = False
         # run_single_test() replaces sys.stdout with io.StringIO if verbose3
         # is true. In this case, huntrleaks sees an write into StringIO as
         # a memory leak, whereas it is not (gh-71290).
+        ns.verbose3 = False
         print("WARNING: Disable --verbose3 because it's incompatible with "
               "--huntrleaks without -jN option",
               file=sys.stderr)
+
+    if ns.huntrleaks and ns.xmlpath:
+        # The XML data is written into a file outside runtest_refleak(), so
+        # it looks like a leak but it's not. Simply disable XML output when
+        # hunting for reference leaks (gh-83434).
+        ns.xmlpath = None
+        print("WARNING: Disable --junit-xml because it's incompatible "
+              "with --huntrleaks",
+              file=sys.stderr)
+
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True
