@@ -321,9 +321,9 @@ module, supports rotation of disk log files.
    *errors* is provided, it determines how encoding errors are handled.
 
    You can use the *maxBytes* and *backupCount* values to allow the file to
-   :dfn:`rollover` at a predetermined size. When the size is about to be exceeded,
+   :dfn:`rollover` at a predetermined size. When the size is exceeded,
    the file is closed and a new file is silently opened for output. Rollover occurs
-   whenever the current log file is nearly *maxBytes* in length; but if either of
+   whenever the current log file exceeds *maxBytes* in length; but if either of
    *maxBytes* or *backupCount* is zero, rollover never occurs, so you generally want
    to set *backupCount* to at least 1, and have a non-zero *maxBytes*.
    When *backupCount* is non-zero, the system will save old log files by appending
@@ -341,6 +341,10 @@ module, supports rotation of disk log files.
 
    .. versionchanged:: 3.9
       The *errors* parameter was added.
+
+   .. versionchanged:: 3.13
+      Instead of using the size of the current file plus the new record to decide,
+      a rollover is done as long as the current file exceeds *maxBytes*.
 
    .. method:: doRollover()
 
