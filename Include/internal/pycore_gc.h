@@ -113,7 +113,19 @@ static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
 /* Bit 1 is set when the object is in generation which is GCed currently. */
 #define _PyGC_PREV_MASK_COLLECTING 2
 
-/* Bit 0 is set if the object belongs to old space 1 */
+/* Bit 0 in _gc_next is the old space bit.
+ * It is set as follows:
+ * Young: gcstate->visited_space
+ * old[0]: 0
+ * old[1]: 1
+ * permanent: 0
+ *
+ * During a collection all objects handled should have the bit set to
+ * gcstate->visited_space, as objects are moved from the young gen
+ * and the increment into old[gcstate->visited_space].
+ * When object are moved from the pending space, old[gcstate->visited_space^1]
+ * into the increment, the old space bit is flipped.
+*/
 #define _PyGC_NEXT_MASK_OLD_SPACE_1    1
 
 #define _PyGC_PREV_SHIFT           2
