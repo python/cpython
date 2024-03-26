@@ -1975,7 +1975,7 @@ class TestExpectedAttributes(unittest.TestCase):
             def f(self):
                 self.x = 1
                 self.y = 2
-                self.x = 3
+                self.x = 3   # check deduplication
 
             def g(self, obj):
                 self.y = 4
