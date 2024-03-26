@@ -1,2 +1,0 @@
-Do not rely solely on ``__cached__`` on modules; code will also support
-``__spec__.cached``.

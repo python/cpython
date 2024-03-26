@@ -1,2 +1,0 @@
-Use the BOLT post-link optimizer to improve performance, particularly on
-medium-to-large applications.

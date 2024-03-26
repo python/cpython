@@ -1,3 +1,0 @@
-Separate Python recursion checking from C recursion checking which reduces
-the chance of C stack overflow and allows the recursion limit to be
-increased safely.

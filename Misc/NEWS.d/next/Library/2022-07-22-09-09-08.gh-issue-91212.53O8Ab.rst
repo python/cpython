@@ -1,1 +1,0 @@
-Fixed flickering of the turtle window when the tracer is turned off. Patch by Shin-myoung-serp.

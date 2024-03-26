@@ -36,7 +36,23 @@ class UpperProto(asyncio.Protocol):
             self.trans.close()
 
 
-class ProactorLoopCtrlC(test_utils.TestCase):
+class WindowsEventsTestCase(test_utils.TestCase):
+    def _unraisablehook(self, unraisable):
+        # Storing unraisable.object can resurrect an object which is being
+        # finalized. Storing unraisable.exc_value creates a reference cycle.
+        self._unraisable = unraisable
+        print(unraisable)
+
+    def setUp(self):
+        self._prev_unraisablehook = sys.unraisablehook
+        self._unraisable = None
+        sys.unraisablehook = self._unraisablehook
+
+    def tearDown(self):
+        sys.unraisablehook = self._prev_unraisablehook
+        self.assertIsNone(self._unraisable)
+
+class ProactorLoopCtrlC(WindowsEventsTestCase):
 
     def test_ctrl_c(self):
 
@@ -58,7 +74,7 @@ class ProactorLoopCtrlC(test_utils.TestCase):
         thread.join()
 
 
-class ProactorMultithreading(test_utils.TestCase):
+class ProactorMultithreading(WindowsEventsTestCase):
     def test_run_from_nonmain_thread(self):
         finished = False
 
@@ -79,7 +95,7 @@ class ProactorMultithreading(test_utils.TestCase):
         self.assertTrue(finished)
 
 
-class ProactorTests(test_utils.TestCase):
+class ProactorTests(WindowsEventsTestCase):
 
     def setUp(self):
         super().setUp()
@@ -163,29 +179,25 @@ class ProactorTests(test_utils.TestCase):
 
         # Wait for unset event with 0.5s timeout;
         # result should be False at timeout
-        fut = self.loop._proactor.wait_for_handle(event, 0.5)
+        timeout = 0.5
+        fut = self.loop._proactor.wait_for_handle(event, timeout)
         start = self.loop.time()
         done = self.loop.run_until_complete(fut)
         elapsed = self.loop.time() - start
 
         self.assertEqual(done, False)
         self.assertFalse(fut.result())
-        # bpo-31008: Tolerate only 450 ms (at least 500 ms expected),
-        # because of bad clock resolution on Windows
-        self.assertTrue(0.45 <= elapsed <= 0.9, elapsed)
+        self.assertGreaterEqual(elapsed, timeout - test_utils.CLOCK_RES)
 
         _overlapped.SetEvent(event)
 
         # Wait for set event;
         # result should be True immediately
         fut = self.loop._proactor.wait_for_handle(event, 10)
-        start = self.loop.time()
         done = self.loop.run_until_complete(fut)
-        elapsed = self.loop.time() - start
 
         self.assertEqual(done, True)
         self.assertTrue(fut.result())
-        self.assertTrue(0 <= elapsed < 0.3, elapsed)
 
         # asyncio issue #195: cancelling a done _WaitHandleFuture
         # must not crash
@@ -199,11 +211,8 @@ class ProactorTests(test_utils.TestCase):
         # CancelledError should be raised immediately
         fut = self.loop._proactor.wait_for_handle(event, 10)
         fut.cancel()
-        start = self.loop.time()
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(fut)
-        elapsed = self.loop.time() - start
-        self.assertTrue(0 <= elapsed < 0.1, elapsed)
 
         # asyncio issue #195: cancelling a _WaitHandleFuture twice
         # must not crash
@@ -239,8 +248,83 @@ class ProactorTests(test_utils.TestCase):
         self.close_loop(self.loop)
         self.assertFalse(self.loop.call_exception_handler.called)
 
+    def test_address_argument_type_error(self):
+        # Regression test for https://github.com/python/cpython/issues/98793
+        proactor = self.loop._proactor
+        sock = socket.socket(type=socket.SOCK_DGRAM)
+        bad_address = None
+        with self.assertRaises(TypeError):
+            proactor.connect(sock, bad_address)
+        with self.assertRaises(TypeError):
+            proactor.sendto(sock, b'abc', addr=bad_address)
+        sock.close()
 
-class WinPolicyTests(test_utils.TestCase):
+    def test_client_pipe_stat(self):
+        res = self.loop.run_until_complete(self._test_client_pipe_stat())
+        self.assertEqual(res, 'done')
+
+    async def _test_client_pipe_stat(self):
+        # Regression test for https://github.com/python/cpython/issues/100573
+        ADDRESS = r'\\.\pipe\test_client_pipe_stat-%s' % os.getpid()
+
+        async def probe():
+            # See https://github.com/python/cpython/pull/100959#discussion_r1068533658
+            h = _overlapped.ConnectPipe(ADDRESS)
+            try:
+                _winapi.CloseHandle(_overlapped.ConnectPipe(ADDRESS))
+            except OSError as e:
+                if e.winerror != _overlapped.ERROR_PIPE_BUSY:
+                    raise
+            finally:
+                _winapi.CloseHandle(h)
+
+        with self.assertRaises(FileNotFoundError):
+            await probe()
+
+        [server] = await self.loop.start_serving_pipe(asyncio.Protocol, ADDRESS)
+        self.assertIsInstance(server, windows_events.PipeServer)
+
+        errors = []
+        self.loop.set_exception_handler(lambda _, data: errors.append(data))
+
+        for i in range(5):
+            await self.loop.create_task(probe())
+
+        self.assertEqual(len(errors), 0, errors)
+
+        server.close()
+
+        with self.assertRaises(FileNotFoundError):
+            await probe()
+
+        return "done"
+
+    def test_loop_restart(self):
+        # We're fishing for the "RuntimeError: <_overlapped.Overlapped object at XXX>
+        # still has pending operation at deallocation, the process may crash" error
+        stop = threading.Event()
+        def threadMain():
+            while not stop.is_set():
+                self.loop.call_soon_threadsafe(lambda: None)
+                time.sleep(0.01)
+        thr = threading.Thread(target=threadMain)
+
+        # In 10 60-second runs of this test prior to the fix:
+        # time in seconds until failure: (none), 15.0, 6.4, (none), 7.6, 8.3, 1.7, 22.2, 23.5, 8.3
+        # 10 seconds had a 50% failure rate but longer would be more costly
+        end_time = time.time() + 10 # Run for 10 seconds
+        self.loop.call_soon(thr.start)
+        while not self._unraisable: # Stop if we got an unraisable exc
+            self.loop.stop()
+            self.loop.run_forever()
+            if time.time() >= end_time:
+                break
+
+        stop.set()
+        thr.join()
+
+
+class WinPolicyTests(WindowsEventsTestCase):
 
     def test_selector_win_policy(self):
         async def main():

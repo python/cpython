@@ -2,22 +2,19 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="pyproject.props" Condition="$(__PyProject_Props_Imported) != 'true'" />
   <PropertyGroup>
-    <TclMajorVersion>8</TclMajorVersion>
-    <TclMinorVersion>6</TclMinorVersion>
-    <TclPatchLevel>12</TclPatchLevel>
-    <TclRevision>1</TclRevision>
-    <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
-    <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
-    <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
-    <TkRevision>$(TclRevision)</TkRevision>
-    <TixMajorVersion>8</TixMajorVersion>
-    <TixMinorVersion>4</TixMinorVersion>
-    <TixPatchLevel>3</TixPatchLevel>
-    <TixRevision>6</TixRevision>
-    <tclDir>$(ExternalsDir)tcl-core-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\</tclDir>
-    <tkDir>$(ExternalsDir)tk-$(TkMajorVersion).$(TkMinorVersion).$(TkPatchLevel).$(TkRevision)\</tkDir>
-    <tixDir>$(ExternalsDir)tix-$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel).$(TixRevision)\</tixDir>
-    <tcltkDir>$(ExternalsDir)tcltk-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\$(ArchName)\</tcltkDir>
+    <TclVersion Condition="$(TclVersion) == ''">8.6.13.1</TclVersion>
+    <TkVersion Condition="$(TkVersion) == ''">$(TclVersion)</TkVersion>
+    <TclMajorVersion>$([System.Version]::Parse($(TclVersion)).Major)</TclMajorVersion>
+    <TclMinorVersion>$([System.Version]::Parse($(TclVersion)).Minor)</TclMinorVersion>
+    <TclPatchLevel>$([System.Version]::Parse($(TclVersion)).Build)</TclPatchLevel>
+    <TclRevision>$([System.Version]::Parse($(TclVersion)).Revision)</TclRevision>
+    <TkMajorVersion>$([System.Version]::Parse($(TkVersion)).Major)</TkMajorVersion>
+    <TkMinorVersion>$([System.Version]::Parse($(TkVersion)).Minor)</TkMinorVersion>
+    <TkPatchLevel>$([System.Version]::Parse($(TkVersion)).Build)</TkPatchLevel>
+    <TkRevision>$([System.Version]::Parse($(TkVersion)).Revision)</TkRevision>
+    <tclDir Condition="$(tclDir) == ''">$(ExternalsDir)tcl-core-$(TclVersion)\</tclDir>
+    <tkDir Condition="$(tkDir) == ''">$(ExternalsDir)tk-$(TkVersion)\</tkDir>
+    <tcltkDir Condition="$(tcltkDir) == ''">$(ExternalsDir)tcltk-$(TclVersion)\$(ArchName)\</tcltkDir>
     <tclWin32Exe Condition="$(Platform) == 'Win32'">$(tcltkDir)\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
     <tclWin32Exe Condition="$(Platform) != 'Win32'">$(tcltkDir)\..\win32\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
 
@@ -27,8 +24,7 @@
     <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).exe</tclShExeName>
     <tkDLLName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).dll</tkDLLName>
     <tkLibName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tkLibName>
-    <tixDLLName>tix$(TixMajorVersion)$(TixMinorVersion)$(TclDebugExt).dll</tixDLLName>
-    <tixDLLPath>$(tcltkDir)lib\tix$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel)\$(tixDLLName)</tixDLLPath>
+    <tclZlibDLLName>zlib1.dll</tclZlibDLLName>
     <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tcltkLib>
     <TclMachine>IX86</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>

@@ -1,2 +1,0 @@
-Merge managed dict and values pointer into a single tagged pointer to save
-one word in the pre-header.

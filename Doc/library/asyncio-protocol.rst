@@ -156,7 +156,8 @@ Base Transport
    will be received.  After all buffered data is flushed, the
    protocol's :meth:`protocol.connection_lost()
    <BaseProtocol.connection_lost>` method will be called with
-   :const:`None` as its argument.
+   :const:`None` as its argument. The transport should not be
+   used once it is closed.
 
 .. method:: BaseTransport.is_closing()
 
@@ -361,6 +362,11 @@ Datagram Transports
    This method does not block; it buffers the data and arranges
    for it to be sent out asynchronously.
 
+   .. versionchanged:: 3.13
+      This method can be called with an empty bytes object to send a
+      zero-length datagram. The buffer size calculation used for flow
+      control is also updated to account for the datagram header.
+
 .. method:: DatagramTransport.abort()
 
    Close the transport immediately, without waiting for pending
@@ -416,8 +422,8 @@ Subprocess Transports
 
    Stop the subprocess.
 
-   On POSIX systems, this method sends SIGTERM to the subprocess.
-   On Windows, the Windows API function TerminateProcess() is called to
+   On POSIX systems, this method sends :py:const:`~signal.SIGTERM` to the subprocess.
+   On Windows, the Windows API function :c:func:`!TerminateProcess` is called to
    stop the subprocess.
 
    See also :meth:`subprocess.Popen.terminate`.
@@ -707,6 +713,9 @@ factories passed to the :meth:`loop.subprocess_exec` and
 
    Called when the child process has exited.
 
+   It can be called before :meth:`~SubprocessProtocol.pipe_data_received` and
+   :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
+
 
 Examples
 ========
@@ -745,7 +754,7 @@ received data, and close the connection::
         loop = asyncio.get_running_loop()
 
         server = await loop.create_server(
-            lambda: EchoServerProtocol(),
+            EchoServerProtocol,
             '127.0.0.1', 8888)
 
         async with server:
@@ -849,7 +858,7 @@ method, sends back received data::
         # One protocol instance will be created to serve all
         # client requests.
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: EchoServerProtocol(),
+            EchoServerProtocol,
             local_addr=('127.0.0.1', 9999))
 
         try:
@@ -1002,12 +1011,26 @@ The subprocess is created by the :meth:`loop.subprocess_exec` method::
         def __init__(self, exit_future):
             self.exit_future = exit_future
             self.output = bytearray()
+            self.pipe_closed = False
+            self.exited = False
+
+        def pipe_connection_lost(self, fd, exc):
+            self.pipe_closed = True
+            self.check_for_exit()
 
         def pipe_data_received(self, fd, data):
             self.output.extend(data)
 
         def process_exited(self):
-            self.exit_future.set_result(True)
+            self.exited = True
+            # process_exited() method can be called before
+            # pipe_connection_lost() method: wait until both methods are
+            # called.
+            self.check_for_exit()
+
+        def check_for_exit(self):
+            if self.pipe_closed and self.exited:
+                self.exit_future.set_result(True)
 
     async def get_date():
         # Get a reference to the event loop as we plan to use

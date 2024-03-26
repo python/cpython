@@ -1,4 +1,0 @@
-On WASI :data:`~errno.ENOTCAPABLE` is now mapped to :exc:`PermissionError`.
-The :mod:`errno` modules exposes the new error number. ``getpath.py`` now
-ignores :exc:`PermissionError` when it cannot open landmark files
-``pybuilddir.txt`` and ``pyenv.cfg``.

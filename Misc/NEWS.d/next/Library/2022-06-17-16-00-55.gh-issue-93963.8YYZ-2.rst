@@ -1,2 +1,0 @@
-Officially deprecate from ``importlib.abc`` classes moved to
-``importlib.resources.abc``.
