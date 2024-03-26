@@ -26,6 +26,7 @@ struct _frame {
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
     char f_fast_as_locals;      /* Have the fast locals of this frame been converted to a dict? */
+    PyObject *f_extra_locals;   /* Dict for locals set by users using f_locals, could be NULL */
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
@@ -233,7 +234,10 @@ int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 
 PyObject *
-_PyFrame_GetLocals(_PyInterpreterFrame *frame, int include_hidden);
+_PyFrame_GetLocals(_PyInterpreterFrame *frame);
+
+PyObject *
+_PyFrame_GetHiddenLocals(_PyInterpreterFrame *frame);
 
 int
 _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);

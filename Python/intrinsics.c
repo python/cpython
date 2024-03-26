@@ -127,7 +127,7 @@ import_star(PyThreadState* tstate, PyObject *from)
         return NULL;
     }
 
-    PyObject *locals = frame->f_locals;
+    PyObject *locals = _PyFrame_GetLocals(frame);
     if (locals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
                             "no locals found during 'import *'");
@@ -135,6 +135,7 @@ import_star(PyThreadState* tstate, PyObject *from)
     }
     int err = import_all_from(tstate, locals, from);
     _PyFrame_LocalsToFast(frame, 0);
+    Py_DECREF(locals);
     if (err < 0) {
         return NULL;
     }
