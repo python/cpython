@@ -6,8 +6,7 @@ import sys
 import sysconfig
 import time
 
-from test import support
-from test.support import os_helper, MS_WINDOWS
+from test.support import os_helper, MS_WINDOWS, flush_std_streams
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
@@ -74,6 +73,7 @@ class Regrtest:
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
         self.want_run_leaks: bool = ns.runleaks
+        self.want_bisect: bool = ns.bisect
 
         self.ci_mode: bool = (ns.fast_ci or ns.slow_ci)
         self.want_add_python_opts: bool = (_add_python_opts
@@ -277,6 +277,55 @@ class Regrtest:
 
         self.display_result(rerun_runtests)
 
+    def _run_bisect(self, runtests: RunTests, test: str, progress: str) -> bool:
+        print()
+        title = f"Bisect {test}"
+        if progress:
+            title = f"{title} ({progress})"
+        print(title)
+        print("#" * len(title))
+        print()
+
+        cmd = runtests.create_python_cmd()
+        cmd.extend([
+            "-u", "-m", "test.bisect_cmd",
+            # Limit to 25 iterations (instead of 100) to not abuse CI resources
+            "--max-iter", "25",
+            "-v",
+            # runtests.match_tests is not used (yet) for bisect_cmd -i arg
+        ])
+        cmd.extend(runtests.bisect_cmd_args())
+        cmd.append(test)
+        print("+", shlex.join(cmd), flush=True)
+
+        flush_std_streams()
+
+        import subprocess
+        proc = subprocess.run(cmd, timeout=runtests.timeout)
+        exitcode = proc.returncode
+
+        title = f"{title}: exit code {exitcode}"
+        print(title)
+        print("#" * len(title))
+        print(flush=True)
+
+        if exitcode:
+            print(f"Bisect failed with exit code {exitcode}")
+            return False
+
+        return True
+
+    def run_bisect(self, runtests: RunTests) -> None:
+        tests, _ = self.results.prepare_rerun(clear=False)
+
+        for index, name in enumerate(tests, 1):
+            if len(tests) > 1:
+                progress = f"{index}/{len(tests)}"
+            else:
+                progress = ""
+            if not self._run_bisect(runtests, name, progress):
+                return
+
     def display_result(self, runtests):
         # If running the test suite for PGO then no one cares about results.
         if runtests.pgo:
@@ -458,7 +507,7 @@ class Regrtest:
 
         setup_process()
 
-        if self.hunt_refleak and not self.num_workers:
+        if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interfers with refleak check
             use_load_tracker = False
         else:
@@ -478,6 +527,9 @@ class Regrtest:
 
             if self.want_rerun and self.results.need_rerun():
                 self.rerun_failed_tests(runtests)
+
+            if self.want_bisect and self.results.need_rerun():
+                self.run_bisect(runtests)
         finally:
             if use_load_tracker:
                 self.logger.stop_load_tracker()
