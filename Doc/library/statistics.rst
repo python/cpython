@@ -1157,7 +1157,7 @@ random selections from that distribution.
 Since the estimated function is just the sum of kernels centered at each
 data point, the problem can be reduced to sampling the kernel function
 and recentering the result around a randomly chosen data point.  This
-works for kernels that have a known or accurately approximated inverse
+works for kernels that have known or accurately approximated inverse
 cumulative distribution functions.
 
 .. testcode::
@@ -1173,8 +1173,6 @@ cumulative distribution functions.
        'triangular': lambda p: sqrt(2*p) - 1 if p < 0.5 else 1 - sqrt(2 - 2*p),
        'cosine': lambda p: 2*asin(2*p - 1)/pi,
    }
-   kernel_invcdfs['gauss'] = kernel_invcdfs['normal']
-   kernel_invcdfs['uniform'] = kernel_invcdfs['rectangular']
 
    def kde_random(data, h, kernel='normal'):
        'Generate random a sample from an estimated kernel density function.'
