@@ -23,10 +23,7 @@
 
 --------------
 
-This module provides runtime support for type hints. For the original
-specification of the typing system, see :pep:`484`. For a simplified
-introduction to type hints, see :pep:`483`.
-
+This module provides runtime support for type hints.
 
 The function below takes and returns a string and is annotated as follows::
 
@@ -164,12 +161,20 @@ compatibility, type aliases can also be created through simple assignment::
 
    Vector = list[float]
 
-Or marked with :data:`TypeAlias` to make it explicit that this is a type alias,
-not a normal variable assignment::
+The following example is an expansion of the above that shows what is
+going on under the hood. ::
 
    from typing import TypeAlias
 
    Vector: TypeAlias = list[float]
+
+
+
+Assigning types this way utilizes TypeAlias rather than the TypeAliasType
+which comes with trade offs that are not obvious. For more information see
+the sections for :data:`TypeAlias` and :data:`TypeAliasType`. It is also
+worth noting that TypeAlias is soft deprecated. For reasoning
+see :data:`TypeAlias`.
 
 .. _distinct:
 
