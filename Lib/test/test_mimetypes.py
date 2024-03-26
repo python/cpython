@@ -1,5 +1,6 @@
 import io
 import mimetypes
+import os
 import pathlib
 import sys
 import unittest.mock
@@ -111,14 +112,39 @@ class MimeTypesTestCase(unittest.TestCase):
         # compared to when interpreted as filename because of the semicolon.
         eq = self.assertEqual
         gzip_expected = ('application/x-tar', 'gzip')
-        eq(self.db.guess_type(";1.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("?1.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("#1.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("#1#.tar.gz"), gzip_expected)
-        eq(self.db.guess_type(";1#.tar.gz"), gzip_expected)
-        eq(self.db.guess_type(";&1=123;?.tar.gz"), gzip_expected)
-        eq(self.db.guess_type("?k1=v1&k2=v2.tar.gz"), gzip_expected)
+        for name in (
+                ';1.tar.gz',
+                '?1.tar.gz',
+                '#1.tar.gz',
+                '#1#.tar.gz',
+                ';1#.tar.gz',
+                ';&1=123;?.tar.gz',
+                '?k1=v1&k2=v2.tar.gz',
+            ):
+            for prefix in ('', '/', '\\',
+                           'c:', 'c:/', 'c:\\', 'c:/d/', 'c:\\d\\',
+                           '//share/server/', '\\\\share\\server\\'):
+                path = prefix + name
+                with self.subTest(path=path):
+                    eq(self.db.guess_type(path), gzip_expected)
+            expected = (None, None) if os.name == 'nt' else gzip_expected
+            for prefix in ('//', '\\\\', '//share/', '\\\\share\\'):
+                path = prefix + name
+                with self.subTest(path=path):
+                    eq(self.db.guess_type(path), expected)
         eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
+
+    def test_url(self):
+        result = self.db.guess_type('http://host.html')
+        msg = 'URL only has a host name, not a file'
+        self.assertSequenceEqual(result, (None, None), msg)
+        result = self.db.guess_type('http://example.com/host.html')
+        msg = 'Should be text/html'
+        self.assertSequenceEqual(result, ('text/html', None), msg)
+        result = self.db.guess_type('http://example.com/host.html#x.tar')
+        self.assertSequenceEqual(result, ('text/html', None))
+        result = self.db.guess_type('http://example.com/host.html?q=x.tar')
+        self.assertSequenceEqual(result, ('text/html', None))
 
     def test_guess_all_types(self):
         # First try strict.  Use a set here for testing the results because if
