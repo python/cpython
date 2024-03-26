@@ -580,6 +580,14 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
     }
 }
 
+// TODO: there are no more changes to optimizer.c. We will only see regular
+// _CHECK_STACK_SPACEs in this function. Need to make the following change:
+// when we see _CHECK_STACK_SPACE, look ahead to _PUSH_FRAME. Extract the
+// code object out of _PUSH_FRAME. Save that object's framesize and convert
+// _CHECK_STACK_SPACE to _CHECK_STACK_SPACE_OPERAND. If we ever can't get a
+// code object, stop the optimization. It should still be ok to save max_space
+// to the first _CHECK_STACK_SPACE_OPERAND at that point, since the rest will
+// be regular _CHECK_STACK_SPACEs and will be handled at execution time.
 static void
 combine_stack_space_checks(
     _PyUOpInstruction *buffer,
@@ -592,7 +600,7 @@ combine_stack_space_checks(
      * calls in this trace.
      */
 #ifdef Py_DEBUG
-    // assume there's a _PUSH_STACK after every _CHECK_STACK_SPACE_OPERAND
+    // assume there's a _PUSH_FRAME after every _CHECK_STACK_SPACE_OPERAND
     bool expecting_push = false;
     /* We might see _CHECK_STACK_SPACE, but only if no code object was
      * available for _PUSH_FRAME at trace projection time. If this occurs,
@@ -601,9 +609,9 @@ combine_stack_space_checks(
     bool saw_check_stack_space = false;
 #endif
     int depth = 0;
-    uint64_t space_at_depth[MAX_ABSTRACT_FRAME_DEPTH];
-    uint64_t curr_space = 0;
-    uint64_t max_space = 0;
+    uint32_t space_at_depth[MAX_ABSTRACT_FRAME_DEPTH];
+    uint32_t curr_space = 0;
+    uint32_t max_space = 0;
     _PyUOpInstruction *first_check_stack = NULL;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;

@@ -3727,9 +3727,9 @@
         }
 
         case _CHECK_STACK_SPACE_OPERAND: {
-            PyObject *framesize = (PyObject *)CURRENT_OPERAND();
-            assert((uint64_t)framesize < INT_MAX);
-            if (!_PyThreadState_HasStackSpace(tstate, (uint64_t)framesize)) goto deoptimize;
+            uint32_t framesize = (uint32_t)CURRENT_OPERAND();
+            assert(framesize < INT_MAX);
+            if (!_PyThreadState_HasStackSpace(tstate, framesize)) goto deoptimize;
             if (tstate->py_recursion_remaining <= 1) goto deoptimize;
             break;
         }
