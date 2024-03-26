@@ -1818,7 +1818,7 @@ typedef struct kqueue_queue_Object {
 #   define DATA_FMT_UNIT    INT64_FMT_UNIT
 #else
 #   define DATA_TYPE        Py_T_INTPTR
-#   define DATA_FMT_UNIT    _Py_PARSE_INTPTRT
+#   define DATA_FMT_UNIT    _Py_PARSE_INTPTR
 #endif
 
 /* Unfortunately, we can't store python objects in udata, because
