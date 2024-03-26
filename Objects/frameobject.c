@@ -924,8 +924,7 @@ frame_tp_clear(PyFrameObject *f)
     _Py_TaggedObject *locals = _PyFrame_GetLocalsArray(f->f_frame);
     assert(f->f_frame->stacktop >= 0);
     for (int i = 0; i < f->f_frame->stacktop; i++) {
-        PyObject *obj = Py_CLEAR_TAG(locals[i]);
-        Py_CLEAR(obj);
+        Py_CLEAR_TAGGED(locals[i]);
     }
     f->f_frame->stacktop = 0;
     Py_CLEAR(f->f_frame->f_locals);
@@ -1444,8 +1443,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 }
                 value = Py_NewRef(Py_None);
             }
-            PyObject *cleared = Py_CLEAR_TAG(fast[i]);
-            Py_XSETREF(cleared, Py_NewRef(value));
+            Py_XSETREF_TAGGED(fast[i], Py_OBJ_PACK(Py_NewRef(value)));
         }
         Py_XDECREF(value);
     }

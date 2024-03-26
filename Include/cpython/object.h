@@ -362,6 +362,14 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
     } while (0)
 #endif
 
+#define Py_XSETREF_TAGGED(dst, src) \
+    do { \
+        _Py_TaggedObject *_tmp_dst_ptr = _Py_CAST(_Py_TaggedObject*, &(dst)); \
+        _Py_TaggedObject _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_XDECREF(Py_CLEAR_TAG(_tmp_old_dst)); \
+    } while (0)
+
 
 /* Define a pair of assertion macros:
    _PyObject_ASSERT_FROM(), _PyObject_ASSERT_WITH_MSG() and _PyObject_ASSERT().

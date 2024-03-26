@@ -1032,6 +1032,15 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     } while (0)
 #endif
 
+#define Py_CLEAR_TAGGED(op) \
+    do { \
+        _Py_TaggedObject *_tmp_op_ptr = _Py_CAST(_Py_TaggedObject*, &(op)); \
+        _Py_TaggedObject _tmp_old_op = (*_tmp_op_ptr); \
+        if (Py_CLEAR_TAG(_tmp_old_op) != NULL) { \
+            *_tmp_op_ptr = Py_OBJ_PACK(_Py_NULL); \
+            Py_DECREF(Py_CLEAR_TAG(_tmp_old_op)); \
+        } \
+    } while (0)
 
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)
