@@ -288,7 +288,7 @@ asyncio
   (Contributed by Laurie Opperman in :gh:`104228`.)
 
 base64
----
+------
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding z85 data.
@@ -405,6 +405,8 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
+  and ``IPv6Network``.
 
 itertools
 ---------
@@ -1704,6 +1706,10 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`PyObject_GenericHash` function that implements the default
+  hashing function of a Python object.
+  (Contributed by Serhiy Storchaka in :gh:`113024`.)
+
 * Add PyTime C API:
 
   * :c:type:`PyTime_t` type.
@@ -1739,6 +1745,9 @@ New Features
   to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
   :term:`strong reference` to the constant zero.
   (Contributed by Victor Stinner in :gh:`115754`.)
+
+* Add :c:func:`PyType_GetModuleByDef` to the limited C API
+  (Contributed by Victor Stinner in :gh:`116936`.)
 
 
 Porting to Python 3.13
