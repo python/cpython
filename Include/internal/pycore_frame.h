@@ -54,7 +54,6 @@ enum _frameowner {
     FRAME_OWNED_BY_CSTACK = 3,
 };
 
-
 typedef struct _PyInterpreterFrame {
     PyObject *f_executable; /* Strong reference (code object or None) */
     struct _PyInterpreterFrame *previous;

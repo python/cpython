@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include "pycore_freelist.h"  // _PyFreeListState
-#include "pycore_frame.h"     // _Py_TaggedObject
 
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);

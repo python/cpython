@@ -429,3 +429,18 @@ do { \
 #define GOTO_UNWIND() goto error_tier_two
 #define EXIT_TO_TRACE() goto exit_to_trace
 #define EXIT_TO_TIER1() goto exit_to_tier1
+
+#ifdef Py_GIL_DISABLED
+static void _Py_HOT_FUNCTION
+untag_stack(_Py_TaggedObject *start, int length) {
+    for (int i = 0; i < length; i++) {
+        start[i] = Py_TAG_CAST(Py_CLEAR_TAG(start[i]));
+    }
+}
+#else
+static void _Py_HOT_FUNCTION
+untag_stack(_Py_TaggedObject *start, int length) {
+    (void)start;
+    (void)length;
+}
+#endif

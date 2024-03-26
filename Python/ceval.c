@@ -643,21 +643,6 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
-#ifdef Py_GIL_DISABLED
-static void _Py_HOT_FUNCTION
-untag_stack(_Py_TaggedObject *start, int length) {
-    for (int i = 0; i < length; i++) {
-        start[i] = Py_TAG_CAST(Py_CLEAR_TAG(start[i]));
-    }
-}
-#else
-static void _Py_HOT_FUNCTION
-untag_stack(_Py_TaggedObject *start, int length) {
-    (void)start;
-    (void)length;
-}
-#endif
-
 static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
     * the code, rather than before it */
