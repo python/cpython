@@ -53,9 +53,9 @@ Hacl_Hash_SHA3_update_last_sha3(
   uint32_t input_len
 );
 
-void Hacl_Impl_SHA3_state_permute(uint64_t *s);
+void Hacl_Hash_SHA3_state_permute(uint64_t *s);
 
-void Hacl_Impl_SHA3_loadState(uint32_t rateInBytes, uint8_t *input, uint64_t *s);
+void Hacl_Hash_SHA3_loadState(uint32_t rateInBytes, uint8_t *input, uint64_t *s);
 
 #if defined(__cplusplus)
 }
