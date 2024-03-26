@@ -2197,8 +2197,8 @@ def main():
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
     parser.add_argument('-m', metavar='module', dest='module')
-    parser.add_argument('pyfile', nargs='?')
-    parser.add_argument('args', nargs='*')
+    parser.add_argument('args', nargs='*',
+                        help="the first arg is the script to debug if -m is not specified")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2211,13 +2211,10 @@ def main():
     if opts.module:
         file = opts.module
         target = _ModuleTarget(file)
-        # If the module is given, the first positional argument is not the script
-        if opts.pyfile:
-            opts.args = [opts.pyfile] + opts.args
     else:
-        if not opts.pyfile:
+        if not opts.args:
             parser.error("no module or script to run")
-        file = opts.pyfile
+        file = opts.args.pop(0)
         target = _ScriptTarget(file)
 
     target.check()
