@@ -17,7 +17,7 @@ from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
-from functools import total_ordering
+from functools import total_ordering, wraps, cache
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
@@ -3505,6 +3505,159 @@ class TestSlots(unittest.TestCase):
         a = A(1)
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
+
+    def test_super_without_params_and_slots(self):
+        # https://github.com/python/cpython/issues/111500
+
+        def decorator(func):
+            @wraps(func)
+            def inner(*args, **kwargs):
+                return func(*args, **kwargs)
+            return inner
+
+        for slots in (True, False):
+            with self.subTest(slots=slots):
+                @dataclass(slots=slots)
+                class Base:
+                    x: int = 0
+                    def __post_init__(self):
+                        self.x = 1
+                    def method(self):
+                        return 2
+                    @decorator
+                    def decorated(self):
+                        return 3
+                    @property
+                    def prop(self):
+                        return 4
+                    @classmethod
+                    def clsmethod(cls):
+                        return 5
+                    @staticmethod
+                    def stmethod():
+                        return 6
+
+                @dataclass(slots=slots)
+                class Child(Base):
+                    y: int = 0
+                    z: int = 0
+                    def __post_init__(self):
+                        self.y = 2
+                        super().__post_init__()
+                        self.z = 3
+                    def method(self):
+                        return super().method()
+                    def decorated1(self):
+                        return super().decorated()
+                    @decorator
+                    def decorated2(self):
+                        return super().decorated()
+                    @property
+                    def prop(self):
+                        return super().prop
+                    @classmethod
+                    def clsmethod(cls):
+                        return super().clsmethod()
+                    @staticmethod
+                    def stmethod1():
+                        return super(Child, Child).stmethod()
+                    @staticmethod
+                    def stmethod2():
+                        return super().stmethod()
+                    def cached1(self):
+                        return super().cached()
+
+                inst = Child()
+                self.assertEqual(inst.x, 1)
+                self.assertEqual(inst.y, 2)
+                self.assertEqual(inst.z, 3)
+                self.assertEqual(inst.method(), 2)
+                self.assertEqual(inst.decorated1(), 3)
+                self.assertEqual(inst.decorated2(), 3)
+                self.assertEqual(inst.prop, 4)
+                self.assertEqual(inst.clsmethod(), 5)
+                self.assertEqual(Child.clsmethod(), 5)
+                self.assertEqual(inst.stmethod1(), 6)
+                self.assertEqual(Child.stmethod1(), 6)
+                # These failures match regular classes:
+                msg = r"super\(\): no arguments"
+                with self.assertRaisesRegex(RuntimeError, msg):
+                    inst.stmethod2()
+                with self.assertRaisesRegex(RuntimeError, msg):
+                    Child.stmethod2()
+
+    def test_super_without_params_wrapped(self):
+        for slots in (True, False):
+            with self.subTest(slots=slots):
+                @dataclass(slots=slots, frozen=True)
+                class Base:
+                    @cache
+                    def cached(self):
+                        return 1
+                    def regular(self):
+                        return 2
+                    @classmethod
+                    @cache
+                    def cached_cl(cls):
+                        return 3
+                    @classmethod
+                    def regular_cl(cls):
+                        return 4
+
+                @dataclass(slots=slots, frozen=True)
+                class Child(Base):
+                    def cached1(self):
+                        return super().cached() + 10
+                    @cache
+                    def cached2(self):
+                        return super().cached() + 20
+                    @cache
+                    def cached3(self):
+                        return super().regular() + 30
+                    @classmethod
+                    @cache
+                    def cached_cl1(cls):
+                        return super().cached_cl() + 40
+                    @classmethod
+                    def cached_cl2(cls):
+                        return super().cached_cl() + 50
+                    @classmethod
+                    @cache
+                    def cached_cl3(cls):
+                        return super().regular_cl() + 60
+
+                inst = Child()
+                self.assertEqual(inst.cached(), 1)
+                self.assertEqual(inst.cached1(), 11)
+                self.assertEqual(inst.cached2(), 21)
+                self.assertEqual(inst.cached3(), 32)
+                self.assertEqual(inst.cached_cl(), 3)
+                self.assertEqual(inst.regular_cl(), 4)
+                self.assertEqual(inst.cached_cl1(), 43)
+                self.assertEqual(inst.cached_cl2(), 53)
+                self.assertEqual(inst.cached_cl3(), 64)
+
+    def test_super_without_params_single_wrapper(self):
+        def decorator(func):
+            @wraps(func)
+            def inner(*args, **kwargs):
+                return func(*args, **kwargs)
+            return inner
+
+        for slots in (True, False):
+            with self.subTest(slots=slots):
+                @dataclass(slots=True)
+                class A:
+                    def method(self):
+                        return 1
+
+                @dataclass(slots=True)
+                class B(A):
+                    @decorator
+                    def method(self):
+                        return super().method()
+
+                self.assertEqual(B().method(), 1)
 
 
     def test_dataclass_derived_weakref_slot(self):

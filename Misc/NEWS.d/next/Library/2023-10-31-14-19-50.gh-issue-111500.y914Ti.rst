@@ -1,0 +1,2 @@
+Fix ``super()`` call without arguments for :mod:`dataclasses` with
+``slots=True``.
