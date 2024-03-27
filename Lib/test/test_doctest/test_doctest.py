@@ -2247,6 +2247,16 @@ def test_DocTestSuite():
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=0 errors=0 failures=0>
 
+       If all examples in a docstring are skipped, unittest will report it as a
+       skipped test:
+
+         >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest_skip')
+         >>> result = suite.run(unittest.TestResult())
+         >>> result
+         <unittest.result.TestResult run=6 errors=0 failures=2>
+        >>> len(result.skipped)
+        2
+
        We can use the current module:
 
          >>> suite = test.test_doctest.sample_doctest.test_suite()
@@ -2417,6 +2427,18 @@ def test_DocFileSuite():
          ...                              package='test')
          Traceback (most recent call last):
          ValueError: Package may only be specified for module-relative paths.
+
+       If all examples in a file are skipped, unittest will report it as a
+       skipped test:
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt',
+         ...                              'test_doctest4.txt',
+         ...                              'test_doctest_skip.txt')
+         >>> result = suite.run(unittest.TestResult())
+         >>> result
+         <unittest.result.TestResult run=3 errors=0 failures=1>
+        >>> len(result.skipped)
+        1
 
        You can specify initial global variables:
 
