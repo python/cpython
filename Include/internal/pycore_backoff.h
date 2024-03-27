@@ -58,7 +58,7 @@ is_unreachable_backoff_counter(backoff_counter_t counter)
 static inline backoff_counter_t
 make_backoff_counter(uint16_t value, uint16_t backoff)
 {
-    assert(backoff <= 12);
+    assert(backoff <= 15);
     assert(value <= 0xFFF);
     return (backoff_counter_t){.value = value, .backoff = backoff};
 }
