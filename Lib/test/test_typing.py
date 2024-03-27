@@ -31,7 +31,7 @@ from typing import reveal_type
 from typing import dataclass_transform
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
-from typing import NamedTuple, NotRequired, Required, TypedDict
+from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
@@ -4656,8 +4656,6 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Tuple[Optional]
         with self.assertRaises(TypeError):
-            ClassVar[ClassVar[int]]
-        with self.assertRaises(TypeError):
             List[ClassVar[int]]
 
     def test_fail_with_bare_generic(self):
@@ -6013,16 +6011,6 @@ class ForwardRefTests(BaseTestCase):
         expected_result = {'foo': typing.ClassVar[int]}
         for clazz in [C, D, E, F]:
             self.assertEqual(get_type_hints(clazz), expected_result)
-
-    def test_nested_classvar_fails_forward_ref_check(self):
-        class E:
-            foo: 'typing.ClassVar[typing.ClassVar[int]]' = 7
-        class F:
-            foo: ClassVar['ClassVar[int]'] = 7
-
-        for clazz in [E, F]:
-            with self.assertRaises(TypeError):
-                get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
         depr_msg = (
@@ -8334,6 +8322,69 @@ class TypedDictTests(BaseTestCase):
                 self.assertEqual(klass.__optional_keys__, set())
                 self.assertIsInstance(klass(), dict)
 
+    def test_readonly_inheritance(self):
+        class Base1(TypedDict):
+            a: ReadOnly[int]
+
+        class Child1(Base1):
+            b: str
+
+        self.assertEqual(Child1.__readonly_keys__, frozenset({'a'}))
+        self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
+
+        class Base2(TypedDict):
+            a: ReadOnly[int]
+
+        class Child2(Base2):
+            b: str
+
+        self.assertEqual(Child1.__readonly_keys__, frozenset({'a'}))
+        self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
+
+    def test_cannot_make_mutable_key_readonly(self):
+        class Base(TypedDict):
+            a: int
+
+        with self.assertRaises(TypeError):
+            class Child(Base):
+                a: ReadOnly[int]
+
+    def test_can_make_readonly_key_mutable(self):
+        class Base(TypedDict):
+            a: ReadOnly[int]
+
+        class Child(Base):
+            a: int
+
+        self.assertEqual(Child.__readonly_keys__, frozenset())
+        self.assertEqual(Child.__mutable_keys__, frozenset({'a'}))
+
+    def test_combine_qualifiers(self):
+        class AllTheThings(TypedDict):
+            a: Annotated[Required[ReadOnly[int]], "why not"]
+            b: Required[Annotated[ReadOnly[int], "why not"]]
+            c: ReadOnly[NotRequired[Annotated[int, "why not"]]]
+            d: NotRequired[Annotated[int, "why not"]]
+
+        self.assertEqual(AllTheThings.__required_keys__, frozenset({'a', 'b'}))
+        self.assertEqual(AllTheThings.__optional_keys__, frozenset({'c', 'd'}))
+        self.assertEqual(AllTheThings.__readonly_keys__, frozenset({'a', 'b', 'c'}))
+        self.assertEqual(AllTheThings.__mutable_keys__, frozenset({'d'}))
+
+        self.assertEqual(
+            get_type_hints(AllTheThings, include_extras=False),
+            {'a': int, 'b': int, 'c': int, 'd': int},
+        )
+        self.assertEqual(
+            get_type_hints(AllTheThings, include_extras=True),
+            {
+                'a': Annotated[Required[ReadOnly[int]], 'why not'],
+                'b': Required[Annotated[ReadOnly[int], 'why not']],
+                'c': ReadOnly[NotRequired[Annotated[int, 'why not']]],
+                'd': NotRequired[Annotated[int, 'why not']],
+            },
+        )
+
 
 class RequiredTests(BaseTestCase):
 
@@ -8715,6 +8766,34 @@ class AnnotatedTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
         self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
+
+    def test_special_forms_nesting(self):
+        # These are uncommon types and are to ensure runtime
+        # is lax on validation. See gh-89547 for more context.
+        class CF:
+            x: ClassVar[Final[int]]
+
+        class FC:
+            x: Final[ClassVar[int]]
+
+        class ACF:
+            x: Annotated[ClassVar[Final[int]], "a decoration"]
+
+        class CAF:
+            x: ClassVar[Annotated[Final[int], "a decoration"]]
+
+        class AFC:
+            x: Annotated[Final[ClassVar[int]], "a decoration"]
+
+        class FAC:
+            x: Final[Annotated[ClassVar[int], "a decoration"]]
+
+        self.assertEqual(get_type_hints(CF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(FC, globals())['x'], Final[ClassVar[int]])
+        self.assertEqual(get_type_hints(ACF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(CAF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(AFC, globals())['x'], Final[ClassVar[int]])
+        self.assertEqual(get_type_hints(FAC, globals())['x'], Final[ClassVar[int]])
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError, "Cannot subclass .*Annotated"):

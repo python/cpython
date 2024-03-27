@@ -520,7 +520,7 @@ MS_WINDOWS = (sys.platform == 'win32')
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
-is_android = hasattr(sys, 'getandroidapilevel')
+is_android = sys.platform == "android"
 
 if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -796,6 +796,16 @@ def disable_gc():
     finally:
         if have_gc:
             gc.enable()
+
+@contextlib.contextmanager
+def gc_threshold(*args):
+    import gc
+    old_threshold = gc.get_threshold()
+    gc.set_threshold(*args)
+    try:
+        yield
+    finally:
+        gc.set_threshold(*old_threshold)
 
 
 def python_is_optimized():
@@ -1153,8 +1163,9 @@ def refcount_test(test):
 def requires_limited_api(test):
     try:
         import _testcapi
+        import _testlimitedcapi
     except ImportError:
-        return unittest.skip('needs _testcapi module')(test)
+        return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
 
 def requires_specialization(test):
@@ -2240,16 +2251,25 @@ def _findwheel(pkgname):
 # and returns the path to the venv directory and the path to the python executable
 @contextlib.contextmanager
 def setup_venv_with_pip_setuptools_wheel(venv_dir):
+    import shlex
     import subprocess
     from .os_helper import temp_cwd
+
+    def run_command(cmd):
+        if verbose:
+            print()
+            print('Run:', ' '.join(map(shlex.quote, cmd)))
+            subprocess.run(cmd, check=True)
+        else:
+            subprocess.run(cmd,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           check=True)
 
     with temp_cwd() as temp_dir:
         # Create virtual environment to get setuptools
         cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
+        run_command(cmd)
 
         venv = os.path.join(temp_dir, venv_dir)
 
@@ -2264,10 +2284,7 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
                '-m', 'pip', 'install',
                _findwheel('setuptools'),
                _findwheel('wheel')]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
+        run_command(cmd)
 
         yield python
 
