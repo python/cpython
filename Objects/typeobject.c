@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PySequence_IterSearch()
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_dict.h"          // _PyDict_KeysSize()
@@ -404,7 +405,13 @@ set_tp_mro(PyTypeObject *self, PyObject *mro)
         /* Other checks are done via set_tp_bases. */
         _Py_SetImmortal(mro);
     }
-    self->tp_mro = mro;
+#ifdef Py_GIL_DISABLED
+    if (self->tp_mro != NULL) {
+        // Allow concurrent reads from PyType_IsSubtype
+        _PyObject_GC_SET_SHARED(self->tp_mro);
+    }
+#endif
+    FT_ATOMIC_STORE_PTR(self->tp_mro, mro);
 }
 
 static inline void
@@ -2187,15 +2194,7 @@ subtype_dealloc(PyObject *self)
            finalizers since they might rely on part of the object
            being finalized that has already been destroyed. */
         if (type->tp_weaklistoffset && !base->tp_weaklistoffset) {
-            /* Modeled after GET_WEAKREFS_LISTPTR().
-
-               This is never triggered for static types so we can avoid the
-               (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR(). */
-            PyWeakReference **list = \
-                _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(self);
-            while (*list) {
-                _PyWeakref_ClearRef(*list);
-            }
+            _PyWeakref_ClearWeakRefsExceptCallbacks(self);
         }
     }
 
@@ -2342,9 +2341,8 @@ int
 PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
 #ifdef Py_GIL_DISABLED
-    PyObject *mro = _PyType_GetMRO(a);
+    PyObject *mro = _Py_atomic_load_ptr(&a->tp_mro);
     int res = is_subtype_with_mro(mro, a, b);
-    Py_XDECREF(mro);
     return res;
 #else
     return is_subtype_with_mro(lookup_tp_mro(a), a, b);

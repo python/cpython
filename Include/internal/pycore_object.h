@@ -87,7 +87,6 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
 extern void _Py_AddRefTotal(PyInterpreterState *, Py_ssize_t);
-extern void _Py_IncRefTotal(PyInterpreterState *);
 extern void _Py_DecRefTotal(PyInterpreterState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \
@@ -505,6 +504,25 @@ _Py_XNewRefWithLock(PyObject *obj)
         return NULL;
     }
     return _Py_NewRefWithLock(obj);
+}
+
+static inline void
+_PyObject_SetMaybeWeakref(PyObject *op)
+{
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    for (;;) {
+        Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
+        if ((shared & _Py_REF_SHARED_FLAG_MASK) != 0) {
+            // Nothing to do if it's in WEAKREFS, QUEUED, or MERGED states.
+            return;
+        }
+        if (_Py_atomic_compare_exchange_ssize(
+                &op->ob_ref_shared, &shared, shared | _Py_REF_MAYBE_WEAKREF)) {
+            return;
+        }
+    }
 }
 
 #endif

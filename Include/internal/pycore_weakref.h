@@ -9,7 +9,25 @@ extern "C" {
 #endif
 
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_lock.h"
 #include "pycore_object.h"           // _Py_REF_IS_MERGED()
+
+#ifdef Py_GIL_DISABLED
+
+#define WEAKREF_LIST_LOCK(obj) \
+    _PyInterpreterState_GET()  \
+        ->weakref_locks[((uintptr_t)obj) % NUM_WEAKREF_LIST_LOCKS]
+
+#define LOCK_WEAKREFS(obj) \
+    PyMutex_LockFlags(&WEAKREF_LIST_LOCK(obj), _Py_LOCK_DONT_DETACH)
+#define UNLOCK_WEAKREFS(obj) PyMutex_Unlock(&WEAKREF_LIST_LOCK(obj))
+
+#else
+
+#define LOCK_WEAKREFS(obj)
+#define UNLOCK_WEAKREFS(obj)
+
+#endif
 
 static inline int _is_dead(PyObject *obj)
 {
@@ -30,48 +48,78 @@ static inline int _is_dead(PyObject *obj)
 static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
 {
     assert(PyWeakref_Check(ref_obj));
-    PyObject *ret = NULL;
-    Py_BEGIN_CRITICAL_SECTION(ref_obj);
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
-    PyObject *obj = ref->wr_object;
 
+#if !defined(Py_GIL_DISABLED)
+    PyObject *obj = ref->wr_object;
     if (obj == Py_None) {
         // clear_weakref() was called
-        goto end;
+        return NULL;
     }
 
     if (_is_dead(obj)) {
-        goto end;
+        return NULL;
     }
-#if !defined(Py_GIL_DISABLED)
     assert(Py_REFCNT(obj) > 0);
+    return Py_NewRef(obj);
+#else
+    PyObject *obj = _Py_atomic_load_ptr(&ref->wr_object);
+    if (obj == Py_None) {
+        // clear_weakref() was called
+        return NULL;
+    }
+    LOCK_WEAKREFS(obj);
+    if (_Py_atomic_load_ptr(&ref->wr_object) == Py_None) {
+        // clear_weakref() was called
+        UNLOCK_WEAKREFS(obj);
+        return NULL;
+    }
+    if (_Py_TryIncref(&obj, obj)) {
+        UNLOCK_WEAKREFS(obj);
+        return obj;
+    }
+    UNLOCK_WEAKREFS(obj);
+    return NULL;
 #endif
-    ret = Py_NewRef(obj);
-end:
-    Py_END_CRITICAL_SECTION();
-    return ret;
 }
 
 static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
 {
     assert(PyWeakref_Check(ref_obj));
     int ret = 0;
-    Py_BEGIN_CRITICAL_SECTION(ref_obj);
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
+#ifdef Py_GIL_DISABLED
+    PyObject *obj = _Py_atomic_load_ptr(&ref->wr_object);
+#else
     PyObject *obj = ref->wr_object;
+#endif
     if (obj == Py_None) {
         // clear_weakref() was called
         ret = 1;
     }
     else {
+        LOCK_WEAKREFS(obj);
         // See _PyWeakref_GET_REF() for the rationale of this test
+#ifdef Py_GIL_DISABLED
+        PyObject *obj_reloaded = _Py_atomic_load_ptr(&ref->wr_object);
+        ret = (obj_reloaded == Py_None) || _is_dead(obj);
+#else
         ret = _is_dead(obj);
+#endif
+        UNLOCK_WEAKREFS(obj);
     }
-    Py_END_CRITICAL_SECTION();
     return ret;
 }
 
+// NB: In free-threaded builds the weakref list lock for the referenced object
+// must be held around calls to this function.
 extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
+
+extern Py_ssize_t _PyWeakref_GetWeakrefCountThreadsafe(PyObject *obj);
+
+// Clear all the weak references to obj but leave their callbacks uncalled and
+// intact.
+extern void _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj);
 
 extern void _PyWeakref_ClearRef(PyWeakReference *self);
 
@@ -79,4 +127,3 @@ extern void _PyWeakref_ClearRef(PyWeakReference *self);
 }
 #endif
 #endif /* !Py_INTERNAL_WEAKREF_H */
-

@@ -14,7 +14,6 @@ module _weakref
 #include "clinic/_weakref.c.h"
 
 /*[clinic input]
-@critical_section object
 _weakref.getweakrefcount -> Py_ssize_t
 
   object: object
@@ -25,14 +24,12 @@ Return the number of weak references to 'object'.
 
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=301806d59558ff3e input=6535a580f1d0ebdc]*/
+/*[clinic end generated code: output=301806d59558ff3e input=7d4d04fcaccf64d5]*/
 {
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         return 0;
     }
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
-    return count;
+    return _PyWeakref_GetWeakrefCountThreadsafe(object);
 }
 
 
@@ -77,7 +74,6 @@ _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
 
 
 /*[clinic input]
-@critical_section object
 _weakref.getweakrefs
     object: object
     /
@@ -86,26 +82,57 @@ Return a list of all weak reference objects pointing to 'object'.
 [clinic start generated code]*/
 
 static PyObject *
-_weakref_getweakrefs_impl(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=5ec268989fb8f035 input=3dea95b8f5b31bbb]*/
+_weakref_getweakrefs(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=25c7731d8e011824 input=00c6d0e5d3206693]*/
 {
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
         return PyList_New(0);
     }
 
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-    Py_ssize_t count = _PyWeakref_GetWeakrefCount(*list);
+    Py_ssize_t count = _PyWeakref_GetWeakrefCountThreadsafe(object);
 
     PyObject *result = PyList_New(count);
     if (result == NULL) {
         return NULL;
     }
 
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t num_added = 0;
+    LOCK_WEAKREFS(object);
+    PyWeakReference *current = *list;
+    // Weakrefs may be added or removed since the count was computed.
+    while (num_added < count && current != NULL) {
+        if (_Py_TryIncref((PyObject**) &current, (PyObject *) current)) {
+            PyList_SET_ITEM(result, num_added, current);
+            num_added++;
+        }
+        current = current->wr_next;
+    }
+    UNLOCK_WEAKREFS(object);
+
+    // Don't return an incomplete list
+    if (num_added != count) {
+        PyObject *new_list = PyList_New(num_added);
+        if (new_list == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        for (Py_ssize_t i = 0; i < num_added; i++) {
+            PyObject *obj = PyList_GET_ITEM(result, i);
+            PyList_SET_ITEM(new_list, i, obj);
+            PyList_SET_ITEM(result, i, NULL);
+        }
+        Py_DECREF(result);
+        result = new_list;
+    }
+#else
     PyWeakReference *current = *list;
     for (Py_ssize_t i = 0; i < count; ++i) {
         PyList_SET_ITEM(result, i, Py_NewRef(current));
         current = current->wr_next;
     }
+#endif
     return result;
 }
 
