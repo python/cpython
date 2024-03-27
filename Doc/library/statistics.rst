@@ -1148,8 +1148,8 @@ The final prediction goes to the largest posterior. This is known as the
   'female'
 
 
-Sampling from an estimated kernel density function
-**************************************************
+Sampling from kernel density estimation
+***************************************
 
 The :func:`kde()` function creates a continuous probability density
 function from discrete samples.  Some applications need a way to make
