@@ -1682,7 +1682,7 @@ dummy_func(
         inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromItems(
+            map = _PyDict_FromTaggedItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     (PyObject **)(values), 1, oparg);
             DECREF_INPUTS();

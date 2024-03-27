@@ -609,9 +609,9 @@
             values = &stack_pointer[-1 - oparg];
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
-            map = _PyDict_FromItems(
-                                    &PyTuple_GET_ITEM(keys, 0), 1,
-                                    (PyObject **)(values), 1, oparg);
+            map = _PyDict_FromTaggedItems(
+                &PyTuple_GET_ITEM(keys, 0), 1,
+                (PyObject **)(values), 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(values[_i]));
             }

@@ -233,14 +233,17 @@ typedef union {
 } _Py_TaggedObject;
 
 #define Py_OBJECT_TAG (0b0)
+#define Py_OBJECT_TEST_TAG (0b1)
 
 #ifdef Py_GIL_DISABLED
 #define Py_CLEAR_TAG(tagged) ((PyObject *)((tagged).bits & ~(Py_OBJECT_TAG)))
 #else
-#define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
+#define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_OBJECT_TEST_TAG)))
 #endif
 
-#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)(obj)})
+#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = ((uintptr_t)(obj) | Py_OBJECT_TEST_TAG)})
+
+#define MAX_UNTAG_SCRATCH 10
 
 static inline void
 _Py_untag_stack(PyObject **dst, const _Py_TaggedObject *src, size_t length) {
