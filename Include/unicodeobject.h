@@ -1007,6 +1007,30 @@ PyAPI_FUNC(int) PyUnicode_Contains(
 
 PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
+/* Lowercases character and adds result to buffer */
+
+PyAPI_FUNC(Py_ssize_t) PyUnicode_ToLower(
+    Py_UCS4 ch,
+    Py_UCS4 *buffer,
+    Py_ssize_t size
+    );
+
+/* Uppercases character and adds result to buffer */
+
+PyAPI_FUNC(Py_ssize_t) PyUnicode_ToUpper(
+    Py_UCS4 ch,
+    Py_UCS4 *buffer,
+    Py_ssize_t size
+    );
+
+/* Titlecases character and adds result to buffer */
+
+PyAPI_FUNC(Py_ssize_t) PyUnicode_ToTitle(
+    Py_UCS4 ch,
+    Py_UCS4 *buffer,
+    Py_ssize_t size
+    );
+
 /* === Characters Type APIs =============================================== */
 
 #ifndef Py_LIMITED_API

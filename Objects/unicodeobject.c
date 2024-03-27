@@ -9616,6 +9616,36 @@ case_operation(PyObject *self,
     return res;
 }
 
+Py_ssize_t
+PyUnicode_ToLower(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+{
+    Py_ssize_t n = _PyUnicode_ToLowerFull(ch, buffer);
+    if (n > size) {
+        return -1;
+    }
+    return n;
+}
+
+Py_ssize_t
+PyUnicode_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+{
+    Py_ssize_t n = _PyUnicode_ToUpperFull(ch, buffer);
+    if (n > size) {
+        return -1;
+    }
+    return n;
+}
+
+Py_ssize_t
+PyUnicode_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+{
+    Py_ssize_t n = _PyUnicode_ToTitleFull(ch, buffer);
+    if (n > size) {
+        return -1;
+    }
+    return n;
+}
+
 PyObject *
 PyUnicode_Join(PyObject *separator, PyObject *seq)
 {
