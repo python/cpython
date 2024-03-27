@@ -116,6 +116,20 @@ class ReferencesTestCase(TestBase):
         del o
         repr(wr)
 
+    @support.cpython_only
+    def test_ref_repr(self):
+        obj = C()
+        ref = weakref.ref(obj)
+        self.assertEqual(repr(ref),
+                         f"<weakref at {id(ref):#x}; "
+                         f"to '{C.__module__}.{C.__qualname__}' "
+                         f"at {id(obj):#x}>")
+
+        obj = None
+        gc_collect()
+        self.assertEqual(repr(ref),
+                         f'<weakref at {id(ref):#x}; dead>')
+
     def test_repr_failure_gh99184(self):
         class MyConfig(dict):
             def __getattr__(self, x):
@@ -194,6 +208,20 @@ class ReferencesTestCase(TestBase):
         gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, bool, ref3)
         self.assertEqual(self.cbcalled, 2)
+
+    @support.cpython_only
+    def test_proxy_repr(self):
+        obj = C()
+        ref = weakref.proxy(obj, self.callback)
+        self.assertEqual(repr(ref),
+                         f"<weakproxy at {id(ref):#x}; "
+                         f"to '{C.__module__}.{C.__qualname__}' "
+                         f"at {id(obj):#x}>")
+
+        obj = None
+        gc_collect()
+        self.assertEqual(repr(ref),
+                         f'<weakproxy at {id(ref):#x}; dead>')
 
     def check_basic_ref(self, factory):
         o = factory()
