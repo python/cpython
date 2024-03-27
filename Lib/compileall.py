@@ -116,7 +116,8 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                                            prependdir=prependdir,
                                            limit_sl_dest=limit_sl_dest,
                                            hardlink_dupes=hardlink_dupes),
-                                   files)
+                                   files,
+                                   chunksize=4)
             success = min(results, default=True)
     else:
         for file in files:
