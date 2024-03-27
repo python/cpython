@@ -150,14 +150,6 @@ extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_inval
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewUOpOptimizer(void);
 
-#define OPTIMIZER_BITS_IN_COUNTER 4
-/* Minimum of 16 additional executions before retry */
-#define MIN_TIER2_BACKOFF 4
-#define MAX_TIER2_BACKOFF (15 - OPTIMIZER_BITS_IN_COUNTER)
-#define OPTIMIZER_BITS_MASK ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1)
-/* A value <= UINT16_MAX but large enough that when shifted is > UINT16_MAX */
-#define OPTIMIZER_UNREACHABLE_THRESHOLD UINT16_MAX
-
 #define _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS 3
 #define _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS 6
 

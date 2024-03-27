@@ -45,6 +45,9 @@ static_assert(sizeof(backoff_counter_t) == 2, "backoff counter size should be 2 
 
 #define UNREACHABLE_BACKOFF_COUNTER ((backoff_counter_t){.counter = 0xFFFF})
 
+/* Alias used by optimizer */
+#define OPTIMIZER_UNREACHABLE_THRESHOLD UNREACHABLE_BACKOFF_COUNTER.counter
+
 static inline bool
 is_unreachable_backoff_counter(backoff_counter_t counter)
 {

@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
+#include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
@@ -13,6 +14,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+
+/* Minimum of 16 additional executions before retry */
+#define MIN_TIER2_BACKOFF 4
 
 #define NEED_OPCODE_METADATA
 #include "pycore_uop_metadata.h" // Uop tables
@@ -136,7 +140,7 @@ shift_and_offset_threshold(uint32_t threshold)
     if (threshold == OPTIMIZER_UNREACHABLE_THRESHOLD) {
         return threshold;
     }
-    return adaptive_counter_bits(threshold, MIN_TIER2_BACKOFF);
+    return make_backoff_counter(threshold, MIN_TIER2_BACKOFF).counter;
 }
 
 _PyOptimizerObject *
@@ -1108,8 +1112,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature =
-            adaptive_counter_bits(interp->optimizer_side_threshold, MIN_TIER2_BACKOFF);
+        executor->exits[i].temperature = interp->optimizer_side_threshold;
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
