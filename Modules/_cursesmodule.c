@@ -1156,8 +1156,10 @@ int py_mvwdelch(WINDOW *w, int y, int x)
 #endif
 
 #if defined(HAVE_CURSES_IS_PAD)
+// is_pad() is defined, either as a macro or as a function
 #define py_is_pad(win)      is_pad(win)
 #elif defined(WINDOW_HAS_FLAGS)
+// is_pad() is not defined, but we can inspect WINDOW structure members
 #define py_is_pad(win)      ((win) ? ((win)->_flags & _ISPAD) != 0 : FALSE)
 #endif
 
@@ -4586,7 +4588,14 @@ make_ncurses_version(PyTypeObject *type)
     if (ncurses_version == NULL) {
         return NULL;
     }
-
+    const char *str = curses_version();
+    unsigned long major = 0, minor = 0, patch = 0;
+    if (!str || sscanf(str, "%*[^0-9]%lu.%lu.%lu", &major, &minor, &patch) < 3) {
+        // Fallback to header version, which cannot be that wrong
+        major = NCURSES_VERSION_MAJOR;
+        minor = NCURSES_VERSION_MINOR;
+        patch = NCURSES_VERSION_PATCH;
+    }
 #define SetIntItem(flag) \
     PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
     if (PyErr_Occurred()) { \
@@ -4594,9 +4603,9 @@ make_ncurses_version(PyTypeObject *type)
         return NULL; \
     }
 
-    SetIntItem(NCURSES_VERSION_MAJOR)
-    SetIntItem(NCURSES_VERSION_MINOR)
-    SetIntItem(NCURSES_VERSION_PATCH)
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(patch)
 #undef SetIntItem
 
     return ncurses_version;
