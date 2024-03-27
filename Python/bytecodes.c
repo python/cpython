@@ -179,7 +179,7 @@ dummy_func(
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 next_instr = this_instr;
             }
@@ -206,13 +206,7 @@ dummy_func(
 
         inst(LOAD_FAST_CHECK, (-- value)) {
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                    UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-                );
-                ERROR_IF(1, error);
-            }
+            ERROR_IF(value == NULL, unbound_local_error);
             Py_INCREF(value);
         }
 
@@ -281,7 +275,7 @@ dummy_func(
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -296,7 +290,7 @@ dummy_func(
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -832,7 +826,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) ERROR_NO_POP();
+            if (err) GOTO_ERROR(error);
             STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -856,7 +850,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, retval);
-            if (err) ERROR_NO_POP();
+            if (err) GOTO_ERROR(error);
             Py_INCREF(retval);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -912,7 +906,7 @@ dummy_func(
             if (PyAsyncGen_CheckExact(aiter)) {
                 awaitable = type->tp_as_async->am_anext(aiter);
                 if (awaitable == NULL) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
             } else {
                 if (type->tp_as_async != NULL){
@@ -922,7 +916,7 @@ dummy_func(
                 if (getter != NULL) {
                     next_iter = (*getter)(aiter);
                     if (next_iter == NULL) {
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                 }
                 else {
@@ -930,7 +924,7 @@ dummy_func(
                                   "'async for' requires an iterator with "
                                   "__anext__ method, got %.100s",
                                   type->tp_name);
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
 
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
@@ -942,7 +936,7 @@ dummy_func(
                         Py_TYPE(next_iter)->tp_name);
 
                     Py_DECREF(next_iter);
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 } else {
                     Py_DECREF(next_iter);
                 }
@@ -1024,7 +1018,7 @@ dummy_func(
                     JUMPBY(oparg);
                 }
                 else {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
             }
             Py_DECREF(v);
@@ -1060,7 +1054,7 @@ dummy_func(
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
                     frame, this_instr, retval);
-            if (err) ERROR_NO_POP();
+            if (err) GOTO_ERROR(error);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -1114,7 +1108,7 @@ dummy_func(
                 else {
                     assert(PyLong_Check(lasti));
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
             }
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1190,7 +1184,7 @@ dummy_func(
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when deleting %R", name);
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
@@ -1198,7 +1192,7 @@ dummy_func(
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                           NAME_ERROR_MSG,
                                           name);
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
         }
 
@@ -1318,12 +1312,12 @@ dummy_func(
             int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
             if (err < 0) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             if (err == 0) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                                           NAME_ERROR_MSG, name);
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
         }
 
@@ -1340,21 +1334,21 @@ dummy_func(
         inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
                 if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -1370,21 +1364,21 @@ dummy_func(
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
                 if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                                     tstate, PyExc_NameError,
                                     NAME_ERROR_MSG, name);
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -1500,13 +1494,7 @@ dummy_func(
 
         inst(DELETE_FAST, (--)) {
             PyObject *v = GETLOCAL(oparg);
-            if (v == NULL) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                    UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-                );
-                ERROR_IF(1, error);
-            }
+            ERROR_IF(v == NULL, unbound_local_error);
             SETLOCAL(oparg, NULL);
         }
 
@@ -1516,7 +1504,7 @@ dummy_func(
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             SETLOCAL(oparg, cell);
         }
@@ -1528,7 +1516,7 @@ dummy_func(
             // Fortunately we don't need its superpower.
             if (oldobj == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             PyCell_SET(cell, NULL);
             Py_DECREF(oldobj);
@@ -1540,14 +1528,14 @@ dummy_func(
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 Py_INCREF(value);
             }
@@ -1627,7 +1615,7 @@ dummy_func(
         inst(BUILD_SET, (values[oparg] -- set)) {
             set = PySet_New(NULL);
             if (set == NULL)
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
@@ -1674,8 +1662,12 @@ dummy_func(
         }
 
         inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
-            assert(PyTuple_CheckExact(keys));
-            assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
+            if (!PyTuple_CheckExact(keys) ||
+                PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "bad BUILD_CONST_KEY_MAP keys argument");
+                GOTO_ERROR(error);  // Pop the keys and values.
+            }
             map = _PyDict_FromItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
                     values, 1, oparg);
@@ -1901,14 +1893,12 @@ dummy_func(
 
         op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            DEOPT_IF(!_PyObject_InlineValues(owner)->valid);
         }
 
         split op(_LOAD_ATTR_INSTANCE_VALUE, (index/1, owner -- attr, null if (oparg & 1))) {
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            attr = _PyDictOrValues_GetValues(dorv)->values[index];
+            attr = _PyObject_InlineValues(owner)->values[index];
             DEOPT_IF(attr == NULL);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
@@ -1951,16 +1941,13 @@ dummy_func(
 
         op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv));
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
         }
 
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -2074,16 +2061,18 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        op(_GUARD_DORV_VALUES, (owner -- owner)) {
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(dorv));
+        op(_GUARD_DORV_NO_DICT, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_dictoffset < 0);
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            DEOPT_IF(_PyObject_GetManagedDict(owner));
+            DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0);
         }
 
         op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
-            PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+            assert(_PyObject_GetManagedDict(owner) == NULL);
+            PyDictValues *values = _PyObject_InlineValues(owner);
+
             PyObject *old_value = values->values[index];
             values->values[index] = value;
             if (old_value == NULL) {
@@ -2092,13 +2081,14 @@ dummy_func(
             else {
                 Py_DECREF(old_value);
             }
+
             Py_DECREF(owner);
         }
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
             _GUARD_TYPE_VERSION +
-            _GUARD_DORV_VALUES +
+            _GUARD_DORV_NO_DICT +
             _STORE_ATTR_INSTANCE_VALUE;
 
         inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
@@ -2106,9 +2096,7 @@ dummy_func(
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv));
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -2510,7 +2498,7 @@ dummy_func(
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 iter = iterable;
             }
@@ -2521,7 +2509,7 @@ dummy_func(
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
                 if (iter == NULL) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 DECREF_INPUTS();
             }
@@ -2558,7 +2546,7 @@ dummy_func(
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -2581,7 +2569,7 @@ dummy_func(
             if (next == NULL) {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                     _PyErr_Clear(tstate);
                 }
@@ -2607,7 +2595,7 @@ dummy_func(
             else {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -2787,7 +2775,7 @@ dummy_func(
                                   "asynchronous context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
@@ -2799,7 +2787,7 @@ dummy_func(
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             DECREF_INPUTS();
             res = PyObject_CallNoArgs(enter);
@@ -2822,7 +2810,7 @@ dummy_func(
                                   "context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
@@ -2834,7 +2822,7 @@ dummy_func(
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             DECREF_INPUTS();
             res = PyObject_CallNoArgs(enter);
@@ -2902,9 +2890,8 @@ dummy_func(
         }
 
         op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
-            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            DEOPT_IF(!_PyObject_InlineValues(owner)->valid);
         }
 
         op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
@@ -2976,10 +2963,9 @@ dummy_func(
             unused/2 +
             _LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
 
-        op(_CHECK_ATTR_METHOD_LAZY_DICT, (owner -- owner)) {
-            Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
-            assert(dictoffset > 0);
-            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+        op(_CHECK_ATTR_METHOD_LAZY_DICT, (dictoffset/1, owner -- owner)) {
+            char *ptr = ((char *)owner) + MANAGED_DICT_OFFSET + dictoffset;
+            PyObject *dict = *(PyObject **)ptr;
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL);
         }
@@ -2997,7 +2983,7 @@ dummy_func(
             unused/1 +
             _GUARD_TYPE_VERSION +
             _CHECK_ATTR_METHOD_LAZY_DICT +
-            unused/2 +
+            unused/1 +
             _LOAD_ATTR_METHOD_LAZY_DICT;
 
         inst(INSTRUMENTED_CALL, (unused/3 -- )) {
@@ -3083,7 +3069,7 @@ dummy_func(
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 frame->return_offset = (uint16_t)(next_instr - this_instr);
                 DISPATCH_INLINED(new_frame);
@@ -3298,6 +3284,7 @@ dummy_func(
             DEOPT_IF(!PyType_Check(callable));
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version));
+            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable;
             PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init->func_code;
@@ -3306,7 +3293,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);
             if (self == NULL) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
@@ -3343,7 +3330,7 @@ dummy_func(
                 PyErr_Format(PyExc_TypeError,
                     "__init__() should return None, not '%.200s'",
                     Py_TYPE(should_be_none)->tp_name);
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
         }
 
@@ -3480,7 +3467,7 @@ dummy_func(
             PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3506,7 +3493,7 @@ dummy_func(
             PyObject *inst = args[0];
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -3720,7 +3707,7 @@ dummy_func(
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 assert(next_instr - this_instr == 1);
                 frame->return_offset = 1;
@@ -3768,11 +3755,11 @@ dummy_func(
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
                 if (tuple == NULL) {
-                    ERROR_NO_POP();
+                    GOTO_ERROR(error);
                 }
                 Py_SETREF(callargs, tuple);
             }
@@ -3784,7 +3771,7 @@ dummy_func(
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
-                if (err) ERROR_NO_POP();
+                if (err) GOTO_ERROR(error);
                 result = PyObject_Call(func, callargs, kwargs);
 
                 if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
@@ -3818,7 +3805,7 @@ dummy_func(
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
-                        ERROR_NO_POP();
+                        GOTO_ERROR(error);
                     }
                     assert(next_instr - this_instr == 1);
                     frame->return_offset = 1;
@@ -3839,7 +3826,7 @@ dummy_func(
 
             Py_DECREF(codeobj);
             if (func_obj == NULL) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
 
             _PyFunction_SetVersion(
@@ -3879,7 +3866,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             if (gen == NULL) {
-                ERROR_NO_POP();
+                GOTO_ERROR(error);
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4177,7 +4164,7 @@ dummy_func(
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
-                        GOTO_UNWIND();
+                        ERROR_IF(1, error);
                     }
                     GOTO_TIER_ONE(target);
                 }
@@ -4205,19 +4192,6 @@ dummy_func(
         tier2 op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
             DEOPT_IF(!current_executor->vm_data.valid);
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
-        }
-
-        tier2 op(_DEOPT, (--)) {
-            EXIT_TO_TIER1();
-        }
-
-        tier2 op(_SIDE_EXIT, (--)) {
-            EXIT_TO_TRACE();
-        }
-
-        tier2 op(_ERROR_POP_N, (unused[oparg] --)) {
-            SYNC_SP();
-            GOTO_UNWIND();
         }
 
 // END BYTECODES //

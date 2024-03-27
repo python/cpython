@@ -25,7 +25,7 @@
                                   "asynchronous context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
@@ -37,7 +37,7 @@
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
             res = PyObject_CallNoArgs(enter);
@@ -71,7 +71,7 @@
                                   "context manager protocol",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                goto error;
+                GOTO_ERROR(error);
             }
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__exit__));
             if (exit == NULL) {
@@ -83,7 +83,7 @@
                                   Py_TYPE(mgr)->tp_name);
                 }
                 Py_DECREF(enter);
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(mgr);
             res = PyObject_CallNoArgs(enter);
@@ -605,8 +605,12 @@
             PyObject *map;
             keys = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg];
-            assert(PyTuple_CheckExact(keys));
-            assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
+            if (!PyTuple_CheckExact(keys) ||
+                PyTuple_GET_SIZE(keys) != (Py_ssize_t)oparg) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "bad BUILD_CONST_KEY_MAP keys argument");
+                GOTO_ERROR(error);  // Pop the keys and values.
+            }
             map = _PyDict_FromItems(
                                     &PyTuple_GET_ITEM(keys, 0), 1,
                                     values, 1, oparg);
@@ -663,7 +667,7 @@
             values = &stack_pointer[-oparg];
             set = PySet_New(NULL);
             if (set == NULL)
-            goto error;
+            GOTO_ERROR(error);
             int err = 0;
             for (int i = 0; i < oparg; i++) {
                 PyObject *item = values[i];
@@ -804,7 +808,7 @@
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     if (new_frame == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     frame->return_offset = (uint16_t)(next_instr - this_instr);
                     DISPATCH_INLINED(new_frame);
@@ -870,6 +874,7 @@
             DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version), CALL);
+            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable;
             PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init->func_code;
@@ -878,7 +883,7 @@
             STAT_INC(CALL, hit);
             PyObject *self = _PyType_NewManagedObject(tp);
             if (self == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
@@ -1209,11 +1214,11 @@
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
                 if (tuple == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_SETREF(callargs, tuple);
             }
@@ -1225,7 +1230,7 @@
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, func, arg);
-                if (err) goto error;
+                if (err) GOTO_ERROR(error);
                 result = PyObject_Call(func, callargs, kwargs);
                 if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
                     if (result == NULL) {
@@ -1257,7 +1262,7 @@
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     assert(next_instr - this_instr == 1);
                     frame->return_offset = 1;
@@ -1338,7 +1343,7 @@
             PyObject *inst = args[0];
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = PyBool_FromLong(retval);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -1403,7 +1408,7 @@
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 if (new_frame == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 assert(next_instr - this_instr == 1);
                 frame->return_offset = 1;
@@ -1471,7 +1476,7 @@
             PyObject *arg = args[0];
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             res = PyLong_FromSsize_t(len_i);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -2325,7 +2330,7 @@
             // Fortunately we don't need its superpower.
             if (oldobj == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                goto error;
+                GOTO_ERROR(error);
             }
             PyCell_SET(cell, NULL);
             Py_DECREF(oldobj);
@@ -2337,13 +2342,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_FAST);
             PyObject *v = GETLOCAL(oparg);
-            if (v == NULL) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                    UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-                );
-                if (1) goto error;
-            }
+            if (v == NULL) goto unbound_local_error;
             SETLOCAL(oparg, NULL);
             DISPATCH();
         }
@@ -2356,12 +2355,12 @@
             int err = PyDict_Pop(GLOBALS(), name, NULL);
             // Can't use ERROR_IF here.
             if (err < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (err == 0) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                     NAME_ERROR_MSG, name);
-                goto error;
+                GOTO_ERROR(error);
             }
             DISPATCH();
         }
@@ -2376,7 +2375,7 @@
             if (ns == NULL) {
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when deleting %R", name);
-                goto error;
+                GOTO_ERROR(error);
             }
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
@@ -2384,7 +2383,7 @@
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                     NAME_ERROR_MSG,
                     name);
-                goto error;
+                GOTO_ERROR(error);
             }
             DISPATCH();
         }
@@ -2525,7 +2524,7 @@
                 PyErr_Format(PyExc_TypeError,
                              "__init__() should return None, not '%.200s'",
                              Py_TYPE(should_be_none)->tp_name);
-                goto error;
+                GOTO_ERROR(error);
             }
             stack_pointer += -1;
             DISPATCH();
@@ -2612,7 +2611,7 @@
                 if (next == NULL) {
                     if (_PyErr_Occurred(tstate)) {
                         if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                            goto error;
+                            GOTO_ERROR(error);
                         }
                         monitor_raise(tstate, frame, this_instr);
                         _PyErr_Clear(tstate);
@@ -2843,7 +2842,7 @@
             if (PyAsyncGen_CheckExact(aiter)) {
                 awaitable = type->tp_as_async->am_anext(aiter);
                 if (awaitable == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
             } else {
                 if (type->tp_as_async != NULL){
@@ -2852,7 +2851,7 @@
                 if (getter != NULL) {
                     next_iter = (*getter)(aiter);
                     if (next_iter == NULL) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
                 else {
@@ -2860,7 +2859,7 @@
                                   "'async for' requires an iterator with "
                                   "__anext__ method, got %.100s",
                                   type->tp_name);
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 awaitable = _PyCoro_GetAwaitableIter(next_iter);
                 if (awaitable == NULL) {
@@ -2870,7 +2869,7 @@
                         "from __anext__: %.100s",
                         Py_TYPE(next_iter)->tp_name);
                     Py_DECREF(next_iter);
-                    goto error;
+                    GOTO_ERROR(error);
                 } else {
                     Py_DECREF(next_iter);
                 }
@@ -2958,7 +2957,7 @@
                     _PyErr_SetString(tstate, PyExc_TypeError,
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 iter = iterable;
             }
@@ -2969,7 +2968,7 @@
                 /* `iterable` is not a generator. */
                 iter = PyObject_GetIter(iterable);
                 if (iter == NULL) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_DECREF(iterable);
             }
@@ -3068,7 +3067,7 @@
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -3089,7 +3088,7 @@
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
                 if (monitor_stop_iteration(tstate, frame, this_instr)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 PyErr_SetRaisedException(NULL);
             }
@@ -3115,7 +3114,7 @@
             else {
                 if (_PyErr_Occurred(tstate)) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     monitor_raise(tstate, frame, this_instr);
                     _PyErr_Clear(tstate);
@@ -3270,7 +3269,7 @@
             uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 next_instr = this_instr;
             }
@@ -3301,7 +3300,7 @@
             int err = _Py_call_instrumentation_arg(
                 tstate, PY_MONITORING_EVENT_PY_RETURN,
                 frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             Py_INCREF(retval);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3326,7 +3325,7 @@
             int err = _Py_call_instrumentation_arg(
                 tstate, PY_MONITORING_EVENT_PY_RETURN,
                 frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             STACK_SHRINK(1);
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3358,7 +3357,7 @@
             int err = _Py_call_instrumentation_arg(
                 tstate, PY_MONITORING_EVENT_PY_YIELD,
                 frame, this_instr, retval);
-            if (err) goto error;
+            if (err) GOTO_ERROR(error);
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
@@ -3681,15 +3680,13 @@
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
                 assert(Py_TYPE(owner)->tp_dictoffset < 0);
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), LOAD_ATTR);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(!_PyObject_InlineValues(owner)->valid, LOAD_ATTR);
             }
             // _LOAD_ATTR_INSTANCE_VALUE
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                attr = _PyDictOrValues_GetValues(dorv)->values[index];
+                attr = _PyObject_InlineValues(owner)->values[index];
                 DEOPT_IF(attr == NULL, LOAD_ATTR);
                 STAT_INC(LOAD_ATTR, hit);
                 Py_INCREF(attr);
@@ -3722,13 +3719,13 @@
             }
             // _CHECK_ATTR_METHOD_LAZY_DICT
             {
-                Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
-                assert(dictoffset > 0);
-                PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+                uint16_t dictoffset = read_u16(&this_instr[4].cache);
+                char *ptr = ((char *)owner) + MANAGED_DICT_OFFSET + dictoffset;
+                PyObject *dict = *(PyObject **)ptr;
                 /* This object has a __dict__, just not yet created */
                 DEOPT_IF(dict != NULL, LOAD_ATTR);
             }
-            /* Skip 2 cache entries */
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_METHOD_LAZY_DICT
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -3799,9 +3796,8 @@
             }
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
             {
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), LOAD_ATTR);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(!_PyObject_InlineValues(owner)->valid, LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
             {
@@ -3915,9 +3911,8 @@
             }
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
             {
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), LOAD_ATTR);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(!_PyObject_InlineValues(owner)->valid, LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
             {
@@ -4027,17 +4022,14 @@
             // _CHECK_ATTR_WITH_HINT
             {
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-                PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+                PyDictObject *dict = _PyObject_GetManagedDict(owner);
                 DEOPT_IF(dict == NULL, LOAD_ATTR);
                 assert(PyDict_CheckExact((PyObject *)dict));
             }
             // _LOAD_ATTR_WITH_HINT
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+                PyDictObject *dict = _PyObject_GetManagedDict(owner);
                 DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -4140,13 +4132,7 @@
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
             PyObject *value;
             value = GETLOCAL(oparg);
-            if (value == NULL) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                    UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-                );
-                if (1) goto error;
-            }
+            if (value == NULL) goto unbound_local_error;
             Py_INCREF(value);
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -4183,14 +4169,14 @@
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
             name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
             if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 Py_INCREF(value);
             }
@@ -4208,21 +4194,21 @@
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
                 if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                             tstate, PyExc_NameError,
                             NAME_ERROR_MSG, name);
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -4406,21 +4392,21 @@
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                goto error;
+                GOTO_ERROR(error);
             }
             if (v == NULL) {
                 if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
-                    goto error;
+                    GOTO_ERROR(error);
                 }
                 if (v == NULL) {
                     if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                     if (v == NULL) {
                         _PyEval_FormatExcCheckArg(
                             tstate, PyExc_NameError,
                             NAME_ERROR_MSG, name);
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
             }
@@ -4582,7 +4568,7 @@
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             SETLOCAL(oparg, cell);
             DISPATCH();
@@ -4599,7 +4585,7 @@
             PyFunction_New(codeobj, GLOBALS());
             Py_DECREF(codeobj);
             if (func_obj == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
@@ -4918,7 +4904,7 @@
                 else {
                     assert(PyLong_Check(lasti));
                     _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                    goto error;
+                    GOTO_ERROR(error);
                 }
             }
             assert(exc && PyExceptionInstance_Check(exc));
@@ -5025,7 +5011,7 @@
             PyFunctionObject *func = (PyFunctionObject *)frame->f_funcobj;
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             if (gen == NULL) {
-                goto error;
+                GOTO_ERROR(error);
             }
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5134,7 +5120,7 @@
                         JUMPBY(oparg);
                     }
                     else {
-                        goto error;
+                        GOTO_ERROR(error);
                     }
                 }
                 Py_DECREF(v);
@@ -5318,19 +5304,20 @@
                 assert(type_version != 0);
                 DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             }
-            // _GUARD_DORV_VALUES
+            // _GUARD_DORV_NO_DICT
             {
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
+                assert(Py_TYPE(owner)->tp_dictoffset < 0);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(_PyObject_GetManagedDict(owner), STORE_ATTR);
+                DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0, STORE_ATTR);
             }
             // _STORE_ATTR_INSTANCE_VALUE
             value = stack_pointer[-2];
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
                 STAT_INC(STORE_ATTR, hit);
-                PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+                assert(_PyObject_GetManagedDict(owner) == NULL);
+                PyDictValues *values = _PyObject_InlineValues(owner);
                 PyObject *old_value = values->values[index];
                 values->values[index] = value;
                 if (old_value == NULL) {
@@ -5392,9 +5379,7 @@
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv), STORE_ATTR);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);

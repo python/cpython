@@ -642,6 +642,7 @@ int _Py_CheckRecursiveCallPy(
     return 0;
 }
 
+
 static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
     * the code, rather than before it */
@@ -849,6 +850,15 @@ resume_frame:
            or goto error. */
         Py_UNREACHABLE();
 
+unbound_local_error:
+        {
+            _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+                UNBOUNDLOCAL_ERROR_MSG,
+                PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+            );
+            goto error;
+        }
+
 pop_4_error:
     STACK_SHRINK(1);
 pop_3_error:
@@ -970,6 +980,12 @@ enter_tier_two:
 #undef GOTO_ERROR
 #define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
 
+#undef DEOPT_IF
+#define DEOPT_IF(COND, INSTNAME) \
+    if ((COND)) {                \
+        goto deoptimize;\
+    }
+
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
 #undef STAT_INC
@@ -997,7 +1013,6 @@ enter_tier_two:
 #endif
 
     assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
-tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
@@ -1039,7 +1054,24 @@ tier2_dispatch:
         }
     }
 
-jump_to_error_target:
+// Jump here from ERROR_IF(..., unbound_local_error)
+unbound_local_error_tier_two:
+    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+        UNBOUNDLOCAL_ERROR_MSG,
+        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
+    );
+    goto error_tier_two;
+
+// JUMP to any of these from ERROR_IF(..., error)
+pop_4_error_tier_two:
+    STACK_SHRINK(1);
+pop_3_error_tier_two:
+    STACK_SHRINK(1);
+pop_2_error_tier_two:
+    STACK_SHRINK(1);
+pop_1_error_tier_two:
+    STACK_SHRINK(1);
+error_tier_two:
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
         printf("Error: [UOp ");
@@ -1049,28 +1081,15 @@ jump_to_error_target:
                _PyOpcode_OpName[frame->instr_ptr->op.code]);
     }
 #endif
-    assert (next_uop[-1].format == UOP_FORMAT_JUMP);
-    uint16_t target = uop_get_error_target(&next_uop[-1]);
-    next_uop = current_executor->trace + target;
-    goto tier2_dispatch;
-
-error_tier_two:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
     frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(current_executor);
     tstate->previous_executor = NULL;
     goto resume_with_error;
 
-jump_to_jump_target:
-    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
-    target = uop_get_jump_target(&next_uop[-1]);
-    next_uop = current_executor->trace + target;
-    goto tier2_dispatch;
-
-exit_to_tier1:
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
+// Jump here from DEOPT_IF()
+deoptimize:
     next_instr = next_uop[-1].target + _PyCode_CODE(_PyFrame_GetCode(frame));
 #ifdef Py_DEBUG
     if (lltrace >= 2) {
@@ -1086,8 +1105,8 @@ exit_to_tier1:
     tstate->previous_executor = NULL;
     DISPATCH();
 
-exit_to_trace:
-    assert(next_uop[-1].format == UOP_FORMAT_EXIT);
+// Jump here from EXIT_IF()
+side_exit:
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     UOP_STAT_INC(uopcode, miss);
     uint32_t exit_index = next_uop[-1].exit_index;

@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
+#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
 /* Check if an object is consistent. For example, ensure that the reference
@@ -265,9 +266,8 @@ _PyObject_Init(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
     Py_SET_TYPE(op, typeobj);
-    if (_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE)) {
-        Py_INCREF(typeobj);
-    }
+    assert(_PyType_HasFeature(typeobj, Py_TPFLAGS_HEAPTYPE) || _Py_IsImmortal(typeobj));
+    Py_INCREF(typeobj);
     _Py_NewReference(op);
 }
 
@@ -611,12 +611,11 @@ extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
 extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 
-extern int _PyObject_InitializeDict(PyObject *obj);
-int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
-extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
-                                          PyObject *name, PyObject *value);
-PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
-                                        PyObject *name);
+void _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
+extern int _PyObject_TryStoreInstanceAttribute(PyObject *obj,
+                                               PyObject *name, PyObject *value);
+extern int _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
+                                             PyObject **attr);
 
 #ifdef Py_GIL_DISABLED
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-1)
@@ -627,46 +626,33 @@ PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
 #endif
 
 typedef union {
-    PyObject *dict;
-    /* Use a char* to generate a warning if directly assigning a PyDictValues */
-    char *values;
-} PyDictOrValues;
+    PyDictObject *dict;
+} PyManagedDictPointer;
 
-static inline PyDictOrValues *
-_PyObject_DictOrValuesPointer(PyObject *obj)
+static inline PyManagedDictPointer *
+_PyObject_ManagedDictPointer(PyObject *obj)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    return (PyDictOrValues *)((char *)obj + MANAGED_DICT_OFFSET);
+    return (PyManagedDictPointer *)((char *)obj + MANAGED_DICT_OFFSET);
 }
 
-static inline int
-_PyDictOrValues_IsValues(PyDictOrValues dorv)
+static inline PyDictObject *
+_PyObject_GetManagedDict(PyObject *obj)
 {
-    return ((uintptr_t)dorv.values) & 1;
+    PyManagedDictPointer *dorv = _PyObject_ManagedDictPointer(obj);
+    return (PyDictObject *)FT_ATOMIC_LOAD_PTR_RELAXED(dorv->dict);
 }
 
 static inline PyDictValues *
-_PyDictOrValues_GetValues(PyDictOrValues dorv)
+_PyObject_InlineValues(PyObject *obj)
 {
-    assert(_PyDictOrValues_IsValues(dorv));
-    return (PyDictValues *)(dorv.values + 1);
-}
-
-static inline PyObject *
-_PyDictOrValues_GetDict(PyDictOrValues dorv)
-{
-    assert(!_PyDictOrValues_IsValues(dorv));
-    return dorv.dict;
-}
-
-static inline void
-_PyDictOrValues_SetValues(PyDictOrValues *ptr, PyDictValues *values)
-{
-    ptr->values = ((char *)values) - 1;
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(Py_TYPE(obj)->tp_basicsize == sizeof(PyObject));
+    return (PyDictValues *)((char *)obj + sizeof(PyObject));
 }
 
 extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
-extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
 // Export for 'math' shared extension
