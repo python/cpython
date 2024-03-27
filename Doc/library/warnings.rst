@@ -581,10 +581,9 @@ Available Context Managers
     and the :func:`showwarning` function.
     If the *record* argument is :const:`False` (the default) the context manager
     returns :class:`None` on entry. If *record* is :const:`True`, a list is
-    returned that is progressively populated with objects as seen by a custom
-    :func:`showwarning` function (which also suppresses output to ``sys.stdout``).
-    Each object in the list has attributes with the same names as the arguments to
-    :func:`showwarning`.
+    returned that is progressively populated with :class:`WarningMessage` objects
+    as seen by a custom :func:`showwarning` function (which also suppresses output
+    to ``sys.stdout``).
 
     The *module* argument takes a module that will be used instead of the
     module returned when you import :mod:`warnings` whose filter will be
@@ -606,3 +605,15 @@ Available Context Managers
     .. versionchanged:: 3.11
 
         Added the *action*, *category*, *lineno*, and *append* parameters.
+
+:class:`WarningMessage` Objects
+-------------------------------
+
+A :class:`WarningMessage` object represents a warning along with information about its emission. It
+is primarily used by :class:`catch_warnings` with *record* set to :const:`True` to record warnings.
+
+.. class:: WarningMessage(message, category, filename, lineno, file=None, line=None, source=None)
+
+   *message*, *category*, *filename*, *lineno*, *file* and *line* have the same meaning as
+   in :func:`showwarning`. *source* is optionally given to indicate the destroyed object which
+   emitted a :exc:`ResourceWarning`.

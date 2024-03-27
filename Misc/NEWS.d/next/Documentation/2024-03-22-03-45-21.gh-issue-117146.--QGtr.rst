@@ -1,0 +1,1 @@
+Expose and document :class:`warnings.WarningMessage`.
