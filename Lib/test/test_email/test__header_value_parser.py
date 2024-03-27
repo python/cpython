@@ -1736,6 +1736,11 @@ class TestParser(TestParserMixin, TestEmailBase):
             ':Foo ', '', '', [errors.InvalidHeaderDefect], ':Foo ')
         self.assertEqual(display_name.value, '')
 
+    def test_get_display_name_terminal_dot(self):
+        display_name = self._test_get_x(parser.get_display_name,
+            'foobar.', 'foobar.', '"foobar."',
+            [errors.ObsoleteHeaderDefect], '')
+
     # get_name_addr
 
     def test_get_name_addr_angle_addr_only(self):

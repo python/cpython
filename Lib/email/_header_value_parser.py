@@ -566,12 +566,12 @@ class DisplayName(Phrase):
         if res[0].token_type == 'cfws':
             res.pop(0)
         else:
-            if res[0][0].token_type == 'cfws':
+            if res[0].token_type != 'dot' and res[0][0].token_type == 'cfws':
                 res[0] = TokenList(res[0][1:])
         if res[-1].token_type == 'cfws':
             res.pop()
         else:
-            if res[-1][-1].token_type == 'cfws':
+            if res[-1].token_type != 'dot' and res[-1][-1].token_type == 'cfws':
                 res[-1] = TokenList(res[-1][:-1])
         return res.value
 
@@ -586,9 +586,11 @@ class DisplayName(Phrase):
                     quote = True
         if len(self) != 0 and quote:
             pre = post = ''
-            if self[0].token_type=='cfws' or self[0][0].token_type=='cfws':
+            if (self[0].token_type=='cfws' or
+                    (self[0].token_type != 'dot' and self[0][0].token_type=='cfws')):
                 pre = ' '
-            if self[-1].token_type=='cfws' or self[-1][-1].token_type=='cfws':
+            if (self[-1].token_type=='cfws' or
+                    (self[-1].token_type != 'dot' and self[-1][-1].token_type=='cfws')):
                 post = ' '
             return pre+quote_string(self.display_name)+post
         else:

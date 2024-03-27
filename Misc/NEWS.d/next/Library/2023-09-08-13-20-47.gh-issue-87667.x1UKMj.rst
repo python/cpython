@@ -1,0 +1,2 @@
+email: avoid throwing an exception of parsing display names that end with a
+dot
