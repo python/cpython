@@ -359,11 +359,10 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
-    "_PyDictOrValues_IsValues",
-    "_PyObject_DictOrValuesPointer",
-    "_PyDictOrValues_GetValues",
+    "_PyManagedDictPointer_IsValues",
+    "_PyObject_ManagedDictPointer",
+    "_PyObject_InlineValues",
     "_PyDictValues_AddToInsertionOrder",
-    "_PyObject_MakeInstanceAttributesFromDict",
     "Py_DECREF",
     "_Py_DECREF_SPECIALIZED",
     "DECREF_INPUTS_AND_REUSE_FLOAT",
