@@ -796,7 +796,7 @@ bolt-opt:
 coverage:
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LDFLAGS="$(LDFLAGS) --coverage"
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage -DPy_COVERAGE" LDFLAGS="$(LDFLAGS) --coverage"
 
 .PHONY: coverage-lcov
 coverage-lcov:

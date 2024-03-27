@@ -204,6 +204,9 @@ struct _ts {
 #  else
 #    define Py_C_RECURSION_LIMIT 500
 #  endif
+#elif defined(Py_COVERAGE)
+   // With gcov, the stack usage is higher.
+#  define Py_C_RECURSION_LIMIT 500
 #elif defined(__wasi__)
    // Based on wasmtime 16.
 #  define Py_C_RECURSION_LIMIT 500
