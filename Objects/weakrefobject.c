@@ -468,11 +468,15 @@ is_basic_proxy(PyWeakReference *proxy)
     return (proxy->wr_callback == NULL) && PyWeakref_CheckProxy(proxy);
 }
 
+#ifdef Py_GIL_DISABLED
+
 static int
 is_basic_ref_or_proxy(PyWeakReference *wr)
 {
     return is_basic_ref(wr) || is_basic_proxy(wr);
 }
+
+#endif
 
 /* Return the node that `newref` should be inserted after or NULL if `newref`
  * should be inserted at the head of the list.
