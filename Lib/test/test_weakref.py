@@ -130,6 +130,19 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(repr(ref),
                          f'<weakref at {id(ref):#x}; dead>')
 
+        # test type with __name__
+        class WithName:
+            @property
+            def __name__(self):
+                return "custom_name"
+
+        obj2 = WithName()
+        ref2 = weakref.ref(obj2)
+        self.assertEqual(repr(ref2),
+                         f"<weakref at {id(ref2):#x}; "
+                         f"to '{WithName.__module__}.{WithName.__qualname__}' "
+                         f"at {id(obj2):#x} (custom_name)>")
+
     def test_repr_failure_gh99184(self):
         class MyConfig(dict):
             def __getattr__(self, x):
