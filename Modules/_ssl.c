@@ -304,10 +304,8 @@ typedef struct {
     int post_handshake_auth;
 #endif
     PyObject *msg_cb;
-#ifndef OPENSSL_IS_BORINGSSL
     PyObject *keylog_filename;
     BIO *keylog_bio;
-#endif
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
 #ifndef OPENSSL_NO_PSK
@@ -3142,10 +3140,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
     self->protocol = proto_version;
     self->msg_cb = NULL;
-#ifndef OPENSSL_IS_BORINGSSL
     self->keylog_filename = NULL;
     self->keylog_bio = NULL;
-#endif
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
@@ -3265,7 +3261,6 @@ context_clear(PySSLContext *self)
 {
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
-#ifndef OPENSSL_IS_BORINGSSL
     Py_CLEAR(self->keylog_filename);
 #ifndef OPENSSL_NO_PSK
     Py_CLEAR(self->psk_client_callback);
@@ -3277,7 +3272,6 @@ context_clear(PySSLContext *self)
         PySSL_END_ALLOW_THREADS
         self->keylog_bio = NULL;
     }
-#endif
     return 0;
 }
 
@@ -4946,10 +4940,8 @@ static PyGetSetDef context_getsetlist[] = {
                         (setter) set_minimum_version, NULL},
     {"maximum_version", (getter) get_maximum_version,
                         (setter) set_maximum_version, NULL},
-#ifndef OPENSSL_IS_BORINGSSL
     {"keylog_filename", (getter) _PySSLContext_get_keylog_filename,
                         (setter) _PySSLContext_set_keylog_filename, NULL},
-#endif
     {"_msg_callback", (getter) _PySSLContext_get_msg_callback,
                       (setter) _PySSLContext_set_msg_callback, NULL},
     {"sni_callback", (getter) get_sni_callback,

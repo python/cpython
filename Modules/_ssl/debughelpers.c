@@ -112,7 +112,6 @@ _PySSLContext_set_msg_callback(PySSLContext *self, PyObject *arg, void *c) {
     return 0;
 }
 
-#ifndef OPENSSL_IS_BORINGSSL
 static void
 _PySSL_keylog_callback(const SSL *ssl, const char *line)
 {
@@ -205,4 +204,3 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
     SSL_CTX_set_keylog_callback(self->ctx, _PySSL_keylog_callback);
     return 0;
 }
-#endif  /* OPENSSL_IS_BORINGSSL */
