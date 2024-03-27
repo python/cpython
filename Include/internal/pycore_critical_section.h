@@ -90,10 +90,10 @@ extern "C" {
 # define Py_BEGIN_CRITICAL_SECTION_MUT(mutex)                           \
     {                                                                   \
         _PyCriticalSection _cs;                                         \
-        _PyCriticalSection_Begin(&_cs, &(mutex))
+        _PyCriticalSection_Begin(&_cs, mutex)
 
 # define Py_BEGIN_CRITICAL_SECTION(op)                                  \
-        Py_BEGIN_CRITICAL_SECTION_MUT(_PyObject_CAST(op)->ob_mutex)
+        Py_BEGIN_CRITICAL_SECTION_MUT(&_PyObject_CAST(op)->ob_mutex)
 
 # define Py_END_CRITICAL_SECTION()                                      \
         _PyCriticalSection_End(&_cs);                                   \
