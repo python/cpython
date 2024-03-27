@@ -1,0 +1,1 @@
+Shelve module accepts serializer and deserializer functions.
