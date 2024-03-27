@@ -27500,6 +27500,8 @@ else $as_nop
     with_ensurepip=no ;; #(
   WASI) :
     with_ensurepip=no ;; #(
+  iOS) :
+    with_ensurepip=no ;; #(
   *) :
     with_ensurepip=upgrade
        ;;
