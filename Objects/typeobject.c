@@ -408,7 +408,7 @@ set_tp_mro(PyTypeObject *self, PyObject *mro)
 #ifdef Py_GIL_DISABLED
     if (self->tp_mro != NULL) {
         // Allow concurrent reads from PyType_IsSubtype
-        _PyObject_GC_SET_SHARED(self->tp_mro);
+        _PyObject_GC_SET_SHARED_INLINE(self->tp_mro);
     }
 #endif
     FT_ATOMIC_STORE_PTR(self->tp_mro, mro);
