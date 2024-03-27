@@ -178,6 +178,24 @@ class LazyLoaderTests(unittest.TestCase):
             # Or multiple load attempts
             self.assertEqual(loader.load_count, 1)
 
+    def test_lazy_self_referential_modules(self):
+        # Directory modules with submodules that reference the parent can attempt to access
+        # the parent module during a load. Verify that this common pattern works with lazy loading.
+        # json is a good example in the stdlib.
+        json_modules = [name for name in sys.modules if name.startswith('json')]
+        with test_util.uncache(*json_modules):
+            # Standard lazy loading, unwrapped
+            spec = util.find_spec('json')
+            loader = util.LazyLoader(spec.loader)
+            spec.loader = loader
+            module = util.module_from_spec(spec)
+            sys.modules['json'] = module
+            loader.exec_module(module)
+
+            # Trigger load with attribute lookup, ensure expected behavior
+            test_load = module.loads('{}')
+            self.assertEqual(test_load, {})
+
 
 if __name__ == '__main__':
     unittest.main()
