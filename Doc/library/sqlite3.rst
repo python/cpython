@@ -300,7 +300,7 @@ Module functions
        or ``None`` to disable opening transactions implicitly.
        Has no effect unless :attr:`Connection.autocommit` is set to
        :const:`~sqlite3.LEGACY_TRANSACTION_CONTROL` (the default).
-   :type isolation_level: str | None
+   :type isolation_level: str or None
 
    :param bool check_same_thread:
        If ``True`` (default), :exc:`ProgrammingError` will be raised
@@ -740,7 +740,7 @@ Connection objects
           The callable must return :ref:`a type natively supported by SQLite
           <sqlite3-types>`.
           Set to ``None`` to remove an existing SQL function.
-      :type func: :term:`callback` | None
+      :type func: :term:`callback` or None
 
       :param bool deterministic:
           If ``True``, the created SQL function is marked as
@@ -791,7 +791,7 @@ Connection objects
           is controlled by *n_arg*.
 
           Set to ``None`` to remove an existing SQL aggregate function.
-      :type aggregate_class: :term:`class` | None
+      :type aggregate_class: :term:`class` or None
 
       Example:
 
@@ -857,7 +857,7 @@ Connection objects
           If used with a version of SQLite older than 3.25.0,
           which does not support aggregate window functions.
 
-      :type aggregate_class: :term:`class` | None
+      :type aggregate_class: :term:`class` or None
 
       .. versionadded:: 3.11
 
@@ -1123,7 +1123,7 @@ Connection objects
          SQLite will come up with an entry point name of its own;
          see the SQLite docs `Loading an Extension`_ for details.
 
-      :type entrypoint: str | None
+      :type entrypoint: str or None
 
       .. audit-event:: sqlite3.load_extension connection,path sqlite3.Connection.load_extension
 
@@ -1148,7 +1148,7 @@ Connection objects
         An optional ``LIKE`` pattern for database objects to dump, e.g. ``prefix_%``.
         If ``None`` (the default), all database objects will be included.
 
-      :type filter: str | None
+      :type filter: str or None
 
       Example:
 
@@ -1191,7 +1191,7 @@ Connection objects
           the *remaining* number of pages still to be copied,
           and the *total* number of pages.
           Defaults to ``None``.
-      :type progress: :term:`callback` | None
+      :type progress: :term:`callback` or None
 
       :param str name:
           The name of the database to back up.
@@ -1523,7 +1523,7 @@ Cursor objects
          A :class:`!dict` if named placeholders are used.
          A :term:`!sequence` if unnamed placeholders are used.
          See :ref:`sqlite3-placeholders`.
-      :type parameters: :class:`dict` | :term:`sequence`
+      :type parameters: dict or :term:`sequence`
 
       :raises ProgrammingError:
          If *sql* contains more than one SQL statement.
