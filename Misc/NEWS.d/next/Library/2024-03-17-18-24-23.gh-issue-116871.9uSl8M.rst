@@ -1,0 +1,2 @@
+Name suggestions for :exc:`AttributeError` and :exc:`ImportError` now only
+include underscored names if the original name was underscored.
