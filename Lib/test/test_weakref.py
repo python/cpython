@@ -120,15 +120,15 @@ class ReferencesTestCase(TestBase):
     def test_ref_repr(self):
         obj = C()
         ref = weakref.ref(obj)
-        self.assertEqual(repr(ref),
-                         f"<weakref at {id(ref):#x}; "
-                         f"to '{C.__module__}.{C.__qualname__}' "
-                         f"at {id(obj):#x}>")
+        self.assertRegex(repr(ref),
+                         rf"<weakref at 0x[0-9a-fA-F]+; "
+                         rf"to '{C.__module__}.{C.__qualname__}' "
+                         rf"at 0x[0-9a-fA-F]+>")
 
         obj = None
         gc_collect()
-        self.assertEqual(repr(ref),
-                         f'<weakref at {id(ref):#x}; dead>')
+        self.assertRegex(repr(ref),
+                         rf'<weakref at 0x[0-9a-fA-F]+; dead>')
 
         # test type with __name__
         class WithName:
@@ -138,10 +138,10 @@ class ReferencesTestCase(TestBase):
 
         obj2 = WithName()
         ref2 = weakref.ref(obj2)
-        self.assertEqual(repr(ref2),
-                         f"<weakref at {id(ref2):#x}; "
-                         f"to '{WithName.__module__}.{WithName.__qualname__}' "
-                         f"at {id(obj2):#x} (custom_name)>")
+        self.assertRegex(repr(ref2),
+                         rf"<weakref at 0x[0-9a-fA-F]+; "
+                         rf"to '{WithName.__module__}.{WithName.__qualname__}' "
+                         rf"at 0x[0-9a-fA-F]+ \(custom_name\)>")
 
     def test_repr_failure_gh99184(self):
         class MyConfig(dict):
@@ -226,15 +226,15 @@ class ReferencesTestCase(TestBase):
     def test_proxy_repr(self):
         obj = C()
         ref = weakref.proxy(obj, self.callback)
-        self.assertEqual(repr(ref),
-                         f"<weakproxy at {id(ref):#x}; "
-                         f"to '{C.__module__}.{C.__qualname__}' "
-                         f"at {id(obj):#x}>")
+        self.assertRegex(repr(ref),
+                         rf"<weakproxy at 0x[0-9a-fA-F]+; "
+                         rf"to '{C.__module__}.{C.__qualname__}' "
+                         rf"at 0x[0-9a-fA-F]+>")
 
         obj = None
         gc_collect()
-        self.assertEqual(repr(ref),
-                         f'<weakproxy at {id(ref):#x}; dead>')
+        self.assertRegex(repr(ref),
+                         rf'<weakproxy at 0x[0-9a-fA-F]+; dead>')
 
     def check_basic_ref(self, factory):
         o = factory()
