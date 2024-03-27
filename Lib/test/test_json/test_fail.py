@@ -89,7 +89,7 @@ class TestFail:
             except self.JSONDecodeError:
                 pass
             else:
-                self.fail("Expected failure for fail{0}.json: {1!r}".format(idx, doc))
+                self.fail(f"Expected failure for fail{idx}.json: {doc!r}")
 
     def test_non_string_keys_dict(self):
         data = {'a' : 1, (1, 2) : 2}
