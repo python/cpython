@@ -430,7 +430,8 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue(library.endswith('.dll'))
             self.assertEqual(library, ldlibrary)
         elif is_apple_mobile:
-            self.assertEqual(ldlibrary, "Python.framework/Python")
+            framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
+            self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
             self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
             self.assertTrue(library.endswith('.a'))

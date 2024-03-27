@@ -430,10 +430,10 @@ class PlatformTest(unittest.TestCase):
             # System is either iOS or iPadOS, depending on the test device
             self.assertIn(system, {"iOS", "iPadOS"})
 
-            # Release is a major.minor specifier
-            major, minor = release.split(".")
-            self.assertTrue(major.isdigit())
-            self.assertTrue(minor.isdigit())
+            # Release is a numeric version specifier with at least 2 parts
+            parts = release.split(".")
+            self.assertGreaterEqual(len(parts), 2)
+            self.assertTrue(all(part.isdigit() for part in parts))
 
             # If this is a simulator, we get a high level device descriptor
             # with no identifying model number. If this is a physical device,
