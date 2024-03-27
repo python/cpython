@@ -1156,7 +1156,7 @@ function from discrete samples.  Some applications need a way to make
 random selections from that distribution.
 
 The technique is to pick a sample from a bandwidth scaled kernel
-function and recenter the result our around a randomly chosen point from
+function and recenter the result around a randomly chosen point from
 the input data.  This can be done with any kernel that has a known or
 accurately approximated inverse cumulative distribution function.
 
