@@ -1934,8 +1934,11 @@ Py_FinalizeEx(void)
        will be called in the current Python thread. Since
        _PyRuntimeState_SetFinalizing() has been called, no other Python thread
        can take the GIL at this point: if they try, they will exit
-       immediately. */
-    _PyThreadState_DeleteExcept(tstate);
+       immediately. We start the world once we are the only thread state left,
+       before we call destructors. */
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    _PyEval_StartTheWorldAll(runtime);
+    _PyThreadState_DeleteList(list);
 
     /* At this point no Python code should be running at all.
        The only thread state left should be the main thread of the main

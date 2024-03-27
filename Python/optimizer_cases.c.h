@@ -769,14 +769,7 @@
             break;
         }
 
-        case _LOAD_NAME: {
-            _Py_UopsSymbol *v;
-            v = sym_new_not_null(ctx);
-            if (v == NULL) goto out_of_space;
-            stack_pointer[0] = v;
-            stack_pointer += 1;
-            break;
-        }
+        /* _LOAD_NAME is not a viable micro-op for tier 2 */
 
         case _LOAD_GLOBAL: {
             _Py_UopsSymbol *res;
@@ -900,14 +893,7 @@
             break;
         }
 
-        case _BUILD_SET: {
-            _Py_UopsSymbol *set;
-            set = sym_new_not_null(ctx);
-            if (set == NULL) goto out_of_space;
-            stack_pointer[-oparg] = set;
-            stack_pointer += 1 - oparg;
-            break;
-        }
+        /* _BUILD_SET is not a viable micro-op for tier 2 */
 
         case _BUILD_MAP: {
             _Py_UopsSymbol *map;
@@ -1408,31 +1394,9 @@
 
         /* _FOR_ITER_GEN is not a viable micro-op for tier 2 */
 
-        case _BEFORE_ASYNC_WITH: {
-            _Py_UopsSymbol *exit;
-            _Py_UopsSymbol *res;
-            exit = sym_new_not_null(ctx);
-            if (exit == NULL) goto out_of_space;
-            res = sym_new_not_null(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-1] = exit;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            break;
-        }
+        /* _BEFORE_ASYNC_WITH is not a viable micro-op for tier 2 */
 
-        case _BEFORE_WITH: {
-            _Py_UopsSymbol *exit;
-            _Py_UopsSymbol *res;
-            exit = sym_new_not_null(ctx);
-            if (exit == NULL) goto out_of_space;
-            res = sym_new_not_null(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-1] = exit;
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            break;
-        }
+        /* _BEFORE_WITH is not a viable micro-op for tier 2 */
 
         case _WITH_EXCEPT_START: {
             _Py_UopsSymbol *res;
@@ -1596,14 +1560,25 @@
             callable = stack_pointer[-2 - oparg];
             int argcount = oparg;
             (void)callable;
-            PyFunctionObject *func = (PyFunctionObject *)(this_instr + 2)->operand;
-            DPRINTF(3, "func: %p ", func);
-            if (func == NULL) {
-                DPRINTF(3, "\n");
-                DPRINTF(1, "Missing function\n");
-                goto done;
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            uint64_t push_operand = (this_instr + 2)->operand;
+            if (push_operand & 1) {
+                co = (PyCodeObject *)(push_operand & ~1);
+                DPRINTF(3, "code=%p ", co);
+                assert(PyCode_Check(co));
             }
-            PyCodeObject *co = (PyCodeObject *)func->func_code;
+            else {
+                PyFunctionObject *func = (PyFunctionObject *)push_operand;
+                DPRINTF(3, "func=%p ", func);
+                if (func == NULL) {
+                    DPRINTF(3, "\n");
+                    DPRINTF(1, "Missing function\n");
+                    goto done;
+                }
+                co = (PyCodeObject *)func->func_code;
+                DPRINTF(3, "code=%p ", co);
+            }
             assert(self_or_null != NULL);
             assert(args != NULL);
             if (sym_is_not_null(self_or_null)) {
@@ -2015,6 +1990,19 @@
         }
 
         case _CHECK_VALIDITY_AND_SET_IP: {
+            break;
+        }
+
+        case _DEOPT: {
+            break;
+        }
+
+        case _SIDE_EXIT: {
+            break;
+        }
+
+        case _ERROR_POP_N: {
+            stack_pointer += -oparg;
             break;
         }
 
