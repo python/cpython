@@ -18,6 +18,7 @@ from pprint import pformat
 from docutils import nodes, utils
 from docutils.io import StringOutput
 from docutils.parsers.rst import Directive
+from docutils.parsers.rst.states import Body
 from docutils.utils import new_document
 from sphinx import addnodes
 from sphinx.builders import Builder
@@ -42,7 +43,6 @@ GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
-from docutils.parsers.rst.states import Body
 Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
