@@ -382,6 +382,28 @@ class GlobTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), p)
 
+    def test_glob0(self):
+        # This function matches literal paths
+        eq = self.assertSequencesEqual_noorder
+        eq(glob.glob0(self.tempdir, 'a'), ['a'])
+        eq(glob.glob0(self.tempdir, '.bb'), ['.bb'])
+        eq(glob.glob0(self.tempdir, '.b*'), [])
+        eq(glob.glob0(self.tempdir, 'b'), [])
+        eq(glob.glob0(self.tempdir, '?'), [])
+        eq(glob.glob0(self.tempdir, '*a'), [])
+        eq(glob.glob0(self.tempdir, 'a*'), [])
+
+    def test_glob1(self):
+        # This function matches non-recursive wildcards
+        eq = self.assertSequencesEqual_noorder
+        eq(glob.glob1(self.tempdir, 'a'), ['a'])
+        eq(glob.glob1(self.tempdir, '.bb'), ['.bb'])
+        eq(glob.glob1(self.tempdir, '.b*'), ['.bb'])
+        eq(glob.glob1(self.tempdir, 'b'), [])
+        eq(glob.glob1(self.tempdir, '?'), ['a'])
+        eq(glob.glob1(self.tempdir, '*a'), ['a', 'aaa'])
+        eq(glob.glob1(self.tempdir, 'a*'), ['a', 'aaa', 'aab'])
+
     def test_translate_matching(self):
         match = re.compile(glob.translate('*')).match
         self.assertIsNotNone(match('foo'))
