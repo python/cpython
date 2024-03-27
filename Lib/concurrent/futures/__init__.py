@@ -30,6 +30,7 @@ __all__ = (
     'as_completed',
     'ProcessPoolExecutor',
     'ThreadPoolExecutor',
+    'InterpreterPoolExecutor',
 )
 
 
@@ -38,7 +39,7 @@ def __dir__():
 
 
 def __getattr__(name):
-    global ProcessPoolExecutor, ThreadPoolExecutor
+    global ProcessPoolExecutor, ThreadPoolExecutor, InterpreterPoolExecutor
 
     if name == 'ProcessPoolExecutor':
         from .process import ProcessPoolExecutor as pe
@@ -49,5 +50,10 @@ def __getattr__(name):
         from .thread import ThreadPoolExecutor as te
         ThreadPoolExecutor = te
         return te
+
+    if name == 'InterpreterPoolExecutor':
+        from .interpreter import InterpreterPoolExecutor as ie
+        InterpreterPoolExecutor = ie
+        return ie
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

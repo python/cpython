@@ -26,6 +26,10 @@ def make_dummy_object(_):
 class ExecutorTest:
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
+
+    def _assertRaises(self, exctype, *args, **kwargs):
+        return self.assertRaises(exctype, *args, **kwargs)
+
     def test_submit(self):
         future = self.executor.submit(pow, 2, 8)
         self.assertEqual(256, future.result())
@@ -53,7 +57,7 @@ class ExecutorTest:
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        self.assertRaises(ZeroDivisionError, i.__next__)
+        self._assertRaises(ZeroDivisionError, i.__next__)
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
