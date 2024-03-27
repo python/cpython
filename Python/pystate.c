@@ -501,7 +501,8 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
         _PyMutex_at_fork_reinit(locks[i]);
     }
 #ifdef Py_GIL_DISABLED
-    for (PyInterpreterState *interp = runtime->interpreters.head; interp != NULL; interp = interp->next) {
+    for (PyInterpreterState *interp = runtime->interpreters.head;
+         interp != NULL; interp = interp->next) {
         for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
             _PyMutex_at_fork_reinit(&interp->weakref_locks[i]);
         }

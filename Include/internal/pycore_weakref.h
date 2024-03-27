@@ -14,9 +14,12 @@ extern "C" {
 
 #ifdef Py_GIL_DISABLED
 
-#define WEAKREF_LIST_LOCK(obj) _PyInterpreterState_GET()->weakref_locks[((uintptr_t) obj) % NUM_WEAKREF_LIST_LOCKS]
+#define WEAKREF_LIST_LOCK(obj) \
+    _PyInterpreterState_GET()  \
+        ->weakref_locks[((uintptr_t)obj) % NUM_WEAKREF_LIST_LOCKS]
 
-#define LOCK_WEAKREFS(obj) PyMutex_LockFlags(&WEAKREF_LIST_LOCK(obj), _Py_LOCK_DONT_DETACH)
+#define LOCK_WEAKREFS(obj) \
+    PyMutex_LockFlags(&WEAKREF_LIST_LOCK(obj), _Py_LOCK_DONT_DETACH)
 #define UNLOCK_WEAKREFS(obj) PyMutex_Unlock(&WEAKREF_LIST_LOCK(obj))
 
 #else
@@ -58,7 +61,7 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
         return NULL;
     }
     assert(Py_REFCNT(obj) > 0);
-    return  Py_NewRef(obj);
+    return Py_NewRef(obj);
 #else
     PyObject *obj = _Py_atomic_load_ptr(&ref->wr_object);
     if (obj == Py_None) {

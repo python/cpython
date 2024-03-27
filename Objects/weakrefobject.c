@@ -138,9 +138,9 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
     if (_Py_atomic_load_ptr(&self->wr_object) != Py_None) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
         if (*list == self)
-            /* If 'self' is the end of the list (and thus self->wr_next == NULL)
-               then the weakref list itself (and thus the value of *list) will
-               end up being set to NULL. */
+            /* If 'self' is the end of the list (and thus self->wr_next ==
+               NULL) then the weakref list itself (and thus the value of *list)
+               will end up being set to NULL. */
             _Py_atomic_store_ptr(list, self->wr_next);
         _Py_atomic_store_ptr(&self->wr_object, Py_None);
         if (self->wr_prev != NULL)
@@ -430,7 +430,8 @@ insert_head(PyWeakReference *newref, PyWeakReference **list)
  * weakref
  */
 static PyWeakReference *
-try_reuse_basic_ref(PyWeakReference *ref, PyWeakReference *proxy, PyTypeObject *type, PyObject *callback)
+try_reuse_basic_ref(PyWeakReference *ref, PyWeakReference *proxy,
+                    PyTypeObject *type, PyObject *callback)
 {
     if (callback != NULL) {
         return NULL;
@@ -488,10 +489,12 @@ get_prev(PyWeakReference *newref, PyWeakReference *ref, PyWeakReference *proxy)
     return (proxy == NULL) ? ref : proxy;
 }
 
-typedef PyWeakReference * (*weakref_alloc_fn)(PyTypeObject *, PyObject *, PyObject *);
+typedef PyWeakReference *(*weakref_alloc_fn)(PyTypeObject *, PyObject *,
+                                             PyObject *);
 
 static PyWeakReference *
-get_or_create_weakref(PyTypeObject *type, weakref_alloc_fn allocate, PyObject *obj, PyObject *callback)
+get_or_create_weakref(PyTypeObject *type, weakref_alloc_fn allocate,
+                      PyObject *obj, PyObject *callback)
 {
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(obj))) {
         PyErr_Format(PyExc_TypeError,
@@ -507,7 +510,8 @@ get_or_create_weakref(PyTypeObject *type, weakref_alloc_fn allocate, PyObject *o
 
     LOCK_WEAKREFS(obj);
     get_basic_refs(*list, &ref, &proxy);
-    PyWeakReference *basic_ref = try_reuse_basic_ref(ref, proxy, type, callback);
+    PyWeakReference *basic_ref =
+        try_reuse_basic_ref(ref, proxy, type, callback);
     if (basic_ref != NULL) {
         UNLOCK_WEAKREFS(obj);
         return basic_ref;
@@ -565,7 +569,8 @@ weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *ob, *callback = NULL;
     if (parse_weakref_init_args("__new__", args, kwargs, &ob, &callback)) {
-        return (PyObject *) get_or_create_weakref(type, allocate_ref_subtype, ob, callback);
+        return (PyObject *)get_or_create_weakref(type, allocate_ref_subtype,
+                                                 ob, callback);
     }
     return NULL;
 }
@@ -1019,7 +1024,8 @@ allocate_ref(PyTypeObject *type, PyObject *obj, PyObject *callback)
 PyObject *
 PyWeakref_NewRef(PyObject *ob, PyObject *callback)
 {
-    return (PyObject *) get_or_create_weakref(&_PyWeakref_RefType, allocate_ref, ob, callback);
+    return (PyObject *)get_or_create_weakref(&_PyWeakref_RefType, allocate_ref,
+                                             ob, callback);
 }
 
 static PyWeakReference *
@@ -1041,7 +1047,8 @@ allocate_proxy(PyTypeObject *type, PyObject *obj, PyObject *callback)
 PyObject *
 PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
 {
-    return (PyObject *) get_or_create_weakref(&_PyWeakref_ProxyType, allocate_proxy, ob, callback);
+    return (PyObject *)get_or_create_weakref(&_PyWeakref_ProxyType,
+                                             allocate_proxy, ob, callback);
 }
 
 
