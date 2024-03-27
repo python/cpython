@@ -1190,7 +1190,7 @@ For example:
    >>> rand = kde_random(discrete_samples, h=1.5)
    >>> seed(8675309)
    >>> selections = [rand() for i in range(10)]
-   >>> [round(x, 1) for x in selections)]
+   >>> [round(x, 1) for x in selections]
    [0.7, 6.2, 1.2, 6.9, 7.0, 1.8, 2.5, -0.5, -1.8, 5.6]
 
 .. testcode::
