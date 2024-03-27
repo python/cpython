@@ -276,7 +276,7 @@ def main(argv: list[str] | None = None) -> int:
     wrong_directory_msg = "Must run this script from the repo root"
     assert Path("Doc").exists() and Path("Doc").is_dir(), wrong_directory_msg
 
-    with Path("Doc/sphinx-warnings.txt").open(encoding="UTF-8") as f:
+    with Path("Doc/build/sphinx-warnings.txt").open(encoding="UTF-8") as f:
         warnings = f.read().splitlines()
 
     cwd = str(Path.cwd()) + os.path.sep
