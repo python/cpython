@@ -347,7 +347,7 @@ The :mod:`csv` module defines the following constants:
    ``None``.  This is similar to :data:`QUOTE_ALL`, except that if a
    field value is ``None`` an empty (unquoted) string is written.
 
-   Instructs :class:`reader` objects to interpret an empty (unquoted) field as None and
+   Instructs :class:`reader` objects to interpret an empty (unquoted) string as ``None`` and
    to otherwise behave as :data:`QUOTE_ALL`.
 
    .. versionadded:: 3.12
@@ -362,6 +362,12 @@ The :mod:`csv` module defines the following constants:
    to otherwise behave as :data:`QUOTE_NONNUMERIC`.
 
    .. versionadded:: 3.12
+
+.. note::
+
+   Due to a bug, constants :data:`QUOTE_NOTNULL` and :data:`QUOTE_STRINGS`
+   do not affect behaviour of :class:`reader` objects.
+   This bug is fixed in Python 3.13.
 
 The :mod:`csv` module defines the following exception:
 
