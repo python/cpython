@@ -2198,7 +2198,7 @@ def main():
                         help='pdb commands to execute as if given in a .pdbrc file')
     parser.add_argument('-m', metavar='module', dest='module')
     parser.add_argument('args', nargs='*',
-                        help="the first arg is the script to debug if -m is not specified")
+                        help="when -m is not specified, the first arg is the script to debug")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
