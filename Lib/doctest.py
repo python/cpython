@@ -2264,7 +2264,7 @@ class DocTestCase(unittest.TestCase):
             runner.DIVIDER = "-"*70
             results = runner.run(test, out=new.write, clear_globs=False)
             if results.skipped == results.attempted:
-                raise unittest.SkipTest(f"all examples were skipped")
+                raise unittest.SkipTest("all examples were skipped")
         finally:
             sys.stdout = old
 
