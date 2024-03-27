@@ -1006,27 +1006,8 @@ class RawConfigParser(MutableMapping):
         lineno = 0
         indent_level = 0
 
-        for lineno, line in enumerate(fp, start=1):
-            comment_start = sys.maxsize
-            # strip inline comments
-            inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
-            while comment_start == sys.maxsize and inline_prefixes:
-                next_prefixes = {}
-                for prefix, index in inline_prefixes.items():
-                    index = line.find(prefix, index+1)
-                    if index == -1:
-                        continue
-                    next_prefixes[prefix] = index
-                    if index == 0 or (index > 0 and line[index-1].isspace()):
-                        comment_start = min(comment_start, index)
-                inline_prefixes = next_prefixes
-            # strip full line comments
-            for prefix in self._comment_prefixes:
-                if line.strip().startswith(prefix):
-                    comment_start = 0
-                    break
-            if comment_start == sys.maxsize:
-                comment_start = None
+        lines = map(self._strip_comments, fp)
+        for lineno, (line, comment_start) in enumerate(lines, start=1):
             value = line[:comment_start].strip()
             if not value:
                 if self._empty_lines_in_values:
@@ -1134,6 +1115,28 @@ class RawConfigParser(MutableMapping):
                             # list of all bogus lines
                             yield ParsingError(fpname, lineno, line)
 
+    def _strip_comments(self, line):
+        comment_start = sys.maxsize
+        # strip inline comments
+        inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
+        while comment_start == sys.maxsize and inline_prefixes:
+            next_prefixes = {}
+            for prefix, index in inline_prefixes.items():
+                index = line.find(prefix, index+1)
+                if index == -1:
+                    continue
+                next_prefixes[prefix] = index
+                if index == 0 or (index > 0 and line[index-1].isspace()):
+                    comment_start = min(comment_start, index)
+            inline_prefixes = next_prefixes
+        # strip full line comments
+        for prefix in self._comment_prefixes:
+            if line.strip().startswith(prefix):
+                comment_start = 0
+                break
+        if comment_start == sys.maxsize:
+            comment_start = None
+        return line, comment_start
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
