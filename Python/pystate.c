@@ -821,9 +821,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     }
 
     PyConfig_Clear(&interp->config);
-    Py_CLEAR(interp->codec_search_path);
-    Py_CLEAR(interp->codec_search_cache);
-    Py_CLEAR(interp->codec_error_registry);
+    Py_CLEAR(interp->codecs.search_path);
+    Py_CLEAR(interp->codecs.search_cache);
+    Py_CLEAR(interp->codecs.error_registry);
 
     assert(interp->imports.modules == NULL);
     assert(interp->imports.modules_by_index == NULL);
