@@ -427,6 +427,115 @@ insert_head(PyWeakReference *newref, PyWeakReference **list)
     *list = newref;
 }
 
+/* See if we can reuse either the basic ref or proxy instead of creating a new
+ * weakref
+ */
+static PyWeakReference *
+try_reuse_basic_ref(PyWeakReference *ref, PyWeakReference *proxy, PyTypeObject *type, PyObject *callback)
+{
+    if (callback != NULL) {
+        return NULL;
+    }
+
+    PyWeakReference *cand = NULL;
+    if (type == &_PyWeakref_RefType) {
+        cand = ref;
+    }
+    if (type == &_PyWeakref_ProxyType) {
+        cand = proxy;
+    }
+
+#ifdef Py_GIL_DISABLED
+    if (cand != NULL && !_Py_TryIncref((PyObject **) &cand, (PyObject *) cand)) {
+        cand = NULL;
+    }
+#else
+    Py_XINCREF(cand);
+#endif
+
+    return cand;
+}
+
+static int
+is_basic_ref(PyWeakReference *ref)
+{
+    return (ref->wr_callback == NULL) && PyWeakref_CheckRefExact(ref);
+}
+
+static int
+is_basic_proxy(PyWeakReference *proxy)
+{
+    return (proxy->wr_callback == NULL) && PyWeakref_CheckProxy(proxy);
+}
+
+/* Return the node that `newref` should be inserted after or NULL if `newref`
+ * should be inserted at the head of the list.
+ */
+static PyWeakReference *
+get_prev(PyWeakReference *newref, PyWeakReference *ref, PyWeakReference *proxy)
+{
+    if (is_basic_ref(newref)) {
+        return NULL;
+    }
+    if (is_basic_proxy(newref)) {
+        return ref;
+    }
+    return (proxy == NULL) ? ref : proxy;
+}
+
+typedef PyWeakReference * (*weakref_alloc_fn)(PyTypeObject *, PyObject *, PyObject *);
+
+static PyWeakReference *
+get_or_create_weakref(PyTypeObject *type, weakref_alloc_fn allocate, PyObject *obj, PyObject *callback)
+{
+    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(obj))) {
+        PyErr_Format(PyExc_TypeError,
+                     "cannot create weak reference to '%s' object",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
+    if (callback == Py_None)
+        callback = NULL;
+
+    PyWeakReference **list = GET_WEAKREFS_LISTPTR(obj);
+    PyWeakReference *ref, *proxy;
+
+    LOCK_WEAKREFS(obj);
+    get_basic_refs(*list, &ref, &proxy);
+    PyWeakReference *basic_ref = try_reuse_basic_ref(ref, proxy, type, callback);
+    if (basic_ref != NULL) {
+        UNLOCK_WEAKREFS(obj);
+        return basic_ref;
+    }
+    UNLOCK_WEAKREFS(obj);
+
+    PyWeakReference *newref = allocate(type, obj, callback);
+    if (newref == NULL) {
+        return NULL;
+    }
+
+    LOCK_WEAKREFS(obj);
+    /* A new basic ref or proxy may be inserted if the GIL is released during
+     * allocation in default builds or while the weakref lock is released in
+     * free-threaded builds.
+     */
+    get_basic_refs(*list, &ref, &proxy);
+    basic_ref = try_reuse_basic_ref(ref, proxy, type, callback);
+    if (basic_ref != NULL) {
+        UNLOCK_WEAKREFS(obj);
+        Py_DECREF(newref);
+        return basic_ref;
+    }
+    PyWeakReference *prev = get_prev(newref, ref, proxy);
+    if (prev == NULL)
+        insert_head(newref, list);
+    else
+        insert_after(newref, prev);
+    UNLOCK_WEAKREFS(obj);
+
+    return newref;
+}
+
 static int
 parse_weakref_init_args(const char *funcname, PyObject *args, PyObject *kwargs,
                         PyObject **obp, PyObject **callbackp)
@@ -434,113 +543,26 @@ parse_weakref_init_args(const char *funcname, PyObject *args, PyObject *kwargs,
     return PyArg_UnpackTuple(args, funcname, 1, 2, obp, callbackp);
 }
 
-#ifdef Py_GIL_DISABLED
 
 static PyWeakReference *
-get_or_create_weakref_subtype(PyTypeObject *type, PyObject *obj, PyObject *callback)
+allocate_ref_subtype(PyTypeObject *type, PyObject *obj, PyObject *callback)
 {
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(obj);
-    PyWeakReference *ref, *proxy;
-
-    LOCK_WEAKREFS(obj);
-    get_basic_refs(*list, &ref, &proxy);
-    if ((callback == NULL) && (type == &_PyWeakref_RefType) && (ref != NULL) && _Py_TryIncref((PyObject**) &ref, (PyObject *) ref)) {
-        // We can reuse the canonical callback-less ref
-        UNLOCK_WEAKREFS(obj);
-        return ref;
-    }
-    UNLOCK_WEAKREFS(obj);
-
-    // We may have to allocate a new weakref
     PyWeakReference *result = (PyWeakReference *) (type->tp_alloc)(type, 0);
     if (result == NULL) {
         return NULL;
     }
     init_weakref(result, obj, callback);
-
-    LOCK_WEAKREFS(obj);
-    get_basic_refs(*list, &ref, &proxy);
-    if (callback == NULL && type == &_PyWeakref_RefType) {
-        if (ref != NULL && _Py_TryIncref((PyObject **) &ref, (PyObject *) ref)) {
-            // Someone else created and inserted the canonical callback-less
-            // weakref while the lock was released.
-            UNLOCK_WEAKREFS(obj);
-            Py_DECREF(result);
-            return ref;
-        }
-        // Our newly created weakref is the canonical callback-less weakref.
-        insert_head(result, list);
-    }
-    else {
-        PyWeakReference *prev;
-        prev = (proxy == NULL) ? ref : proxy;
-        if (prev == NULL)
-            insert_head(result, list);
-        else
-            insert_after(result, prev);
-
-    }
-    UNLOCK_WEAKREFS(obj);
-
     return result;
 }
-
-#endif
 
 static PyObject *
 weakref___new__(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    PyWeakReference *self = NULL;
     PyObject *ob, *callback = NULL;
-
     if (parse_weakref_init_args("__new__", args, kwargs, &ob, &callback)) {
-        if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(ob))) {
-            PyErr_Format(PyExc_TypeError,
-                         "cannot create weak reference to '%s' object",
-                         Py_TYPE(ob)->tp_name);
-            return NULL;
-        }
-        if (callback == Py_None)
-            callback = NULL;
-#ifdef Py_GIL_DISABLED
-        self = get_or_create_weakref_subtype(type, ob, callback);
-#else
-        PyWeakReference *ref, *proxy;
-        PyWeakReference **list;
-        list = GET_WEAKREFS_LISTPTR(ob);
-        get_basic_refs(*list, &ref, &proxy);
-        if (callback == NULL && type == &_PyWeakref_RefType) {
-            if (ref != NULL) {
-                /* We can re-use an existing reference. */
-                return (PyWeakReference *)Py_NewRef(ref);
-            }
-        }
-        /* We have to create a new reference. */
-        /* Note: the tp_alloc() can trigger cyclic GC, so the weakref
-           list on ob can be mutated.  This means that the ref and
-           proxy pointers we got back earlier may have been collected,
-           so we need to compute these values again before we use
-           them. */
-        self = (PyWeakReference *) (type->tp_alloc(type, 0));
-        if (self != NULL) {
-            init_weakref(self, ob, callback);
-            if (callback == NULL && type == &_PyWeakref_RefType) {
-                insert_head(self, list);
-            }
-            else {
-                PyWeakReference *prev;
-
-                get_basic_refs(*list, &ref, &proxy);
-                prev = (proxy == NULL) ? ref : proxy;
-                if (prev == NULL)
-                    insert_head(self, list);
-                else
-                    insert_after(self, prev);
-            }
-        }
-#endif
+        return (PyObject *) get_or_create_weakref(type, allocate_ref_subtype, ob, callback);
     }
-    return (PyObject *)self;
+    return NULL;
 }
 
 static int
@@ -983,126 +1005,21 @@ _PyWeakref_CallableProxyType = {
     proxy_iternext,                     /* tp_iternext */
 };
 
-
-#ifdef Py_GIL_DISABLED
-
 static PyWeakReference *
-get_or_create_weakref(PyObject *obj, PyObject *callback)
+allocate_ref(PyTypeObject *type, PyObject *obj, PyObject *callback)
 {
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(obj);
-    PyWeakReference *ref, *proxy;
-
-    LOCK_WEAKREFS(obj);
-    get_basic_refs(*list, &ref, &proxy);
-    if ((callback == NULL) && (ref != NULL) && _Py_TryIncref((PyObject**) &ref, (PyObject *) ref)) {
-        // We can reuse the canonical callback-less ref
-        UNLOCK_WEAKREFS(obj);
-        return ref;
-    }
-    UNLOCK_WEAKREFS(obj);
-
-    // We may have to allocate a new weakref
-    PyWeakReference *result = new_weakref(obj, callback);
-    if (result == NULL) {
-        return NULL;
-    }
-
-    LOCK_WEAKREFS(obj);
-    get_basic_refs(*list, &ref, &proxy);
-    if (callback == NULL) {
-        if (ref != NULL && _Py_TryIncref((PyObject **) &ref, (PyObject *) ref)) {
-            // Someone else created and inserted the canonical callback-less
-            // weakref while the lock was released.
-            UNLOCK_WEAKREFS(obj);
-            Py_DECREF(result);
-            return ref;
-        }
-        // Our newly created weakref is the canonical callback-less weakref.
-        insert_head(result, list);
-    }
-    else {
-        PyWeakReference *prev;
-        prev = (proxy == NULL) ? ref : proxy;
-        if (prev == NULL)
-            insert_head(result, list);
-        else
-            insert_after(result, prev);
-
-    }
-    UNLOCK_WEAKREFS(obj);
-
-    return result;
+    return new_weakref(obj, callback);
 }
-
-#endif
 
 PyObject *
 PyWeakref_NewRef(PyObject *ob, PyObject *callback)
 {
-    PyWeakReference *result = NULL;
-
-    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(ob))) {
-        PyErr_Format(PyExc_TypeError,
-                     "cannot create weak reference to '%s' object",
-                     Py_TYPE(ob)->tp_name);
-        return NULL;
-    }
-    if (callback == Py_None)
-        callback = NULL;
-#ifdef Py_GIL_DISABLED
-    result = get_or_create_weakref(ob, callback);
-#else
-    PyWeakReference *ref, *proxy;
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(ob);
-    get_basic_refs(*list, &ref, &proxy);
-    if (callback == NULL)
-        /* return existing weak reference if it exists */
-        result = ref;
-    if (result != NULL)
-        Py_INCREF(result);
-    else {
-        /* We do not need to recompute ref/proxy; new_weakref() cannot
-           trigger GC.
-        */
-        result = new_weakref(ob, callback);
-        if (result != NULL) {
-            if (callback == NULL) {
-                assert(ref == NULL);
-                insert_head(result, list);
-            }
-            else {
-                PyWeakReference *prev;
-
-                prev = (proxy == NULL) ? ref : proxy;
-                if (prev == NULL)
-                    insert_head(result, list);
-                else
-                    insert_after(result, prev);
-            }
-        }
-    }
-#endif
-    return (PyObject *) result;
+    return (PyObject *) get_or_create_weakref(&_PyWeakref_RefType, allocate_ref, ob, callback);
 }
 
-#ifdef Py_GIL_DISABLED
-
 static PyWeakReference *
-get_or_create_proxy(PyObject *obj, PyObject *callback)
+allocate_proxy(PyTypeObject *type, PyObject *obj, PyObject *callback)
 {
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(obj);
-    PyWeakReference *ref, *proxy;
-
-    LOCK_WEAKREFS(obj);
-    get_basic_refs(*list, &ref, &proxy);
-    if ((callback == NULL) && (proxy != NULL) && _Py_TryIncref((PyObject**) &proxy, (PyObject *) proxy)) {
-        // We can reuse the canonical callback-less proxy
-        UNLOCK_WEAKREFS(obj);
-        return proxy;
-    }
-    UNLOCK_WEAKREFS(obj);
-
-    // We may have to allocate a new weakref
     PyWeakReference *result = new_weakref(obj, callback);
     if (result == NULL) {
         return NULL;
@@ -1113,84 +1030,13 @@ get_or_create_proxy(PyObject *obj, PyObject *callback)
     else {
         Py_SET_TYPE(result, &_PyWeakref_ProxyType);
     }
-
-    LOCK_WEAKREFS(obj);
-    get_basic_refs(*list, &ref, &proxy);
-    if (callback == NULL && proxy != NULL && _Py_TryIncref((PyObject **) &proxy, (PyObject *) proxy)) {
-        // Someone else created and inserted the canonical callback-less
-        // proxy while the lock was released.
-        UNLOCK_WEAKREFS(obj);
-        Py_DECREF(result);
-        return proxy;
-    }
-    PyWeakReference *prev;
-    if (callback == NULL) {
-        prev = ref;
-    }
-    else
-        prev = (proxy == NULL) ? ref : proxy;
-    if (prev == NULL)
-        insert_head(result, list);
-    else
-        insert_after(result, prev);
-    UNLOCK_WEAKREFS(obj);
-
     return result;
 }
-#endif
 
 PyObject *
 PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
 {
-    PyWeakReference *result = NULL;
-
-    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(ob))) {
-        PyErr_Format(PyExc_TypeError,
-                     "cannot create weak reference to '%s' object",
-                     Py_TYPE(ob)->tp_name);
-        return NULL;
-    }
-    if (callback == Py_None)
-        callback = NULL;
-#ifdef Py_GIL_DISABLED
-    result = get_or_create_proxy(ob, callback);
-#else
-    PyWeakReference *ref, *proxy;
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(ob);
-    get_basic_refs(*list, &ref, &proxy);
-    if (callback == NULL)
-        /* attempt to return an existing weak reference if it exists */
-        result = proxy;
-    if (result != NULL)
-        Py_INCREF(result);
-    else {
-        /* We do not need to recompute ref/proxy; new_weakref cannot
-           trigger GC.
-        */
-        result = new_weakref(ob, callback);
-        if (result != NULL) {
-            PyWeakReference *prev;
-
-            if (PyCallable_Check(ob)) {
-                Py_SET_TYPE(result, &_PyWeakref_CallableProxyType);
-            }
-            else {
-                Py_SET_TYPE(result, &_PyWeakref_ProxyType);
-            }
-            if (callback == NULL) {
-                prev = ref;
-            }
-            else
-                prev = (proxy == NULL) ? ref : proxy;
-
-            if (prev == NULL)
-                insert_head(result, list);
-            else
-                insert_after(result, prev);
-        }
-    }
-#endif
-    return (PyObject *) result;
+    return (PyObject *) get_or_create_weakref(&_PyWeakref_ProxyType, allocate_proxy, ob, callback);
 }
 
 
