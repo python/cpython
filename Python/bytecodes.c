@@ -4161,7 +4161,6 @@ dummy_func(
             _PyExitData *exit = &previous->exits[oparg];
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(exit->temperature)) {
                 _PyExecutorObject *executor;
                 if (target->op.code == ENTER_EXECUTOR) {
@@ -4187,7 +4186,6 @@ dummy_func(
                 GOTO_TIER_TWO(executor);
             }
             DECREMENT_ADAPTIVE_COUNTER(exit->temperature);
-            #endif
             GOTO_TIER_ONE(target);
         }
 
