@@ -811,12 +811,11 @@
                     frame->return_offset = (uint16_t)(next_instr - this_instr);
                     DISPATCH_INLINED(new_frame);
                 }
-                untag_stack(args, total_args | PY_VECTORCALL_ARGUMENTS_OFFSET);
                 /* Callable is not a normal Python function */
-                res = PyObject_Vectorcall(
-                                      callable, (PyObject **)args,
-                                      total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                      NULL);
+                res = PyObject_Vectorcall_Tagged(
+                    callable, args,
+                    total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                    NULL);
                 if (opcode == INSTRUMENTED_CALL) {
                     PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : Py_CLEAR_TAG(args[0]);
@@ -837,8 +836,7 @@
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 Py_DECREF(callable);
                 for (int i = 0; i < total_args; i++) {
-                    // Note: untagged above
-                    Py_DECREF(args[i].obj);
+                    Py_DECREF(Py_CLEAR_TAG(args[i]));
                 }
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
             }
@@ -1035,12 +1033,10 @@
                 PyTypeObject *tp = (PyTypeObject *)Py_CLEAR_TAG(callable);
                 DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
                 STAT_INC(CALL, hit);
-                untag_stack(args, total_args);
-                res = tp->tp_vectorcall((PyObject *)tp, (PyObject **)args, total_args, NULL);
+                res = PyObject_TypeVectorcall_Tagged(tp, args, total_args, NULL);
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    // Note: untagged above
-                    Py_DECREF(args[i].obj);
+                    Py_DECREF(Py_CLEAR_TAG(args[i]));
                 }
                 Py_DECREF(Py_CLEAR_TAG(callable));
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
@@ -1080,17 +1076,17 @@
                 DEOPT_IF(PyCFunction_GET_FLAGS(callable) != METH_FASTCALL, CALL);
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-                untag_stack(args, total_args);
                 /* res = func(self, args, nargs) */
-                res = ((PyCFunctionFast)(void(*)(void))cfunc)(
+                res = PyObject_PyCFunctionFastCall_Tagged(
+                    ((PyCFunctionFast)(void(*)(void))cfunc),
                     PyCFunction_GET_SELF(callable),
-                    (PyObject **)args,
+                    args,
                     total_args);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
                     // Note: unpacked above.
-                    Py_DECREF(args[i].obj);
+                    Py_DECREF(Py_CLEAR_TAG(args[i]));
                 }
                 Py_DECREF(callable);
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
@@ -1134,13 +1130,13 @@
                 PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))
                 PyCFunction_GET_FUNCTION(cb);
-                untag_stack(args, total_args);
-                res = cfunc(PyCFunction_GET_SELF(cb), (PyObject **)args, total_args, NULL);
+                res = PyObject_PyCFunctionFastWithKeywordsCall_Tagged(
+                    cfunc, PyCFunction_GET_SELF(cb), args, total_args, NULL
+                );
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    // Note: untagged above
-                    Py_DECREF(args[i].obj);
+                    Py_DECREF(Py_CLEAR_TAG(args[i]));
                 }
                 Py_DECREF(Py_CLEAR_TAG(callable));
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
@@ -1420,12 +1416,11 @@
                 frame->return_offset = 1;
                 DISPATCH_INLINED(new_frame);
             }
-            untag_stack(args, positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET);
             /* Callable is not a normal Python function */
-            res = PyObject_Vectorcall(
-                                      callable, (PyObject **)args,
-                                      positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                      kwnames);
+            res = PyObject_Vectorcall_Tagged(
+                callable, args,
+                positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                kwnames);
             if (opcode == INSTRUMENTED_CALL_KW) {
                 PyObject *arg = total_args == 0 ?
                 &_PyInstrumentation_MISSING : Py_CLEAR_TAG(args[0]);
@@ -1447,8 +1442,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
-                // Note: untagged above
-                Py_DECREF(args[i].obj);
+                Py_DECREF(Py_CLEAR_TAG(args[i]));
             }
             if (res == NULL) { stack_pointer += -3 - oparg; goto error; }
             stack_pointer[-3 - oparg] = Py_OBJ_PACK(res);
@@ -1561,13 +1555,13 @@
                 PyCFunctionFast cfunc =
                 (PyCFunctionFast)(void(*)(void))meth->ml_meth;
                 int nargs = total_args - 1;
-                untag_stack(args, total_args);
-                res = cfunc(self, (PyObject **)(args + 1), nargs);
+                res = PyObject_PyCFunctionFastCall_Tagged(
+                    cfunc, self, (args + 1), nargs
+                );
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Clear the stack of the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    // Note: untagged above.
-                    Py_DECREF(args[i].obj);
+                    Py_DECREF(Py_CLEAR_TAG(args[i]));
                 }
                 Py_DECREF(callable);
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }
@@ -1613,13 +1607,13 @@
                 int nargs = total_args - 1;
                 PyCFunctionFastWithKeywords cfunc =
                 (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
-                untag_stack(args, total_args);
-                res = cfunc(self, (PyObject **)(args + 1), nargs, NULL);
+                res = PyObject_PyCFunctionFastWithKeywordsCall_Tagged(
+                    cfunc, self, (args + 1), nargs, NULL
+                );
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    // Note: untagged above
-                    Py_DECREF(args[i].obj);
+                    Py_DECREF(Py_CLEAR_TAG(args[i]));
                 }
                 Py_DECREF(callable);
                 if (res == NULL) { stack_pointer += -2 - oparg; goto error; }

@@ -1043,6 +1043,171 @@ _PyStack_UnpackDict_FreeNoDecRef(PyObject *const *stack, PyObject *kwnames)
     Py_DECREF(kwnames);
 }
 
+/* --- Tagged call functions  ------------------------------------------ */
+
+static inline void
+untag_stack(PyObject **dst, const _Py_TaggedObject *src, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        dst[i] = Py_CLEAR_TAG(src[i]);
+    }
+}
+
+#define MAX_UNTAG_SCRATCH 10
+
+static PyObject *
+PyObject_VectorcallTaggedSlow(PyObject *callable,
+                              const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+{
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    if (kwnames != NULL && PyTuple_CheckExact(kwnames)) {
+        nargs += PyTuple_GET_SIZE(kwnames);
+    }
+    PyObject **args = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
+    if (args == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    untag_stack(args + 1, tagged, nargs);
+    PyObject *res = PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
+    PyMem_Free(args);
+    return res;
+}
+
+PyObject *
+PyObject_Vectorcall_Tagged(PyObject *callable,
+                           const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+{
+//#ifdef Py_GIL_DISABLED
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    if (kwnames != NULL && PyTuple_CheckExact(kwnames)) {
+        nargs += PyTuple_GET_SIZE(kwnames);
+    }
+    PyObject *args[MAX_UNTAG_SCRATCH];
+    if (nargs >= MAX_UNTAG_SCRATCH) {
+        return PyObject_VectorcallTaggedSlow(callable, tagged, nargsf, kwnames);
+    }
+    // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
+    untag_stack(args + 1, tagged, nargs);
+    return PyObject_Vectorcall(callable, args + 1, nargsf, kwnames);
+//#else
+//    (void)(PyObject_VectorcallTaggedSlow);
+//    return PyObject_Vectorcall(callable, (PyObject **)tagged, nargs, kwnames);
+//#endif
+}
+
+static PyObject *
+PyObject_TypeVectorcall_TaggedSlow(PyTypeObject *callable,
+                                    const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+{
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject **args = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
+    if (args == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
+    untag_stack(args + 1, tagged, nargs);
+    PyObject *res = callable->tp_vectorcall((PyObject *)callable,
+                                            args + 1, nargsf, kwnames);
+    PyMem_Free(args);
+    return res;
+}
+
+PyObject *
+PyObject_TypeVectorcall_Tagged(PyTypeObject *callable,
+                               const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+{
+//#ifdef Py_GIL_DISABLED
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *args[MAX_UNTAG_SCRATCH];
+    if (nargs >= MAX_UNTAG_SCRATCH) {
+        return PyObject_TypeVectorcall_TaggedSlow(callable, tagged, nargsf, kwnames);
+    }
+    // + 1 to allow args[-1] to be used by PY_VECTORCALL_ARGUMENTS_OFFSET
+    untag_stack(args + 1, tagged, nargs);
+    return callable->tp_vectorcall((PyObject *)callable, args + 1, nargsf, kwnames);
+//#else
+//    (void)PyObject_TypeVectorcall_TaggedSlow;
+//    return callable->tp_vectorcall((PyObject *)callable, (PyObject **)tagged, nargs, kwnames);
+//#endif
+}
+
+static PyObject *
+PyObject_PyCFunctionFastCall_TaggedSlow(PyCFunctionFast cfunc,
+                                   PyObject *self,
+                                   const _Py_TaggedObject *tagged, Py_ssize_t nargsf)
+{
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject **args = PyMem_Malloc(nargs * sizeof(PyObject *));
+    if (args == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    untag_stack(args, tagged, nargs);
+    PyObject *res = cfunc(self, args, nargsf);
+    PyMem_Free(args);
+    return res;
+}
+
+PyObject *
+PyObject_PyCFunctionFastCall_Tagged(PyCFunctionFast cfunc,
+                                    PyObject *self,
+                                    const _Py_TaggedObject *tagged, Py_ssize_t nargsf)
+{
+//#ifdef Py_DEBUG
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *args[MAX_UNTAG_SCRATCH];
+    if (nargs >= MAX_UNTAG_SCRATCH) {
+        return PyObject_PyCFunctionFastCall_TaggedSlow(cfunc, self, tagged, nargsf);
+    }
+    untag_stack(args + 1, tagged, nargs);
+    return cfunc(self, args + 1, nargsf);
+//#else
+//    (void)PyObject_PyCFunctionFastCall_TaggedSlow;
+//    return cfunc(self, (PyObject **)tagged, nargs);
+//#endif
+}
+
+static PyObject *
+PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow(PyCFunctionFastWithKeywords cfunc,
+                                        PyObject *self,
+                                        const _Py_TaggedObject *tagged, Py_ssize_t nargsf,
+                                        PyObject *kwds)
+{
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject **args = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
+    if (args == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    untag_stack(args + 1, tagged, nargs);
+    PyObject *res = cfunc(self, args + 1, nargsf, kwds);
+    PyMem_Free(args);
+    return res;
+}
+
+PyObject *
+PyObject_PyCFunctionFastWithKeywordsCall_Tagged(PyCFunctionFastWithKeywords cfunc,
+                                    PyObject *self,
+                                    const _Py_TaggedObject *tagged, Py_ssize_t nargsf,
+                                    PyObject *kwds)
+{
+//#ifdef Py_GIL_DISABLED
+    size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
+    PyObject *args[MAX_UNTAG_SCRATCH];
+    if (nargs >= MAX_UNTAG_SCRATCH) {
+        return PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow(
+            cfunc, self, tagged, nargsf, kwds
+        );
+    }
+    untag_stack(args + 1, tagged, nargs);
+    return cfunc(self, args + 1, nargsf, kwds);
+//#else
+//    (void)PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow;
+//    return cfunc(self, (PyObject **)tagged, nargs, kwds);
+//#endif
+}
+
 // Export for the stable ABI
 #undef PyVectorcall_NARGS
 Py_ssize_t
