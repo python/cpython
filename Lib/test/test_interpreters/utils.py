@@ -2,10 +2,11 @@ import contextlib
 import os
 import os.path
 import pickle
+import select
 import subprocess
 import sys
 import tempfile
-from textwrap import dedent
+from textwrap import dedent, indent
 import threading
 import types
 import unittest
@@ -14,6 +15,17 @@ from test import support
 from test.support import os_helper
 
 from test.support import interpreters
+
+
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
+else:
+    run_in_interpreter = _testinternalcapi.run_in_subinterp_with_config
+
+def requires__testinternalcapi(func):
+    return unittest.skipIf(_testinternalcapi is None, "test requires _testinternalcapi module")(func)
 
 
 def _captured_script(script):
@@ -67,109 +79,243 @@ def _running(interp):
     t.join()
 
 
-class UnmanagedInterpreter:
+class CapturingScript:
+    """
+    Embeds a script in a new script that captures stdout/stderr
+    and uses pipes to expose them.
+    """
 
-    @classmethod
-    def start(cls, create_pipe, *, legacy=True):
-        r_in, _ = inpipe = create_pipe()
-        r_out, w_out = outpipe = create_pipe()
+    WRAPPER = dedent("""
+        import sys
+        w_out = {w_out}
+        w_err = {w_err}
+        stdout, stderr = orig = (sys.stdout, sys.stderr)
+        if w_out is not None:
+            if w_err == w_out:
+                stdout = stderr = open(w_out, 'w', encoding='utf-8')
+            elif w_err is not None:
+                stdout = open(w_out, 'w', encoding='utf-8')
+                stderr = open(w_err, 'w', encoding='utf-8')
+            else:
+                stdout = open(w_out, 'w', encoding='utf-8')
+        else:
+            assert w_err is not None
+            stderr = open(w_err, 'w', encoding='utf-8')
 
-        script = dedent(f"""
-            import pickle, os, traceback, _testcapi
-
-            # Send the interpreter ID.
-            interpid = _testcapi.get_current_interpid()
-            os.write({w_out}, pickle.dumps(interpid))
-
-            # Run exec requests until "done".
-            script = b''
-            while True:
-                ch = os.read({r_in}, 1)
-                if ch == b'\0':
-                    if not script:
-                        # done!
-                        break
-
-                    # Run the provided script.
-                    try:
-                        exec(script)
-                    except Exception as exc:
-                        traceback.print_exc()
-                        err = traceback.format_exception_only(exc)
-                        os.write(w_out, err.encode('utf-8'))
-                    os.write(w_out, b'\0')
-                    script = b''
-                else:
-                    script += ch
-            """)
-        def run():
-            try:
-                if legacy:
-                    rc = support.run_in_subinterp(script)
-                else:
-                    rc = support.run_in_subinterp_with_config(script)
-                assert rc == 0, rc
-            except BaseException:
-                os.write(w_out, b'\0')
-                raise  # re-raise
-        t = threading.Thread(target=run)
-        t.start()
+        sys.stdout = stdout
+        sys.stderr = stderr
         try:
-            # Get the interpreter ID.
-            data = os.read(r_out, 10)
-            assert len(data) < 10, repr(data) 
-            assert data != b'\0'
-            interpid = pickle.loads(data)
+            #########################
+            # begin wrapped script
 
-            return cls(interpid, t, inpipe, outpipe)
-        except BaseException:
-            os.write(w_out, b'\0')
-            raise  # re-raise
+            {wrapped}
 
-    def __init__(self, id, thread, inpipe, outpipe):
-        self._id = id
-        self._thread = thread
-        self._r_in, self._w_in = inpipe
-        self._r_out, self._w_out = outpipe
+            # end wrapped script
+            #########################
+        finally:
+            sys.stdout, sys.stderr = orig
+        """)
 
-    def __repr__(self):
-        return f'<{type(self).__name__} {self._id}>'
+    def __init__(self, script, *, combined=True):
+        self._r_out, self._w_out = os.pipe()
+        if combined:
+            self._r_err = self._w_err = None
+            w_err = self._w_out
+        else:
+            self._r_err, self._w_err = os.pipe()
+            w_err = self._w_err
+        self._combined = combined
+
+        self._script = self.WRAPPER.format(
+            w_out=self._w_out,
+            w_err=w_err,
+            wrapped=indent(script, '    '),
+        )
+
+    def __del__(self):
+        self.close()
 
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
-        self.shutdown()
+        self.close()
 
     @property
-    def id(self):
-        return self._id
+    def script(self):
+        return self._script
 
-    def exec(self, code):
-        if isinstance(code, str):
-            code = code.encode('utf-8')
-        elif not isinstance(code, bytes):
-            raise TypeError(f'expected str/bytes, got {code!r}')
-        if not code:
-            raise ValueError('empty code')
-        os.write(self._w_in, code)
-        os.write(self._w_in, b'\0')
+    def close(self):
+        for fd in [self._r_out, self._w_out, self._r_err, self._w_err]:
+            if fd is not None:
+                try:
+                    os.close(fd)
+                except OSError:
+                    if exc.errno != 9:
+                        raise  # re-raise
+                    # It was closed already.
+        self._r_out = self._w_out = self._r_err = self._w_err = None
 
-        out = b''
-        while True:
-            ch = os.read(self._r_out, 1)
-            if ch == b'\0':
-                break
-            out += ch
-        return out.decode('utf-8')
+    def read(self, n=None):
+        return self.read_stdout(n)
 
-    def shutdown(self, *, wait=True):
-        t = self._thread
-        self._thread = None
-        if t is not None:
-            os.write(self._w_in, b'\0')
-            if wait:
-                t.join()
+    def read_stdout(self, n=None):
+        try:
+            return os.read(self._r_out, n)
+        except OSError as exc:
+            if exc.errno != 9:
+                raise  # re-raise
+            # It was closed already.
+            return b''
+
+    def read_stderr(self, n=None):
+        if self._combined:
+            return b''
+        try:
+            return os.read(self._r_err, n)
+        except OSError as exc:
+            if exc.errno != 9:
+                raise  # re-raise
+            # It was closed already.
+            return b''
+
+
+class WatchedScript:
+    """
+    Embeds a script in a new script that identifies when the script finishes.
+    Captures any uncaught exception, and uses a pipe to expose it.
+    """
+
+    WRAPPER = dedent("""
+        import os, traceback, json
+        w_done = {w_done}
+        try:
+            os.write(w_done, b'\0')  # started
+        except OSError:
+            # It was canceled.
+            pass
+        else:
+            try:
+                #########################
+                # begin wrapped script
+
+                {wrapped}
+
+                # end wrapped script
+                #########################
+            except Exception as exc:
+                text = json.dumps(dict(
+                    type=dict(
+                        __name__=type(exc).__name__,
+                        __qualname__=type(exc).__qualname__,
+                        __module__=type(exc).__module__,
+                    ),
+                    msg=str(exc),
+                    formatted=traceback.format_exception_only(exc),
+                    errdisplay=traceback.format_exception(exc),
+                ))
+                try:
+                    os.write(w_done, text.encode('utf-8'))
+                except BrokenPipeError:
+                    # It was closed already.
+                    pass
+                except OSError:
+                    if exc.errno != 9:
+                        raise  # re-raise
+                    # It was closed already.
+            finally:
+                try:
+                    os.close({w_done})
+                except OSError:
+                    if exc.errno != 9:
+                        raise  # re-raise
+                    # It was closed already.
+        """)
+
+    def __init__(self, script):
+        self._started = False
+        self._finished = False
+        self._r_done, self._w_done = os.pipe()
+
+        wrapper = self.WRAPPER.format(
+            w_done=self._w_done,
+            wrapped=indent(script, '    '),
+        )
+        t = threading.Thread(target=self._watch)
+        t.start()
+
+        self._script = wrapper
+        self._thread = t
+
+    def __del__(self):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    @property
+    def script(self):
+        return self._script
+
+    def close(self):
+        for fd in [self._r_done, self._w_done]:
+            if fd is not None:
+                try:
+                    os.close(fd)
+                except OSError:
+                    if exc.errno != 9:
+                        raise  # re-raise
+                    # It was closed already.
+        self._r_done = None
+        self._w_done = None
+
+    @property
+    def finished(self):
+        if isinstance(self._finished, dict):
+            exc = types.SimpleNamespace(**self._finished)
+            exc.type = types.SimpleNamespace(**exc.type)
+            return exc
+        return self._finished
+
+    def _watch(self):
+        r_fd = self._r_done
+
+        assert not self._started
+        try:
+            ch0 = os.read(r_fd, 1)
+        except OSError as exc:
+            if exc.errno != 9:
+                raise  # re-raise
+            # It was closed already.
+            return
+        if ch0 == b'':
+            # The write end of the pipe has closed.
+            return
+        assert ch0 == b'\0', repr(ch0)
+        self._started = True
+
+        assert not self._finished
+        data = b''
+        try:
+            chunk = os.read(r_fd, 100)
+            self._finished = True
+            while chunk:
+                data += chunk
+                chunk = os.read(r_fd, 100)
+            os.close(r_fd)
+        except OSError as exc:
+            if exc.errno != 9:
+                raise  # re-raise
+            # It was closed already.
+
+        if data:
+            self._finished = json.loads(data)
+
+    # It may be useful to implement the concurrent.futures.Future API
+    # on this class.
 
 
 class TestBase(unittest.TestCase):
@@ -282,39 +428,14 @@ class TestBase(unittest.TestCase):
         standardMsg = self._truncateMessage(standardMsg, diff)
         self.fail(self._formatMessage(msg, standardMsg))
 
-    def unmanaged_interpreter(self, *, legacy=True):
-        return UnmanagedInterpreter.start(self.pipe, legacy=legacy)
-#    @contextlib.contextmanager
-#    def unmanaged_interpreter(self, *, legacy=True):
-#        r_id, w_id = self.pipe()
-#        r_done, w_done = self.pipe()
-#        script = dedent(f"""
-#            import marshal, os, _testcapi
-#
-#            # Send the interpreter ID.
-#            interpid = _testcapi.get_current_interpid()
-#            data = marshal.dumps(interpid)
-#            os.write({w_id}, data)
-#
-#            # Wait for "done".
-#            os.read({r_done}, 1)
-#            """)
-#        rc = None
-#        def task():
-#            nonlocal rc
-#            if legacy:
-#                rc = support.run_in_subinterp(script)
-#            else:
-#                rc = support.run_in_subinterp_with_config(script)
-#        t = threading.Thread(target=task)
-#        t.start()
-#        try:
-#            # Get the interpreter ID.
-#            data = os.read(r_id, 10)
-#            assert len(data) < 10, repr(data) 
-#            yield marshal.loads(data)
-#        finally:
-#            # Send "done".
-#            os.write(w_done, b'\0')
-#            t.join()
-#        self.assertEqual(rc, 0)
+    @requires__testinternalcapi
+    def run_external(self, script, config='legacy'):
+        with CapturingScript(script, combined=False) as captured:
+            with WatchedScript(captured.script) as watched:
+                rc = run_in_interpreter(watched.script, config)
+                assert rc == 0, rc
+                text = watched.read(100).decode('utf-8')
+            err = captured.finished
+            if err is True:
+                err = None
+        return err, text

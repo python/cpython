@@ -1,6 +1,7 @@
 import os
 import pickle
-from textwrap import dedent
+import sys
+from textwrap import dedent, indent
 import threading
 import types
 import unittest
@@ -11,7 +12,10 @@ from test.support import import_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
 from test.support.interpreters import InterpreterNotFoundError
-from .utils import _captured_script, _run_output, _running, TestBase
+from .utils import (
+    _captured_script, _run_output, _running, TestBase,
+    CapturingScript,
+)
 
 
 class ModuleTests(TestBase):
@@ -959,6 +963,23 @@ class LowLevelTests(TestBase):
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.
 
+    def _run_string(self, interpid, script, maxout):
+        with CapturingScript(script, combined=False) as captured:
+            err = _interpreters.run_string(interpid, captured.script)
+            if err is not None:
+                return None, err
+            raw = captured.read(maxout)
+        return raw.decode('utf-8'), None
+
+    def run_and_capture(self, interpid, script, maxout=1000):
+        text, err = self._run_string(interpid, script, maxout)
+        if err is not None:
+            print()
+            print(err.errdisplay, file=sys.stderr)
+            raise Exception(f'subinterpreter failed: {err.formatted}')
+        else:
+            return text
+
     def test_new_config(self):
         # This test overlaps with
         # test.test_capi.test_misc.InterpreterConfigTests.
@@ -1092,17 +1113,59 @@ class LowLevelTests(TestBase):
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
-        with self.subTest('isolated'):
-            expected = _interpreters.new_config('isolated')
-            interpid = _interpreters.create('isolated')
-            config = _interpreters.get_config(interpid)
-            self.assert_ns_equal(config, expected)
+    def test_get_main(self):
+        interpid, owned = _interpreters.get_main()
+        self.assertEqual(interpid, 0)
+        self.assertFalse(owned)
 
-        with self.subTest('legacy'):
-            expected = _interpreters.new_config('legacy')
-            interpid = _interpreters.create('legacy')
-            config = _interpreters.get_config(interpid)
-            self.assert_ns_equal(config, expected)
+    def test_get_current(self):
+        with self.subTest('main'):
+            main, _ = _interpreters.get_main()
+            interpid, owned = _interpreters.get_current()
+            self.assertEqual(interpid, main)
+            self.assertFalse(owned)
+
+        with self.subTest('owned'):
+#            r, w = self.pipe()
+#            orig = _interpreters.create()
+#            _interpreters.run_string(orig, dedent(f"""
+#                import os
+#                import {_interpreters.__name__} as _interpreters
+#                interpid = _interpreters.get_current()
+#                os.write({w}, interpid.as_bytes(8, 'big'))
+#                """))
+#            raw = os.read(r, 8)
+#            interpid = int.from_bytes(raw, 'big')
+#            self.assertEqual(interpid, orig)
+            orig = _interpreters.create()
+            text = self.run_and_capture(orig, f"""
+                import {_interpreters.__name__} as _interpreters
+                interpid, owned = _interpreters.get_current()
+                print(interpid)
+                print(owned)
+                """)
+            interpid, owned = text.split()
+            interpid = int(interpid)
+            owned = eval(owned)
+            self.assertEqual(interpid, orig)
+            self.assertTrue(owned)
+
+        with self.subTest('external'):
+            err, text = self.run_external(f"""
+                import {_interpreters.__name__} as _interpreters
+                interpid, owned = _interpreters.get_current()
+                print(interpid)
+                print(owned)
+                """)
+            assert err is None, err
+            interpid, owned = text.split()
+            interpid = int(interpid)
+            owned = eval(owned)
+            self.assertEqual(interpid, orig)
+            self.assertTrue(owned)
+
+    def test_list_all(self):
+        ...
 
     def test_create(self):
         isolated = _interpreters.new_config('isolated')
@@ -1155,11 +1218,25 @@ class LowLevelTests(TestBase):
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
 
-    def test_current(self):
-        ...
+    def test_get_config(self):
+        with self.subTest('main'):
+            expected = _interpreters.new_config('legacy')
+            expected.gil = 'own'
+            interpid, _ = _interpreters.get_main()
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
 
-    def test_list_all(self):
-        ...
+        with self.subTest('isolated'):
+            expected = _interpreters.new_config('isolated')
+            interpid = _interpreters.create('isolated')
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
+
+        with self.subTest('legacy'):
+            expected = _interpreters.new_config('legacy')
+            interpid = _interpreters.create('legacy')
+            config = _interpreters.get_config(interpid)
+            self.assert_ns_equal(config, expected)
 
 
 if __name__ == '__main__':
