@@ -13989,7 +13989,6 @@ mainformatlong(PyObject *v,
                 base = 8;
                 break;
             case 'x':
-            case 'X':
                 base = 16;
                 break;
         }

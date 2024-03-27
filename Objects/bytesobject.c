@@ -851,7 +851,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                             base = 8;
                             break;
                         case 'x':
-                        case 'X':
                             base = 16;
                             break;
                     }
