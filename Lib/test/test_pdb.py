@@ -3057,6 +3057,15 @@ def bœr():
         stdout, stderr = self.run_pdb_module(script, commands)
         self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
 
+    def test_run_module_with_args(self):
+        commands = """
+            continue
+        """
+        self._run_pdb(["calendar", "-m"], commands, expected_returncode=2)
+
+        stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
+        self.assertIn("December", stdout)
+
     def test_breakpoint(self):
         script = """
             if __name__ == '__main__':
