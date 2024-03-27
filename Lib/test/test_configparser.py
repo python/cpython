@@ -2115,6 +2115,54 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
             self.assertEqual(cfg['two'].getlen('one'), 5)
 
 
+class SectionlessTestCase(unittest.TestCase):
+
+    def fromstring(self, string):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.read_string(string)
+        return cfg
+
+    def test_no_first_section(self):
+        cfg1 = self.fromstring("""
+        a = 1
+        b = 2
+        [sect1]
+        c = 3
+        """)
+
+        self.assertEqual(set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg1.sections()))
+        self.assertEqual('1', cfg1[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg1[configparser.UNNAMED_SECTION]['b'])
+        self.assertEqual('3', cfg1['sect1']['c'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(output.getvalue())
+
+        #self.assertEqual(set([configparser.UNNAMED_SECTION, 'sect1']), set(cfg2.sections()))
+        self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
+        self.assertEqual('3', cfg2['sect1']['c'])
+
+    def test_no_section(self):
+        cfg1 = self.fromstring("""
+        a = 1
+        b = 2
+        """)
+
+        self.assertEqual([configparser.UNNAMED_SECTION], cfg1.sections())
+        self.assertEqual('1', cfg1[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg1[configparser.UNNAMED_SECTION]['b'])
+
+        output = io.StringIO()
+        cfg1.write(output)
+        cfg2 = self.fromstring(output.getvalue())
+
+        self.assertEqual([configparser.UNNAMED_SECTION], cfg2.sections())
+        self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, configparser, not_exported={"Error"})
