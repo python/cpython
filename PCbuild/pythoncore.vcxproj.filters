@@ -330,9 +330,6 @@
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\interpreteridobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\hashtable.h">
       <Filter>Modules</Filter>
     </ClInclude>
@@ -491,9 +488,6 @@
     </ClInclude>
     <ClInclude Include="..\Include\cpython\genobject.h">
       <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\cpython\interpreteridobject.h">
-      <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pythonrun.h">
       <Filter>Include\cpython</Filter>
@@ -1473,9 +1467,6 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\namespaceobject.c">
-      <Filter>Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_opcode.c">

@@ -1,8 +1,9 @@
 /* statistics accelerator C extension: _statistics module. */
 
-// clinic/_statisticsmodule.c.h uses internal pycore_modsupport.h API
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030c0000
 #endif
 
 #include "Python.h"

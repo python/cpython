@@ -891,8 +891,16 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return (uint32_t)_Py_atomic_load_uintptr_relaxed(
+    uint32_t version = (uint32_t)_Py_atomic_load_uintptr_relaxed(
         &interp->ceval.instrumentation_version);
+#ifdef Py_DEBUG
+    PyThreadState *tstate = _PyThreadState_GET();
+    uint32_t thread_version =
+        (uint32_t)(_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) &
+                   ~_PY_EVAL_EVENTS_MASK);
+    assert(thread_version == version);
+#endif
+    return version;
 }
 
 /* Atomically set the given version in the given location, without touching

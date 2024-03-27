@@ -196,6 +196,10 @@ Java Platform
    ``(os_name, os_version, os_arch)``. Values which cannot be determined are set to
    the defaults given as parameters (which all default to ``''``).
 
+   .. deprecated-removed:: 3.13 3.15
+      It was largely untested, had a confusing API,
+      and was only useful for Jython support.
+
 
 Windows Platform
 ----------------
