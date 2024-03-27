@@ -19,7 +19,7 @@ class TestDecode:
     def test_bytes(self):
         self.assertEqual(self.loads(b"1"), 1)
 
-    def test_constant(self):
+    def test_parse_constant(self):
         for constant, expected in [
             ("Infinity", "INFINITY"),
             ("-Infinity", "-INFINITY"),
