@@ -471,7 +471,7 @@ static PyObject *
 proxy_repr(PyObject *proxy)
 {
     PyObject *obj = _PyWeakref_GET_REF(proxy);
-    if (!proxy_check_ref(obj) && PyErr_Occurred()) {
+    if (!proxy_check_ref(obj)) {
         return NULL;
     }
     PyObject *repr = PyUnicode_FromFormat(
