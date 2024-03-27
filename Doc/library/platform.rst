@@ -317,21 +317,21 @@ Android Platform
 
    * ``api_level`` - API level, as an integer (e.g. ``34``)
 
-   * ``manufacturer`` - `manufacturer name
+   * ``manufacturer`` - `Manufacturer name
      <https://developer.android.com/reference/android/os/Build#MANUFACTURER>`__
 
-   * ``model`` - `model name
+   * ``model`` - `Model name
      <https://developer.android.com/reference/android/os/Build#MODEL>`__ –
      typically the marketing name or model number
 
-   * ``device`` - `device name
+   * ``device`` - `Device name
      <https://developer.android.com/reference/android/os/Build#DEVICE>`__ –
      typically the model number or a codename
 
    * ``is_emulator`` - ``True`` if the device is an emulator; ``False`` if it's
      a physical device
 
-   For a list of known model and device names, see `here
+   See the `list of known model and device names
    <https://storage.googleapis.com/play_public/supported_devices.html>`__.
 
    .. versionadded:: 3.13

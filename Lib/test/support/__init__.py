@@ -1795,7 +1795,7 @@ _old_android_emulator = None
 def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
-    minimum_interval = 1e-4
+    minimum_interval = 1e-4   # 100 us
     if is_android and interval < minimum_interval:
         global _old_android_emulator
         if _old_android_emulator is None:
