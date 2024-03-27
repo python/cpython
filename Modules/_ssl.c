@@ -479,10 +479,30 @@ fill_and_set_sslerror(_sslmodulestate *state,
 {
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
-    PyObject *init_value, *msg, *key;
+    PyObject *init_value, *msg;
 
     if (errcode != 0) {
+#if defined(OPENSSL_IS_BORINGSSL)
+        const char *lib_str, *reason_str;
+
+        lib_str = ERR_lib_symbol_name(errcode);
+        if (lib_str != NULL) {
+            lib_obj = PyUnicode_FromString(lib_str);
+            if (lib_obj == NULL) {
+                goto fail;
+            }
+        }
+
+        reason_str = ERR_reason_symbol_name(errcode);
+        if (reason_str != NULL) {
+            reason_obj = PyUnicode_FromString(reason_str);
+            if (reason_obj == NULL) {
+                goto fail;
+            }
+        }
+#else
         int lib, reason;
+        PyObject *key;
 
         lib = ERR_GET_LIB(errcode);
         reason = ERR_GET_REASON(errcode);
@@ -502,6 +522,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
         if (lib_obj == NULL && PyErr_Occurred()) {
             goto fail;
         }
+#endif /* OPENSSL_IS_BORINGSSL */
         if (errstr == NULL)
             errstr = ERR_reason_error_string(errcode);
     }
@@ -6291,6 +6312,11 @@ sslmodule_init_constants(PyObject *m)
 static int
 sslmodule_init_errorcodes(PyObject *module)
 {
+#if defined(OPENSSL_IS_BORINGSSL)
+    /* BoringSSL does not use error tables and instead provides the necessary
+       API directly. */
+    return 0;
+#else
     _sslmodulestate *state = get_ssl_state(module);
 
     struct py_ssl_error_code *errcode;
@@ -6339,6 +6365,7 @@ sslmodule_init_errorcodes(PyObject *module)
     }
 
     return 0;
+#endif /* OPENSSL_IS_BORINGSSL */
 }
 
 static void
