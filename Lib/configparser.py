@@ -145,12 +145,14 @@ ConfigParser -- responsible for parsing a list of
 
 from collections.abc import MutableMapping
 from collections import ChainMap as _ChainMap
+import contextlib
 import functools
 import io
 import itertools
 import os
 import re
 import sys
+from typing import Iterator
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
@@ -985,17 +987,16 @@ class RawConfigParser(MutableMapping):
         """
 
         try:
-            self._raise_all(*self._read_inner(fp, fpname))
+            self._raise_all(self._read_inner(fp, fpname))
         finally:
             self._join_multiline_values()
 
-    def _raise_all(self, *exceptions: ParsingError):
+    def _raise_all(self, exceptions: Iterator[ParsingError]):
         """
         Combine any number of ParsingErrors into one and raise it.
         """
-        if not exceptions:
-            return
-        raise exceptions[0].combine(exceptions[1:])
+        with contextlib.suppress(StopIteration):
+            raise next(exceptions).combine(exceptions)
 
     def _read_inner(self, fp, fpname):
         elements_added = set()
