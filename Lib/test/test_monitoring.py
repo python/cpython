@@ -3,14 +3,18 @@
 import collections
 import dis
 import functools
+import math
 import operator
 import sys
 import textwrap
 import types
 import unittest
 import asyncio
-from test import support
+
+import test.support
 from test.support import requires_specialization, script_helper
+
+_testcapi = test.support.import_helper.import_module("_testcapi")
 
 PAIR = (0,1)
 
@@ -1884,5 +1888,164 @@ class TestMonitoringAtShutdown(unittest.TestCase):
         # gh-115832: An object destructor running during the final GC of
         # interpreter shutdown triggered an infinite loop in the
         # instrumentation code.
-        script = support.findfile("_test_monitoring_shutdown.py")
+        script = test.support.findfile("_test_monitoring_shutdown.py")
         script_helper.run_test_script(script)
+
+
+class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
+
+    class Scope:
+        def __init__(self, *args):
+            self.args = args
+
+        def __enter__(self):
+            _testcapi.enter_scope(*self.args)
+
+        def __exit__(self, *args):
+            _testcapi.exit_scope()
+
+    def setUp(self):
+        super(TestCApiEventGeneration, self).setUp()
+
+        capi = _testcapi
+
+        self.codelike = capi.CodeLike(2)
+
+        self.cases = [
+            # (Event, function, *args)
+            ( 1, E.PY_START, capi.fire_event_py_start),
+            ( 1, E.PY_RESUME, capi.fire_event_py_resume),
+            ( 1, E.PY_YIELD, capi.fire_event_py_yield, 10),
+            ( 1, E.PY_RETURN, capi.fire_event_py_return, 20),
+            ( 2, E.CALL, capi.fire_event_call, callable, 40),
+            (10, E.INSTRUCTION, capi.fire_event_instruction),
+            ( 1, E.JUMP, capi.fire_event_jump, 60),
+            ( 1, E.BRANCH, capi.fire_event_branch, 70),
+            ( 1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),
+            ( 1, E.RAISE, capi.fire_event_raise, ValueError(2)),
+            ( 1, E.EXCEPTION_HANDLED, capi.fire_event_exception_handled, ValueError(5)),
+            ( 1, E.PY_UNWIND, capi.fire_event_py_unwind, ValueError(6)),
+            ( 1, E.STOP_ITERATION, capi.fire_event_stop_iteration, ValueError(7)),
+        ]
+
+    def check_event_count(self, event, func, args, expected):
+        class Counter:
+            def __init__(self):
+                self.count = 0
+            def __call__(self, *args):
+                self.count += 1
+
+        try:
+            counter = Counter()
+            sys.monitoring.register_callback(TEST_TOOL, event, counter)
+            if event == E.C_RETURN or event == E.C_RAISE:
+                sys.monitoring.set_events(TEST_TOOL, E.CALL)
+            else:
+                sys.monitoring.set_events(TEST_TOOL, event)
+            event_value = int(math.log2(event))
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, expected)
+
+            prev = sys.monitoring.register_callback(TEST_TOOL, event, None)
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, 0)
+                self.assertEqual(prev, counter)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_fire_event(self):
+        for expected, event, function, *args in self.cases:
+            for unstable in (0, 1):
+                offset = 0
+                self.codelike = _testcapi.CodeLike(1)
+                with self.subTest(function.__name__, unstable=unstable):
+                    args_ = (self.codelike, 0, unstable) + tuple(args)
+                    self.check_event_count(event, function, args_, expected)
+
+    CANNOT_DISABLE = { E.PY_THROW, E.RAISE, E.RERAISE,
+                       E.EXCEPTION_HANDLED, E.PY_UNWIND }
+
+    def check_disable(self, event, func, args, expected):
+        try:
+            counter = CounterWithDisable()
+            sys.monitoring.register_callback(TEST_TOOL, event, counter)
+            if event == E.C_RETURN or event == E.C_RAISE:
+                sys.monitoring.set_events(TEST_TOOL, E.CALL)
+            else:
+                sys.monitoring.set_events(TEST_TOOL, event)
+            event_value = int(math.log2(event))
+            with self.Scope(self.codelike, event_value):
+                counter.count = 0
+                func(*args)
+                self.assertEqual(counter.count, expected)
+                counter.disable = True
+                if event in self.CANNOT_DISABLE:
+                    # use try-except rather then assertRaises to avoid
+                    # events from framework code
+                    try:
+                        counter.count = 0
+                        func(*args)
+                        self.assertEqual(counter.count, expected)
+                    except ValueError:
+                        pass
+                    else:
+                        self.Error("Expected a ValueError")
+                else:
+                    counter.count = 0
+                    func(*args)
+                    self.assertEqual(counter.count, expected)
+                    counter.count = 0
+                    func(*args)
+                    self.assertEqual(counter.count, expected - 1)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_disable_event(self):
+        for expected, event, function, *args in self.cases:
+            for unstable in (0, 1):
+                offset = 0
+                self.codelike = _testcapi.CodeLike(2)
+                with self.subTest(function.__name__, unstable=unstable):
+                    args_ = (self.codelike, 0, unstable) + tuple(args)
+                    self.check_disable(event, function, args_, expected)
+
+    def test_enter_scope_two_events(self):
+        for unstable in (0,1):
+            with self.subTest(unstable=unstable):
+                try:
+                    yield_counter = CounterWithDisable()
+                    unwind_counter = CounterWithDisable()
+                    sys.monitoring.register_callback(TEST_TOOL, E.PY_YIELD, yield_counter)
+                    sys.monitoring.register_callback(TEST_TOOL, E.PY_UNWIND, unwind_counter)
+                    sys.monitoring.set_events(TEST_TOOL, E.PY_YIELD | E.PY_UNWIND)
+
+                    yield_value = int(math.log2(E.PY_YIELD))
+                    unwind_value = int(math.log2(E.PY_UNWIND))
+                    cl = _testcapi.CodeLike(2)
+                    with self.Scope(cl, yield_value, unwind_value):
+                        yield_counter.count = 0
+                        unwind_counter.count = 0
+
+                        _testcapi.fire_event_py_unwind(cl, 0, unstable, ValueError(42))
+                        assert(yield_counter.count == 0)
+                        assert(unwind_counter.count == 1)
+
+                        _testcapi.fire_event_py_yield(cl, 0, unstable, ValueError(42))
+                        assert(yield_counter.count == 1)
+                        assert(unwind_counter.count == 1)
+
+                        yield_counter.disable = True
+                        _testcapi.fire_event_py_yield(cl, 0, unstable, ValueError(42))
+                        assert(yield_counter.count == 2)
+                        assert(unwind_counter.count == 1)
+
+                        _testcapi.fire_event_py_yield(cl, 0, unstable, ValueError(42))
+                        assert(yield_counter.count == 2)
+                        assert(unwind_counter.count == 1)
+
+                finally:
+                    sys.monitoring.set_events(TEST_TOOL, 0)
