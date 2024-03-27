@@ -361,8 +361,9 @@ static int
 dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_value,
                     PyObject **result, int incref_result);
 
-
+#ifndef NDEBUG
 static int _PyObject_InlineValuesConsistencyCheck(PyObject *obj);
+#endif
 
 #include "clinic/dictobject.c.h"
 
@@ -851,7 +852,8 @@ new_values(size_t size)
     }
     res->embedded = 0;
     res->size = 0;
-    res->capacity = size;
+    assert(size < 256);
+    res->capacity = (uint8_t)size;
     return res;
 }
 
@@ -6587,7 +6589,8 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
 #endif
     size_t size = shared_keys_usable_size(keys);
     PyDictValues *values = _PyObject_InlineValues(obj);
-    values->capacity = size;
+    assert(size < 256);
+    values->capacity = (uint8_t)size;
     values->size = 0;
     values->embedded = 1;
     values->valid = 1;
@@ -7101,7 +7104,8 @@ _PyDict_SendEvent(int watcher_bits,
     }
 }
 
-int
+#ifndef NDEBUG
+static int
 _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 {
     if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
@@ -7119,3 +7123,4 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
     assert(0);
     return 0;
 }
+#endif
