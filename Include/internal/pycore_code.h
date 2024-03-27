@@ -448,18 +448,14 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 
 /** Counters
  * The first 16-bit value in each inline cache is a counter.
- * When counting misses, the counter is treated as a simple unsigned value.
  *
  * When counting executions until the next specialization attempt,
  * exponential backoff is used to reduce the number of specialization failures.
- * The high 12 bits store the counter, the low 4 bits store the backoff exponent.
- * On a specialization failure, the backoff exponent is incremented and the
- * counter set to (2**backoff - 1).
- * Backoff == 6 -> starting counter == 63, backoff == 10 -> starting counter == 1023.
+ * See pycore_backoff.h for more details.
+ * On a specialization failure, the backoff counter is reset.
  */
 
-/* With a 16-bit counter, we have 12 bits for the counter value, and 4 bits for the backoff */
-#define ADAPTIVE_BACKOFF_BITS 4
+#include "pycore_backoff.h"
 
 // A value of 1 means that we attempt to specialize the *second* time each
 // instruction is executed. Executing twice is a much better indicator of
@@ -477,13 +473,9 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_VALUE 52
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
-#define MAX_BACKOFF_VALUE (16 - ADAPTIVE_BACKOFF_BITS)
-
-
 static inline uint16_t
 adaptive_counter_bits(uint16_t value, uint16_t backoff) {
-    return ((value << ADAPTIVE_BACKOFF_BITS)
-            | (backoff & ((1 << ADAPTIVE_BACKOFF_BITS) - 1)));
+    return make_backoff_counter(value, backoff).counter;
 }
 
 static inline uint16_t
@@ -500,13 +492,7 @@ adaptive_counter_cooldown(void) {
 
 static inline uint16_t
 adaptive_counter_backoff(uint16_t counter) {
-    uint16_t backoff = counter & ((1 << ADAPTIVE_BACKOFF_BITS) - 1);
-    backoff++;
-    if (backoff > MAX_BACKOFF_VALUE) {
-        backoff = MAX_BACKOFF_VALUE;
-    }
-    uint16_t value = (uint16_t)(1 << backoff) - 1;
-    return adaptive_counter_bits(value, backoff);
+    return reset_backoff_counter(forge_backoff_counter(counter)).counter;
 }
 
 

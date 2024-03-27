@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
+#include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
@@ -13,6 +14,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+
+/* Minimum of 16 additional executions before retry */
+#define MIN_TIER2_BACKOFF 4
 
 #define NEED_OPCODE_METADATA
 #include "pycore_uop_metadata.h" // Uop tables
@@ -110,9 +114,7 @@ never_optimize(
     _PyExecutorObject **exec,
     int Py_UNUSED(stack_entries))
 {
-    /* Although it should be benign for this to be called,
-     * it shouldn't happen, so fail in debug builds. */
-    assert(0 && "never optimize should never be called");
+    // This may be called if the optimizer is reset
     return 0;
 }
 
@@ -127,7 +129,6 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
-    .resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
     .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
     .side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
 };
@@ -135,17 +136,16 @@ static _PyOptimizerObject _PyOptimizer_Default = {
 static uint32_t
 shift_and_offset_threshold(uint32_t threshold)
 {
-    return (threshold << OPTIMIZER_BITS_IN_COUNTER) + (1 << 15);
+    if (threshold == OPTIMIZER_UNREACHABLE_THRESHOLD) {
+        return threshold;
+    }
+    return make_backoff_counter(threshold, MIN_TIER2_BACKOFF).counter;
 }
 
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->optimizer_backedge_threshold ==
-           shift_and_offset_threshold(interp->optimizer->backedge_threshold));
-    assert(interp->optimizer_resume_threshold ==
-           shift_and_offset_threshold(interp->optimizer->resume_threshold));
     if (interp->optimizer == &_PyOptimizer_Default) {
         return NULL;
     }
@@ -191,11 +191,10 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
     interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
-    interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
-    interp->optimizer_side_threshold = optimizer->side_threshold;
+    interp->optimizer_side_threshold = shift_and_offset_threshold(optimizer->side_threshold);
     if (optimizer == &_PyOptimizer_Default) {
-        assert(interp->optimizer_backedge_threshold > (1 << 16));
-        assert(interp->optimizer_resume_threshold > (1 << 16));
+        assert(interp->optimizer_backedge_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
+        assert(interp->optimizer_side_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
     }
     return old;
 }
@@ -1106,10 +1105,11 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
 
     /* Initialize exits */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = 0;
+        executor->exits[i].temperature = interp->optimizer_side_threshold;
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -1291,11 +1291,10 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    opt->resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     // Need a few iterations to settle specializations,
     // and to ammortize the cost of optimization.
-    opt->side_threshold = 16;
     opt->backedge_threshold = 16;
+    opt->side_threshold = 16;
     return (PyObject *)opt;
 }
 
@@ -1385,9 +1384,8 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
-    opt->base.side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->base.backedge_threshold = 0;
+    opt->base.side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->count = 0;
     return (PyObject *)opt;
 }
@@ -1554,7 +1552,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_DECREF(executor->exits[i].executor);
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = INT16_MIN;
+        executor->exits[i].temperature = OPTIMIZER_UNREACHABLE_THRESHOLD;
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);

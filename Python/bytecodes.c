@@ -8,6 +8,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_backoff.h"
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
@@ -1715,7 +1716,7 @@ dummy_func(
         inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1, unused, unused, unused -- unused, unused if (oparg & 1))) {
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
@@ -2348,40 +2349,34 @@ dummy_func(
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             uint16_t counter = this_instr[1].cache;
-            this_instr[1].cache = counter + (1 << OPTIMIZER_BITS_IN_COUNTER);
-            /* We are using unsigned values, but we really want signed values, so
-             * do the 2s complement adjustment manually */
-            uint32_t offset_counter = counter ^ (1 << 15);
-            uint32_t threshold = tstate->interp->optimizer_backedge_threshold;
-            assert((threshold & OPTIMIZER_BITS_MASK) == 0);
-            // Use '>=' not '>' so that the optimizer/backoff bits do not effect the result.
-            // Double-check that the opcode isn't instrumented or something:
-            if (offset_counter >= threshold && this_instr->op.code == JUMP_BACKWARD) {
-                _Py_CODEUNIT *start = this_instr;
-                /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                while (oparg > 255) {
-                    oparg >>= 8;
-                    start--;
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                if (counter == 0) {
+                    // Dynamically initialize the counter
+                    counter = tstate->interp->optimizer_backedge_threshold;
+                    this_instr[1].cache = counter;
                 }
-                _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
-                ERROR_IF(optimized < 0, error);
-                if (optimized) {
-                    assert(tstate->previous_executor == NULL);
-                    tstate->previous_executor = Py_None;
-                    GOTO_TIER_TWO(executor);
-                }
-                else {
-                    int backoff = this_instr[1].cache & OPTIMIZER_BITS_MASK;
-                    backoff++;
-                    if (backoff < MIN_TIER2_BACKOFF) {
-                        backoff = MIN_TIER2_BACKOFF;
+                if (ADAPTIVE_COUNTER_IS_ZERO(counter) && this_instr->op.code == JUMP_BACKWARD) {
+                    _Py_CODEUNIT *start = this_instr;
+                    /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
+                    while (oparg > 255) {
+                        oparg >>= 8;
+                        start--;
                     }
-                    else if (backoff > MAX_TIER2_BACKOFF) {
-                        backoff = MAX_TIER2_BACKOFF;
+                    _PyExecutorObject *executor;
+                    int optimized = _PyOptimizer_Optimize(frame, start, stack_pointer, &executor);
+                    ERROR_IF(optimized < 0, error);
+                    if (optimized) {
+                        assert(tstate->previous_executor == NULL);
+                        tstate->previous_executor = Py_None;
+                        GOTO_TIER_TWO(executor);
                     }
-                    this_instr[1].cache = ((UINT16_MAX << OPTIMIZER_BITS_IN_COUNTER) << backoff) | backoff;
+                    else {
+                        this_instr[1].cache = adaptive_counter_backoff(counter);
+                    }
                 }
+            }
+            else {
+                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
             }
             #endif  /* ENABLE_SPECIALIZATION */
         }
@@ -3010,7 +3005,7 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
             ERROR_IF(err, error);
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
             GO_TO_INSTRUCTION(CALL);
         }
 
@@ -3973,7 +3968,7 @@ dummy_func(
             ERROR_IF(next_opcode < 0, error);
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
-                INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                PAUSE_ADAPTIVE_COUNTER(next_instr[1].cache);
             }
             assert(next_opcode > 0 && next_opcode < 256);
             opcode = next_opcode;
@@ -4159,21 +4154,22 @@ dummy_func(
         tier2 op(_COLD_EXIT, (--)) {
             _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
             _PyExitData *exit = &previous->exits[oparg];
-            exit->temperature++;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
+            backoff_counter_t temperature = forge_backoff_counter(exit->temperature);
+            if (!backoff_counter_is_zero(temperature)) {
+                exit->temperature = advance_backoff_counter(temperature).counter;
                 GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
-            } else {
+            }
+            else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
-                    exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
+                    exit->temperature = reset_backoff_counter(temperature).counter;
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
@@ -4183,7 +4179,7 @@ dummy_func(
                 }
             }
             /* We need two references. One to store in exit->executor and
-             * one to keep the executor alive when executing. */
+            * one to keep the executor alive when executing. */
             Py_INCREF(executor);
             exit->executor = executor;
             GOTO_TIER_TWO(executor);
