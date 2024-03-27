@@ -367,15 +367,14 @@ clear_tp_bases(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    ASSERT_TYPE_LOCK_HELD();
-    return self->tp_mro;
+    return FT_ATOMIC_LOAD_PTR(self->tp_mro);
 }
 
 PyObject *
 _PyType_GetMRO(PyTypeObject *self)
 {
+    PyObject *mro = lookup_tp_mro(self);
 #ifdef Py_GIL_DISABLED
-    PyObject *mro = _Py_atomic_load_ptr_relaxed(&self->tp_mro);
     if (mro == NULL) {
         return NULL;
     }
@@ -389,7 +388,7 @@ _PyType_GetMRO(PyTypeObject *self)
     END_TYPE_LOCK()
     return mro;
 #else
-    return Py_XNewRef(lookup_tp_mro(self));
+    return Py_XNewRef(mro);
 #endif
 }
 
@@ -2348,13 +2347,7 @@ is_subtype_with_mro(PyObject *a_mro, PyTypeObject *a, PyTypeObject *b)
 int
 PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
-#ifdef Py_GIL_DISABLED
-    PyObject *mro = _Py_atomic_load_ptr(&a->tp_mro);
-    int res = is_subtype_with_mro(mro, a, b);
-    return res;
-#else
     return is_subtype_with_mro(lookup_tp_mro(a), a, b);
-#endif
 }
 
 /* Routines to do a method lookup in the type without looking in the
