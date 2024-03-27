@@ -1,0 +1,1 @@
+Changes to documentation files and config outputs to reflect the new location for reporting bugs - i.e. GitHub rather than bugs.python.org.
