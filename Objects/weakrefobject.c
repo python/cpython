@@ -54,9 +54,7 @@
  * them, but we only hold borrowed references and they may also be destroyed
  * concurrently.
  *
- * We can probably solve this by using QSBR to ensure that the memory backing
- * either the weakref or the referenced object is not freed until we're ready,
- * but for now we've chosen to work around it using a few different strategies:
+ * For now we've chosen to address this in a straightforward way:
  *
  * - The weakref's hash is protected using the weakref's per-object lock.
  * - The other mutable is protected by a striped lock owned by the interpreter.
@@ -79,6 +77,7 @@ Py_ssize_t
 _PyWeakref_GetWeakrefCount(PyWeakReference *head)
 {
     Py_ssize_t count = 0;
+
     while (head != NULL) {
         ++count;
         head = head->wr_next;
@@ -466,6 +465,12 @@ static int
 is_basic_proxy(PyWeakReference *proxy)
 {
     return (proxy->wr_callback == NULL) && PyWeakref_CheckProxy(proxy);
+}
+
+static int
+is_basic_ref_or_proxy(PyWeakReference *wr)
+{
+    return is_basic_ref(wr) || is_basic_proxy(wr);
 }
 
 /* Return the node that `newref` should be inserted after or NULL if `newref`
@@ -1119,13 +1124,10 @@ PyObject_ClearWeakRefs(PyObject *object)
     for (int done = 0; !done;) {
         PyObject *callback = NULL;
         LOCK_WEAKREFS(object);
-        if (*list != NULL && (*list)->wr_callback == NULL) {
+        if (*list != NULL && is_basic_ref_or_proxy(*list)) {
             clear_weakref_lock_held(*list, &callback);
-            done = (*list == NULL);
         }
-        else {
-            done = 1;
-        }
+        done = (*list == NULL) || !is_basic_ref_or_proxy(*list);
         UNLOCK_WEAKREFS(object);
         Py_XDECREF(callback);
     }
@@ -1158,9 +1160,7 @@ PyObject_ClearWeakRefs(PyObject *object)
                 callback = NULL;
             }
         }
-        else {
-            done = 1;
-        }
+        done = (*list == NULL);
         UNLOCK_WEAKREFS(object);
 
         Py_XDECREF(callback);

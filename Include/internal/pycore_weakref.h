@@ -53,6 +53,7 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
         // clear_weakref() was called
         return NULL;
     }
+
     if (_is_dead(obj)) {
         return NULL;
     }

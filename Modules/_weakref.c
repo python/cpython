@@ -32,6 +32,7 @@ _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
     return _PyWeakref_GetWeakrefCountThreadsafe(object);
 }
 
+
 static int
 is_dead_weakref(PyObject *value)
 {
