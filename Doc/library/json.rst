@@ -288,7 +288,6 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
-   .. versionchanged:: 3.6
       *fp* can now be a :term:`binary file`. The input encoding should be
       UTF-8, UTF-16 or UTF-32.
 

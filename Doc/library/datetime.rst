@@ -2611,7 +2611,6 @@ Notes:
    .. versionchanged:: 3.7
       The UTC offset is not restricted to a whole number of minutes.
 
-   .. versionchanged:: 3.7
       When the ``%z`` directive is provided to the  :meth:`~.datetime.strptime` method,
       the UTC offsets can have a colon as a separator between hours, minutes
       and seconds.

@@ -1080,7 +1080,6 @@ SSL Sockets
    .. versionchanged:: 3.5
       The :meth:`sendfile` method was added.
 
-   .. versionchanged:: 3.5
       The :meth:`shutdown` does not reset the socket timeout each time bytes
       are received or sent. The socket timeout is now the maximum total duration
       of the shutdown.
@@ -1463,8 +1462,6 @@ to speed up repeated connections from the same clients.
       :class:`SSLContext` without protocol argument is deprecated. The
       context class will either require :data:`PROTOCOL_TLS_CLIENT` or
       :data:`PROTOCOL_TLS_SERVER` protocol in the future.
-
-   .. versionchanged:: 3.10
 
       The default cipher suites now include only secure AES and ChaCha20
       ciphers with forward secrecy and security level 2. RSA and DH keys with

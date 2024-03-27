@@ -740,15 +740,13 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       The AF_RDS family was added.
 
    .. versionchanged:: 3.4
-       The CAN_BCM protocol was added.
+      The CAN_BCM protocol was added.
 
-   .. versionchanged:: 3.4
       The returned socket is now non-inheritable.
 
    .. versionchanged:: 3.7
-       The CAN_ISOTP protocol was added.
+      The CAN_ISOTP protocol was added.
 
-   .. versionchanged:: 3.7
       When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
       bit flags are applied to *type* they are cleared, and
       :attr:`socket.type` will not reflect them.  They are still passed
@@ -1802,7 +1800,6 @@ to sockets.
       The socket timeout is no longer reset each time data is sent successfully.
       The socket timeout is now the maximum total duration to send all data.
 
-   .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
       an exception, the method now retries the system call instead of raising
       an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).

@@ -81,7 +81,6 @@ The module provides the following classes:
    .. versionchanged:: 3.2
       *source_address*, *context* and *check_hostname* were added.
 
-   .. versionchanged:: 3.2
       This class now supports HTTPS virtual hosts if possible (that is,
       if :const:`ssl.HAS_SNI` is true).
 

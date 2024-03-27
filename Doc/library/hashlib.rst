@@ -88,7 +88,6 @@ accessible by name via :func:`new`.  See :data:`algorithms_available`.
    that the hashing algorithm is not used in a security context, e.g. as a
    non-cryptographic one-way compression function.
 
-.. versionchanged:: 3.9
    Hashlib now uses SHA3 and SHAKE from OpenSSL if it provides it.
 
 .. versionchanged:: 3.12

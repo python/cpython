@@ -27,9 +27,8 @@ scheduler:
    applications.
 
    .. versionchanged:: 3.3
-      *timefunc* and *delayfunc* parameters are optional.
+      The *timefunc* and *delayfunc* parameters are optional.
 
-   .. versionchanged:: 3.3
       :class:`scheduler` class can be safely used in multi-threaded
       environments.
 
@@ -84,11 +83,9 @@ Scheduler Objects
    (see :meth:`cancel`).
 
    .. versionchanged:: 3.3
-      *argument* parameter is optional.
+      The *kwargs* parameter was added.
 
-   .. versionchanged:: 3.3
-      *kwargs* parameter was added.
-
+      The *argument* parameter is optional.
 
 .. method:: scheduler.enter(delay, priority, action, argument=(), kwargs={})
 
@@ -97,10 +94,9 @@ Scheduler Objects
    :meth:`enterabs`.
 
    .. versionchanged:: 3.3
-      *argument* parameter is optional.
+      The *kwargs* parameter was added.
 
-   .. versionchanged:: 3.3
-      *kwargs* parameter was added.
+      The *argument* parameter is optional.
 
 .. method:: scheduler.cancel(event)
 

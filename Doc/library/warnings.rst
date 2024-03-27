@@ -243,7 +243,6 @@ In a :ref:`debug build <debug-build>`, the list of default warning filters is em
   :exc:`DeprecationWarning` is once again shown by default when triggered
   directly by code in ``__main__``.
 
-.. versionchanged:: 3.7
   :exc:`BytesWarning` no longer appears in the default filter list and is
   instead configured via :data:`sys.warnoptions` when :option:`-b` is specified
   twice.

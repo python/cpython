@@ -314,17 +314,13 @@ ZipFile Objects
       ZIP file that contains members with duplicate names.
 
    .. versionchanged:: 3.6
-      Removed support of ``mode='U'``.  Use :class:`io.TextIOWrapper` for reading
-      compressed text files in :term:`universal newlines` mode.
-
-   .. versionchanged:: 3.6
-      :meth:`ZipFile.open` can now be used to write files into the archive with the
+      :meth:`.open` can now be used to write files into the archive with the
       ``mode='w'`` option.
-
-   .. versionchanged:: 3.6
       Calling :meth:`.open` on a closed ZipFile will raise a :exc:`ValueError`.
       Previously, a :exc:`RuntimeError` was raised.
 
+      Removed support of ``mode='U'``.  Use :class:`io.TextIOWrapper` for reading
+      compressed text files in :term:`universal newlines` mode.
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 

@@ -285,12 +285,11 @@ Directory and files operations
       Now returns *dst*.
 
    .. versionchanged:: 3.8
+      Added the *dirs_exist_ok* parameter.
+
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
-
-   .. versionchanged:: 3.8
-      Added the *dirs_exist_ok* parameter.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 

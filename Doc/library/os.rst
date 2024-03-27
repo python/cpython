@@ -3262,7 +3262,6 @@ features:
    .. versionchanged:: 3.8
       Added the :attr:`st_reparse_tag` member on Windows.
 
-   .. versionchanged:: 3.8
       On Windows, the :attr:`st_mode` member now identifies special
       files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
       as appropriate.

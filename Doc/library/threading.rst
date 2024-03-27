@@ -561,9 +561,8 @@ All methods are executed atomically.
       ``False`` if not (for example if the *timeout* expired).
 
       .. versionchanged:: 3.2
-         The *timeout* parameter is new.
+         Added the *timeout* parameter.
 
-      .. versionchanged:: 3.2
          Lock acquisition can now be interrupted by signals on POSIX if the
          underlying threading implementation supports it.
 
@@ -645,7 +644,7 @@ Reentrant locks also support the :ref:`context management protocol <with-locks>`
       been acquired, ``False`` if the timeout has elapsed.
 
       .. versionchanged:: 3.2
-         The *timeout* parameter is new.
+         Added the *timeout* parameter.
 
 
    .. method:: release()
@@ -892,7 +891,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       that interval, return ``False``.  Return ``True`` otherwise.
 
       .. versionchanged:: 3.2
-         The *timeout* parameter is new.
+         Added the *timeout* parameter.
 
    .. method:: release(n=1)
 

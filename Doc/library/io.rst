@@ -996,9 +996,8 @@ Text I/O
    object is immediately handled to its underlying binary *buffer*.
 
    .. versionchanged:: 3.3
-      The *write_through* argument has been added.
+      The *write_through* parameter has been added.
 
-   .. versionchanged:: 3.3
       The default *encoding* is now ``locale.getpreferredencoding(False)``
       instead of ``locale.getpreferredencoding()``. Don't change temporary the
       locale encoding using :func:`locale.setlocale`, use the current locale

@@ -609,8 +609,6 @@ always available.
 
    .. versionchanged:: 3.11
       Added the ``safe_path`` attribute for :option:`-P` option.
-
-   .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
 
 

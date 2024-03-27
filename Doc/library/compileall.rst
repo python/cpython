@@ -212,10 +212,8 @@ Public functions
    .. versionchanged:: 3.5
       Added the *workers* parameter.
 
-   .. versionchanged:: 3.5
       *quiet* parameter was changed to a multilevel value.
 
-   .. versionchanged:: 3.5
       The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
       no matter what the value of *optimize* is.
 
@@ -281,7 +279,6 @@ Public functions
    .. versionchanged:: 3.5
       *quiet* parameter was changed to a multilevel value.
 
-   .. versionchanged:: 3.5
       The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
       no matter what the value of *optimize* is.
 
@@ -310,7 +307,6 @@ Public functions
    .. versionchanged:: 3.5
       *quiet* parameter was changed to a multilevel value.
 
-   .. versionchanged:: 3.5
       The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
       no matter what the value of *optimize* is.
 

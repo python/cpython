@@ -94,14 +94,12 @@ another rational number, or from a string.
       Underscores are now permitted when creating a :class:`Fraction` instance
       from a string, following :PEP:`515` rules.
 
-   .. versionchanged:: 3.11
       :class:`Fraction` implements ``__int__`` now to satisfy
       ``typing.SupportsInt`` instance checks.
 
    .. versionchanged:: 3.12
       Space is allowed around the slash for string inputs: ``Fraction('2 / 3')``.
 
-   .. versionchanged:: 3.12
       :class:`Fraction` instances now support float-style formatting, with
       presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
       and ``"%""``.
