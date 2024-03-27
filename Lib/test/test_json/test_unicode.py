@@ -27,6 +27,11 @@ class TestUnicode:
         j = self.dumps([u], ensure_ascii=False)
         self.assertEqual(j, f'["{u}"]')
 
+    def test_encoding7(self):
+        u = '\N{GREEK SMALL LETTER ALPHA}\N{GREEK CAPITAL LETTER OMEGA}'
+        j = self.dumps(u + "\n", ensure_ascii=False)
+        self.assertEqual(j, f'"{u}\\n"')
+
     def test_big_unicode_encode(self):
         u = '\U0001d120'
         self.assertEqual(self.dumps(u), '"\\ud834\\udd20"')
