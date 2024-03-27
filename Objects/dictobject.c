@@ -6573,6 +6573,7 @@ _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
     assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     assert(keys != NULL);
+    OBJECT_STAT_INC(inline_values);
 #ifdef Py_GIL_DISABLED
     Py_ssize_t usable = _Py_atomic_load_ssize_relaxed(&keys->dk_usable);
     if (usable > 1) {

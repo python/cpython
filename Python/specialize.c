@@ -188,7 +188,7 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object allocations to 4 kbytes: %" PRIu64 "\n", stats->allocations4k);
     fprintf(out, "Object allocations over 4 kbytes: %" PRIu64 "\n", stats->allocations_big);
     fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
-    fprintf(out, "Object new values: %" PRIu64 "\n", stats->new_values);
+    fprintf(out, "Object inline values: %" PRIu64 "\n", stats->inline_values);
     fprintf(out, "Object interpreter increfs: %" PRIu64 "\n", stats->interpreter_increfs);
     fprintf(out, "Object interpreter decrefs: %" PRIu64 "\n", stats->interpreter_decrefs);
     fprintf(out, "Object increfs: %" PRIu64 "\n", stats->increfs);
