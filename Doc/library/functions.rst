@@ -160,9 +160,9 @@ are always available.  They are listed here in alphabetical order.
    This function drops you into the debugger at the call site.  Specifically,
    it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
    through.  By default, ``sys.breakpointhook()`` calls
-   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
-   purely a convenience function so you don't have to explicitly import
-   :mod:`pdb` or type as much code to enter the debugger.  However,
+   :func:`pdb.set_trace()` expecting an optional keyword argument `header`.  In
+   this case, it is purely a convenience function so you don't have to explicitly
+   import :mod:`pdb` or type as much code to enter the debugger.  However,
    :func:`sys.breakpointhook` can be set to some other function and
    :func:`breakpoint` will automatically call that, allowing you to drop into
    the debugger of choice.
