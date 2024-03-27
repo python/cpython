@@ -2253,7 +2253,7 @@ def test_DocTestSuite():
          >>> suite = doctest.DocTestSuite('test.test_doctest.sample_doctest_skip')
          >>> result = suite.run(unittest.TestResult())
          >>> result
-         <unittest.result.TestResult run=4 errors=0 failures=1>
+         <unittest.result.TestResult run=6 errors=0 failures=2>
         >>> len(result.skipped)
         2
 

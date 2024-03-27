@@ -3,11 +3,16 @@
 This module includes various scenarios involving skips.
 """
 
-# This test will pass.
-def no_skip():
+def no_skip_pass():
     """
     >>> 2 + 2
     4
+    """
+
+def no_skip_fail():
+    """
+    >>> 2 + 2
+    5
     """
 
 def single_skip():
@@ -24,8 +29,15 @@ def double_skip():
     6
     """
 
-# This test will fail.
-def partial_skip():
+def partial_skip_pass():
+    """
+    >>> 2 + 2  # doctest: +SKIP
+    4
+    >>> 3 + 3
+    6
+    """
+
+def partial_skip_fail():
     """
     >>> 2 + 2  # doctest: +SKIP
     4
@@ -34,4 +46,4 @@ def partial_skip():
     """
 
 def no_examples():
-    """A docstring with no examples should not be counted as a skip."""
+    """A docstring with no examples should not be counted as run or skipped."""
