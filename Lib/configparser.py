@@ -1059,7 +1059,7 @@ class RawConfigParser(MutableMapping):
                     # no section header?
                     elif cursect is None:
                         raise MissingSectionHeaderError(fpname, lineno, line)
-                        # an option line?
+                    # an option line?
                     else:
                         indent_level = cur_indent_level
                         # is it a section header?
