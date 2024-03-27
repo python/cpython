@@ -1716,7 +1716,7 @@ dummy_func(
         inst(INSTRUMENTED_LOAD_SUPER_ATTR, (unused/1, unused, unused, unused -- unused, unused if (oparg & 1))) {
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
@@ -3005,7 +3005,7 @@ dummy_func(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, this_instr, function, arg);
             ERROR_IF(err, error);
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
             GO_TO_INSTRUCTION(CALL);
         }
 
@@ -3968,12 +3968,7 @@ dummy_func(
             ERROR_IF(next_opcode < 0, error);
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
-                if (next_opcode != POP_JUMP_IF_FALSE &&
-                    next_opcode != POP_JUMP_IF_TRUE &&
-                    next_opcode != POP_JUMP_IF_NOT_NONE &&
-                    next_opcode != POP_JUMP_IF_NONE) {
-                    INCREMENT_ADAPTIVE_COUNTER(next_instr[1].cache);
-                }
+                PAUSE_ADAPTIVE_COUNTER(next_instr[1].cache);
             }
             assert(next_opcode > 0 && next_opcode < 256);
             opcode = next_opcode;
@@ -4163,7 +4158,7 @@ dummy_func(
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             backoff_counter_t temperature = forge_backoff_counter(exit->temperature);
             if (!backoff_counter_is_zero(temperature)) {
-                exit->temperature = decrement_backoff_counter(temperature).counter;
+                exit->temperature = advance_backoff_counter(temperature).counter;
                 GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;

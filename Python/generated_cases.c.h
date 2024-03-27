@@ -3026,7 +3026,7 @@
                 tstate, PY_MONITORING_EVENT_CALL,
                 frame, this_instr, function, arg);
             if (err) goto error;
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
             GO_TO_INSTRUCTION(CALL);
         }
 
@@ -3142,12 +3142,7 @@
             if (next_opcode < 0) goto error;
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
-                if (next_opcode != POP_JUMP_IF_FALSE &&
-                    next_opcode != POP_JUMP_IF_TRUE &&
-                    next_opcode != POP_JUMP_IF_NOT_NONE &&
-                    next_opcode != POP_JUMP_IF_NONE) {
-                    INCREMENT_ADAPTIVE_COUNTER(next_instr[1].cache);
-                }
+                PAUSE_ADAPTIVE_COUNTER(next_instr[1].cache);
             }
             assert(next_opcode > 0 && next_opcode < 256);
             opcode = next_opcode;
@@ -3182,7 +3177,7 @@
             /* Skip 1 cache entry */
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
-            INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
