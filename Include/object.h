@@ -229,7 +229,6 @@ struct _object {
 #define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
 typedef union {
-    PyObject *obj;
     uintptr_t bits;
 } _Py_TaggedObject;
 

@@ -84,7 +84,7 @@ static inline _Py_TaggedObject *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 
 static inline _Py_TaggedObject _PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(f->localsplus[f->stacktop-1].obj != NULL);
+    assert(Py_CLEAR_TAG(f->localsplus[f->stacktop-1]) != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
