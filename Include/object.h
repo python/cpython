@@ -243,7 +243,12 @@ typedef union {
 
 #define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = (uintptr_t)(obj)})
 
-#define Py_TAG_CAST(o) ((_Py_TaggedObject){.obj = (o)})
+static inline void
+_Py_untag_stack(PyObject **dst, const _Py_TaggedObject *src, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        dst[i] = Py_CLEAR_TAG(src[i]);
+    }
+}
 
 typedef struct {
     PyObject ob_base;

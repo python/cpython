@@ -629,7 +629,7 @@
             _Py_TaggedObject *values;
             PyObject *list;
             values = &stack_pointer[-oparg];
-            list = _PyList_FromArraySteal((PyObject **)values, oparg);
+            list = _PyList_FromTaggedArraySteal(values, oparg);
             if (list == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = Py_OBJ_PACK(list);
             stack_pointer += 1 - oparg;
@@ -643,10 +643,10 @@
             _Py_TaggedObject *values;
             PyObject *map;
             values = &stack_pointer[-oparg*2];
-            map = _PyDict_FromItems(
-                                    (PyObject **)values, 2,
-                                    ((PyObject **)values)+1, 2,
-                                    oparg);
+            map = _PyDict_FromTaggedItems(
+                values, 2,
+                values+1, 2,
+                oparg);
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(values[_i]));
             }
@@ -710,7 +710,7 @@
             _Py_TaggedObject *pieces;
             PyObject *str;
             pieces = &stack_pointer[-oparg];
-            str = _PyUnicode_JoinArray(&_Py_STR(empty), (PyObject **)pieces, oparg);
+            str = _PyUnicode_JoinTaggedArray(&_Py_STR(empty), pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
                 Py_DECREF(Py_CLEAR_TAG(pieces[_i]));
             }
@@ -727,7 +727,7 @@
             _Py_TaggedObject *values;
             PyObject *tup;
             values = &stack_pointer[-oparg];
-            tup = _PyTuple_FromArraySteal((PyObject **)values, oparg);
+            tup = _PyTuple_FromTaggedArraySteal(values, oparg);
             if (tup == NULL) { stack_pointer += -oparg; goto error; }
             stack_pointer[-oparg] = Py_OBJ_PACK(tup);
             stack_pointer += 1 - oparg;

@@ -403,12 +403,15 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyType_HasFeature",
     "PyUnicode_Concat",
     "_PyList_FromArraySteal",
+    "_PyList_FromTaggedArraySteal",
     "_PyTuple_FromArraySteal",
+    "_PyTuple_FromTaggedArraySteal",
     "PySlice_New",
     "_Py_LeaveRecursiveCallPy",
     "CALL_STAT_INC",
     "maybe_lltrace_resume_frame",
     "_PyUnicode_JoinArray",
+    "_PyUnicode_JoinTaggedArray",
 )
 
 ESCAPING_FUNCTIONS = (

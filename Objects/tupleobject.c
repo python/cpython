@@ -390,7 +390,6 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     return (PyObject *)tuple;
 }
 
-// Accepts tagged input
 PyObject *
 _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
 {
@@ -400,13 +399,35 @@ _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF(Py_CLEAR_TAG(Py_TAG_CAST(src[i])));
+            Py_DECREF(src[i]);
         }
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = Py_CLEAR_TAG(Py_TAG_CAST(src[i]));
+        PyObject *item = src[i];
+        dst[i] = item;
+    }
+    _PyObject_GC_TRACK(tuple);
+    return (PyObject *)tuple;
+}
+
+PyObject *
+_PyTuple_FromTaggedArraySteal(_Py_TaggedObject const *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return tuple_get_empty();
+    }
+    PyTupleObject *tuple = tuple_alloc(n);
+    if (tuple == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_DECREF(Py_CLEAR_TAG(src[i]));
+        }
+        return NULL;
+    }
+    PyObject **dst = tuple->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = Py_CLEAR_TAG(src[i]);
         dst[i] = item;
     }
     _PyObject_GC_TRACK(tuple);

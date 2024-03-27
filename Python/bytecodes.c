@@ -1591,18 +1591,18 @@ dummy_func(
         }
 
         inst(BUILD_STRING, (pieces[oparg] -- str)) {
-            str = _PyUnicode_JoinArray(&_Py_STR(empty), (PyObject **)pieces, oparg);
+            str = _PyUnicode_JoinTaggedArray(&_Py_STR(empty), pieces, oparg);
             DECREF_INPUTS();
             ERROR_IF(str == NULL, error);
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
-            tup = _PyTuple_FromArraySteal((PyObject **)values, oparg);
+            tup = _PyTuple_FromTaggedArraySteal(values, oparg);
             ERROR_IF(tup == NULL, error);
         }
 
         inst(BUILD_LIST, (values[oparg] -- list)) {
-            list = _PyList_FromArraySteal((PyObject **)values, oparg);
+            list = _PyList_FromTaggedArraySteal(values, oparg);
             ERROR_IF(list == NULL, error);
         }
 
@@ -1648,9 +1648,9 @@ dummy_func(
         }
 
         inst(BUILD_MAP, (values[oparg*2] -- map)) {
-            map = _PyDict_FromItems(
-                    (PyObject **)values, 2,
-                    ((PyObject **)values)+1, 2,
+            map = _PyDict_FromTaggedItems(
+                    values, 2,
+                    values+1, 2,
                     oparg);
             DECREF_INPUTS();
             ERROR_IF(map == NULL, error);
