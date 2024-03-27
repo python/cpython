@@ -2352,7 +2352,8 @@ dummy_func(
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 if (counter == 0) {
                     // Dynamically initialize the counter
-                    this_instr[1].cache = tstate->interp->optimizer_backedge_threshold;
+                    counter = tstate->interp->optimizer_backedge_threshold;
+                    this_instr[1].cache = counter;
                 }
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter) && this_instr->op.code == JUMP_BACKWARD) {
                     _Py_CODEUNIT *start = this_instr;
