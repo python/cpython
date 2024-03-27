@@ -20,7 +20,7 @@ ConfigParser -- responsible for parsing a list of
              empty_lines_in_values=True, default_section='DEFAULT',
              interpolation=<unset>, converters=<unset>,
              allow_unnamed_section=False):
-        Create the parser. When `defaults' is given, it is initialized into the
+        Create the parser. When `defaults` is given, it is initialized into the
         dictionary or intrinsic defaults. The keys must be strings, the values
         must be appropriate for %()s string interpolation.
 
