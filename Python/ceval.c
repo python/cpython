@@ -818,7 +818,7 @@ resume_frame:
         if (next_instr != here) {
             DISPATCH();
         }
-        if (_PyOpcode_Caches[original_opcode] && !OPCODE_HAS_JUMP(original_opcode)) {
+        if (_PyOpcode_Caches[original_opcode]) {
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
             /* Prevent the underlying instruction from specializing
              * and overwriting the instrumentation. */
