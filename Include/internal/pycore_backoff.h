@@ -83,17 +83,25 @@ reset_backoff_counter(backoff_counter_t counter)
 static inline backoff_counter_t
 increment_backoff_counter(backoff_counter_t counter)
 {
-    assert(!is_unreachable_backoff_counter(counter));
-    assert(counter.value != 0xFFF);
-    return make_backoff_counter(counter.value + 1, counter.backoff);
+    if (!is_unreachable_backoff_counter(counter)) {
+        assert(counter.value != 0xFFF);
+        return make_backoff_counter(counter.value + 1, counter.backoff);
+    }
+    else {
+        return counter;
+    }
 }
 
 static inline backoff_counter_t
 decrement_backoff_counter(backoff_counter_t counter)
 {
-    assert(!is_unreachable_backoff_counter(counter));
-    assert(counter.value != 0);
-    return make_backoff_counter(counter.value - 1, counter.backoff);
+    if (!is_unreachable_backoff_counter(counter)) {
+        assert(counter.value != 0);
+        return make_backoff_counter(counter.value - 1, counter.backoff);
+    }
+    else {
+        return counter;
+    }
 }
 
 static inline bool
