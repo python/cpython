@@ -241,7 +241,6 @@ struct _is {
 
     /* These three values are shifted and offset to speed up check in JUMP_BACKWARD */
     uint32_t optimizer_backedge_threshold;
-    uint32_t optimizer_resume_threshold;
     uint16_t optimizer_side_threshold;
 
     _rare_events rare_events;

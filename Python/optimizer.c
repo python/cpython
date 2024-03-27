@@ -130,7 +130,6 @@ static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
     .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
-    .resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
     .side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
 };
 
@@ -192,11 +191,9 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
     interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
-    interp->optimizer_resume_threshold = shift_and_offset_threshold(optimizer->resume_threshold);
     interp->optimizer_side_threshold = shift_and_offset_threshold(optimizer->side_threshold);
     if (optimizer == &_PyOptimizer_Default) {
         assert(interp->optimizer_backedge_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
-        assert(interp->optimizer_resume_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
         assert(interp->optimizer_side_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
     }
     return old;
@@ -1297,7 +1294,6 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     // Need a few iterations to settle specializations,
     // and to ammortize the cost of optimization.
     opt->backedge_threshold = 16;
-    opt->resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->side_threshold = 16;
     return (PyObject *)opt;
 }
@@ -1389,7 +1385,6 @@ PyUnstable_Optimizer_NewCounter(void)
     }
     opt->base.optimize = counter_optimize;
     opt->base.backedge_threshold = 0;
-    opt->base.resume_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->base.side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->count = 0;
     return (PyObject *)opt;
