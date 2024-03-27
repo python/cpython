@@ -973,9 +973,20 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t size = PySet_Size(remaining_fields);
     PyObject *field_types = NULL, *remaining_list = NULL;
     if (size > 0) {
-        if (!PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
-                                      &field_types)) {
+        if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
+                                     &field_types) < 0) {
             res = -1;
+            goto cleanup;
+        }
+        if (field_types == NULL) {
+            if (PyErr_WarnFormat(
+                PyExc_DeprecationWarning, 1,
+                "%.400s provides _fields but not _field_types. "
+                "This will become an error in Python 3.15.",
+                Py_TYPE(self)->tp_name
+            ) < 0) {
+                res = -1;
+            }
             goto cleanup;
         }
         remaining_list = PySequence_List(remaining_fields);
