@@ -1,0 +1,1 @@
+Handle leading ``//`` for :func:`posixpath.commonpath` using :func:`posixpath.splitroot`.
