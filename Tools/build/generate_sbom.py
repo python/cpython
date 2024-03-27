@@ -186,10 +186,11 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
         # HACL* specifies its expected rev in a refresh script.
         if package["name"] == "hacl-star":
             hacl_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/_hacl/refresh.sh").read_text()
-            hacl_expected_rev = re.search(
+            hacl_expected_rev_match = re.search(
                 r"expected_hacl_star_rev=([0-9a-f]{40})",
                 hacl_refresh_sh
-            ).group(1)
+            )
+            hacl_expected_rev = hacl_expected_rev_match and hacl_expected_rev_match.group(1)
 
             error_if(
                 hacl_expected_rev != version,
