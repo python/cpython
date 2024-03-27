@@ -11,7 +11,9 @@ from _testcapi import (_test_structmembersType_OldAPI,
     INT_MAX, INT_MIN, UINT_MAX,
     LONG_MAX, LONG_MIN, ULONG_MAX,
     LLONG_MAX, LLONG_MIN, ULLONG_MAX,
-    PY_SSIZE_T_MAX, PY_SSIZE_T_MIN,
+    PY_SSIZE_T_MAX, PY_SSIZE_T_MIN, SIZE_MAX,
+    SIZEOF_INTMAX_T, SIZEOF_INTPTR_T, SIZEOF_PTRDIFF_T, SIZEOF_OFF_T,
+    SIZEOF_PID_T, SIZEOF_INT,
     )
 
 
@@ -20,6 +22,8 @@ class Index:
         self.value = value
     def __index__(self):
         return self.value
+    def __repr__(self):
+        return f'Index({self.value!r})'
 
 # There are two classes: one using <structmember.h> and another using
 # `Py_`-prefixed API. They should behave the same in Python
@@ -168,6 +172,48 @@ class ReadWriteTests_OldAPI(ReadWriteTests, unittest.TestCase):
 
 class ReadWriteTests_NewAPI(ReadWriteTests, unittest.TestCase):
     cls = _test_structmembersType_NewAPI
+
+    def test_size(self):
+        self._test_int_range('T_SSIZE', PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, indexlimit=False)
+        self._test_int_range('T_SIZE', 0, SIZE_MAX, indexlimit=False)
+
+    def test_int8(self):
+        self._test_int_range('T_INT8', -2**7, 2**7-1)
+        self._test_int_range('T_UINT8', 0, 2**8-1, indexlimit=False)
+
+    def test_int16(self):
+        self._test_int_range('T_INT16', -2**15, 2**15-1)
+        self._test_int_range('T_UINT16', 0, 2**16-1, indexlimit=False)
+
+    def test_int32(self):
+        self._test_int_range('T_INT32', -2**31, 2**31-1)
+        self._test_int_range('T_UINT32', 0, 2**32-1, indexlimit=False)
+
+    def test_int64(self):
+        self._test_int_range('T_INT64', -2**63, 2**63-1)
+        self._test_int_range('T_UINT64', 0, 2**64-1, indexlimit=False)
+
+    def test_intmax(self):
+        bits = 8*SIZEOF_INTMAX_T
+        self._test_int_range('T_INTMAX', -2**(bits-1), 2**(bits-1)-1)
+        self._test_int_range('T_UINTMAX', 0, 2**bits-1, indexlimit=False)
+
+    def test_intptr(self):
+        bits = 8*SIZEOF_INTPTR_T
+        self._test_int_range('T_INTPTR', -2**(bits-1), 2**(bits-1)-1)
+        self._test_int_range('T_UINTPTR', 0, 2**bits-1, indexlimit=False)
+
+    def test_ptrdiff(self):
+        bits = 8*SIZEOF_PTRDIFF_T
+        self._test_int_range('T_PTRDIFF', -2**(bits-1), 2**(bits-1)-1)
+
+    def test_off(self):
+        bits = 8*SIZEOF_OFF_T
+        self._test_int_range('T_OFF', -2**(bits-1), 2**(bits-1)-1)
+
+    def test_pid(self):
+        bits = 8*SIZEOF_PID_T
+        self._test_int_range('T_PID', -2**(bits-1), 2**(bits-1)-1)
 
 
 if __name__ == "__main__":
