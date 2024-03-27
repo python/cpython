@@ -179,6 +179,9 @@ def collect_platform(info_add):
             info_add(f'platform.freedesktop_os_release[{key}]',
                      os_release[key])
 
+    if sys.platform == 'android':
+        call_func(info_add, 'platform.android_ver', platform, 'android_ver')
+
 
 def collect_locale(info_add):
     import locale

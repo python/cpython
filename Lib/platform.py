@@ -542,6 +542,47 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
 
     return release, vendor, vminfo, osinfo
 
+
+AndroidVer = collections.namedtuple(
+    "AndroidVer", "release api_level manufacturer model device is_emulator")
+
+def android_ver(release="", api_level=0, manufacturer="", model="", device="",
+                is_emulator=False):
+    if sys.platform == "android":
+        try:
+            from ctypes import CDLL, c_char_p, create_string_buffer
+        except ImportError:
+            pass
+        else:
+            # An NDK developer confirmed that this is an officially-supported
+            # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
+            # private name mangling.
+            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
+            system_property_get.argtypes = (c_char_p, c_char_p)
+
+            def getprop(name, default):
+                # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
+                PROP_VALUE_MAX = 92
+                buffer = create_string_buffer(PROP_VALUE_MAX)
+                length = system_property_get(name.encode("UTF-8"), buffer)
+                if length == 0:
+                    # This API doesn’t distinguish between an empty property and
+                    # a missing one.
+                    return default
+                else:
+                    return buffer.value.decode("UTF-8", "backslashreplace")
+
+            release = getprop("ro.build.version.release", release)
+            api_level = int(getprop("ro.build.version.sdk", api_level))
+            manufacturer = getprop("ro.product.manufacturer", manufacturer)
+            model = getprop("ro.product.model", model)
+            device = getprop("ro.product.device", device)
+            is_emulator = getprop("ro.kernel.qemu", "0") == "1"
+
+    return AndroidVer(
+        release, api_level, manufacturer, model, device, is_emulator)
+
+
 ### System name aliasing
 
 def system_alias(system, release, version):
@@ -971,6 +1012,11 @@ def uname():
     if system == 'Microsoft' and release == 'Windows':
         system = 'Windows'
         release = 'Vista'
+
+    # On Android, return the name and version of the OS rather than the kernel.
+    if sys.platform == 'android':
+        system = 'Android'
+        release = android_ver().release
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''

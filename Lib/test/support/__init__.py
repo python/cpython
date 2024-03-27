@@ -1801,18 +1801,18 @@ def missing_compiler_executable(cmd_names=[]):
             return cmd[0]
 
 
-_is_android_emulator = None
+_old_android_emulator = None
 def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
-    minimum_interval = 1e-5
+    minimum_interval = 1e-4   # 100 us
     if is_android and interval < minimum_interval:
-        global _is_android_emulator
-        if _is_android_emulator is None:
-            import subprocess
-            _is_android_emulator = (subprocess.check_output(
-                               ['getprop', 'ro.kernel.qemu']).strip() == b'1')
-        if _is_android_emulator:
+        global _old_android_emulator
+        if _old_android_emulator is None:
+            import platform
+            av = platform.android_ver()
+            _old_android_emulator = av.is_emulator and av.api_level < 24
+        if _old_android_emulator:
             interval = minimum_interval
     return sys.setswitchinterval(interval)
 
