@@ -827,6 +827,19 @@ function.
        .. versionchanged:: 3.10
          The *globals*, *locals*, and *eval_str* parameters were added.
 
+   .. classmethod:: Signature.from_frame(frame)
+
+       Return a :class:`Signature` (or its subclass) object for a given
+       :ref:`frame object <frame-objects>`.
+
+       Notice that it is impossible to get signatures
+       with defaults or annotations from frames,
+       because annotations are stored
+       in a function inside ``__defaults__``, ``__kwdefaults__``,
+       and ``__annotations__`` attributes.
+
+       .. versionadded:: 3.13
+
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
