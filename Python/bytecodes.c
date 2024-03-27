@@ -3837,14 +3837,32 @@ dummy_func(
             PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
 
-            Py_DECREF(codeobj);
             if (func_obj == NULL) {
                 ERROR_NO_POP();
             }
-
-            _PyFunction_SetVersion(
-                func_obj, ((PyCodeObject *)codeobj)->co_version);
+            PyCodeObject *code = (PyCodeObject *)codeobj;
+            if (func_obj->func_builtins != tstate->interp->builtins) {
+                _PyFunction_SetVersion(func_obj, 0);
+            }
+            else if (code->co_version == 0) {
+                code->co_version = tstate->interp->func_state.next_version;
+                if (tstate->interp->func_state.next_version != 0) {
+                    tstate->interp->func_state.next_version++;
+                }
+                assert(code->co_expected_globals_version == 0);
+                if (PyDict_CheckExact(GLOBALS())) {
+                    code->co_expected_globals_version = ((PyDictObject *)GLOBALS())->ma_version_tag;
+                }
+                _PyFunction_SetVersion(func_obj, code->co_version);
+            }
+            else {
+                if (PyDict_CheckExact(GLOBALS()) &&
+                    code->co_expected_globals_version == ((PyDictObject *)GLOBALS())->ma_version_tag) {
+                    _PyFunction_SetVersion(func_obj, code->co_version);
+                }
+            }
             func = (PyObject *)func_obj;
+            Py_DECREF(codeobj);
         }
 
         inst(SET_FUNCTION_ATTRIBUTE, (attr, func -- func)) {
@@ -3868,6 +3886,13 @@ dummy_func(
                     assert(PyTuple_CheckExact(attr));
                     assert(func_obj->func_defaults == NULL);
                     func_obj->func_defaults = attr;
+                    PyCodeObject *code = (PyCodeObject *)func_obj->func_code;
+                    if (code->co_expected_number_of_defaults < 0) {
+                        code->co_expected_number_of_defaults = (int32_t)PyTuple_GET_SIZE(attr);
+                    }
+                    else if (code->co_expected_number_of_defaults != PyTuple_GET_SIZE(attr)) {
+                        func_obj->func_version = 0;
+                    }
                     break;
                 default:
                     Py_UNREACHABLE();

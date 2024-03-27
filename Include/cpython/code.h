@@ -156,7 +156,7 @@ typedef struct {
     int co_ncellvars;             /* total number of cell variables */         \
     int co_nfreevars;             /* number of free variables */               \
     uint32_t co_version;          /* version number */                         \
-                                                                               \
+    int32_t co_expected_number_of_defaults;                                    \
     PyObject *co_localsplusnames; /* tuple mapping offsets to names */         \
     PyObject *co_localspluskinds; /* Bytes mapping to local kinds (one byte    \
                                      per variable) */                          \
@@ -170,6 +170,7 @@ typedef struct {
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
+    uint64_t co_expected_globals_version;                                      \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
