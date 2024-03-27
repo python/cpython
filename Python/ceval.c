@@ -101,33 +101,34 @@
 
 #ifdef LLTRACE
 static void
-dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
+dump_stack(_PyInterpreterFrame *frame, _Py_TaggedObject *stack_pointer)
 {
-    PyObject **stack_base = _PyFrame_Stackbase(frame);
+    _Py_TaggedObject *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
-    for (PyObject **ptr = stack_base; ptr < stack_pointer; ptr++) {
+    for (_Py_TaggedObject *ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
             printf(", ");
         }
-        if (*ptr == NULL) {
+        PyObject *obj = Py_CLEAR_TAG(*ptr);
+        if (obj == NULL) {
             printf("<nil>");
             continue;
         }
         if (
-            *ptr == Py_None
-            || PyBool_Check(*ptr)
-            || PyLong_CheckExact(*ptr)
-            || PyFloat_CheckExact(*ptr)
-            || PyUnicode_CheckExact(*ptr)
+            obj == Py_None
+            || PyBool_Check(obj)
+            || PyLong_CheckExact(obj)
+            || PyFloat_CheckExact(obj)
+            || PyUnicode_CheckExact(obj)
         ) {
-            if (PyObject_Print(*ptr, stdout, 0) == 0) {
+            if (PyObject_Print(obj, stdout, 0) == 0) {
                 continue;
             }
             PyErr_Clear();
         }
         // Don't call __repr__(), it might recurse into the interpreter.
-        printf("<%s at %p>", Py_TYPE(*ptr)->tp_name, (void *)(*ptr));
+        printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)(ptr->bits));
     }
     printf("]\n");
     fflush(stdout);
@@ -136,7 +137,7 @@ dump_stack(_PyInterpreterFrame *frame, PyObject **stack_pointer)
 
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
-                    PyObject **stack_pointer,
+                    _Py_TaggedObject *stack_pointer,
                     _Py_CODEUNIT *next_instr,
                     int opcode,
                     int oparg)
@@ -246,7 +247,7 @@ static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg
 static int get_exception_handler(PyCodeObject *, int, int*, int*, int*);
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
+                        PyObject *locals, _Py_TaggedObject const* args,
                         size_t argcount, PyObject *kwnames);
 static  _PyInterpreterFrame *
 _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
@@ -750,7 +751,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
-    PyObject **stack_pointer;
+    _Py_TaggedObject *stack_pointer;
 
 #ifndef _Py_JIT
     /* Tier 2 interpreter state */
@@ -887,9 +888,9 @@ exception_unwind:
                 assert(_PyErr_Occurred(tstate));
 
                 /* Pop remaining stack entries. */
-                PyObject **stackbase = _PyFrame_Stackbase(frame);
+                _Py_TaggedObject *stackbase = _PyFrame_Stackbase(frame);
                 while (stack_pointer > stackbase) {
-                    PyObject *o = POP();
+                    PyObject *o = Py_CLEAR_TAG(POP());
                     Py_XDECREF(o);
                 }
                 assert(STACK_LEVEL() == 0);
@@ -899,9 +900,9 @@ exception_unwind:
             }
 
             assert(STACK_LEVEL() >= level);
-            PyObject **new_top = _PyFrame_Stackbase(frame) + level;
+            _Py_TaggedObject *new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {
-                PyObject *v = POP();
+                PyObject *v = Py_CLEAR_TAG(POP());
                 Py_XDECREF(v);
             }
             if (lasti) {
@@ -910,7 +911,7 @@ exception_unwind:
                 if (lasti == NULL) {
                     goto exception_unwind;
                 }
-                PUSH(lasti);
+                PUSH(Py_OBJ_PACK(lasti));
             }
 
             /* Make the raw exception data
@@ -918,7 +919,7 @@ exception_unwind:
                 so a program can emulate the
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
-            PUSH(exc);
+            PUSH(Py_OBJ_PACK(exc));
             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
@@ -1183,7 +1184,7 @@ format_missing(PyThreadState *tstate, const char *kind,
 static void
 missing_arguments(PyThreadState *tstate, PyCodeObject *co,
                   Py_ssize_t missing, Py_ssize_t defcount,
-                  PyObject **localsplus, PyObject *qualname)
+                  _Py_TaggedObject *localsplus, PyObject *qualname)
 {
     Py_ssize_t i, j = 0;
     Py_ssize_t start, end;
@@ -1204,7 +1205,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
         end = start + co->co_kwonlyargcount;
     }
     for (i = start; i < end; i++) {
-        if (localsplus[i] == NULL) {
+        if (Py_CLEAR_TAG(localsplus[i]) == NULL) {
             PyObject *raw = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             PyObject *name = PyObject_Repr(raw);
             if (name == NULL) {
@@ -1222,7 +1223,7 @@ missing_arguments(PyThreadState *tstate, PyCodeObject *co,
 static void
 too_many_positional(PyThreadState *tstate, PyCodeObject *co,
                     Py_ssize_t given, PyObject *defaults,
-                    PyObject **localsplus, PyObject *qualname)
+                    _Py_TaggedObject *localsplus, PyObject *qualname)
 {
     int plural;
     Py_ssize_t kwonly_given = 0;
@@ -1233,7 +1234,7 @@ too_many_positional(PyThreadState *tstate, PyCodeObject *co,
     assert((co->co_flags & CO_VARARGS) == 0);
     /* Count missing keyword-only args. */
     for (i = co_argcount; i < co_argcount + co->co_kwonlyargcount; i++) {
-        if (localsplus[i] != NULL) {
+        if (Py_CLEAR_TAG(localsplus[i]) != NULL) {
             kwonly_given++;
         }
     }
@@ -1411,7 +1412,7 @@ get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, i
 
 static int
 initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
-    PyObject **localsplus, PyObject *const *args,
+    _Py_TaggedObject *localsplus, _Py_TaggedObject const *args,
     Py_ssize_t argcount, PyObject *kwnames)
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
@@ -1429,8 +1430,8 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (co->co_flags & CO_VARARGS) {
             i++;
         }
-        assert(localsplus[i] == NULL);
-        localsplus[i] = kwdict;
+        assert(Py_CLEAR_TAG(localsplus[i]) == NULL);
+        localsplus[i] = Py_OBJ_PACK(kwdict);
     }
     else {
         kwdict = NULL;
@@ -1445,9 +1446,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         n = argcount;
     }
     for (j = 0; j < n; j++) {
-        PyObject *x = args[j];
-        assert(localsplus[j] == NULL);
-        localsplus[j] = x;
+        PyObject *x = Py_CLEAR_TAG(args[j]);
+        assert(Py_CLEAR_TAG(localsplus[j]) == NULL);
+        localsplus[j] = Py_OBJ_PACK(x);
     }
 
     /* Pack other positional arguments into the *args argument */
@@ -1458,18 +1459,18 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         else {
             assert(args != NULL);
-            u = _PyTuple_FromArraySteal(args + n, argcount - n);
+            u = _PyTuple_FromArraySteal((PyObject **)(args + n), argcount - n);
         }
         if (u == NULL) {
             goto fail_post_positional;
         }
-        assert(localsplus[total_args] == NULL);
-        localsplus[total_args] = u;
+        assert(Py_CLEAR_TAG(localsplus[total_args]) == NULL);
+        localsplus[total_args] = Py_OBJ_PACK(u);
     }
     else if (argcount > n) {
         /* Too many postional args. Error is reported later */
         for (j = n; j < argcount; j++) {
-            Py_DECREF(args[j]);
+            Py_DECREF(Py_CLEAR_TAG(args[j]));
         }
     }
 
@@ -1479,7 +1480,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         for (i = 0; i < kwcount; i++) {
             PyObject **co_varnames;
             PyObject *keyword = PyTuple_GET_ITEM(kwnames, i);
-            PyObject *value = args[i+argcount];
+            PyObject *value = Py_CLEAR_TAG(args[i+argcount]);
             Py_ssize_t j;
 
             if (keyword == NULL || !PyUnicode_Check(keyword)) {
@@ -1560,19 +1561,19 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
         kw_fail:
             for (;i < kwcount; i++) {
-                PyObject *value = args[i+argcount];
+                PyObject *value = Py_CLEAR_TAG(args[i+argcount]);
                 Py_DECREF(value);
             }
             goto fail_post_args;
 
         kw_found:
-            if (localsplus[j] != NULL) {
+            if (Py_CLEAR_TAG(localsplus[j]) != NULL) {
                 _PyErr_Format(tstate, PyExc_TypeError,
                             "%U() got multiple values for argument '%S'",
                           func->func_qualname, keyword);
                 goto kw_fail;
             }
-            localsplus[j] = value;
+            localsplus[j] = Py_OBJ_PACK(value);
         }
     }
 
@@ -1589,7 +1590,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         Py_ssize_t m = co->co_argcount - defcount;
         Py_ssize_t missing = 0;
         for (i = argcount; i < m; i++) {
-            if (localsplus[i] == NULL) {
+            if (Py_CLEAR_TAG(localsplus[i]) == NULL) {
                 missing++;
             }
         }
@@ -1605,9 +1606,9 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         if (defcount) {
             PyObject **defs = &PyTuple_GET_ITEM(func->func_defaults, 0);
             for (; i < defcount; i++) {
-                if (localsplus[m+i] == NULL) {
+                if (Py_CLEAR_TAG(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
-                    localsplus[m+i] = Py_NewRef(def);
+                    localsplus[m+i] = Py_OBJ_PACK(Py_NewRef(def));
                 }
             }
         }
@@ -1617,7 +1618,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     if (co->co_kwonlyargcount > 0) {
         Py_ssize_t missing = 0;
         for (i = co->co_argcount; i < total_args; i++) {
-            if (localsplus[i] != NULL)
+            if (Py_CLEAR_TAG(localsplus[i]) != NULL)
                 continue;
             PyObject *varname = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (func->func_kwdefaults != NULL) {
@@ -1626,7 +1627,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
                     goto fail_post_args;
                 }
                 if (def) {
-                    localsplus[i] = def;
+                    localsplus[i] = Py_OBJ_PACK(def);
                     continue;
                 }
             }
@@ -1642,14 +1643,14 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
 fail_pre_positional:
     for (j = 0; j < argcount; j++) {
-        Py_DECREF(args[j]);
+        Py_DECREF(Py_CLEAR_TAG(args[j]));
     }
     /* fall through */
 fail_post_positional:
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (j = argcount; j < argcount+kwcount; j++) {
-            Py_DECREF(args[j]);
+            Py_DECREF(Py_CLEAR_TAG(args[j]));
         }
     }
     /* fall through */
@@ -1704,7 +1705,7 @@ _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame * frame)
 /* Consumes references to func, locals and all the args */
 static _PyInterpreterFrame *
 _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
-                        PyObject *locals, PyObject* const* args,
+                        PyObject *locals, _Py_TaggedObject const* args,
                         size_t argcount, PyObject *kwnames)
 {
     PyCodeObject * code = (PyCodeObject *)func->func_code;
@@ -1723,12 +1724,12 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 fail:
     /* Consume the references */
     for (size_t i = 0; i < argcount; i++) {
-        Py_DECREF(args[i]);
+        Py_DECREF(Py_CLEAR_TAG(args[i]));
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            Py_DECREF(args[i+argcount]);
+            Py_DECREF(Py_CLEAR_TAG(args[i+argcount]));
         }
     }
     PyErr_NoMemory();
@@ -1761,7 +1762,7 @@ _PyEvalFramePushAndInit_Ex(PyThreadState *tstate, PyFunctionObject *func,
     }
     _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
         tstate, (PyFunctionObject *)func, locals,
-        newargs, nargs, kwnames
+        (_Py_TaggedObject const *)newargs, nargs, kwnames
     );
     if (has_dict) {
         _PyStack_UnpackDict_FreeNoDecRef(newargs, kwnames);
@@ -1798,7 +1799,7 @@ _PyEval_Vector(PyThreadState *tstate, PyFunctionObject *func,
         }
     }
     _PyInterpreterFrame *frame = _PyEvalFramePushAndInit(
-        tstate, func, locals, args, argcount, kwnames);
+        tstate, func, locals, (_Py_TaggedObject * const)args, argcount, kwnames);
     if (frame == NULL) {
         return NULL;
     }
@@ -2049,8 +2050,8 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
 */
 
 int
-_PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
-                       int argcnt, int argcntafter, PyObject **sp)
+_PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
+                       int argcnt, int argcntafter, _Py_TaggedObject *sp)
 {
     int i = 0, j = 0;
     Py_ssize_t ll = 0;
@@ -2092,7 +2093,7 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
             }
             goto Error;
         }
-        *--sp = w;
+        *--sp = Py_OBJ_PACK(w);
     }
 
     if (argcntafter == -1) {
@@ -2114,7 +2115,7 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
     l = PySequence_List(it);
     if (l == NULL)
         goto Error;
-    *--sp = l;
+    *--sp = Py_OBJ_PACK(l);
     i++;
 
     ll = PyList_GET_SIZE(l);
@@ -2127,7 +2128,7 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
 
     /* Pop the "after-variable" args off the list. */
     for (j = argcntafter; j > 0; j--, i++) {
-        *--sp = PyList_GET_ITEM(l, ll - j);
+        *--sp = Py_OBJ_PACK(PyList_GET_ITEM(l, ll - j));
     }
     /* Resize the list. */
     Py_SET_SIZE(l, ll - argcntafter);
@@ -2135,8 +2136,9 @@ _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v,
     return 1;
 
 Error:
-    for (; i > 0; i--, sp++)
-        Py_DECREF(*sp);
+    for (; i > 0; i--, sp++) {
+        Py_DECREF(Py_CLEAR_TAG(*sp));
+    }
     Py_XDECREF(it);
     return 0;
 }

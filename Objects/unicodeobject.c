@@ -9807,6 +9807,35 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
     return NULL;
 }
 
+PyObject*
+_PyUnicode_JoinTaggedArray_Slow(PyObject *separator, _Py_TaggedObject const *tagged, Py_ssize_t seqlen)
+{
+    PyObject **args = PyMem_Malloc(seqlen * sizeof(PyObject *));
+    if (args == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    _Py_untag_stack(args, tagged, seqlen);
+    PyObject *res = _PyUnicode_JoinArray(separator, args, seqlen);
+    PyMem_Free(args);
+    return res;
+}
+
+PyObject *
+_PyUnicode_JoinTaggedArray(PyObject *separator, _Py_TaggedObject const *items_tagged, Py_ssize_t seqlen)
+{
+#ifdef Py_GIL_DISABLED
+    PyObject *args[MAX_UNTAG_SCRATCH];
+    if (seqlen > MAX_UNTAG_SCRATCH) {
+        return _PyUnicode_JoinTaggedArray_Slow(separator, items_tagged, seqlen);
+    }
+    _Py_untag_stack(args, items_tagged, seqlen);
+    return _PyUnicode_JoinArray(separator, args, seqlen);
+#endif
+    (void)_PyUnicode_JoinTaggedArray_Slow;
+    return _PyUnicode_JoinArray(separator, (PyObject **)items_tagged, seqlen);
+}
+
 void
 _PyUnicode_FastFill(PyObject *unicode, Py_ssize_t start, Py_ssize_t length,
                     Py_UCS4 fill_char)

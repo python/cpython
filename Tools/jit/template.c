@@ -77,7 +77,7 @@ do {                                                         \
 #define JUMP_TO_ERROR() PATCH_JUMP(_JIT_ERROR_TARGET)
 
 _Py_CODEUNIT *
-_JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
+_JIT_ENTRY(_PyInterpreterFrame *frame, _Py_TaggedObject *stack_pointer, PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)

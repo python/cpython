@@ -208,6 +208,12 @@ PyAPI_FUNC(PyObject*) _PyUnicode_JoinArray(
     Py_ssize_t seqlen
     );
 
+PyAPI_FUNC(PyObject*) _PyUnicode_JoinTaggedArray(
+    PyObject *separator,
+    _Py_TaggedObject const *items,
+    Py_ssize_t seqlen
+);
+
 /* Test whether a unicode is equal to ASCII identifier.  Return 1 if true,
    0 otherwise.  The right argument must be ASCII identifier.
    Any error occurs inside will be cleared before return. */

@@ -275,7 +275,7 @@ extern void _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub,
 extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
                                 int nargs);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
-                                    int oparg, PyObject **locals);
+                                    int oparg, _Py_TaggedObject *locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
                                      _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,

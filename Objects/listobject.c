@@ -3190,6 +3190,30 @@ _PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
     return (PyObject *)list;
 }
 
+PyObject *
+_PyList_FromTaggedArraySteal(_Py_TaggedObject const *src, Py_ssize_t n)
+{
+    if (n == 0) {
+        return PyList_New(0);
+    }
+
+    PyListObject *list = (PyListObject *)PyList_New(n);
+    if (list == NULL) {
+        for (Py_ssize_t i = 0; i < n; i++) {
+            Py_DECREF(Py_CLEAR_TAG(src[i]));
+        }
+        return NULL;
+    }
+
+    PyObject **dst = list->ob_item;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = Py_CLEAR_TAG(src[i]);
+        dst[i] = item;
+    }
+
+    return (PyObject *)list;
+}
+
 /*[clinic input]
 list.index
 
