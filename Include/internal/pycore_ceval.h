@@ -129,6 +129,15 @@ extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 extern void _PyEval_AcquireLock(PyThreadState *tstate);
 extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
 
+#ifdef Py_GIL_DISABLED
+// Enable the GIL for the given thread's interpreter. This may affect other
+// interpreters, if the GIL is shared.
+//
+// Returns 1 if this call enabled the GIL, or 0 if it was already enabled. The
+// caller will hold the GIL upon return.
+extern int _PyEval_EnableGIL(PyThreadState *tstate);
+#endif
+
 extern void _PyEval_DeactivateOpCache(void);
 
 
