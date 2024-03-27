@@ -79,9 +79,8 @@ class MultiprocessResult:
     err_msg: str | None = None
 
 
-# Indicates that a worker thread has exited
 class WorkerExited:
-    pass
+    """Indicates that a worker thread has exited"""
 
 ExcStr = str
 QueueOutput = tuple[Literal[False], MultiprocessResult] | tuple[Literal[True], ExcStr]
