@@ -186,11 +186,17 @@ PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
 PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 PYTHONFRAMEWORKINSTALLNAMEPREFIX= @PYTHONFRAMEWORKINSTALLNAMEPREFIX@
 RESSRCDIR= @RESSRCDIR@
-# Deployment target selected during configure, to be checked
+# macOS deployment target selected during configure, to be checked
 # by distutils. The export statement is needed to ensure that the
 # deployment target is active during build.
 MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 @EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
+
+# iOS Deployment target selected during configure. Unlike macOS, the iOS
+# deployment target is controlled using `-mios-version-min` arguments added to
+# CFLAGS and LDFLAGS by the configure script. This variable is not used during
+# the build, and is only listed here so it will be included in sysconfigdata.
+IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 # Option to install to strip binaries
 STRIPFLAG=-s
@@ -2041,7 +2047,13 @@ testios:
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
 	# If the suite fails, extract and print the console output, then re-raise the failure
 	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
-		xcrun xcresulttool get --path $(XCRESULT) --id $$(xcrun xcresulttool get --path $(XCRESULT) --format json | $(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])"); \
+		xcrun xcresulttool get --path $(XCRESULT) \
+			--id $$( \
+				xcrun xcresulttool get --path $(XCRESULT) --format json | \
+				$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
+			) \
+			--format json | \
+			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"; \
 		echo ; \
 		exit 1; \
 	fi
