@@ -228,13 +228,13 @@ class PlatformTest(unittest.TestCase):
             if sys.platform == "android":
                 self.assertEqual(res.system, "Android")
                 self.assertEqual(res.release, platform.android_ver().release)
+            elif sys.platform == "ios":
+                self.assertIn(res.system, {"iOS", "iPadOS"})
+                self.assertEqual(res.release, platform.ios_ver().release)
             else:
                 self.assertEqual(res.system, uname.sysname)
                 self.assertEqual(res.release, uname.release)
 
-        if sys.platform == "ios":
-            self.assertIn(res.system, {"iOS", "iPadOS"})
-            self.assertEqual(res.release, platform.ios_ver().release)
 
     @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
     def test_uname_win32_without_wmi(self):
