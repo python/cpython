@@ -302,15 +302,23 @@ class InterpolationDepthError(InterpolationError):
 class ParsingError(Error):
     """Raised when a configuration file does not follow legal syntax."""
 
-    def __init__(self, source):
+    def __init__(self, source, *args):
         super().__init__(f'Source contains parsing errors: {source!r}')
         self.source = source
         self.errors = []
         self.args = (source, )
+        if args:
+            self.append(*args)
 
     def append(self, lineno, line):
         self.errors.append((lineno, line))
-        self.message += '\n\t[line %2d]: %s' % (lineno, line)
+        self.message += '\n\t[line %2d]: %s' % (lineno, repr(line))
+
+    def combine(self, others):
+        for other in others:
+            for error in other.errors:
+                self.append(*error)
+        return self
 
 
 class MissingSectionHeaderError(ParsingError):
@@ -977,9 +985,17 @@ class RawConfigParser(MutableMapping):
         """
 
         try:
-            self._read_inner(fp, fpname)
+            self._raise_all(*self._read_inner(fp, fpname))
         finally:
             self._join_multiline_values()
+
+    def _raise_all(self, *exceptions: ParsingError):
+        """
+        Combine any number of ParsingErrors into one and raise it.
+        """
+        if not exceptions:
+            return
+        raise exceptions[0].combine(exceptions[1:])
 
     def _read_inner(self, fp, fpname):
         elements_added = set()
@@ -988,7 +1004,6 @@ class RawConfigParser(MutableMapping):
         optname = None
         lineno = 0
         indent_level = 0
-        e = None                              # None, or an exception
 
         for lineno, line in enumerate(fp, start=1):
             comment_start = sys.maxsize
@@ -1096,7 +1111,7 @@ class RawConfigParser(MutableMapping):
                         if mo:
                             optname, vi, optval = mo.group('option', 'vi', 'value')
                             if not optname:
-                                e = self._handle_error(e, fpname, lineno, line)
+                                yield ParsingError(fpname, lineno, line)
                             optname = self.optionxform(optname.rstrip())
                             if (self._strict and
                                 (sectname, optname) in elements_added):
@@ -1116,11 +1131,7 @@ class RawConfigParser(MutableMapping):
                             # exception but keep going. the exception will be
                             # raised at the end of the file and will contain a
                             # list of all bogus lines
-                            e = self._handle_error(e, fpname, lineno, line)
-
-        # if any parsing errors occurred, raise an exception
-        if e:
-            raise e
+                            yield ParsingError(fpname, lineno, line)
 
 
     def _join_multiline_values(self):
@@ -1140,12 +1151,6 @@ class RawConfigParser(MutableMapping):
         Note: values can be non-string."""
         for key, value in defaults.items():
             self._defaults[self.optionxform(key)] = value
-
-    def _handle_error(self, exc, fpname, lineno, line):
-        if not exc:
-            exc = ParsingError(fpname)
-        exc.append(lineno, repr(line))
-        return exc
 
     def _unify_values(self, section, vars):
         """Create a sequence of lookups with 'vars' taking priority over
