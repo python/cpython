@@ -3141,8 +3141,8 @@
                 tstate, frame, this_instr);
             if (next_opcode < 0) goto error;
             next_instr = this_instr;
-            if (_PyOpcode_Caches[next_opcode]) {
-                INCREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            if (_PyOpcode_Caches[next_opcode] && !OPCODE_HAS_JUMP(next_opcode)) {
+                INCREMENT_ADAPTIVE_COUNTER(next_instr[1].cache);
             }
             assert(next_opcode > 0 && next_opcode < 256);
             opcode = next_opcode;
