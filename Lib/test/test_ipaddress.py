@@ -897,7 +897,10 @@ class ComparisonTests(unittest.TestCase):
     v6net_scoped= ipaddress.IPv6Network('::1%scope')
     v6intf_scoped= ipaddress.IPv6Interface('::1%scope')
 
-    v4_addresses = [v4addr, v4intf]
+    v4mapaddr = ipaddress.IPv6Address('::ffff:0:1')
+    v4mapnet = ipaddress.IPv6Address('::ffff:0:1')
+
+    v4_addresses = [v4addr, v4intf, v4mapaddr]
     v4_objects = v4_addresses + [v4net]
     v6_addresses = [v6addr, v6intf]
     v6_objects = v6_addresses + [v6net]
@@ -1019,7 +1022,7 @@ class ComparisonTests(unittest.TestCase):
 
     def test_mixed_type_key(self):
         # with get_mixed_type_key, you can sort addresses and network.
-        v4_ordered = [self.v4addr, self.v4net, self.v4intf]
+        v4_ordered = [self.v4addr, self.v4mapaddr, self.v4net, self.v4intf]
         v6_ordered = [self.v6addr, self.v6net, self.v6intf]
         v6_scoped_ordered = [self.v6addr_scoped, self.v6net_scoped, self.v6intf_scoped]
         self.assertEqual(v4_ordered,
