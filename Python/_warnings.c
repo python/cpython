@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -233,16 +234,9 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
 
 
 static PyObject *
-get_once_registry(PyInterpreterState *interp)
+get_once_registry_impl(PyInterpreterState *interp, WarningsState *st)
 {
-    PyObject *registry;
-
-    WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
-
-    registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
+    PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -263,16 +257,26 @@ get_once_registry(PyInterpreterState *interp)
 
 
 static PyObject *
-get_default_action(PyInterpreterState *interp)
+get_once_registry(PyInterpreterState *interp)
 {
-    PyObject *default_action;
-
     WarningsState *st = warnings_get_state(interp);
     if (st == NULL) {
         return NULL;
     }
 
-    default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
+    PyObject *registry;
+    Py_BEGIN_CRITICAL_SECTION(st->once_registry);
+    registry = get_once_registry_impl(interp, st);
+    Py_END_CRITICAL_SECTION();
+
+    return registry;
+}
+
+
+static PyObject *
+get_default_action_impl(PyInterpreterState *interp, WarningsState *st)
+{
+    PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -293,21 +297,30 @@ get_default_action(PyInterpreterState *interp)
 }
 
 
-/* The item is a new reference. */
-static PyObject*
-get_filter(PyInterpreterState *interp, PyObject *category,
-           PyObject *text, Py_ssize_t lineno,
-           PyObject *module, PyObject **item)
+static PyObject *
+get_default_action(PyInterpreterState *interp)
 {
-    PyObject *action;
-    Py_ssize_t i;
-    PyObject *warnings_filters;
     WarningsState *st = warnings_get_state(interp);
     if (st == NULL) {
         return NULL;
     }
 
-    warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    PyObject *default_action;
+    Py_BEGIN_CRITICAL_SECTION(st->default_action);
+    default_action = get_default_action_impl(interp, st);
+    Py_END_CRITICAL_SECTION();
+
+    return default_action;
+}
+
+
+/* The item is a new reference. */
+static PyObject *
+get_filter_impl(PyInterpreterState *interp, WarningsState *st,
+                PyObject *category, PyObject *text, Py_ssize_t lineno,
+                PyObject *module, PyObject **item)
+{
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -324,7 +337,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     }
 
     /* WarningsState.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
@@ -384,13 +397,32 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         Py_DECREF(tmp_item);
     }
 
-    action = get_default_action(interp);
+    PyObject *action = get_default_action(interp);
     if (action != NULL) {
         *item = Py_NewRef(Py_None);
         return action;
     }
 
     return NULL;
+}
+
+
+static PyObject *
+get_filter(PyInterpreterState *interp, PyObject *category,
+           PyObject *text, Py_ssize_t lineno,
+           PyObject *module, PyObject **item)
+{
+    WarningsState *st = warnings_get_state(interp);
+    if (st == NULL) {
+        return NULL;
+    }
+
+    PyObject *filters;
+    Py_BEGIN_CRITICAL_SECTION(st->filters);
+    filters = get_filter_impl(interp, st, category, text, lineno, module, item);
+    Py_END_CRITICAL_SECTION();
+
+    return filters;
 }
 
 
