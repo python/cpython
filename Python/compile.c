@@ -235,6 +235,28 @@ _PyCompile_InstructionSequence_UseLabel(instr_sequence *seq, int lbl)
     return SUCCESS;
 }
 
+int
+_PyCompile_InstructionSequence_ApplyLabelMap(instr_sequence *instrs)
+{
+    /* Replace labels by offsets in the code */
+    for (int i=0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (HAS_TARGET(instr->i_opcode)) {
+            assert(instr->i_oparg < instrs->s_labelmap_size);
+            instr->i_oparg = instrs->s_labelmap[instr->i_oparg];
+        }
+        _PyCompile_ExceptHandlerInfo *hi = &instr->i_except_handler_info;
+        if (hi->h_label >= 0) {
+            assert(hi->h_label < instrs->s_labelmap_size);
+            hi->h_label = instrs->s_labelmap[hi->h_label];
+        }
+    }
+    /* Clear label map so it's never used again */
+    PyMem_Free(instrs->s_labelmap);
+    instrs->s_labelmap = NULL;
+    instrs->s_labelmap_size = 0;
+    return SUCCESS;
+}
 
 #define MAX_OPCODE 511
 
@@ -7824,11 +7846,8 @@ instr_sequence_to_instructions(instr_sequence *seq)
     for (int i = 0; i < seq->s_used; i++) {
         instruction *instr = &seq->s_instrs[i];
         location loc = instr->i_loc;
-        int arg = HAS_TARGET(instr->i_opcode) ?
-                  seq->s_labelmap[instr->i_oparg] : instr->i_oparg;
-
         PyObject *inst_tuple = Py_BuildValue(
-            "(iiiiii)", instr->i_opcode, arg,
+            "(iiiiii)", instr->i_opcode, instr->i_oparg,
             loc.lineno, loc.end_lineno,
             loc.col_offset, loc.end_col_offset);
         if (inst_tuple == NULL) {
@@ -7853,6 +7872,9 @@ cfg_to_instructions(cfg_builder *g)
     instr_sequence seq;
     memset(&seq, 0, sizeof(seq));
     if (_PyCfg_ToInstructionSequence(g, &seq) < 0) {
+        return NULL;
+    }
+    if (_PyCompile_InstructionSequence_ApplyLabelMap(&seq) < 0) {
         return NULL;
     }
     PyObject *res = instr_sequence_to_instructions(&seq);
@@ -8024,6 +8046,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     int addNone = mod->kind != Expression_kind;
     if (add_return_at_end(c, addNone) < 0) {
         goto finally;
+    }
+
+    if (_PyCompile_InstructionSequence_ApplyLabelMap(INSTR_SEQUENCE(c)) < 0) {
+        return NULL;
     }
 
     PyObject *insts = instr_sequence_to_instructions(INSTR_SEQUENCE(c));

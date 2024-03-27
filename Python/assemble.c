@@ -736,6 +736,9 @@ _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cac
                            int nlocalsplus, int code_flags, PyObject *filename)
 {
 
+    if (_PyCompile_InstructionSequence_ApplyLabelMap(instrs) < 0) {
+        return NULL;
+    }
     if (resolve_unconditional_jumps(instrs) < 0) {
         return NULL;
     }

@@ -66,6 +66,7 @@ int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq,
 int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
                                          int opcode, int oparg,
                                          _PyCompilerSrcLocation loc);
+int _PyCompile_InstructionSequence_ApplyLabelMap(_PyCompile_InstructionSequence *seq);
 
 typedef struct {
     PyObject *u_name;
