@@ -8,6 +8,7 @@ import sys
 import threading
 import types
 import warnings
+import contextvars
 
 from . import futures
 
@@ -26,6 +27,7 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
         def callback():
             global repl_future
             global repl_future_interrupted
+            global repl_context
 
             repl_future = None
             repl_future_interrupted = False
@@ -53,7 +55,7 @@ class AsyncIOInteractiveConsole(code.InteractiveConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback)
+        loop.call_soon_threadsafe(callback, context=repl_context)
 
         try:
             return future.result()
@@ -104,6 +106,7 @@ if __name__ == '__main__':
 
     repl_future = None
     repl_future_interrupted = False
+    repl_context = contextvars.Context()
 
     try:
         import readline  # NoQA
