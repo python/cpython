@@ -1684,7 +1684,7 @@ dummy_func(
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
             map = _PyDict_FromTaggedItems(
                     &PyTuple_GET_ITEM(keys, 0), 1,
-                    (PyObject **)(values), 1, oparg);
+                    values, 1, oparg);
             DECREF_INPUTS();
             ERROR_IF(map == NULL, error);
         }

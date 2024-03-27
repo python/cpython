@@ -3206,7 +3206,10 @@ _PyList_FromTaggedArraySteal(_Py_TaggedObject const *src, Py_ssize_t n)
     }
 
     PyObject **dst = list->ob_item;
-    memcpy(dst, src, n * sizeof(PyObject *));
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = Py_CLEAR_TAG(src[i]);
+        dst[i] = item;
+    }
 
     return (PyObject *)list;
 }
