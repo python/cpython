@@ -116,6 +116,21 @@ class ReferencesTestCase(TestBase):
         del o
         repr(wr)
 
+    def test_proxy_repr(self):
+        class A:
+            pass
+        a = A()
+        wp = weakref.proxy(a)
+        self.assertRegex(repr(wp), '<weakproxy at 0x.* to A at 0x.*>')
+
+        # gh-117281: Interpreter shouldn't crash when calling repr on proxy with a
+        # dead object.
+        del a
+        with self.assertRaisesRegex(
+                ReferenceError,
+                'weakly-referenced object no longer exists'):
+            repr(wp)
+
     def test_repr_failure_gh99184(self):
         class MyConfig(dict):
             def __getattr__(self, x):

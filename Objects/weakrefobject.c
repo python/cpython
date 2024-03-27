@@ -471,6 +471,9 @@ static PyObject *
 proxy_repr(PyObject *proxy)
 {
     PyObject *obj = _PyWeakref_GET_REF(proxy);
+    if (!proxy_check_ref(obj) && PyErr_Occurred()) {
+        return NULL;
+    }
     PyObject *repr = PyUnicode_FromFormat(
         "<weakproxy at %p to %s at %p>",
         proxy, Py_TYPE(obj)->tp_name, obj);
