@@ -22,8 +22,28 @@ class MyObject(object):
 def make_dummy_object(_):
     return MyObject()
 
+wait_event = None
+
+def init_wait_event(event):
+    global wait_event
+    wait_event = event
+
+def maybe_wait(should_wait):
+    if should_wait:
+        wait_event.wait(support.SHORT_TIMEOUT)
+        wait_event.clear()
 
 class ExecutorTest:
+
+    def setUp(self):
+        if hasattr(self, "ctx"):
+            self.wait_event = self.get_context().Event()
+        else:
+            self.wait_event = threading.Event()
+        self.executor_kwargs = dict(initializer=init_wait_event,
+                                    initargs=(self.wait_event,))
+        super().setUp()
+
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
     def test_submit(self):
@@ -57,18 +77,29 @@ class ExecutorTest:
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
-        results = []
-        try:
-            for i in self.executor.map(time.sleep,
-                                       [0, 0, 6],
-                                       timeout=5):
-                results.append(i)
-        except futures.TimeoutError:
-            pass
-        else:
-            self.fail('expected TimeoutError')
+        def run_test(timeout):
+            results = []
+            try:
+                for i in self.executor.map(maybe_wait,
+                                        [False, False, True],
+                                        timeout=timeout):
+                    results.append(i)
+            except futures.TimeoutError:
+                self.wait_event.set()  # cancel the last task
+            else:
+                self.fail('expected TimeoutError')
+            return results
 
-        self.assertEqual([None, None], results)
+        results = run_test(0.5)  # First, try with a short timeout
+        if results != [None, None]:
+            # The launching of tasks may have timed out
+            self.assertLessEqual(len(results), 2)
+            self.assertTrue(results == [] or results == [None])
+
+            # re-run with a longer timeout
+            self.wait_event.clear()
+            results = run_test(10)
+            self.assertEqual(results, [None, None])
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
