@@ -2250,15 +2250,19 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(prog="pdb",
+                                     usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
                                      description=_usage,
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)
 
-    parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-m', metavar='module')
-    group.add_argument('pyfile', nargs='?')
-    parser.add_argument('args', nargs="*")
+    # We need to maunally get the script from args, because the first positional
+    # arguments could be either the script we need to debug, or the argument
+    # to the -m module
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
+                        help='pdb commands to execute as if given in a .pdbrc file')
+    parser.add_argument('-m', metavar='module', dest='module')
+    parser.add_argument('args', nargs='*',
+                        help="when -m is not specified, the first arg is the script to debug")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2268,11 +2272,13 @@ def main():
 
     opts = parser.parse_args()
 
-    if opts.m:
-        file = opts.m
+    if opts.module:
+        file = opts.module
         target = _ModuleTarget(file)
     else:
-        file = opts.pyfile
+        if not opts.args:
+            parser.error("no module or script to run")
+        file = opts.args.pop(0)
         target = _ScriptTarget(file)
 
     target.check()
@@ -2284,7 +2290,7 @@ def main():
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
-    pdb.rcLines.extend(opts.command)
+    pdb.rcLines.extend(opts.commands)
     while True:
         try:
             pdb._run(target)
