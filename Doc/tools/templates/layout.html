@@ -41,4 +41,59 @@
       {{ "}" }}
     </style>
 {{ super() }}
+
+<meta name="readthedocs-addons-api-version" content="0">
+<script type="text/javascript">
+ function onSwitch(event) {
+     const option = event.target.selectedIndex;
+     const item = event.target.options[option];
+     window.location.href = item.dataset.url;
+ }
+
+ document.addEventListener("readthedocs-addons-data-ready", function(event) {
+     const config = event.detail;
+     const languageMapping = {
+         en: "English",
+         es: "Spanish",
+         // ...
+     }
+
+     // TODO: add `selected="selected"` to option
+     const versionSelect = `
+     <select id="version_select">
+     ${ config.addons.flyout.versions.map(
+         (version) => `
+           <option
+               value="${ version.slug }"
+               ${ config.versions.current.slug === version.slug ? 'selected="selected"' : '' }
+               data-url="${ version.url }">
+               ${ version.slug }
+           </option>`
+     ).join("\n") }
+     </select>
+     `;
+
+     const languageSelect = `
+     <select id="language_select">
+     ${ config.addons.flyout.translations.map(
+         (translation) => `
+         <option
+             value="${ translation.slug }"
+             ${ config.projects.current.language.code === translation.slug ? 'selected="selected"' : '' }
+             data-url="${ translation.url }">
+             ${ languageMapping[translation.slug] }
+         </option>`
+     ).join("\n") }
+     </select>
+     `;
+
+    const selectVersionElement = document.querySelector("li.switchers div.version_switcher_placeholder");
+    selectVersionElement.innerHTML = versionSelect;
+    document.querySelector("li.switchers div.version_switcher_placeholder").addEventListener("change", onSwitch);
+
+    const selectLanguageElement = document.querySelector("li.switchers div.language_switcher_placeholder");
+    selectLanguageElement.innerHTML = languageSelect;
+    document.querySelector("li.switchers div.language_switcher_placeholder select").addEventListener("change", onSwitch);
+ });
+</script>
 {% endblock %}
