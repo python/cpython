@@ -252,7 +252,7 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     int has_multiple_interpreters_slot = 0;
     void *multiple_interpreters = (void *)0;
     int has_gil_slot = 0;
-    void *gil_slot = (void *)Py_MOD_GIL_USED;
+    void *gil_slot = Py_MOD_GIL_USED;
     int has_execution_slots = 0;
     const char *name;
     int ret;
@@ -349,6 +349,8 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
     }
 
 #ifdef Py_GIL_DISABLED
+    // TODO: We should figure out a way to fit this logic somewhere that it
+    // more naturally fits, like import.c or importdl.c.
     PyThreadState *tstate = _PyThreadState_GET();
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
     if (gil_slot == Py_MOD_GIL_USED && config->enable_gil == _PyConfig_GIL_DEFAULT) {
@@ -367,6 +369,8 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
             PySys_FormatStderr("# loading module '%s', which requires the GIL\n", name);
         }
     }
+#else
+    (void)gil_slot;
 #endif
 
     if (create) {
