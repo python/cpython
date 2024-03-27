@@ -223,7 +223,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING, doc=None)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -291,6 +291,11 @@ Module contents
      parameters are computed.
 
     .. versionadded:: 3.10
+
+   - ``doc``: optional docstring for this field.
+     It is only used for documenting :attr:`~object.__slots__`.
+
+    .. versionadded:: 3.13
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be

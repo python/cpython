@@ -450,6 +450,14 @@ class PydocDocTest(unittest.TestCase):
         doc = pydoc.render_doc(BinaryInteger)
         self.assertIn('BinaryInteger.zero', doc)
 
+    def test_slotted_dataclass_with_field_docs(self):
+        import dataclasses
+        @dataclasses.dataclass(slots=True)
+        class My:
+            x: int = dataclasses.field(doc='Docstring for x')
+        doc = pydoc.render_doc(My)
+        self.assertIn('Docstring for x', doc)
+
     def test_mixed_case_module_names_are_lower_cased(self):
         # issue16484
         doc_link = get_pydoc_link(xml.etree.ElementTree)
