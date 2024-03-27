@@ -1035,12 +1035,20 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         (and the next character is a '/' or the end of the string).
 
         """
-        collapsed_path = _url_collapse_path(self.path)
-        dir_sep = collapsed_path.find('/', 1)
-        while dir_sep > 0 and not collapsed_path[:dir_sep] in self.cgi_directories:
-            dir_sep = collapsed_path.find('/', dir_sep+1)
+        path = _url_collapse_path(self.path)
+
+        words = []
+        for word in path.split('/'):
+            if os.path.dirname(word) or word in (os.curdir, os.pardir):
+                continue
+            words.append(word)
+        path = '/'.join(words)
+
+        dir_sep = path.find('/', 1)
+        while dir_sep > 0 and not path[:dir_sep] in self.cgi_directories:
+            dir_sep = path.find('/', dir_sep+1)
         if dir_sep > 0:
-            head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
+            head, tail = path[:dir_sep], path[dir_sep+1:]
             self.cgi_info = head, tail
             return True
         return False
