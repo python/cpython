@@ -64,7 +64,7 @@ def replace_deopt(
     next(tkn_iter)  # Semi colon
     out.emit(", ")
     assert inst is not None
-    assert inst.family is not None
+    assert inst.family is not None, inst.name
     out.emit(inst.family.name)
     out.emit(");\n")
 

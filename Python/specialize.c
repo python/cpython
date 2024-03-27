@@ -2138,71 +2138,49 @@ void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                         int oparg, PyObject **locals)
 {
+    instr->op.code = BINARY_OP;
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
-    switch (oparg) {
-        case NB_ADD:
-        case NB_INPLACE_ADD:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                break;
-            }
-            if (PyUnicode_CheckExact(lhs)) {
-                _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_BINARY_OP + 1];
-                bool to_store = (next.op.code == STORE_FAST);
-                if (to_store && locals[next.op.arg] == lhs) {
-                    instr->op.code = BINARY_OP_INPLACE_ADD_UNICODE;
-                    goto success;
-                }
-                instr->op.code = BINARY_OP_ADD_UNICODE;
-                goto success;
-            }
-            if (PyLong_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_ADD_INT;
-                goto success;
-            }
-            if (PyFloat_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_ADD_FLOAT;
-                goto success;
-            }
-            break;
-        case NB_MULTIPLY:
-        case NB_INPLACE_MULTIPLY:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                break;
-            }
-            if (PyLong_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_MULTIPLY_INT;
-                goto success;
-            }
-            if (PyFloat_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_MULTIPLY_FLOAT;
-                goto success;
-            }
-            break;
-        case NB_SUBTRACT:
-        case NB_INPLACE_SUBTRACT:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                break;
-            }
-            if (PyLong_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_SUBTRACT_INT;
-                goto success;
-            }
-            if (PyFloat_CheckExact(lhs)) {
-                instr->op.code = BINARY_OP_SUBTRACT_FLOAT;
-                goto success;
-            }
-            break;
+    if (Py_REFCNT(lhs) == 1) {
+        if (Py_REFCNT(rhs) == 1) {
+            instr->op.code = BINARY_OP_11;
+        }
+        else if (_Py_IsImmortal(rhs)) {
+            instr->op.code = BINARY_OP_1I;
+        }
+        else {
+            instr->op.code = BINARY_OP_1X;
+        }
     }
-    SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
-    STAT_INC(BINARY_OP, failure);
-    instr->op.code = BINARY_OP;
-    cache->counter = adaptive_counter_backoff(cache->counter);
-    return;
-success:
-    STAT_INC(BINARY_OP, success);
-    cache->counter = adaptive_counter_cooldown();
+    else if (_Py_IsImmortal(lhs)) {
+        if (Py_REFCNT(rhs) == 1) {
+            instr->op.code = BINARY_OP_I1;
+        }
+        else if (_Py_IsImmortal(rhs)) {
+            instr->op.code = BINARY_OP_II;
+        }
+        else {
+            instr->op.code = BINARY_OP_IX;
+        }
+    }
+    else {
+        if (Py_REFCNT(rhs) == 1) {
+            instr->op.code = BINARY_OP_X1;
+        }
+        else if (_Py_IsImmortal(rhs)) {
+            instr->op.code = BINARY_OP_XI;
+        }
+    }
+    if (instr->op.code == BINARY_OP) {
+        SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
+        STAT_INC(BINARY_OP, failure);
+        cache->counter = adaptive_counter_backoff(cache->counter);
+    }
+    else {
+        STAT_INC(BINARY_OP, success);
+        cache->counter = adaptive_counter_cooldown();
+    }
 }
 
 

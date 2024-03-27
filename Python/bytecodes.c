@@ -407,138 +407,91 @@ dummy_func(
         }
 
         family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
-            BINARY_OP_MULTIPLY_INT,
-            BINARY_OP_ADD_INT,
-            BINARY_OP_SUBTRACT_INT,
-            BINARY_OP_MULTIPLY_FLOAT,
-            BINARY_OP_ADD_FLOAT,
-            BINARY_OP_SUBTRACT_FLOAT,
-            BINARY_OP_ADD_UNICODE,
+            BINARY_OP_11,
+            BINARY_OP_1X,
+            BINARY_OP_1I,
+            BINARY_OP_X1,
+            BINARY_OP_XI,
+            BINARY_OP_I1,
+            BINARY_OP_IX,
+            BINARY_OP_II,
             // BINARY_OP_INPLACE_ADD_UNICODE,  // See comments at that opcode.
         };
+
+        op(_GUARD_NOS_REFCNT1, (value2, unused -- value2, unused)) {
+            EXIT_IF(Py_REFCNT(value2) != 1);
+        }
+
+        op(_GUARD_TOS_REFCNT1, (value1 -- value1)) {
+            EXIT_IF(Py_REFCNT(value1) != 1);
+        }
+
+        op(_GUARD_NOS_IMMORTAL, (value2, unused -- value2, unused)) {
+            EXIT_IF(!_Py_IsImmortal(value2));
+        }
+
+        op(_GUARD_TOS_IMMORTAL, (value1 -- value1)) {
+            EXIT_IF(!_Py_IsImmortal(value1));
+        }
+
+        macro(BINARY_OP_11) =
+            unused/1 +
+            _GUARD_NOS_REFCNT1 +
+            _GUARD_TOS_REFCNT1 +
+            _BINARY_OP;
+
+        macro(BINARY_OP_1X) =
+            unused/1 +
+            _GUARD_NOS_REFCNT1 +
+            _BINARY_OP;
+
+        macro(BINARY_OP_1I) =
+            unused/1 +
+            _GUARD_NOS_REFCNT1 +
+            _GUARD_TOS_IMMORTAL +
+            _BINARY_OP;
+
+        macro(BINARY_OP_X1) =
+            unused/1 +
+            _GUARD_TOS_REFCNT1 +
+            _BINARY_OP;
+
+        macro(BINARY_OP_XI) =
+            unused/1 +
+            _GUARD_TOS_IMMORTAL +
+            _BINARY_OP;
+
+        macro(BINARY_OP_I1) =
+            unused/1 +
+            _GUARD_NOS_IMMORTAL +
+            _GUARD_TOS_REFCNT1 +
+            _BINARY_OP;
+
+        macro(BINARY_OP_IX) =
+            unused/1 +
+            _GUARD_NOS_IMMORTAL +
+            _BINARY_OP;
+
+        macro(BINARY_OP_II) =
+            unused/1 +
+            _GUARD_NOS_IMMORTAL +
+            _GUARD_TOS_IMMORTAL +
+            _BINARY_OP;
 
         op(_GUARD_BOTH_INT, (left, right -- left, right)) {
             EXIT_IF(!PyLong_CheckExact(left));
             EXIT_IF(!PyLong_CheckExact(right));
         }
 
-        pure op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-            STAT_INC(BINARY_OP, hit);
-            res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            ERROR_IF(res == NULL, error);
-        }
-
-        pure op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-            STAT_INC(BINARY_OP, hit);
-            res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            ERROR_IF(res == NULL, error);
-        }
-
-        pure op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-            STAT_INC(BINARY_OP, hit);
-            res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            ERROR_IF(res == NULL, error);
-        }
-
-        macro(BINARY_OP_MULTIPLY_INT) =
-            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_MULTIPLY_INT;
-        macro(BINARY_OP_ADD_INT) =
-            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_ADD_INT;
-        macro(BINARY_OP_SUBTRACT_INT) =
-            _GUARD_BOTH_INT + unused/1 + _BINARY_OP_SUBTRACT_INT;
-
         op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
             EXIT_IF(!PyFloat_CheckExact(left));
             EXIT_IF(!PyFloat_CheckExact(right));
         }
 
-        pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-            STAT_INC(BINARY_OP, hit);
-            double dres =
-                ((PyFloatObject *)left)->ob_fval *
-                ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-        }
-
-        pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-            STAT_INC(BINARY_OP, hit);
-            double dres =
-                ((PyFloatObject *)left)->ob_fval +
-                ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-        }
-
-        pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-            STAT_INC(BINARY_OP, hit);
-            double dres =
-                ((PyFloatObject *)left)->ob_fval -
-                ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-        }
-
-        macro(BINARY_OP_MULTIPLY_FLOAT) =
-            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_MULTIPLY_FLOAT;
-        macro(BINARY_OP_ADD_FLOAT) =
-            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_ADD_FLOAT;
-        macro(BINARY_OP_SUBTRACT_FLOAT) =
-            _GUARD_BOTH_FLOAT + unused/1 + _BINARY_OP_SUBTRACT_FLOAT;
-
         op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
             EXIT_IF(!PyUnicode_CheckExact(left));
             EXIT_IF(!PyUnicode_CheckExact(right));
         }
-
-        pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
-            STAT_INC(BINARY_OP, hit);
-            res = PyUnicode_Concat(left, right);
-            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            ERROR_IF(res == NULL, error);
-        }
-
-        macro(BINARY_OP_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + unused/1 + _BINARY_OP_ADD_UNICODE;
-
-        // This is a subtle one. It's a super-instruction for
-        // BINARY_OP_ADD_UNICODE followed by STORE_FAST
-        // where the store goes into the left argument.
-        // So the inputs are the same as for all BINARY_OP
-        // specializations, but there is no output.
-        // At the end we just skip over the STORE_FAST.
-        tier1 op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
-            assert(next_instr->op.code == STORE_FAST);
-            PyObject **target_local = &GETLOCAL(next_instr->op.arg);
-            DEOPT_IF(*target_local != left);
-            STAT_INC(BINARY_OP, hit);
-            /* Handle `left = left + right` or `left += right` for str.
-             *
-             * When possible, extend `left` in place rather than
-             * allocating a new PyUnicodeObject. This attempts to avoid
-             * quadratic behavior when one neglects to use str.join().
-             *
-             * If `left` has only two references remaining (one from
-             * the stack, one in the locals), DECREFing `left` leaves
-             * only the locals reference, so PyUnicode_Append knows
-             * that the string is safe to mutate.
-             */
-            assert(Py_REFCNT(left) >= 2);
-            _Py_DECREF_NO_DEALLOC(left);
-            PyUnicode_Append(target_local, right);
-            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            ERROR_IF(*target_local == NULL, error);
-            // The STORE_FAST is already done.
-            assert(next_instr->op.code == STORE_FAST);
-            SKIP_OVER(1);
-        }
-
-        macro(BINARY_OP_INPLACE_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + unused/1 + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         family(BINARY_SUBSCR, INLINE_CACHE_ENTRIES_BINARY_SUBSCR) = {
             BINARY_SUBSCR_DICT,

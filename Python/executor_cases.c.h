@@ -410,6 +410,34 @@
             break;
         }
 
+        case _GUARD_NOS_REFCNT1: {
+            PyObject *value2;
+            value2 = stack_pointer[-2];
+            if (Py_REFCNT(value2) != 1) JUMP_TO_JUMP_TARGET();
+            break;
+        }
+
+        case _GUARD_TOS_REFCNT1: {
+            PyObject *value1;
+            value1 = stack_pointer[-1];
+            if (Py_REFCNT(value1) != 1) JUMP_TO_JUMP_TARGET();
+            break;
+        }
+
+        case _GUARD_NOS_IMMORTAL: {
+            PyObject *value2;
+            value2 = stack_pointer[-2];
+            if (!_Py_IsImmortal(value2)) JUMP_TO_JUMP_TARGET();
+            break;
+        }
+
+        case _GUARD_TOS_IMMORTAL: {
+            PyObject *value1;
+            value1 = stack_pointer[-1];
+            if (!_Py_IsImmortal(value1)) JUMP_TO_JUMP_TARGET();
+            break;
+        }
+
         case _GUARD_BOTH_INT: {
             PyObject *right;
             PyObject *left;
@@ -417,54 +445,6 @@
             left = stack_pointer[-2];
             if (!PyLong_CheckExact(left)) JUMP_TO_JUMP_TARGET();
             if (!PyLong_CheckExact(right)) JUMP_TO_JUMP_TARGET();
-            break;
-        }
-
-        case _BINARY_OP_MULTIPLY_INT: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            STAT_INC(BINARY_OP, hit);
-            res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_ADD_INT: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            STAT_INC(BINARY_OP, hit);
-            res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_SUBTRACT_INT: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            STAT_INC(BINARY_OP, hit);
-            res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
-            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
-            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
-            if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
             break;
         }
 
@@ -478,54 +458,6 @@
             break;
         }
 
-        case _BINARY_OP_MULTIPLY_FLOAT: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            STAT_INC(BINARY_OP, hit);
-            double dres =
-            ((PyFloatObject *)left)->ob_fval *
-            ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_ADD_FLOAT: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            STAT_INC(BINARY_OP, hit);
-            double dres =
-            ((PyFloatObject *)left)->ob_fval +
-            ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_SUBTRACT_FLOAT: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            STAT_INC(BINARY_OP, hit);
-            double dres =
-            ((PyFloatObject *)left)->ob_fval -
-            ((PyFloatObject *)right)->ob_fval;
-            DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
         case _GUARD_BOTH_UNICODE: {
             PyObject *right;
             PyObject *left;
@@ -533,22 +465,6 @@
             left = stack_pointer[-2];
             if (!PyUnicode_CheckExact(left)) JUMP_TO_JUMP_TARGET();
             if (!PyUnicode_CheckExact(right)) JUMP_TO_JUMP_TARGET();
-            break;
-        }
-
-        case _BINARY_OP_ADD_UNICODE: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            STAT_INC(BINARY_OP, hit);
-            res = PyUnicode_Concat(left, right);
-            _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
-            _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
-            if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
             break;
         }
 

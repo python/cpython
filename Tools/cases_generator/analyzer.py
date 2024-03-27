@@ -727,9 +727,6 @@ def assign_opcodes(
     # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
     instmap["RESUME"] = 149
 
-    # This is an historical oddity.
-    instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
-
     instmap["INSTRUMENTED_LINE"] = 254
 
     instrumented = [name for name in instructions if name.startswith("INSTRUMENTED")]

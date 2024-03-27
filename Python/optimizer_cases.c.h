@@ -219,6 +219,22 @@
             break;
         }
 
+        case _GUARD_NOS_REFCNT1: {
+            break;
+        }
+
+        case _GUARD_TOS_REFCNT1: {
+            break;
+        }
+
+        case _GUARD_NOS_IMMORTAL: {
+            break;
+        }
+
+        case _GUARD_TOS_IMMORTAL: {
+            break;
+        }
+
         case _GUARD_BOTH_INT: {
             _Py_UopsSymbol *right;
             _Py_UopsSymbol *left;
@@ -234,96 +250,6 @@
             if (!sym_set_type(right, &PyLong_Type)) {
                 goto hit_bottom;
             }
-            break;
-        }
-
-        case _BINARY_OP_MULTIPLY_INT: {
-            _Py_UopsSymbol *right;
-            _Py_UopsSymbol *left;
-            _Py_UopsSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-            {
-                assert(PyLong_CheckExact(sym_get_const(left)));
-                assert(PyLong_CheckExact(sym_get_const(right)));
-                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
-                    (PyLongObject *)sym_get_const(right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                Py_DECREF(temp);
-                OUT_OF_SPACE_IF_NULL(res);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and add tests!
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_ADD_INT: {
-            _Py_UopsSymbol *right;
-            _Py_UopsSymbol *left;
-            _Py_UopsSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-            {
-                assert(PyLong_CheckExact(sym_get_const(left)));
-                assert(PyLong_CheckExact(sym_get_const(right)));
-                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
-                    (PyLongObject *)sym_get_const(right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                Py_DECREF(temp);
-                OUT_OF_SPACE_IF_NULL(res);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and add tests!
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_SUBTRACT_INT: {
-            _Py_UopsSymbol *right;
-            _Py_UopsSymbol *left;
-            _Py_UopsSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-            {
-                assert(PyLong_CheckExact(sym_get_const(left)));
-                assert(PyLong_CheckExact(sym_get_const(right)));
-                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
-                    (PyLongObject *)sym_get_const(right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                Py_DECREF(temp);
-                OUT_OF_SPACE_IF_NULL(res);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and add tests!
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
             break;
         }
 
@@ -345,99 +271,6 @@
             break;
         }
 
-        case _BINARY_OP_MULTIPLY_FLOAT: {
-            _Py_UopsSymbol *right;
-            _Py_UopsSymbol *left;
-            _Py_UopsSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-            {
-                assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(left)) *
-                    PyFloat_AS_DOUBLE(sym_get_const(right)));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                Py_DECREF(temp);
-                OUT_OF_SPACE_IF_NULL(res);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and update tests!
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_ADD_FLOAT: {
-            _Py_UopsSymbol *right;
-            _Py_UopsSymbol *left;
-            _Py_UopsSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-            {
-                assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(left)) +
-                    PyFloat_AS_DOUBLE(sym_get_const(right)));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                Py_DECREF(temp);
-                OUT_OF_SPACE_IF_NULL(res);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and update tests!
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
-        case _BINARY_OP_SUBTRACT_FLOAT: {
-            _Py_UopsSymbol *right;
-            _Py_UopsSymbol *left;
-            _Py_UopsSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-            {
-                assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(left)) -
-                    PyFloat_AS_DOUBLE(sym_get_const(right)));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                Py_DECREF(temp);
-                OUT_OF_SPACE_IF_NULL(res);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and update tests!
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
         case _GUARD_BOTH_UNICODE: {
             _Py_UopsSymbol *right;
             _Py_UopsSymbol *left;
@@ -453,30 +286,6 @@
             if (!sym_set_type(right, &PyUnicode_Type)) {
                 goto hit_bottom;
             }
-            break;
-        }
-
-        case _BINARY_OP_ADD_UNICODE: {
-            _Py_UopsSymbol *right;
-            _Py_UopsSymbol *left;
-            _Py_UopsSymbol *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
-                PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
-                if (temp == NULL) {
-                    goto error;
-                }
-                res = sym_new_const(ctx, temp);
-                Py_DECREF(temp);
-                OUT_OF_SPACE_IF_NULL(res);
-            }
-            else {
-                OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyUnicode_Type));
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
             break;
         }
 
