@@ -30,15 +30,62 @@ typedef struct {
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
 
+#define UOP_FORMAT_TARGET 0
+#define UOP_FORMAT_EXIT 1
+#define UOP_FORMAT_JUMP 2
+#define UOP_FORMAT_UNUSED 3
+
+/* Depending on the format,
+ * the 32 bits between the oparg and operand are:
+ * UOP_FORMAT_TARGET:
+ *    uint32_t target;
+ * UOP_FORMAT_EXIT
+ *    uint16_t exit_index;
+ *    uint16_t error_target;
+ * UOP_FORMAT_JUMP
+ *    uint16_t jump_target;
+ *    uint16_t error_target;
+ */
 typedef struct {
-    uint16_t opcode;
+    uint16_t opcode:14;
+    uint16_t format:2;
     uint16_t oparg;
     union {
         uint32_t target;
-        uint32_t exit_index;
+        struct {
+            union {
+                uint16_t exit_index;
+                uint16_t jump_target;
+            };
+            uint16_t error_target;
+        };
     };
     uint64_t operand;  // A cache entry
 } _PyUOpInstruction;
+
+static inline uint32_t uop_get_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_TARGET);
+    return inst->target;
+}
+
+static inline uint16_t uop_get_exit_index(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_EXIT);
+    return inst->exit_index;
+}
+
+static inline uint16_t uop_get_jump_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format == UOP_FORMAT_JUMP);
+    return inst->jump_target;
+}
+
+static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
+{
+    assert(inst->format != UOP_FORMAT_TARGET);
+    return inst->error_target;
+}
 
 typedef struct _exit_data {
     uint32_t target;
@@ -65,7 +112,7 @@ typedef int (*optimize_func)(
     _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
     int curr_stackentries);
 
-typedef struct _PyOptimizerObject {
+struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
     /* These thresholds are treated as signed so do not exceed INT16_MAX
@@ -74,7 +121,7 @@ typedef struct _PyOptimizerObject {
     uint16_t side_threshold;
     uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
-} _PyOptimizerObject;
+};
 
 /** Test support **/
 typedef struct {
@@ -91,9 +138,6 @@ PyAPI_FUNC(int) PyUnstable_SetOptimizer(_PyOptimizerObject* optimizer);
 PyAPI_FUNC(_PyOptimizerObject *) PyUnstable_GetOptimizer(void);
 
 PyAPI_FUNC(_PyExecutorObject *) PyUnstable_GetExecutor(PyCodeObject *code, int offset);
-
-int
-_PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
 void _Py_ExecutorInit(_PyExecutorObject *, const _PyBloomFilter *);
 void _Py_ExecutorClear(_PyExecutorObject *);

@@ -505,7 +505,7 @@ unicode_check_encoding_errors(const char *encoding, const char *errors)
 
     /* Disable checks during Python finalization. For example, it allows to
        call _PyObject_Dump() during finalization for debugging purpose. */
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         return 0;
     }
 
@@ -2788,6 +2788,64 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             return NULL;
         }
         Py_DECREF(ascii);
+        break;
+    }
+
+    case 'T':
+    {
+        PyObject *obj = va_arg(*vargs, PyObject *);
+        PyTypeObject *type = (PyTypeObject *)Py_NewRef(Py_TYPE(obj));
+
+        PyObject *type_name;
+        if (f[1] == '#') {
+            type_name = _PyType_GetFullyQualifiedName(type, ':');
+            f++;
+        }
+        else {
+            type_name = PyType_GetFullyQualifiedName(type);
+        }
+        Py_DECREF(type);
+        if (!type_name) {
+            return NULL;
+        }
+
+        if (unicode_fromformat_write_str(writer, type_name,
+                                         width, precision, flags) == -1) {
+            Py_DECREF(type_name);
+            return NULL;
+        }
+        Py_DECREF(type_name);
+        break;
+    }
+
+    case 'N':
+    {
+        PyObject *type_raw = va_arg(*vargs, PyObject *);
+        assert(type_raw != NULL);
+
+        if (!PyType_Check(type_raw)) {
+            PyErr_SetString(PyExc_TypeError, "%N argument must be a type");
+            return NULL;
+        }
+        PyTypeObject *type = (PyTypeObject*)type_raw;
+
+        PyObject *type_name;
+        if (f[1] == '#') {
+            type_name = _PyType_GetFullyQualifiedName(type, ':');
+            f++;
+        }
+        else {
+            type_name = PyType_GetFullyQualifiedName(type);
+        }
+        if (!type_name) {
+            return NULL;
+        }
+        if (unicode_fromformat_write_str(writer, type_name,
+                                         width, precision, flags) == -1) {
+            Py_DECREF(type_name);
+            return NULL;
+        }
+        Py_DECREF(type_name);
         break;
     }
 

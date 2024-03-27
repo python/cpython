@@ -354,7 +354,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    All user settable flags.
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: UF_NODUMP
 
@@ -384,13 +384,13 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    Used for handling document IDs (macOS)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: UF_DATAVAULT
 
    The file needs an entitlement for reading or writing (macOS 10.13+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: UF_HIDDEN
 
@@ -400,7 +400,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    All super-user changeable flags
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_SUPPORTED
 
@@ -408,7 +408,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    .. availability:: macOS
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_SYNTHETIC
 
@@ -416,7 +416,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    .. availability:: macOS
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_ARCHIVED
 
@@ -434,7 +434,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file needs an entitlement to write to (macOS 10.13+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_NOUNLINK
 
@@ -448,13 +448,13 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file is a firmlink (macOS 10.15+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 .. data:: SF_DATALESS
 
    The file is a dataless object (macOS 10.15+)
 
-   .. versionadded: 3.13
+   .. versionadded:: 3.13
 
 See the \*BSD or macOS systems man page :manpage:`chflags(2)` for more information.
 

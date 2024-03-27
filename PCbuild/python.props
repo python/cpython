@@ -74,6 +74,7 @@
     <libffiDir Condition="$(libffiDir) == ''">$(ExternalsDir)libffi-3.4.4\</libffiDir>
     <libffiOutDir Condition="$(libffiOutDir) == ''">$(libffiDir)$(ArchName)\</libffiOutDir>
     <libffiIncludeDir Condition="$(libffiIncludeDir) == ''">$(libffiOutDir)include</libffiIncludeDir>
+    <mpdecimalDir Condition="$(mpdecimalDir) == ''">$(ExternalsDir)\mpdecimal-2.5.1\</mpdecimalDir>
     <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.13\</opensslDir>
     <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.13\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir Condition="$(opensslIncludeDir) == ''">$(opensslOutDir)include</opensslIncludeDir>

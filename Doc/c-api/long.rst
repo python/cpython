@@ -450,7 +450,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    a “fast path” for small integers. For compact values use
    :c:func:`PyUnstable_Long_CompactValue`; for others fall back to a
    :c:func:`PyLong_As* <PyLong_AsSize_t>` function or
-   :c:func:`calling <PyObject_CallMethod>` :meth:`int.to_bytes`.
+   :c:func:`PyLong_AsNativeBytes`.
 
    The speedup is expected to be negligible for most users.
 

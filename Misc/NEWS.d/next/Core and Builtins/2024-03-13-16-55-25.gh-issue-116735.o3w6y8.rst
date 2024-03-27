@@ -1,0 +1,1 @@
+For ``INSTRUMENTED_CALL_FUNCTION_EX``, set ``arg0`` to ``sys.monitoring.MISSING`` instead of ``None`` for :monitoring-event:`CALL` event.

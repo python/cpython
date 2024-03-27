@@ -370,13 +370,13 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("a[i:j, k]")
 
     def test_invalid_raise(self):
-        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
+        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X", ctx=ast.Load())))
 
     def test_invalid_fstring_value(self):
         self.check_invalid(
             ast.JoinedStr(
                 values=[
-                    ast.Name(id="test"),
+                    ast.Name(id="test", ctx=ast.Load()),
                     ast.Constant(value="test")
                 ]
             )
@@ -718,7 +718,7 @@ class ManualASTCreationTestCase(unittest.TestCase):
             body=[ast.Pass()],
             decorator_list=[],
             returns=None,
-            type_params=[ast.TypeVar("T", bound=ast.Name("int"))],
+            type_params=[ast.TypeVar("T", bound=ast.Name("int", ctx=ast.Load()))],
         )
         ast.fix_missing_locations(node)
         self.assertEqual(ast.unparse(node), "def f[T: int]():\n    pass")

@@ -121,6 +121,12 @@ typedef struct {
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
+typedef struct {
+    uint16_t counter;
+} _PyContainsOpCache;
+
+#define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
+
 // Borrowed references to common callables:
 struct callable_cache {
     PyObject *isinstance;
@@ -245,7 +251,12 @@ extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
 
+#ifdef Py_GIL_DISABLED
+// gh-115999 tracks progress on addressing this.
+#define ENABLE_SPECIALIZATION 0
+#else
 #define ENABLE_SPECIALIZATION 1
+#endif
 
 /* Specialization functions */
 
@@ -272,6 +283,7 @@ extern void _Py_Specialize_UnpackSequence(PyObject *seq, _Py_CODEUNIT *instr,
 extern void _Py_Specialize_ForIter(PyObject *iter, _Py_CODEUNIT *instr, int oparg);
 extern void _Py_Specialize_Send(PyObject *receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(PyObject *value, _Py_CODEUNIT *instr);
+extern void _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr);
 
 /* Finalizer function for static codeobjects used in deepfreeze.py */
 extern void _PyStaticCode_Fini(PyCodeObject *co);
@@ -296,6 +308,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
+#define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
     do { \
         if (_Py_stats) { \
@@ -322,6 +335,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPT_STAT_INC(name) ((void)0)
 #define UOP_STAT_INC(opname, name) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
+#define OPT_ERROR_IN_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS

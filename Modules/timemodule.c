@@ -1928,20 +1928,20 @@ time_exec(PyObject *module)
             return -1;
         }
 
-        if (PyDict_DelItemString(dct, "clock_gettime") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_gettime", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_gettime_ns") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_gettime_ns", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_settime") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_settime", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_settime_ns") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_settime_ns", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "clock_getres") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "clock_getres", NULL) < 0) {
+            return -1;
         }
     }
 #endif
@@ -1951,11 +1951,11 @@ time_exec(PyObject *module)
     } else {
         PyObject* dct = PyModule_GetDict(module);
 
-        if (PyDict_DelItemString(dct, "thread_time") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "thread_time", NULL) < 0) {
+            return -1;
         }
-        if (PyDict_DelItemString(dct, "thread_time_ns") == -1) {
-            PyErr_Clear();
+        if (PyDict_PopString(dct, "thread_time_ns", NULL) < 0) {
+            return -1;
         }
     }
 #endif
