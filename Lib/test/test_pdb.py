@@ -3057,6 +3057,15 @@ def bœr():
         stdout, stderr = self.run_pdb_module(script, commands)
         self.assertTrue(any("SUCCESS" in l for l in stdout.splitlines()), stdout)
 
+    def test_run_module_with_args(self):
+        commands = """
+            continue
+        """
+        self._run_pdb(["calendar", "-m"], commands, expected_returncode=2)
+
+        stdout, _ = self._run_pdb(["-m", "calendar", "1"], commands)
+        self.assertIn("December", stdout)
+
     def test_breakpoint(self):
         script = """
             if __name__ == '__main__':
@@ -3566,6 +3575,57 @@ class PdbTestReadline(unittest.TestCase):
         self.assertIn(b'special', output)
         self.assertIn(b'species', output)
         self.assertIn(b'$_frame', output)
+
+    def test_builtin_completion(self):
+        script = textwrap.dedent("""
+            value = "speci"
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # Complete: print(value + 'al')
+        input = b"pri\tval\t + 'al')\n"
+
+        # Continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'special', output)
+
+    def test_local_namespace(self):
+        script = textwrap.dedent("""
+            def f():
+                original = "I live Pythin"
+                import pdb; pdb.Pdb().set_trace()
+            f()
+        """)
+
+        # Complete: original.replace('i', 'o')
+        input = b"orig\t.repl\t('i', 'o')\n"
+
+        # Continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'I love Python', output)
+
+    def test_multiline_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        input = b"def func():\n"
+        # Complete: \treturn 40 + 2
+        input += b"\tret\t 40 + 2\n"
+        input += b"\n"
+        # Complete: func()
+        input += b"fun\t()\n"
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'42', output)
 
 
 def load_tests(loader, tests, pattern):

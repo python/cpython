@@ -80,7 +80,7 @@ or sample.
 :func:`median`           Median (middle value) of data.
 :func:`median_low`       Low median of data.
 :func:`median_high`      High median of data.
-:func:`median_grouped`   Median, or 50th percentile, of grouped data.
+:func:`median_grouped`   Median (50th percentile) of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
 :func:`multimode`        List of modes (most common values) of discrete or nominal data.
 :func:`quantiles`        Divide data into intervals with equal probability.
@@ -381,55 +381,56 @@ However, for reading convenience, most of the examples show sorted sequences.
    be an actual data point rather than interpolated.
 
 
-.. function:: median_grouped(data, interval=1)
+.. function:: median_grouped(data, interval=1.0)
 
-   Return the median of grouped continuous data, calculated as the 50th
-   percentile, using interpolation.  If *data* is empty, :exc:`StatisticsError`
-   is raised.  *data* can be a sequence or iterable.
+   Estimates the median for numeric data that has been `grouped or binned
+   <https://en.wikipedia.org/wiki/Data_binning>`_ around the midpoints
+   of consecutive, fixed-width intervals.
 
-   .. doctest::
+   The *data* can be any iterable of numeric data with each value being
+   exactly the midpoint of a bin.  At least one value must be present.
 
-      >>> median_grouped([52, 52, 53, 54])
-      52.5
+   The *interval* is the width of each bin.
 
-   In the following example, the data are rounded, so that each value represents
-   the midpoint of data classes, e.g. 1 is the midpoint of the class 0.5--1.5, 2
-   is the midpoint of 1.5--2.5, 3 is the midpoint of 2.5--3.5, etc.  With the data
-   given, the middle value falls somewhere in the class 3.5--4.5, and
-   interpolation is used to estimate it:
+   For example, demographic information may have been summarized into
+   consecutive ten-year age groups with each group being represented
+   by the 5-year midpoints of the intervals:
 
    .. doctest::
 
-      >>> median_grouped([1, 2, 2, 3, 4, 4, 4, 4, 4, 5])
-      3.7
+      >>> from collections import Counter
+      >>> demographics = Counter({
+      ...    25: 172,   # 20 to 30 years old
+      ...    35: 484,   # 30 to 40 years old
+      ...    45: 387,   # 40 to 50 years old
+      ...    55:  22,   # 50 to 60 years old
+      ...    65:   6,   # 60 to 70 years old
+      ... })
+      ...
 
-   Optional argument *interval* represents the class interval, and defaults
-   to 1.  Changing the class interval naturally will change the interpolation:
+   The 50th percentile (median) is the 536th person out of the 1071
+   member cohort.  That person is in the 30 to 40 year old age group.
+
+   The regular :func:`median` function would assume that everyone in the
+   tricenarian age group was exactly 35 years old.  A more tenable
+   assumption is that the 484 members of that age group are evenly
+   distributed between 30 and 40.  For that, we use
+   :func:`median_grouped`:
 
    .. doctest::
 
-      >>> median_grouped([1, 3, 3, 5, 7], interval=1)
-      3.25
-      >>> median_grouped([1, 3, 3, 5, 7], interval=2)
-      3.5
+       >>> data = list(demographics.elements())
+       >>> median(data)
+       35
+       >>> round(median_grouped(data, interval=10), 1)
+       37.5
 
-   This function does not check whether the data points are at least
-   *interval* apart.
+   The caller is responsible for making sure the data points are separated
+   by exact multiples of *interval*.  This is essential for getting a
+   correct result.  The function does not check this precondition.
 
-   .. impl-detail::
-
-      Under some circumstances, :func:`median_grouped` may coerce data points to
-      floats.  This behaviour is likely to change in the future.
-
-   .. seealso::
-
-      * "Statistics for the Behavioral Sciences", Frederick J Gravetter and
-        Larry B Wallnau (8th Edition).
-
-      * The `SSMEDIAN
-        <https://help.gnome.org/users/gnumeric/stable/gnumeric.html#gnumeric-function-SSMEDIAN>`_
-        function in the Gnome Gnumeric spreadsheet, including `this discussion
-        <https://mail.gnome.org/archives/gnumeric-list/2011-April/msg00018.html>`_.
+   Inputs may be any numeric type that can be coerced to a float during
+   the interpolation step.
 
 
 .. function:: mode(data)
@@ -1000,8 +1001,8 @@ of applications in statistics.
     .. versionadded:: 3.8
 
 
-:class:`NormalDist` Examples and Recipes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Examples and Recipes
+--------------------
 
 
 Classic probability problems
@@ -1036,7 +1037,7 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
 Monte Carlo inputs for simulations
 **********************************
 
-To estimate the distribution for a model than isn't easy to solve
+To estimate the distribution for a model that isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
 
