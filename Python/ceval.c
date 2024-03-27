@@ -819,6 +819,10 @@ resume_frame:
             DISPATCH();
         }
         if (_PyOpcode_Caches[original_opcode]) {
+            assert(original_opcode != POP_JUMP_IF_FALSE);
+            assert(original_opcode != POP_JUMP_IF_TRUE);
+            assert(original_opcode != POP_JUMP_IF_NONE);
+            assert(original_opcode != POP_JUMP_IF_NOT_NONE);
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
             /* Prevent the underlying instruction from specializing
              * and overwriting the instrumentation. */
