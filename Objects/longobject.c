@@ -1159,6 +1159,18 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
             /* If we fit, return the requested number of bytes */
             if (_fits_in_n_bits(cv.v, n * 8)) {
                 res = n;
+            } else if (cv.v > 0 && _fits_in_n_bits(cv.v, n * 8 + 1)) {
+                /* Positive values with the MSB set do not require an
+                 * additional bit when the caller's intent is to treat them
+                 * as unsigned. */
+                /* TODO: Disabled because we don't know the caller's intent
+                res = n;
+                 * Instead, we'll return n+1, which is more accurate than
+                 * res at this stage (which is just sizeof(size_t)),
+                 * and it's something we can test for to ensure this case
+                 * is being detected correctly.
+                 */
+                res = n + 1;
             }
         }
         else {
@@ -1199,17 +1211,51 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
             _PyLong_AsByteArray(v, buffer, (size_t)n, little_endian, 1, 0);
         }
 
-        // More efficient calculation for number of bytes required?
+        /* Calculates the number of bits required for the *absolute* value
+         * of v. This does not take sign into account, only magnitude. */
         size_t nb = _PyLong_NumBits((PyObject *)v);
         /* Normally this would be((nb - 1) / 8) + 1 to avoid rounding up
          * multiples of 8 to the next byte, but we add an implied bit for
          * the sign and it cancels out. */
-        size_t n_needed = (nb / 8) + 1;
-        res = (Py_ssize_t)n_needed;
-        if ((size_t)res != n_needed) {
-            PyErr_SetString(PyExc_OverflowError,
-                "value too large to convert");
-            res = -1;
+        res = (Py_ssize_t)(nb / 8) + 1;
+
+        /* Two edge cases exist that are best handled after extracting the
+         * bits. These may result in us reporting overflow when the value
+         * actually fits.
+         */
+        if (n > 0 && res == n + 1 && nb == n * 8) {
+            if (_PyLong_IsNegative(v)) {
+                /* Values of 0x80...00 from negative values that use every
+                 * available bit in the buffer do not require an additional
+                 * bit to store the sign. */
+                int is_edge_case = 1;
+                unsigned char *b = (unsigned char *)buffer;
+                for (Py_ssize_t i = 0; i < n && is_edge_case; ++i, ++b) {
+                    if (i == 0) {
+                        is_edge_case = (*b == (little_endian ? 0 : 0x80));
+                    } else if (i < n - 1) {
+                        is_edge_case = (*b == 0);
+                    } else {
+                        is_edge_case = (*b == (little_endian ? 0x80 : 0));
+                    }
+                }
+                if (is_edge_case) {
+                    res = n;
+                }
+            }
+            else {
+                /* Positive values with the MSB set do not require an
+                 * additional bit when the caller's intent is to treat them
+                 * as unsigned. */
+                unsigned char *b = (unsigned char *)buffer;
+                if (b[little_endian ? n - 1 : 0] & 0x80) {
+                    /* TODO: Disabled because we don't know the caller's intent
+                    res = n;
+                     * Instead, we'll return res == n+1.
+                     */
+                    res = n + 1;
+                }
+            }
         }
     }
 
