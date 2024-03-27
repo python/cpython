@@ -651,7 +651,7 @@ and its return annotation. To retrieve a :class:`!Signature` object,
 use the :func:`!signature`
 function.
 
-.. function:: signature(callable, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
+.. function:: signature(callable, *, follow_wrapped=True, skip_bound_arg=True, globals=None, locals=None, eval_str=False)
 
    Return a :class:`Signature` object for the given *callable*:
 
@@ -675,6 +675,11 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   If *follow_wrapped* is ``False`` *callable* will not be unwrapped
+   (``callable.__wrapped__`` will not be used to unwrap decorated callables).
+
+   If *skip_bound_arg* is ``False``, keep ``self`` parameter in a signature.
+
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
@@ -696,12 +701,12 @@ function.
 
    .. versionchanged:: 3.5
       The *follow_wrapped* parameter was added.
-      Pass ``False`` to get a signature of
-      *callable* specifically (``callable.__wrapped__`` will not be used to
-      unwrap decorated callables.)
 
    .. versionchanged:: 3.10
       The *globals*, *locals*, and *eval_str* parameters were added.
+
+   .. versionchanged:: 3.13
+      The *skip_bound_arg* parameter was added.
 
    .. note::
 
@@ -806,7 +811,7 @@ function.
 
       .. versionadded:: 3.13
 
-   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False)
+   .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, skip_bound_arg=True,  globals=None, locals=None, eval_str=False)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
        *obj*.
@@ -826,6 +831,9 @@ function.
 
        .. versionchanged:: 3.10
          The *globals*, *locals*, and *eval_str* parameters were added.
+
+       .. versionchanged:: 3.13
+         The *skip_bound_arg* parameter was added.
 
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
