@@ -1,0 +1,5 @@
+Make interp->obmalloc a pointer. For interpreters that share state with the
+main interpreter, this points to the same static memory structure. For
+interpreters with their own obmalloc state, it is heap allocated. Add
+free_obmalloc_arenas() which will free the obmalloc arenas and radix tree
+structures for interpreters with their own obmalloc state.
