@@ -68,6 +68,9 @@ def _running(interp):
 
 class TestBase(unittest.TestCase):
 
+    def tearDown(self):
+        clean_up_interpreters()
+
     def pipe(self):
         def ensure_closed(fd):
             try:
@@ -156,5 +159,19 @@ class TestBase(unittest.TestCase):
         self.assertNotEqual(exitcode, 0)
         return stdout, stderr
 
-    def tearDown(self):
-        clean_up_interpreters()
+    def assert_ns_equal(self, ns1, ns2, msg=None):
+        # This is mostly copied from TestCase.assertDictEqual.
+        self.assertEqual(type(ns1), type(ns2))
+        if ns1 == ns2:
+            return
+
+        import difflib
+        import pprint
+        from unittest.util import _common_shorten_repr
+        standardMsg = '%s != %s' % _common_shorten_repr(ns1, ns2)
+        diff = ('\n' + '\n'.join(difflib.ndiff(
+                       pprint.pformat(vars(ns1)).splitlines(),
+                       pprint.pformat(vars(ns2)).splitlines())))
+        diff = f'namespace({diff})'
+        standardMsg = self._truncateMessage(standardMsg, diff)
+        self.fail(self._formatMessage(msg, standardMsg))

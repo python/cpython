@@ -584,7 +584,7 @@ class RunStringTests(TestBase):
     def test_create_daemon_thread(self):
         with self.subTest('isolated'):
             expected = 'spam spam spam spam spam'
-            subinterp = interpreters.create(isolated=True)
+            subinterp = interpreters.create('isolated')
             script, file = _captured_script(f"""
                 import threading
                 def f():
@@ -604,7 +604,7 @@ class RunStringTests(TestBase):
             self.assertEqual(out, expected)
 
         with self.subTest('not isolated'):
-            subinterp = interpreters.create(isolated=False)
+            subinterp = interpreters.create('legacy')
             script, file = _captured_script("""
                 import threading
                 def f():

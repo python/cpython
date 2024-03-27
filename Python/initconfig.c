@@ -24,6 +24,9 @@
 #  endif
 #endif
 
+#include "config_common.h"
+
+
 /* --- PyConfig spec ---------------------------------------------- */
 
 typedef enum {
@@ -1098,32 +1101,10 @@ _PyConfig_AsDict(const PyConfig *config)
 }
 
 
-static PyObject*
-config_dict_get(PyObject *dict, const char *name)
-{
-    PyObject *item;
-    if (PyDict_GetItemStringRef(dict, name, &item) < 0) {
-        return NULL;
-    }
-    if (item == NULL) {
-        PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
-        return NULL;
-    }
-    return item;
-}
-
-
 static void
 config_dict_invalid_value(const char *name)
 {
     PyErr_Format(PyExc_ValueError, "invalid config value: %s", name);
-}
-
-
-static void
-config_dict_invalid_type(const char *name)
-{
-    PyErr_Format(PyExc_TypeError, "invalid config type: %s", name);
 }
 
 
