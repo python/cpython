@@ -1,5 +1,5 @@
-:mod:`signal` --- Set handlers for asynchronous events
-======================================================
+:mod:`!signal` --- Set handlers for asynchronous events
+=======================================================
 
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.

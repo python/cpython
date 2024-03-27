@@ -1,5 +1,5 @@
-:mod:`traceback` --- Print or retrieve a stack traceback
-========================================================
+:mod:`!traceback` --- Print or retrieve a stack traceback
+=========================================================
 
 .. module:: traceback
    :synopsis: Print or retrieve a stack traceback.

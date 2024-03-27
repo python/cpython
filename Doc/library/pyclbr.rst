@@ -1,5 +1,5 @@
-:mod:`pyclbr` --- Python module browser support
-===============================================
+:mod:`!pyclbr` --- Python module browser support
+================================================
 
 .. module:: pyclbr
    :synopsis: Supports information extraction for a Python module browser.

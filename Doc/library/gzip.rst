@@ -1,5 +1,5 @@
-:mod:`gzip` --- Support for :program:`gzip` files
-=================================================
+:mod:`!gzip` --- Support for :program:`gzip` files
+==================================================
 
 .. module:: gzip
    :synopsis: Interfaces for gzip compression and decompression using file objects.

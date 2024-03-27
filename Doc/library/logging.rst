@@ -1,5 +1,5 @@
-:mod:`logging` --- Logging facility for Python
-==============================================
+:mod:`!logging` --- Logging facility for Python
+===============================================
 
 .. module:: logging
    :synopsis: Flexible event logging system for applications.

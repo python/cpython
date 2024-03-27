@@ -1,5 +1,5 @@
-:mod:`msvcrt` --- Useful routines from the MS VC++ runtime
-==========================================================
+:mod:`!msvcrt` --- Useful routines from the MS VC++ runtime
+===========================================================
 
 .. module:: msvcrt
    :platform: Windows

@@ -1,5 +1,5 @@
-:mod:`sysconfig` --- Provide access to Python's configuration information
-=========================================================================
+:mod:`!sysconfig` --- Provide access to Python's configuration information
+==========================================================================
 
 .. module:: sysconfig
    :synopsis: Python's configuration information

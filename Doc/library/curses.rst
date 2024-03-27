@@ -1,5 +1,5 @@
-:mod:`curses` --- Terminal handling for character-cell displays
-===============================================================
+:mod:`!curses` --- Terminal handling for character-cell displays
+================================================================
 
 .. module:: curses
    :synopsis: An interface to the curses library, providing portable

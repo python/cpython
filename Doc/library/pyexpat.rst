@@ -1,5 +1,5 @@
-:mod:`xml.parsers.expat` --- Fast XML parsing using Expat
-=========================================================
+:mod:`!xml.parsers.expat` --- Fast XML parsing using Expat
+==========================================================
 
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.

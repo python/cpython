@@ -1,5 +1,5 @@
-:mod:`ensurepip` --- Bootstrapping the ``pip`` installer
-========================================================
+:mod:`!ensurepip` --- Bootstrapping the ``pip`` installer
+=========================================================
 
 .. module:: ensurepip
    :synopsis: Bootstrapping the "pip" installer into an existing Python

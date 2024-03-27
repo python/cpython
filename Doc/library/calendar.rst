@@ -1,5 +1,5 @@
-:mod:`calendar` --- General calendar-related functions
-======================================================
+:mod:`!calendar` --- General calendar-related functions
+=======================================================
 
 .. module:: calendar
    :synopsis: Functions for working with calendars, including some emulation

@@ -1,5 +1,5 @@
-:mod:`statistics` --- Mathematical statistics functions
-=======================================================
+:mod:`!statistics` --- Mathematical statistics functions
+========================================================
 
 .. module:: statistics
    :synopsis: Mathematical statistics functions

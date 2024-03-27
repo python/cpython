@@ -1,5 +1,5 @@
-:mod:`urllib.parse` --- Parse URLs into components
-==================================================
+:mod:`!urllib.parse` --- Parse URLs into components
+===================================================
 
 .. module:: urllib.parse
    :synopsis: Parse URLs into or assemble them from components.

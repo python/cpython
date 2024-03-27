@@ -1,5 +1,5 @@
-:mod:`email.utils`: Miscellaneous utilities
--------------------------------------------
+:mod:`!email.utils`: Miscellaneous utilities
+--------------------------------------------
 
 .. module:: email.utils
    :synopsis: Miscellaneous email package utilities.

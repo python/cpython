@@ -1,5 +1,5 @@
-:mod:`bdb` --- Debugger framework
-=================================
+:mod:`!bdb` --- Debugger framework
+==================================
 
 .. module:: bdb
    :synopsis: Debugger framework.

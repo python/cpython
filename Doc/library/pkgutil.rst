@@ -1,5 +1,5 @@
-:mod:`pkgutil` --- Package extension utility
-============================================
+:mod:`!pkgutil` --- Package extension utility
+=============================================
 
 .. module:: pkgutil
    :synopsis: Utilities for the import system.

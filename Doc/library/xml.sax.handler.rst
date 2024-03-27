@@ -1,5 +1,5 @@
-:mod:`xml.sax.handler` --- Base classes for SAX handlers
-========================================================
+:mod:`!xml.sax.handler` --- Base classes for SAX handlers
+=========================================================
 
 .. module:: xml.sax.handler
    :synopsis: Base classes for SAX event handlers.

@@ -1,5 +1,5 @@
-:mod:`ipaddress` --- IPv4/IPv6 manipulation library
-===================================================
+:mod:`!ipaddress` --- IPv4/IPv6 manipulation library
+====================================================
 
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.

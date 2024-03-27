@@ -1,5 +1,5 @@
-:mod:`collections.abc` --- Abstract Base Classes for Containers
-===============================================================
+:mod:`!collections.abc` --- Abstract Base Classes for Containers
+================================================================
 
 .. module:: collections.abc
    :synopsis: Abstract base classes for containers

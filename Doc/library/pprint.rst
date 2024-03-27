@@ -1,5 +1,5 @@
-:mod:`pprint` --- Data pretty printer
-=====================================
+:mod:`!pprint` --- Data pretty printer
+======================================
 
 .. module:: pprint
    :synopsis: Data pretty printer.

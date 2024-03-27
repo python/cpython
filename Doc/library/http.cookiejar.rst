@@ -1,5 +1,5 @@
-:mod:`http.cookiejar` --- Cookie handling for HTTP clients
-==========================================================
+:mod:`!http.cookiejar` --- Cookie handling for HTTP clients
+===========================================================
 
 .. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.

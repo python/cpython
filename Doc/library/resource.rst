@@ -1,5 +1,5 @@
-:mod:`resource` --- Resource usage information
-==============================================
+:mod:`!resource` --- Resource usage information
+===============================================
 
 .. module:: resource
    :platform: Unix

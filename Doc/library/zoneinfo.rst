@@ -1,5 +1,5 @@
-:mod:`zoneinfo` --- IANA time zone support
-==========================================
+:mod:`!zoneinfo` --- IANA time zone support
+===========================================
 
 .. module:: zoneinfo
     :synopsis: IANA time zone support

@@ -1,5 +1,5 @@
-:mod:`ssl` --- TLS/SSL wrapper for socket objects
-=================================================
+:mod:`!ssl` --- TLS/SSL wrapper for socket objects
+==================================================
 
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects

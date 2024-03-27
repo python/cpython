@@ -1,5 +1,5 @@
-:mod:`tabnanny` --- Detection of ambiguous indentation
-======================================================
+:mod:`!tabnanny` --- Detection of ambiguous indentation
+=======================================================
 
 .. module:: tabnanny
    :synopsis: Tool for detecting white space related problems in Python

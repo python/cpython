@@ -1,6 +1,5 @@
-
-:mod:`pathlib` --- Object-oriented filesystem paths
-===================================================
+:mod:`!pathlib` --- Object-oriented filesystem paths
+====================================================
 
 .. module:: pathlib
    :synopsis: Object-oriented filesystem paths

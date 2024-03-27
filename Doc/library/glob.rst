@@ -1,5 +1,5 @@
-:mod:`glob` --- Unix style pathname pattern expansion
-=====================================================
+:mod:`!glob` --- Unix style pathname pattern expansion
+======================================================
 
 .. module:: glob
    :synopsis: Unix shell style pathname pattern expansion.

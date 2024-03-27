@@ -1,5 +1,5 @@
-:mod:`importlib.resources.abc` -- Abstract base classes for resources
----------------------------------------------------------------------
+:mod:`!importlib.resources.abc` -- Abstract base classes for resources
+----------------------------------------------------------------------
 
 .. module:: importlib.resources.abc
     :synopsis: Abstract base classes for resources
