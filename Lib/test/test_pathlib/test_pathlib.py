@@ -65,7 +65,7 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         p = self.cls('a')
         self.assertIs(type(p), expected)
 
-    def test_concrete_pathmod(self):
+    def test_concrete_parser(self):
         if self.cls is pathlib.PurePosixPath:
             expected = posixpath
         elif self.cls is pathlib.PureWindowsPath:
@@ -73,19 +73,19 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         else:
             expected = os.path
         p = self.cls('a')
-        self.assertIs(p.pathmod, expected)
+        self.assertIs(p.parser, expected)
 
-    def test_different_pathmods_unequal(self):
+    def test_different_parsers_unequal(self):
         p = self.cls('a')
-        if p.pathmod is posixpath:
+        if p.parser is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
         self.assertNotEqual(p, q)
 
-    def test_different_pathmods_unordered(self):
+    def test_different_parsers_unordered(self):
         p = self.cls('a')
-        if p.pathmod is posixpath:
+        if p.parser is posixpath:
             q = pathlib.PureWindowsPath('a')
         else:
             q = pathlib.PurePosixPath('a')
@@ -108,16 +108,16 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(P(P('./a:b')), P('./a:b'))
 
     def _check_parse_path(self, raw_path, *expected):
-        sep = self.pathmod.sep
+        sep = self.parser.sep
         actual = self.cls._parse_path(raw_path.replace('/', sep))
         self.assertEqual(actual, expected)
-        if altsep := self.pathmod.altsep:
+        if altsep := self.parser.altsep:
             actual = self.cls._parse_path(raw_path.replace('/', altsep))
             self.assertEqual(actual, expected)
 
     def test_parse_path_common(self):
         check = self._check_parse_path
-        sep = self.pathmod.sep
+        sep = self.parser.sep
         check('',         '', '', [])
         check('a',        '', '', ['a'])
         check('a/',       '', '', ['a'])
@@ -523,10 +523,10 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
 
     def setUp(self):
         super().setUp()
-        os.chmod(self.pathmod.join(self.base, 'dirE'), 0)
+        os.chmod(self.parser.join(self.base, 'dirE'), 0)
 
     def tearDown(self):
-        os.chmod(self.pathmod.join(self.base, 'dirE'), 0o777)
+        os.chmod(self.parser.join(self.base, 'dirE'), 0o777)
         os_helper.rmtree(self.base)
 
     def tempdir(self):
@@ -541,8 +541,8 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
         self.assertEqual(our_names, path_names)
         for attr_name in our_names:
-            if attr_name == 'pathmod':
-                # On Windows, Path.pathmod is ntpath, but PathBase.pathmod is
+            if attr_name == 'parser':
+                # On Windows, Path.parser is ntpath, but PathBase.parser is
                 # posixpath, and so their docstrings differ.
                 continue
             our_attr = getattr(self.cls, attr_name)
@@ -557,9 +557,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         p = self.cls('a')
         self.assertIs(type(p), expected)
 
-    def test_unsupported_pathmod(self):
-        if self.cls.pathmod is os.path:
-            self.skipTest("path flavour is supported")
+    def test_unsupported_parser(self):
+        if self.cls.parser is os.path:
+            self.skipTest("path parser is supported")
         else:
             self.assertRaises(pathlib.UnsupportedOperation, self.cls)
 
@@ -809,7 +809,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(target.exists())
         # Linking to a str of a relative path.
         link2 = P / 'dirA' / 'fileAAA'
-        target2 = self.pathmod.join(TESTFN, 'fileA')
+        target2 = self.parser.join(TESTFN, 'fileA')
         link2.hardlink_to(target2)
         self.assertEqual(os.stat(target2).st_size, size)
         self.assertTrue(link2.exists())
@@ -834,7 +834,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Renaming to a str of a relative path.
-        r = self.pathmod.join(TESTFN, 'fileAAA')
+        r = self.parser.join(TESTFN, 'fileAAA')
         renamed_q = q.rename(r)
         self.assertEqual(renamed_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
@@ -851,7 +851,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Replacing another (existing) path.
-        r = self.pathmod.join(TESTFN, 'dirB', 'fileB')
+        r = self.parser.join(TESTFN, 'dirB', 'fileB')
         replaced_q = q.replace(r)
         self.assertEqual(replaced_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
@@ -1060,9 +1060,9 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_is_junction(self):
         P = self.cls(self.base)
 
-        with mock.patch.object(P.pathmod, 'isjunction'):
-            self.assertEqual(P.is_junction(), P.pathmod.isjunction.return_value)
-            P.pathmod.isjunction.assert_called_once_with(P)
+        with mock.patch.object(P.parser, 'isjunction'):
+            self.assertEqual(P.is_junction(), P.parser.isjunction.return_value)
+            P.parser.isjunction.assert_called_once_with(P)
 
     @unittest.skipUnless(hasattr(os, "mkfifo"), "os.mkfifo() required")
     @unittest.skipIf(sys.platform == "vxworks",
@@ -1294,12 +1294,12 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         p = self.cls(self.base)
         with (p / 'new_file').open('wb'):
             pass
-        st = os.stat(self.pathmod.join(self.base, 'new_file'))
+        st = os.stat(self.parser.join(self.base, 'new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o666)
         os.umask(0o022)
         with (p / 'other_new_file').open('wb'):
             pass
-        st = os.stat(self.pathmod.join(self.base, 'other_new_file'))
+        st = os.stat(self.parser.join(self.base, 'other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
 
     @needs_posix
@@ -1322,14 +1322,14 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.addCleanup(os.umask, old_mask)
         p = self.cls(self.base)
         (p / 'new_file').touch()
-        st = os.stat(self.pathmod.join(self.base, 'new_file'))
+        st = os.stat(self.parser.join(self.base, 'new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o666)
         os.umask(0o022)
         (p / 'other_new_file').touch()
-        st = os.stat(self.pathmod.join(self.base, 'other_new_file'))
+        st = os.stat(self.parser.join(self.base, 'other_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o644)
         (p / 'masked_new_file').touch(mode=0o750)
-        st = os.stat(self.pathmod.join(self.base, 'masked_new_file'))
+        st = os.stat(self.parser.join(self.base, 'masked_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o750)
 
     @unittest.skipUnless(hasattr(pwd, 'getpwall'),
