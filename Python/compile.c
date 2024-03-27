@@ -228,11 +228,9 @@ _PyCompile_InstructionSequence_UseLabel(instr_sequence *seq, int lbl)
                                            INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
                                            sizeof(int)));
 
-#ifndef NDEBUG
     for(int i = old_size; i < seq->s_labelmap_size; i++) {
         seq->s_labelmap[i] = -111;  /* something weird, for debugging */
     }
-#endif
     seq->s_labelmap[lbl] = seq->s_used; /* label refers to the next instruction */
     return SUCCESS;
 }
