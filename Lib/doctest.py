@@ -2262,13 +2262,12 @@ class DocTestCase(unittest.TestCase):
 
         try:
             runner.DIVIDER = "-"*70
-            results = runner.run(test, out=new.write, clear_globs=False)
-            if results.skipped == results.attempted:
-                raise unittest.SkipTest(f"all examples were skipped")
+            failures, tries = runner.run(
+                test, out=new.write, clear_globs=False)
         finally:
             sys.stdout = old
 
-        if results.failed:
+        if failures:
             raise self.failureException(self.format_failure(new.getvalue()))
 
     def format_failure(self, err):

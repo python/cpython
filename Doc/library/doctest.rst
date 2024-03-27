@@ -1021,8 +1021,7 @@ from text files and modules with doctests:
    and runs the interactive examples in each file.  If an example in any file
    fails, then the synthesized unit test fails, and a :exc:`failureException`
    exception is raised showing the name of the file containing the test and a
-   (sometimes approximate) line number.  If all the examples in a file are
-   skipped, then the synthesized unit test is also marked as skipped.
+   (sometimes approximate) line number.
 
    Pass one or more paths (as strings) to text files to be examined.
 
@@ -1088,8 +1087,7 @@ from text files and modules with doctests:
    and runs each doctest in the module.  If any of the doctests fail, then the
    synthesized unit test fails, and a :exc:`failureException` exception is raised
    showing the name of the file containing the test and a (sometimes approximate)
-   line number.  If all the examples in a docstring are skipped, then the
-   synthesized unit test is also marked as skipped.
+   line number.
 
    Optional argument *module* provides the module to be tested.  It can be a module
    object or a (possibly dotted) module name.  If not specified, the module calling
