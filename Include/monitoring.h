@@ -96,19 +96,6 @@ PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelike
     }
 
 
-static inline void
-PyUnstable_Monitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
-                                 const uint8_t *event_types, uint32_t length)
-{
-    _PyMonitoring_EnterScope(state_array, version, event_types, length);
-}
-
-static inline void
-PyUnstable_Monitoring_ExitScope(void)
-{
-    _PyMonitoring_ExitScope();
-}
-
 static inline int
 PyUnstable_Monitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int offset)
 {

@@ -2344,7 +2344,7 @@ capi_call_instrumentation(PyMonitoringState *state, PyObject *codelike, int offs
 }
 
 void
-_PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
+PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                          const uint8_t *event_types, uint32_t length)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -2361,7 +2361,7 @@ _PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
 }
 
 void
-_PyMonitoring_ExitScope(void)
+PyMonitoring_ExitScope(void)
 {
 }
 
@@ -2543,17 +2543,6 @@ _PyMonitoring_FireStopIterationEvent(PyMonitoringState *state, PyObject *codelik
 
 /******************* Public API *******************/
 
-void
-PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
-                        const uint8_t *event_types, uint32_t length)
-{
-    _PyMonitoring_EnterScope(state_array, version, event_types, length);
-}
-
-void
-PyMonitoring_ExitScope(void)
-{
-}
 
 #define IF_ACTIVE(STATE, X)  \
     if ((STATE)->active) { \
