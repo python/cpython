@@ -1,5 +1,6 @@
 import unittest
 import unittest.mock
+from test import support
 from test.support import (verbose, refcount_test,
                           cpython_only, requires_subprocess, Py_GIL_DISABLED)
 from test.support.import_helper import import_module
@@ -470,7 +471,7 @@ class GCTests(unittest.TestCase):
                 make_nested()
 
         old_switchinterval = sys.getswitchinterval()
-        sys.setswitchinterval(1e-5)
+        support.setswitchinterval(1e-5)
         try:
             exit = []
             threads = []
