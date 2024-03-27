@@ -1,0 +1,2 @@
+Added documentation for the ``PyUnstable_InterpreterState_GetMainModule``
+and ``PyInterpreterID`` C-API. Patch by Anthony Shaw.
