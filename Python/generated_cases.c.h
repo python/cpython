@@ -3419,12 +3419,7 @@
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 if (counter == 0) {
                     // Dynamically initialize the counter
-                    PyInterpreterState *interp = tstate->interp;
-                    if (interp->optimizer_backedge_threshold != OPTIMIZER_UNREACHABLE_THRESHOLD) {
-                        counter = interp->optimizer_backedge_threshold;
-                        assert(counter != 0);
-                        this_instr[1].cache = counter;
-                    }
+                    this_instr[1].cache = tstate->interp->optimizer_backedge_threshold;
                 }
                 if (ADAPTIVE_COUNTER_IS_ZERO(counter) && this_instr->op.code == JUMP_BACKWARD) {
                     _Py_CODEUNIT *start = this_instr;
