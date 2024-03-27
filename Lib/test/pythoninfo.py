@@ -936,11 +936,14 @@ def collect_windows(info_add):
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 text=True)
-        output = proc.communicate()[0]
+        output, stderr = proc.communicate()
         if proc.returncode == 0xc0000142:
             return
         if proc.returncode:
-            output = ""
+            raise ValueError(
+                f"Command 'ver' failed with exit code {proc.returncode}: "
+                f"stdout={output!r} stderr={stderr!r}"
+            )
     except OSError:
         return
     else:
