@@ -1,5 +1,5 @@
 #include "Python.h"
-#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -133,6 +133,8 @@ _PyWarnings_InitState(PyInterpreterState *interp)
 {
     WarningsState *st = &interp->warnings;
 
+    st->mutex = (struct _PyMutex){ 0 };
+
     if (st->filters == NULL) {
         st->filters = init_filters(interp);
         if (st->filters == NULL) {
@@ -234,8 +236,15 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
 
 
 static PyObject *
-get_once_registry_impl(PyInterpreterState *interp, WarningsState *st)
+get_once_registry(PyInterpreterState *interp)
 {
+    WarningsState *st = warnings_get_state(interp);
+    if (st == NULL) {
+        return NULL;
+    }
+
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
     PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
@@ -257,25 +266,15 @@ get_once_registry_impl(PyInterpreterState *interp, WarningsState *st)
 
 
 static PyObject *
-get_once_registry(PyInterpreterState *interp)
+get_default_action(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
     if (st == NULL) {
         return NULL;
     }
 
-    PyObject *registry;
-    Py_BEGIN_CRITICAL_SECTION(st->once_registry);
-    registry = get_once_registry_impl(interp, st);
-    Py_END_CRITICAL_SECTION();
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
 
-    return registry;
-}
-
-
-static PyObject *
-get_default_action_impl(PyInterpreterState *interp, WarningsState *st)
-{
     PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
@@ -297,29 +296,19 @@ get_default_action_impl(PyInterpreterState *interp, WarningsState *st)
 }
 
 
-static PyObject *
-get_default_action(PyInterpreterState *interp)
+/* The item is a new reference. */
+static PyObject*
+get_filter(PyInterpreterState *interp, PyObject *category,
+           PyObject *text, Py_ssize_t lineno,
+           PyObject *module, PyObject **item)
 {
     WarningsState *st = warnings_get_state(interp);
     if (st == NULL) {
         return NULL;
     }
 
-    PyObject *default_action;
-    Py_BEGIN_CRITICAL_SECTION(st->default_action);
-    default_action = get_default_action_impl(interp, st);
-    Py_END_CRITICAL_SECTION();
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
 
-    return default_action;
-}
-
-
-/* The item is a new reference. */
-static PyObject *
-get_filter_impl(PyInterpreterState *interp, WarningsState *st,
-                PyObject *category, PyObject *text, Py_ssize_t lineno,
-                PyObject *module, PyObject **item)
-{
     PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
@@ -404,25 +393,6 @@ get_filter_impl(PyInterpreterState *interp, WarningsState *st,
     }
 
     return NULL;
-}
-
-
-static PyObject *
-get_filter(PyInterpreterState *interp, PyObject *category,
-           PyObject *text, Py_ssize_t lineno,
-           PyObject *module, PyObject **item)
-{
-    WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
-
-    PyObject *filters;
-    Py_BEGIN_CRITICAL_SECTION(st->filters);
-    filters = get_filter_impl(interp, st, category, text, lineno, module, item);
-    Py_END_CRITICAL_SECTION();
-
-    return filters;
 }
 
 
@@ -1032,8 +1002,15 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
+    WarningsState *st = warnings_get_state(tstate->interp);
+    if (st == NULL) {
+        return NULL;
+    }
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
+    Py_END_CRITICAL_SECTION();
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1181,8 +1158,16 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
             return NULL;
         }
     }
+
+    WarningsState *st = warnings_get_state(tstate->interp);
+    if (st == NULL) {
+        return NULL;
+    }
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
+    Py_END_CRITICAL_SECTION();
     Py_XDECREF(source_line);
     return returned;
 }
@@ -1322,8 +1307,16 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     if (tstate == NULL) {
         return -1;
     }
+
+    WarningsState *st = warnings_get_state(tstate->interp);
+    if (st == NULL) {
+        return -1;
+    }
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
+    Py_END_CRITICAL_SECTION();
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1388,12 +1381,17 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
-            res = warn_explicit(tstate, category, message, filename, lineno,
-                                module, registry, NULL, NULL);
-            Py_DECREF(message);
-            if (res != NULL) {
-                Py_DECREF(res);
-                ret = 0;
+            WarningsState *st = warnings_get_state(tstate->interp);
+            if (st != NULL) {
+                Py_BEGIN_CRITICAL_SECTION_MUT(st->mutex);
+                res = warn_explicit(tstate, category, message, filename, lineno,
+                                    module, registry, NULL, NULL);
+                Py_END_CRITICAL_SECTION();
+                Py_DECREF(message);
+                if (res != NULL) {
+                    Py_DECREF(res);
+                    ret = 0;
+                }
             }
         }
     }
