@@ -2509,7 +2509,7 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     }
     Py_XDECREF(sock);
     if (retval < 0)
-        return PySSL_SetError(self, (int)retval, __FILE__, __LINE__);
+        return PySSL_SetError(self, __FILE__, __LINE__);
     if (PySSL_ChainExceptions(self) < 0)
         return NULL;
     return PyLong_FromSize_t(retval);
