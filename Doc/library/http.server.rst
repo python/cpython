@@ -389,8 +389,7 @@ provides three different variants:
       ``'Last-Modified:'`` header with the file's modification time.
 
       Then follows a blank line signifying the end of the headers, and then the
-      contents of the file are output. If the file's MIME type starts with
-      ``text/`` the file is opened in text mode; otherwise binary mode is used.
+      contents of the file are output.
 
       For example usage, see the implementation of the ``test`` function
       in :source:`Lib/http/server.py`.
