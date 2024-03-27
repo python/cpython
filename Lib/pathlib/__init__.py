@@ -529,6 +529,13 @@ class Path(_abc.PathBase, PurePath):
             cls = WindowsPath if os.name == 'nt' else PosixPath
         return object.__new__(cls)
 
+    def __reduce__(self):
+        cls = self.__class__
+        if cls is PosixPath or cls is WindowsPath:
+            # Allow unpickling on foreign operating systems.
+            cls = Path
+        return cls, self.parts
+
     def stat(self, *, follow_symlinks=True):
         """
         Return the result of the stat() system call on this path, like
