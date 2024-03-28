@@ -92,12 +92,24 @@ pylong_fromnativebytes(PyObject *module, PyObject *args)
     return res;
 }
 
+static PyObject *
+pylong_aspid(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    pid_t value = PyLong_AsPid(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromPid(value);
+}
+
 
 static PyMethodDef test_methods[] = {
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
     {"pylong_asnativebytes",        pylong_asnativebytes,       METH_VARARGS},
     {"pylong_fromnativebytes",      pylong_fromnativebytes,     METH_VARARGS},
+    {"pylong_aspid",                pylong_aspid,               METH_O},
     {NULL},
 };
 

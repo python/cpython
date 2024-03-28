@@ -104,8 +104,8 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
 
 def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
     names = _listdir(dirname, dir_fd, dironly)
-    if include_hidden or not _ishidden(pattern):
-        names = (x for x in names if include_hidden or not _ishidden(x))
+    if not (include_hidden or _ishidden(pattern)):
+        names = (x for x in names if not _ishidden(x))
     return fnmatch.filter(names, pattern)
 
 def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
