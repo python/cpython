@@ -1,2 +1,1 @@
-* Handle leading ``//`` for :func:`posixpath.commonpath` using :func:`posixpath.splitroot`.
-* Raise TypeError for non-sequences for :func:`ntpath.commonpath`.
+Handle leading ``//`` for :func:`posixpath.commonpath` using :func:`posixpath.splitroot`.
