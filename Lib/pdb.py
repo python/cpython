@@ -186,7 +186,7 @@ class _ScriptTarget(_ExecutableTarget):
 
     @property
     def code(self):
-        # We need to open the file each time because the file may be modified
+        # Open the file each time because the file may be modified
         with io.open_code(self._target) as fp:
             return f"exec(compile({fp.read()!r}, {self._target!r}, 'exec'))"
 
