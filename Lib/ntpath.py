@@ -831,23 +831,22 @@ def relpath(path, start=None):
         raise
 
 
-# Return the longest common sub-path of the sequence of paths given as input.
+# Return the longest common sub-path of the iterable of paths given as input.
 # The function is case-insensitive and 'separator-insensitive', i.e. if the
 # only difference between two paths is the use of '\' versus '/' as separator,
 # they are deemed to be equal.
 #
 # However, the returned path will have the standard '\' separator (even if the
 # given paths had the alternative '/' separator) and will have the case of the
-# first path given in the sequence. Additionally, any trailing separator is
+# first path given in the iterable. Additionally, any trailing separator is
 # stripped from the returned path.
 
 def commonpath(paths):
-    """Given a sequence of path names, returns the longest common sub-path."""
-
-    if not paths:
-        raise ValueError('commonpath() arg is an empty sequence')
-
+    """Given an iterable of path names, returns the longest common sub-path."""
     paths = tuple(map(os.fspath, paths))
+    if not paths:
+        raise ValueError('commonpath() arg is an empty iterable')
+
     if isinstance(paths[0], bytes):
         sep = b'\\'
         altsep = b'/'
