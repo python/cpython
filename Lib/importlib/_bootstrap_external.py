@@ -81,6 +81,11 @@ def _pack_uint32(x):
     return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
 
+def _unpack_uint64(data):
+    """Convert 8 bytes in little-endian to an integer."""
+    assert len(data) == 8
+    return int.from_bytes(data, 'little')
+
 def _unpack_uint32(data):
     """Convert 4 bytes in little-endian to an integer."""
     assert len(data) == 4
