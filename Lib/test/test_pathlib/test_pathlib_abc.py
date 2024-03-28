@@ -1776,9 +1776,9 @@ class DummyPathTest(DummyPurePathTest):
         _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     @needs_symlinks
-    def test_glob_follow_symlinks_common(self):
+    def test_glob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
-            actual = {path for path in path.glob(glob, follow_symlinks=True)
+            actual = {path for path in path.glob(glob, recurse_symlinks=True)
                       if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
@@ -1812,39 +1812,9 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*/dirD/**", ["dirC/dirD/", "dirC/dirD/fileD"])
         _check(p, "*/dirD/**/", ["dirC/dirD/"])
 
-    @needs_symlinks
-    def test_glob_no_follow_symlinks_common(self):
+    def test_rglob_recurse_symlinks_false(self):
         def _check(path, glob, expected):
-            actual = {path for path in path.glob(glob, follow_symlinks=False)}
-            self.assertEqual(actual, { P(self.base, q) for q in expected })
-        P = self.cls
-        p = P(self.base)
-        _check(p, "fileB", [])
-        _check(p, "dir*/file*", ["dirB/fileB", "dirC/fileC"])
-        _check(p, "*A", ["dirA", "fileA", "linkA"])
-        _check(p, "*B/*", ["dirB/fileB", "dirB/linkD"])
-        _check(p, "*/fileB", ["dirB/fileB"])
-        _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirE/"])
-        _check(p, "dir*/*/..", ["dirC/dirD/.."])
-        _check(p, "dir*/**", [
-            "dirA/", "dirA/linkC",
-            "dirB/", "dirB/fileB", "dirB/linkD",
-            "dirC/", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt",
-            "dirE/"])
-        _check(p, "dir*/**/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
-        _check(p, "dir*/**/..", ["dirA/..", "dirB/..", "dirC/..", "dirC/dirD/..", "dirE/.."])
-        _check(p, "dir*/*/**", ["dirC/dirD/", "dirC/dirD/fileD"])
-        _check(p, "dir*/*/**/", ["dirC/dirD/"])
-        _check(p, "dir*/*/**/..", ["dirC/dirD/.."])
-        _check(p, "dir*/**/fileC", ["dirC/fileC"])
-        _check(p, "dir*/*/../dirD/**", ["dirC/dirD/../dirD/", "dirC/dirD/../dirD/fileD"])
-        _check(p, "dir*/*/../dirD/**/", ["dirC/dirD/../dirD/"])
-        _check(p, "*/dirD/**", ["dirC/dirD/", "dirC/dirD/fileD"])
-        _check(p, "*/dirD/**/", ["dirC/dirD/"])
-
-    def test_rglob_follow_symlinks_none(self):
-        def _check(path, glob, expected):
-            actual = set(path.rglob(glob, follow_symlinks=None))
+            actual = set(path.rglob(glob, recurse_symlinks=False))
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
         p = P(self.base)
@@ -1901,9 +1871,9 @@ class DummyPathTest(DummyPurePathTest):
         self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\fileD"})
 
     @needs_symlinks
-    def test_rglob_follow_symlinks_common(self):
+    def test_rglob_recurse_symlinks_common(self):
         def _check(path, glob, expected):
-            actual = {path for path in path.rglob(glob, follow_symlinks=True)
+            actual = {path for path in path.rglob(glob, recurse_symlinks=True)
                       if path.parts.count("linkD") <= 1}  # exclude symlink loop.
             self.assertEqual(actual, { P(self.base, q) for q in expected })
         P = self.cls
@@ -1933,36 +1903,11 @@ class DummyPathTest(DummyPurePathTest):
         _check(p, "*.*", ["dirC/novel.txt"])
 
     @needs_symlinks
-    def test_rglob_no_follow_symlinks_common(self):
-        def _check(path, glob, expected):
-            actual = {path for path in path.rglob(glob, follow_symlinks=False)}
-            self.assertEqual(actual, { P(self.base, q) for q in expected })
-        P = self.cls
-        p = P(self.base)
-        _check(p, "fileB", ["dirB/fileB"])
-        _check(p, "*/fileA", [])
-        _check(p, "*/fileB", ["dirB/fileB"])
-        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD", ])
-        _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
-        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
-
-        p = P(self.base, "dirC")
-        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
-                        "dirC/dirD", "dirC/dirD/fileD"])
-        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p, "*/*", ["dirC/dirD/fileD"])
-        _check(p, "*/", ["dirC/dirD/"])
-        _check(p, "", ["dirC/", "dirC/dirD/"])
-        # gh-91616, a re module regression
-        _check(p, "*.txt", ["dirC/novel.txt"])
-        _check(p, "*.*", ["dirC/novel.txt"])
-
-    @needs_symlinks
     def test_rglob_symlink_loop(self):
         # Don't get fooled by symlink loops (Issue #26012).
         P = self.cls
         p = P(self.base)
-        given = set(p.rglob('*', follow_symlinks=None))
+        given = set(p.rglob('*', recurse_symlinks=False))
         expect = {'brokenLink',
                   'dirA', 'dirA/linkC',
                   'dirB', 'dirB/fileB', 'dirB/linkD',

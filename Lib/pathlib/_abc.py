@@ -66,10 +66,8 @@ def _select_special(paths, part):
         yield path._make_child_relpath(part)
 
 
-def _select_children(parent_paths, dir_only, follow_symlinks, match):
+def _select_children(parent_paths, dir_only, match):
     """Yield direct children of given paths, filtering by name and type."""
-    if follow_symlinks is None:
-        follow_symlinks = True
     for parent_path in parent_paths:
         try:
             # We must close the scandir() object before proceeding to
@@ -82,7 +80,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
             for entry in entries:
                 if dir_only:
                     try:
-                        if not entry.is_dir(follow_symlinks=follow_symlinks):
+                        if not entry.is_dir():
                             continue
                     except OSError:
                         continue
@@ -96,8 +94,6 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks, match):
     """Yield given paths and all their children, recursively, filtering by
     string and type.
     """
-    if follow_symlinks is None:
-        follow_symlinks = False
     for parent_path in parent_paths:
         if match is not None:
             # If we're filtering paths through a regex, record the length of
@@ -789,7 +785,7 @@ class PathBase(PurePathBase):
     def _make_child_relpath(self, name):
         return self.joinpath(name)
 
-    def glob(self, pattern, *, case_sensitive=None, follow_symlinks=True):
+    def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -818,7 +814,7 @@ class PathBase(PurePathBase):
                 # Consume following non-special components, provided we're
                 # treating symlinks consistently. Each component is joined
                 # onto 'part', which is used to generate an re.Pattern object.
-                if follow_symlinks is not None:
+                if recurse_symlinks:
                     while stack and stack[-1] not in specials:
                         part += sep + stack.pop()
 
@@ -827,7 +823,7 @@ class PathBase(PurePathBase):
                 match = _compile_pattern(part, sep, case_sensitive) if part != '**' else None
 
                 # Recursively walk directories, filtering by type and regex.
-                paths = _select_recursive(paths, bool(stack), follow_symlinks, match)
+                paths = _select_recursive(paths, bool(stack), recurse_symlinks, match)
 
                 # De-duplicate if we've already seen a '**' component.
                 if deduplicate_paths:
@@ -843,10 +839,10 @@ class PathBase(PurePathBase):
                 match = _compile_pattern(part, sep, case_sensitive) if part != '*' else None
 
                 # Iterate over directories' children filtering by type and regex.
-                paths = _select_children(paths, bool(stack), follow_symlinks, match)
+                paths = _select_children(paths, bool(stack), match)
         return paths
 
-    def rglob(self, pattern, *, case_sensitive=None, follow_symlinks=True):
+    def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
         """Recursively yield all existing files (of any kind, including
         directories) matching the given relative pattern, anywhere in
         this subtree.
@@ -854,7 +850,7 @@ class PathBase(PurePathBase):
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
         pattern = '**' / pattern
-        return self.glob(pattern, case_sensitive=case_sensitive, follow_symlinks=follow_symlinks)
+        return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
