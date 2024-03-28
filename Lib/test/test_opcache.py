@@ -5,12 +5,13 @@ import threading
 import types
 import unittest
 from test.support import threading_helper, check_impl_detail, requires_specialization
+from test.support.import_helper import import_module
 
 # Skip this module on other interpreters, it is cpython specific:
 if check_impl_detail(cpython=False):
     raise unittest.SkipTest('implementation detail specific to cpython')
 
-import _testinternalcapi
+_testinternalcapi = import_module("_testinternalcapi")
 
 
 def disabling_optimizer(func):

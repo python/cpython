@@ -1168,6 +1168,16 @@ def requires_limited_api(test):
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
 
+
+TEST_MODULES = sysconfig.get_config_var('TEST_MODULES')
+
+
+def requires_test_modules(test):
+    if TEST_MODULES != 'yes':
+        return unittest.skip('needs test modules')(test)
+    return test
+
+
 def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
