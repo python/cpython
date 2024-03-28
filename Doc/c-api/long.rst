@@ -418,7 +418,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    ``Py_ASNATIVEBYTES_NATIVE_ENDIAN | Py_ASNATIVEBYTES_UNSIGNED_BUFFER``).
 
    ============================================= ======
-   Flag                                          Value 
+   Flag                                          Value
    ============================================= ======
    .. c:macro:: Py_ASNATIVEBYTES_DEFAULTS        ``-1``
    .. c:macro:: Py_ASNATIVEBYTES_BIG_ENDIAN      ``0``
