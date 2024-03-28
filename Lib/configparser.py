@@ -1116,30 +1116,8 @@ class RawConfigParser(MutableMapping):
     def _handle_option(self, st, line, fpname):
         # an option line?
         st.indent_level = st.cur_indent_level
-        # is it a section header?
-        mo = self.SECTCRE.match(line.clean)
-        if mo:
-            st.sectname = mo.group('header')
-            if st.sectname in self._sections:
-                if self._strict and st.sectname in st.elements_added:
-                    raise DuplicateSectionError(st.sectname, fpname,
-                                                st.lineno)
-                st.cursect = self._sections[st.sectname]
-                st.elements_added.add(st.sectname)
-            elif st.sectname == self.default_section:
-                st.cursect = self._defaults
-            else:
-                st.cursect = self._dict()
-                self._sections[st.sectname] = st.cursect
-                self._proxies[st.sectname] = SectionProxy(self, st.sectname)
-                st.elements_added.add(st.sectname)
-            # So sections can't start with a continuation line
-            st.optname = None
-        # no section header in the file?
-        elif st.cursect is None:
-            raise MissingSectionHeaderError(fpname, st.lineno, line)
-        # an option line?
-        else:
+
+        if True:
             mo = self._optcre.match(line.clean)
             if mo:
                 st.optname, vi, optval = mo.group('option', 'vi', 'value')
