@@ -699,6 +699,12 @@ xml.etree.ElementTree
 * Add the :meth:`!close` method for the iterator returned by
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
+ 
+zipimport
+---------
+
+* Gains support for ZIP64 format files.  Everybody loves huge code right?
+  (Contributed by Tim Hatch in :gh:`94146`.)
 
 
 Optimizations
