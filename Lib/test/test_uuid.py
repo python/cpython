@@ -530,7 +530,14 @@ class BaseTestUUID:
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_safe(self):
-        if not self.uuid._has_uuid_generate_time_safe:
+        try:
+            import _uuid
+        except ImportError:
+            has_uuid_generate_time_safe = False
+        else:
+            has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+
+        if not has_uuid_generate_time_safe or not self.uuid._generate_time_safe:
             self.skipTest('requires uuid_generate_time_safe(3)')
 
         u = self.uuid.uuid1()
@@ -546,7 +553,6 @@ class BaseTestUUID:
         """
         if os.name != 'posix':
             self.skipTest('POSIX-only test')
-        self.uuid._load_system_functions()
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
@@ -581,8 +587,7 @@ class BaseTestUUID:
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
     def test_uuid1_time(self):
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
              mock.patch('time.time_ns', return_value=1545052026752910643), \
@@ -590,8 +595,7 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch('time.time_ns', return_value=1545052026752910643):
             u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)

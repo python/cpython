@@ -30,6 +30,7 @@ extern "C" {
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
+#include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_typeobject.h"    // struct types_state
@@ -71,7 +72,6 @@ typedef struct _rare_events {
     uint8_t set_eval_frame_func;
     /* Modifying the builtins,  __builtins__.__dict__[var] = ... */
     uint8_t builtin_dict;
-    int builtins_dict_watcher_id;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint8_t func_modification;
 } _rare_events;
@@ -85,7 +85,7 @@ typedef struct _rare_events {
    */
 struct _is {
 
-    /* This struct countains the eval_breaker,
+    /* This struct contains the eval_breaker,
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
@@ -112,7 +112,7 @@ struct _is {
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
-        long count;
+        Py_ssize_t count;
         /* Support for runtime thread stack size tuning.
            A value of 0 means using the platform's default stack size
            or the size specified by the THREAD_STACK_SIZE macro. */
@@ -198,9 +198,11 @@ struct _is {
     struct _warnings_runtime_state warnings;
     struct atexit_state atexit;
     struct _stoptheworld_state stoptheworld;
+    struct _qsbr_shared qsbr;
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
+    struct _brc_state brc;  // biased reference counting state
 #endif
 
     // Per-interpreter state for the obmalloc allocator.  For the main
@@ -221,28 +223,30 @@ struct _is {
     // One bit is set for each non-NULL entry in code_watchers
     uint8_t active_code_watchers;
 
-#if !defined(Py_GIL_DISABLED)
-    struct _Py_freelist_state freelist_state;
-#endif
     struct _py_object_state object_state;
     struct _Py_unicode_state unicode;
     struct _Py_long_state long_state;
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
 
-    struct _Py_tuple_state tuple;
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
+    struct _Py_mem_interp_free_queue mem_free_queue;
 
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
     _PyExecutorObject *executor_list_head;
-    uint16_t optimizer_resume_threshold;
-    uint16_t optimizer_backedge_threshold;
-    uint32_t next_func_version;
+
+    /* These two values are shifted and offset to speed up check in JUMP_BACKWARD */
+    uint32_t optimizer_resume_threshold;
+    uint32_t optimizer_backedge_threshold;
+
+    uint16_t optimizer_side_threshold;
+
     _rare_events rare_events;
+    PyDict_WatchCallback builtins_dict_watcher;
 
     _Py_GlobalMonitors monitors;
     bool sys_profile_initialized;
@@ -291,9 +295,11 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 }
 
 
-// Export for the _xxinterpchannels module.
-PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 
+// Exports for the _testinternalcapi module.
+PyAPI_FUNC(int64_t) _PyInterpreterState_ObjectToID(PyObject *);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpIDObject(PyObject *);
 PyAPI_FUNC(int) _PyInterpreterState_IDInitref(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IDIncref(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_IDDecref(PyInterpreterState *);

@@ -54,7 +54,6 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     Py_ssize_t size, align;
     SETFUNC setfunc = NULL;
     GETFUNC getfunc = NULL;
-    StgDictObject *dict;
     int fieldtype;
 #define NO_BITFIELD 0
 #define NEW_BITFIELD 1
@@ -66,21 +65,27 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
     self = (CFieldObject *)tp->tp_alloc(tp, 0);
     if (self == NULL)
         return NULL;
-    dict = PyType_stgdict(desc);
-    if (!dict) {
+
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, desc, &info) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    if (!info) {
         PyErr_SetString(PyExc_TypeError,
                         "has no _stginfo_");
         Py_DECREF(self);
         return NULL;
     }
+
     if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
 #ifdef MS_WIN32
         /* MSVC, GCC with -mms-bitfields */
-        && dict->size * 8 == *pfield_size
+        && info->size * 8 == *pfield_size
 #else
         /* GCC */
-        && dict->size * 8 <= *pfield_size
+        && info->size * 8 <= *pfield_size
 #endif
         && (*pbitofs + bitsize) <= *pfield_size) {
         /* continue bit field */
@@ -88,8 +93,8 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #ifndef MS_WIN32
     } else if (bitsize /* this is a bitfield request */
         && *pfield_size /* we have a bitfield open */
-        && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
+        && info->size * 8 >= *pfield_size
+        && (*pbitofs + bitsize) <= info->size * 8) {
         /* expand bit field */
         fieldtype = EXPAND_BITFIELD;
 #endif
@@ -97,7 +102,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* start new bitfield */
         fieldtype = NEW_BITFIELD;
         *pbitofs = 0;
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
     } else {
         /* not a bit field */
         fieldtype = NO_BITFIELD;
@@ -105,29 +110,37 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         *pfield_size = 0;
     }
 
-    size = dict->size;
+    size = info->size;
     proto = desc;
 
     /*  Field descriptors for 'c_char * n' are be scpecial cased to
         return a Python string instead of an Array object instance...
     */
     if (PyCArrayTypeObject_Check(st, proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
+        StgInfo *ainfo;
+        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+
+        if (ainfo && ainfo->proto) {
+            StgInfo *iinfo;
+            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+            if (!iinfo) {
                 PyErr_SetString(PyExc_TypeError,
                                 "has no _stginfo_");
                 Py_DECREF(self);
                 return NULL;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("s");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
             }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
                 struct fielddesc *fd = _ctypes_get_fielddesc("U");
                 getfunc = fd->getfunc;
                 setfunc = fd->setfunc;
@@ -151,9 +164,9 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         /* fall through */
     case NO_BITFIELD:
         if (pack)
-            align = min(pack, dict->align);
+            align = min(pack, info->align);
         else
-            align = dict->align;
+            align = info->align;
         if (align && *poffset % align) {
             Py_ssize_t delta = align - (*poffset % align);
             *psize += delta;
@@ -171,10 +184,10 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
         break;
 
     case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
+        *poffset += info->size - *pfield_size/8;
+        *psize += info->size - *pfield_size/8;
 
-        *pfield_size = dict->size * 8;
+        *pfield_size = info->size * 8;
 
         if (big_endian)
             self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;

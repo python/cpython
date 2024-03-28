@@ -19,6 +19,8 @@
 // Define _PY_INTERPRETER macro to increment interpreter_increfs and
 // interpreter_decrefs. Otherwise, increment increfs and decrefs.
 
+#include "pycore_uop_ids.h"
+
 #ifndef Py_CPYTHON_PYSTATS_H
 #  error "this header file must not be included directly"
 #endif
@@ -115,11 +117,18 @@ typedef struct _optimization_stats {
     uint64_t inner_loop;
     uint64_t recursive_call;
     uint64_t low_confidence;
-    UOpStats opcode[512];
+    uint64_t executors_invalidated;
+    UOpStats opcode[MAX_UOP_ID+1];
     uint64_t unsupported_opcode[256];
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
+    uint64_t optimizer_attempts;
+    uint64_t optimizer_successes;
+    uint64_t optimizer_failure_reason_no_memory;
+    uint64_t remove_globals_builtins_changed;
+    uint64_t remove_globals_incorrect_keys;
+    uint64_t error_in_opcode[MAX_UOP_ID+1];
 } OptimizationStats;
 
 typedef struct _rare_event_stats {
@@ -133,6 +142,9 @@ typedef struct _rare_event_stats {
     uint64_t builtin_dict;
     /* Modifying a function, e.g. func.__defaults__ = ..., etc. */
     uint64_t func_modification;
+    /* Modifying a dict that is being watched */
+    uint64_t watched_dict_modification;
+    uint64_t watched_globals_modification;
 } RareEventStats;
 
 typedef struct _stats {

@@ -1949,18 +1949,11 @@ class LoggerAdapter(object):
         """
         return self.logger.hasHandlers()
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+    def _log(self, level, msg, args, **kwargs):
         """
         Low-level log implementation, proxied to allow nested logger adapters.
         """
-        return self.logger._log(
-            level,
-            msg,
-            args,
-            exc_info=exc_info,
-            extra=extra,
-            stack_info=stack_info,
-        )
+        return self.logger._log(level, msg, args, **kwargs)
 
     @property
     def manager(self):
@@ -2020,7 +2013,7 @@ def basicConfig(**kwargs):
               that this argument is incompatible with 'filename' - if both
               are present, 'stream' is ignored.
     handlers  If specified, this should be an iterable of already created
-              handlers, which will be added to the root handler. Any handler
+              handlers, which will be added to the root logger. Any handler
               in the list which does not have a formatter assigned will be
               assigned the formatter created in this function.
     force     If this keyword  is specified as true, any existing handlers

@@ -123,10 +123,10 @@ And so on, eventually ending with:
        OverflowError: n too large
    ok
    2 items passed all tests:
-      1 tests in __main__
-      8 tests in __main__.factorial
-   9 tests in 2 items.
-   9 passed and 0 failed.
+      1 test in __main__
+      6 tests in __main__.factorial
+   7 tests in 2 items.
+   7 passed.
    Test passed.
    $
 
@@ -430,10 +430,10 @@ Simple example::
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: 42 is not in list
+   ValueError: list.remove(x): x not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list``
-detail as shown.
+That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
+x not in list`` detail as shown.
 
 The expected output for an exception must start with a traceback header, which
 may be either of the following two lines, indented the same as the first line of
@@ -1933,7 +1933,7 @@ such a test runner::
                                            optionflags=flags)
         else:
             fail, total = doctest.testmod(optionflags=flags)
-            print("{} failures out of {} tests".format(fail, total))
+            print(f"{fail} failures out of {total} tests")
 
 
 .. rubric:: Footnotes

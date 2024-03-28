@@ -4380,7 +4380,7 @@ Patch by Victor Stinner.
 .. nonce: I6MQhb
 .. section: Library
 
-:pep:`594`: Remove the :mod:`!cgi`` and :mod:`!cgitb` modules, deprecated in
+:pep:`594`: Remove the :mod:`!cgi` and :mod:`!cgitb` modules, deprecated in
 Python 3.11. Patch by Victor Stinner.
 
 ..

@@ -268,6 +268,18 @@ def modules_cleanup(oldmodules):
     sys.modules.update(oldmodules)
 
 
+@contextlib.contextmanager
+def isolated_modules():
+    """
+    Save modules on entry and cleanup on exit.
+    """
+    (saved,) = modules_setup()
+    try:
+        yield
+    finally:
+        modules_cleanup(saved)
+
+
 def mock_register_at_fork(func):
     # bpo-30599: Mock os.register_at_fork() when importing the random module,
     # since this function doesn't allow to unregister callbacks and would leak

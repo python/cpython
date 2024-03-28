@@ -4591,6 +4591,27 @@ class TestPythonBufferProtocol(unittest.TestCase):
         self.assertRaises(SystemError, buf.__buffer__, PyBUF_READ)
         self.assertRaises(SystemError, buf.__buffer__, PyBUF_WRITE)
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_invalid_flags(self):
+        # PyBuffer_FillInfo
+        source = b"abc"
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_READ)
+        self.assertRaises(SystemError, _testcapi.buffer_fill_info,
+                          source, 0, PyBUF_WRITE)
+
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
+    def test_c_fill_buffer_readonly_and_writable(self):
+        source = b"abc"
+        with _testcapi.buffer_fill_info(source, 1, PyBUF_SIMPLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertTrue(m.readonly)
+        with _testcapi.buffer_fill_info(source, 0, PyBUF_WRITABLE) as m:
+            self.assertEqual(bytes(m), b"abc")
+            self.assertFalse(m.readonly)
+        self.assertRaises(BufferError, _testcapi.buffer_fill_info,
+                          source, 1, PyBUF_WRITABLE)
+
     def test_inheritance(self):
         class A(bytearray):
             def __buffer__(self, flags):

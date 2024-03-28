@@ -244,7 +244,6 @@ The :mod:`csv` module defines the following classes:
 
        with open('students.csv', 'w', newline='') as csvfile:
            writer = csv.writer(csvfile, dialect='unix')
-                                        ^^^^^^^^^^^^^^
 
 
 .. class:: excel()

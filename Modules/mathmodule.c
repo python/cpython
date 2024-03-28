@@ -2074,11 +2074,6 @@ math_trunc(PyObject *module, PyObject *x)
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    if (!_PyType_IsReady(Py_TYPE(x))) {
-        if (PyType_Ready(Py_TYPE(x)) < 0)
-            return NULL;
-    }
-
     math_module_state *state = get_math_module_state(module);
     trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
     if (trunc == NULL) {
@@ -2323,6 +2318,48 @@ math_log10(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=be72a64617df9c6f input=b2469d02c6469e53]*/
 {
     return loghelper(x, m_log10);
+}
+
+
+/*[clinic input]
+math.fma
+
+    x: double
+    y: double
+    z: double
+    /
+
+Fused multiply-add operation.
+
+Compute (x * y) + z with a single round.
+[clinic start generated code]*/
+
+static PyObject *
+math_fma_impl(PyObject *module, double x, double y, double z)
+/*[clinic end generated code: output=4fc8626dbc278d17 input=e3ad1f4a4c89626e]*/
+{
+    double r = fma(x, y, z);
+
+    /* Fast path: if we got a finite result, we're done. */
+    if (Py_IS_FINITE(r)) {
+        return PyFloat_FromDouble(r);
+    }
+
+    /* Non-finite result. Raise an exception if appropriate, else return r. */
+    if (Py_IS_NAN(r)) {
+        if (!Py_IS_NAN(x) && !Py_IS_NAN(y) && !Py_IS_NAN(z)) {
+            /* NaN result from non-NaN inputs. */
+            PyErr_SetString(PyExc_ValueError, "invalid operation in fma");
+            return NULL;
+        }
+    }
+    else if (Py_IS_FINITE(x) && Py_IS_FINITE(y) && Py_IS_FINITE(z)) {
+        /* Infinite result from finite inputs. */
+        PyErr_SetString(PyExc_OverflowError, "overflow in fma");
+        return NULL;
+    }
+
+    return PyFloat_FromDouble(r);
 }
 
 
@@ -4099,6 +4136,7 @@ static PyMethodDef math_methods[] = {
     {"fabs",            math_fabs,      METH_O,         math_fabs_doc},
     MATH_FACTORIAL_METHODDEF
     MATH_FLOOR_METHODDEF
+    MATH_FMA_METHODDEF
     MATH_FMOD_METHODDEF
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
