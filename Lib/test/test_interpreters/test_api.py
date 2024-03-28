@@ -12,10 +12,7 @@ from test.support import import_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
 from test.support.interpreters import InterpreterNotFoundError
-from .utils import (
-    _captured_script, _run_output, _running, TestBase,
-    CapturingScript,
-)
+from .utils import _captured_script, _run_output, _running, TestBase
 
 
 class ModuleTests(TestBase):
@@ -542,10 +539,10 @@ class TestInterpreterExec(TestBase):
 
     def test_success(self):
         interp = interpreters.create()
-        script, file = _captured_script('print("it worked!", end="")')
-        with file:
+        script, results = _captured_script('print("it worked!", end="")')
+        with results:
             interp.exec(script)
-            out = file.read()
+            out = results.stdout()
 
         self.assertEqual(out, 'it worked!')
 
@@ -604,15 +601,15 @@ class TestInterpreterExec(TestBase):
 
     def test_in_thread(self):
         interp = interpreters.create()
-        script, file = _captured_script('print("it worked!", end="")')
-        with file:
+        script, results = _captured_script('print("it worked!", end="")')
+        with results:
             def f():
                 interp.exec(script)
 
             t = threading.Thread(target=f)
             t.start()
             t.join()
-            out = file.read()
+            out = results.stdout()
 
         self.assertEqual(out, 'it worked!')
 
@@ -963,24 +960,6 @@ class LowLevelTests(TestBase):
     # encountered by the high-level module, thus they
     # mostly shouldn't matter as much.
 
-    def _run_string(self, interpid, script, maxout):
-        with CapturingScript(script, combined=False) as captured:
-            err = _interpreters.run_string(interpid, captured.script)
-            if err is not None:
-                return None, err
-            raw = b''
-            #raw = captured.read(maxout)
-        return raw.decode('utf-8'), None
-
-    def run_and_capture(self, interpid, script, maxout=1000):
-        text, err = self._run_string(interpid, script, maxout)
-        if err is not None:
-            print()
-            print(err.errdisplay, file=sys.stderr)
-            raise Exception(f'subinterpreter failed: {err.formatted}')
-        else:
-            return text
-
     def test_new_config(self):
         # This test overlaps with
         # test.test_capi.test_misc.InterpreterConfigTests.
@@ -1126,35 +1105,37 @@ class LowLevelTests(TestBase):
             self.assertEqual(interpid, main)
             self.assertFalse(owned)
 
-        with self.subTest('owned'):
-            orig = _interpreters.create()
-            text = self.run_and_capture(orig, f"""
-                import {_interpreters.__name__} as _interpreters
-                interpid, owned = _interpreters.get_current()
-                print(interpid)
-                print(owned)
-                """)
+        script = f"""
+            import {_interpreters.__name__} as _interpreters
+            interpid, owned = _interpreters.get_current()
+            print(interpid)
+            print(owned)
+            """
+        def parse_stdout(text):
             parts = text.split()
             assert len(parts) == 2, parts
             interpid, owned = parts
             interpid = int(interpid)
             owned = eval(owned)
+            return interpid, owned
+
+        with self.subTest('owned'):
+            orig = _interpreters.create()
+            text = self.run_and_capture(orig, script)
+            interpid, owned = parse_stdout(text)
             self.assertEqual(interpid, orig)
             self.assertTrue(owned)
 
         with self.subTest('external'):
-            err, text = self.run_external(f"""
-                import {_interpreters.__name__} as _interpreters
-                interpid, owned = _interpreters.get_current()
-                print(interpid)
-                print(owned)
-                """)
+            last = 0
+            for id, *_ in _interpreters.list_all():
+                last = max(last, id)
+            expected = last + 1
+            err, text = self.run_external(script)
             assert err is None, err
-            interpid, owned = text.split()
-            interpid = int(interpid)
-            owned = eval(owned)
-            self.assertEqual(interpid, orig)
-            self.assertTrue(owned)
+            interpid, owned = parse_stdout(text)
+            self.assertEqual(interpid, expected)
+            self.assertFalse(owned)
 
     def test_list_all(self):
         ...

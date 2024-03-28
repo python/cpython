@@ -1,4 +1,6 @@
 import contextlib
+import json
+import io
 import os
 import os.path
 import pickle
@@ -11,10 +13,13 @@ from textwrap import dedent, indent
 import threading
 import types
 import unittest
+import warnings
 
 from test import support
 from test.support import os_helper
+from test.support import import_helper
 
+_interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
 
 
@@ -29,16 +34,227 @@ def requires__testinternalcapi(func):
     return unittest.skipIf(_testinternalcapi is None, "test requires _testinternalcapi module")(func)
 
 
-def _captured_script(script):
-    r, w = os.pipe()
-    indented = script.replace('\n', '\n                ')
-    wrapped = dedent(f"""
-        import contextlib
-        with open({w}, 'w', encoding='utf-8') as spipe:
-            with contextlib.redirect_stdout(spipe):
+def _dump_script(text):
+    lines = text.splitlines()
+    print('-' * 20)
+    for i, line in enumerate(lines, 1):
+        print(f' {i:>{len(str(len(lines)))}}  {line}')
+    print('-' * 20)
+
+
+def _close_file(file):
+    try:
+        if hasattr(file, 'close'):
+            file.close()
+        else:
+            os.close(file)
+    except OSError as exc:
+        if exc.errno != 9:
+            raise  # re-raise
+        # It was closed already.
+
+
+class CapturedResults:
+
+    STDIO = dedent("""\
+        import contextlib, io
+        with open({w_pipe}, 'wb', buffering=0) as _spipe_{stream}:
+            _captured_std{stream} = io.StringIO()
+            with contextlib.redirect_std{stream}(_captured_std{stream}):
+                #########################
+                # begin wrapped script
+
                 {indented}
-        """)
-    return wrapped, open(r, encoding='utf-8')
+
+                # end wrapped script
+                #########################
+            text = _captured_std{stream}.getvalue()
+            _spipe_{stream}.write(text.encode('utf-8'))
+        """)[:-1]
+    EXC = dedent("""\
+        import json, traceback
+        with open({w_pipe}, 'wb', buffering=0) as _spipe_exc:
+            try:
+                #########################
+                # begin wrapped script
+
+                {indented}
+
+                # end wrapped script
+                #########################
+            except Exception as exc:
+                # This matches what _interpreters.exec() returns.
+                text = json.dumps(dict(
+                    type=dict(
+                        __name__=type(exc).__name__,
+                        __qualname__=type(exc).__qualname__,
+                        __module__=type(exc).__module__,
+                    ),
+                    msg=str(exc),
+                    formatted=traceback.format_exception_only(exc),
+                    errdisplay=traceback.format_exception(exc),
+                ))
+                _spipe_exc.write(text.encode('utf-8'))
+        """)[:-1]
+
+    @classmethod
+    def wrap_script(cls, script, *, stdout=True, stderr=False, exc=False):
+        script = dedent(script).strip(os.linesep)
+        wrapped = script
+
+        # Handle exc.
+        if exc:
+            exc = os.pipe()
+            r_exc, w_exc = exc
+            indented = wrapped.replace('\n', '\n        ')
+            wrapped = cls.EXC.format(
+                w_pipe=w_exc,
+                indented=indented,
+            )
+        else:
+            exc = None
+
+        # Handle stdout.
+        if stdout:
+            stdout = os.pipe()
+            r_out, w_out = stdout
+            indented = wrapped.replace('\n', '\n        ')
+            wrapped = cls.STDIO.format(
+                w_pipe=w_out,
+                indented=indented,
+                stream='out',
+            )
+        else:
+            stdout = None
+
+        # Handle stderr.
+        if stderr == 'stdout':
+            stderr = None
+        elif stderr:
+            stderr = os.pipe()
+            r_err, w_err = stderr
+            indented = wrapped.replace('\n', '\n        ')
+            wrapped = cls.STDIO.format(
+                w_pipe=w_err,
+                indented=indented,
+                stream='err',
+            )
+        else:
+            stderr = None
+
+        if wrapped == script:
+            raise NotImplementedError
+        results = cls(stdout, stderr, exc)
+        return wrapped, results
+
+    def __init__(self, out, err, exc):
+        self._rf_out = None
+        self._rf_err = None
+        self._rf_exc = None
+        self._w_out = None
+        self._w_err = None
+        self._w_exc = None
+
+        if out is not None:
+            r_out, w_out = out
+            self._rf_out = open(r_out, 'rb', buffering=0)
+            self._w_out = w_out
+
+        if err is not None:
+            r_err, w_err = err
+            self._rf_err = open(r_err, 'rb', buffering=0)
+            self._w_err = w_err
+
+        if exc is not None:
+            r_exc, w_exc = exc
+            self._rf_exc = open(r_exc, 'rb', buffering=0)
+            self._w_exc = w_exc
+
+        self._buf_out = b''
+        self._buf_err = b''
+        self._buf_exc = b''
+        self._exc = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def close(self):
+        if self._w_out is not None:
+            _close_file(self._w_out)
+            self._w_out = None
+        if self._w_err is not None:
+            _close_file(self._w_err)
+            self._w_err = None
+        if self._w_exc is not None:
+            _close_file(self._w_exc)
+            self._w_exc = None
+
+        self._capture()
+
+        if self._rf_out is not None:
+            _close_file(self._rf_out)
+            self._rf_out = None
+        if self._rf_err is not None:
+            _close_file(self._rf_err)
+            self._rf_err = None
+        if self._rf_exc is not None:
+            _close_file(self._rf_exc)
+            self._rf_exc = None
+
+    def _capture(self):
+        # Ideally this is called only after the script finishes
+        # (and thus has closed the write end of the pipe.
+        if self._rf_out is not None:
+            chunk = self._rf_out.read(100)
+            while chunk:
+                self._buf_out += chunk
+                chunk = self._rf_out.read(100)
+        if self._rf_err is not None:
+            chunk = self._rf_err.read(100)
+            while chunk:
+                self._buf_err += chunk
+                chunk = self._rf_err.read(100)
+        if self._rf_exc is not None:
+            chunk = self._rf_exc.read(100)
+            while chunk:
+                self._buf_exc += chunk
+                chunk = self._rf_exc.read(100)
+
+    def stdout(self):
+        self._capture()
+        return self._buf_out.decode('utf-8')
+
+    def stderr(self):
+        self._capture()
+        return self._buf_err.decode('utf-8')
+
+    def exc(self):
+        if self._exc is not None:
+            return self._exc
+        self._capture()
+        if not self._buf_exc:
+            return None
+        try:
+            data = json.loads(self._buf_exc)
+        except json.decoder.JSONDecodeError:
+            warnings.warn('incomplete exception data', RuntimeWarning)
+            print(self._buf_exc.decode('utf-8'))
+            return None
+        self._exc = exc = types.SimpleNamespace(**data)
+        exc.type = types.SimpleNamespace(**exc.type)
+        return self._exc
+
+
+def _captured_script(script, *, stdout=True, stderr=False, exc=False):
+    return CapturedResults.wrap_script(
+        script,
+        stdout=stdout,
+        stderr=stderr,
+        exc=exc,
+    )
 
 
 def clean_up_interpreters():
@@ -52,12 +268,12 @@ def clean_up_interpreters():
 
 
 def _run_output(interp, request, init=None):
-    script, rpipe = _captured_script(request)
-    with rpipe:
+    script, (stdout, _, _) = _captured_script(request)
+    with stdout:
         if init:
             interp.prepare_main(init)
         interp.exec(script)
-        return rpipe.read()
+        return stdout.read()
 
 
 @contextlib.contextmanager
@@ -78,419 +294,6 @@ def _running(interp):
     with open(w, 'w') as spipe:
         spipe.write('done')
     t.join()
-
-
-@contextlib.contextmanager
-def fd_maybe_closed():
-    try:
-        yield
-    except OSError as exc:
-        if exc.errno != 9:
-            raise  # re-raise
-        # The file descriptor has closed.
-
-
-class PipeEnd:
-
-    def __init__(self, fd):
-        self._fd = fd
-        self._closed = False
-        self._lock = threading.Lock()
-
-    def __del__(self):
-        self.close()
-
-    def __str__(self):
-        return str(self._fd)
-
-    def __repr__(self):
-        return f'{type_self.__name__}({self._fd!r})'
-
-    def __index__(self):
-        return self._fd
-
-    def close(self):
-        with self._lock:
-            if self._closed:
-                return
-            self._closed = True
-            with fd_maybe_closed():
-                self._close()
-
-    @contextlib.contextmanager
-    def _maybe_closed(self):
-        assert self._lock.locked()
-        with fd_maybe_closed():
-            yield
-            return
-        # It was closed already.
-        if not self._closed:
-            self._closed = True
-            with fd_maybe_closed():
-                self._close()
-
-    def _close(self):
-        os.close(self._fd)
-
-
-class ReadPipe(PipeEnd):
-
-    def __init__(self, fd):
-        super().__init__(fd)
-
-        self._requests = queue.Queue(1)
-        self._looplock = threading.Lock()
-        self._thread = threading.Thread(target=self._handle_read_requests)
-        self._thread.start()
-        self._buffer = bytearray()
-        self._bufferlock = threading.Lock()
-
-    def _handle_read_requests(self):
-        while True:
-            try:
-                req = self._requests.get()
-            except queue.ShutDown:
-                # The pipe is closed.
-                break
-            finally:
-                # It was locked in either self.close() or self.read().
-                assert self._lock.locked()
-
-            # The loop lock was taken for us in self._read().
-            try:
-                if req is None:
-                    # Read all available bytes.
-                    buf = bytearray()
-                    data = os.read(self._fd, 8147)  # a prime number
-                    while data:
-                        buf += data
-                        data = os.read(self._fd, 8147)
-                    with self._bufferlock:
-                        self._buffer += buf
-                else:
-                    assert req >= 0, repr(req)
-                    with self._bufferlock:
-                        missing = req - len(self._buffer)
-                    if missing > 0:
-                        with self._maybe_closed():
-                            data = os.read(self._fd, missing)
-                            # The rest is skipped if its already closed.
-                            with self._bufferlock:
-                                self._buffer += data
-            finally:
-                self._looplock.release()
-
-    def read(self, n=None, timeout=-1):
-        if n == 0:
-            return b''
-        elif n is not None and n < 0:
-            # This will fail.
-            os.read(self._fd, n)
-            raise OSError('invalid argument')
-
-        with self._lock:
-            # The looo will release it after handling the request.
-            self._looplock.acquire()
-            try:
-                self._requests.put_nowait(n)
-            except BaseException:
-                self._looplock.release()
-                raise  # re-raise
-            # Wait for the request to finish.
-            if self._looplock.acquire(timeout=timeout):
-                self._looplock.release()
-            # Return (up to) the requested bytes.
-            with self._bufferlock:
-                data = self._buffer[:n]
-                self._buffer = self._buffer[n:]
-            return bytes(data)
-
-    def _close(self):
-        # Ideally the write end is already closed.
-        self._requests.shutdown()
-        with self._bufferlock:
-            # Throw away any leftover bytes.
-            self._buffer = b''
-        super()._close()
-
-
-class WritePipe(PipeEnd):
-
-    def write(self, n=None):
-        try:
-            with self._maybe_closed():
-                return os.write(self._fd, n)
-        except BrokenPipeError:
-            # The read end was already closed.
-            self.close()
-
-
-def create_pipe():
-    r, w = os.pipe()
-    return ReadPipe(r), WritePipe(w)
-
-
-class CapturingScript:
-    """
-    Embeds a script in a new script that captures stdout/stderr
-    and uses pipes to expose them.
-    """
-
-    WRAPPER = dedent("""
-        import sys
-        w_out = {w_out}
-        w_err = {w_err}
-        stdout, stderr = orig = (sys.stdout, sys.stderr)
-        if w_out is not None:
-            if w_err == w_out:
-                stdout = stderr = open(w_out, 'w', encoding='utf-8')
-            elif w_err is not None:
-                stdout = open(w_out, 'w', encoding='utf-8', closefd=False)
-                stderr = open(w_err, 'w', encoding='utf-8', closefd=False)
-            else:
-                stdout = open(w_out, 'w', encoding='utf-8', closefd=False)
-        else:
-            assert w_err is not None
-            stderr = open(w_err, 'w', encoding='utf-8', closefd=False)
-
-        sys.stdout = stdout
-        sys.stderr = stderr
-        try:
-            #########################
-            # begin wrapped script
-
-            {wrapped}
-
-            # end wrapped script
-            #########################
-        finally:
-            sys.stdout, sys.stderr = orig
-        """)
-
-    def __init__(self, script, *, combined=True):
-        self._r_out, self._w_out = create_pipe()
-        if combined:
-            self._r_err = self._w_err = None
-            w_err = self._w_out
-        else:
-            self._r_err, self._w_err = create_pipe()
-            w_err = self._w_err
-        self._combined = combined
-
-        self._script = self.WRAPPER.format(
-            w_out=self._w_out,
-            w_err=w_err,
-            wrapped=indent(script, '    '),
-        )
-
-        self._buf_stdout = None
-        self._buf_stderr = None
-
-    def __del__(self):
-        self.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.close()
-
-    @property
-    def script(self):
-        return self._script
-
-    def close(self):
-        if self._w_out is not None:
-            assert self._r_out is not None
-            self._w_out.close()
-            self._w_out = None
-            self._buf_stdout = self._r_out.read()
-            self._r_out.close()
-            self._r_out = None
-        else:
-            assert self._r_out is None
-
-        if self._combined:
-            assert self._w_err is None
-            assert self._r_err is None
-        elif self._w_err is not None:
-            assert self._r_err is not None
-            self._w_err.close()
-            self._w_err = None
-            self._buf_stderr = self._r_err.read()
-            self._r_err.close()
-            self._r_err = None
-        else:
-            assert self._r_err is None
-
-    def read(self, n=None):
-        return self.read_stdout(n)
-
-    def read_stdout(self, n=None):
-        if self._r_out is not None:
-            data = self._r_out.read(n)
-        elif self._buf_stdout is None:
-            data = b''
-        elif n is None or n == len(self._buf_stdout):
-            data = self._buf_stdout
-            self._buf_stdout = None
-        else:
-            data = self._buf_stdout[:n]
-            self._buf_stdout = self._buf_stdout[n:]
-        return data
-
-    def read_stderr(self, n=None):
-        if self._combined:
-            return b''
-        if self._r_err is not None:
-            data = self._r_err.read(n)
-        elif self._buf_stderr is None:
-            data = b''
-        elif n is None or n == len(self._buf_stderr):
-            data = self._buf_stderr
-            self._buf_stderr = None
-        else:
-            data = self._buf_stderr[:n]
-            self._buf_stderr = self._buf_stderr[n:]
-        return data
-
-
-class WatchedScript:
-    """
-    Embeds a script in a new script that identifies when the script finishes.
-    Captures any uncaught exception, and uses a pipe to expose it.
-    """
-
-    WRAPPER = dedent("""
-        import os, traceback, json
-        w_done = {w_done}
-        try:
-            os.write(w_done, b'\0')  # started
-        except OSError:
-            # It was canceled.
-            pass
-        else:
-            try:
-                #########################
-                # begin wrapped script
-
-                {wrapped}
-
-                # end wrapped script
-                #########################
-            except Exception as exc:
-                text = json.dumps(dict(
-                    type=dict(
-                        __name__=type(exc).__name__,
-                        __qualname__=type(exc).__qualname__,
-                        __module__=type(exc).__module__,
-                    ),
-                    msg=str(exc),
-                    formatted=traceback.format_exception_only(exc),
-                    errdisplay=traceback.format_exception(exc),
-                ))
-                try:
-                    os.write(w_done, text.encode('utf-8'))
-                except BrokenPipeError:
-                    # It was closed already.
-                    pass
-                except OSError:
-                    if exc.errno != 9:
-                        raise  # re-raise
-                    # It was closed already.
-            finally:
-                try:
-                    os.close({w_done})
-                except OSError:
-                    if exc.errno != 9:
-                        raise  # re-raise
-                    # It was closed already.
-        """)
-
-    def __init__(self, script):
-        self._started = False
-        self._finished = False
-        self._r_done, self._w_done = os.pipe()
-
-        wrapper = self.WRAPPER.format(
-            w_done=self._w_done,
-            wrapped=indent(script, '    '),
-        )
-        t = threading.Thread(target=self._watch)
-        t.start()
-
-        self._script = wrapper
-        self._thread = t
-
-    def __del__(self):
-        self.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.close()
-
-    @property
-    def script(self):
-        return self._script
-
-    def close(self):
-        for fd in [self._r_done, self._w_done]:
-            if fd is not None:
-                try:
-                    os.close(fd)
-                except OSError:
-                    if exc.errno != 9:
-                        raise  # re-raise
-                    # It was closed already.
-        self._r_done = None
-        self._w_done = None
-
-    @property
-    def finished(self):
-        if isinstance(self._finished, dict):
-            exc = types.SimpleNamespace(**self._finished)
-            exc.type = types.SimpleNamespace(**exc.type)
-            return exc
-        return self._finished
-
-    def _watch(self):
-        r_fd = self._r_done
-
-        assert not self._started
-        try:
-            ch0 = os.read(r_fd, 1)
-        except OSError as exc:
-            if exc.errno != 9:
-                raise  # re-raise
-            # It was closed already.
-            return
-        if ch0 == b'':
-            # The write end of the pipe has closed.
-            return
-        assert ch0 == b'\0', repr(ch0)
-        self._started = True
-
-        assert not self._finished
-        data = b''
-        try:
-            chunk = os.read(r_fd, 100)
-            self._finished = True
-            while chunk:
-                data += chunk
-                chunk = os.read(r_fd, 100)
-            os.close(r_fd)
-        except OSError as exc:
-            if exc.errno != 9:
-                raise  # re-raise
-            # It was closed already.
-
-        if data:
-            self._finished = json.loads(data)
-
-    # It may be useful to implement the concurrent.futures.Future API
-    # on this class.
 
 
 class TestBase(unittest.TestCase):
@@ -603,14 +406,38 @@ class TestBase(unittest.TestCase):
         standardMsg = self._truncateMessage(standardMsg, diff)
         self.fail(self._formatMessage(msg, standardMsg))
 
+    def _run_string(self, interp, script):
+        wrapped, results = _captured_script(script, exc=False)
+        #_dump_script(wrapped)
+        with results:
+            if isinstance(interp, interpreters.Interpreter):
+                interp.exec(script)
+            else:
+                err = _interpreters.run_string(interp, wrapped)
+                if err is not None:
+                    return None, err
+        return results.stdout(), None
+
+    def run_and_capture(self, interp, script):
+        text, err = self._run_string(interp, script)
+        if err is not None:
+            print()
+            if not err.errdisplay.startswith('Traceback '):
+                print('Traceback (most recent call last):')
+            print(err.errdisplay, file=sys.stderr)
+            raise Exception(f'subinterpreter failed: {err.formatted}')
+        else:
+            return text
+
     @requires__testinternalcapi
     def run_external(self, script, config='legacy'):
-        with CapturingScript(script, combined=False) as captured:
-            with WatchedScript(captured.script) as watched:
-                rc = run_in_interpreter(watched.script, config)
-                assert rc == 0, rc
-                text = watched.read(100).decode('utf-8')
-            err = watched.finished
-            if err is True:
-                err = None
+        if isinstance(config, str):
+            config = _interpreters.new_config(config)
+        wrapped, results = _captured_script(script, exc=True)
+        #_dump_script(wrapped)
+        with results:
+            rc = run_in_interpreter(wrapped, config)
+            assert rc == 0, rc
+        text = results.stdout()
+        err = results.exc()
         return err, text
