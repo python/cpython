@@ -79,12 +79,12 @@ class MultiprocessResult:
     err_msg: str | None = None
 
 
-class WorkerExited:
+class WorkerThreadExited:
     """Indicates that a worker thread has exited"""
 
 ExcStr = str
 QueueOutput = tuple[Literal[False], MultiprocessResult] | tuple[Literal[True], ExcStr]
-QueueContent = QueueOutput | WorkerExited
+QueueContent = QueueOutput | WorkerThreadExited
 
 
 class ExitThread(Exception):
@@ -405,7 +405,7 @@ class WorkerThread(threading.Thread):
         except BaseException:
             self.output.put((True, traceback.format_exc()))
         finally:
-            self.output.put(WorkerExited())
+            self.output.put(WorkerThreadExited())
 
     def _wait_completed(self) -> None:
         popen = self._popen
@@ -526,7 +526,7 @@ class RunWorkers:
             # wait for a thread
             try:
                 result = self.output.get(timeout=PROGRESS_UPDATE)
-                if isinstance(result, WorkerExited):
+                if isinstance(result, WorkerThreadExited):
                     self.live_worker_count -= 1
                     continue
                 return result
