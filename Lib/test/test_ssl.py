@@ -11,6 +11,7 @@ from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
 import array
+import re
 import socket
 import select
 import struct
@@ -21,7 +22,6 @@ import http.client
 import os
 import errno
 import pprint
-import re
 import urllib.request
 import threading
 import traceback
