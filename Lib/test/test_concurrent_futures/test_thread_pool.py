@@ -49,6 +49,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         self.assertEqual(len(executor._threads), 1)
         executor.shutdown(wait=True)
 
+    @support.requires_fork()
     @unittest.skipUnless(hasattr(os, 'register_at_fork'), 'need os.register_at_fork')
     @support.requires_resource('cpu')
     def test_hang_global_shutdown_lock(self):
