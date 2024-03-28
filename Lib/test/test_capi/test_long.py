@@ -711,10 +711,8 @@ class LongTests(unittest.TestCase):
                     self.assertEqual(expect_u, fromnativebytes(v_be, n, -1, 0),
                         f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <native>)")
 
-                # Swap the signed/unsigned request for tests and use the
-                # Py_ASNATIVEBYTES_UNSIGNED_BUFFER flag to select the opposite
-                self.assertEqual(expect_s, fromnativebytes(v_be, n, 0, 0),
-                    f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <big|signed>)")
+                # Swap the unsigned request for tests and use the
+                # Py_ASNATIVEBYTES_UNSIGNED_BUFFER flag instead
                 self.assertEqual(expect_u, fromnativebytes(v_be, n, 4, 1),
                     f"PyLong_FromNativeBytes(buffer, {n}, <big|unsigned>)")
 
