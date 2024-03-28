@@ -46,6 +46,7 @@ typedef struct _PyEncoderObject {
     PyObject *item_separator;
     char sort_keys;
     char skipkeys;
+    char convert_keys;
     int allow_nan;
     PyCFunction fast_encode;
 } PyEncoderObject;
@@ -59,6 +60,7 @@ static PyMemberDef encoder_members[] = {
     {"item_separator", _Py_T_OBJECT, offsetof(PyEncoderObject, item_separator), Py_READONLY, "item_separator"},
     {"sort_keys", Py_T_BOOL, offsetof(PyEncoderObject, sort_keys), Py_READONLY, "sort_keys"},
     {"skipkeys", Py_T_BOOL, offsetof(PyEncoderObject, skipkeys), Py_READONLY, "skipkeys"},
+    {"convert_keys", Py_T_BOOL, offsetof(PyEncoderObject, convert_keys), Py_READONLY, "convert_keys"},
     {NULL}
 };
 
@@ -1205,17 +1207,17 @@ static PyType_Spec PyScannerType_spec = {
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", NULL};
+    static char *kwlist[] = {"markers", "default", "encoder", "indent", "key_separator", "item_separator", "sort_keys", "skipkeys", "allow_nan", "convert_keys", NULL};
 
     PyEncoderObject *s;
     PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
     PyObject *item_separator;
-    int sort_keys, skipkeys, allow_nan;
+    int sort_keys, skipkeys, allow_nan, convert_keys;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUppp:make_encoder", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUpppp:make_encoder", kwlist,
         &markers, &defaultfn, &encoder, &indent,
         &key_separator, &item_separator,
-        &sort_keys, &skipkeys, &allow_nan))
+        &sort_keys, &skipkeys, &allow_nan, &convert_keys))
         return NULL;
 
     if (markers != Py_None && !PyDict_Check(markers)) {
@@ -1238,6 +1240,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->sort_keys = sort_keys;
     s->skipkeys = skipkeys;
     s->allow_nan = allow_nan;
+    s->convert_keys = convert_keys;
     s->fast_encode = NULL;
 
     if (PyCFunction_Check(s->encoder)) {
@@ -1474,6 +1477,68 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
     }
     else if (PyLong_Check(key)) {
         keystr = PyLong_Type.tp_repr(key);
+    }
+    else if (s->convert_keys) {
+        PyObject *ident = NULL;
+        PyObject *newobj = NULL;
+        int rv;
+        if (s->markers != Py_None)
+        {
+            int has_key;
+            ident = PyLong_FromVoidPtr(key);
+            if (ident == NULL)
+                return -1;
+            has_key = PyDict_Contains(s->markers, ident);
+            if (has_key)
+            {
+                if (has_key != -1)
+                    Py_XDECREF(ident);
+                return -1;
+            }
+            Py_XDECREF(ident);
+        }
+
+        newobj = PyObject_CallOneArg(s->defaultfn, key);
+        if (newobj == NULL)
+        {
+            Py_XDECREF(ident);
+            return -1;
+        }
+
+        if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
+        {
+            Py_DECREF(newobj);
+            Py_XDECREF(ident);
+            return -1;
+        }
+        rv = encoder_listencode_obj(s, writer, newobj, indent_level);
+        _Py_LeaveRecursiveCall();
+
+        Py_DECREF(newobj);
+        if (rv)
+        {
+            Py_XDECREF(ident);
+            return -1;
+        }
+        if (ident != NULL)
+        {
+            if (PyDict_DelItem(s->markers, ident))
+            {
+                Py_XDECREF(ident);
+                return -1;
+            }
+            Py_XDECREF(ident);
+        }
+
+        if (!(PyUnicode_Check(newobj) || PyFloat_Check(newobj) || newobj == Py_True
+                || newobj == Py_False || newobj == Py_None || PyLong_Check(newobj))) {
+            PyErr_Format(PyExc_TypeError,
+                         "keys must be str, int, float, bool or None, "
+                         "not %.100s",
+                         Py_TYPE(newobj)->tp_name);
+            return -1;
+        }
+        return rv;
     }
     else if (s->skipkeys) {
         return 0;

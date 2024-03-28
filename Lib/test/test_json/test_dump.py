@@ -22,6 +22,16 @@ class TestDump:
         self.assertIn('valid_key', o)
         self.assertNotIn(b'invalid_key', o)
 
+    def test_dump_convert_keys(self):
+        v = {b'bytes_key': False, 'valid_key': True}
+        with self.assertRaises(TypeError):
+            self.json.dumps(v)
+
+        s = self.json.dumps(v, convert_keys=True, default=lambda b: b.hex(':'))
+        o = self.json.loads(s)
+        self.assertIn('valid_key', o)
+        self.assertIn('62:79:74:65:73:5f:6b:65:79', o)
+
     def test_encode_truefalse(self):
         self.assertEqual(self.dumps(
                  {True: False, False: True}, sort_keys=True),

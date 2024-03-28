@@ -107,7 +107,7 @@ class JSONEncoder(object):
             indent=None, separators=None, default=None, convert_keys=False):
         """Constructor for JSONEncoder, with sensible defaults.
 
-        Dict keys in JSON must be str, int, float or None.  skipkeys and
+        Dict keys in JSON must be str, int, float, bool, or None.  skipkeys and
         convert_keys control how keys that are not one of these types are
         handled.  If skipkeys is True, then those items are simply skipped.
         Otherwise, if convert_keys is True, the keys will be passed to
@@ -253,7 +253,7 @@ class JSONEncoder(object):
             _iterencode = c_make_encoder(
                 markers, self.default, _encoder, self.indent,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, self.allow_nan)
+                self.skipkeys, self.allow_nan, self.convert_keys)
         else:
             _iterencode = _make_iterencode(
                 markers, self.default, _encoder, self.indent, floatstr,
@@ -376,13 +376,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(key, int):
                 # see comment for int/float in _make_iterencode
                 key = _intstr(key)
-            elif _skipkeys:
-                continue
             elif _convert_keys:
                 key = _default(key)
-                if not isinstance(key, (int, bool, float, str, None)):
+                if not isinstance(key, (int, bool, float, str, type(None))):
                     raise TypeError(f'keys must be str, int, float, bool '
                                     f'or None, not {key.__class__.__name__}')
+            elif _skipkeys:
+                continue
             else:
                 raise TypeError(f'keys must be str, int, float, bool or None, '
                                 f'not {key.__class__.__name__}')
