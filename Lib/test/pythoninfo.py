@@ -524,6 +524,7 @@ def collect_sysconfig(info_add):
         'Py_GIL_DISABLED',
         'SHELL',
         'SOABI',
+        'TEST_MODULES',
         'abs_builddir',
         'abs_srcdir',
         'prefix',
