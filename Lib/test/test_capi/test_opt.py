@@ -1245,9 +1245,9 @@ class TestUopsOptimization(unittest.TestCase):
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_POP_FRAME"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
+        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 1)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
-        largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__) * 2
+        largest_stack = _testinternalcapi.get_co_framesize(dummy15.__code__)
         self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
 
     def test_many_nested(self):
@@ -1268,42 +1268,15 @@ class TestUopsOptimization(unittest.TestCase):
             return dummy_f(x)
         def dummy_h(x):
             return dummy_g(x)
-        def dummy_i(x):
-            return dummy_h(x)
-        def dummy_j(x):
-            return dummy_i(x)
-        def dummy_k(x):
-            return dummy_j(x)
-        def dummy_l(x):
-            return dummy_k(x)
         def testfunc(n):
             a = 0
             for _ in range(n):
-                a += dummy_l(n)
+                a += dummy_h(n)
             return a
-
-        self._assert_framesize_cross_platform((dummy_l), 14)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 32 * 32)
-        self.assertIsNotNone(ex)
-
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
-        uop_names = [uop[0] for uop in uops_and_operands]
-        self.assertEqual(uop_names.count("_PUSH_FRAME"), 6)
-        # we run out of trace stack depth before emitting any _POP_FRAMEs
-        self.assertEqual(uop_names.count("_POP_FRAME"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE"), 0)
-        self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
-        largest_stack = (
-            _testinternalcapi.get_co_framesize(dummy_l.__code__) +
-            _testinternalcapi.get_co_framesize(dummy_k.__code__) +
-            _testinternalcapi.get_co_framesize(dummy_j.__code__) +
-            _testinternalcapi.get_co_framesize(dummy_i.__code__) +
-            _testinternalcapi.get_co_framesize(dummy_h.__code__) +
-            _testinternalcapi.get_co_framesize(dummy_g.__code__)
-        )
-        self.assertIn(("_CHECK_STACK_SPACE_OPERAND", largest_stack), uops_and_operands)
+        self.assertIsNone(ex)
 
 if __name__ == "__main__":
     unittest.main()

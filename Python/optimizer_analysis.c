@@ -533,6 +533,29 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     Py_UNREACHABLE();
 }
 
+/* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
+ * PyCodeObject *. Retrieve the code object if possible.
+ */
+static PyCodeObject *
+get_co(_PyUOpInstruction *op) {
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME);
+    PyCodeObject *co = NULL;
+    uint64_t operand = op->operand;
+    if (operand == 0) {
+        return NULL;
+    }
+    if (operand & 1) {
+        co = (PyCodeObject *)(operand & ~1);
+    }
+    else {
+        PyFunctionObject *func = (PyFunctionObject *)operand;
+        assert(PyFunction_Check(func));
+        co = (PyCodeObject *)func->func_code;
+    }
+    assert(PyCode_Check(co));
+    return co;
+}
+
 static void
 peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
@@ -561,7 +584,7 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             {
                 uint64_t operand = buffer[pc].operand;
                 if (operand & 1) {
-                    co = (PyCodeObject *)(operand & ~1);
+                    co = (PyCodeObject *)(operand & ~1);  // TODO: use get_co
                     assert(PyCode_Check(co));
                 }
                 else if (operand == 0) {
@@ -581,68 +604,75 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
     }
 }
 
-// TODO: there are no more changes to optimizer.c. We will only see regular
-// _CHECK_STACK_SPACEs in this function. Need to make the following change:
-// when we see _CHECK_STACK_SPACE, look ahead to _PUSH_FRAME. Extract the
-// code object out of _PUSH_FRAME. Save that object's framesize and convert
-// _CHECK_STACK_SPACE to _CHECK_STACK_SPACE_OPERAND. If we ever can't get a
-// code object, stop the optimization. It should still be ok to save max_space
-// to the first _CHECK_STACK_SPACE_OPERAND at that point, since the rest will
-// be regular _CHECK_STACK_SPACEs and will be handled at execution time.
+// _PUSH_FRAME is 3 ops in front of _CHECK_STACK_SPACE
+#define _CHECK_STACK_TO_PUSH_FRAME_OFFSET 3
+
+/* Compute the maximum stack space needed for this trace and consolidate
+ * all possible _CHECK_STACK_SPACE ops to one _CHECK_STACK_SPACE_OPERAND.
+ * This calculation is essentially a traversal over the tree of function
+ * calls in this trace.
+ */
 static void
 combine_stack_space_checks(
     _PyUOpInstruction *buffer,
     int buffer_size
 )
 {
-    /* Compute the maximum stack space needed for this trace and consolidate
-     * all _CHECK_STACK_SPACE_OPERAND ops to just one.
-     * This calculation is essentially a traversal over the tree of function
-     * calls in this trace.
-     */
 #ifdef Py_DEBUG
-    // assume there's a _PUSH_FRAME after every _CHECK_STACK_SPACE_OPERAND
+    // assume there's a _PUSH_FRAME after every _CHECK_STACK_SPACE
     bool expecting_push = false;
-    /* We might see _CHECK_STACK_SPACE, but only if no code object was
-     * available for _PUSH_FRAME at trace projection time. If this occurs,
-     * it should be closely followed by _PUSH_FRAME + _EXIT_TRACE and must
-     * not be followed by any _CHECK_STACK_SPACE_OPERANDs. */
-    bool saw_check_stack_space = false;
+    // if we ever can't get a framesize from _PUSH_FRAME, must exit soon
+    bool must_exit = false;
 #endif
     int depth = 0;
     uint32_t space_at_depth[MAX_ABSTRACT_FRAME_DEPTH];
     uint32_t curr_space = 0;
     uint32_t max_space = 0;
-    _PyUOpInstruction *first_check_stack = NULL;
+    _PyUOpInstruction *first_valid_check_stack = NULL;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
-            case _CHECK_STACK_SPACE_OPERAND: {
+            case _CHECK_STACK_SPACE: {
 #ifdef Py_DEBUG
                 assert(expecting_push == false);
-                assert(saw_check_stack_space == false);
+                assert(must_exit == false);
+                expecting_push = true;
 #endif
-                if (first_check_stack == NULL) {
-                    first_check_stack = &buffer[pc];
+                uint32_t framesize = 0;
+                if (pc + _CHECK_STACK_TO_PUSH_FRAME_OFFSET < buffer_size) {
+                    _PyUOpInstruction *uop = &buffer[
+                        pc + _CHECK_STACK_TO_PUSH_FRAME_OFFSET
+                    ];
+                    assert(uop->opcode == _PUSH_FRAME);
+                    PyCodeObject *code = get_co(uop);
+                    if (code != NULL) {
+                        framesize = code->co_framesize;
+                    }
+                }
+                if (framesize == 0) {
+#ifdef Py_DEBUG
+                    must_exit = true;
+#endif
+                    break;
+                }
+                if (first_valid_check_stack == NULL) {
+                    first_valid_check_stack = &buffer[pc];
                 }
                 else {
-                    // delete all but the first _CHECK_STACK_SPACE_OPERAND
+                    // delete all but the first valid _CHECK_STACK_SPACE
                     buffer[pc].opcode = _NOP;
                 }
-                space_at_depth[depth] = buffer[pc].operand;
-                curr_space += buffer[pc].operand;
+                space_at_depth[depth] = framesize;
+                curr_space += framesize;
                 max_space = curr_space > max_space ? curr_space : max_space;
                 depth++;
                 assert(depth < MAX_ABSTRACT_FRAME_DEPTH);
-#ifdef Py_DEBUG
-                expecting_push = true;
-#endif
                 break;
             }
             case _POP_FRAME: {
 #ifdef Py_DEBUG
                 assert(expecting_push == false);
-                assert(saw_check_stack_space == false);
+                assert(must_exit == false);
 #endif
                 depth--;
                 assert(depth >= 0);
@@ -650,22 +680,20 @@ combine_stack_space_checks(
                 break;
             }
 #ifdef Py_DEBUG
-            case _CHECK_STACK_SPACE: {
-                assert(expecting_push == false);
-                expecting_push = true;
-                saw_check_stack_space = true;
-                break;
-            }
             case _PUSH_FRAME: {
                 assert(expecting_push == true);
                 expecting_push = false;
                 break;
             }
 #endif
+            case _JUMP_TO_TOP:
             case _EXIT_TRACE: {
-                if (first_check_stack != NULL) {
+                if (first_valid_check_stack != NULL) {
+                    assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
+                    assert(max_space > 0);
                     assert(max_space < INT_MAX);
-                    first_check_stack->operand = max_space;
+                    first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
+                    first_valid_check_stack->operand = max_space;
                 }
                 return;
             }
@@ -704,7 +732,7 @@ _Py_uop_analyze_and_optimize(
         return length;
     }
 
-    combine_stack_space_checks(buffer, buffer_size);
+    combine_stack_space_checks(buffer, length);
     length = remove_unneeded_uops(buffer, length);
     assert(length > 0);
 
