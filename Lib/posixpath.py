@@ -217,31 +217,19 @@ def ismount(path):
     except (OSError, ValueError):
         # It doesn't exist -- so not a mount point. :-)
         return False
-    else:
-        # A symlink can never be a mount point
-        if stat.S_ISLNK(s1.st_mode):
-            return False
 
-    path = os.fspath(path)
-    if isinstance(path, bytes):
-        parent = join(path, b'..')
-    else:
-        parent = join(path, '..')
-    parent = realpath(parent)
+    # A symlink can never be a mount point
+    if stat.S_ISLNK(s1.st_mode):
+        return False
+
+    parent = realpath(dirname(path))
     try:
         s2 = os.lstat(parent)
     except (OSError, ValueError):
         return False
 
-    dev1 = s1.st_dev
-    dev2 = s2.st_dev
-    if dev1 != dev2:
-        return True     # path/.. on a different device as path
-    ino1 = s1.st_ino
-    ino2 = s2.st_ino
-    if ino1 == ino2:
-        return True     # path/.. is the same i-node as path
-    return False
+    # path/.. on a different device as path or the same i-node as path
+    return s1.st_dev != s2.st_dev or s1.st_ino == s2.st_ino
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -380,29 +368,29 @@ except ImportError:
         if isinstance(path, bytes):
             sep = b'/'
             empty = b''
-            dot = b'.'
-            dotdot = b'..'
+            curdir = b'.'
+            pardir = b'..'
         else:
             sep = '/'
             empty = ''
-            dot = '.'
-            dotdot = '..'
+            curdir = '.'
+            pardir = '..'
         if path == empty:
-            return dot
+            return curdir
         _, initial_slashes, path = splitroot(path)
         comps = path.split(sep)
         new_comps = []
         for comp in comps:
-            if comp in (empty, dot):
+            if comp in (empty, curdir):
                 continue
-            if (comp != dotdot or (not initial_slashes and not new_comps) or
-                 (new_comps and new_comps[-1] == dotdot)):
+            if (comp != pardir or (not initial_slashes and not new_comps) or
+                 (new_comps and new_comps[-1] == pardir)):
                 new_comps.append(comp)
             elif new_comps:
                 new_comps.pop()
         comps = new_comps
         path = initial_slashes + sep.join(comps)
-        return path or dot
+        return path or curdir
 
 else:
     def normpath(path):
