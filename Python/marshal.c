@@ -14,6 +14,10 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "marshal.h"              // Py_MARSHAL_VERSION
 
+#ifdef __APPLE__
+#  include "TargetConditionals.h"
+#endif /* __APPLE__ */
+
 /*[clinic input]
 module marshal
 [clinic start generated code]*/
@@ -33,11 +37,14 @@ module marshal
  * #if defined(MS_WINDOWS) && defined(_DEBUG)
  */
 #if defined(MS_WINDOWS)
-#define MAX_MARSHAL_STACK_DEPTH 1000
+#  define MAX_MARSHAL_STACK_DEPTH 1000
 #elif defined(__wasi__)
-#define MAX_MARSHAL_STACK_DEPTH 1500
+#  define MAX_MARSHAL_STACK_DEPTH 1500
+// TARGET_OS_IPHONE covers any non-macOS Apple platform.
+#elif defined(__APPLE__) && TARGET_OS_IPHONE
+#  define MAX_MARSHAL_STACK_DEPTH 1500
 #else
-#define MAX_MARSHAL_STACK_DEPTH 2000
+#  define MAX_MARSHAL_STACK_DEPTH 2000
 #endif
 
 #define TYPE_NULL               '0'
