@@ -12,7 +12,10 @@ from test.support import import_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 from test.support import interpreters
 from test.support.interpreters import InterpreterNotFoundError
-from .utils import _captured_script, _run_output, _running, TestBase
+from .utils import (
+    _captured_script, _run_output, _running, TestBase,
+    requires__testinternalcapi, _testinternalcapi,
+)
 
 
 class ModuleTests(TestBase):
@@ -158,19 +161,21 @@ class GetCurrentTests(TestBase):
             id2 = id(interp)
             self.assertNotEqual(id1, id2)
 
+    @requires__testinternalcapi
     def test_unmanaged(self):
-        with self.unmanaged_interpreter() as unmanaged:
-            print(unmanaged)
-            err = unmanaged.exec(dedent(f"""
-                import {interpreters.__name__} as interpreters
-                err = None
-                try:
-                    interpreters.get_current()
-                except ValueError as exc:
-                    err = exc
-                assert exc is not None
-                """))
-            self.assertEqual(err, '')
+        last = 0
+        for id, *_ in _interpreters.list_all():
+            last = max(last, id)
+        expected = _testinternalcapi.next_interpreter_id()
+        err, text = self.run_external(f"""
+            import {interpreters.__name__} as interpreters
+            interp = interpreters.get_current()
+            print((interp.id, interp.owned))
+            """)
+        assert err is None, err
+        interpid, owned = eval(text)
+        self.assertEqual(interpid, expected)
+        self.assertFalse(owned)
 
 
 class ListAllTests(TestBase):
@@ -215,7 +220,32 @@ class ListAllTests(TestBase):
             self.assertIs(interp1, interp2)
 
     def test_unmanaged(self):
-        ...
+        mainid, _ = _interpreters.get_main()
+        interpid1 = _interpreters.create()
+        interpid2 = _interpreters.create()
+        interpid3 = _interpreters.create()
+        interpid4 = interpid3 + 1
+        interpid5 = interpid4 + 1
+        expected = [
+            (mainid, False),
+            (interpid1, True),
+            (interpid2, True),
+            (interpid3, True),
+            (interpid4, False),
+            (interpid5, True),
+        ]
+        expected2 = expected[:-2]
+        err, text = self.run_external(f"""
+            import {interpreters.__name__} as interpreters
+            interp = interpreters.create()
+            print(
+                [(i.id, i.owned) for i in interpreters.list_all()])
+            """)
+        assert err is None, err
+        res = eval(text)
+        res2 = [(i.id, i.owned) for i in interpreters.list_all()]
+        self.assertEqual(res, expected)
+        self.assertEqual(res2, expected2)
 
 
 class InterpreterObjectTests(TestBase):
@@ -1138,7 +1168,52 @@ class LowLevelTests(TestBase):
             self.assertFalse(owned)
 
     def test_list_all(self):
-        ...
+        mainid, _ = _interpreters.get_main()
+        interpid1 = _interpreters.create()
+        interpid2 = _interpreters.create()
+        interpid3 = _interpreters.create()
+        expected = [
+            (mainid, False),
+            (interpid1, True),
+            (interpid2, True),
+            (interpid3, True),
+        ]
+
+        with self.subTest('main'):
+            res = _interpreters.list_all()
+            self.assertEqual(res, expected)
+
+        with self.subTest('owned'):
+            text = self.run_and_capture(interpid2, f"""
+                import {_interpreters.__name__} as _interpreters
+                print(
+                    _interpreters.list_all())
+                """)
+
+            res = eval(text)
+            self.assertEqual(res, expected)
+
+        with self.subTest('external'):
+            interpid4 = interpid3 + 1
+            interpid5 = interpid4 + 1
+            expected2 = expected + [
+                (interpid4, False),
+                (interpid5, True),
+            ]
+            expected3 = expected + [
+                (interpid5, True),
+            ]
+            err, text = self.run_external(f"""
+                import {_interpreters.__name__} as _interpreters
+                _interpreters.create()
+                print(
+                    _interpreters.list_all())
+                """)
+            assert err is None, err
+            res2 = eval(text)
+            res3 = _interpreters.list_all()
+            self.assertEqual(res2, expected2)
+            self.assertEqual(res3, expected3)
 
     def test_create(self):
         isolated = _interpreters.new_config('isolated')

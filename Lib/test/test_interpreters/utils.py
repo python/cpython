@@ -268,12 +268,12 @@ def clean_up_interpreters():
 
 
 def _run_output(interp, request, init=None):
-    script, (stdout, _, _) = _captured_script(request)
-    with stdout:
+    script, results = _captured_script(request)
+    with results:
         if init:
             interp.prepare_main(init)
         interp.exec(script)
-        return stdout.read()
+    return results.stdout()
 
 
 @contextlib.contextmanager
