@@ -1170,7 +1170,6 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(get_type_fullyqualname(MyType), 'my_qualname')
 
 
-
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
     """Test API for extending opaque types (PEP 697)"""
@@ -1324,6 +1323,125 @@ class TestHeapTypeRelative(unittest.TestCase):
             # int is variable-length, but doesn't have the
             # Py_TPFLAGS_ITEMS_AT_END layout (and flag)
             _testcapi.pyobject_getitemdata(0)
+
+
+    def test_function_get_closure(self):
+        from types import CellType
+
+        def regular_function(): ...
+        def unused_one_level(arg1):
+            def inner(arg2, arg3): ...
+            return inner
+        def unused_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6): ...
+                return inner
+            return decorator
+        def with_one_level(arg1):
+            def inner(arg2, arg3):
+                return arg1 + arg2 + arg3
+            return inner
+        def with_two_levels(arg1, arg2):
+            def decorator(arg3, arg4):
+                def inner(arg5, arg6):
+                    return arg1 + arg2 + arg3 + arg4 + arg5 + arg6
+                return inner
+            return decorator
+
+        # Functions without closures:
+        self.assertIsNone(_testcapi.function_get_closure(regular_function))
+        self.assertIsNone(regular_function.__closure__)
+
+        func = unused_one_level(1)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        func = unused_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertIsNone(closure)
+        self.assertIsNone(func.__closure__)
+
+        # Functions with closures:
+        func = with_one_level(5)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 1)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertTrue(closure[0].cell_contents, 5)
+
+        func = with_two_levels(1, 2)(3, 4)
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual(closure, func.__closure__)
+        self.assertIsInstance(closure, tuple)
+        self.assertEqual(len(closure), 4)
+        self.assertEqual(len(closure), len(func.__code__.co_freevars))
+        self.assertTrue(all(isinstance(cell, CellType) for cell in closure))
+        self.assertEqual([cell.cell_contents for cell in closure],
+                         [1, 2, 3, 4])
+
+    def test_function_get_closure_error(self):
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(1)
+        with self.assertRaises(SystemError):
+            _testcapi.function_get_closure(None)
+
+    def test_function_set_closure(self):
+        from types import CellType
+
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        func = function_without_closure
+        _testcapi.function_set_closure(func, (CellType(1), CellType(1)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 1])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 1])
+
+        func = function_with_closure(1)
+        _testcapi.function_set_closure(func,
+                                       (CellType(1), CellType(2), CellType(3)))
+        closure = _testcapi.function_get_closure(func)
+        self.assertEqual([c.cell_contents for c in closure], [1, 2, 3])
+        self.assertEqual([c.cell_contents for c in func.__closure__], [1, 2, 3])
+
+    def test_function_set_closure_none(self):
+        def function_without_closure(): ...
+        def function_with_closure(arg):
+            def inner():
+                return arg
+            return inner
+
+        _testcapi.function_set_closure(function_without_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_without_closure))
+        self.assertIsNone(function_without_closure.__closure__)
+
+        _testcapi.function_set_closure(function_with_closure, None)
+        self.assertIsNone(
+            _testcapi.function_get_closure(function_with_closure))
+        self.assertIsNone(function_with_closure.__closure__)
+
+    def test_function_set_closure_errors(self):
+        def function_without_closure(): ...
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(None, ())  # not a function
+
+        with self.assertRaises(SystemError):
+            _testcapi.function_set_closure(function_without_closure, 1)
+        self.assertIsNone(function_without_closure.__closure__)  # no change
+
+        # NOTE: this works, but goes against the docs:
+        _testcapi.function_set_closure(function_without_closure, (1, 2))
+        self.assertEqual(
+            _testcapi.function_get_closure(function_without_closure), (1, 2))
+        self.assertEqual(function_without_closure.__closure__, (1, 2))
 
 
 class TestPendingCalls(unittest.TestCase):
@@ -2056,6 +2174,13 @@ class SubinterpreterTest(unittest.TestCase):
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
 
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
         script = textwrap.dedent(f"""
             import importlib.machinery
             import importlib.util
@@ -2063,7 +2188,7 @@ class SubinterpreterTest(unittest.TestCase):
 
             fullname = '_test_module_state_shared'
             origin = importlib.util.find_spec('_testmultiphase').origin
-            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+            loader = importlib.machinery.{loader}(fullname, origin)
             spec = importlib.util.spec_from_loader(fullname, loader)
             module = importlib.util.module_from_spec(spec)
             attr_id = str(id(module.Error)).encode()
@@ -2082,132 +2207,264 @@ class SubinterpreterTest(unittest.TestCase):
 @requires_subinterpreters
 class InterpreterIDTests(unittest.TestCase):
 
-    InterpreterID = _testcapi.get_interpreterid_type()
-
-    def new_interpreter(self):
-        def ensure_destroyed(interpid):
+    def add_interp_cleanup(self, interpid):
+        def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)
             except _interpreters.InterpreterNotFoundError:
                 pass
+        self.addCleanup(ensure_destroyed)
+
+    def new_interpreter(self):
         id = _interpreters.create()
-        self.addCleanup(lambda: ensure_destroyed(id))
+        self.add_interp_cleanup(id)
         return id
 
-    def test_with_int(self):
-        id = self.InterpreterID(10, force=True)
+    def test_conversion_int(self):
+        convert = _testinternalcapi.normalize_interp_id
+        interpid = convert(10)
+        self.assertEqual(interpid, 10)
 
-        self.assertEqual(int(id), 10)
-
-    def test_coerce_id(self):
-        class Int(str):
+    def test_conversion_coerced(self):
+        convert = _testinternalcapi.normalize_interp_id
+        class MyInt(str):
             def __index__(self):
                 return 10
+        interpid = convert(MyInt())
+        self.assertEqual(interpid, 10)
 
-        id = self.InterpreterID(Int(), force=True)
-        self.assertEqual(int(id), 10)
+    def test_conversion_from_interpreter(self):
+        convert = _testinternalcapi.normalize_interp_id
+        interpid = self.new_interpreter()
+        converted = convert(interpid)
+        self.assertEqual(converted, interpid)
 
-    def test_bad_id(self):
+    def test_conversion_bad(self):
+        convert = _testinternalcapi.normalize_interp_id
+
         for badid in [
             object(),
             10.0,
             '10',
             b'10',
         ]:
-            with self.subTest(badid):
+            with self.subTest(f'bad: {badid!r}'):
                 with self.assertRaises(TypeError):
-                    self.InterpreterID(badid)
+                    convert(badid)
 
         badid = -1
-        with self.subTest(badid):
+        with self.subTest(f'bad: {badid!r}'):
             with self.assertRaises(ValueError):
-                self.InterpreterID(badid)
+                convert(badid)
 
         badid = 2**64
-        with self.subTest(badid):
+        with self.subTest(f'bad: {badid!r}'):
             with self.assertRaises(OverflowError):
-                self.InterpreterID(badid)
+                convert(badid)
 
-    def test_exists(self):
-        id = self.new_interpreter()
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            self.InterpreterID(int(id) + 1)  # unforced
+    def test_lookup_exists(self):
+        interpid = self.new_interpreter()
+        self.assertTrue(
+            _testinternalcapi.interpreter_exists(interpid))
 
-    def test_does_not_exist(self):
-        id = self.new_interpreter()
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            self.InterpreterID(int(id) + 1)  # unforced
+    def test_lookup_does_not_exist(self):
+        interpid = _testinternalcapi.unused_interpreter_id()
+        self.assertFalse(
+            _testinternalcapi.interpreter_exists(interpid))
 
-    def test_destroyed(self):
-        id = _interpreters.create()
-        _interpreters.destroy(id)
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            self.InterpreterID(id)  # unforced
+    def test_lookup_destroyed(self):
+        interpid = _interpreters.create()
+        _interpreters.destroy(interpid)
+        self.assertFalse(
+            _testinternalcapi.interpreter_exists(interpid))
 
-    def test_str(self):
-        id = self.InterpreterID(10, force=True)
-        self.assertEqual(str(id), '10')
+    def test_linked_lifecycle_does_not_exist(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        unlink = _testinternalcapi.unlink_interpreter_refcount
+        get_refcount = _testinternalcapi.get_interpreter_refcount
+        incref = _testinternalcapi.interpreter_incref
+        decref = _testinternalcapi.interpreter_decref
 
-    def test_repr(self):
-        id = self.InterpreterID(10, force=True)
-        self.assertEqual(repr(id), 'InterpreterID(10)')
+        with self.subTest('never existed'):
+            interpid = _testinternalcapi.unused_interpreter_id()
+            self.assertFalse(
+                exists(interpid))
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                is_linked(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                link(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                unlink(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                get_refcount(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                incref(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                decref(interpid)
 
-    def test_equality(self):
-        id1 = self.new_interpreter()
-        id2 = self.InterpreterID(id1)
-        id3 = self.InterpreterID(
-                self.new_interpreter())
+        with self.subTest('destroyed'):
+            interpid = _interpreters.create()
+            _interpreters.destroy(interpid)
+            self.assertFalse(
+                exists(interpid))
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                is_linked(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                link(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                unlink(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                get_refcount(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                incref(interpid)
+            with self.assertRaises(_interpreters.InterpreterNotFoundError):
+                decref(interpid)
 
-        self.assertTrue(id2 == id2)  # identity
-        self.assertTrue(id2 == id1)  # int-equivalent
-        self.assertTrue(id1 == id2)  # reversed
-        self.assertTrue(id2 == int(id2))
-        self.assertTrue(id2 == float(int(id2)))
-        self.assertTrue(float(int(id2)) == id2)
-        self.assertFalse(id2 == float(int(id2)) + 0.1)
-        self.assertFalse(id2 == str(int(id2)))
-        self.assertFalse(id2 == 2**1000)
-        self.assertFalse(id2 == float('inf'))
-        self.assertFalse(id2 == 'spam')
-        self.assertFalse(id2 == id3)
+    def test_linked_lifecycle_initial(self):
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        get_refcount = _testinternalcapi.get_interpreter_refcount
 
-        self.assertFalse(id2 != id2)
-        self.assertFalse(id2 != id1)
-        self.assertFalse(id1 != id2)
-        self.assertTrue(id2 != id3)
+        # A new interpreter will start out not linked, with a refcount of 0.
+        interpid = _testinternalcapi.new_interpreter()
+        self.add_interp_cleanup(interpid)
+        linked = is_linked(interpid)
+        refcount = get_refcount(interpid)
 
-    def test_linked_lifecycle(self):
-        id1 = _interpreters.create()
-        _testcapi.unlink_interpreter_refcount(id1)
+        self.assertFalse(linked)
+        self.assertEqual(refcount, 0)
+
+    def test_linked_lifecycle_never_linked(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        get_refcount = _testinternalcapi.get_interpreter_refcount
+        incref = _testinternalcapi.interpreter_incref
+        decref = _testinternalcapi.interpreter_decref
+
+        interpid = _testinternalcapi.new_interpreter()
+        self.add_interp_cleanup(interpid)
+
+        # Incref will not automatically link it.
+        incref(interpid)
+        self.assertFalse(
+            is_linked(interpid))
         self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            0)
+            1, get_refcount(interpid))
 
-        id2 = self.InterpreterID(id1)
+        # It isn't linked so it isn't destroyed.
+        decref(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertFalse(
+            is_linked(interpid))
         self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            1)
+            0, get_refcount(interpid))
 
-        # The interpreter isn't linked to ID objects, so it isn't destroyed.
-        del id2
+    def test_linked_lifecycle_link_unlink(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        unlink = _testinternalcapi.unlink_interpreter_refcount
+
+        interpid = _testinternalcapi.new_interpreter()
+        self.add_interp_cleanup(interpid)
+
+        # Linking at refcount 0 does not destroy the interpreter.
+        link(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertTrue(
+            is_linked(interpid))
+
+        # Unlinking at refcount 0 does not destroy the interpreter.
+        unlink(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertFalse(
+            is_linked(interpid))
+
+    def test_linked_lifecycle_link_incref_decref(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        get_refcount = _testinternalcapi.get_interpreter_refcount
+        incref = _testinternalcapi.interpreter_incref
+        decref = _testinternalcapi.interpreter_decref
+
+        interpid = _testinternalcapi.new_interpreter()
+        self.add_interp_cleanup(interpid)
+
+        # Linking it will not change the refcount.
+        link(interpid)
+        self.assertTrue(
+            is_linked(interpid))
         self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            0)
+            0, get_refcount(interpid))
 
-        _testcapi.link_interpreter_refcount(id1)
+        # Decref with a refcount of 0 is not allowed.
+        incref(interpid)
         self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            0)
+            1, get_refcount(interpid))
 
-        id3 = self.InterpreterID(id1)
+        # When linked, decref back to 0 destroys the interpreter.
+        decref(interpid)
+        self.assertFalse(
+            exists(interpid))
+
+    def test_linked_lifecycle_incref_link(self):
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        get_refcount = _testinternalcapi.get_interpreter_refcount
+        incref = _testinternalcapi.interpreter_incref
+
+        interpid = _testinternalcapi.new_interpreter()
+        self.add_interp_cleanup(interpid)
+
+        incref(interpid)
         self.assertEqual(
-            _testinternalcapi.get_interpreter_refcount(id1),
-            1)
+            1, get_refcount(interpid))
 
-        # The interpreter is linked now so is destroyed.
-        del id3
-        with self.assertRaises(_interpreters.InterpreterNotFoundError):
-            _testinternalcapi.get_interpreter_refcount(id1)
+        # Linking it will not reset the refcount.
+        link(interpid)
+        self.assertTrue(
+            is_linked(interpid))
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+    def test_linked_lifecycle_link_incref_unlink_decref(self):
+        exists = _testinternalcapi.interpreter_exists
+        is_linked = _testinternalcapi.interpreter_refcount_linked
+        link = _testinternalcapi.link_interpreter_refcount
+        unlink = _testinternalcapi.unlink_interpreter_refcount
+        get_refcount = _testinternalcapi.get_interpreter_refcount
+        incref = _testinternalcapi.interpreter_incref
+        decref = _testinternalcapi.interpreter_decref
+
+        interpid = _testinternalcapi.new_interpreter()
+        self.add_interp_cleanup(interpid)
+
+        link(interpid)
+        self.assertTrue(
+            is_linked(interpid))
+
+        incref(interpid)
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+        # Unlinking it will not change the refcount.
+        unlink(interpid)
+        self.assertFalse(
+            is_linked(interpid))
+        self.assertEqual(
+            1, get_refcount(interpid))
+
+        # Unlinked: decref back to 0 does not destroys the interpreter.
+        decref(interpid)
+        self.assertTrue(
+            exists(interpid))
+        self.assertEqual(
+            0, get_refcount(interpid))
 
 
 class BuiltinStaticTypesTests(unittest.TestCase):
@@ -2338,7 +2595,7 @@ class Test_testcapi(unittest.TestCase):
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_widechar(self):
-        _testcapi.test_widechar()
+        _testlimitedcapi.test_widechar()
 
     def test_version_api_data(self):
         self.assertEqual(_testcapi.Py_Version, sys.hexversion)
@@ -2371,7 +2628,12 @@ class Test_ModuleStateAccess(unittest.TestCase):
     def setUp(self):
         fullname = '_testmultiphase_meth_state_access'  # XXX
         origin = importlib.util.find_spec('_testmultiphase').origin
-        loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = importlib.machinery.AppleFrameworkLoader(fullname, origin)
+        else:
+            loader = importlib.machinery.ExtensionFileLoader(fullname, origin)
         spec = importlib.util.spec_from_loader(fullname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)

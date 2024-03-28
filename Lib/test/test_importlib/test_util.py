@@ -707,13 +707,20 @@ class IncompatibleExtensionModuleRestrictionsTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_incomplete_multi_phase_init_module(self):
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if support.is_apple_mobile:
+            loader = "AppleFrameworkLoader"
+        else:
+            loader = "ExtensionFileLoader"
+
         prescript = textwrap.dedent(f'''
             from importlib.util import spec_from_loader, module_from_spec
-            from importlib.machinery import ExtensionFileLoader
+            from importlib.machinery import {loader}
 
             name = '_test_shared_gil_only'
             filename = {_testmultiphase.__file__!r}
-            loader = ExtensionFileLoader(name, filename)
+            loader = {loader}(name, filename)
             spec = spec_from_loader(name, loader)
 
             ''')
