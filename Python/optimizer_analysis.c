@@ -582,19 +582,7 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             case _PUSH_FRAME:
             case _POP_FRAME:
             {
-                uint64_t operand = buffer[pc].operand;
-                if (operand & 1) {
-                    co = (PyCodeObject *)(operand & ~1);  // TODO: use get_co
-                    assert(PyCode_Check(co));
-                }
-                else if (operand == 0) {
-                    co = NULL;
-                }
-                else {
-                    PyFunctionObject *func = (PyFunctionObject *)operand;
-                    assert(PyFunction_Check(func));
-                    co = (PyCodeObject *)func->func_code;
-                }
+                co = get_co(&buffer[pc]);
                 break;
             }
             case _JUMP_TO_TOP:
