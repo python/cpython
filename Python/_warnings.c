@@ -133,8 +133,6 @@ _PyWarnings_InitState(PyInterpreterState *interp)
 {
     WarningsState *st = &interp->warnings;
 
-    st->mutex = (struct _PyMutex){ 0 };
-
     if (st->filters == NULL) {
         st->filters = init_filters(interp);
         if (st->filters == NULL) {
@@ -239,9 +237,7 @@ static PyObject *
 get_once_registry(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
     _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
 
@@ -269,9 +265,7 @@ static PyObject *
 get_default_action(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
     _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
 
@@ -303,9 +297,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
            PyObject *module, PyObject **item)
 {
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
     _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
 
@@ -1003,9 +995,7 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
         return NULL;
 
     WarningsState *st = warnings_get_state(tstate->interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
@@ -1160,9 +1150,7 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
     }
 
     WarningsState *st = warnings_get_state(tstate->interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
@@ -1309,9 +1297,7 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     }
 
     WarningsState *st = warnings_get_state(tstate->interp);
-    if (st == NULL) {
-        return -1;
-    }
+    assert(st != NULL);
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
@@ -1382,16 +1368,16 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
             WarningsState *st = warnings_get_state(tstate->interp);
-            if (st != NULL) {
-                Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
-                res = warn_explicit(tstate, category, message, filename, lineno,
-                                    module, registry, NULL, NULL);
-                Py_END_CRITICAL_SECTION();
-                Py_DECREF(message);
-                if (res != NULL) {
-                    Py_DECREF(res);
-                    ret = 0;
-                }
+            assert(st != NULL);
+
+            Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+            res = warn_explicit(tstate, category, message, filename, lineno,
+                                module, registry, NULL, NULL);
+            Py_END_CRITICAL_SECTION();
+            Py_DECREF(message);
+            if (res != NULL) {
+                Py_DECREF(res);
+                ret = 0;
             }
         }
     }
