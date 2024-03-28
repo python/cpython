@@ -334,45 +334,40 @@ def expandvars(path):
 
 try:
     from posix import _path_normpath
-
-except ImportError:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            sep = b'/'
-            empty = b''
-            dot = b'.'
-            dotdot = b'..'
-        else:
-            sep = '/'
-            empty = ''
-            dot = '.'
-            dotdot = '..'
-        if path == empty:
-            return dot
-        _, initial_slashes, path = splitroot(path)
-        comps = path.split(sep)
-        new_comps = []
-        for comp in comps:
-            if comp in (empty, dot):
-                continue
-            if (comp != dotdot or (not initial_slashes and not new_comps) or
-                 (new_comps and new_comps[-1] == dotdot)):
-                new_comps.append(comp)
-            elif new_comps:
-                new_comps.pop()
-        comps = new_comps
-        path = initial_slashes + sep.join(comps)
-        return path or dot
-
-else:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
         path = os.fspath(path)
         if isinstance(path, bytes):
             return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
         return _path_normpath(path) or "."
+except ImportError:
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            sep = b'/'
+            curdir = b'.'
+            pardir = b'..'
+        else:
+            sep = '/'
+            curdir = '.'
+            pardir = '..'
+        if not path:
+            return curdir
+        _, root, tail = splitroot(path)
+        comps = []
+        for comp in tail.split(sep):
+            if not comp or comp == curdir:
+                continue
+            if (
+                comp != pardir
+                or (not root and not comps)
+                or (comps and comps[-1] == pardir)
+            ):
+                comps.append(comp)
+            elif comps:
+                comps.pop()
+        return (root + sep.join(comps)) or curdir
 
 
 def abspath(path):
