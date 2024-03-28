@@ -318,13 +318,12 @@ def expandvars(path):
                 value = os.fsencode(os.environ[os.fsdecode(name)])
             else:
                 value = environ[name]
-        except KeyError:
-            i = j
-        else:
             tail = path[j:]
             path = path[:i] + value
             i = len(path)
             path += tail
+        except KeyError:
+            i = j
     return path
 
 

@@ -858,33 +858,30 @@ def commonpath(paths):
         curdir = '.'
 
     try:
-        drivesplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
-        split_paths = [p.split(sep) for d, r, p in drivesplits]
+        rootsplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
 
-        if len({r for d, r, p in drivesplits}) != 1:
-            raise ValueError("Can't mix absolute and relative paths")
-
-        # Check that all drive letters or UNC paths match. The check is made only
-        # now otherwise type errors for mixing strings and bytes would not be
-        # caught.
-        if len({d for d, r, p in drivesplits}) != 1:
+        # Check that all drive letters or UNC paths match. The check is made
+        # only now otherwise type errors for mixing strings and bytes would not
+        # be caught.
+        if len({d for d, _, _ in rootsplits}) != 1:
             raise ValueError("Paths don't have the same drive")
 
-        drive, root, path = splitroot(paths[0].replace(altsep, sep))
-        common = path.split(sep)
-        common = [c for c in common if c and c != curdir]
+        if len({r for _, r, _ in rootsplits}) != 1:
+            raise ValueError("Can't mix absolute and relative paths")
 
-        split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
+        drive, root, tail = splitroot(paths[0].replace(altsep, sep))
+        common = [c for c in tail.split(sep) if c and c != curdir]
+
+        split_paths = [
+            [c for c in t.split(sep) if c and c != curdir]
+            for _, _, t in rootsplits
+        ]
         s1 = min(split_paths)
         s2 = max(split_paths)
         for i, c in enumerate(s1):
             if c != s2[i]:
-                common = common[:i]
-                break
-        else:
-            common = common[:len(s1)]
-
-        return drive + root + sep.join(common)
+                return drive + root + sep.join(common[:i])
+        return drive + root + sep.join(common[:len(s1)])
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
