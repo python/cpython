@@ -514,8 +514,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # sanitizer: [address, undefined, memory]  -- memory skipped temporarily until GH-116886 is solved.
-        sanitizer: [address, undefined]
+        sanitizer: [address, undefined, memory]
     steps:
       - name: Build fuzzers (${{ matrix.sanitizer }})
         id: build
