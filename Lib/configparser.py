@@ -1117,32 +1117,31 @@ class RawConfigParser(MutableMapping):
         # an option line?
         st.indent_level = st.cur_indent_level
 
-        if True:
-            mo = self._optcre.match(line.clean)
-            if mo:
-                st.optname, vi, optval = mo.group('option', 'vi', 'value')
-                if not st.optname:
-                    st.errors.append(ParsingError(fpname, st.lineno, line))
-                st.optname = self.optionxform(st.optname.rstrip())
-                if (self._strict and
-                    (st.sectname, st.optname) in st.elements_added):
-                    raise DuplicateOptionError(st.sectname, st.optname,
-                                            fpname, st.lineno)
-                st.elements_added.add((st.sectname, st.optname))
-                # This check is fine because the OPTCRE cannot
-                # match if it would set optval to None
-                if optval is not None:
-                    optval = optval.strip()
-                    st.cursect[st.optname] = [optval]
-                else:
-                    # valueless option handling
-                    st.cursect[st.optname] = None
-            else:
-                # a non-fatal parsing error occurred. set up the
-                # exception but keep going. the exception will be
-                # raised at the end of the file and will contain a
-                # list of all bogus lines
+        mo = self._optcre.match(line.clean)
+        if mo:
+            st.optname, vi, optval = mo.group('option', 'vi', 'value')
+            if not st.optname:
                 st.errors.append(ParsingError(fpname, st.lineno, line))
+            st.optname = self.optionxform(st.optname.rstrip())
+            if (self._strict and
+                (st.sectname, st.optname) in st.elements_added):
+                raise DuplicateOptionError(st.sectname, st.optname,
+                                        fpname, st.lineno)
+            st.elements_added.add((st.sectname, st.optname))
+            # This check is fine because the OPTCRE cannot
+            # match if it would set optval to None
+            if optval is not None:
+                optval = optval.strip()
+                st.cursect[st.optname] = [optval]
+            else:
+                # valueless option handling
+                st.cursect[st.optname] = None
+        else:
+            # a non-fatal parsing error occurred. set up the
+            # exception but keep going. the exception will be
+            # raised at the end of the file and will contain a
+            # list of all bogus lines
+            st.errors.append(ParsingError(fpname, st.lineno, line))
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
