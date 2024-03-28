@@ -375,6 +375,28 @@ class FilterTests(BaseTest):
                 "appended duplicate changed order of filters"
             )
 
+    def test_argument_validation(self):
+        with self.assertRaises(ValueError):
+            self.module.filterwarnings(action='foo')
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', message=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', category=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', category=int)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', module=0)
+        with self.assertRaises(TypeError):
+            self.module.filterwarnings('ignore', lineno=int)
+        with self.assertRaises(ValueError):
+            self.module.filterwarnings('ignore', lineno=-1)
+        with self.assertRaises(ValueError):
+            self.module.simplefilter(action='foo')
+        with self.assertRaises(TypeError):
+            self.module.simplefilter('ignore', lineno=int)
+        with self.assertRaises(ValueError):
+            self.module.simplefilter('ignore', lineno=-1)
+
     def test_catchwarnings_with_simplefilter_ignore(self):
         with original_warnings.catch_warnings(module=self.module):
             self.module.resetwarnings()
@@ -1238,8 +1260,8 @@ class EnvironmentVariableTests(BaseTest):
              b"  File \"<string>\", line 1, in <module>",
              b'    import sys, warnings; sys.stdout.write(str(sys.warnoptions)); warnings.w'
              b"arn('Message', DeprecationWarning)",
-             b'                                                                  ^^^^^^^^^^'
-             b'^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
+             b'                                                                  ~~~~~~~~~~'
+             b'~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
              b"DeprecationWarning: Message"])
 
     def test_default_filter_configuration(self):

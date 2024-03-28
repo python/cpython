@@ -4,7 +4,7 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper, check_impl_detail
+from test.support import threading_helper, check_impl_detail, requires_specialization
 
 # Skip this module on other interpreters, it is cpython specific:
 if check_impl_detail(cpython=False):
@@ -506,6 +506,7 @@ class TestCallCache(unittest.TestCase):
 
 
 @threading_helper.requires_working_threading()
+@requires_specialization
 class TestRacesDoNotCrash(unittest.TestCase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
@@ -1021,6 +1022,7 @@ class TestRacesDoNotCrash(unittest.TestCase):
 class C:
     pass
 
+@requires_specialization
 class TestInstanceDict(unittest.TestCase):
 
     def setUp(self):

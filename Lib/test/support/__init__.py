@@ -43,7 +43,7 @@ __all__ = [
     "requires_limited_api", "requires_specialization",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
-    "check_impl_detail", "unix_shell", "setswitchinterval",
+    "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
     # os
     "get_pagesize",
     # network
@@ -392,10 +392,10 @@ def skip_if_buildbot(reason=None):
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
     """Returns True if Python is compiled with sanitizer support"""
-    if not (address or memory or ub):
-        raise ValueError('At least one of address, memory, or ub must be True')
+    if not (address or memory or ub or thread):
+        raise ValueError('At least one of address, memory, ub or thread must be True')
 
 
     cflags = sysconfig.get_config_var('CFLAGS') or ''
@@ -412,18 +412,23 @@ def check_sanitizer(*, address=False, memory=False, ub=False):
         '-fsanitize=undefined' in cflags or
         '--with-undefined-behavior-sanitizer' in config_args
     )
+    thread_sanitizer = (
+        '-fsanitize=thread' in cflags or
+        '--with-thread-sanitizer' in config_args
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
-        (ub and ub_sanitizer)
+        (ub and ub_sanitizer) or
+        (thread and thread_sanitizer)
     )
 
 
-def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
+def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False, thread=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    skip = check_sanitizer(address=address, memory=memory, ub=ub, thread=thread)
     return unittest.skipIf(skip, reason)
 
 # gh-89363: True if fork() can hang if Python is built with Address Sanitizer
@@ -432,7 +437,7 @@ HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
 
 
 def set_sanitizer_env_var(env, option):
-    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS', 'TSAN_OPTIONS'):
         if name in env:
             env[name] += f':{option}'
         else:
@@ -515,9 +520,9 @@ MS_WINDOWS = (sys.platform == 'win32')
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
 
-is_android = hasattr(sys, 'getandroidapilevel')
+is_android = sys.platform == "android"
 
-if sys.platform not in ('win32', 'vxworks'):
+if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
 else:
     unix_shell = None
@@ -527,19 +532,44 @@ else:
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
 
-has_fork_support = hasattr(os, "fork") and not is_emscripten and not is_wasi
+is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
+is_apple = is_apple_mobile or sys.platform == "darwin"
+
+has_fork_support = hasattr(os, "fork") and not (
+    # WASM and Apple mobile platforms do not support subprocesses.
+    is_emscripten
+    or is_wasi
+    or is_apple_mobile
+
+    # Although Android supports fork, it's unsafe to call it from Python because
+    # all Android apps are multi-threaded.
+    or is_android
+)
 
 def requires_fork():
     return unittest.skipUnless(has_fork_support, "requires working os.fork()")
 
-has_subprocess_support = not is_emscripten and not is_wasi
+has_subprocess_support = not (
+    # WASM and Apple mobile platforms do not support subprocesses.
+    is_emscripten
+    or is_wasi
+    or is_apple_mobile
+
+    # Although Android supports subproceses, they're almost never useful in
+    # practice (see PEP 738). And most of the tests that use them are calling
+    # sys.executable, which won't work when Python is embedded in an Android app.
+    or is_android
+)
 
 def requires_subprocess():
     """Used for subprocess, os.spawn calls, fd inheritance"""
     return unittest.skipUnless(has_subprocess_support, "requires subprocess support")
 
 # Emscripten's socket emulation and WASI sockets have limitations.
-has_socket_support = not is_emscripten and not is_wasi
+has_socket_support = not (
+    is_emscripten
+    or is_wasi
+)
 
 def requires_working_socket(*, module=False):
     """Skip tests or modules that require working sockets
@@ -767,6 +797,16 @@ def disable_gc():
         if have_gc:
             gc.enable()
 
+@contextlib.contextmanager
+def gc_threshold(*args):
+    import gc
+    old_threshold = gc.get_threshold()
+    gc.set_threshold(*args)
+    try:
+        yield
+    finally:
+        gc.set_threshold(*old_threshold)
+
 
 def python_is_optimized():
     """Find if Python was built with optimizations."""
@@ -796,7 +836,8 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
-if sysconfig.get_config_var('Py_GIL_DISABLED'):
+Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
+if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
     _header = 'nP'
@@ -1122,8 +1163,9 @@ def refcount_test(test):
 def requires_limited_api(test):
     try:
         import _testcapi
+        import _testlimitedcapi
     except ImportError:
-        return unittest.skip('needs _testcapi module')(test)
+        return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
 
 def requires_specialization(test):
@@ -1705,19 +1747,22 @@ def _check_tracemalloc():
 
 
 def check_free_after_iterating(test, iter, cls, args=()):
-    class A(cls):
-        def __del__(self):
-            nonlocal done
-            done = True
-            try:
-                next(it)
-            except StopIteration:
-                pass
-
     done = False
-    it = iter(A(*args))
-    # Issue 26494: Shouldn't crash
-    test.assertRaises(StopIteration, next, it)
+    def wrapper():
+        class A(cls):
+            def __del__(self):
+                nonlocal done
+                done = True
+                try:
+                    next(it)
+                except StopIteration:
+                    pass
+
+        it = iter(A(*args))
+        # Issue 26494: Shouldn't crash
+        test.assertRaises(StopIteration, next, it)
+
+    wrapper()
     # The sequence should be deallocated just after the end of iterating
     gc_collect()
     test.assertTrue(done)
@@ -1756,18 +1801,18 @@ def missing_compiler_executable(cmd_names=[]):
             return cmd[0]
 
 
-_is_android_emulator = None
+_old_android_emulator = None
 def setswitchinterval(interval):
     # Setting a very low gil interval on the Android emulator causes python
     # to hang (issue #26939).
-    minimum_interval = 1e-5
+    minimum_interval = 1e-4   # 100 us
     if is_android and interval < minimum_interval:
-        global _is_android_emulator
-        if _is_android_emulator is None:
-            import subprocess
-            _is_android_emulator = (subprocess.check_output(
-                               ['getprop', 'ro.kernel.qemu']).strip() == b'1')
-        if _is_android_emulator:
+        global _old_android_emulator
+        if _old_android_emulator is None:
+            import platform
+            av = platform.android_ver()
+            _old_android_emulator = av.is_emulator and av.api_level < 24
+        if _old_android_emulator:
             interval = minimum_interval
     return sys.setswitchinterval(interval)
 
@@ -1843,7 +1888,7 @@ class SaveSignals:
 
 def with_pymalloc():
     import _testcapi
-    return _testcapi.WITH_PYMALLOC
+    return _testcapi.WITH_PYMALLOC and not Py_GIL_DISABLED
 
 
 def with_mimalloc():
@@ -2121,19 +2166,11 @@ def set_recursion_limit(limit):
         sys.setrecursionlimit(original_limit)
 
 def infinite_recursion(max_depth=None):
-    """Set a lower limit for tests that interact with infinite recursions
-    (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
-    debug windows builds, due to not enough functions being inlined the
-    stack size might not handle the default recursion limit (1000). See
-    bpo-11105 for details."""
     if max_depth is None:
-        if not python_is_optimized() or Py_DEBUG:
-            # Python built without compiler optimizations or in debug mode
-            # usually consumes more stack memory per function call.
-            # Unoptimized number based on what works under a WASI debug build.
-            max_depth = 50
-        else:
-            max_depth = 100
+        # Pick a number large enough to cause problems
+        # but not take too long for code that can handle
+        # very deep recursion.
+        max_depth = 20_000
     elif max_depth < 3:
         raise ValueError("max_depth must be at least 3, got {max_depth}")
     depth = get_recursion_depth()
@@ -2195,7 +2232,9 @@ def _findwheel(pkgname):
     If set, the wheels are searched for in WHEEL_PKG_DIR (see ensurepip).
     Otherwise, they are searched for in the test directory.
     """
-    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or TEST_HOME_DIR
+    wheel_dir = sysconfig.get_config_var('WHEEL_PKG_DIR') or os.path.join(
+        TEST_HOME_DIR, 'wheeldata',
+    )
     filenames = os.listdir(wheel_dir)
     filenames = sorted(filenames, reverse=True)  # approximate "newest" first
     for filename in filenames:
@@ -2212,16 +2251,25 @@ def _findwheel(pkgname):
 # and returns the path to the venv directory and the path to the python executable
 @contextlib.contextmanager
 def setup_venv_with_pip_setuptools_wheel(venv_dir):
+    import shlex
     import subprocess
     from .os_helper import temp_cwd
+
+    def run_command(cmd):
+        if verbose:
+            print()
+            print('Run:', ' '.join(map(shlex.quote, cmd)))
+            subprocess.run(cmd, check=True)
+        else:
+            subprocess.run(cmd,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT,
+                           check=True)
 
     with temp_cwd() as temp_dir:
         # Create virtual environment to get setuptools
         cmd = [sys.executable, '-X', 'dev', '-m', 'venv', venv_dir]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
+        run_command(cmd)
 
         venv = os.path.join(temp_dir, venv_dir)
 
@@ -2236,10 +2284,7 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
                '-m', 'pip', 'install',
                _findwheel('setuptools'),
                _findwheel('wheel')]
-        if verbose:
-            print()
-            print('Run:', ' '.join(cmd))
-        subprocess.run(cmd, check=True)
+        run_command(cmd)
 
         yield python
 
@@ -2362,6 +2407,46 @@ def sleeping_retry(timeout, err_msg=None, /,
         delay = min(delay * 2, max_delay)
 
 
+class CPUStopwatch:
+    """Context manager to roughly time a CPU-bound operation.
+
+    Disables GC. Uses CPU time if it can (i.e. excludes sleeps & time of
+    other processes).
+
+    N.B.:
+    - This *includes* time spent in other threads.
+    - Some systems only have a coarse resolution; check
+      stopwatch.clock_info.rseolution if.
+
+    Usage:
+
+    with ProcessStopwatch() as stopwatch:
+        ...
+    elapsed = stopwatch.seconds
+    resolution = stopwatch.clock_info.resolution
+    """
+    def __enter__(self):
+        get_time = time.process_time
+        clock_info = time.get_clock_info('process_time')
+        if get_time() <= 0:  # some platforms like WASM lack process_time()
+            get_time = time.monotonic
+            clock_info = time.get_clock_info('monotonic')
+        self.context = disable_gc()
+        self.context.__enter__()
+        self.get_time = get_time
+        self.clock_info = clock_info
+        self.start_time = get_time()
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            end_time = self.get_time()
+        finally:
+            result = self.context.__exit__(*exc)
+        self.seconds = end_time - self.start_time
+        return result
+
+
 @contextlib.contextmanager
 def adjust_int_max_str_digits(max_digits):
     """Temporarily change the integer string conversion length limit."""
@@ -2372,8 +2457,6 @@ def adjust_int_max_str_digits(max_digits):
     finally:
         sys.set_int_max_str_digits(current)
 
-#For recursion tests, easily exceeds default recursion limit
-EXCEEDS_RECURSION_LIMIT = 5000
 
 def _get_c_recursion_limit():
     try:
@@ -2381,10 +2464,16 @@ def _get_c_recursion_limit():
         return _testcapi.Py_C_RECURSION_LIMIT
     except (ImportError, AttributeError):
         # Originally taken from Include/cpython/pystate.h .
-        return 1500
+        if sys.platform == 'win32':
+            return 4000
+        else:
+            return 10000
 
 # The default C recursion limit.
 Py_C_RECURSION_LIMIT = _get_c_recursion_limit()
+
+#For recursion tests, easily exceeds default recursion limit
+EXCEEDS_RECURSION_LIMIT = Py_C_RECURSION_LIMIT * 3
 
 #Windows doesn't have os.uname() but it doesn't support s390x.
 skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',

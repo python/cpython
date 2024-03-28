@@ -525,17 +525,38 @@ class AST_Tests(unittest.TestCase):
             if name == 'Index':
                 continue
             if self._is_ast_node(name, item):
-                x = item()
+                x = self._construct_ast_class(item)
                 if isinstance(x, ast.AST):
                     self.assertIs(type(x._fields), tuple)
+
+    def _construct_ast_class(self, cls):
+        kwargs = {}
+        for name, typ in cls.__annotations__.items():
+            if typ is str:
+                kwargs[name] = 'capybara'
+            elif typ is int:
+                kwargs[name] = 42
+            elif typ is object:
+                kwargs[name] = b'capybara'
+            elif isinstance(typ, type) and issubclass(typ, ast.AST):
+                kwargs[name] = self._construct_ast_class(typ)
+        return cls(**kwargs)
 
     def test_arguments(self):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
+        self.assertEqual(x.__annotations__, {
+            'posonlyargs': list[ast.arg],
+            'args': list[ast.arg],
+            'vararg': ast.arg | None,
+            'kwonlyargs': list[ast.arg],
+            'kw_defaults': list[ast.expr],
+            'kwarg': ast.arg | None,
+            'defaults': list[ast.expr],
+        })
 
-        with self.assertRaises(AttributeError):
-            x.args
+        self.assertEqual(x.args, [])
         self.assertIsNone(x.vararg)
 
         x = ast.arguments(*range(1, 8))
@@ -551,7 +572,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x._fields, 666)
 
     def test_field_attr_writable(self):
-        x = ast.Constant()
+        x = ast.Constant(1)
         # We can assign to _fields
         x._fields = 666
         self.assertEqual(x._fields, 666)
@@ -611,15 +632,22 @@ class AST_Tests(unittest.TestCase):
 
         self.assertEqual([str(w.message) for w in wlog], [
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            "Constant.__init__ missing 1 required positional argument: 'value'. This will become "
+            'an error in Python 3.15.',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            "Constant.__init__ missing 1 required positional argument: 'value'. This will become "
+            'an error in Python 3.15.',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
+            "Constant.__init__ got an unexpected keyword argument 'foo'. Support for "
+            'arbitrary keyword arguments is deprecated and will be removed in Python '
+            '3.15.',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
             'Attribute n is deprecated and will be removed in Python 3.14; use value instead',
             'ast.Num is deprecated and will be removed in Python 3.14; use ast.Constant instead',
@@ -636,7 +664,8 @@ class AST_Tests(unittest.TestCase):
         ])
 
     def test_classattrs(self):
-        x = ast.Constant()
+        with self.assertWarns(DeprecationWarning):
+            x = ast.Constant()
         self.assertEqual(x._fields, ('value', 'kind'))
 
         with self.assertRaises(AttributeError):
@@ -651,7 +680,7 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             x.foobar
 
-        x = ast.Constant(lineno=2)
+        x = ast.Constant(lineno=2, value=3)
         self.assertEqual(x.lineno, 2)
 
         x = ast.Constant(42, lineno=0)
@@ -662,8 +691,9 @@ class AST_Tests(unittest.TestCase):
         self.assertRaises(TypeError, ast.Constant, 1, None, 2)
         self.assertRaises(TypeError, ast.Constant, 1, None, 2, lineno=0)
 
-        # Arbitrary keyword arguments are supported
-        self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        # Arbitrary keyword arguments are supported (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
 
         with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
             ast.Constant(1, value=2)
@@ -815,11 +845,11 @@ class AST_Tests(unittest.TestCase):
         assertBytesDeprecated(self.assertNotIsInstance, Constant('42'), Bytes)
         assertNameConstantDeprecated(self.assertNotIsInstance, Constant(42), NameConstant)
         assertEllipsisDeprecated(self.assertNotIsInstance, Constant(42), Ellipsis)
-        assertNumDeprecated(self.assertNotIsInstance, Constant(), Num)
-        assertStrDeprecated(self.assertNotIsInstance, Constant(), Str)
-        assertBytesDeprecated(self.assertNotIsInstance, Constant(), Bytes)
-        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(), NameConstant)
-        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(), Ellipsis)
+        assertNumDeprecated(self.assertNotIsInstance, Constant(None), Num)
+        assertStrDeprecated(self.assertNotIsInstance, Constant(None), Str)
+        assertBytesDeprecated(self.assertNotIsInstance, Constant(None), Bytes)
+        assertNameConstantDeprecated(self.assertNotIsInstance, Constant(1), NameConstant)
+        assertEllipsisDeprecated(self.assertNotIsInstance, Constant(None), Ellipsis)
 
         class S(str): pass
         with assertStrDeprecated():
@@ -888,8 +918,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.body, body)
 
     def test_nodeclasses(self):
-        # Zero arguments constructor explicitly allowed
-        x = ast.BinOp()
+        # Zero arguments constructor explicitly allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.BinOp()
         self.assertEqual(x._fields, ('left', 'op', 'right'))
 
         # Random attribute allowed too
@@ -927,8 +958,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # Random kwargs also allowed
-        x = ast.BinOp(1, 2, 3, foobarbaz=42)
+        # Random kwargs also allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.BinOp(1, 2, 3, foobarbaz=42)
         self.assertEqual(x.foobarbaz, 42)
 
     def test_no_fields(self):
@@ -941,8 +973,9 @@ class AST_Tests(unittest.TestCase):
 
         for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
             for ast in (compile(i, "?", "exec", 0x400) for i in exec_tests):
-                ast2 = pickle.loads(pickle.dumps(ast, protocol))
-                self.assertEqual(to_tuple(ast2), to_tuple(ast))
+                with self.subTest(ast=ast, protocol=protocol):
+                    ast2 = pickle.loads(pickle.dumps(ast, protocol))
+                    self.assertEqual(to_tuple(ast2), to_tuple(ast))
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
@@ -1045,18 +1078,14 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('lambda x=1, /: ...', feature_version=(3, 7))
 
-    def test_parenthesized_with_feature_version(self):
-        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 10))
-        # While advertised as a feature in Python 3.10, this was allowed starting 3.9
-        ast.parse('with (CtxManager() as example): ...', feature_version=(3, 9))
-        with self.assertRaises(SyntaxError):
-            ast.parse('with (CtxManager() as example): ...', feature_version=(3, 8))
-        ast.parse('with CtxManager() as example: ...', feature_version=(3, 8))
-
     def test_assignment_expression_feature_version(self):
         ast.parse('(x := 0)', feature_version=(3, 8))
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
+
+    def test_conditional_context_managers_parse_with_low_feature_version(self):
+        # regression test for gh-115881
+        ast.parse('with (x() if y else z()): ...', feature_version=(3, 8))
 
     def test_exception_groups_feature_version(self):
         code = dedent('''
@@ -1126,7 +1155,7 @@ class AST_Tests(unittest.TestCase):
     def test_ast_recursion_limit(self):
         fail_depth = support.EXCEEDS_RECURSION_LIMIT
         crash_depth = 100_000
-        success_depth = 1200
+        success_depth = int(support.Py_C_RECURSION_LIMIT * 0.8)
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
             success_depth = min(success_depth, remaining)
@@ -1314,8 +1343,9 @@ Module(
             'lineno=1, col_offset=4, end_lineno=1, end_col_offset=5), lineno=1, '
             'col_offset=0, end_lineno=1, end_col_offset=5))'
         )
-        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1)
-        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None))
+        func = ast.Name('spam', ast.Load())
+        src = ast.Call(col_offset=1, lineno=1, end_lineno=1, end_col_offset=1, func=func)
+        new = ast.copy_location(src, ast.Call(col_offset=None, lineno=None, func=func))
         self.assertIsNone(new.end_lineno)
         self.assertIsNone(new.end_col_offset)
         self.assertEqual(new.lineno, 1)
@@ -1574,15 +1604,15 @@ Module(
         self.assertIn('sleep', ns)
 
     def test_recursion_direct(self):
-        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
     def test_recursion_indirect(self):
-        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
-        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0)
+        e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
+        f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = f
         f.operand = e
         with self.assertRaises(RecursionError):
@@ -2868,6 +2898,23 @@ class NodeTransformerTests(ASTTestMixin, BaseNodeVisitorCases, unittest.TestCase
                 return node
 
         self.assertASTTransformation(PrintToLog, code, expected)
+
+
+class ASTConstructorTests(unittest.TestCase):
+    """Test the autogenerated constructors for AST nodes."""
+
+    def test_FunctionDef(self):
+        args = ast.arguments()
+        self.assertEqual(args.args, [])
+        self.assertEqual(args.posonlyargs, [])
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"FunctionDef\.__init__ missing 1 required positional argument: 'name'"):
+            node = ast.FunctionDef(args=args)
+        self.assertFalse(hasattr(node, "name"))
+        self.assertEqual(node.decorator_list, [])
+        node = ast.FunctionDef(name='foo', args=args)
+        self.assertEqual(node.name, 'foo')
+        self.assertEqual(node.decorator_list, [])
 
 
 @support.cpython_only

@@ -152,6 +152,8 @@ class PyMemDebugTests(unittest.TestCase):
             self.assertGreaterEqual(count, i*5-2)
 
 
+# Py_GIL_DISABLED requires mimalloc (not malloc)
+@unittest.skipIf(support.Py_GIL_DISABLED, 'need malloc')
 class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 
@@ -159,6 +161,11 @@ class PyMemMallocDebugTests(PyMemDebugTests):
 @unittest.skipUnless(support.with_pymalloc(), 'need pymalloc')
 class PyMemPymallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'pymalloc_debug'
+
+
+@unittest.skipUnless(support.with_mimalloc(), 'need mimaloc')
+class PyMemMimallocDebugTests(PyMemDebugTests):
+    PYTHONMALLOC = 'mimalloc_debug'
 
 
 @unittest.skipUnless(support.Py_DEBUG, 'need Py_DEBUG')

@@ -2,10 +2,11 @@ import contextlib
 import collections
 import collections.abc
 from collections import defaultdict
-from functools import lru_cache, wraps
+from functools import lru_cache, wraps, reduce
 import gc
 import inspect
 import itertools
+import operator
 import pickle
 import re
 import sys
@@ -30,7 +31,7 @@ from typing import reveal_type
 from typing import dataclass_transform
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
-from typing import NamedTuple, NotRequired, Required, TypedDict
+from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
@@ -1769,6 +1770,26 @@ class UnionTests(BaseTestCase):
         v = Union[u, Employee]
         self.assertEqual(v, Union[int, float, Employee])
 
+    def test_union_of_unhashable(self):
+        class UnhashableMeta(type):
+            __hash__ = None
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        self.assertEqual(Union[A, B].__args__, (A, B))
+        union1 = Union[A, B]
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = Union[int, B]
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = Union[A, int]
+        with self.assertRaises(TypeError):
+            hash(union3)
+
     def test_repr(self):
         self.assertEqual(repr(Union), 'typing.Union')
         u = Union[Employee, int]
@@ -3448,8 +3469,8 @@ class ProtocolTests(BaseTestCase):
 
         self.assertNotIn("__protocol_attrs__", vars(NonP))
         self.assertNotIn("__protocol_attrs__", vars(NonPR))
-        self.assertNotIn("__callable_proto_members_only__", vars(NonP))
-        self.assertNotIn("__callable_proto_members_only__", vars(NonPR))
+        self.assertNotIn("__non_callable_proto_members__", vars(NonP))
+        self.assertNotIn("__non_callable_proto_members__", vars(NonPR))
 
         self.assertEqual(get_protocol_members(P), {"x"})
         self.assertEqual(get_protocol_members(PR), {"meth"})
@@ -3533,13 +3554,26 @@ class ProtocolTests(BaseTestCase):
 
     def test_issubclass_fails_correctly(self):
         @runtime_checkable
-        class P(Protocol):
+        class NonCallableMembers(Protocol):
             x = 1
+
+        class NotRuntimeCheckable(Protocol):
+            def callable_member(self) -> int: ...
+
+        @runtime_checkable
+        class RuntimeCheckable(Protocol):
+            def callable_member(self) -> int: ...
 
         class C: pass
 
-        with self.assertRaisesRegex(TypeError, r"issubclass\(\) arg 1 must be a class"):
-            issubclass(C(), P)
+        # These three all exercise different code paths,
+        # but should result in the same error message:
+        for protocol in NonCallableMembers, NotRuntimeCheckable, RuntimeCheckable:
+            with self.subTest(proto_name=protocol.__name__):
+                with self.assertRaisesRegex(
+                    TypeError, r"issubclass\(\) arg 1 must be a class"
+                ):
+                    issubclass(C(), protocol)
 
     def test_defining_generic_protocols(self):
         T = TypeVar('T')
@@ -4092,6 +4126,7 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsInstance(42, ProtocolWithMixedMembers)
 
     def test_protocol_issubclass_error_message(self):
+        @runtime_checkable
         class Vec2D(Protocol):
             x: float
             y: float
@@ -4106,6 +4141,39 @@ class ProtocolTests(BaseTestCase):
         )
         with self.assertRaisesRegex(TypeError, re.escape(expected_error_message)):
             issubclass(int, Vec2D)
+
+    def test_nonruntime_protocol_interaction_with_evil_classproperty(self):
+        class classproperty:
+            def __get__(self, instance, type):
+                raise RuntimeError("NO")
+
+        class Commentable(Protocol):
+            evil = classproperty()
+
+        # recognised as a protocol attr,
+        # but not actually accessed by the protocol metaclass
+        # (which would raise RuntimeError) for non-runtime protocols.
+        # See gh-113320
+        self.assertEqual(get_protocol_members(Commentable), {"evil"})
+
+    def test_runtime_protocol_interaction_with_evil_classproperty(self):
+        class CustomError(Exception): pass
+
+        class classproperty:
+            def __get__(self, instance, type):
+                raise CustomError
+
+        with self.assertRaises(TypeError) as cm:
+            @runtime_checkable
+            class Commentable(Protocol):
+                evil = classproperty()
+
+        exc = cm.exception
+        self.assertEqual(
+            exc.args[0],
+            "Failed to determine whether protocol member 'evil' is a method member"
+        )
+        self.assertIs(type(exc.__cause__), CustomError)
 
 
 class GenericTests(BaseTestCase):
@@ -4275,6 +4343,16 @@ class GenericTests(BaseTestCase):
         c = C()
         c.bar = 'abc'
         self.assertEqual(c.__dict__, {'bar': 'abc'})
+
+    def test_setattr_exceptions(self):
+        class Immutable[T]:
+            def __setattr__(self, key, value):
+                raise RuntimeError("immutable")
+
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `Immutable` instance
+        # returned by the `Immutable[int]()` call
+        self.assertIsInstance(Immutable[int](), Immutable)
 
     def test_subscripted_generics_as_proxies(self):
         T = TypeVar('T')
@@ -4578,8 +4656,6 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             Tuple[Optional]
         with self.assertRaises(TypeError):
-            ClassVar[ClassVar[int]]
-        with self.assertRaises(TypeError):
             List[ClassVar[int]]
 
     def test_fail_with_bare_generic(self):
@@ -4872,6 +4948,75 @@ class GenericTests(BaseTestCase):
         class B(Generic[S]): ...
         class C(List[int], B): ...
         self.assertEqual(C.__mro__, (C, list, B, Generic, object))
+
+    def test_multiple_inheritance_non_type_with___mro_entries__(self):
+        class GoodEntries:
+            def __mro_entries__(self, bases):
+                return (object,)
+
+        class A(List[int], GoodEntries()): ...
+
+        self.assertEqual(A.__mro__, (A, list, Generic, object))
+
+    def test_multiple_inheritance_non_type_without___mro_entries__(self):
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(TypeError, r"^bases must be types"):
+            class A(List[int], object()): ...
+
+    def test_multiple_inheritance_non_type_bad___mro_entries__(self):
+        class BadEntries:
+            def __mro_entries__(self, bases):
+                return None
+
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(
+            TypeError,
+            r"^__mro_entries__ must return a tuple",
+        ):
+            class A(List[int], BadEntries()): ...
+
+    def test_multiple_inheritance___mro_entries___returns_non_type(self):
+        class BadEntries:
+            def __mro_entries__(self, bases):
+                return (object(),)
+
+        # Error should be from the type machinery, not from typing.py
+        with self.assertRaisesRegex(
+            TypeError,
+            r"^bases must be types",
+        ):
+            class A(List[int], BadEntries()): ...
+
+    def test_multiple_inheritance_with_genericalias(self):
+        class A(typing.Sized, list[int]): ...
+
+        self.assertEqual(
+            A.__mro__,
+            (A, collections.abc.Sized, Generic, list, object),
+        )
+
+    def test_multiple_inheritance_with_genericalias_2(self):
+        T = TypeVar("T")
+
+        class BaseSeq(typing.Sequence[T]): ...
+        class MySeq(List[T], BaseSeq[T]): ...
+
+        self.assertEqual(
+            MySeq.__mro__,
+            (
+                MySeq,
+                list,
+                BaseSeq,
+                collections.abc.Sequence,
+                collections.abc.Reversible,
+                collections.abc.Collection,
+                collections.abc.Sized,
+                collections.abc.Iterable,
+                collections.abc.Container,
+                Generic,
+                object,
+            ),
+        )
 
     def test_init_subclass_super_called(self):
         class FinalException(Exception):
@@ -5380,10 +5525,8 @@ class OverrideDecoratorTests(BaseTestCase):
         self.assertFalse(hasattr(WithOverride.some, "__override__"))
 
     def test_multiple_decorators(self):
-        import functools
-
         def with_wraps(f):  # similar to `lru_cache` definition
-            @functools.wraps(f)
+            @wraps(f)
             def wrapper(*args, **kwargs):
                 return f(*args, **kwargs)
             return wrapper
@@ -5637,7 +5780,7 @@ class ForwardRefTests(BaseTestCase):
         def cmp(o1, o2):
             return o1 == o2
 
-        with infinite_recursion():
+        with infinite_recursion(25):
             r1 = namespace1()
             r2 = namespace2()
             self.assertIsNot(r1, r2)
@@ -5721,6 +5864,12 @@ class ForwardRefTests(BaseTestCase):
 
         with self.assertRaises(SyntaxError):
             get_type_hints(foo)
+
+    def test_syntax_error_empty_string(self):
+        for form in [typing.List, typing.Set, typing.Type, typing.Deque]:
+            with self.subTest(form=form):
+                with self.assertRaises(SyntaxError):
+                    form['']
 
     def test_name_error(self):
 
@@ -5862,16 +6011,6 @@ class ForwardRefTests(BaseTestCase):
         expected_result = {'foo': typing.ClassVar[int]}
         for clazz in [C, D, E, F]:
             self.assertEqual(get_type_hints(clazz), expected_result)
-
-    def test_nested_classvar_fails_forward_ref_check(self):
-        class E:
-            foo: 'typing.ClassVar[typing.ClassVar[int]]' = 7
-        class F:
-            foo: ClassVar['ClassVar[int]'] = 7
-
-        for clazz in [E, F]:
-            with self.assertRaises(TypeError):
-                get_type_hints(clazz)
 
     def test_meta_no_type_check(self):
         depr_msg = (
@@ -6029,8 +6168,6 @@ class OverloadTests(BaseTestCase):
 
             self.assertEqual(list(get_overloads(impl)), overloads)
 
-
-# Definitions needed for features introduced in Python 3.6
 
 from test.typinganndata import (
     ann_module, ann_module2, ann_module3, ann_module5, ann_module6,
@@ -8185,6 +8322,69 @@ class TypedDictTests(BaseTestCase):
                 self.assertEqual(klass.__optional_keys__, set())
                 self.assertIsInstance(klass(), dict)
 
+    def test_readonly_inheritance(self):
+        class Base1(TypedDict):
+            a: ReadOnly[int]
+
+        class Child1(Base1):
+            b: str
+
+        self.assertEqual(Child1.__readonly_keys__, frozenset({'a'}))
+        self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
+
+        class Base2(TypedDict):
+            a: ReadOnly[int]
+
+        class Child2(Base2):
+            b: str
+
+        self.assertEqual(Child1.__readonly_keys__, frozenset({'a'}))
+        self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
+
+    def test_cannot_make_mutable_key_readonly(self):
+        class Base(TypedDict):
+            a: int
+
+        with self.assertRaises(TypeError):
+            class Child(Base):
+                a: ReadOnly[int]
+
+    def test_can_make_readonly_key_mutable(self):
+        class Base(TypedDict):
+            a: ReadOnly[int]
+
+        class Child(Base):
+            a: int
+
+        self.assertEqual(Child.__readonly_keys__, frozenset())
+        self.assertEqual(Child.__mutable_keys__, frozenset({'a'}))
+
+    def test_combine_qualifiers(self):
+        class AllTheThings(TypedDict):
+            a: Annotated[Required[ReadOnly[int]], "why not"]
+            b: Required[Annotated[ReadOnly[int], "why not"]]
+            c: ReadOnly[NotRequired[Annotated[int, "why not"]]]
+            d: NotRequired[Annotated[int, "why not"]]
+
+        self.assertEqual(AllTheThings.__required_keys__, frozenset({'a', 'b'}))
+        self.assertEqual(AllTheThings.__optional_keys__, frozenset({'c', 'd'}))
+        self.assertEqual(AllTheThings.__readonly_keys__, frozenset({'a', 'b', 'c'}))
+        self.assertEqual(AllTheThings.__mutable_keys__, frozenset({'d'}))
+
+        self.assertEqual(
+            get_type_hints(AllTheThings, include_extras=False),
+            {'a': int, 'b': int, 'c': int, 'd': int},
+        )
+        self.assertEqual(
+            get_type_hints(AllTheThings, include_extras=True),
+            {
+                'a': Annotated[Required[ReadOnly[int]], 'why not'],
+                'b': Required[Annotated[ReadOnly[int], 'why not']],
+                'c': ReadOnly[NotRequired[Annotated[int, 'why not']]],
+                'd': NotRequired[Annotated[int, 'why not']],
+            },
+        )
+
 
 class RequiredTests(BaseTestCase):
 
@@ -8400,6 +8600,76 @@ class AnnotatedTests(BaseTestCase):
         self.assertEqual(A.__metadata__, (4, 5))
         self.assertEqual(A.__origin__, int)
 
+    def test_deduplicate_from_union(self):
+        # Regular:
+        self.assertEqual(get_args(Annotated[int, 1] | int),
+                         (Annotated[int, 1], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], int]),
+                         (Annotated[int, 1], int))
+        self.assertEqual(get_args(Annotated[int, 1] | Annotated[int, 2] | int),
+                         (Annotated[int, 1], Annotated[int, 2], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], Annotated[int, 2], int]),
+                         (Annotated[int, 1], Annotated[int, 2], int))
+        self.assertEqual(get_args(Annotated[int, 1] | Annotated[str, 1] | int),
+                         (Annotated[int, 1], Annotated[str, 1], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], Annotated[str, 1], int]),
+                         (Annotated[int, 1], Annotated[str, 1], int))
+
+        # Duplicates:
+        self.assertEqual(Annotated[int, 1] | Annotated[int, 1] | int,
+                         Annotated[int, 1] | int)
+        self.assertEqual(Union[Annotated[int, 1], Annotated[int, 1], int],
+                         Union[Annotated[int, 1], int])
+
+        # Unhashable metadata:
+        self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[int, set()] | int),
+                         (str, Annotated[int, {}], Annotated[int, set()], int))
+        self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[int, set()], int]),
+                         (str, Annotated[int, {}], Annotated[int, set()], int))
+        self.assertEqual(get_args(str | Annotated[int, {}] | Annotated[str, {}] | int),
+                         (str, Annotated[int, {}], Annotated[str, {}], int))
+        self.assertEqual(get_args(Union[str, Annotated[int, {}], Annotated[str, {}], int]),
+                         (str, Annotated[int, {}], Annotated[str, {}], int))
+
+        self.assertEqual(get_args(Annotated[int, 1] | str | Annotated[str, {}] | int),
+                         (Annotated[int, 1], str, Annotated[str, {}], int))
+        self.assertEqual(get_args(Union[Annotated[int, 1], str, Annotated[str, {}], int]),
+                         (Annotated[int, 1], str, Annotated[str, {}], int))
+
+        import dataclasses
+        @dataclasses.dataclass
+        class ValueRange:
+            lo: int
+            hi: int
+        v = ValueRange(1, 2)
+        self.assertEqual(get_args(Annotated[int, v] | None),
+                         (Annotated[int, v], types.NoneType))
+        self.assertEqual(get_args(Union[Annotated[int, v], None]),
+                         (Annotated[int, v], types.NoneType))
+        self.assertEqual(get_args(Optional[Annotated[int, v]]),
+                         (Annotated[int, v], types.NoneType))
+
+        # Unhashable metadata duplicated:
+        self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
+                         Annotated[int, {}] | int)
+        self.assertEqual(Annotated[int, {}] | Annotated[int, {}] | int,
+                         int | Annotated[int, {}])
+        self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
+                         Union[Annotated[int, {}], int])
+        self.assertEqual(Union[Annotated[int, {}], Annotated[int, {}], int],
+                         Union[int, Annotated[int, {}]])
+
+    def test_order_in_union(self):
+        expr1 = Annotated[int, 1] | str | Annotated[str, {}] | int
+        for args in itertools.permutations(get_args(expr1)):
+            with self.subTest(args=args):
+                self.assertEqual(expr1, reduce(operator.or_, args))
+
+        expr2 = Union[Annotated[int, 1], str, Annotated[str, {}], int]
+        for args in itertools.permutations(get_args(expr2)):
+            with self.subTest(args=args):
+                self.assertEqual(expr2, Union[args])
+
     def test_specialize(self):
         L = Annotated[List[T], "my decoration"]
         LI = Annotated[List[int], "my decoration"]
@@ -8420,6 +8690,16 @@ class AnnotatedTests(BaseTestCase):
             {Annotated[int, 4, 5], Annotated[int, 4, 5], Annotated[T, 4, 5]},
             {Annotated[int, 4, 5], Annotated[T, 4, 5]}
         )
+        # Unhashable `metadata` raises `TypeError`:
+        a1 = Annotated[int, []]
+        with self.assertRaises(TypeError):
+            hash(a1)
+
+        class A:
+            __hash__ = None
+        a2 = Annotated[int, A()]
+        with self.assertRaises(TypeError):
+            hash(a2)
 
     def test_instantiate(self):
         class C:
@@ -8444,6 +8724,17 @@ class AnnotatedTests(BaseTestCase):
         MyCount = Annotated[typing.Counter[T], "my decoration"]
         self.assertEqual(MyCount([4, 4, 5]), {4: 2, 5: 1})
         self.assertEqual(MyCount[int]([4, 4, 5]), {4: 2, 5: 1})
+
+    def test_instantiate_immutable(self):
+        class C:
+            def __setattr__(self, key, value):
+                raise Exception("should be ignored")
+
+        A = Annotated[C, "a decoration"]
+        # gh-115165: This used to cause RuntimeError to be raised
+        # when we tried to set `__orig_class__` on the `C` instance
+        # returned by the `A()` call
+        self.assertIsInstance(A(), C)
 
     def test_cannot_instantiate_forward(self):
         A = Annotated["int", (5, 6)]
@@ -8475,6 +8766,34 @@ class AnnotatedTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(C, globals())['classvar'], ClassVar[int])
         self.assertEqual(get_type_hints(C, globals())['const'], Final[int])
+
+    def test_special_forms_nesting(self):
+        # These are uncommon types and are to ensure runtime
+        # is lax on validation. See gh-89547 for more context.
+        class CF:
+            x: ClassVar[Final[int]]
+
+        class FC:
+            x: Final[ClassVar[int]]
+
+        class ACF:
+            x: Annotated[ClassVar[Final[int]], "a decoration"]
+
+        class CAF:
+            x: ClassVar[Annotated[Final[int], "a decoration"]]
+
+        class AFC:
+            x: Annotated[Final[ClassVar[int]], "a decoration"]
+
+        class FAC:
+            x: Final[Annotated[ClassVar[int], "a decoration"]]
+
+        self.assertEqual(get_type_hints(CF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(FC, globals())['x'], Final[ClassVar[int]])
+        self.assertEqual(get_type_hints(ACF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(CAF, globals())['x'], ClassVar[Final[int]])
+        self.assertEqual(get_type_hints(AFC, globals())['x'], Final[ClassVar[int]])
+        self.assertEqual(get_type_hints(FAC, globals())['x'], Final[ClassVar[int]])
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError, "Cannot subclass .*Annotated"):
@@ -8674,6 +8993,40 @@ class AnnotatedTests(BaseTestCase):
         class X(Annotated[int, (1, 10)]): ...
         self.assertEqual(X.__mro__, (X, int, object),
                          "Annotated should be transparent.")
+
+    def test_annotated_cached_with_types(self):
+        class A(str): ...
+        class B(str): ...
+
+        field_a1 = Annotated[str, A("X")]
+        field_a2 = Annotated[str, B("X")]
+        a1_metadata = field_a1.__metadata__[0]
+        a2_metadata = field_a2.__metadata__[0]
+
+        self.assertIs(type(a1_metadata), A)
+        self.assertEqual(a1_metadata, A("X"))
+        self.assertIs(type(a2_metadata), B)
+        self.assertEqual(a2_metadata, B("X"))
+        self.assertIsNot(type(a1_metadata), type(a2_metadata))
+
+        field_b1 = Annotated[str, A("Y")]
+        field_b2 = Annotated[str, B("Y")]
+        b1_metadata = field_b1.__metadata__[0]
+        b2_metadata = field_b2.__metadata__[0]
+
+        self.assertIs(type(b1_metadata), A)
+        self.assertEqual(b1_metadata, A("Y"))
+        self.assertIs(type(b2_metadata), B)
+        self.assertEqual(b2_metadata, B("Y"))
+        self.assertIsNot(type(b1_metadata), type(b2_metadata))
+
+        field_c1 = Annotated[int, 1]
+        field_c2 = Annotated[int, 1.0]
+        field_c3 = Annotated[int, True]
+
+        self.assertIs(type(field_c1.__metadata__[0]), int)
+        self.assertIs(type(field_c2.__metadata__[0]), float)
+        self.assertIs(type(field_c3.__metadata__[0]), bool)
 
 
 class TypeAliasTests(BaseTestCase):

@@ -118,6 +118,10 @@ import re
 import sys
 import functools
 import itertools
+try:
+    import _wmi
+except ImportError:
+    _wmi = None
 
 ### Globals & Constants
 
@@ -312,24 +316,26 @@ def _syscmd_ver(system='', release='', version='',
         version = _norm_version(version)
     return system, release, version
 
-try:
-    import _wmi
-except ImportError:
-    def _wmi_query(*keys):
+
+def _wmi_query(table, *keys):
+    global _wmi
+    if not _wmi:
         raise OSError("not supported")
-else:
-    def _wmi_query(table, *keys):
-        table = {
-            "OS": "Win32_OperatingSystem",
-            "CPU": "Win32_Processor",
-        }[table]
+    table = {
+        "OS": "Win32_OperatingSystem",
+        "CPU": "Win32_Processor",
+    }[table]
+    try:
         data = _wmi.exec_query("SELECT {} FROM {}".format(
             ",".join(keys),
             table,
         )).split("\0")
-        split_data = (i.partition("=") for i in data)
-        dict_data = {i[0]: i[2] for i in split_data}
-        return (dict_data[k] for k in keys)
+    except OSError:
+        _wmi = None
+        raise OSError("not supported")
+    split_data = (i.partition("=") for i in data)
+    dict_data = {i[0]: i[2] for i in split_data}
+    return (dict_data[k] for k in keys)
 
 
 _WIN32_CLIENT_RELEASES = [
@@ -364,10 +370,7 @@ def win32_is_iot():
 
 def win32_edition():
     try:
-        try:
-            import winreg
-        except ImportError:
-            import _winreg as winreg
+        import winreg
     except ImportError:
         pass
     else:
@@ -426,10 +429,7 @@ def _win32_ver(version, csd, ptype):
                 csd = 'SP' + csd[13:]
 
     try:
-        try:
-            import winreg
-        except ImportError:
-            import _winreg as winreg
+        import winreg
     except ImportError:
         pass
     else:
@@ -497,7 +497,7 @@ def mac_ver(release='', versioninfo=('', '', ''), machine=''):
     return release, versioninfo, machine
 
 def _java_getprop(name, default):
-
+    """This private helper is deprecated in 3.13 and will be removed in 3.15"""
     from java.lang import System
     try:
         value = System.getProperty(name)
@@ -519,6 +519,8 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
         given as parameters (which all default to '').
 
     """
+    import warnings
+    warnings._deprecated('java_ver', remove=(3, 15))
     # Import the needed APIs
     try:
         import java.lang
@@ -539,6 +541,47 @@ def java_ver(release='', vendor='', vminfo=('', '', ''), osinfo=('', '', '')):
     osinfo = os_name, os_version, os_arch
 
     return release, vendor, vminfo, osinfo
+
+
+AndroidVer = collections.namedtuple(
+    "AndroidVer", "release api_level manufacturer model device is_emulator")
+
+def android_ver(release="", api_level=0, manufacturer="", model="", device="",
+                is_emulator=False):
+    if sys.platform == "android":
+        try:
+            from ctypes import CDLL, c_char_p, create_string_buffer
+        except ImportError:
+            pass
+        else:
+            # An NDK developer confirmed that this is an officially-supported
+            # API (https://stackoverflow.com/a/28416743). Use `getattr` to avoid
+            # private name mangling.
+            system_property_get = getattr(CDLL("libc.so"), "__system_property_get")
+            system_property_get.argtypes = (c_char_p, c_char_p)
+
+            def getprop(name, default):
+                # https://android.googlesource.com/platform/bionic/+/refs/tags/android-5.0.0_r1/libc/include/sys/system_properties.h#39
+                PROP_VALUE_MAX = 92
+                buffer = create_string_buffer(PROP_VALUE_MAX)
+                length = system_property_get(name.encode("UTF-8"), buffer)
+                if length == 0:
+                    # This API doesn’t distinguish between an empty property and
+                    # a missing one.
+                    return default
+                else:
+                    return buffer.value.decode("UTF-8", "backslashreplace")
+
+            release = getprop("ro.build.version.release", release)
+            api_level = int(getprop("ro.build.version.sdk", api_level))
+            manufacturer = getprop("ro.product.manufacturer", manufacturer)
+            model = getprop("ro.product.model", model)
+            device = getprop("ro.product.device", device)
+            is_emulator = getprop("ro.kernel.qemu", "0") == "1"
+
+    return AndroidVer(
+        release, api_level, manufacturer, model, device, is_emulator)
+
 
 ### System name aliasing
 
@@ -746,6 +789,8 @@ def architecture(executable=sys.executable, bits='', linkage=''):
     # Linkage
     if 'ELF' in fileout:
         linkage = 'ELF'
+    elif 'Mach-O' in fileout:
+        linkage = "Mach-O"
     elif 'PE' in fileout:
         # E.g. Windows uses this format
         if 'Windows' in fileout:
@@ -967,6 +1012,11 @@ def uname():
     if system == 'Microsoft' and release == 'Windows':
         system = 'Windows'
         release = 'Vista'
+
+    # On Android, return the name and version of the OS rather than the kernel.
+    if sys.platform == 'android':
+        system = 'Android'
+        release = android_ver().release
 
     vals = system, node, release, version, machine
     # Replace 'unknown' values with the more portable ''

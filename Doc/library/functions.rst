@@ -57,7 +57,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: abs(x)
 
    Return the absolute value of a number.  The argument may be an
-   integer, a floating point number, or an object implementing :meth:`__abs__`.
+   integer, a floating point number, or an object implementing
+   :meth:`~object.__abs__`.
    If the argument is a complex number, its magnitude is returned.
 
 
@@ -235,7 +236,7 @@ are always available.  They are listed here in alphabetical order.
    :const:`False` if not.  If this returns ``True``, it is still possible that a
    call fails, but if it is ``False``, calling *object* will never succeed.
    Note that classes are callable (calling a class returns a new instance);
-   instances are callable if their class has a :meth:`__call__` method.
+   instances are callable if their class has a :meth:`~object.__call__` method.
 
    .. versionadded:: 3.2
       This function was first removed in Python 3.0 and then brought back
@@ -432,15 +433,18 @@ are always available.  They are listed here in alphabetical order.
    Without arguments, return the list of names in the current local scope.  With an
    argument, attempt to return a list of valid attributes for that object.
 
-   If the object has a method named :meth:`__dir__`, this method will be called and
+   If the object has a method named :meth:`~object.__dir__`,
+   this method will be called and
    must return the list of attributes. This allows objects that implement a custom
-   :func:`__getattr__` or :func:`__getattribute__` function to customize the way
+   :func:`~object.__getattr__` or :func:`~object.__getattribute__` function
+   to customize the way
    :func:`dir` reports their attributes.
 
-   If the object does not provide :meth:`__dir__`, the function tries its best to
-   gather information from the object's :attr:`~object.__dict__` attribute, if defined, and
+   If the object does not provide :meth:`~object.__dir__`,
+   the function tries its best to gather information from the object's
+   :attr:`~object.__dict__` attribute, if defined, and
    from its type object.  The resulting list is not necessarily complete and may
-   be inaccurate when the object has a custom :func:`__getattr__`.
+   be inaccurate when the object has a custom :func:`~object.__getattr__`.
 
    The default :func:`dir` mechanism behaves differently with different types of
    objects, as it attempts to produce the most relevant, rather than complete,
@@ -522,9 +526,20 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression, globals=None, locals=None)
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   :param expression:
+      A Python expression.
+   :type expression: :class:`str` | :ref:`code object <code-objects>`
+
+   :param globals:
+      The global namespace (default: ``None``).
+   :type globals: :class:`dict` | ``None``
+
+   :param locals:
+      The local namespace (default: ``None``).
+   :type locals: :term:`mapping` | ``None``
+
+   :returns: The result of the evaluated expression.
+   :raises: Syntax errors are reported as exceptions.
 
    The *expression* argument is parsed and evaluated as a Python expression
    (technically speaking, a condition list) using the *globals* and *locals*
@@ -541,8 +556,7 @@ are always available.  They are listed here in alphabetical order.
    :term:`nested scopes <nested scope>` (non-locals) in the enclosing
    environment.
 
-   The return value is the result of
-   the evaluated expression. Syntax errors are reported as exceptions.  Example:
+   Example:
 
       >>> x = 1
       >>> eval('x+1')
@@ -664,16 +678,15 @@ are always available.  They are listed here in alphabetical order.
       sign: "+" | "-"
       infinity: "Infinity" | "inf"
       nan: "nan"
+      digit: <a Unicode decimal digit, i.e. characters in Unicode general category Nd>
       digitpart: `digit` (["_"] `digit`)*
       number: [`digitpart`] "." `digitpart` | `digitpart` ["."]
       exponent: ("e" | "E") ["+" | "-"] `digitpart`
       floatnumber: number [`exponent`]
       floatvalue: [`sign`] (`floatnumber` | `infinity` | `nan`)
 
-   Here ``digit`` is a Unicode decimal digit (character in the Unicode general
-   category ``Nd``). Case is not significant, so, for example, "inf", "Inf",
-   "INFINITY", and "iNfINity" are all acceptable spellings for positive
-   infinity.
+   Case is not significant, so, for example, "inf", "Inf", "INFINITY", and
+   "iNfINity" are all acceptable spellings for positive infinity.
 
    Otherwise, if the argument is an integer or a floating point number, a
    floating point number with the same value (within Python's floating point
@@ -727,8 +740,8 @@ are always available.  They are listed here in alphabetical order.
 
    A call to ``format(value, format_spec)`` is translated to
    ``type(value).__format__(value, format_spec)`` which bypasses the instance
-   dictionary when searching for the value's :meth:`__format__` method.  A
-   :exc:`TypeError` exception is raised if the method search reaches
+   dictionary when searching for the value's :meth:`~object.__format__` method.
+   A :exc:`TypeError` exception is raised if the method search reaches
    :mod:`object` and the *format_spec* is non-empty, or if either the
    *format_spec* or the return value are not strings.
 
@@ -792,9 +805,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      For objects with custom :meth:`__hash__` methods, note that :func:`hash`
+      For objects with custom :meth:`~object.__hash__` methods,
+      note that :func:`hash`
       truncates the return value based on the bit width of the host machine.
-      See :meth:`__hash__ <object.__hash__>` for details.
 
 .. function:: help()
               help(request)
@@ -982,7 +995,8 @@ are always available.  They are listed here in alphabetical order.
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
    second argument, *object* must be a collection object which supports the
-   :term:`iterable` protocol (the :meth:`__iter__` method), or it must support
+   :term:`iterable` protocol (the :meth:`~object.__iter__` method),
+   or it must support
    the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
@@ -1069,8 +1083,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc, reverse=True)[0]`` and
    ``heapq.nlargest(1, iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1107,8 +1121,8 @@ are always available.  They are listed here in alphabetical order.
    such as ``sorted(iterable, key=keyfunc)[0]`` and ``heapq.nsmallest(1,
    iterable, key=keyfunc)``.
 
-   .. versionadded:: 3.4
-      The *default* keyword-only argument.
+   .. versionchanged:: 3.4
+      Added the *default* keyword-only parameter.
 
    .. versionchanged:: 3.8
       The *key* can be ``None``.
@@ -1500,38 +1514,44 @@ are always available.  They are listed here in alphabetical order.
               """Get the current voltage."""
               return self._voltage
 
-   The ``@property`` decorator turns the :meth:`voltage` method into a "getter"
+   The ``@property`` decorator turns the :meth:`!voltage` method into a "getter"
    for a read-only attribute with the same name, and it sets the docstring for
    *voltage* to "Get the current voltage."
 
-   A property object has :attr:`~property.getter`, :attr:`~property.setter`,
-   and :attr:`~property.deleter` methods usable as decorators that create a
-   copy of the property with the corresponding accessor function set to the
-   decorated function.  This is best explained with an example::
+   .. decorator:: property.getter
+   .. decorator:: property.setter
+   .. decorator:: property.deleter
 
-      class C:
-          def __init__(self):
-              self._x = None
+      A property object has ``getter``, ``setter``,
+      and ``deleter`` methods usable as decorators that create a
+      copy of the property with the corresponding accessor function set to the
+      decorated function.  This is best explained with an example:
 
-          @property
-          def x(self):
-              """I'm the 'x' property."""
-              return self._x
+      .. testcode::
 
-          @x.setter
-          def x(self, value):
-              self._x = value
+         class C:
+             def __init__(self):
+                 self._x = None
 
-          @x.deleter
-          def x(self):
-              del self._x
+             @property
+             def x(self):
+                 """I'm the 'x' property."""
+                 return self._x
 
-   This code is exactly equivalent to the first example.  Be sure to give the
-   additional functions the same name as the original property (``x`` in this
-   case.)
+             @x.setter
+             def x(self, value):
+                 self._x = value
 
-   The returned property object also has the attributes ``fget``, ``fset``, and
-   ``fdel`` corresponding to the constructor arguments.
+             @x.deleter
+             def x(self):
+                 del self._x
+
+      This code is exactly equivalent to the first example.  Be sure to give the
+      additional functions the same name as the original property (``x`` in this
+      case.)
+
+      The returned property object also has the attributes ``fget``, ``fset``, and
+      ``fdel`` corresponding to the constructor arguments.
 
    .. versionchanged:: 3.5
       The docstrings of property objects are now writeable.
@@ -1554,17 +1574,28 @@ are always available.  They are listed here in alphabetical order.
    representation is a string enclosed in angle brackets that contains the name
    of the type of the object together with additional information often
    including the name and address of the object.  A class can control what this
-   function returns for its instances by defining a :meth:`__repr__` method.
+   function returns for its instances
+   by defining a :meth:`~object.__repr__` method.
    If :func:`sys.displayhook` is not accessible, this function will raise
    :exc:`RuntimeError`.
+
+   This class has a custom representation that can be evaluated::
+
+      class Person:
+         def __init__(self, name, age):
+            self.name = name
+            self.age = age
+
+         def __repr__(self):
+            return f"Person('{self.name}', {self.age})"
 
 
 .. function:: reversed(seq)
 
    Return a reverse :term:`iterator`.  *seq* must be an object which has
-   a :meth:`__reversed__` method or supports the sequence protocol (the
-   :meth:`__len__` method and the :meth:`~object.__getitem__` method with integer
-   arguments starting at ``0``).
+   a :meth:`~object.__reversed__` method or supports the sequence protocol (the
+   :meth:`~object.__len__` method and the :meth:`~object.__getitem__` method
+   with integer arguments starting at ``0``).
 
 
 .. function:: round(number, ndigits=None)
@@ -1635,13 +1666,21 @@ are always available.  They are listed here in alphabetical order.
 
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
-   ``None``.  Slice objects have read-only data attributes :attr:`~slice.start`,
-   :attr:`~slice.stop`, and :attr:`~slice.step` which merely return the argument
-   values (or their default).  They have no other explicit functionality;
-   however, they are used by NumPy and other third-party packages.
+   ``None``.
+
+   .. attribute:: slice.start
+   .. attribute:: slice.stop
+   .. attribute:: slice.step
+
+      Slice objects have read-only data attributes :attr:`!start`,
+      :attr:`!stop`, and :attr:`!step` which merely return the argument
+      values (or their default).  They have no other explicit functionality;
+      however, they are used by NumPy and other third-party packages.
+
    Slice objects are also generated when extended indexing syntax is used.  For
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
-   :func:`itertools.islice` for an alternate version that returns an iterator.
+   :func:`itertools.islice` for an alternate version that returns an
+   :term:`iterator`.
 
    .. versionchanged:: 3.12
       Slice objects are now :term:`hashable` (provided :attr:`~slice.start`,
@@ -1780,6 +1819,13 @@ are always available.  They are listed here in alphabetical order.
    the second argument is a type, ``issubclass(type2, type)`` must be true (this
    is useful for classmethods).
 
+   When called directly within an ordinary method of a class, both arguments may
+   be omitted ("zero-argument :func:`!super`"). In this case, *type* will be the
+   enclosing class, and *obj* will be the first argument of the immediately
+   enclosing function (typically ``self``). (This means that zero-argument
+   :func:`!super` will not work as expected within nested functions, including
+   generator expressions, which implicitly create nested functions.)
+
    There are two typical use cases for *super*.  In a class hierarchy with
    single inheritance, *super* can be used to refer to parent classes without
    naming them explicitly, thus making the code more maintainable.  This use
@@ -1808,7 +1854,8 @@ are always available.  They are listed here in alphabetical order.
 
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
-   It does so by implementing its own :meth:`__getattribute__` method for searching
+   It does so by implementing its own :meth:`~object.__getattribute__` method
+   for searching
    classes in a predictable order that supports cooperative multiple inheritance.
    Accordingly, :func:`super` is undefined for implicit lookups using statements or
    operators such as ``super()[name]``.

@@ -174,6 +174,16 @@ class AutoFileTests:
         self.assertEqual(repr(self.f),
                          "<%s.FileIO [closed]>" % (self.modulename,))
 
+    def test_subclass_repr(self):
+        class TestSubclass(self.FileIO):
+            pass
+
+        f = TestSubclass(TESTFN)
+        with f:
+            self.assertIn(TestSubclass.__name__, repr(f))
+
+        self.assertIn(TestSubclass.__name__, repr(f))
+
     def testReprNoCloseFD(self):
         fd = os.open(TESTFN, os.O_RDONLY)
         try:
@@ -473,6 +483,14 @@ class OtherFileTests:
         if sys.platform == 'win32':
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
+
+    def testBooleanFd(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor') as cm:
+                f = self.FileIO(fd, closefd=False)
+            f.close()
+            self.assertEqual(cm.filename, __file__)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument

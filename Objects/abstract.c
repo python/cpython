@@ -425,6 +425,12 @@ PyObject_AsWriteBuffer(PyObject *obj,
 int
 PyObject_GetBuffer(PyObject *obj, Py_buffer *view, int flags)
 {
+    if (flags != PyBUF_SIMPLE) {  /* fast path */
+        if (flags == PyBUF_READ || flags == PyBUF_WRITE) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+    }
     PyBufferProcs *pb = Py_TYPE(obj)->tp_as_buffer;
 
     if (pb == NULL || pb->bf_getbuffer == NULL) {
@@ -761,11 +767,17 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
         return -1;
     }
 
-    if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
-        (readonly == 1)) {
-        PyErr_SetString(PyExc_BufferError,
-                        "Object is not writable.");
-        return -1;
+    if (flags != PyBUF_SIMPLE) {  /* fast path */
+        if (flags == PyBUF_READ || flags == PyBUF_WRITE) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+        if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
+            (readonly == 1)) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Object is not writable.");
+            return -1;
+        }
     }
 
     view->obj = Py_XNewRef(obj);
@@ -1180,29 +1192,10 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
     return result;
 }
 
-PyObject *
-PyNumber_MatrixMultiply(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_matrix_multiply), "@");
-}
-
-PyObject *
-PyNumber_FloorDivide(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_floor_divide), "//");
-}
-
-PyObject *
-PyNumber_TrueDivide(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_true_divide), "/");
-}
-
-PyObject *
-PyNumber_Remainder(PyObject *v, PyObject *w)
-{
-    return binary_op(v, w, NB_SLOT(nb_remainder), "%");
-}
+BINARY_FUNC(PyNumber_MatrixMultiply, nb_matrix_multiply, "@")
+BINARY_FUNC(PyNumber_FloorDivide, nb_floor_divide, "//")
+BINARY_FUNC(PyNumber_TrueDivide, nb_true_divide, "/")
+BINARY_FUNC(PyNumber_Remainder, nb_remainder, "%")
 
 PyObject *
 PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
@@ -1379,73 +1372,27 @@ _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
 
 /* Unary operators and functions */
 
-PyObject *
-PyNumber_Negative(PyObject *o)
-{
-    if (o == NULL) {
-        return null_error();
+#define UNARY_FUNC(func, op, meth_name, descr)                           \
+    PyObject *                                                           \
+    func(PyObject *o) {                                                  \
+        if (o == NULL) {                                                 \
+            return null_error();                                         \
+        }                                                                \
+                                                                         \
+        PyNumberMethods *m = Py_TYPE(o)->tp_as_number;                   \
+        if (m && m->op) {                                                \
+            PyObject *res = (*m->op)(o);                                 \
+            assert(_Py_CheckSlotResult(o, #meth_name, res != NULL));     \
+            return res;                                                  \
+        }                                                                \
+                                                                         \
+        return type_error("bad operand type for "descr": '%.200s'", o);  \
     }
 
-    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
-    if (m && m->nb_negative) {
-        PyObject *res = (*m->nb_negative)(o);
-        assert(_Py_CheckSlotResult(o, "__neg__", res != NULL));
-        return res;
-    }
-
-    return type_error("bad operand type for unary -: '%.200s'", o);
-}
-
-PyObject *
-PyNumber_Positive(PyObject *o)
-{
-    if (o == NULL) {
-        return null_error();
-    }
-
-    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
-    if (m && m->nb_positive) {
-        PyObject *res = (*m->nb_positive)(o);
-        assert(_Py_CheckSlotResult(o, "__pos__", res != NULL));
-        return res;
-    }
-
-    return type_error("bad operand type for unary +: '%.200s'", o);
-}
-
-PyObject *
-PyNumber_Invert(PyObject *o)
-{
-    if (o == NULL) {
-        return null_error();
-    }
-
-    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
-    if (m && m->nb_invert) {
-        PyObject *res = (*m->nb_invert)(o);
-        assert(_Py_CheckSlotResult(o, "__invert__", res != NULL));
-        return res;
-    }
-
-    return type_error("bad operand type for unary ~: '%.200s'", o);
-}
-
-PyObject *
-PyNumber_Absolute(PyObject *o)
-{
-    if (o == NULL) {
-        return null_error();
-    }
-
-    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
-    if (m && m->nb_absolute) {
-        PyObject *res = m->nb_absolute(o);
-        assert(_Py_CheckSlotResult(o, "__abs__", res != NULL));
-        return res;
-    }
-
-    return type_error("bad operand type for abs(): '%.200s'", o);
-}
+UNARY_FUNC(PyNumber_Negative, nb_negative, __neg__, "unary -")
+UNARY_FUNC(PyNumber_Positive, nb_positive, __pos__, "unary +")
+UNARY_FUNC(PyNumber_Invert, nb_invert, __invert__, "unary ~")
+UNARY_FUNC(PyNumber_Absolute, nb_absolute, __abs__, "abs()")
 
 
 int

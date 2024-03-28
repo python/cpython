@@ -58,15 +58,16 @@ def _formatwarnmsg_impl(msg):
         # catch Exception, not only ImportError and RecursionError.
         except Exception:
             # don't suggest to enable tracemalloc if it's not available
-            tracing = True
+            suggest_tracemalloc = False
             tb = None
         else:
-            tracing = tracemalloc.is_tracing()
             try:
+                suggest_tracemalloc = not tracemalloc.is_tracing()
                 tb = tracemalloc.get_object_traceback(msg.source)
             except Exception:
                 # When a warning is logged during Python shutdown, tracemalloc
                 # and the import machinery don't work anymore
+                suggest_tracemalloc = False
                 tb = None
 
         if tb is not None:
@@ -85,7 +86,7 @@ def _formatwarnmsg_impl(msg):
                 if line:
                     line = line.strip()
                     s += '    %s\n' % line
-        elif not tracing:
+        elif suggest_tracemalloc:
             s += (f'{category}: Enable tracemalloc to get the object '
                   f'allocation traceback\n')
     return s
@@ -139,14 +140,18 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    assert action in ("error", "ignore", "always", "default", "module",
-                      "once"), "invalid action: %r" % (action,)
-    assert isinstance(message, str), "message must be a string"
-    assert isinstance(category, type), "category must be a class"
-    assert issubclass(category, Warning), "category must be a Warning subclass"
-    assert isinstance(module, str), "module must be a string"
-    assert isinstance(lineno, int) and lineno >= 0, \
-           "lineno must be an int >= 0"
+    if action not in {"error", "ignore", "always", "default", "module", "once"}:
+        raise ValueError(f"invalid action: {action!r}")
+    if not isinstance(message, str):
+        raise TypeError("message must be a string")
+    if not isinstance(category, type) or not issubclass(category, Warning):
+        raise TypeError("category must be a Warning subclass")
+    if not isinstance(module, str):
+        raise TypeError("module must be a string")
+    if not isinstance(lineno, int):
+        raise TypeError("lineno must be an int")
+    if lineno < 0:
+        raise ValueError("lineno must be an int >= 0")
 
     if message or module:
         import re
@@ -172,10 +177,12 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
     'lineno' -- an integer line number, 0 matches all warnings
     'append' -- if true, append to the list of filters
     """
-    assert action in ("error", "ignore", "always", "default", "module",
-                      "once"), "invalid action: %r" % (action,)
-    assert isinstance(lineno, int) and lineno >= 0, \
-           "lineno must be an int >= 0"
+    if action not in {"error", "ignore", "always", "default", "module", "once"}:
+        raise ValueError(f"invalid action: {action!r}")
+    if not isinstance(lineno, int):
+        raise TypeError("lineno must be an int")
+    if lineno < 0:
+        raise ValueError("lineno must be an int >= 0")
     _add_filter(action, None, category, None, lineno, append=append)
 
 def _add_filter(*item, append):

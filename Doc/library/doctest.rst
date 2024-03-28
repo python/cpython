@@ -123,10 +123,10 @@ And so on, eventually ending with:
        OverflowError: n too large
    ok
    2 items passed all tests:
-      1 tests in __main__
-      8 tests in __main__.factorial
-   9 tests in 2 items.
-   9 passed and 0 failed.
+      1 test in __main__
+      6 tests in __main__.factorial
+   7 tests in 2 items.
+   7 passed.
    Test passed.
    $
 
@@ -134,7 +134,7 @@ That's all you need to know to start making productive use of :mod:`doctest`!
 Jump in.  The following sections provide full details.  Note that there are many
 examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
-:file:`Lib/test/test_doctest.py`.
+:file:`Lib/test/test_doctest/test_doctest.py`.
 
 
 .. _doctest-simple-testmod:
@@ -280,7 +280,7 @@ searched.  Objects imported into the module are not searched.
 In addition, there are cases when you want tests to be part of a module but not part
 of the help text, which requires that the tests not be included in the docstring.
 Doctest looks for a module-level variable called ``__test__`` and uses it to locate other
-tests. If ``M.__test__`` exists and is truthy, it must be a dict, and each
+tests. If ``M.__test__`` exists, it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
 Function and class object docstrings found from ``M.__test__`` are searched, and
 strings are treated as if they were docstrings.  In output, a key ``K`` in
@@ -430,10 +430,10 @@ Simple example::
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: 42 is not in list
+   ValueError: list.remove(x): x not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list``
-detail as shown.
+That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
+x not in list`` detail as shown.
 
 The expected output for an exception must start with a traceback header, which
 may be either of the following two lines, indented the same as the first line of
@@ -944,8 +944,8 @@ and :ref:`doctest-simple-testfile`.
    (or module :mod:`__main__` if *m* is not supplied or is ``None``), starting with
    ``m.__doc__``.
 
-   Also test examples reachable from dict ``m.__test__``, if it exists and is not
-   ``None``.  ``m.__test__`` maps names (strings) to functions, classes and
+   Also test examples reachable from dict ``m.__test__``, if it exists.
+   ``m.__test__`` maps names (strings) to functions, classes and
    strings; function and class docstrings are searched for examples; strings are
    searched directly, as if they were docstrings.
 
@@ -1502,7 +1502,7 @@ DocTestRunner objects
    :attr:`failures` and :attr:`skips` attributes. The :meth:`run` and
    :meth:`summarize` methods return a :class:`TestResults` instance.
 
-   :class:`DocTestParser` defines the following methods:
+   :class:`DocTestRunner` defines the following methods:
 
 
    .. method:: report_start(out, test, example)
@@ -1933,7 +1933,7 @@ such a test runner::
                                            optionflags=flags)
         else:
             fail, total = doctest.testmod(optionflags=flags)
-            print("{} failures out of {} tests".format(fail, total))
+            print(f"{fail} failures out of {total} tests")
 
 
 .. rubric:: Footnotes

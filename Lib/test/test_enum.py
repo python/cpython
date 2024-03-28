@@ -447,7 +447,7 @@ class _EnumTests:
     def test_bad_new_super(self):
         with self.assertRaisesRegex(
                 TypeError,
-                'has no members defined',
+                'do not use .super...__new__;',
             ):
             class BadSuper(self.enum_type):
                 def __new__(cls, value):
@@ -514,6 +514,7 @@ class _EnumTests:
             self.assertFalse('first' in MainEnum)
         val = MainEnum.dupe
         self.assertIn(val, MainEnum)
+        self.assertNotIn(float('nan'), MainEnum)
         #
         class OtherEnum(Enum):
             one = auto()
@@ -1046,6 +1047,22 @@ class TestPlainEnumFunction(_EnumTests, _PlainOutputTests, unittest.TestCase):
 
 class TestPlainFlagClass(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
+
+    def test_none_member(self):
+        class FlagWithNoneMember(Flag):
+            A = 1
+            E = None
+
+        self.assertEqual(FlagWithNoneMember.A.value, 1)
+        self.assertIs(FlagWithNoneMember.E.value, None)
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with |"):
+            FlagWithNoneMember.A | FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with &"):
+            FlagWithNoneMember.E & FlagWithNoneMember.A
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be combined with other flags with \^"):
+            FlagWithNoneMember.A ^ FlagWithNoneMember.E
+        with self.assertRaisesRegex(TypeError, r"'FlagWithNoneMember.E' cannot be inverted"):
+            ~FlagWithNoneMember.E
 
 
 class TestPlainFlagFunction(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
@@ -2343,6 +2360,40 @@ class TestSpecial(unittest.TestCase):
         globals()['SomeTuple'] = SomeTuple
         test_pickle_dump_load(self.assertIs, SomeTuple.first)
 
+    def test_tuple_subclass_with_auto_1(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(T, Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = auto(), 'for the money'
+            second = auto(), 'for the show'
+            third = auto(), 'for the music'
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.index, 1)
+        self.assertEqual(SomeEnum.second.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
+
+    def test_tuple_subclass_with_auto_2(self):
+        from collections import namedtuple
+        T = namedtuple('T', 'index desc')
+        class SomeEnum(Enum):
+            __qualname__ = 'SomeEnum'      # needed for pickle protocol 4
+            first = T(auto(), 'for the money')
+            second = T(auto(), 'for the show')
+            third = T(auto(), 'for the music')
+        self.assertIs(type(SomeEnum.first), SomeEnum)
+        self.assertEqual(SomeEnum.third.value, (3, 'for the music'))
+        self.assertIsInstance(SomeEnum.third.value, T)
+        self.assertEqual(SomeEnum.first.value.index, 1)
+        self.assertEqual(SomeEnum.second.value.desc, 'for the show')
+        globals()['SomeEnum'] = SomeEnum
+        globals()['T'] = T
+        test_pickle_dump_load(self.assertIs, SomeEnum.first)
+
     def test_duplicate_values_give_unique_enum_items(self):
         class AutoNumber(Enum):
             first = ()
@@ -3201,6 +3252,37 @@ class TestSpecial(unittest.TestCase):
                 [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
                 )
 
+        self.assertRaises(AttributeError, getattr, NTEnum.NONE, 'id')
+        #
+        class NTCEnum(TTuple, Enum):
+            NONE = 0, 0, []
+            A = 1, 2, [4]
+            B = 2, 4, [0, 1, 2]
+        self.assertEqual(repr(NTCEnum.NONE), "<NTCEnum.NONE: TTuple(id=0, a=0, blist=[])>")
+        self.assertEqual(NTCEnum.NONE.value, TTuple(id=0, a=0, blist=[]))
+        self.assertEqual(NTCEnum.NONE.id, 0)
+        self.assertEqual(NTCEnum.A.a, 2)
+        self.assertEqual(NTCEnum.B.blist, [0, 1 ,2])
+        self.assertEqual(
+                [x.value for x in NTCEnum],
+                [TTuple(id=0, a=0, blist=[]), TTuple(id=1, a=2, blist=[4]), TTuple(id=2, a=4, blist=[0, 1, 2])],
+                )
+        #
+        class NTDEnum(Enum):
+            def __new__(cls, id, a, blist):
+                member = object.__new__(cls)
+                member.id = id
+                member.a = a
+                member.blist = blist
+                return member
+            NONE = TTuple(0, 0, [])
+            A = TTuple(1, 2, [4])
+            B = TTuple(2, 4, [0, 1, 2])
+        self.assertEqual(repr(NTDEnum.NONE), "<NTDEnum.NONE: TTuple(id=0, a=0, blist=[])>")
+        self.assertEqual(NTDEnum.NONE.id, 0)
+        self.assertEqual(NTDEnum.A.a, 2)
+        self.assertEqual(NTDEnum.B.blist, [0, 1 ,2])
+
     def test_flag_with_custom_new(self):
         class FlagFromChar(IntFlag):
             def __new__(cls, c):
@@ -3267,6 +3349,95 @@ class TestSpecial(unittest.TestCase):
                     member = Base.__new__(cls)
                     member._value_ = Base(value)
                     return member
+
+    def test_extra_member_creation(self):
+        class IDEnumMeta(EnumMeta):
+            def __new__(metacls, cls, bases, classdict, **kwds):
+                # add new entries to classdict
+                for name in classdict.member_names:
+                    classdict[f'{name}_DESC'] = f'-{classdict[name]}'
+                return super().__new__(metacls, cls, bases, classdict, **kwds)
+        class IDEnum(StrEnum, metaclass=IDEnumMeta):
+            pass
+        class MyEnum(IDEnum):
+            ID = 'id'
+            NAME = 'name'
+        self.assertEqual(list(MyEnum), [MyEnum.ID, MyEnum.NAME, MyEnum.ID_DESC, MyEnum.NAME_DESC])
+
+    def test_add_alias(self):
+        class mixin:
+            @property
+            def ORG(self):
+                return 'huh'
+        class Color(mixin, Enum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+        Color.RED._add_alias_('ROJO')
+        self.assertIs(Color.RED, Color['ROJO'])
+        self.assertIs(Color.RED, Color.ROJO)
+        Color.BLUE._add_alias_('ORG')
+        self.assertIs(Color.BLUE, Color['ORG'])
+        self.assertIs(Color.BLUE, Color.ORG)
+        self.assertEqual(Color.RED.ORG, 'huh')
+        self.assertEqual(Color.GREEN.ORG, 'huh')
+        self.assertEqual(Color.BLUE.ORG, 'huh')
+        self.assertEqual(Color.ORG.ORG, 'huh')
+
+    def test_add_value_alias_after_creation(self):
+        class Color(Enum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+        Color.RED._add_value_alias_(5)
+        self.assertIs(Color.RED, Color(5))
+
+    def test_add_value_alias_during_creation(self):
+        class Types(Enum):
+            Unknown = 0,
+            Source  = 1, 'src'
+            NetList = 2, 'nl'
+            def __new__(cls, int_value, *value_aliases):
+                member = object.__new__(cls)
+                member._value_ = int_value
+                for alias in value_aliases:
+                    member._add_value_alias_(alias)
+                return member
+        self.assertIs(Types(0), Types.Unknown)
+        self.assertIs(Types(1), Types.Source)
+        self.assertIs(Types('src'), Types.Source)
+        self.assertIs(Types(2), Types.NetList)
+        self.assertIs(Types('nl'), Types.NetList)
+
+    def test_second_tuple_item_is_falsey(self):
+        class Cardinal(Enum):
+            RIGHT = (1, 0)
+            UP = (0, 1)
+            LEFT = (-1, 0)
+            DOWN = (0, -1)
+        self.assertIs(Cardinal(1, 0), Cardinal.RIGHT)
+        self.assertIs(Cardinal(-1, 0), Cardinal.LEFT)
+
+    def test_no_members(self):
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Enum(7)
+        with self.assertRaisesRegex(
+                TypeError,
+                'has no members',
+            ):
+            Flag(7)
+
+    def test_empty_names(self):
+        for nothing in '', [], {}:
+            for e_type in None, int:
+                empty_enum = Enum('empty_enum', nothing, type=e_type)
+                self.assertEqual(len(empty_enum), 0)
+                self.assertRaisesRegex(TypeError, 'has no members', empty_enum, 0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', names=0)
+        self.assertRaisesRegex(TypeError, '.int. object is not iterable', Enum, 'bad_enum', 0, type=int)
 
 
 class TestOrder(unittest.TestCase):
@@ -3892,6 +4063,8 @@ class OldTestIntFlag(unittest.TestCase):
 
     @reraise_if_not_enum(NoName)
     def test_global_enum_str(self):
+        self.assertEqual(repr(NoName.ONE), 'test_enum.ONE')
+        self.assertEqual(repr(NoName(0)), 'test_enum.NoName(0)')
         self.assertEqual(str(NoName.ONE & NoName.TWO), 'NoName(0)')
         self.assertEqual(str(NoName(0)), 'NoName(0)')
 
@@ -4726,22 +4899,22 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |
  |  ----------------------------------------------------------------------
- |  Methods inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
  |
- |  __contains__(value) from enum.EnumType
+ |  __contains__(value)
  |      Return True if `value` is in `cls`.
  |
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
  |
- |  __getitem__(name) from enum.EnumType
+ |  __getitem__(name)
  |      Return the member matching `name`.
  |
- |  __iter__() from enum.EnumType
+ |  __iter__()
  |      Return members in definition order.
  |
- |  __len__() from enum.EnumType
+ |  __len__()
  |      Return the number of members (no aliases)
  |
  |  ----------------------------------------------------------------------
@@ -4766,11 +4939,11 @@ class Color(enum.Enum)
  |
  |  Data and other attributes defined here:
  |
- |  YELLOW = <Color.YELLOW: 3>
+ |  CYAN = <Color.CYAN: 1>
  |
  |  MAGENTA = <Color.MAGENTA: 2>
  |
- |  CYAN = <Color.CYAN: 1>
+ |  YELLOW = <Color.YELLOW: 3>
  |
  |  ----------------------------------------------------------------------
  |  Data descriptors inherited from enum.Enum:
@@ -4780,7 +4953,18 @@ class Color(enum.Enum)
  |  value
  |
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumType:
+ |  Static methods inherited from enum.EnumType:
+ |
+ |  __contains__(value)
+ |
+ |  __getitem__(name)
+ |
+ |  __iter__()
+ |
+ |  __len__()
+ |
+ |  ----------------------------------------------------------------------
+ |  Readonly properties inherited from enum.EnumType:
  |
  |  __members__"""
 
@@ -4941,12 +5125,14 @@ class TestStdLib(unittest.TestCase):
             @bltns.property
             def zeroth(self):
                 return 'zeroed %s' % self.name
-        self.assertTrue(_test_simple_enum(CheckedColor, SimpleColor) is None)
+        _test_simple_enum(CheckedColor, SimpleColor)
         SimpleColor.MAGENTA._value_ = 9
         self.assertRaisesRegex(
                 TypeError, "enum mismatch",
                 _test_simple_enum, CheckedColor, SimpleColor,
                 )
+        #
+        #
         class CheckedMissing(IntFlag, boundary=KEEP):
             SIXTY_FOUR = 64
             ONE_TWENTY_EIGHT = 128
@@ -4963,8 +5149,28 @@ class TestStdLib(unittest.TestCase):
             ALL = 2048 + 128 + 64 + 12
         M = Missing
         self.assertEqual(list(CheckedMissing), [M.SIXTY_FOUR, M.ONE_TWENTY_EIGHT, M.TWENTY_FORTY_EIGHT])
-        #
         _test_simple_enum(CheckedMissing, Missing)
+        #
+        #
+        class CheckedUnhashable(Enum):
+            ONE = dict()
+            TWO = set()
+            name = 'python'
+        self.assertIn(dict(), CheckedUnhashable)
+        self.assertIn('python', CheckedUnhashable)
+        self.assertEqual(CheckedUnhashable.name.value, 'python')
+        self.assertEqual(CheckedUnhashable.name.name, 'name')
+        #
+        @_simple_enum()
+        class Unhashable:
+            ONE = dict()
+            TWO = set()
+            name = 'python'
+        self.assertIn(dict(), Unhashable)
+        self.assertIn('python', Unhashable)
+        self.assertEqual(Unhashable.name.value, 'python')
+        self.assertEqual(Unhashable.name.name, 'name')
+        _test_simple_enum(Unhashable, Unhashable)
 
 
 class MiscTestCase(unittest.TestCase):

@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import token
 import codeop
 import pprint
 import signal
@@ -85,8 +86,8 @@ import traceback
 import linecache
 
 from contextlib import contextmanager
+from rlcompleter import Completer
 from types import CodeType
-from typing import Union
 
 
 class Restart(Exception):
@@ -96,17 +97,47 @@ class Restart(Exception):
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
+
+def find_first_executable_line(code):
+    """ Try to find the first executable line of the code object.
+
+    Equivalently, find the line number of the instruction that's
+    after RESUME
+
+    Return code.co_firstlineno if no executable line is found.
+    """
+    prev = None
+    for instr in dis.get_instructions(code):
+        if prev is not None and prev.opname == 'RESUME':
+            if instr.positions.lineno is not None:
+                return instr.positions.lineno
+            return code.co_firstlineno
+        prev = instr
+    return code.co_firstlineno
+
 def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
         return None
+    funcdef = ""
+    funcstart = None
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
             if cre.match(line):
-                return funcname, filename, lineno
+                funcstart, funcdef = lineno, line
+            elif funcdef:
+                funcdef += line
+
+            if funcdef:
+                try:
+                    funccode = compile(funcdef, filename, 'exec').co_consts[0]
+                except SyntaxError:
+                    continue
+                lineno_offset = find_first_executable_line(funccode)
+                return funcname, filename, funcstart + lineno_offset - 1
     return None
 
 def lasti2lineno(code, lasti):
@@ -146,9 +177,6 @@ class _ScriptTarget(_ExecutableTarget):
         if not sys.flags.safe_path:
             sys.path[0] = os.path.dirname(self._target)
 
-        with io.open_code(self._target) as fp:
-            self._code = f"exec(compile({fp.read()!r}, {self._target!r}, 'exec'))"
-
     def __repr__(self):
         return self._target
 
@@ -158,7 +186,9 @@ class _ScriptTarget(_ExecutableTarget):
 
     @property
     def code(self):
-        return self._code
+        # We need to open the file each time because the file may be modified
+        with io.open_code(self._target) as fp:
+            return f"exec(compile({fp.read()!r}, {self._target!r}, 'exec'))"
 
     @property
     def namespace(self):
@@ -166,6 +196,7 @@ class _ScriptTarget(_ExecutableTarget):
             __name__='__main__',
             __file__=self._target,
             __builtins__=__builtins__,
+            __spec__=None,
         )
 
 
@@ -206,6 +237,15 @@ class _ModuleTarget(_ExecutableTarget):
         )
 
 
+class _PdbInteractiveConsole(code.InteractiveConsole):
+    def __init__(self, ns, message):
+        self._message = message
+        super().__init__(locals=ns, local_exit=True)
+
+    def write(self, data):
+        self._message(data, end='')
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -221,6 +261,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Limit the maximum depth of chained exceptions, we should be handling cycles,
     # but in case there are recursions, we stop at 999.
     MAX_CHAINED_EXCEPTION_DEPTH = 999
+
+    _file_mtime_table = {}
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
@@ -319,26 +361,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self._chained_exceptions[self._chained_exception_index],
             )
 
-        return self.execRcLines()
-
-    # Can be executed earlier than 'setup' if desired
-    def execRcLines(self):
-        if not self.rcLines:
-            return
-        # local copy because of recursion
-        rcLines = self.rcLines
-        rcLines.reverse()
-        # execute every line only once
-        self.rcLines = []
-        while rcLines:
-            line = rcLines.pop().strip()
-            if line and line[0] != '#':
-                if self.onecmd(line):
-                    # if onecmd returns True, the command wants to exit
-                    # from the interaction, save leftover rc lines
-                    # to execute before next interaction
-                    self.rcLines += reversed(rcLines)
-                    return True
+        if self.rcLines:
+            self.cmdqueue = [
+                line for line in self.rcLines
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            self.rcLines = []
 
     # Override Bdb methods
 
@@ -425,6 +453,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 break
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
+
+    def _validate_file_mtime(self):
+        """Check if the source file of the current frame has been modified since
+        the last time we saw it. If so, give a warning."""
+        try:
+            filename = self.curframe.f_code.co_filename
+            mtime = os.path.getmtime(filename)
+        except Exception:
+            return
+        if (filename in self._file_mtime_table and
+            mtime != self._file_mtime_table[filename]):
+            self.message(f"*** WARNING: file '{filename}' was edited, "
+                         "running stale code until the program is rerun")
+        self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -513,12 +555,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if isinstance(tb_or_exc, BaseException):
             assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
-            if self.setup(frame, tb):
-                # no interaction desired at this time (happens if .pdbrc contains
-                # a command like "continue")
-                self.forget()
-                return
-            self.print_stack_entry(self.stack[self.curindex])
+            self.setup(frame, tb)
+            # if we have more commands to process, do not show the stack entry
+            if not self.cmdqueue:
+                self.print_stack_entry(self.stack[self.curindex])
             self._cmdloop()
             self.forget()
 
@@ -531,20 +571,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     @contextmanager
-    def _disable_tab_completion(self):
-        if self.use_rawinput and self.completekey == 'tab':
-            try:
-                import readline
-            except ImportError:
-                yield
-                return
-            try:
-                readline.parse_and_bind('tab: self-insert')
-                yield
-            finally:
-                readline.parse_and_bind('tab: complete')
-        else:
+    def _disable_command_completion(self):
+        completenames = self.completenames
+        try:
+            self.completenames = self.completedefault
             yield
+        finally:
+            self.completenames = completenames
+        return
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
@@ -553,7 +587,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                with self._disable_tab_completion():
+                with self._disable_command_completion():
                     buffer = line
                     continue_prompt = "...   "
                     while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
@@ -591,6 +625,39 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             self._error_exc()
 
+    def _replace_convenience_variables(self, line):
+        """Replace the convenience variables in 'line' with their values.
+           e.g. $foo is replaced by __pdb_convenience_variables["foo"].
+           Note: such pattern in string literals will be skipped"""
+
+        if "$" not in line:
+            return line
+
+        dollar_start = dollar_end = -1
+        replace_variables = []
+        try:
+            for t in tokenize.generate_tokens(io.StringIO(line).readline):
+                token_type, token_string, start, end, _ = t
+                if token_type == token.OP and token_string == '$':
+                    dollar_start, dollar_end = start, end
+                elif start == dollar_end and token_type == token.NAME:
+                    # line is a one-line command so we only care about column
+                    replace_variables.append((dollar_start[1], end[1], token_string))
+        except tokenize.TokenError:
+            return line
+
+        if not replace_variables:
+            return line
+
+        last_end = 0
+        line_pieces = []
+        for start, end, name in replace_variables:
+            line_pieces.append(line[last_end:start] + f'__pdb_convenience_variables["{name}"]')
+            last_end = end
+        line_pieces.append(line[last_end:])
+
+        return ''.join(line_pieces)
+
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
         if not line.strip():
@@ -621,11 +688,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if marker >= 0:
                 # queue up everything after marker
                 next = line[marker+2:].lstrip()
-                self.cmdqueue.append(next)
+                self.cmdqueue.insert(0, next)
                 line = line[:marker].rstrip()
 
         # Replace all the convenience variables
-        line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
+        line = self._replace_convenience_variables(line)
 
         return line
 
@@ -637,6 +704,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            self._validate_file_mtime()
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -645,13 +713,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Handles one command line during command list definition."""
         cmd, arg, line = self.parseline(line)
         if not cmd:
-            return
+            return False
         if cmd == 'silent':
             self.commands_silent[self.commands_bnum] = True
-            return # continue to handle other cmd def in the cmd list
+            return False  # continue to handle other cmd def in the cmd list
         elif cmd == 'end':
-            self.cmdqueue = []
-            return 1 # end of cmd list
+            return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if arg:
             cmdlist.append(cmd+' '+arg)
@@ -665,14 +732,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
             self.commands_doprompt[self.commands_bnum] = False
-            self.cmdqueue = []
-            return 1
-        return
+            return True
+        return False
 
     # interface abstraction functions
 
-    def message(self, msg):
-        print(msg, file=self.stdout)
+    def message(self, msg, end='\n'):
+        print(msg, end=end, file=self.stdout)
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
@@ -697,7 +763,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if commands:
             return commands
         else:
-            return self._complete_expression(text, line, begidx, endidx)
+            expressions = self._complete_expression(text, line, begidx, endidx)
+            if expressions:
+                return expressions
+            return self.completedefault(text, line, begidx, endidx)
 
     def _complete_location(self, text, line, begidx, endidx):
         # Complete a file/module/function location for break/tbreak/clear.
@@ -753,6 +822,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    def completedefault(self, text, line, begidx, endidx):
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
+
+        # Use rlcompleter to do the completion
+        state = 0
+        matches = []
+        completer = Completer(self.curframe.f_globals | self.curframe_locals)
+        while (match := completer.complete(text, state)) is not None:
+            matches.append(match)
+            state += 1
+        return matches
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
@@ -914,7 +998,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
-                    lineno = self._find_first_executable_line(code)
+                    lineno = find_first_executable_line(code)
                     filename = code.co_filename
                 except:
                     # last thing to try
@@ -1016,23 +1100,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.error('Blank or comment')
             return 0
         return lineno
-
-    def _find_first_executable_line(self, code):
-        """ Try to find the first executable line of the code object.
-
-        Equivalently, find the line number of the instruction that's
-        after RESUME
-
-        Return code.co_firstlineno if no executable line is found.
-        """
-        prev = None
-        for instr in dis.get_instructions(code):
-            if prev is not None and prev.opname == 'RESUME':
-                if instr.positions.lineno is not None:
-                    return instr.positions.lineno
-                return code.co_firstlineno
-            prev = instr
-        return code.co_firstlineno
 
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
@@ -1785,7 +1852,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns, local_exit=True)
+        console = _PdbInteractiveConsole(ns, message=self.message)
+        console.interact(banner="*pdb interact start*",
+                         exitmsg="*exit from pdb interact command*")
 
     def do_alias(self, arg):
         """alias [name [command]]
@@ -1974,6 +2043,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         import __main__
         __main__.__dict__.clear()
         __main__.__dict__.update(target.namespace)
+
+        # Clear the mtime table for program reruns, assume all the files
+        # are up to date.
+        self._file_mtime_table.clear()
 
         self.run(target.code)
 
@@ -2174,15 +2247,19 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(prog="pdb",
+                                     usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
                                      description=_usage,
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)
 
-    parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-m', metavar='module')
-    group.add_argument('pyfile', nargs='?')
-    parser.add_argument('args', nargs="*")
+    # We need to maunally get the script from args, because the first positional
+    # arguments could be either the script we need to debug, or the argument
+    # to the -m module
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
+                        help='pdb commands to execute as if given in a .pdbrc file')
+    parser.add_argument('-m', metavar='module', dest='module')
+    parser.add_argument('args', nargs='*',
+                        help="when -m is not specified, the first arg is the script to debug")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2192,11 +2269,13 @@ def main():
 
     opts = parser.parse_args()
 
-    if opts.m:
-        file = opts.m
+    if opts.module:
+        file = opts.module
         target = _ModuleTarget(file)
     else:
-        file = opts.pyfile
+        if not opts.args:
+            parser.error("no module or script to run")
+        file = opts.args.pop(0)
         target = _ScriptTarget(file)
 
     sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
@@ -2206,7 +2285,7 @@ def main():
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
-    pdb.rcLines.extend(opts.command)
+    pdb.rcLines.extend(opts.commands)
     while True:
         try:
             pdb._run(target)

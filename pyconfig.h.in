@@ -157,6 +157,12 @@
 /* Define to 1 if you have the `clock_settime' function. */
 #undef HAVE_CLOCK_SETTIME
 
+/* Define to 1 if the system has the type `clock_t'. */
+#undef HAVE_CLOCK_T
+
+/* Define to 1 if you have the `closefrom' function. */
+#undef HAVE_CLOSEFROM
+
 /* Define to 1 if you have the `close_range' function. */
 #undef HAVE_CLOSE_RANGE
 
@@ -471,6 +477,9 @@
 /* Define to 1 if you have the `getgid' function. */
 #undef HAVE_GETGID
 
+/* Define to 1 if you have the `getgrent' function. */
+#undef HAVE_GETGRENT
+
 /* Define to 1 if you have the `getgrgid' function. */
 #undef HAVE_GETGRGID
 
@@ -597,6 +606,9 @@
 /* Define if glibc has incorrect _FORTIFY_SOURCE wrappers for memmove and
    bcopy. */
 #undef HAVE_GLIBC_MEMMOVE_BUG
+
+/* Define to 1 if you have the `grantpt' function. */
+#undef HAVE_GRANTPT
 
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
@@ -896,11 +908,18 @@
 /* Define to 1 if you have the `posix_fallocate' function. */
 #undef HAVE_POSIX_FALLOCATE
 
+/* Define to 1 if you have the `posix_openpt' function. */
+#undef HAVE_POSIX_OPENPT
+
 /* Define to 1 if you have the `posix_spawn' function. */
 #undef HAVE_POSIX_SPAWN
 
 /* Define to 1 if you have the `posix_spawnp' function. */
 #undef HAVE_POSIX_SPAWNP
+
+/* Define to 1 if you have the `posix_spawn_file_actions_addclosefrom_np'
+   function. */
+#undef HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCLOSEFROM_NP
 
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
@@ -917,11 +936,18 @@
 /* Define to 1 if you have the <process.h> header file. */
 #undef HAVE_PROCESS_H
 
+/* Define to 1 if you have the `process_vm_readv' function. */
+#undef HAVE_PROCESS_VM_READV
+
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
 /* Define to 1 if you have the `pthread_condattr_setclock' function. */
 #undef HAVE_PTHREAD_CONDATTR_SETCLOCK
+
+/* Define to 1 if you have the `pthread_cond_timedwait_relative_np' function.
+   */
+#undef HAVE_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP
 
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
@@ -943,6 +969,12 @@
 
 /* Define if platform requires stubbed pthreads support */
 #undef HAVE_PTHREAD_STUBS
+
+/* Define to 1 if you have the `ptsname' function. */
+#undef HAVE_PTSNAME
+
+/* Define to 1 if you have the `ptsname_r' function. */
+#undef HAVE_PTSNAME_R
 
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
@@ -983,7 +1015,7 @@
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
-/* Define if readline supports rl_compdisp_func_t */
+/* Define to 1 if the system has the type `rl_compdisp_func_t'. */
 #undef HAVE_RL_COMPDISP_FUNC_T
 
 /* Define if you have readline 2.2 */
@@ -1169,13 +1201,16 @@
 /* Define if you have the 'socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
+/* Define to 1 if the system has the type `socklen_t'. */
+#undef HAVE_SOCKLEN_T
+
 /* Define to 1 if you have the <spawn.h> header file. */
 #undef HAVE_SPAWN_H
 
 /* Define to 1 if you have the `splice' function. */
 #undef HAVE_SPLICE
 
-/* Define if your compiler provides ssize_t */
+/* Define to 1 if the system has the type `ssize_t'. */
 #undef HAVE_SSIZE_T
 
 /* Define to 1 if you have the `statvfs' function. */
@@ -1452,6 +1487,9 @@
 /* Define to 1 if you have the `unlinkat' function. */
 #undef HAVE_UNLINKAT
 
+/* Define to 1 if you have the `unlockpt' function. */
+#undef HAVE_UNLOCKPT
+
 /* Define to 1 if you have the `unshare' function. */
 #undef HAVE_UNSHARE
 
@@ -1538,6 +1576,9 @@
 
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
+
+/* Define to 1 if the system has the type `__uint128_t'. */
+#undef HAVE___UINT128_T
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.
    */
@@ -1800,9 +1841,6 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
-/* Define to build the readline module against Apple BSD editline. */
-#undef WITH_APPLE_EDITLINE
-
 /* Define if you want build the _decimal module using a coroutine-local rather
    than a thread-local context */
 #undef WITH_DECIMAL_CONTEXTVAR
@@ -1906,7 +1944,7 @@
 /* Define on FreeBSD to activate all library features */
 #undef __BSD_VISIBLE
 
-/* Define to 'long' if <time.h> doesn't define. */
+/* Define to 'long' if <time.h> does not define clock_t. */
 #undef clock_t
 
 /* Define to empty if `const' does not conform to ANSI C. */
@@ -1930,7 +1968,7 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
-/* Define to `int' if <sys/socket.h> does not define. */
+/* Define to 'int' if <sys/socket.h> does not define. */
 #undef socklen_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */

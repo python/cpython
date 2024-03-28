@@ -668,7 +668,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
-        if sys.platform.startswith(("linux", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
@@ -691,11 +691,23 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
+        has_is_interned = (test.support.check_impl_detail(cpython=True)
+                           or hasattr(sys, '_is_interned'))
         self.assertRaises(TypeError, sys.intern)
+        self.assertRaises(TypeError, sys.intern, b'abc')
+        if has_is_interned:
+            self.assertRaises(TypeError, sys._is_interned)
+            self.assertRaises(TypeError, sys._is_interned, b'abc')
         s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s), True)
         s2 = s.swapcase().swapcase()
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
         self.assertTrue(sys.intern(s2) is s)
+        if has_is_interned:
+            self.assertIs(sys._is_interned(s2), False)
 
         # Subclasses of string can't be interned, because they
         # provide too much opportunity for insane things to happen.
@@ -707,6 +719,8 @@ class SysModuleTest(unittest.TestCase):
                 return 123
 
         self.assertRaises(TypeError, sys.intern, S("abc"))
+        if has_is_interned:
+            self.assertIs(sys._is_interned(S("abc")), False)
 
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
@@ -715,7 +729,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIs(t, s)
 
         interp = interpreters.create()
-        interp.run(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) != {id(s)}, (id(t), {id(s)})
@@ -730,7 +744,7 @@ class SysModuleTest(unittest.TestCase):
         t = sys.intern(s)
 
         interp = interpreters.create()
-        interp.run(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) == {id(t)}, (id(t), {id(t)})
@@ -1087,8 +1101,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertEqual(stderr.rstrip(), b"")
 
-    @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
-                         'need sys.getandroidapilevel()')
+    @unittest.skipUnless(sys.platform == "android", "Android only")
     def test_getandroidapilevel(self):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)
@@ -1115,8 +1128,10 @@ class SysModuleTest(unittest.TestCase):
             b'Traceback (most recent call last):',
             b'  File "<string>", line 8, in <module>',
             b'    f2()',
+            b'    ~~^^',
             b'  File "<string>", line 6, in f2',
             b'    f1()',
+            b'    ~~^^',
             b'  File "<string>", line 4, in f1',
             b'    1 / 0',
             b'    ~~^~~',
@@ -1124,8 +1139,8 @@ class SysModuleTest(unittest.TestCase):
         ]
         check(10, traceback)
         check(3, traceback)
-        check(2, traceback[:1] + traceback[3:])
-        check(1, traceback[:1] + traceback[5:])
+        check(2, traceback[:1] + traceback[4:])
+        check(1, traceback[:1] + traceback[7:])
         check(0, [traceback[-1]])
         check(-1, [traceback[-1]])
         check(1<<1000, traceback)
@@ -1208,9 +1223,7 @@ class SysModuleTest(unittest.TestCase):
     @test.support.cpython_only
     @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
     def test_disable_gil_abi(self):
-        abi_threaded = 't' in sys.abiflags
-        py_gil_disabled = (sysconfig.get_config_var('Py_GIL_DISABLED') == 1)
-        self.assertEqual(py_gil_disabled, abi_threaded)
+        self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
 
 @test.support.cpython_only
@@ -1378,6 +1391,7 @@ class SizeofTest(unittest.TestCase):
         self.longdigit = sys.int_info.sizeof_digit
         import _testinternalcapi
         self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
+        self.managed_pre_header_size = _testinternalcapi.SIZEOF_MANAGED_PRE_HEADER
 
     check_sizeof = test.support.check_sizeof
 
@@ -1413,7 +1427,7 @@ class SizeofTest(unittest.TestCase):
             def __sizeof__(self):
                 return int(self)
         self.assertEqual(sys.getsizeof(OverflowSizeof(sys.maxsize)),
-                         sys.maxsize + self.gc_headsize*2)
+                         sys.maxsize + self.gc_headsize + self.managed_pre_header_size)
         with self.assertRaises(OverflowError):
             sys.getsizeof(OverflowSizeof(sys.maxsize + 1))
         with self.assertRaises(ValueError):
@@ -1636,7 +1650,7 @@ class SizeofTest(unittest.TestCase):
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
-        s = vsize('2P' + fmt)
+        s = vsize(fmt)
         check(int, s)
         # class
         s = vsize(fmt +                 # PyTypeObject

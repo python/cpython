@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.2
+    rev: v0.3.4
     hooks:
       - id: ruff
         name: Run Ruff on Lib/test/
@@ -14,6 +14,8 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
+      - id: check-case-conflict
+      - id: check-merge-conflict
       - id: check-toml
         exclude: ^Lib/test/test_tomllib/
       - id: check-yaml
@@ -24,11 +26,11 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.8.1
+    rev: v0.9.1
     hooks:
       - id: sphinx-lint
         args: [--enable=default-role]
-        files: ^Doc/|^Misc/NEWS.d/next/
+        files: ^Doc/|^Misc/NEWS.d/
 
   - repo: meta
     hooks:

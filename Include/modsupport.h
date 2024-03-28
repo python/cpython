@@ -9,10 +9,10 @@ extern "C" {
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                            const char *, char **, ...);
+                                            const char *, PY_CXX_CONST char * const *, ...);
 PyAPI_FUNC(int) PyArg_VaParse(PyObject *, const char *, va_list);
 PyAPI_FUNC(int) PyArg_VaParseTupleAndKeywords(PyObject *, PyObject *,
-                                              const char *, char **, va_list);
+                                              const char *, PY_CXX_CONST char * const *, va_list);
 
 PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject *);
 PyAPI_FUNC(int) PyArg_UnpackTuple(PyObject *, const char *, Py_ssize_t, Py_ssize_t, ...);

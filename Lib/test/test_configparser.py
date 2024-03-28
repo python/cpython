@@ -646,6 +646,21 @@ boolean {0[0]} NO
                                      "'opt' in section 'Bar' already exists")
             self.assertEqual(e.args, ("Bar", "opt", "<dict>", None))
 
+    def test_get_after_duplicate_option_error(self):
+        cf = self.newconfig()
+        ini = textwrap.dedent("""\
+            [Foo]
+            x{equals}1
+            y{equals}2
+            y{equals}3
+        """.format(equals=self.delimiters[0]))
+        if self.strict:
+            with self.assertRaises(configparser.DuplicateOptionError):
+                cf.read_string(ini)
+        else:
+            cf.read_string(ini)
+        self.assertEqual(cf.get('Foo', 'x'), '1')
+
     def test_write(self):
         config_string = (
             "[Long Line]\n"
@@ -1554,6 +1569,30 @@ class ReadFileTestCase(unittest.TestCase):
             "File contains no section headers.\nfile: b'badbad', line: 1\n"
             "'[badbad'"
         )
+
+    def test_keys_without_value_with_extra_whitespace(self):
+        lines = [
+            '[SECT]\n',
+            'KEY1\n',
+            ' KEY2 = VAL2\n', # note the Space before the key!
+        ]
+        parser = configparser.ConfigParser(
+            comment_prefixes="",
+            allow_no_value=True,
+            strict=False,
+            delimiters=('=',),
+            interpolation=None,
+        )
+        with self.assertRaises(configparser.MultilineContinuationError) as dse:
+            parser.read_file(lines)
+        self.assertEqual(
+            str(dse.exception),
+            "Key without value continued with an indented line.\n"
+            "file: '<???>', line: 3\n"
+            "' KEY2 = VAL2\\n'"
+        )
+
+
 
 
 class CoverageOneHundredTestCase(unittest.TestCase):

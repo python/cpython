@@ -563,6 +563,11 @@ extern "C" {
 #      define _Py_ADDRESS_SANITIZER
 #    endif
 #  endif
+#  if __has_feature(thread_sanitizer)
+#    if !defined(_Py_THREAD_SANITIZER)
+#      define _Py_THREAD_SANITIZER
+#    endif
+#  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
@@ -584,6 +589,14 @@ extern "C" {
 #if !defined(ALIGNOF_MAX_ALIGN_T) || ALIGNOF_MAX_ALIGN_T == 0
 #   undef ALIGNOF_MAX_ALIGN_T
 #   define ALIGNOF_MAX_ALIGN_T _Alignof(long double)
+#endif
+
+#ifndef PY_CXX_CONST
+#  ifdef __cplusplus
+#    define PY_CXX_CONST const
+#  else
+#    define PY_CXX_CONST
+#  endif
 #endif
 
 #if defined(__sgi) && !defined(_SGI_MP_SOURCE)

@@ -7,9 +7,19 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_typeobject.h"    // _PyType_GetModuleName()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
+
+/**************/
+/* exceptions */
+/**************/
+
+static int init_exceptions(PyInterpreterState *);
+static void fini_exceptions(PyInterpreterState *);
+static int _init_not_shareable_error_type(PyInterpreterState *);
+static void _fini_not_shareable_error_type(PyInterpreterState *);
+static PyObject * _get_not_shareable_error_type(PyInterpreterState *);
+#include "crossinterp_exceptions.h"
 
 
 /***************************/
@@ -20,7 +30,7 @@ int
 _Py_CallInInterpreter(PyInterpreterState *interp,
                       _Py_simple_func func, void *arg)
 {
-    if (interp == _PyThreadState_GetCurrent()->interp) {
+    if (interp == PyInterpreterState_Get()) {
         return func(arg);
     }
     // XXX Emit a warning if this fails?
@@ -32,7 +42,7 @@ int
 _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
                                 _Py_simple_func func, void *arg)
 {
-    if (interp == _PyThreadState_GetCurrent()->interp) {
+    if (interp == PyInterpreterState_Get()) {
         int res = func(arg);
         PyMem_RawFree(arg);
         return res;
@@ -46,6 +56,20 @@ _Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
 /**************************/
 /* cross-interpreter data */
 /**************************/
+
+/* registry of {type -> crossinterpdatafunc} */
+
+/* For now we use a global registry of shareable classes.  An
+   alternative would be to add a tp_* slot for a class's
+   crossinterpdatafunc. It would be simpler and more efficient. */
+
+static void xid_lookup_init(PyInterpreterState *);
+static void xid_lookup_fini(PyInterpreterState *);
+static crossinterpdatafunc lookup_getdata(PyInterpreterState *, PyObject *);
+#include "crossinterp_data_lookup.h"
+
+
+/* lifecycle */
 
 _PyCrossInterpreterData *
 _PyCrossInterpreterData_New(void)
@@ -67,38 +91,6 @@ _PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
 }
 
 
-/* exceptions */
-
-static PyStatus
-_init_not_shareable_error_type(PyInterpreterState *interp)
-{
-    const char *name = "_interpreters.NotShareableError";
-    PyObject *base = PyExc_ValueError;
-    PyObject *ns = NULL;
-    PyObject *exctype = PyErr_NewException(name, base, ns);
-    if (exctype == NULL) {
-        PyErr_Clear();
-        return _PyStatus_ERR("could not initialize NotShareableError");
-    }
-
-    interp->xi.PyExc_NotShareableError = exctype;
-    return _PyStatus_OK();
-}
-
-static void
-_fini_not_shareable_error_type(PyInterpreterState *interp)
-{
-    Py_CLEAR(interp->xi.PyExc_NotShareableError);
-}
-
-static PyObject *
-_get_not_shareable_error_type(PyInterpreterState *interp)
-{
-    assert(interp->xi.PyExc_NotShareableError != NULL);
-    return interp->xi.PyExc_NotShareableError;
-}
-
-
 /* defining cross-interpreter data */
 
 static inline void
@@ -109,7 +101,7 @@ _xidata_init(_PyCrossInterpreterData *data)
     assert(data->data == NULL);
     assert(data->obj == NULL);
     *data = (_PyCrossInterpreterData){0};
-    data->interpid = -1;
+    _PyCrossInterpreterData_INTERPID(data) = -1;
 }
 
 static inline void
@@ -146,7 +138,9 @@ _PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
     // Ideally every object would know its owning interpreter.
     // Until then, we have to rely on the caller to identify it
     // (but we don't need it in all cases).
-    data->interpid = (interp != NULL) ? interp->id : -1;
+    _PyCrossInterpreterData_INTERPID(data) = (interp != NULL)
+        ? PyInterpreterState_GetID(interp)
+        : -1;
     data->new_object = new_object;
 }
 
@@ -176,8 +170,8 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
     assert(data != NULL);
     // This must be called in the owning interpreter.
     assert(interp == NULL
-           || data->interpid == -1
-           || data->interpid == interp->id);
+           || _PyCrossInterpreterData_INTERPID(data) == -1
+           || _PyCrossInterpreterData_INTERPID(data) == PyInterpreterState_GetID(interp));
     _xidata_clear(data);
 }
 
@@ -191,38 +185,19 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
 
     // data->obj may be NULL, so we don't check it.
 
-    if (data->interpid < 0) {
-        _PyErr_SetString(tstate, PyExc_SystemError, "missing interp");
+    if (_PyCrossInterpreterData_INTERPID(data) < 0) {
+        PyErr_SetString(PyExc_SystemError, "missing interp");
         return -1;
     }
 
     if (data->new_object == NULL) {
-        _PyErr_SetString(tstate, PyExc_SystemError, "missing new_object func");
+        PyErr_SetString(PyExc_SystemError, "missing new_object func");
         return -1;
     }
 
     // data->free may be NULL, so we don't check it.
 
     return 0;
-}
-
-static crossinterpdatafunc _lookup_getdata_from_registry(
-                                            PyInterpreterState *, PyObject *);
-
-static crossinterpdatafunc
-_lookup_getdata(PyInterpreterState *interp, PyObject *obj)
-{
-   /* Cross-interpreter objects are looked up by exact match on the class.
-      We can reassess this policy when we move from a global registry to a
-      tp_* slot. */
-    return _lookup_getdata_from_registry(interp, obj);
-}
-
-crossinterpdatafunc
-_PyCrossInterpreterData_Lookup(PyObject *obj)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _lookup_getdata(interp, obj);
 }
 
 static inline void
@@ -248,8 +223,8 @@ _set_xid_lookup_failure(PyInterpreterState *interp,
 int
 _PyObject_CheckCrossInterpreterData(PyObject *obj)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    crossinterpdatafunc getdata = _lookup_getdata(interp, obj);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    crossinterpdatafunc getdata = lookup_getdata(interp, obj);
     if (getdata == NULL) {
         if (!PyErr_Occurred()) {
             _set_xid_lookup_failure(interp, obj, NULL);
@@ -262,20 +237,16 @@ _PyObject_CheckCrossInterpreterData(PyObject *obj)
 int
 _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 {
-    PyThreadState *tstate = _PyThreadState_GetCurrent();
-#ifdef Py_DEBUG
-    // The caller must hold the GIL
-    _Py_EnsureTstateNotNULL(tstate);
-#endif
+    PyThreadState *tstate = PyThreadState_Get();
     PyInterpreterState *interp = tstate->interp;
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
-    data->interpid = -1;
+    _PyCrossInterpreterData_INTERPID(data) = -1;
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
-    crossinterpdatafunc getdata = _lookup_getdata(interp, obj);
+    crossinterpdatafunc getdata = lookup_getdata(interp, obj);
     if (getdata == NULL) {
         Py_DECREF(obj);
         if (!PyErr_Occurred()) {
@@ -290,7 +261,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    data->interpid = interp->id;
+    _PyCrossInterpreterData_INTERPID(data) = PyInterpreterState_GetID(interp);
     if (_check_xidata(tstate, data) != 0) {
         (void)_PyCrossInterpreterData_Release(data);
         return -1;
@@ -327,7 +298,8 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
     }
 
     // Switch to the original interpreter.
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interpid);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(
+                                    _PyCrossInterpreterData_INTERPID(data));
     if (interp == NULL) {
         // The interpreter was already destroyed.
         // This function shouldn't have been called.
@@ -361,577 +333,117 @@ _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
 }
 
 
-/* registry of {type -> crossinterpdatafunc} */
-
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-static inline struct _xidregistry *
-_get_global_xidregistry(_PyRuntimeState *runtime)
-{
-    return &runtime->xi.registry;
-}
-
-static inline struct _xidregistry *
-_get_xidregistry(PyInterpreterState *interp)
-{
-    return &interp->xi.registry;
-}
-
-static inline struct _xidregistry *
-_get_xidregistry_for_type(PyInterpreterState *interp, PyTypeObject *cls)
-{
-    struct _xidregistry *registry = _get_global_xidregistry(interp->runtime);
-    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        registry = _get_xidregistry(interp);
-    }
-    return registry;
-}
-
-static int
-_xidregistry_add_type(struct _xidregistry *xidregistry,
-                      PyTypeObject *cls, crossinterpdatafunc getdata)
-{
-    struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
-    if (newhead == NULL) {
-        return -1;
-    }
-    *newhead = (struct _xidregitem){
-        // We do not keep a reference, to avoid keeping the class alive.
-        .cls = cls,
-        .refcount = 1,
-        .getdata = getdata,
-    };
-    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        // XXX Assign a callback to clear the entry from the registry?
-        newhead->weakref = PyWeakref_NewRef((PyObject *)cls, NULL);
-        if (newhead->weakref == NULL) {
-            PyMem_RawFree(newhead);
-            return -1;
-        }
-    }
-    newhead->next = xidregistry->head;
-    if (newhead->next != NULL) {
-        newhead->next->prev = newhead;
-    }
-    xidregistry->head = newhead;
-    return 0;
-}
-
-static struct _xidregitem *
-_xidregistry_remove_entry(struct _xidregistry *xidregistry,
-                          struct _xidregitem *entry)
-{
-    struct _xidregitem *next = entry->next;
-    if (entry->prev != NULL) {
-        assert(entry->prev->next == entry);
-        entry->prev->next = next;
-    }
-    else {
-        assert(xidregistry->head == entry);
-        xidregistry->head = next;
-    }
-    if (next != NULL) {
-        next->prev = entry->prev;
-    }
-    Py_XDECREF(entry->weakref);
-    PyMem_RawFree(entry);
-    return next;
-}
-
-static void
-_xidregistry_clear(struct _xidregistry *xidregistry)
-{
-    struct _xidregitem *cur = xidregistry->head;
-    xidregistry->head = NULL;
-    while (cur != NULL) {
-        struct _xidregitem *next = cur->next;
-        Py_XDECREF(cur->weakref);
-        PyMem_RawFree(cur);
-        cur = next;
-    }
-}
-
-static void
-_xidregistry_lock(struct _xidregistry *registry)
-{
-    if (registry->mutex != NULL) {
-        PyThread_acquire_lock(registry->mutex, WAIT_LOCK);
-    }
-}
-
-static void
-_xidregistry_unlock(struct _xidregistry *registry)
-{
-    if (registry->mutex != NULL) {
-        PyThread_release_lock(registry->mutex);
-    }
-}
-
-static struct _xidregitem *
-_xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
-{
-    struct _xidregitem *cur = xidregistry->head;
-    while (cur != NULL) {
-        if (cur->weakref != NULL) {
-            // cur is/was a heap type.
-            PyObject *registered = _PyWeakref_GET_REF(cur->weakref);
-            if (registered == NULL) {
-                // The weakly ref'ed object was freed.
-                cur = _xidregistry_remove_entry(xidregistry, cur);
-                continue;
-            }
-            assert(PyType_Check(registered));
-            assert(cur->cls == (PyTypeObject *)registered);
-            assert(cur->cls->tp_flags & Py_TPFLAGS_HEAPTYPE);
-            Py_DECREF(registered);
-        }
-        if (cur->cls == cls) {
-            return cur;
-        }
-        cur = cur->next;
-    }
-    return NULL;
-}
-
-int
-_PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
-                                      crossinterpdatafunc getdata)
-{
-    if (!PyType_Check(cls)) {
-        PyErr_Format(PyExc_ValueError, "only classes may be registered");
-        return -1;
-    }
-    if (getdata == NULL) {
-        PyErr_Format(PyExc_ValueError, "missing 'getdata' func");
-        return -1;
-    }
-
-    int res = 0;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
-    _xidregistry_lock(xidregistry);
-
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
-    if (matched != NULL) {
-        assert(matched->getdata == getdata);
-        matched->refcount += 1;
-        goto finally;
-    }
-
-    res = _xidregistry_add_type(xidregistry, cls, getdata);
-
-finally:
-    _xidregistry_unlock(xidregistry);
-    return res;
-}
-
-int
-_PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
-{
-    int res = 0;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
-    _xidregistry_lock(xidregistry);
-
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
-    if (matched != NULL) {
-        assert(matched->refcount > 0);
-        matched->refcount -= 1;
-        if (matched->refcount == 0) {
-            (void)_xidregistry_remove_entry(xidregistry, matched);
-        }
-        res = 1;
-    }
-
-    _xidregistry_unlock(xidregistry);
-    return res;
-}
-
-static crossinterpdatafunc
-_lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
-{
-    PyTypeObject *cls = Py_TYPE(obj);
-
-    struct _xidregistry *xidregistry = _get_xidregistry_for_type(interp, cls);
-    _xidregistry_lock(xidregistry);
-
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
-    crossinterpdatafunc func = matched != NULL ? matched->getdata : NULL;
-
-    _xidregistry_unlock(xidregistry);
-    return func;
-}
-
-/* cross-interpreter data for builtin types */
-
-// bytes
-
-struct _shared_bytes_data {
-    char *bytes;
-    Py_ssize_t len;
-};
-
-static PyObject *
-_new_bytes_object(_PyCrossInterpreterData *data)
-{
-    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(data->data);
-    return PyBytes_FromStringAndSize(shared->bytes, shared->len);
-}
-
-static int
-_bytes_shared(PyThreadState *tstate, PyObject *obj,
-              _PyCrossInterpreterData *data)
-{
-    if (_PyCrossInterpreterData_InitWithSize(
-            data, tstate->interp, sizeof(struct _shared_bytes_data), obj,
-            _new_bytes_object
-            ) < 0)
-    {
-        return -1;
-    }
-    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)data->data;
-    if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
-        _PyCrossInterpreterData_Clear(tstate->interp, data);
-        return -1;
-    }
-    return 0;
-}
-
-// str
-
-struct _shared_str_data {
-    int kind;
-    const void *buffer;
-    Py_ssize_t len;
-};
-
-static PyObject *
-_new_str_object(_PyCrossInterpreterData *data)
-{
-    struct _shared_str_data *shared = (struct _shared_str_data *)(data->data);
-    return PyUnicode_FromKindAndData(shared->kind, shared->buffer, shared->len);
-}
-
-static int
-_str_shared(PyThreadState *tstate, PyObject *obj,
-            _PyCrossInterpreterData *data)
-{
-    if (_PyCrossInterpreterData_InitWithSize(
-            data, tstate->interp, sizeof(struct _shared_str_data), obj,
-            _new_str_object
-            ) < 0)
-    {
-        return -1;
-    }
-    struct _shared_str_data *shared = (struct _shared_str_data *)data->data;
-    shared->kind = PyUnicode_KIND(obj);
-    shared->buffer = PyUnicode_DATA(obj);
-    shared->len = PyUnicode_GET_LENGTH(obj);
-    return 0;
-}
-
-// int
-
-static PyObject *
-_new_long_object(_PyCrossInterpreterData *data)
-{
-    return PyLong_FromSsize_t((Py_ssize_t)(data->data));
-}
-
-static int
-_long_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
-{
-    /* Note that this means the size of shareable ints is bounded by
-     * sys.maxsize.  Hence on 32-bit architectures that is half the
-     * size of maximum shareable ints on 64-bit.
-     */
-    Py_ssize_t value = PyLong_AsSsize_t(obj);
-    if (value == -1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            PyErr_SetString(PyExc_OverflowError, "try sending as bytes");
-        }
-        return -1;
-    }
-    _PyCrossInterpreterData_Init(data, tstate->interp, (void *)value, NULL,
-            _new_long_object);
-    // data->obj and data->free remain NULL
-    return 0;
-}
-
-// float
-
-static PyObject *
-_new_float_object(_PyCrossInterpreterData *data)
-{
-    double * value_ptr = data->data;
-    return PyFloat_FromDouble(*value_ptr);
-}
-
-static int
-_float_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
-{
-    if (_PyCrossInterpreterData_InitWithSize(
-            data, tstate->interp, sizeof(double), NULL,
-            _new_float_object
-            ) < 0)
-    {
-        return -1;
-    }
-    double *shared = (double *)data->data;
-    *shared = PyFloat_AsDouble(obj);
-    return 0;
-}
-
-// None
-
-static PyObject *
-_new_none_object(_PyCrossInterpreterData *data)
-{
-    // XXX Singleton refcounts are problematic across interpreters...
-    return Py_NewRef(Py_None);
-}
-
-static int
-_none_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
-{
-    _PyCrossInterpreterData_Init(data, tstate->interp, NULL, NULL,
-            _new_none_object);
-    // data->data, data->obj and data->free remain NULL
-    return 0;
-}
-
-// bool
-
-static PyObject *
-_new_bool_object(_PyCrossInterpreterData *data)
-{
-    if (data->data){
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
-}
-
-static int
-_bool_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
-{
-    _PyCrossInterpreterData_Init(data, tstate->interp,
-            (void *) (Py_IsTrue(obj) ? (uintptr_t) 1 : (uintptr_t) 0), NULL,
-            _new_bool_object);
-    // data->obj and data->free remain NULL
-    return 0;
-}
-
-// tuple
-
-struct _shared_tuple_data {
-    Py_ssize_t len;
-    _PyCrossInterpreterData **data;
-};
-
-static PyObject *
-_new_tuple_object(_PyCrossInterpreterData *data)
-{
-    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
-    PyObject *tuple = PyTuple_New(shared->len);
-    if (tuple == NULL) {
-        return NULL;
-    }
-
-    for (Py_ssize_t i = 0; i < shared->len; i++) {
-        PyObject *item = _PyCrossInterpreterData_NewObject(shared->data[i]);
-        if (item == NULL){
-            Py_DECREF(tuple);
-            return NULL;
-        }
-        PyTuple_SET_ITEM(tuple, i, item);
-    }
-    return tuple;
-}
-
-static void
-_tuple_shared_free(void* data)
-{
-    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data);
-#ifndef NDEBUG
-    int64_t interpid = PyInterpreterState_GetID(_PyInterpreterState_GET());
-#endif
-    for (Py_ssize_t i = 0; i < shared->len; i++) {
-        if (shared->data[i] != NULL) {
-            assert(shared->data[i]->interpid == interpid);
-            _PyCrossInterpreterData_Release(shared->data[i]);
-            PyMem_RawFree(shared->data[i]);
-            shared->data[i] = NULL;
-        }
-    }
-    PyMem_Free(shared->data);
-    PyMem_RawFree(shared);
-}
-
-static int
-_tuple_shared(PyThreadState *tstate, PyObject *obj,
-             _PyCrossInterpreterData *data)
-{
-    Py_ssize_t len = PyTuple_GET_SIZE(obj);
-    if (len < 0) {
-        return -1;
-    }
-    struct _shared_tuple_data *shared = PyMem_RawMalloc(sizeof(struct _shared_tuple_data));
-    if (shared == NULL){
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    shared->len = len;
-    shared->data = (_PyCrossInterpreterData **) PyMem_Calloc(shared->len, sizeof(_PyCrossInterpreterData *));
-    if (shared->data == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
-    for (Py_ssize_t i = 0; i < shared->len; i++) {
-        _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
-        if (data == NULL) {
-            goto error;  // PyErr_NoMemory already set
-        }
-        PyObject *item = PyTuple_GET_ITEM(obj, i);
-
-        int res = -1;
-        if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetCrossInterpreterData(item, data);
-            _Py_LeaveRecursiveCallTstate(tstate);
-        }
-        if (res < 0) {
-            PyMem_RawFree(data);
-            goto error;
-        }
-        shared->data[i] = data;
-    }
-    _PyCrossInterpreterData_Init(
-            data, tstate->interp, shared, obj, _new_tuple_object);
-    data->free = _tuple_shared_free;
-    return 0;
-
-error:
-    _tuple_shared_free(shared);
-    return -1;
-}
-
-// registration
-
-static void
-_register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
-{
-    // None
-    if (_xidregistry_add_type(xidregistry, (PyTypeObject *)PyObject_Type(Py_None), _none_shared) != 0) {
-        Py_FatalError("could not register None for cross-interpreter sharing");
-    }
-
-    // int
-    if (_xidregistry_add_type(xidregistry, &PyLong_Type, _long_shared) != 0) {
-        Py_FatalError("could not register int for cross-interpreter sharing");
-    }
-
-    // bytes
-    if (_xidregistry_add_type(xidregistry, &PyBytes_Type, _bytes_shared) != 0) {
-        Py_FatalError("could not register bytes for cross-interpreter sharing");
-    }
-
-    // str
-    if (_xidregistry_add_type(xidregistry, &PyUnicode_Type, _str_shared) != 0) {
-        Py_FatalError("could not register str for cross-interpreter sharing");
-    }
-
-    // bool
-    if (_xidregistry_add_type(xidregistry, &PyBool_Type, _bool_shared) != 0) {
-        Py_FatalError("could not register bool for cross-interpreter sharing");
-    }
-
-    // float
-    if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
-        Py_FatalError("could not register float for cross-interpreter sharing");
-    }
-
-    // tuple
-    if (_xidregistry_add_type(xidregistry, &PyTuple_Type, _tuple_shared) != 0) {
-        Py_FatalError("could not register tuple for cross-interpreter sharing");
-    }
-}
-
-/* registry lifecycle */
-
-static void
-_xidregistry_init(struct _xidregistry *registry)
-{
-    if (registry->initialized) {
-        return;
-    }
-    registry->initialized = 1;
-
-    if (registry->global) {
-        // We manage the mutex lifecycle in pystate.c.
-        assert(registry->mutex != NULL);
-
-        // Registering the builtins is cheap so we don't bother doing it lazily.
-        assert(registry->head == NULL);
-        _register_builtins_for_crossinterpreter_data(registry);
-    }
-    else {
-        // Within an interpreter we rely on the GIL instead of a separate lock.
-        assert(registry->mutex == NULL);
-
-        // There's nothing else to initialize.
-    }
-}
-
-static void
-_xidregistry_fini(struct _xidregistry *registry)
-{
-    if (!registry->initialized) {
-        return;
-    }
-    registry->initialized = 0;
-
-    _xidregistry_clear(registry);
-
-    if (registry->global) {
-        // We manage the mutex lifecycle in pystate.c.
-        assert(registry->mutex != NULL);
-    }
-    else {
-        // There's nothing else to finalize.
-
-        // Within an interpreter we rely on the GIL instead of a separate lock.
-        assert(registry->mutex == NULL);
-    }
-}
-
-
 /*************************/
 /* convenience utilities */
 /*************************/
 
 static const char *
-_copy_string_obj_raw(PyObject *strobj)
+_copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
 {
-    const char *str = PyUnicode_AsUTF8(strobj);
+    Py_ssize_t size = -1;
+    const char *str = PyUnicode_AsUTF8AndSize(strobj, &size);
     if (str == NULL) {
         return NULL;
     }
 
-    char *copied = PyMem_RawMalloc(strlen(str)+1);
+    char *copied = PyMem_RawMalloc(size+1);
     if (copied == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     strcpy(copied, str);
+    if (p_size != NULL) {
+        *p_size = size;
+    }
     return copied;
 }
+
+
+static int
+_convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
+{
+    PyObject *args = NULL;
+    PyObject *kwargs = NULL;
+    PyObject *create = NULL;
+
+    // This is inspired by _PyErr_Display().
+    PyObject *tbmod = PyImport_ImportModule("traceback");
+    if (tbmod == NULL) {
+        return -1;
+    }
+    PyObject *tbexc_type = PyObject_GetAttrString(tbmod, "TracebackException");
+    Py_DECREF(tbmod);
+    if (tbexc_type == NULL) {
+        return -1;
+    }
+    create = PyObject_GetAttrString(tbexc_type, "from_exception");
+    Py_DECREF(tbexc_type);
+    if (create == NULL) {
+        return -1;
+    }
+
+    args = PyTuple_Pack(1, exc);
+    if (args == NULL) {
+        goto error;
+    }
+
+    kwargs = PyDict_New();
+    if (kwargs == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "save_exc_type", Py_False) < 0) {
+        goto error;
+    }
+    if (PyDict_SetItemString(kwargs, "lookup_lines", Py_False) < 0) {
+        goto error;
+    }
+
+    PyObject *tbexc = PyObject_Call(create, args, kwargs);
+    Py_DECREF(args);
+    Py_DECREF(kwargs);
+    Py_DECREF(create);
+    if (tbexc == NULL) {
+        goto error;
+    }
+
+    *p_tbexc = tbexc;
+    return 0;
+
+error:
+    Py_XDECREF(args);
+    Py_XDECREF(kwargs);
+    Py_XDECREF(create);
+    return -1;
+}
+
+// We accommodate backports here.
+#ifndef _Py_EMPTY_STR
+# define _Py_EMPTY_STR &_Py_STR(empty)
+#endif
+
+static const char *
+_format_TracebackException(PyObject *tbexc)
+{
+    PyObject *lines = PyObject_CallMethod(tbexc, "format", NULL);
+    if (lines == NULL) {
+        return NULL;
+    }
+    assert(_Py_EMPTY_STR != NULL);
+    PyObject *formatted_obj = PyUnicode_Join(_Py_EMPTY_STR, lines);
+    Py_DECREF(lines);
+    if (formatted_obj == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t size = -1;
+    const char *formatted = _copy_string_obj_raw(formatted_obj, &size);
+    Py_DECREF(formatted_obj);
+    // We remove trailing the newline added by TracebackException.format().
+    assert(formatted[size-1] == '\n');
+    ((char *)formatted)[size-1] = '\0';
+    return formatted;
+}
+
 
 static int
 _release_xid_data(_PyCrossInterpreterData *data, int rawfree)
@@ -979,7 +491,7 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     if (strobj == NULL) {
         return -1;
     }
-    info->name = _copy_string_obj_raw(strobj);
+    info->name = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
     if (info->name == NULL) {
         return -1;
@@ -990,18 +502,18 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     if (strobj == NULL) {
         return -1;
     }
-    info->qualname = _copy_string_obj_raw(strobj);
+    info->qualname = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
     if (info->name == NULL) {
         return -1;
     }
 
     // __module__
-    strobj = _PyType_GetModuleName(type);
+    strobj = PyType_GetModuleName(type);
     if (strobj == NULL) {
         return -1;
     }
-    info->module = _copy_string_obj_raw(strobj);
+    info->module = _copy_string_obj_raw(strobj, NULL);
     Py_DECREF(strobj);
     if (info->name == NULL) {
         return -1;
@@ -1066,6 +578,9 @@ _PyXI_excinfo_Clear(_PyXI_excinfo *info)
     if (info->msg != NULL) {
         PyMem_RawFree((void *)info->msg);
     }
+    if (info->errdisplay != NULL) {
+        PyMem_RawFree((void *)info->errdisplay);
+    }
     *info = (_PyXI_excinfo){{NULL}};
 }
 
@@ -1123,11 +638,30 @@ _PyXI_excinfo_InitFromException(_PyXI_excinfo *info, PyObject *exc)
         failure = "error while formatting exception";
         goto error;
     }
-    info->msg = _copy_string_obj_raw(msgobj);
+    info->msg = _copy_string_obj_raw(msgobj, NULL);
     Py_DECREF(msgobj);
     if (info->msg == NULL) {
         failure = "error while copying exception message";
         goto error;
+    }
+
+    // Pickle a traceback.TracebackException.
+    PyObject *tbexc = NULL;
+    if (_convert_exc_to_TracebackException(exc, &tbexc) < 0) {
+#ifdef Py_DEBUG
+        PyErr_FormatUnraisable("Exception ignored while creating TracebackException");
+#endif
+        PyErr_Clear();
+    }
+    else {
+        info->errdisplay = _format_TracebackException(tbexc);
+        Py_DECREF(tbexc);
+        if (info->errdisplay == NULL) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored while formating TracebackException");
+#endif
+            PyErr_Clear();
+        }
     }
 
     return NULL;
@@ -1141,9 +675,29 @@ error:
 static void
 _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
 {
+    PyObject *tbexc = NULL;
+    if (info->errdisplay != NULL) {
+        tbexc = PyUnicode_FromString(info->errdisplay);
+        if (tbexc == NULL) {
+            PyErr_Clear();
+        }
+    }
+
     PyObject *formatted = _PyXI_excinfo_format(info);
     PyErr_SetObject(exctype, formatted);
     Py_DECREF(formatted);
+
+    if (tbexc != NULL) {
+        PyObject *exc = PyErr_GetRaisedException();
+        if (PyObject_SetAttrString(exc, "_errdisplay", tbexc) < 0) {
+#ifdef Py_DEBUG
+            PyErr_FormatUnraisable("Exception ignored when setting _errdisplay");
+#endif
+            PyErr_Clear();
+        }
+        Py_DECREF(tbexc);
+        PyErr_SetRaisedException(exc);
+    }
 }
 
 static PyObject *
@@ -1247,6 +801,20 @@ _PyXI_excinfo_AsObject(_PyXI_excinfo *info)
     Py_DECREF(formatted);
     if (res < 0) {
         goto error;
+    }
+
+    if (info->errdisplay != NULL) {
+        PyObject *tbexc = PyUnicode_FromString(info->errdisplay);
+        if (tbexc == NULL) {
+            PyErr_Clear();
+        }
+        else {
+            res = PyObject_SetAttrString(ns, "errdisplay", tbexc);
+            Py_DECREF(tbexc);
+            if (res < 0) {
+                goto error;
+            }
+        }
     }
 
     return ns;
@@ -1413,7 +981,7 @@ _sharednsitem_is_initialized(_PyXI_namespace_item *item)
 static int
 _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
 {
-    item->name = _copy_string_obj_raw(key);
+    item->name = _copy_string_obj_raw(key, NULL);
     if (item->name == NULL) {
         assert(!_sharednsitem_is_initialized(item));
         return -1;
@@ -1430,7 +998,7 @@ _sharednsitem_has_value(_PyXI_namespace_item *item, int64_t *p_interpid)
         return 0;
     }
     if (p_interpid != NULL) {
-        *p_interpid = item->data->interpid;
+        *p_interpid = _PyCrossInterpreterData_INTERPID(item->data);
     }
     return 1;
 }
@@ -1704,7 +1272,7 @@ _PyXI_FreeNamespace(_PyXI_namespace *ns)
         return;
     }
 
-    if (interpid == PyInterpreterState_GetID(_PyInterpreterState_GET())) {
+    if (interpid == PyInterpreterState_GetID(PyInterpreterState_Get())) {
         _sharedns_free(ns);
     }
     else {
@@ -1844,7 +1412,7 @@ _enter_session(_PyXI_session *session, PyInterpreterState *interp)
     PyThreadState *prev = tstate;
     if (interp != tstate->interp) {
         tstate = PyThreadState_New(interp);
-        tstate->_whence = _PyThreadState_WHENCE_EXEC;
+        _PyThreadState_SetWhence(tstate, _PyThreadState_WHENCE_EXEC);
         // XXX Possible GILState issues?
         session->prev_tstate = PyThreadState_Swap(tstate);
         assert(session->prev_tstate == prev);
@@ -1903,7 +1471,7 @@ _propagate_not_shareable_error(_PyXI_session *session)
     if (session == NULL) {
         return;
     }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyInterpreterState *interp = PyInterpreterState_Get();
     if (PyErr_ExceptionMatches(_get_not_shareable_error_type(interp))) {
         // We want to propagate the exception directly.
         session->_error_override = _PyXI_ERR_NOT_SHAREABLE;
@@ -1955,6 +1523,7 @@ _capture_current_exception(_PyXI_session *session)
     }
     else {
         failure = _PyXI_InitError(err, excval, _PyXI_ERR_UNCAUGHT_EXCEPTION);
+        Py_DECREF(excval);
         if (failure == NULL && override != NULL) {
             err->code = errcode;
         }
@@ -1967,18 +1536,6 @@ _capture_current_exception(_PyXI_session *session)
                 "RunFailedError: script raised an uncaught exception (%s)",
                 failure);
         err = NULL;
-    }
-
-    // a temporary hack  (famous last words)
-    if (excval != NULL) {
-        // XXX Store the traceback info (or rendered traceback) on
-        // _PyXI_excinfo, attach it to the exception when applied,
-        // and teach PyErr_Display() to print it.
-#ifdef Py_DEBUG
-        // XXX Drop this once _Py_excinfo picks up the slack.
-        PyErr_Display(NULL, excval, NULL);
-#endif
-        Py_DECREF(excval);
     }
 
     // Finished!
@@ -2086,18 +1643,12 @@ _PyXI_Exit(_PyXI_session *session)
 PyStatus
 _PyXI_Init(PyInterpreterState *interp)
 {
-    PyStatus status;
-
-    // Initialize the XID registry.
-    if (_Py_IsMainInterpreter(interp)) {
-        _xidregistry_init(_get_global_xidregistry(interp->runtime));
-    }
-    _xidregistry_init(_get_xidregistry(interp));
+    // Initialize the XID lookup state (e.g. registry).
+    xid_lookup_init(interp);
 
     // Initialize exceptions (heap types).
-    status = _init_not_shareable_error_type(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (_init_not_shareable_error_type(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize NotShareableError");
     }
 
     return _PyStatus_OK();
@@ -2112,9 +1663,21 @@ _PyXI_Fini(PyInterpreterState *interp)
     // Finalize exceptions (heap types).
     _fini_not_shareable_error_type(interp);
 
-    // Finalize the XID registry.
-    _xidregistry_fini(_get_xidregistry(interp));
-    if (_Py_IsMainInterpreter(interp)) {
-        _xidregistry_fini(_get_global_xidregistry(interp->runtime));
+    // Finalize the XID lookup state (e.g. registry).
+    xid_lookup_fini(interp);
+}
+
+PyStatus
+_PyXI_InitTypes(PyInterpreterState *interp)
+{
+    if (init_exceptions(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize an exception type");
     }
+    return _PyStatus_OK();
+}
+
+void
+_PyXI_FiniTypes(PyInterpreterState *interp)
+{
+    fini_exceptions(interp);
 }

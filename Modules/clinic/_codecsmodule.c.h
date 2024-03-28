@@ -297,7 +297,9 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1099,7 +1101,9 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1175,7 +1179,9 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1644,7 +1650,9 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -2738,4 +2746,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=d8d9e372f7ccba35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e50d5fdf65bd45fa input=a9049054013a1b77]*/

@@ -113,6 +113,9 @@ Restrictions
   differs across Unix versions and requires knowledge about the database
   implementation used.
 
+* On macOS :mod:`dbm.ndbm` can silently corrupt the database file on updates,
+  which can cause hard crashes when trying to read from the database.
+
 
 .. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
 
@@ -149,13 +152,14 @@ Restrictions
 
 .. class:: BsdDbShelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
 
-   A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`!next`,
-   :meth:`previous`, :meth:`last` and :meth:`set_location` which are available
-   in the third-party :mod:`bsddb` module from `pybsddb
+   A subclass of :class:`Shelf` which exposes :meth:`!first`, :meth:`!next`,
+   :meth:`!previous`, :meth:`!last` and :meth:`!set_location` methods.
+   These are available
+   in the third-party :mod:`!bsddb` module from `pybsddb
    <https://www.jcea.es/programacion/pybsddb.htm>`_ but not in other database
    modules.  The *dict* object passed to the constructor must support those
    methods.  This is generally accomplished by calling one of
-   :func:`bsddb.hashopen`, :func:`bsddb.btopen` or :func:`bsddb.rnopen`.  The
+   :func:`!bsddb.hashopen`, :func:`!bsddb.btopen` or :func:`!bsddb.rnopen`.  The
    optional *protocol*, *writeback*, and *keyencoding* parameters have the same
    interpretation as for the :class:`Shelf` class.
 

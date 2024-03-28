@@ -301,6 +301,7 @@ class ExceptionTests(unittest.TestCase):
             {
             6
             0="""''', 5, 13)
+        check('b"fooжжж"'.encode(), 1, 1, 1, 10)
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 7)
@@ -1917,7 +1918,7 @@ class ImportErrorTests(unittest.TestCase):
         self.assertEqual(exc.name, 'somename')
         self.assertEqual(exc.path, 'somepath')
 
-        msg = "'invalid' is an invalid keyword argument for ImportError"
+        msg = r"ImportError\(\) got an unexpected keyword argument 'invalid'"
         with self.assertRaisesRegex(TypeError, msg):
             ImportError('test', invalid='keyword')
 
@@ -2080,6 +2081,7 @@ class AssertionErrorTests(unittest.TestCase):
              """,
                 [
                     '    1 < 2 and',
+                    '    3 > 4',
                     'AssertionError',
                 ],
             ),
@@ -2087,7 +2089,7 @@ class AssertionErrorTests(unittest.TestCase):
         for source, expected in cases:
             with self.subTest(source):
                 result = self.write_source(source)
-                self.assertEqual(result[-2:], expected)
+                self.assertEqual(result[-len(expected):], expected)
 
 
 class SyntaxErrorTests(unittest.TestCase):

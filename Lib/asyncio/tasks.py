@@ -404,11 +404,10 @@ def create_task(coro, *, name=None, context=None):
     loop = events.get_running_loop()
     if context is None:
         # Use legacy API if context is not needed
-        task = loop.create_task(coro)
+        task = loop.create_task(coro, name=name)
     else:
-        task = loop.create_task(coro, context=context)
+        task = loop.create_task(coro, name=name, context=context)
 
-    task.set_name(name)
     return task
 
 
@@ -465,7 +464,7 @@ async def wait_for(fut, timeout):
 
     If the wait is cancelled, the task is also cancelled.
 
-    If the task supresses the cancellation and returns a value instead,
+    If the task suppresses the cancellation and returns a value instead,
     that value is returned.
 
     This function is a coroutine.

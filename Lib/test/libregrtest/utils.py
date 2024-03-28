@@ -276,6 +276,15 @@ def clear_caches():
         pass
     else:
         inspect._shadowed_dict_from_mro_tuple.cache_clear()
+        inspect._filesbymodname.clear()
+        inspect.modulesbyfile.clear()
+
+    try:
+        importlib_metadata = sys.modules['importlib.metadata']
+    except KeyError:
+        pass
+    else:
+        importlib_metadata.FastPath.__new__.cache_clear()
 
 
 def get_build_info():
@@ -291,7 +300,7 @@ def get_build_info():
 
     # --disable-gil
     if sysconfig.get_config_var('Py_GIL_DISABLED'):
-        build.append("nogil")
+        build.append("free_threading")
 
     if hasattr(sys, 'gettotalrefcount'):
         # --with-pydebug
@@ -340,6 +349,9 @@ def get_build_info():
     # --with-undefined-behavior-sanitizer
     if support.check_sanitizer(ub=True):
         sanitizers.append("UBSAN")
+    # --with-thread-sanitizer
+    if support.check_sanitizer(thread=True):
+        sanitizers.append("TSAN")
     if sanitizers:
         build.append('+'.join(sanitizers))
 
@@ -377,10 +389,19 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                         # Python out of the source tree, especially when the
                         # source tree is read only.
                         tmp_dir = sysconfig.get_config_var('srcdir')
+                        if not tmp_dir:
+                            raise RuntimeError(
+                                "Could not determine the correct value for tmp_dir"
+                            )
                 tmp_dir = os.path.join(tmp_dir, 'build')
             else:
                 # WASI platform
                 tmp_dir = sysconfig.get_config_var('projectbase')
+                if not tmp_dir:
+                    raise RuntimeError(
+                        "sysconfig.get_config_var('projectbase') "
+                        f"unexpectedly returned {tmp_dir!r} on WASI"
+                    )
                 tmp_dir = os.path.join(tmp_dir, 'build')
 
                 # When get_temp_dir() is called in a worker process,
@@ -410,7 +431,7 @@ def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
-    # milisecond clock resolution. Use randint() instead.
+    # millisecond clock resolution. Use randint() instead.
     if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
@@ -625,6 +646,7 @@ def display_header(use_resources: tuple[str, ...],
     asan = support.check_sanitizer(address=True)
     msan = support.check_sanitizer(memory=True)
     ubsan = support.check_sanitizer(ub=True)
+    tsan = support.check_sanitizer(thread=True)
     sanitizers = []
     if asan:
         sanitizers.append("address")
@@ -632,12 +654,15 @@ def display_header(use_resources: tuple[str, ...],
         sanitizers.append("memory")
     if ubsan:
         sanitizers.append("undefined behavior")
+    if tsan:
+        sanitizers.append("thread")
     if sanitizers:
         print(f"== sanitizers: {', '.join(sanitizers)}")
         for sanitizer, env_var in (
             (asan, "ASAN_OPTIONS"),
             (msan, "MSAN_OPTIONS"),
             (ubsan, "UBSAN_OPTIONS"),
+            (tsan, "TSAN_OPTIONS"),
         ):
             options= os.environ.get(env_var)
             if sanitizer and options is not None:

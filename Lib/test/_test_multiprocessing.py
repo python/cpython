@@ -2693,13 +2693,19 @@ class _TestPool(BaseTestCase):
                 p.join()
 
     def test_terminate(self):
-        if self.TYPE == 'threads':
-            self.skipTest("Threads cannot be terminated")
-
         # Simulate slow tasks which take "forever" to complete
+        sleep_time = support.LONG_TIMEOUT
+
+        if self.TYPE == 'threads':
+            # Thread pool workers can't be forced to quit, so if the first
+            # task starts early enough, we will end up waiting for it.
+            # Sleep for a shorter time, so the test doesn't block.
+            sleep_time = 1
+
         p = self.Pool(3)
-        args = [support.LONG_TIMEOUT for i in range(10_000)]
+        args = [sleep_time for i in range(10_000)]
         result = p.map_async(time.sleep, args, chunksize=1)
+        time.sleep(0.2)  # give some tasks a chance to start
         p.terminate()
         p.join()
 
@@ -3498,6 +3504,30 @@ class _TestListener(BaseTestCase):
         if self.TYPE == 'processes':
             self.assertRaises(OSError, l.accept)
 
+    def test_empty_authkey(self):
+        # bpo-43952: allow empty bytes as authkey
+        def handler(*args):
+            raise RuntimeError('Connection took too long...')
+
+        def run(addr, authkey):
+            client = self.connection.Client(addr, authkey=authkey)
+            client.send(1729)
+
+        key = b''
+
+        with self.connection.Listener(authkey=key) as listener:
+            thread = threading.Thread(target=run, args=(listener.address, key))
+            thread.start()
+            try:
+                with listener.accept() as d:
+                    self.assertEqual(d.recv(), 1729)
+            finally:
+                thread.join()
+
+        if self.TYPE == 'processes':
+            with self.assertRaises(OSError):
+                listener.accept()
+
     @unittest.skipUnless(util.abstract_sockets_supported,
                          "test needs abstract socket support")
     def test_abstract_socket(self):
@@ -3965,6 +3995,21 @@ class _TestSharedMemory(BaseTestCase):
         # test_multiprocessing_spawn, etc) in parallel.
         return prefix + str(os.getpid())
 
+    def test_shared_memory_name_with_embedded_null(self):
+        name_tsmb = self._new_shm_name('test01_null')
+        sms = shared_memory.SharedMemory(name_tsmb, create=True, size=512)
+        self.addCleanup(sms.unlink)
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(name_tsmb + '\0a', create=False, size=512)
+        if shared_memory._USE_POSIX:
+            orig_name = sms._name
+            try:
+                sms._name = orig_name + '\0a'
+                with self.assertRaises(ValueError):
+                    sms.unlink()
+            finally:
+                sms._name = orig_name
+
     def test_shared_memory_basics(self):
         name_tsmb = self._new_shm_name('test01_tsmb')
         sms = shared_memory.SharedMemory(name_tsmb, create=True, size=512)
@@ -4099,7 +4144,7 @@ class _TestSharedMemory(BaseTestCase):
             self.addCleanup(shm2.unlink)
             self.assertEqual(shm2._name, names[1])
 
-    def test_invalid_shared_memory_cration(self):
+    def test_invalid_shared_memory_creation(self):
         # Test creating a shared memory segment with negative size
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True, size=-1)
@@ -4455,6 +4500,59 @@ class _TestSharedMemory(BaseTestCase):
                     "resource_tracker: There appear to be 1 leaked "
                     "shared_memory objects to clean up at shutdown", err)
 
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_untracking(self):
+        # gh-82300: When a separate Python process accesses shared memory
+        # with track=False, it must not cause the memory to be deleted
+        # when terminating.
+        cmd = '''if 1:
+            import sys
+            from multiprocessing.shared_memory import SharedMemory
+            mem = SharedMemory(create=False, name=sys.argv[1], track=False)
+            mem.close()
+        '''
+        mem = shared_memory.SharedMemory(create=True, size=10)
+        # The resource tracker shares pipes with the subprocess, and so
+        # err existing means that the tracker process has terminated now.
+        try:
+            rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
+            self.assertNotIn(b"resource_tracker", err)
+            self.assertEqual(rc, 0)
+            mem2 = shared_memory.SharedMemory(create=False, name=mem.name)
+            mem2.close()
+        finally:
+            try:
+                mem.unlink()
+            except OSError:
+                pass
+            mem.close()
+
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_tracking(self):
+        # gh-82300: When a separate Python process accesses shared memory
+        # with track=True, it must cause the memory to be deleted when
+        # terminating.
+        cmd = '''if 1:
+            import sys
+            from multiprocessing.shared_memory import SharedMemory
+            mem = SharedMemory(create=False, name=sys.argv[1], track=True)
+            mem.close()
+        '''
+        mem = shared_memory.SharedMemory(create=True, size=10)
+        try:
+            rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
+            self.assertEqual(rc, 0)
+            self.assertIn(
+                b"resource_tracker: There appear to be 1 leaked "
+                b"shared_memory objects to clean up at shutdown", err)
+        finally:
+            try:
+                mem.unlink()
+            except OSError:
+                pass
+            resource_tracker.unregister(mem._name, "shared_memory")
+            mem.close()
+
 #
 # Test to verify that `Finalize` works.
 #
@@ -4670,6 +4768,29 @@ class _TestLogging(BaseTestCase):
 
         root_logger.setLevel(root_level)
         logger.setLevel(level=LOG_LEVEL)
+
+    def test_filename(self):
+        logger = multiprocessing.get_logger()
+        original_level = logger.level
+        try:
+            logger.setLevel(util.DEBUG)
+            stream = io.StringIO()
+            handler = logging.StreamHandler(stream)
+            logging_format = '[%(levelname)s] [%(filename)s] %(message)s'
+            handler.setFormatter(logging.Formatter(logging_format))
+            logger.addHandler(handler)
+            logger.info('1')
+            util.info('2')
+            logger.debug('3')
+            filename = os.path.basename(__file__)
+            log_record = stream.getvalue()
+            self.assertIn(f'[INFO] [{filename}] 1', log_record)
+            self.assertIn(f'[INFO] [{filename}] 2', log_record)
+            self.assertIn(f'[DEBUG] [{filename}] 3', log_record)
+        finally:
+            logger.setLevel(original_level)
+            logger.removeHandler(handler)
+            handler.close()
 
 
 # class _TestLoggingProcessName(BaseTestCase):
@@ -5527,8 +5648,9 @@ class TestResourceTracker(unittest.TestCase):
         '''
         for rtype in resource_tracker._CLEANUP_FUNCS:
             with self.subTest(rtype=rtype):
-                if rtype == "noop":
+                if rtype in ("noop", "dummy"):
                     # Artefact resource type used by the resource_tracker
+                    # or tests
                     continue
                 r, w = os.pipe()
                 p = subprocess.Popen([sys.executable,
@@ -5648,6 +5770,38 @@ class TestResourceTracker(unittest.TestCase):
         with self.assertRaises(ValueError):
             resource_tracker.register(too_long_name_resource, rtype)
 
+    def _test_resource_tracker_leak_resources(self, cleanup):
+        # We use a separate instance for testing, since the main global
+        # _resource_tracker may be used to watch test infrastructure.
+        from multiprocessing.resource_tracker import ResourceTracker
+        tracker = ResourceTracker()
+        tracker.ensure_running()
+        self.assertTrue(tracker._check_alive())
+
+        self.assertIsNone(tracker._exitcode)
+        tracker.register('somename', 'dummy')
+        if cleanup:
+            tracker.unregister('somename', 'dummy')
+            expected_exit_code = 0
+        else:
+            expected_exit_code = 1
+
+        self.assertTrue(tracker._check_alive())
+        self.assertIsNone(tracker._exitcode)
+        tracker._stop()
+        self.assertEqual(tracker._exitcode, expected_exit_code)
+
+    def test_resource_tracker_exit_code(self):
+        """
+        Test the exit code of the resource tracker.
+
+        If no leaked resources were found, exit code should be 0, otherwise 1
+        """
+        for cleanup in [True, False]:
+            with self.subTest(cleanup=cleanup):
+                self._test_resource_tracker_leak_resources(
+                    cleanup=cleanup,
+                )
 
 class TestSimpleQueue(unittest.TestCase):
 
@@ -6029,6 +6183,24 @@ class MiscTestCase(unittest.TestCase):
             import multiprocessing.spawn  # This should not fail\n""",
         )
         self.assertEqual(rc, 0)
+        self.assertFalse(err, msg=err.decode('utf-8'))
+
+    def test_large_pool(self):
+        #
+        # gh-89240: Check that large pools are always okay
+        #
+        testfn = os_helper.TESTFN
+        self.addCleanup(os_helper.unlink, testfn)
+        with open(testfn, 'w', encoding='utf-8') as f:
+            f.write(textwrap.dedent('''\
+                import multiprocessing
+                def f(x): return x*x
+                if __name__ == '__main__':
+                    with multiprocessing.Pool(200) as p:
+                        print(sum(p.map(f, range(1000))))
+            '''))
+        rc, out, err = script_helper.assert_python_ok(testfn)
+        self.assertEqual("332833500", out.decode('utf-8').strip())
         self.assertFalse(err, msg=err.decode('utf-8'))
 
 

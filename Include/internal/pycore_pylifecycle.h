@@ -40,7 +40,6 @@ extern void _PySys_FiniTypes(PyInterpreterState *interp);
 extern int _PyBuiltins_AddExceptions(PyObject * bltinmod);
 extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
-extern PyStatus _PyTime_Init(void);
 extern PyStatus _PyGC_Init(PyInterpreterState *interp);
 extern PyStatus _PyAtExit_Init(PyInterpreterState *interp);
 extern int _Py_Deepfreeze_Init(void);
@@ -64,7 +63,7 @@ extern void _PyArg_Fini(void);
 extern void _Py_FinalizeAllocatedBlocks(_PyRuntimeState *);
 
 extern PyStatus _PyGILState_Init(PyInterpreterState *interp);
-extern PyStatus _PyGILState_SetTstate(PyThreadState *tstate);
+extern void _PyGILState_SetTstate(PyThreadState *tstate);
 extern void _PyGILState_Fini(PyInterpreterState *interp);
 
 extern void _PyGC_DumpShutdownStats(PyInterpreterState *interp);
