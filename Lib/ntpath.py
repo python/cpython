@@ -853,7 +853,7 @@ def relpath(path, start=None):
 # stripped from the returned path.
 
 def commonpath(paths):
-    """Given a iterable of path names, returns the longest common sub-path."""
+    """Given an iterable of path names, returns the longest common sub-path."""
     paths = tuple(map(os.fspath, paths))
     if not paths:
         raise ValueError('commonpath() arg is an empty iterable')

@@ -258,30 +258,24 @@ def expanduser(path):
     if i != 1:
         try:
             import pwd
-        except ImportError:
+            name = path[1:i]
+            if isinstance(name, bytes):
+                name = name.decode('ascii')
+
+            userhome = pwd.getpwnam(name).pw_dir
+        except (ImportError, KeyError):
             # pwd module unavailable, return path unchanged
-            return path
-        name = path[1:i]
-        if isinstance(name, bytes):
-            name = name.decode('ascii')
-        try:
-            pwent = pwd.getpwnam(name)
-        except KeyError:
             # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
             return path
-        userhome = pwent.pw_dir
     elif 'HOME' in os.environ:
         userhome = os.environ['HOME']
     else:
         try:
             import pwd
-        except ImportError:
-            # pwd module unavailable, return path unchanged
-            return path
-        try:
             userhome = pwd.getpwuid(os.getuid()).pw_dir
-        except KeyError:
+        except (ImportError, KeyError):
+            # pwd module unavailable, return path unchanged
             # bpo-10496: if the current user identifier doesn't exist in the
             # password database, return the path unchanged
             return path
@@ -360,45 +354,40 @@ def expandvars(path):
 
 try:
     from posix import _path_normpath
-
-except ImportError:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            sep = b'/'
-            empty = b''
-            curdir = b'.'
-            pardir = b'..'
-        else:
-            sep = '/'
-            empty = ''
-            curdir = '.'
-            pardir = '..'
-        if path == empty:
-            return curdir
-        _, initial_slashes, path = splitroot(path)
-        comps = path.split(sep)
-        new_comps = []
-        for comp in comps:
-            if comp in (empty, curdir):
-                continue
-            if (comp != pardir or (not initial_slashes and not new_comps) or
-                 (new_comps and new_comps[-1] == pardir)):
-                new_comps.append(comp)
-            elif new_comps:
-                new_comps.pop()
-        comps = new_comps
-        path = initial_slashes + sep.join(comps)
-        return path or curdir
-
-else:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
         path = os.fspath(path)
         if isinstance(path, bytes):
             return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
         return _path_normpath(path) or "."
+except ImportError:
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            sep = b'/'
+            curdir = b'.'
+            pardir = b'..'
+        else:
+            sep = '/'
+            curdir = '.'
+            pardir = '..'
+        if not path:
+            return curdir
+        _, root, tail = splitroot(path)
+        comps = []
+        for comp in tail.split(sep):
+            if not comp or comp == curdir:
+                continue
+            if (
+                comp != pardir
+                or (not root and not comps)
+                or (comps and comps[-1] == pardir)
+            ):
+                comps.append(comp)
+            elif comps:
+                comps.pop()
+        return (root + sep.join(comps)) or curdir
 
 
 def abspath(path):
@@ -420,7 +409,7 @@ def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, strict, {})
+    path, _ = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
@@ -532,7 +521,7 @@ def relpath(path, start=None):
 # returned path.
 
 def commonpath(paths):
-    """Given a iterable of path names, returns the longest common sub-path."""
+    """Given an iterable of path names, returns the longest common sub-path."""
     try:
         # Raises TypeError if paths is not iterable
         _, roots, tails = zip(*map(splitroot, paths))
