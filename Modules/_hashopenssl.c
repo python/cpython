@@ -45,16 +45,13 @@
 #define MUNCH_SIZE INT_MAX
 
 #define PY_OPENSSL_HAS_SCRYPT 1
-#if defined(NID_sha512_224) && defined(NID_sha512_256)
-#define PY_OPENSSL_HAS_SHA512_2XX 1
-#endif
 #if defined(NID_sha3_224) && defined(NID_sha3_256) && defined(NID_sha3_384) && defined(NID_sha3_512)
 #define PY_OPENSSL_HAS_SHA3 1
 #endif
-#if defined(NID_shake128) && defined(NID_shake256)
+#if defined(NID_shake128) || defined(NID_shake256)
 #define PY_OPENSSL_HAS_SHAKE 1
 #endif
-#if defined(NID_blake2s256) && defined(NID_blake2b512)
+#if defined(NID_blake2s256) || defined(NID_blake2b512)
 #define PY_OPENSSL_HAS_BLAKE2 1
 #endif
 
