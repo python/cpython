@@ -5,11 +5,11 @@
 #ifndef Py_LIMITED_API
 
 PyAPI_FUNC(void)
-_PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
+PyMonitoring_EnterScope(PyMonitoringState *state_array, uint64_t *version,
                          const uint8_t *event_types, uint32_t length);
 
 PyAPI_FUNC(void)
-_PyMonitoring_ExitScope(void);
+PyMonitoring_ExitScope(void);
 
 PyAPI_FUNC(int)
 _PyMonitoring_FirePyStartEvent(PyMonitoringState *state, PyObject *codelike, int offset);
