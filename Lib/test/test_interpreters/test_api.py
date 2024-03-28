@@ -968,7 +968,8 @@ class LowLevelTests(TestBase):
             err = _interpreters.run_string(interpid, captured.script)
             if err is not None:
                 return None, err
-            raw = captured.read(maxout)
+            raw = b''
+            #raw = captured.read(maxout)
         return raw.decode('utf-8'), None
 
     def run_and_capture(self, interpid, script, maxout=1000):
@@ -1126,17 +1127,6 @@ class LowLevelTests(TestBase):
             self.assertFalse(owned)
 
         with self.subTest('owned'):
-#            r, w = self.pipe()
-#            orig = _interpreters.create()
-#            _interpreters.run_string(orig, dedent(f"""
-#                import os
-#                import {_interpreters.__name__} as _interpreters
-#                interpid = _interpreters.get_current()
-#                os.write({w}, interpid.as_bytes(8, 'big'))
-#                """))
-#            raw = os.read(r, 8)
-#            interpid = int.from_bytes(raw, 'big')
-#            self.assertEqual(interpid, orig)
             orig = _interpreters.create()
             text = self.run_and_capture(orig, f"""
                 import {_interpreters.__name__} as _interpreters
@@ -1144,7 +1134,9 @@ class LowLevelTests(TestBase):
                 print(interpid)
                 print(owned)
                 """)
-            interpid, owned = text.split()
+            parts = text.split()
+            assert len(parts) == 2, parts
+            interpid, owned = parts
             interpid = int(interpid)
             owned = eval(owned)
             self.assertEqual(interpid, orig)

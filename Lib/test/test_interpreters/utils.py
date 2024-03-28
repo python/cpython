@@ -2,7 +2,8 @@ import contextlib
 import os
 import os.path
 import pickle
-import select
+import queue
+#import select
 import subprocess
 import sys
 import tempfile
@@ -79,6 +80,156 @@ def _running(interp):
     t.join()
 
 
+@contextlib.contextmanager
+def fd_maybe_closed():
+    try:
+        yield
+    except OSError as exc:
+        if exc.errno != 9:
+            raise  # re-raise
+        # The file descriptor has closed.
+
+
+class PipeEnd:
+
+    def __init__(self, fd):
+        self._fd = fd
+        self._closed = False
+        self._lock = threading.Lock()
+
+    def __del__(self):
+        self.close()
+
+    def __str__(self):
+        return str(self._fd)
+
+    def __repr__(self):
+        return f'{type_self.__name__}({self._fd!r})'
+
+    def __index__(self):
+        return self._fd
+
+    def close(self):
+        with self._lock:
+            if self._closed:
+                return
+            self._closed = True
+            with fd_maybe_closed():
+                self._close()
+
+    @contextlib.contextmanager
+    def _maybe_closed(self):
+        assert self._lock.locked()
+        with fd_maybe_closed():
+            yield
+            return
+        # It was closed already.
+        if not self._closed:
+            self._closed = True
+            with fd_maybe_closed():
+                self._close()
+
+    def _close(self):
+        os.close(self._fd)
+
+
+class ReadPipe(PipeEnd):
+
+    def __init__(self, fd):
+        super().__init__(fd)
+
+        self._requests = queue.Queue(1)
+        self._looplock = threading.Lock()
+        self._thread = threading.Thread(target=self._handle_read_requests)
+        self._thread.start()
+        self._buffer = bytearray()
+        self._bufferlock = threading.Lock()
+
+    def _handle_read_requests(self):
+        while True:
+            try:
+                req = self._requests.get()
+            except queue.ShutDown:
+                # The pipe is closed.
+                break
+            finally:
+                # It was locked in either self.close() or self.read().
+                assert self._lock.locked()
+
+            # The loop lock was taken for us in self._read().
+            try:
+                if req is None:
+                    # Read all available bytes.
+                    buf = bytearray()
+                    data = os.read(self._fd, 8147)  # a prime number
+                    while data:
+                        buf += data
+                        data = os.read(self._fd, 8147)
+                    with self._bufferlock:
+                        self._buffer += buf
+                else:
+                    assert req >= 0, repr(req)
+                    with self._bufferlock:
+                        missing = req - len(self._buffer)
+                    if missing > 0:
+                        with self._maybe_closed():
+                            data = os.read(self._fd, missing)
+                            # The rest is skipped if its already closed.
+                            with self._bufferlock:
+                                self._buffer += data
+            finally:
+                self._looplock.release()
+
+    def read(self, n=None, timeout=-1):
+        if n == 0:
+            return b''
+        elif n is not None and n < 0:
+            # This will fail.
+            os.read(self._fd, n)
+            raise OSError('invalid argument')
+
+        with self._lock:
+            # The looo will release it after handling the request.
+            self._looplock.acquire()
+            try:
+                self._requests.put_nowait(n)
+            except BaseException:
+                self._looplock.release()
+                raise  # re-raise
+            # Wait for the request to finish.
+            if self._looplock.acquire(timeout=timeout):
+                self._looplock.release()
+            # Return (up to) the requested bytes.
+            with self._bufferlock:
+                data = self._buffer[:n]
+                self._buffer = self._buffer[n:]
+            return bytes(data)
+
+    def _close(self):
+        # Ideally the write end is already closed.
+        self._requests.shutdown()
+        with self._bufferlock:
+            # Throw away any leftover bytes.
+            self._buffer = b''
+        super()._close()
+
+
+class WritePipe(PipeEnd):
+
+    def write(self, n=None):
+        try:
+            with self._maybe_closed():
+                return os.write(self._fd, n)
+        except BrokenPipeError:
+            # The read end was already closed.
+            self.close()
+
+
+def create_pipe():
+    r, w = os.pipe()
+    return ReadPipe(r), WritePipe(w)
+
+
 class CapturingScript:
     """
     Embeds a script in a new script that captures stdout/stderr
@@ -94,13 +245,13 @@ class CapturingScript:
             if w_err == w_out:
                 stdout = stderr = open(w_out, 'w', encoding='utf-8')
             elif w_err is not None:
-                stdout = open(w_out, 'w', encoding='utf-8')
-                stderr = open(w_err, 'w', encoding='utf-8')
+                stdout = open(w_out, 'w', encoding='utf-8', closefd=False)
+                stderr = open(w_err, 'w', encoding='utf-8', closefd=False)
             else:
-                stdout = open(w_out, 'w', encoding='utf-8')
+                stdout = open(w_out, 'w', encoding='utf-8', closefd=False)
         else:
             assert w_err is not None
-            stderr = open(w_err, 'w', encoding='utf-8')
+            stderr = open(w_err, 'w', encoding='utf-8', closefd=False)
 
         sys.stdout = stdout
         sys.stderr = stderr
@@ -117,12 +268,12 @@ class CapturingScript:
         """)
 
     def __init__(self, script, *, combined=True):
-        self._r_out, self._w_out = os.pipe()
+        self._r_out, self._w_out = create_pipe()
         if combined:
             self._r_err = self._w_err = None
             w_err = self._w_out
         else:
-            self._r_err, self._w_err = os.pipe()
+            self._r_err, self._w_err = create_pipe()
             w_err = self._w_err
         self._combined = combined
 
@@ -131,6 +282,9 @@ class CapturingScript:
             w_err=w_err,
             wrapped=indent(script, '    '),
         )
+
+        self._buf_stdout = None
+        self._buf_stderr = None
 
     def __del__(self):
         self.close()
@@ -146,38 +300,59 @@ class CapturingScript:
         return self._script
 
     def close(self):
-        for fd in [self._r_out, self._w_out, self._r_err, self._w_err]:
-            if fd is not None:
-                try:
-                    os.close(fd)
-                except OSError:
-                    if exc.errno != 9:
-                        raise  # re-raise
-                    # It was closed already.
-        self._r_out = self._w_out = self._r_err = self._w_err = None
+        if self._w_out is not None:
+            assert self._r_out is not None
+            self._w_out.close()
+            self._w_out = None
+            self._buf_stdout = self._r_out.read()
+            self._r_out.close()
+            self._r_out = None
+        else:
+            assert self._r_out is None
+
+        if self._combined:
+            assert self._w_err is None
+            assert self._r_err is None
+        elif self._w_err is not None:
+            assert self._r_err is not None
+            self._w_err.close()
+            self._w_err = None
+            self._buf_stderr = self._r_err.read()
+            self._r_err.close()
+            self._r_err = None
+        else:
+            assert self._r_err is None
 
     def read(self, n=None):
         return self.read_stdout(n)
 
     def read_stdout(self, n=None):
-        try:
-            return os.read(self._r_out, n)
-        except OSError as exc:
-            if exc.errno != 9:
-                raise  # re-raise
-            # It was closed already.
-            return b''
+        if self._r_out is not None:
+            data = self._r_out.read(n)
+        elif self._buf_stdout is None:
+            data = b''
+        elif n is None or n == len(self._buf_stdout):
+            data = self._buf_stdout
+            self._buf_stdout = None
+        else:
+            data = self._buf_stdout[:n]
+            self._buf_stdout = self._buf_stdout[n:]
+        return data
 
     def read_stderr(self, n=None):
         if self._combined:
             return b''
-        try:
-            return os.read(self._r_err, n)
-        except OSError as exc:
-            if exc.errno != 9:
-                raise  # re-raise
-            # It was closed already.
-            return b''
+        if self._r_err is not None:
+            data = self._r_err.read(n)
+        elif self._buf_stderr is None:
+            data = b''
+        elif n is None or n == len(self._buf_stderr):
+            data = self._buf_stderr
+            self._buf_stderr = None
+        else:
+            data = self._buf_stderr[:n]
+            self._buf_stderr = self._buf_stderr[n:]
+        return data
 
 
 class WatchedScript:
@@ -435,7 +610,7 @@ class TestBase(unittest.TestCase):
                 rc = run_in_interpreter(watched.script, config)
                 assert rc == 0, rc
                 text = watched.read(100).decode('utf-8')
-            err = captured.finished
+            err = watched.finished
             if err is True:
                 err = None
         return err, text
