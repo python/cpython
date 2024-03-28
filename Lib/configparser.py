@@ -526,6 +526,31 @@ class ExtendedInterpolation(Interpolation):
                     "'$' must be followed by '$' or '{', "
                     "found: %r" % (rest,))
 
+class _Line(str):
+    def _strip_comments(self, prefixes, inline_prefixes):
+        comment_start = sys.maxsize
+        # strip inline comments
+        inline_prefixes = {p: -1 for p in inline_prefixes}
+        while comment_start == sys.maxsize and inline_prefixes:
+            next_prefixes = {}
+            for prefix, index in inline_prefixes.items():
+                index = self.find(prefix, index+1)
+                if index == -1:
+                    continue
+                next_prefixes[prefix] = index
+                if index == 0 or (index > 0 and self[index-1].isspace()):
+                    comment_start = min(comment_start, index)
+            inline_prefixes = next_prefixes
+        # strip full line comments
+        for prefix in prefixes:
+            if self.strip().startswith(prefix):
+                comment_start = 0
+                break
+        if comment_start == sys.maxsize:
+            comment_start = None
+        self.clean = self[:comment_start].strip()
+        self.has_comments = comment_start is not None
+
 
 class RawConfigParser(MutableMapping):
     """ConfigParser that does not do interpolation."""
@@ -1006,14 +1031,14 @@ class RawConfigParser(MutableMapping):
         lineno = 0
         indent_level = 0
 
-        lines = map(self._strip_comments, fp)
-        for lineno, (line, comment_start) in enumerate(lines, start=1):
-            value = line[:comment_start].strip()
-            if not value:
+        for lineno, line in enumerate(map(_Line, fp), start=1):
+            line._strip_comments(self._comment_prefixes, self._inline_comment_prefixes)
+
+            if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
                     # comment on the line
-                    if (comment_start is None and
+                    if (not line.has_comments and
                         cursect is not None and
                         optname and
                         cursect[optname] is not None):
@@ -1029,7 +1054,7 @@ class RawConfigParser(MutableMapping):
                 cur_indent_level > indent_level):
                 if cursect[optname] is None:
                     raise MultilineContinuationError(fpname, lineno, line)
-                cursect[optname].append(value)
+                cursect[optname].append(line.clean)
             # a section header or option header?
             else:
                 if self._allow_unnamed_section and cursect is None:
@@ -1041,7 +1066,7 @@ class RawConfigParser(MutableMapping):
 
                 indent_level = cur_indent_level
                 # is it a section header?
-                mo = self.SECTCRE.match(value)
+                mo = self.SECTCRE.match(line.clean)
                 if mo:
                     sectname = mo.group('header')
                     if sectname in self._sections:
@@ -1066,7 +1091,7 @@ class RawConfigParser(MutableMapping):
                 else:
                     indent_level = cur_indent_level
                     # is it a section header?
-                    mo = self.SECTCRE.match(value)
+                    mo = self.SECTCRE.match(line.clean)
                     if mo:
                         sectname = mo.group('header')
                         if sectname in self._sections:
@@ -1089,7 +1114,7 @@ class RawConfigParser(MutableMapping):
                         raise MissingSectionHeaderError(fpname, lineno, line)
                         # an option line?
                     else:
-                        mo = self._optcre.match(value)
+                        mo = self._optcre.match(line.clean)
                         if mo:
                             optname, vi, optval = mo.group('option', 'vi', 'value')
                             if not optname:
@@ -1114,29 +1139,6 @@ class RawConfigParser(MutableMapping):
                             # raised at the end of the file and will contain a
                             # list of all bogus lines
                             yield ParsingError(fpname, lineno, line)
-
-    def _strip_comments(self, line):
-        comment_start = sys.maxsize
-        # strip inline comments
-        inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
-        while comment_start == sys.maxsize and inline_prefixes:
-            next_prefixes = {}
-            for prefix, index in inline_prefixes.items():
-                index = line.find(prefix, index+1)
-                if index == -1:
-                    continue
-                next_prefixes[prefix] = index
-                if index == 0 or (index > 0 and line[index-1].isspace()):
-                    comment_start = min(comment_start, index)
-            inline_prefixes = next_prefixes
-        # strip full line comments
-        for prefix in self._comment_prefixes:
-            if line.strip().startswith(prefix):
-                comment_start = 0
-                break
-        if comment_start == sys.maxsize:
-            comment_start = None
-        return line, comment_start
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
