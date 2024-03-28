@@ -1828,6 +1828,7 @@ typedef struct _internal_name_mapper_state {
 } _InternalNameMapperState;
 
 
+#ifndef OPENSSL_IS_BORINGSSL
 /* A callback function to pass to OpenSSL's OBJ_NAME_do_all(...) */
 static void
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
@@ -1856,6 +1857,7 @@ _openssl_hash_name_mapper(const EVP_MD *md, const char *from,
         Py_DECREF(py_name);
     }
 }
+#endif  // !OPENSSL_IS_BORINGSSL
 
 
 /* Ask OpenSSL for a list of supported ciphers, filling in a Python set. */
@@ -1864,12 +1866,42 @@ hashlib_md_meth_names(PyObject *module)
 {
     _InternalNameMapperState state = {
         .set = PyFrozenSet_New(NULL),
+#ifndef OPENSSL_IS_BORINGSSL
         .error = 0
+#endif  // !OPENSSL_IS_BORINGSSL
     };
     if (state.set == NULL) {
         return -1;
     }
 
+#if defined(OPENSSL_IS_BORINGSSL)
+    // This avoids a need to link with -ldecrepit for EVP_MD_do_all().
+    // TODO(gpshead): Using CPython predefined constant internal C APIs
+    // would be better.
+    const char *boringssl_hash_names[] = {
+        "md5",
+        "sha1",
+        "sha224",
+        "sha256",
+        "sha384",
+        "sha512",
+        NULL,
+    };
+    for (int i=0; boringssl_hash_names[i] != NULL; ++i) {
+        PyObject *py_name = PyUnicode_FromString(boringssl_hash_names[i]);
+        if (py_name == NULL) {
+            Py_DECREF(state.set);
+            return -1;
+        } else {
+            if (PySet_Add(state.set, py_name) != 0) {
+                Py_DECREF(py_name);
+                Py_DECREF(state.set);
+                return -1;
+            };
+            Py_DECREF(py_name);
+        }
+    }
+#else
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
     // get algorithms from all activated providers in default context
     EVP_MD_do_all_provided(NULL, &_openssl_hash_name_mapper, &state);
@@ -1881,6 +1913,7 @@ hashlib_md_meth_names(PyObject *module)
         Py_DECREF(state.set);
         return -1;
     }
+#endif  // !OPENSSL_IS_BORINGSSL
 
     return PyModule_Add(module, "openssl_md_meth_names", state.set);
 }

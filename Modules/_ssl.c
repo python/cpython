@@ -127,6 +127,7 @@ static void _PySSLFixErrno(void) {
 #define _PySSL_FIX_ERRNO _PySSLFixErrno()
 #endif
 
+#ifndef OPENSSL_IS_BORINGSSL
 /* Include generated data (error codes) */
 #if (OPENSSL_VERSION_NUMBER >= 0x30100000L)
 #include "_ssl_data_31.h"
@@ -137,6 +138,7 @@ static void _PySSLFixErrno(void) {
 #else
 #error Unsupported OpenSSL version
 #endif
+#endif  // !OPENSSL_IS_BORINGSSL
 
 /* OpenSSL API 1.1.0+ does not include version methods */
 #ifndef OPENSSL_NO_SSL3_METHOD
@@ -3200,7 +3202,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         result = SSL_CTX_set_cipher_list(ctx, "HIGH:!aNULL:!eNULL");
     }
     if (result == 0) {
-        Py_DECREF(self);
         ERR_clear_error();
         PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
                         "No cipher can be selected.");
