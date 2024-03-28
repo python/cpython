@@ -2603,12 +2603,12 @@ class PdbTestCase(unittest.TestCase):
                 cmd,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stderr=subprocess.PIPE,
                 env = {**env, 'PYTHONIOENCODING': 'utf-8'}
         ) as proc:
             stdout, stderr = proc.communicate(str.encode(commands))
-        stdout = stdout and bytes.decode(stdout)
-        stderr = stderr and bytes.decode(stderr)
+        stdout = bytes.decode(stdout) if isinstance(stdout, bytes) else stdout
+        stderr = bytes.decode(stderr) if isinstance(stderr, bytes) else stderr
         self.assertEqual(
             proc.returncode,
             expected_returncode,
@@ -2756,7 +2756,7 @@ def bœr():
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             )
         self.addCleanup(proc.stdout.close)
         stdout, stderr = proc.communicate(b'quit\n')
@@ -2840,7 +2840,7 @@ def bœr():
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             env={**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
@@ -2870,7 +2870,7 @@ def bœr():
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
@@ -2886,10 +2886,10 @@ def bœr():
         stdout, stderr = self.run_pdb_script(
             script, commands
         )
-        self.assertIn(expected, stdout,
+        self.assertIn(expected, stderr,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
-            .format(expected, stdout))
+            .format(expected, stderr))
 
     def test_issue84583(self):
         # A syntax error from ast.literal_eval should not make pdb exit.
@@ -2900,11 +2900,12 @@ def bœr():
             quit
         """
         stdout, stderr = self.run_pdb_script(script, commands)
-        # The code should appear 3 times in the stdout:
-        # 1. when pdb starts
-        # 2. when the exception is raised, in trackback
-        # 3. in where command
-        self.assertEqual(stdout.count("ast.literal_eval('')"), 3)
+        # The code should appear 3 times in the stdout/stderr:
+        # 1. when pdb starts (stdout)
+        # 2. when the exception is raised, in trackback (stderr)
+        # 3. in where command (stdout)
+        self.assertEqual(stdout.count("ast.literal_eval('')"), 2)
+        self.assertEqual(stderr.count("ast.literal_eval('')"), 1)
 
     def test_issue26053(self):
         # run command of pdb prompt echoes the correct args
@@ -3133,9 +3134,9 @@ def bœr():
 
     def test_invalid_cmd_line_options(self):
         stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=2)
-        self.assertIn(f"pdb: error: argument -c/--command: expected one argument", stdout.split('\n')[1])
+        self.assertIn(f"pdb: error: argument -c/--command: expected one argument", stderr.split('\n')[1])
         stdout, stderr = self._run_pdb(["--spam", "-m", "pdb"], "", expected_returncode=2)
-        self.assertIn(f"pdb: error: unrecognized arguments: --spam", stdout.split('\n')[1])
+        self.assertIn(f"pdb: error: unrecognized arguments: --spam", stderr.split('\n')[1])
 
     def test_blocks_at_first_code_line(self):
         script = """
@@ -3190,7 +3191,7 @@ def bœr():
                 cmd,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stderr=subprocess.PIPE,
                 env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'},
         ) as proc:
             stdout, _ = proc.communicate(str.encode(commands))
