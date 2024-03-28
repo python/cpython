@@ -43,6 +43,7 @@
 #undef GOTO_TIER_TWO
 #define GOTO_TIER_TWO(EXECUTOR) \
 do {  \
+    OPT_STAT_INC(traces_executed);                \
     __attribute__((musttail))                     \
     return ((jit_func)((EXECUTOR)->jit_code))(frame, stack_pointer, tstate); \
 } while (0)
@@ -88,6 +89,10 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
     PATCH_VALUE(uint16_t, _exit_index, _JIT_EXIT_INDEX)
+
+    OPT_STAT_INC(uops_executed);
+    UOP_STAT_INC(opcode, execution_count);
+
     // The actual instruction definitions (only one will be used):
     if (opcode == _JUMP_TO_TOP) {
         CHECK_EVAL_BREAKER();
@@ -106,9 +111,11 @@ error_tier_two:
     GOTO_TIER_ONE(NULL);
 exit_to_tier1:
     tstate->previous_executor = (PyObject *)current_executor;
+    UOP_STAT_INC(opcode, miss);
     GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
 exit_to_trace:
     {
+        UOP_STAT_INC(opcode, miss);
         _PyExitData *exit = &current_executor->exits[_exit_index];
         Py_INCREF(exit->executor);
         tstate->previous_executor = (PyObject *)current_executor;
