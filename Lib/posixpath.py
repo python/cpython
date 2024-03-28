@@ -412,7 +412,7 @@ def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, strict, {})
+    path, _ = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links
@@ -427,9 +427,9 @@ def _joinrealpath(path, rest, strict, seen):
         curdir = '.'
         pardir = '..'
 
-    if isabs(rest):
-        rest = rest[1:]
-        path = sep
+    _, root, rest = splitroot(rest)
+    if root:
+        path = root
 
     while rest:
         name, _, rest = rest.partition(sep)
@@ -438,22 +438,24 @@ def _joinrealpath(path, rest, strict, seen):
             continue
         if name == pardir:
             # parent dir
-            if path:
-                path, name = split(path)
-                if name == pardir:
-                    path = join(path, pardir, pardir)
-            else:
+            if not path:
+                # ..
                 path = pardir
+            elif basename(path) == pardir:
+                # ../..
+                path = join(path, pardir)
+            else:
+                # foo/bar/.. -> foo
+                path = dirname(path)
             continue
         newpath = join(path, name)
         try:
             st = os.lstat(newpath)
+            is_link = stat.S_ISLNK(st.st_mode)
         except OSError:
             if strict:
                 raise
             is_link = False
-        else:
-            is_link = stat.S_ISLNK(st.st_mode)
         if not is_link:
             path = newpath
             continue
@@ -465,12 +467,11 @@ def _joinrealpath(path, rest, strict, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            if strict:
-                # Raise OSError(errno.ELOOP)
-                os.stat(newpath)
-            else:
+            if not strict:
                 # Return already resolved part + rest of the path unchanged.
                 return join(newpath, rest), False
+            # Raise OSError(errno.ELOOP)
+            os.stat(newpath)
         seen[newpath] = None # not resolved symlink
         path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
         if not ok:
