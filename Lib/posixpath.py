@@ -217,19 +217,31 @@ def ismount(path):
     except (OSError, ValueError):
         # It doesn't exist -- so not a mount point. :-)
         return False
+    else:
+        # A symlink can never be a mount point
+        if stat.S_ISLNK(s1.st_mode):
+            return False
 
-    # A symlink can never be a mount point
-    if stat.S_ISLNK(s1.st_mode):
-        return False
-
-    parent = realpath(dirname(path))
+    path = os.fspath(path)
+    if isinstance(path, bytes):
+        parent = join(path, b'..')
+    else:
+        parent = join(path, '..')
+    parent = realpath(parent)
     try:
         s2 = os.lstat(parent)
     except (OSError, ValueError):
         return False
 
-    # path/.. on a different device as path or the same i-node as path
-    return s1.st_dev != s2.st_dev or s1.st_ino == s2.st_ino
+    dev1 = s1.st_dev
+    dev2 = s2.st_dev
+    if dev1 != dev2:
+        return True     # path/.. on a different device as path
+    ino1 = s1.st_ino
+    ino2 = s2.st_ino
+    if ino1 == ino2:
+        return True     # path/.. is the same i-node as path
+    return False
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -255,31 +267,37 @@ def expanduser(path):
     i = path.find(sep, 1)
     if i < 0:
         i = len(path)
-    if i != 1:
-        try:
-            import pwd
-            name = path[1:i]
-            if isinstance(name, bytes):
-                name = name.decode('ascii')
-
-            userhome = pwd.getpwnam(name).pw_dir
-        except (ImportError, KeyError):
-            # pwd module unavailable, return path unchanged
-            # bpo-10496: if the user name from the path doesn't exist in the
-            # password database, return the path unchanged
-            return path
-    elif 'HOME' in os.environ:
-        userhome = os.environ['HOME']
+    if i == 1:
+        if 'HOME' not in os.environ:
+            try:
+                import pwd
+            except ImportError:
+                # pwd module unavailable, return path unchanged
+                return path
+            try:
+                userhome = pwd.getpwuid(os.getuid()).pw_dir
+            except KeyError:
+                # bpo-10496: if the current user identifier doesn't exist in the
+                # password database, return the path unchanged
+                return path
+        else:
+            userhome = os.environ['HOME']
     else:
         try:
             import pwd
-            userhome = pwd.getpwuid(os.getuid()).pw_dir
-        except (ImportError, KeyError):
+        except ImportError:
             # pwd module unavailable, return path unchanged
-            # bpo-10496: if the current user identifier doesn't exist in the
+            return path
+        name = path[1:i]
+        if isinstance(name, bytes):
+            name = str(name, 'ASCII')
+        try:
+            pwent = pwd.getpwnam(name)
+        except KeyError:
+            # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
             return path
-
+        userhome = pwent.pw_dir
     # if no user home, return the path unchanged on VxWorks
     if userhome is None and sys.platform == "vxworks":
         return path
@@ -354,40 +372,45 @@ def expandvars(path):
 
 try:
     from posix import _path_normpath
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
+
 except ImportError:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
         path = os.fspath(path)
         if isinstance(path, bytes):
             sep = b'/'
-            curdir = b'.'
-            pardir = b'..'
+            empty = b''
+            dot = b'.'
+            dotdot = b'..'
         else:
             sep = '/'
-            curdir = '.'
-            pardir = '..'
-        if not path:
-            return curdir
-        _, root, tail = splitroot(path)
-        comps = []
-        for comp in tail.split(sep):
-            if not comp or comp == curdir:
+            empty = ''
+            dot = '.'
+            dotdot = '..'
+        if path == empty:
+            return dot
+        _, initial_slashes, path = splitroot(path)
+        comps = path.split(sep)
+        new_comps = []
+        for comp in comps:
+            if comp in (empty, dot):
                 continue
-            if (
-                comp != pardir
-                or (not root and not comps)
-                or (comps and comps[-1] == pardir)
-            ):
-                comps.append(comp)
-            elif comps:
-                comps.pop()
-        return (root + sep.join(comps)) or curdir
+            if (comp != dotdot or (not initial_slashes and not new_comps) or
+                 (new_comps and new_comps[-1] == dotdot)):
+                new_comps.append(comp)
+            elif new_comps:
+                new_comps.pop()
+        comps = new_comps
+        path = initial_slashes + sep.join(comps)
+        return path or dot
+
+else:
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
+        return _path_normpath(path) or "."
 
 
 def abspath(path):
