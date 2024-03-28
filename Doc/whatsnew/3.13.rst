@@ -699,7 +699,7 @@ xml.etree.ElementTree
 * Add the :meth:`!close` method for the iterator returned by
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
- 
+
 zipimport
 ---------
 
