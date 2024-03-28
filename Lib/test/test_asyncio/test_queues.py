@@ -551,10 +551,12 @@ class _QueueShutdownTestMixin:
     async def test_shutdown_empty(self):
         # Test shutting down an empty queue
 
-        # Setup empty queue and join() task
+        # Setup empty queue, and join() and get() tasks
         q = self.q_class()
         loop = asyncio.get_running_loop()
         join_task = loop.create_task(q.join())
+        get_task = loop.create_task(q.get())
+        await self._ensure_started(get_task)  # want pending before shutdown
 
         # Perform shut-down
         q.shutdown(immediate=False)  # unfinished tasks: 0 -> 0
@@ -565,6 +567,11 @@ class _QueueShutdownTestMixin:
         await self._ensure_started(join_task)
         self.assertTrue(join_task.done())
         await join_task
+
+        # Ensure get() task is finished, and raised ShutDown
+        self.assertTrue(get_task.done())
+        with self.assertRaisesShutdown():
+            await get_task
 
         # Ensure put() and get() raise ShutDown
         with self.assertRaisesShutdown():

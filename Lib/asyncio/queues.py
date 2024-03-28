@@ -272,10 +272,10 @@ class Queue(mixins._LoopBoundMixin):
                     self._unfinished_tasks -= 1
             if self._unfinished_tasks <= 0:
                 self._finished.set()
-            while self._getters:
-                getter = self._getters.popleft()
-                if not getter.done():
-                    getter.set_result(None)
+        while self._getters:
+            getter = self._getters.popleft()
+            if not getter.done():
+                getter.set_result(None)
         while self._putters:
             putter = self._putters.popleft()
             if not putter.done():
