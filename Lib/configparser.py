@@ -1054,16 +1054,27 @@ class RawConfigParser(MutableMapping):
                     # empty line marks end of value
                     st.indent_level = sys.maxsize
                 continue
-            # continuation line?
+
             first_nonspace = self.NONSPACECRE.search(line)
-            cur_indent_level = first_nonspace.start() if first_nonspace else 0
-            if (st.cursect is not None and st.optname and
-                cur_indent_level > st.indent_level):
+            st.cur_indent_level = first_nonspace.start() if first_nonspace else 0
+
+            if self._handle_continuation_line(st, line, fpname):
+                continue
+
+            yield from self._handle_rest(st, line, fpname)
+
+    def _handle_continuation_line(self, st, line, fpname):
+            # continuation line?
+            is_continue = (st.cursect is not None and st.optname and
+                st.cur_indent_level > st.indent_level)
+            if is_continue:
                 if st.cursect[st.optname] is None:
                     raise MultilineContinuationError(fpname, st.lineno, line)
                 st.cursect[st.optname].append(line.clean)
-            # a section header or option header?
-            else:
+            return is_continue
+
+    def _handle_rest(self, st, line, fpname):
+                # a section header or option header?
                 if self._allow_unnamed_section and st.cursect is None:
                     st.sectname = UNNAMED_SECTION
                     st.cursect = self._dict()
@@ -1071,7 +1082,7 @@ class RawConfigParser(MutableMapping):
                     self._proxies[st.sectname] = SectionProxy(self, st.sectname)
                     st.elements_added.add(st.sectname)
 
-                st.indent_level = cur_indent_level
+                st.indent_level = st.cur_indent_level
                 # is it a section header?
                 mo = self.SECTCRE.match(line.clean)
                 if mo:
@@ -1096,7 +1107,7 @@ class RawConfigParser(MutableMapping):
                     raise MissingSectionHeaderError(fpname, st.lineno, line)
                     # an option line?
                 else:
-                    st.indent_level = cur_indent_level
+                    st.indent_level = st.cur_indent_level
                     # is it a section header?
                     mo = self.SECTCRE.match(line.clean)
                     if mo:
