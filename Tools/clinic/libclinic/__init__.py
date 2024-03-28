@@ -25,15 +25,15 @@ from .identifiers import (
 )
 from .utils import (
     FormatCounterFormatter,
+    NULL,
+    Null,
+    Sentinels,
+    VersionTuple,
     compute_checksum,
     create_regex,
-    write_file,
-    VersionTuple,
-    Sentinels,
-    unspecified,
     unknown,
-    Null,
-    NULL,
+    unspecified,
+    write_file,
 )
 
 
@@ -63,15 +63,15 @@ __all__ = [
 
     # Utility functions
     "FormatCounterFormatter",
+    "NULL",
+    "Null",
+    "Sentinels",
+    "VersionTuple",
     "compute_checksum",
     "create_regex",
-    "write_file",
-    "VersionTuple",
-    "Sentinels",
-    "unspecified",
     "unknown",
-    "Null",
-    "NULL",
+    "unspecified",
+    "write_file",
 ]
 
 
