@@ -2756,7 +2756,7 @@ def bœr():
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             )
         self.addCleanup(proc.stdout.close)
         stdout, stderr = proc.communicate(b'quit\n')
@@ -2840,7 +2840,7 @@ def bœr():
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             env={**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
@@ -2870,7 +2870,7 @@ def bœr():
         proc = subprocess.Popen(cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            stderr=subprocess.PIPE,
             env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
             )
         self.addCleanup(proc.stdout.close)
@@ -3191,7 +3191,7 @@ def bœr():
                 cmd,
                 stdout=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stderr=subprocess.PIPE,
                 env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'},
         ) as proc:
             stdout, _ = proc.communicate(str.encode(commands))
