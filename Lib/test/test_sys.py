@@ -473,6 +473,55 @@ class SysModuleTest(unittest.TestCase):
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
+    @support.requires_fork()
+    def test_current_frames_exceptions_deadlock(self):
+        """
+        Try to reproduce the bug raised in GH-106883 and GH-116969.
+        """
+        import threading
+        import time
+
+        class MockObject:
+            def __init__(self):
+                # Create some garbage
+                self._list = list(range(10000))
+                # Call the functions under test
+                self._trace = sys._current_frames()
+                self._exceptions = sys._current_exceptions()
+
+        def thread_function(num_objects):
+            obj = None
+            for _ in range(num_objects):
+                # The sleep is needed to have a syscall: in interrupts the
+                # current thread, releases the GIL and gives way to other
+                # threads to be executed. In this way there are more chances
+                # to reproduce the bug.
+                time.sleep(0)
+                obj = MockObject()
+
+        NUM_OBJECTS = 25
+        NUM_THREADS = 1000
+
+        # 60 seconds should be enough for the test to be executed: if it
+        # is more than 60 seconds it means that the process is in deadlock
+        # hence the test fails
+        TIMEOUT = 60
+
+        # Test the sys._current_frames and sys._current_exceptions calls
+        pid = os.fork()
+        if pid:  # parent process
+            support.wait_process(pid, exitcode=0, timeout=TIMEOUT)
+        else:  # child process
+            # Run the actual test in the forked process.
+            for i in range(NUM_THREADS):
+                thread = threading.Thread(
+                    target=thread_function, args=(NUM_OBJECTS,)
+                )
+                thread.start()
+            os._exit(0)
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_current_exceptions(self):
         import threading
         import traceback

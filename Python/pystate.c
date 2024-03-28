@@ -2,7 +2,6 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "objimpl.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"           // stats
 #include "pycore_frame.h"
@@ -1389,10 +1388,6 @@ PyThreadState_Next(PyThreadState *tstate) {
 PyObject *
 _PyThread_CurrentFrames(void)
 {
-    // Disable the GC as this can cause a deadlock the interpreter.
-    // See issues 116969 and 106883.
-    PyGC_Disable();
-
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PySys_Audit(tstate, "sys._current_frames", NULL) < 0) {
         return NULL;
@@ -1402,6 +1397,9 @@ _PyThread_CurrentFrames(void)
     if (result == NULL) {
         return NULL;
     }
+
+    // gh-106883: Disable the GC as this can cause the interpreter to deadlock
+    int gc_was_enabled = PyGC_Disable();
 
     /* for i in all interpreters:
      *     for t in all of i's thread states:
@@ -1446,8 +1444,10 @@ fail:
 done:
     HEAD_UNLOCK(runtime);
 
-    // Once we release the runtime, the GC can be reenabled.
-    PyGC_Enable();
+    // Once the runtime is released, the GC can be reenabled.
+    if (gc_was_enabled) {
+        PyGC_Enable();
+    }
 
     return result;
 }
@@ -1455,10 +1455,6 @@ done:
 PyObject *
 _PyThread_CurrentExceptions(void)
 {
-    // Disable the GC as this can cause a deadlock the interpreter.
-    // See issues 116969 and 106883.
-    PyGC_Disable();
-
     PyThreadState *tstate = _PyThreadState_GET();
 
     _Py_EnsureTstateNotNULL(tstate);
@@ -1471,6 +1467,9 @@ _PyThread_CurrentExceptions(void)
     if (result == NULL) {
         return NULL;
     }
+
+    // gh-106883: Disable the GC as this can cause the interpreter to deadlock
+    int gc_was_enabled = PyGC_Disable();
 
     /* for i in all interpreters:
      *     for t in all of i's thread states:
@@ -1513,8 +1512,10 @@ fail:
 done:
     HEAD_UNLOCK(runtime);
 
-    // Once we release the runtime, the GC can be reenabled.
-    PyGC_Enable();
+    // Once the runtime is released, the GC can be reenabled.
+    if (gc_was_enabled) {
+        PyGC_Enable();
+    }
 
     return result;
 }
