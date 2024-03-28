@@ -101,8 +101,8 @@ The module defines the following items:
    is no compression. The default is ``9``.
 
    The optional *mtime* argument is the timestamp requested by gzip. The time
-   is in Unix format, i.e., seconds since 00:00:00 GMT, Jan.  1, 1970.
-   If mtime is omitted or None, the current time is used. Use mtime = 0
+   is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+   If *mtime* is omitted or None, the current time is used. Use *mtime* = 0
    to generate a compressed stream that does not depend on creation time.
 
    See below for the :attr:`mtime` attribute that is set when decompressing.
@@ -135,9 +135,9 @@ The module defines the following items:
 
    .. attribute:: mtime
 
-      When decompressing, this attribute is set to last timestamp in the most
+      When decompressing, this attribute is set to the last timestamp in the most
       recently read header.  It is an integer, holding the number of seconds
-      since the Unix epoch (00:00:00 GMT, Jan. 1, 1970).
+      since the Unix epoch (00:00:00 UTC, January 1, 1970).
       The initial value before reading any headers is ``None``.
 
    .. attribute:: name
