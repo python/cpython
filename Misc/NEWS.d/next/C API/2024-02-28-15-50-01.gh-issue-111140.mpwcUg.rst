@@ -1,3 +1,3 @@
-Allow :c:func:`PyLong_AsNativeBytes` to extract negative numbers requiring
-every single bit of the target buffer into the buffer without requesting a
-larger one.
+Add additional flags to :c:func:`PyLong_AsNativeBytes` and
+:c:func`PyLong_FromNativeBytes` to allow the caller to determine how to handle
+edge cases around values that fill the entire buffer.
