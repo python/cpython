@@ -842,24 +842,24 @@ def relpath(path, start=None):
         raise
 
 
-# Return the longest common sub-path of the sequence of paths given as input.
+# Return the longest common sub-path of the iterable of paths given as input.
 # The function is case-insensitive and 'separator-insensitive', i.e. if the
 # only difference between two paths is the use of '\' versus '/' as separator,
 # they are deemed to be equal.
 #
 # However, the returned path will have the standard '\' separator (even if the
 # given paths had the alternative '/' separator) and will have the case of the
-# first path given in the sequence. Additionally, any trailing separator is
+# first path given in the iterable. Additionally, any trailing separator is
 # stripped from the returned path.
 
 def commonpath(paths):
-    """Given a sequence of path names, returns the longest common sub-path."""
-
-    if not paths:
-        raise ValueError('commonpath() arg is an empty sequence')
-
+    """Given a iterable of path names, returns the longest common sub-path."""
     paths = tuple(map(os.fspath, paths))
-    if isinstance(paths[0], bytes):
+    if not paths:
+        raise ValueError('commonpath() arg is an empty iterable')
+
+    path = paths[0]
+    if isinstance(path, bytes):
         sep = b'\\'
         altsep = b'/'
         curdir = b'.'
@@ -869,36 +869,33 @@ def commonpath(paths):
         curdir = '.'
 
     try:
-        drivesplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
-        split_paths = [p.split(sep) for d, r, p in drivesplits]
-
-        if len({r for d, r, p in drivesplits}) != 1:
-            raise ValueError("Can't mix absolute and relative paths")
-
-        # Check that all drive letters or UNC paths match. The check is made only
-        # now otherwise type errors for mixing strings and bytes would not be
-        # caught.
-        if len({d for d, r, p in drivesplits}) != 1:
-            raise ValueError("Paths don't have the same drive")
-
-        drive, root, path = splitroot(paths[0].replace(altsep, sep))
-        common = path.split(sep)
-        common = [c for c in common if c and c != curdir]
-
-        split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
-        s1 = min(split_paths)
-        s2 = max(split_paths)
-        for i, c in enumerate(s1):
-            if c != s2[i]:
-                common = common[:i]
-                break
-        else:
-            common = common[:len(s1)]
-
-        return drive + root + sep.join(common)
+        rootsplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
+
+    # Check that all drive letters or UNC paths match. The check is made only
+    # now otherwise type errors for mixing strings and bytes would not be
+    # caught.
+    if len({drt[0] for drt in rootsplits}) != 1:
+        raise ValueError("Paths don't have the same drive")
+
+    if len({drt[1] for drt in rootsplits}) != 1:
+        raise ValueError("Can't mix absolute and relative paths")
+
+    drive, root, tail = splitroot(path.replace(altsep, sep))
+    common = [c for c in tail.split(sep) if c and c != curdir]
+    split_paths = [
+        [c for c in drt[2].split(sep) if c and c != curdir]
+        for drt in rootsplits
+    ]
+    s1 = min(split_paths)
+    s2 = max(split_paths)
+    for i, c in enumerate(s1):
+        if c != s2[i]:
+            return drive + root + sep.join(common[:i])
+
+    return drive + root + sep.join(common[:len(s1)])
 
 
 try:
