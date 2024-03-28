@@ -881,7 +881,7 @@ Security Options
 macOS Options
 -------------
 
-See ``Mac/README.rst``.
+See :source:`Mac/README.rst`.
 
 .. option:: --enable-universalsdk
 .. option:: --enable-universalsdk=SDKDIR
@@ -915,6 +915,20 @@ See ``Mac/README.rst``.
 
    Specify the name for the python framework on macOS only valid when
    :option:`--enable-framework` is set (default: ``Python``).
+
+iOS Options
+-----------
+
+See :source:`iOS/README.rst`.
+
+.. option:: --enable-framework=INSTALLDIR
+
+   Create a Python.framework. Unlike macOS, the *INSTALLDIR* argument
+   specifying the installation path is mandatory.
+
+.. option:: --with-framework-name=FRAMEWORK
+
+   Specify the name for the framework (default: ``Python``).
 
 
 Cross Compiling Options

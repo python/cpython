@@ -8,7 +8,7 @@
 
 --------------
 
-.. include:: ../includes/wasm-notavail.rst
+.. include:: ../includes/wasm-ios-notavail.rst
 
 Introduction
 ------------
