@@ -1161,13 +1161,6 @@ static inline int
 maybe_freelist_push(PyTupleObject *op)
 {
 #ifdef WITH_FREELISTS
-#ifdef Py_GIL_DISABLED
-    if (_PyObject_GC_IS_SHARED_INLINE((PyObject *) op)) {
-        // There may still be threads that are concurrently reading from the
-        // tuple.
-        return 0;
-    }
-#endif
     struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
     if (Py_SIZE(op) == 0) {
         return 0;
