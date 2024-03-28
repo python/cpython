@@ -990,7 +990,6 @@ enter_tier_two:
     #define DPRINTF(level, ...)
 #endif
 
-    OPT_STAT_INC(traces_executed);
     uint16_t uopcode;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
