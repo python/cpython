@@ -724,6 +724,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__slotnames__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__slots__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__spec__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__static_attributes__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__str__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__sub__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__subclasscheck__));
@@ -983,7 +984,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hi));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hook));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(hour));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(id));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ident));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(identity_hint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ignore));

@@ -1077,20 +1077,20 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 if (!name) {
                     goto cleanup;
                 }
-                PyObject *value = PyDict_GetItemWithError(remaining_dict, name);
+                PyObject *value;
+                int rc = PyDict_Pop(remaining_dict, name, &value);
+                Py_DECREF(name);
+                if (rc < 0) {
+                    goto cleanup;
+                }
                 if (!value) {
-                    if (PyErr_Occurred()) {
-                        goto cleanup;
-                    }
                     break;
                 }
-                if (PyList_Append(positional_args, value) < 0) {
+                rc = PyList_Append(positional_args, value);
+                Py_DECREF(value);
+                if (rc < 0) {
                     goto cleanup;
                 }
-                if (PyDict_DelItem(remaining_dict, name) < 0) {
-                    goto cleanup;
-                }
-                Py_DECREF(name);
             }
             PyObject *args_tuple = PyList_AsTuple(positional_args);
             if (!args_tuple) {
