@@ -1174,7 +1174,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
                 /* Positive values with the MSB set do not require an
                  * additional bit when the caller's intent is to treat them
                  * as unsigned. */
-                if (flags == -1 || flags & Py_ASNATIVEBYTES_UNSIGNED_BUFFER) {
+                if (flags == -1 || (flags & Py_ASNATIVEBYTES_UNSIGNED_BUFFER)) {
                     res = n;
                 } else {
                     res = n + 1;
@@ -1257,11 +1257,11 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
                  * as unsigned. */
                 unsigned char *b = (unsigned char *)buffer;
                 if (b[little_endian ? n - 1 : 0] & 0x80) {
-                    /* TODO: Disabled because we don't know the caller's intent
-                    res = n;
-                     * Instead, we'll return res == n+1.
-                     */
-                    res = n + 1;
+                    if (flags == -1 || (flags & Py_ASNATIVEBYTES_UNSIGNED_BUFFER)) {
+                        res = n;
+                    } else {
+                        res = n + 1;
+                    }
                 }
             }
         }
@@ -1310,12 +1310,7 @@ PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n, int flags)
         return NULL;
     }
 
-    return _PyLong_FromByteArray(
-        (const unsigned char *)buffer,
-        n,
-        little_endian,
-        (flags != -1 && (flags & Py_ASNATIVEBYTES_UNSIGNED_BUFFER)) ? 1 : 0
-    );
+    return _PyLong_FromByteArray((const unsigned char *)buffer, n, little_endian, 0);
 }
 
 

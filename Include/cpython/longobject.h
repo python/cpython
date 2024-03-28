@@ -44,7 +44,7 @@ PyAPI_FUNC(Py_ssize_t) PyLong_AsNativeBytes(PyObject* v, void* buffer,
    always produce the zero int.
    PyLong_FromUnsignedNativeBytes always produces a non-negative int.
    flags is the same as for PyLong_AsNativeBytes, but only supports selecting
-   the endianness.
+   the endianness or forcing an unsigned buffer.
 
    Returns the int object, or NULL with an exception set. */
 PyAPI_FUNC(PyObject*) PyLong_FromNativeBytes(const void* buffer, size_t n_bytes,

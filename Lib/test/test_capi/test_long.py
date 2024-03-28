@@ -580,6 +580,33 @@ class LongTests(unittest.TestCase):
                     f"PyLong_AsNativeBytes(v, buffer, {n}, <little>)")
                 self.assertEqual(expect_le, buffer[:n], "<little>")
 
+        # Test cases that do not request size for a sign bit when we pass the
+        # Py_ASNATIVEBYTES_UNSIGNED_BUFFER flag
+        for v, expect_be, expect_n in [
+            (255,       b'\xff',                1),
+            # We pass a 2 byte buffer so it just uses the whole thing
+            (255,       b'\x00\xff',            2),
+
+            (2**63,     b'\x80' + b'\x00' * 7,  8),
+            # We pass a 9 byte buffer so it uses the whole thing
+            (2**63,     b'\x00\x80' + b'\x00' * 7, 9),
+
+            (2**256-1,  b'\xff' * 32,           32),
+            # We pass a 33 byte buffer so it uses the whole thing
+            (2**256-1,  b'\x00' + b'\xff' * 32, 33),
+        ]:
+            with self.subTest(f"{v:X}-{len(expect_be)}bytes-unsigned"):
+                n = len(expect_be)
+                buffer = bytearray(b"\xa5"*n)
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 4),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <big|unsigned>)")
+                self.assertEqual(expect_n, asnativebytes(v, buffer, n, 5),
+                    f"PyLong_AsNativeBytes(v, buffer, {n}, <little|unsigned>)")
+
+        # Ensure Py_ASNATIVEBYTES_REJECT_NEGATIVE raises on negative value
+        with self.assertRaises(OverflowError):
+            asnativebytes(-1, buffer, 0, 8)
+
         # Check a few error conditions. These are validated in code, but are
         # unspecified in docs, so if we make changes to the implementation, it's
         # fine to just update these tests rather than preserve the behaviour.
@@ -616,12 +643,9 @@ class LongTests(unittest.TestCase):
                 # All values are positive, so if MSB is set, expect extra bit
                 # when we request the size or have a large enough buffer
                 expect_1 = (SZ, n + 1)
-                # When requesting exactly the right size, we expect the return
-                # to be exactly the right size.
-                #expect_2 = (n,)
-                # However, right now, the extra bit is still requested. These
-                # are the TODO comments in PyLong_AsNativeBytes
-                expect_2 = (n + 1,)
+                # When passing Py_ASNATIVEBYTES_UNSIGNED_BUFFER, we expect the
+                # return to be exactly the right size.
+                expect_2 = (n,)
 
             try:
                 actual = asnativebytes(v, buffer, 0, -1)
@@ -635,10 +659,10 @@ class LongTests(unittest.TestCase):
                 self.assertIn(actual, expect_1)
                 self.assertEqual(bytes_le, buffer[:n])
 
-                actual = asnativebytes(v, buffer, n, 0)
-                self.assertIn(actual, expect_2)
-                actual = asnativebytes(v, buffer, n, 1)
-                self.assertIn(actual, expect_2)
+                actual = asnativebytes(v, buffer, n, 4)
+                self.assertIn(actual, expect_2, bytes_be.hex())
+                actual = asnativebytes(v, buffer, n, 5)
+                self.assertIn(actual, expect_2, bytes_be.hex())
             except AssertionError:
                 if support.verbose:
                     print()
@@ -686,6 +710,13 @@ class LongTests(unittest.TestCase):
                         f"PyLong_FromNativeBytes(buffer, {n}, <native>)")
                     self.assertEqual(expect_u, fromnativebytes(v_be, n, -1, 0),
                         f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <native>)")
+
+                # Swap the signed/unsigned request for tests and use the
+                # Py_ASNATIVEBYTES_UNSIGNED_BUFFER flag to select the opposite
+                self.assertEqual(expect_s, fromnativebytes(v_be, n, 0, 0),
+                    f"PyLong_FromUnsignedNativeBytes(buffer, {n}, <big|signed>)")
+                self.assertEqual(expect_u, fromnativebytes(v_be, n, 4, 1),
+                    f"PyLong_FromNativeBytes(buffer, {n}, <big|unsigned>)")
 
 
 if __name__ == "__main__":

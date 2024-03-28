@@ -121,7 +121,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    *flags* are as for :c:func:`PyLong_AsNativeBytes`. Passing ``-1`` will select
    the native endian that CPython was compiled with and assume that the
    most-significant bit is a sign bit. ``Py_ASNATIVEBYTES_REJECT_NEGATIVE`` has
-   no effect.
+   no effect. Passing ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` will produce the same
+   result as calling :c:func:`PyLong_FromUnsignedNativeBytes`.
 
    .. versionadded:: 3.13
 
@@ -133,8 +134,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    *flags* are as for :c:func:`PyLong_AsNativeBytes`. Passing ``-1`` will select
    the native endian that CPython was compiled with and assume that the
-   most-significant bit is not a sign bit. ``Py_ASNATIVEBYTES_REJECT_NEGATIVE``
-   has no effect.
+   most-significant bit is not a sign bit. Flags other than endian are ignored.
 
    .. versionadded:: 3.13
 
