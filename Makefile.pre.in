@@ -2044,17 +2044,23 @@ testios:
 	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
 	# Copy the framework from the install location to the testbed project.
 	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
+
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
-	# If the suite fails, extract and print the console output, then re-raise the failure
+	# If the suite fails, touch a file in the test folder as a marker
 	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
-		xcrun xcresulttool get --path $(XCRESULT) \
-			--id $$( \
-				xcrun xcresulttool get --path $(XCRESULT) --format json | \
-				$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
-			) \
-			--format json | \
-			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"; \
-		echo ; \
+	 	touch $(XCFOLDER)/failed; \
+	fi
+
+	# Regardless of success or failure, extract and print the test output
+	xcrun xcresulttool get --path $(XCRESULT) \
+		--id $$( \
+			xcrun xcresulttool get --path $(XCRESULT) --format json | \
+			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
+		) \
+		--format json | \
+		$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"
+
+	@if test -e $(XCFOLDER)/failed ; then \
 		exit 1; \
 	fi
 
