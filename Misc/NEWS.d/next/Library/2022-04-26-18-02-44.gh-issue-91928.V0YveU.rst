@@ -1,3 +1,0 @@
-Add `datetime.UTC` alias for `datetime.timezone.utc`.
-
-Patch by Kabir Kwatra.

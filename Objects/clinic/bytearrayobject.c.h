@@ -2,6 +2,13 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors);
@@ -10,8 +17,31 @@ static int
 bytearray___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(source), &_Py_ID(encoding), &_Py_ID(errors), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"source", "encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "bytearray", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "bytearray",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
@@ -132,10 +162,6 @@ bytearray_removeprefix(PyByteArrayObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &prefix, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&prefix, 'C')) {
-        _PyArg_BadArgument("removeprefix", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = bytearray_removeprefix_impl(self, &prefix);
 
 exit:
@@ -172,10 +198,6 @@ bytearray_removesuffix(PyByteArrayObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &suffix, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&suffix, 'C')) {
-        _PyArg_BadArgument("removesuffix", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = bytearray_removesuffix_impl(self, &suffix);
 
 exit:
@@ -210,8 +232,31 @@ static PyObject *
 bytearray_translate(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(delete), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"", "delete", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "translate", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "translate",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *table;
@@ -237,7 +282,7 @@ PyDoc_STRVAR(bytearray_maketrans__doc__,
 "maketrans(frm, to, /)\n"
 "--\n"
 "\n"
-"Return a translation table useable for the bytes or bytearray translate method.\n"
+"Return a translation table usable for the bytes or bytearray translate method.\n"
 "\n"
 "The returned table will be one where each byte in frm is mapped to the byte at\n"
 "the same position in to.\n"
@@ -263,15 +308,7 @@ bytearray_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[0], &frm, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&frm, 'C')) {
-        _PyArg_BadArgument("maketrans", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (PyObject_GetBuffer(args[1], &to, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&to, 'C')) {
-        _PyArg_BadArgument("maketrans", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = bytearray_maketrans_impl(&frm, &to);
@@ -323,15 +360,7 @@ bytearray_replace(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nar
     if (PyObject_GetBuffer(args[0], &old, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&old, 'C')) {
-        _PyArg_BadArgument("replace", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (PyObject_GetBuffer(args[1], &new, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&new, 'C')) {
-        _PyArg_BadArgument("replace", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (nargs < 3) {
@@ -390,8 +419,31 @@ static PyObject *
 bytearray_split(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "split", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "split",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
@@ -489,8 +541,31 @@ static PyObject *
 bytearray_rsplit(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(sep), &_Py_ID(maxsplit), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"sep", "maxsplit", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "rsplit", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "rsplit",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = Py_None;
@@ -843,8 +918,31 @@ static PyObject *
 bytearray_decode(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(encoding), &_Py_ID(errors), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"encoding", "errors", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "decode", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "decode",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     const char *encoding = NULL;
@@ -927,8 +1025,31 @@ static PyObject *
 bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(keepends), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"keepends", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "splitlines", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "splitlines",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int keepends = 0;
@@ -940,8 +1061,8 @@ bytearray_splitlines(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t 
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    keepends = _PyLong_AsInt(args[0]);
-    if (keepends == -1 && PyErr_Occurred()) {
+    keepends = PyObject_IsTrue(args[0]);
+    if (keepends < 0) {
         goto exit;
     }
 skip_optional_pos:
@@ -974,9 +1095,6 @@ bytearray_fromhex(PyTypeObject *type, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("fromhex", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     string = arg;
@@ -1019,8 +1137,31 @@ static PyObject *
 bytearray_hex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(sep), &_Py_ID(bytes_per_sep), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"sep", "bytes_per_sep", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "hex", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "hex",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *sep = NULL;
@@ -1039,7 +1180,7 @@ bytearray_hex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs, 
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[1]);
+    bytes_per_sep = PyLong_AsInt(args[1]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1092,7 +1233,7 @@ bytearray_reduce_ex(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t n
     if (nargs < 1) {
         goto skip_optional;
     }
-    proto = _PyLong_AsInt(args[0]);
+    proto = PyLong_AsInt(args[0]);
     if (proto == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1120,4 +1261,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=033e9eb5f2bb0139 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0797a5e03cda2a16 input=a9049054013a1b77]*/

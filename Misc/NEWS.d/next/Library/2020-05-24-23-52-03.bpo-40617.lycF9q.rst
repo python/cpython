@@ -1,3 +1,0 @@
-Add :meth:`~sqlite3.Connection.create_window_function` to
-:class:`sqlite3.Connection` for creating aggregate window functions.
-Patch by Erlend E. Aasland.

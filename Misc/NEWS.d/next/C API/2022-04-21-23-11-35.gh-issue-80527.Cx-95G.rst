@@ -1,3 +1,0 @@
-Mark functions as deprecated by :pep:`623`: :c:func:`PyUnicode_AS_DATA`,
-:c:func:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_GET_DATA_SIZE`,
-:c:func:`PyUnicode_GET_SIZE`. Patch by Victor Stinner.

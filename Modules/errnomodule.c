@@ -1,39 +1,48 @@
-
 /* Errno module */
 
+// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030c0000
+#endif
+
 #include "Python.h"
+#include <errno.h>                // EPIPE
 
 /* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-/* The following constants were added to errno.h in VS2010 but have
-   preferred WSA equivalents. */
-#undef EADDRINUSE
-#undef EADDRNOTAVAIL
-#undef EAFNOSUPPORT
-#undef EALREADY
-#undef ECONNABORTED
-#undef ECONNREFUSED
-#undef ECONNRESET
-#undef EDESTADDRREQ
-#undef EHOSTUNREACH
-#undef EINPROGRESS
-#undef EISCONN
-#undef ELOOP
-#undef EMSGSIZE
-#undef ENETDOWN
-#undef ENETRESET
-#undef ENETUNREACH
-#undef ENOBUFS
-#undef ENOPROTOOPT
-#undef ENOTCONN
-#undef ENOTSOCK
-#undef EOPNOTSUPP
-#undef EPROTONOSUPPORT
-#undef EPROTOTYPE
-#undef ETIMEDOUT
-#undef EWOULDBLOCK
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+
+   // The following constants were added to errno.h in VS2010 but have
+   // preferred WSA equivalents.
+#  undef EADDRINUSE
+#  undef EADDRNOTAVAIL
+#  undef EAFNOSUPPORT
+#  undef EALREADY
+#  undef ECONNABORTED
+#  undef ECONNREFUSED
+#  undef ECONNRESET
+#  undef EDESTADDRREQ
+#  undef EHOSTUNREACH
+#  undef EINPROGRESS
+#  undef EISCONN
+#  undef ELOOP
+#  undef EMSGSIZE
+#  undef ENETDOWN
+#  undef ENETRESET
+#  undef ENETUNREACH
+#  undef ENOBUFS
+#  undef ENOPROTOOPT
+#  undef ENOTCONN
+#  undef ENOTSOCK
+#  undef EOPNOTSUPP
+#  undef EPROTONOSUPPORT
+#  undef EPROTOTYPE
+#  undef ETIMEDOUT
+#  undef EWOULDBLOCK
 #endif
 
 /*
@@ -79,9 +88,12 @@ end:
 static int
 errno_exec(PyObject *module)
 {
-    PyObject *module_dict = PyModule_GetDict(module);
+    PyObject *module_dict = PyModule_GetDict(module);  // Borrowed ref.
+    if (module_dict == NULL) {
+        return -1;
+    }
     PyObject *error_dict = PyDict_New();
-    if (!module_dict || !error_dict) {
+    if (error_dict == NULL) {
         return -1;
     }
     if (PyDict_SetItemString(module_dict, "errorcode", error_dict) < 0) {
@@ -279,6 +291,10 @@ errno_exec(PyObject *module)
 #endif
 #ifdef ENOANO
     add_errcode("ENOANO", ENOANO, "No anode");
+#endif
+#if defined(__wasi__) && !defined(ESHUTDOWN)
+    // WASI SDK 16 does not have ESHUTDOWN, shutdown results in EPIPE.
+    #define ESHUTDOWN EPIPE
 #endif
 #ifdef ESHUTDOWN
     add_errcode("ESHUTDOWN", ESHUTDOWN, "Cannot send after transport endpoint shutdown");
@@ -923,6 +939,10 @@ errno_exec(PyObject *module)
 #ifdef EQFULL
     add_errcode("EQFULL", EQFULL, "Interface output queue is full");
 #endif
+#ifdef ENOTCAPABLE
+    // WASI extension
+    add_errcode("ENOTCAPABLE", ENOTCAPABLE, "Capabilities insufficient");
+#endif
 
     Py_DECREF(error_dict);
     return 0;
@@ -930,6 +950,7 @@ errno_exec(PyObject *module)
 
 static PyModuleDef_Slot errno_slots[] = {
     {Py_mod_exec, errno_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

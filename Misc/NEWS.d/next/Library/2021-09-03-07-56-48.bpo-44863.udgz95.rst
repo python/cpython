@@ -1,4 +1,0 @@
-Allow :class:`~typing.TypedDict` subclasses to also include
-:class:`~typing.Generic` as a base class in class based syntax. Thereby allowing
-the user to define a generic ``TypedDict``, just like a user-defined generic but
-with ``TypedDict`` semantics.

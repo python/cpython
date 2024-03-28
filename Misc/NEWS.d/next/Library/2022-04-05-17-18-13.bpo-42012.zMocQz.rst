@@ -1,2 +1,0 @@
-Add :mod:`wsgiref.types`, containing WSGI-specific types for static type
-checking.

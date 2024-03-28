@@ -445,6 +445,20 @@ class ClassTests(unittest.TestCase):
         del testme.cardinal
         self.assertCallStack([('__delattr__', (testme, "cardinal"))])
 
+    def testHasAttrString(self):
+        import sys
+        from test.support import import_helper
+        _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
+
+        class A:
+            def __init__(self):
+                self.attr = 1
+
+        a = A()
+        self.assertEqual(_testlimitedcapi.object_hasattrstring(a, b"attr"), 1)
+        self.assertEqual(_testlimitedcapi.object_hasattrstring(a, b"noattr"), 0)
+        self.assertIsNone(sys.exception())
+
     def testDel(self):
         x = []
 
@@ -611,6 +625,65 @@ class ClassTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             type.__setattr__(A, b'x', None)
 
+    def testTypeAttributeAccessErrorMessages(self):
+        class A:
+            pass
+
+        error_msg = "type object 'A' has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            A.x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del A.x
+
+    def testObjectAttributeAccessErrorMessages(self):
+        class A:
+            pass
+        class B:
+            y = 0
+            __slots__ = ('z',)
+        class C:
+            __slots__ = ("y",)
+
+            def __setattr__(self, name, value) -> None:
+                if name == "z":
+                    super().__setattr__("y", 1)
+                else:
+                    super().__setattr__(name, value)
+
+        error_msg = "'A' object has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            A().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del A().x
+
+        error_msg = "'B' object has no attribute 'x'"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().x
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().x
+        with self.assertRaisesRegex(
+            AttributeError,
+            "'B' object has no attribute 'x' and no __dict__ for setting new attributes"
+        ):
+            B().x = 0
+        with self.assertRaisesRegex(
+            AttributeError,
+            "'C' object has no attribute 'x'"
+        ):
+            C().x = 0
+
+        error_msg = "'B' object attribute 'y' is read-only"
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().y
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().y = 0
+
+        error_msg = 'z'
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            B().z
+        with self.assertRaisesRegex(AttributeError, error_msg):
+            del B().z
+
     def testConstructorErrorMessages(self):
         # bpo-31506: Improves the error message logic for object_new & object_init
 
@@ -683,6 +756,37 @@ class ClassTests(unittest.TestCase):
         class A(0, *range(1, 8), **d, foo='bar'): pass
         self.assertEqual(A, (tuple(range(8)), {'foo': 'bar'}))
 
+    def testClassCallRecursionLimit(self):
+        class C:
+            def __init__(self):
+                self.c = C()
+
+        with self.assertRaises(RecursionError):
+            C()
+
+        def add_one_level():
+            #Each call to C() consumes 2 levels, so offset by 1.
+            C()
+
+        with self.assertRaises(RecursionError):
+            add_one_level()
+
+    def testMetaclassCallOptimization(self):
+        calls = 0
+
+        class TypeMetaclass(type):
+            def __call__(cls, *args, **kwargs):
+                nonlocal calls
+                calls += 1
+                return type.__call__(cls, *args, **kwargs)
+
+        class Type(metaclass=TypeMetaclass):
+            def __init__(self, obj):
+                self._obj = obj
+
+        for i in range(100):
+            Type(i)
+        self.assertEqual(calls, 100)
 
 if __name__ == '__main__':
     unittest.main()

@@ -121,21 +121,11 @@ write code that handles both IP versions correctly.  Address objects are
       Leading zeros are tolerated, even in ambiguous cases that look like
       octal notation.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.9.5
 
       Leading zeros are no longer tolerated and are treated as an error.
       IPv4 address strings are now parsed as strict as glibc
       :func:`~socket.inet_pton`.
-
-   .. versionchanged:: 3.9.5
-
-      The above change was also included in Python 3.9 starting with
-      version 3.9.5.
-
-   .. versionchanged:: 3.8.12
-
-      The above change was also included in Python 3.8 starting with
-      version 3.8.12.
 
    .. attribute:: version
 
@@ -188,17 +178,52 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_private
 
-      ``True`` if the address is allocated for private networks.  See
+      ``True`` if the address is defined as not globally reachable by
       iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-      (for IPv6).
+      (for IPv6) with the following exceptions:
+
+      * ``is_private`` is ``False`` for the shared address space (``100.64.0.0/10``)
+      * For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
+        semantics of the underlying IPv4 addresses and the following condition holds
+        (see :attr:`IPv6Address.ipv4_mapped`)::
+
+            address.is_private == address.ipv4_mapped.is_private
+
+      ``is_private`` has value opposite to :attr:`is_global`, except for the shared address space
+      (``100.64.0.0/10`` range) where they are both ``False``.
+
+      .. versionchanged:: 3.13
+
+         Fixed some false positives and false negatives.
+
+         * ``192.0.0.0/24`` is considered private with the exception of ``192.0.0.9/32`` and
+           ``192.0.0.10/32`` (previously: only the ``192.0.0.0/29`` sub-range was considered private).
+         * ``64:ff9b:1::/48`` is considered private.
+         * ``2002::/16`` is considered private.
+         * There are exceptions within ``2001::/23`` (otherwise considered private): ``2001:1::1/128``,
+           ``2001:1::2/128``, ``2001:3::/32``, ``2001:4:112::/48``, ``2001:20::/28``, ``2001:30::/28``.
+           The exceptions are not considered private.
 
    .. attribute:: is_global
 
-      ``True`` if the address is allocated for public networks.  See
+      ``True`` if the address is defined as globally reachable by
       iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-      (for IPv6).
+      (for IPv6) with the following exception:
+
+      For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
+      semantics of the underlying IPv4 addresses and the following condition holds
+      (see :attr:`IPv6Address.ipv4_mapped`)::
+
+         address.is_global == address.ipv4_mapped.is_global
+
+      ``is_global`` has value opposite to :attr:`is_private`, except for the shared address space
+      (``100.64.0.0/10`` range) where they are both ``False``.
 
       .. versionadded:: 3.4
+
+      .. versionchanged:: 3.13
+
+         Fixed some false positives and false negatives, see :attr:`is_private` for details.
 
    .. attribute:: is_unspecified
 
@@ -218,6 +243,13 @@ write code that handles both IP versions correctly.  Address objects are
 
       ``True`` if the address is reserved for link-local usage.  See
       :RFC:`3927`.
+
+   .. attribute:: ipv6_mapped
+
+      :class:`IPv4Address` object representing the IPv4-mapped IPv6 address. See :RFC:`4291`.
+
+      .. versionadded:: 3.13
+
 
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml

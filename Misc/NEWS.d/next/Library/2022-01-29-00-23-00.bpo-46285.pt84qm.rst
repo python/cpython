@@ -1,4 +1,0 @@
-Add command-line option ``-p``/``--protocol`` to module :mod:`http.server`
-which specifies the HTTP version to which the server is conformant (HTTP/1.1
-conformant servers can now be run from the command-line interface of module
-:mod:`http.server`). Patch by Géry Ogam.

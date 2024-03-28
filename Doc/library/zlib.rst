@@ -43,8 +43,6 @@ The available exception and functions in this module are:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
-      To generate the same numeric value when using Python 2 or earlier,
-      use ``adler32(data) & 0xffffffff``.
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -137,8 +135,6 @@ The available exception and functions in this module are:
 
    .. versionchanged:: 3.0
       The result is always unsigned.
-      To generate the same numeric value when using Python 2 or earlier,
-      use ``crc32(data) & 0xffffffff``.
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
@@ -269,7 +265,7 @@ Decompression objects support the following methods and attributes:
    A boolean indicating whether the end of the compressed data stream has been
    reached.
 
-   This makes it possible to distinguish between a properly-formed compressed
+   This makes it possible to distinguish between a properly formed compressed
    stream, and an incomplete or truncated one.
 
    .. versionadded:: 3.3

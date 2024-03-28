@@ -1,3 +1,0 @@
-Fix :data:`signal.NSIG` value on FreeBSD to accept signal numbers greater than
-32, like :data:`signal.SIGRTMIN` and :data:`signal.SIGRTMAX`. Patch by Victor
-Stinner.

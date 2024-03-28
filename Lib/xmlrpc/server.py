@@ -720,9 +720,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?((?:\w|\.)+))\b')
-        while 1:
-            match = pattern.search(text, here)
-            if not match: break
+        while match := pattern.search(text, here):
             start, end = match.span()
             results.append(escape(text[here:start]))
 
