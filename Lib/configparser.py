@@ -153,7 +153,7 @@ import itertools
 import os
 import re
 import sys
-from typing import Iterator
+from typing import Iterable
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
@@ -536,6 +536,7 @@ class _ReadState:
     optname : str | None = None
     lineno : int = 0
     indent_level : int = 0
+    errors : list[ParsingError] = field(default_factory=list)
 
 
 class _Line(str):
@@ -1028,10 +1029,11 @@ class RawConfigParser(MutableMapping):
         finally:
             self._join_multiline_values()
 
-    def _raise_all(self, exceptions: Iterator[ParsingError]):
+    def _raise_all(self, exceptions: Iterable[ParsingError]):
         """
         Combine any number of ParsingErrors into one and raise it.
         """
+        exceptions = iter(exceptions)
         with contextlib.suppress(StopIteration):
             raise next(exceptions).combine(exceptions)
 
@@ -1061,7 +1063,9 @@ class RawConfigParser(MutableMapping):
             if self._handle_continuation_line(st, line, fpname):
                 continue
 
-            yield from self._handle_rest(st, line, fpname)
+            self._handle_rest(st, line, fpname)
+
+        return st.errors
 
     def _handle_continuation_line(self, st, line, fpname):
         # continuation line?
@@ -1136,7 +1140,7 @@ class RawConfigParser(MutableMapping):
                 if mo:
                     st.optname, vi, optval = mo.group('option', 'vi', 'value')
                     if not st.optname:
-                        yield ParsingError(fpname, st.lineno, line)
+                        st.errors.append(ParsingError(fpname, st.lineno, line))
                     st.optname = self.optionxform(st.optname.rstrip())
                     if (self._strict and
                         (st.sectname, st.optname) in st.elements_added):
@@ -1156,7 +1160,7 @@ class RawConfigParser(MutableMapping):
                     # exception but keep going. the exception will be
                     # raised at the end of the file and will contain a
                     # list of all bogus lines
-                    yield ParsingError(fpname, st.lineno, line)
+                    st.errors.append(ParsingError(fpname, st.lineno, line))
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
