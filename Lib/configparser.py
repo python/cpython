@@ -146,6 +146,7 @@ ConfigParser -- responsible for parsing a list of
 from collections.abc import MutableMapping
 from collections import ChainMap as _ChainMap
 import contextlib
+from dataclasses import dataclass, field
 import functools
 import io
 import itertools
@@ -525,6 +526,17 @@ class ExtendedInterpolation(Interpolation):
                     option, section,
                     "'$' must be followed by '$' or '{', "
                     "found: %r" % (rest,))
+
+
+@dataclass
+class _ReadState:
+    elements_added : set[str] = field(default_factory=set)
+    cursect : dict[str, str] | None = None
+    sectname : str | None = None
+    optname : str | None = None
+    lineno : int = 0
+    indent_level : int = 0
+
 
 class _Line(str):
     def _strip_comments(self, prefixes, inline_prefixes):
@@ -1024,14 +1036,9 @@ class RawConfigParser(MutableMapping):
             raise next(exceptions).combine(exceptions)
 
     def _read_inner(self, fp, fpname):
-        elements_added = set()
-        cursect = None                        # None, or a dictionary
-        sectname = None
-        optname = None
-        lineno = 0
-        indent_level = 0
+        st = _ReadState()
 
-        for lineno, line in enumerate(map(_Line, fp), start=1):
+        for st.lineno, line in enumerate(map(_Line, fp), start=1):
             line._strip_comments(self._comment_prefixes, self._inline_comment_prefixes)
 
             if not line.clean:
@@ -1039,106 +1046,106 @@ class RawConfigParser(MutableMapping):
                     # add empty line to the value, but only if there was no
                     # comment on the line
                     if (not line.has_comments and
-                        cursect is not None and
-                        optname and
-                        cursect[optname] is not None):
-                        cursect[optname].append('') # newlines added at join
+                        st.cursect is not None and
+                        st.optname and
+                        st.cursect[st.optname] is not None):
+                        st.cursect[st.optname].append('') # newlines added at join
                 else:
                     # empty line marks end of value
-                    indent_level = sys.maxsize
+                    st.indent_level = sys.maxsize
                 continue
             # continuation line?
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
-            if (cursect is not None and optname and
-                cur_indent_level > indent_level):
-                if cursect[optname] is None:
-                    raise MultilineContinuationError(fpname, lineno, line)
-                cursect[optname].append(line.clean)
+            if (st.cursect is not None and st.optname and
+                cur_indent_level > st.indent_level):
+                if st.cursect[st.optname] is None:
+                    raise MultilineContinuationError(fpname, st.lineno, line)
+                st.cursect[st.optname].append(line.clean)
             # a section header or option header?
             else:
-                if self._allow_unnamed_section and cursect is None:
-                    sectname = UNNAMED_SECTION
-                    cursect = self._dict()
-                    self._sections[sectname] = cursect
-                    self._proxies[sectname] = SectionProxy(self, sectname)
-                    elements_added.add(sectname)
+                if self._allow_unnamed_section and st.cursect is None:
+                    st.sectname = UNNAMED_SECTION
+                    st.cursect = self._dict()
+                    self._sections[st.sectname] = st.cursect
+                    self._proxies[st.sectname] = SectionProxy(self, st.sectname)
+                    st.elements_added.add(st.sectname)
 
-                indent_level = cur_indent_level
+                st.indent_level = cur_indent_level
                 # is it a section header?
                 mo = self.SECTCRE.match(line.clean)
                 if mo:
-                    sectname = mo.group('header')
-                    if sectname in self._sections:
-                        if self._strict and sectname in elements_added:
-                            raise DuplicateSectionError(sectname, fpname,
-                                                        lineno)
-                        cursect = self._sections[sectname]
-                        elements_added.add(sectname)
-                    elif sectname == self.default_section:
-                        cursect = self._defaults
+                    st.sectname = mo.group('header')
+                    if st.sectname in self._sections:
+                        if self._strict and st.sectname in st.elements_added:
+                            raise DuplicateSectionError(st.sectname, fpname,
+                                                        st.lineno)
+                        st.cursect = self._sections[st.sectname]
+                        st.elements_added.add(st.sectname)
+                    elif st.sectname == self.default_section:
+                        st.cursect = self._defaults
                     else:
-                        cursect = self._dict()
-                        self._sections[sectname] = cursect
-                        self._proxies[sectname] = SectionProxy(self, sectname)
-                        elements_added.add(sectname)
+                        st.cursect = self._dict()
+                        self._sections[st.sectname] = st.cursect
+                        self._proxies[st.sectname] = SectionProxy(self, st.sectname)
+                        st.elements_added.add(st.sectname)
                     # So sections can't start with a continuation line
-                    optname = None
+                    st.optname = None
                 # no section header?
-                elif cursect is None:
-                    raise MissingSectionHeaderError(fpname, lineno, line)
+                elif st.cursect is None:
+                    raise MissingSectionHeaderError(fpname, st.lineno, line)
                     # an option line?
                 else:
-                    indent_level = cur_indent_level
+                    st.indent_level = cur_indent_level
                     # is it a section header?
                     mo = self.SECTCRE.match(line.clean)
                     if mo:
-                        sectname = mo.group('header')
-                        if sectname in self._sections:
-                            if self._strict and sectname in elements_added:
-                                raise DuplicateSectionError(sectname, fpname,
-                                                            lineno)
-                            cursect = self._sections[sectname]
-                            elements_added.add(sectname)
-                        elif sectname == self.default_section:
-                            cursect = self._defaults
+                        st.sectname = mo.group('header')
+                        if st.sectname in self._sections:
+                            if self._strict and st.sectname in st.elements_added:
+                                raise DuplicateSectionError(st.sectname, fpname,
+                                                            st.lineno)
+                            st.cursect = self._sections[st.sectname]
+                            st.elements_added.add(st.sectname)
+                        elif st.sectname == self.default_section:
+                            st.cursect = self._defaults
                         else:
-                            cursect = self._dict()
-                            self._sections[sectname] = cursect
-                            self._proxies[sectname] = SectionProxy(self, sectname)
-                            elements_added.add(sectname)
+                            st.cursect = self._dict()
+                            self._sections[st.sectname] = st.cursect
+                            self._proxies[st.sectname] = SectionProxy(self, st.sectname)
+                            st.elements_added.add(st.sectname)
                         # So sections can't start with a continuation line
-                        optname = None
+                        st.optname = None
                     # no section header in the file?
-                    elif cursect is None:
-                        raise MissingSectionHeaderError(fpname, lineno, line)
+                    elif st.cursect is None:
+                        raise MissingSectionHeaderError(fpname, st.lineno, line)
                         # an option line?
                     else:
                         mo = self._optcre.match(line.clean)
                         if mo:
-                            optname, vi, optval = mo.group('option', 'vi', 'value')
-                            if not optname:
-                                yield ParsingError(fpname, lineno, line)
-                            optname = self.optionxform(optname.rstrip())
+                            st.optname, vi, optval = mo.group('option', 'vi', 'value')
+                            if not st.optname:
+                                yield ParsingError(fpname, st.lineno, line)
+                            st.optname = self.optionxform(st.optname.rstrip())
                             if (self._strict and
-                                (sectname, optname) in elements_added):
-                                raise DuplicateOptionError(sectname, optname,
-                                                        fpname, lineno)
-                            elements_added.add((sectname, optname))
+                                (st.sectname, st.optname) in st.elements_added):
+                                raise DuplicateOptionError(st.sectname, st.optname,
+                                                        fpname, st.lineno)
+                            st.elements_added.add((st.sectname, st.optname))
                             # This check is fine because the OPTCRE cannot
                             # match if it would set optval to None
                             if optval is not None:
                                 optval = optval.strip()
-                                cursect[optname] = [optval]
+                                st.cursect[st.optname] = [optval]
                             else:
                                 # valueless option handling
-                                cursect[optname] = None
+                                st.cursect[st.optname] = None
                         else:
                             # a non-fatal parsing error occurred. set up the
                             # exception but keep going. the exception will be
                             # raised at the end of the file and will contain a
                             # list of all bogus lines
-                            yield ParsingError(fpname, lineno, line)
+                            yield ParsingError(fpname, st.lineno, line)
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
