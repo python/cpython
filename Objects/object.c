@@ -1588,7 +1588,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                 }
             }
             else {
-                dict = _PyObject_MakeDictFromInstanceAttributes(obj);
+                dict = (PyObject *)_PyObject_MakeDictFromInstanceAttributes(obj);
                 if (dict == NULL) {
                     res = NULL;
                     goto done;

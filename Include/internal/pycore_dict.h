@@ -248,7 +248,7 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
     return DICT_NEXT_VERSION(interp) | (mp->ma_version_tag & DICT_WATCHER_AND_MODIFICATION_MASK);
 }
 
-extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj);
+extern PyDictObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj);
 
 PyAPI_FUNC(PyObject *)_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
