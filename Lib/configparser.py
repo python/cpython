@@ -1089,6 +1089,10 @@ class RawConfigParser(MutableMapping):
         st.indent_level = st.cur_indent_level
         # is it a section header?
         mo = self.SECTCRE.match(line.clean)
+
+        if not mo and st.cursect is None:
+            raise MissingSectionHeaderError(fpname, st.lineno, line)
+
         if mo:
             st.sectname = mo.group('header')
             if st.sectname in self._sections:
@@ -1106,10 +1110,7 @@ class RawConfigParser(MutableMapping):
                 st.elements_added.add(st.sectname)
             # So sections can't start with a continuation line
             st.optname = None
-        # no section header?
-        elif st.cursect is None:
-            raise MissingSectionHeaderError(fpname, st.lineno, line)
-            # an option line?
+        # an option line?
         else:
             st.indent_level = st.cur_indent_level
             # is it a section header?
