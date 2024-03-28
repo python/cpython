@@ -1,0 +1,2 @@
+A ``DocTestCase`` now reports as skipped if all examples in the doctest are
+skipped.
