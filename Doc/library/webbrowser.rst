@@ -33,6 +33,13 @@ allow the remote browser to maintain its own windows on the display.  If remote
 browsers are not available on Unix, the controlling process will launch a new
 browser and wait.
 
+On iOS, the :envvar:`BROWSER` environment variable, as well as any arguments
+controlling autoraise, browser preference, and new tab/window creation will be
+ignored. Web pages will *always* be opened in the user's preferred browser, in
+a new tab, with the browser being brought to the foreground. The use of the
+:mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
+:mod:`ctypes` isn't available, calls to :func:`.open` will fail.
+
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
 parameters: ``-n`` opens the URL in a new browser window, if possible;
@@ -147,6 +154,8 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'chromium-browser'`` | ``Chromium('chromium-browser')``        |       |
 +------------------------+-----------------------------------------+-------+
+| ``'iosbrowser'``       | ``IOSBrowser``                          | \(4)  |
++------------------------+-----------------------------------------+-------+
 
 Notes:
 
@@ -161,7 +170,10 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on macOS platform.
+   Only on macOS.
+
+(4)
+   Only on iOS.
 
 .. versionadded:: 3.2
    A new :class:`!MacOSXOSAScript` class has been added
@@ -175,6 +187,9 @@ Notes:
    Support for several obsolete browsers has been removed.
    Removed browsers include Grail, Mosaic, Netscape, Galeon,
    Skipstone, Iceape, and Firefox versions 35 and below.
+
+.. versionchanged:: 3.13
+   Support for iOS has been added.
 
 Here are some simple examples::
 

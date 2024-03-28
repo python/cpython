@@ -1223,6 +1223,7 @@ class GCCallbackTests(unittest.TestCase):
         self.assertEqual(len(gc.garbage), 0)
 
 
+    @requires_subprocess()
     @unittest.skipIf(BUILD_WITH_NDEBUG,
                      'built with -NDEBUG')
     def test_refcount_errors(self):

@@ -38,6 +38,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_heapq",
 "_imp",
 "_io",
+"_ios_support",
 "_json",
 "_locale",
 "_lsprof",

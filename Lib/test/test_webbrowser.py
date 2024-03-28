@@ -5,11 +5,14 @@ import sys
 import subprocess
 from unittest import mock
 from test import support
+from test.support import is_apple_mobile
 from test.support import import_helper
 from test.support import os_helper
+from test.support import requires_subprocess
+from test.support import threading_helper
 
-if not support.has_subprocess_support:
-    raise unittest.SkipTest("test webserver requires subprocess")
+# The webbrowser module uses threading locks
+threading_helper.requires_working_threading(module=True)
 
 URL = 'https://www.example.com'
 CMD_NAME = 'test'
@@ -24,6 +27,7 @@ class PopenMock(mock.MagicMock):
         return 0
 
 
+@requires_subprocess()
 class CommandTestMixin:
 
     def _test(self, meth, *, args=[URL], kw={}, options, arguments):
@@ -219,6 +223,73 @@ class ELinksCommandTest(CommandTestMixin, unittest.TestCase):
                    arguments=['openURL({},new-tab)'.format(URL)])
 
 
+@unittest.skipUnless(sys.platform == "ios", "Test only applicable to iOS")
+class IOSBrowserTest(unittest.TestCase):
+    def _obj_ref(self, *args):
+        # Construct a string representation of the arguments that can be used
+        # as a proxy for object instance references
+        return "|".join(str(a) for a in args)
+
+    @unittest.skipIf(getattr(webbrowser, "objc", None) is None,
+                     "iOS Webbrowser tests require ctypes")
+    def setUp(self):
+        # Intercept the the objc library. Wrap the calls to get the
+        # references to classes and selectors to return strings, and
+        # wrap msgSend to return stringified object references
+        self.orig_objc = webbrowser.objc
+
+        webbrowser.objc = mock.Mock()
+        webbrowser.objc.objc_getClass = lambda cls: f"C#{cls.decode()}"
+        webbrowser.objc.sel_registerName = lambda sel: f"S#{sel.decode()}"
+        webbrowser.objc.objc_msgSend.side_effect = self._obj_ref
+
+    def tearDown(self):
+        webbrowser.objc = self.orig_objc
+
+    def _test(self, meth, **kwargs):
+        # The browser always gets focus, there's no concept of separate browser
+        # windows, and there's no API-level control over creating a new tab.
+        # Therefore, all calls to webbrowser are effectively the same.
+        getattr(webbrowser, meth)(URL, **kwargs)
+
+        # The ObjC String version of the URL is created with UTF-8 encoding
+        url_string_args = [
+            "C#NSString",
+            "S#stringWithCString:encoding:",
+            b'https://www.example.com',
+            4,
+        ]
+        # The NSURL version of the URL is created from that string
+        url_obj_args = [
+            "C#NSURL",
+            "S#URLWithString:",
+            self._obj_ref(*url_string_args),
+        ]
+        # The openURL call is invoked on the shared application
+        shared_app_args = ["C#UIApplication", "S#sharedApplication"]
+
+        # Verify that the last call is the one that opens the URL.
+        webbrowser.objc.objc_msgSend.assert_called_with(
+            self._obj_ref(*shared_app_args),
+            "S#openURL:options:completionHandler:",
+            self._obj_ref(*url_obj_args),
+            None,
+            None
+        )
+
+    def test_open(self):
+        self._test('open')
+
+    def test_open_with_autoraise_false(self):
+        self._test('open', autoraise=False)
+
+    def test_open_new(self):
+        self._test('open_new')
+
+    def test_open_new_tab(self):
+        self._test('open_new_tab')
+
+
 class BrowserRegistrationTest(unittest.TestCase):
 
     def setUp(self):
@@ -314,6 +385,10 @@ class ImportTest(unittest.TestCase):
         webbrowser.register(name, None, webbrowser.GenericBrowser(name))
         webbrowser.get(sys.executable)
 
+    @unittest.skipIf(
+        is_apple_mobile,
+        "Apple mobile doesn't allow modifying browser with environment"
+    )
     def test_environment(self):
         webbrowser = import_helper.import_fresh_module('webbrowser')
         try:
@@ -325,6 +400,10 @@ class ImportTest(unittest.TestCase):
             webbrowser = import_helper.import_fresh_module('webbrowser')
             webbrowser.get()
 
+    @unittest.skipIf(
+        is_apple_mobile,
+        "Apple mobile doesn't allow modifying browser with environment"
+    )
     def test_environment_preferred(self):
         webbrowser = import_helper.import_fresh_module('webbrowser')
         try:
