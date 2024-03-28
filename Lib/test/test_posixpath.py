@@ -639,8 +639,8 @@ class PosixPathTest(unittest.TestCase):
 
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_double_slash(self):
-        # gh-117201: Handle leading `//` for `posixpath.realpath`
-        self.assertEqual(realpath("//foo"), "/foo")
+        # gh-117338: Handle leading `//` for `posixpath.realpath`
+        self.assertEqual(realpath("//foo"), "//foo")
 
     def test_relpath(self):
         (real_getcwd, os.getcwd) = (os.getcwd, lambda: r"/home/user/bar")
