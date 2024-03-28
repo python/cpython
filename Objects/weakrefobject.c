@@ -441,7 +441,8 @@ try_reuse_basic_ref(PyWeakReference *ref, PyWeakReference *proxy,
     if (type == &_PyWeakref_RefType) {
         cand = ref;
     }
-    if (type == &_PyWeakref_ProxyType) {
+    if ((type == &_PyWeakref_ProxyType) ||
+        (type == &_PyWeakref_CallableProxyType)) {
         cand = proxy;
     }
 
