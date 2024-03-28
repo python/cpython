@@ -1893,12 +1893,19 @@ class SaveSignals:
 
 
 def with_pymalloc():
-    WITH_PYMALLOC = bool(sysconfig.get_config_var("WITH_PYMALLOC"))
-    return WITH_PYMALLOC and not Py_GIL_DISABLED
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("requires _testcapi")
+    return _testcapi.WITH_PYMALLOC and not Py_GIL_DISABLED
 
 
 def with_mimalloc():
-    return bool(sysconfig.get_config_var("WITH_MIMALLOC"))
+    try:
+        import _testcapi
+    except ImportError:
+        raise unittest.SkipTest("requires _testcapi")
+    return _testcapi.WITH_MIMALLOC
 
 
 class _ALWAYS_EQ:
