@@ -847,8 +847,7 @@ def commonpath(paths):
     if not paths:
         raise ValueError('commonpath() arg is an empty iterable')
 
-    path = paths[0]
-    if isinstance(path, bytes):
+    if isinstance(paths[0], bytes):
         sep = b'\\'
         altsep = b'/'
         curdir = b'.'
@@ -859,32 +858,32 @@ def commonpath(paths):
 
     try:
         rootsplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
+
+        # Check that all drive letters or UNC paths match. The check is made
+        # only now otherwise type errors for mixing strings and bytes would not
+        # be caught.
+        if len({d for d, _, _ in rootsplits}) != 1:
+            raise ValueError("Paths don't have the same drive")
+
+        if len({r for _, r, _ in rootsplits}) != 1:
+            raise ValueError("Can't mix absolute and relative paths")
+
+        drive, root, tail = splitroot(paths[0].replace(altsep, sep))
+        common = [c for c in tail.split(sep) if c and c != curdir]
+
+        split_paths = [
+            [c for c in t.split(sep) if c and c != curdir]
+            for _, _, t in rootsplits
+        ]
+        s1 = min(split_paths)
+        s2 = max(split_paths)
+        for i, c in enumerate(s1):
+            if c != s2[i]:
+                return drive + root + sep.join(common[:i])
+        return drive + root + sep.join(common[:len(s1)])
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
-
-    # Check that all drive letters or UNC paths match. The check is made only
-    # now otherwise type errors for mixing strings and bytes would not be
-    # caught.
-    if len({drt[0] for drt in rootsplits}) != 1:
-        raise ValueError("Paths don't have the same drive")
-
-    if len({drt[1] for drt in rootsplits}) != 1:
-        raise ValueError("Can't mix absolute and relative paths")
-
-    drive, root, tail = splitroot(path.replace(altsep, sep))
-    common = [c for c in tail.split(sep) if c and c != curdir]
-    split_paths = [
-        [c for c in drt[2].split(sep) if c and c != curdir]
-        for drt in rootsplits
-    ]
-    s1 = min(split_paths)
-    s2 = max(split_paths)
-    for i, c in enumerate(s1):
-        if c != s2[i]:
-            return drive + root + sep.join(common[:i])
-
-    return drive + root + sep.join(common[:len(s1)])
 
 
 try:
