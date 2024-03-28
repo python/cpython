@@ -118,8 +118,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Create a Python integer from the value contained in the first *n_bytes* of
    *buffer*, interpreted as a two's-complement signed number.
 
-   *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or else ``0`` for big endian and ``1`` for little.
+   *flags* are as for :c:func:`PyLong_AsNativeBytes`. Passing ``-1`` will select
+   the native endian that CPython was compiled with and assume that the
+   most-significant bit is a sign bit. ``Py_ASNATIVEBYTES_REJECT_NEGATIVE`` has
+   no effect.
 
    .. versionadded:: 3.13
 
@@ -129,8 +131,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Create a Python integer from the value contained in the first *n_bytes* of
    *buffer*, interpreted as an unsigned number.
 
-   *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or else ``0`` for big endian and ``1`` for little.
+   *flags* are as for :c:func:`PyLong_AsNativeBytes`. Passing ``-1`` will select
+   the native endian that CPython was compiled with and assume that the
+   most-significant bit is not a sign bit. ``Py_ASNATIVEBYTES_REJECT_NEGATIVE``
+   has no effect.
 
    .. versionadded:: 3.13
 
@@ -354,7 +358,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 
-.. c:function:: Py_ssize_t PyLong_AsNativeBytes(PyObject *pylong, void* buffer, Py_ssize_t n_bytes, int endianness)
+.. c:function:: Py_ssize_t PyLong_AsNativeBytes(PyObject *pylong, void* buffer, Py_ssize_t n_bytes, int flags)
 
    Copy the Python integer value to a native *buffer* of size *n_bytes*::
 
@@ -409,13 +413,41 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
       // ... use bignum ...
       free(bignum);
 
-   *endianness* may be passed ``-1`` for the native endian that CPython was
-   compiled with, or ``0`` for big endian and ``1`` for little.
+   *flags* is a combination of the flags shown in the table below, or ``-1`` to
+   select defaults that behave most like a C cast (currently,
+   ``Py_ASNATIVEBYTES_NATIVE_ENDIAN | Py_ASNATIVEBYTES_UNSIGNED_BUFFER``).
+
+   ============================================= ======
+   Flag                                          Value 
+   ============================================= ======
+   .. c:macro:: Py_ASNATIVEBYTES_DEFAULTS        ``-1``
+   .. c:macro:: Py_ASNATIVEBYTES_BIG_ENDIAN      ``0``
+   .. c:macro:: Py_ASNATIVEBYTES_LITTLE_ENDIAN   ``1``
+   .. c:macro:: Py_ASNATIVEBYTES_NATIVE_ENDIAN   ``3``
+   .. c:macro:: Py_ASNATIVEBYTES_UNSIGNED_BUFFER ``4``
+   .. c:macro:: Py_ASNATIVEBYTES_REJECT_NEGATIVE ``8``
+   ============================================= ======
+
+   Specifying ``Py_ASNATIVEBYTES_NATIVE_ENDIAN`` will override any other endian
+   flags.
+
+   Specifying ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` allows positive input values
+   that would set the most-significant bit to be converted. For example,
+   converting 128 into a single byte. Without this flag, these values request a
+   larger buffer in order to ensure a zero sign bit is included. If the
+   destination buffer is later treated as signed, a positive input value may
+   become negative.
+
+   Specifying ``Py_ASNATIVEBYTES_REJECT_NEGATIVE`` causes an exception to be set
+   if *pylong* is negative. Without this flag, negative values will be copied
+   provided there is enough space for at least one sign bit, regardless of
+   whether ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` was specified.
 
    Returns ``-1`` with an exception raised if *pylong* cannot be interpreted as
-   an integer. Otherwise, return the size of the buffer required to store the
-   value. If this is equal to or less than *n_bytes*, the entire value was
-   copied. ``0`` will never be returned.
+   an integer, or if *pylong* was negative and
+   ``Py_ASNATIVEBYTES_REJECT_NEGATIVE`` was set. Otherwise, return the size of
+   the buffer required to store the value. If this is equal to or less than
+   *n_bytes*, the entire value was copied. ``0`` will never be returned.
 
    Unless an exception is raised, all *n_bytes* of the buffer will always be
    written. In the case of truncation, as many of the lowest bits of the value

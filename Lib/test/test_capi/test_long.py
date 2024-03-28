@@ -583,8 +583,6 @@ class LongTests(unittest.TestCase):
         # Check a few error conditions. These are validated in code, but are
         # unspecified in docs, so if we make changes to the implementation, it's
         # fine to just update these tests rather than preserve the behaviour.
-        with self.assertRaises(SystemError):
-            asnativebytes(1, buffer, 0, 2)
         with self.assertRaises(TypeError):
             asnativebytes('not a number', buffer, 0, -1)
 

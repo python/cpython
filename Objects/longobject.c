@@ -1083,8 +1083,10 @@ _fits_in_n_bits(Py_ssize_t v, Py_ssize_t n)
 static inline int
 _resolve_endianness(int *endianness)
 {
-    if (*endianness < 0) {
+    if (*endianness == -1 || (*endianness & 2)) {
         *endianness = PY_LITTLE_ENDIAN;
+    } else {
+        *endianness &= 1;
     }
     if (*endianness != 0 && *endianness != 1) {
         PyErr_SetString(PyExc_SystemError, "invalid 'endianness' value");
@@ -1094,7 +1096,7 @@ _resolve_endianness(int *endianness)
 }
 
 Py_ssize_t
-PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
+PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
 {
     PyLongObject *v;
     union {
@@ -1109,7 +1111,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
         return -1;
     }
 
-    int little_endian = endianness;
+    int little_endian = flags;
     if (_resolve_endianness(&little_endian) < 0) {
         return -1;
     }
@@ -1123,6 +1125,15 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
             return -1;
         }
         do_decref = 1;
+    }
+
+    if ((flags != -1 && (flags & Py_ASNATIVEBYTES_REJECT_NEGATIVE))
+        && _PyLong_IsNegative(v)) {
+        PyErr_SetString(PyExc_OverflowError, "Cannot convert negative int");
+        if (do_decref) {
+            Py_DECREF(v);
+        }
+        return -1;
     }
 
     if (_PyLong_IsCompact(v)) {
@@ -1163,14 +1174,11 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
                 /* Positive values with the MSB set do not require an
                  * additional bit when the caller's intent is to treat them
                  * as unsigned. */
-                /* TODO: Disabled because we don't know the caller's intent
-                res = n;
-                 * Instead, we'll return n+1, which is more accurate than
-                 * res at this stage (which is just sizeof(size_t)),
-                 * and it's something we can test for to ensure this case
-                 * is being detected correctly.
-                 */
-                res = n + 1;
+                if (flags == -1 || flags & Py_ASNATIVEBYTES_UNSIGNED_BUFFER) {
+                    res = n;
+                } else {
+                    res = n + 1;
+                }
             }
         }
         else {
@@ -1268,38 +1276,46 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int endianness)
 
 
 PyObject *
-PyLong_FromNativeBytes(const void* buffer, size_t n, int endianness)
+PyLong_FromNativeBytes(const void* buffer, size_t n, int flags)
 {
     if (!buffer) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
-    int little_endian = endianness;
+    int little_endian = flags;
     if (_resolve_endianness(&little_endian) < 0) {
         return NULL;
     }
 
-    return _PyLong_FromByteArray((const unsigned char *)buffer, n,
-                                 little_endian, 1);
+    return _PyLong_FromByteArray(
+        (const unsigned char *)buffer,
+        n,
+        little_endian,
+        (flags == -1 || !(flags & Py_ASNATIVEBYTES_UNSIGNED_BUFFER)) ? 1 : 0
+    );
 }
 
 
 PyObject *
-PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n, int endianness)
+PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n, int flags)
 {
     if (!buffer) {
         PyErr_BadInternalCall();
         return NULL;
     }
 
-    int little_endian = endianness;
+    int little_endian = flags;
     if (_resolve_endianness(&little_endian) < 0) {
         return NULL;
     }
 
-    return _PyLong_FromByteArray((const unsigned char *)buffer, n,
-                                 little_endian, 0);
+    return _PyLong_FromByteArray(
+        (const unsigned char *)buffer,
+        n,
+        little_endian,
+        (flags != -1 && (flags & Py_ASNATIVEBYTES_UNSIGNED_BUFFER)) ? 1 : 0
+    );
 }
 
 
