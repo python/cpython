@@ -678,7 +678,7 @@ def _platform(*args):
         if cleaned == platform:
             break
         platform = cleaned
-    while platform[-1] == '-':
+    while platform and platform[-1] == '-':
         platform = platform[:-1]
 
     return platform

@@ -230,6 +230,7 @@ class IOSBrowserTest(unittest.TestCase):
         # as a proxy for object instance references
         return "|".join(str(a) for a in args)
 
+    @unittest.skipIf(webbrowser.objc is None, "iOS Webbrowser tests require ctypes")
     def setUp(self):
         # Intercept the the objc library. Wrap the calls to get the
         # references to classes and selectors to return strings, and

@@ -10,6 +10,14 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 
+try:
+    # Some of the iOS tests need ctypes to operate.
+    # Confirm that the ctypes module is available
+    # is available.
+    import _ctypes
+except ImportError:
+    _ctypes = None
+
 FEDORA_OS_RELEASE = """\
 NAME=Fedora
 VERSION="32 (Thirty Two)"
@@ -229,8 +237,15 @@ class PlatformTest(unittest.TestCase):
                 self.assertEqual(res.system, "Android")
                 self.assertEqual(res.release, platform.android_ver().release)
             elif sys.platform == "ios":
-                self.assertIn(res.system, {"iOS", "iPadOS"})
-                self.assertEqual(res.release, platform.ios_ver().release)
+                # Platform module needs ctypes for full operation. If ctypes
+                # isn't available, there's no ObjC module, and dummy values are
+                # returned.
+                if _ctypes:
+                    self.assertIn(res.system, {"iOS", "iPadOS"})
+                    self.assertEqual(res.release, platform.ios_ver().release)
+                else:
+                    self.assertEqual(res.system, "")
+                    self.assertEqual(res.release, "")
             else:
                 self.assertEqual(res.system, uname.sysname)
                 self.assertEqual(res.release, uname.release)
@@ -428,9 +443,10 @@ class PlatformTest(unittest.TestCase):
 
     def test_ios_ver(self):
         result = platform.ios_ver()
-        if sys.platform == "ios":
-            system, release, model, is_simulator = result
 
+        # ios_ver is only fully available on iOS where ctypes is available.
+        if sys.platform == "ios" and _ctypes:
+            system, release, model, is_simulator = result
             # Result is a namedtuple
             self.assertEqual(result.system, system)
             self.assertEqual(result.release, release)
