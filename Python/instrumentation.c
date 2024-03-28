@@ -29,6 +29,15 @@
     }
 #define ASSERT_WORLD_STOPPED() assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
 
+#else
+
+#define ASSERT_WORLD_STOPPED_OR_LOCKED(obj)
+#define ASSERT_WORLD_STOPPED()
+
+#endif
+
+#ifdef Py_GIL_DISABLED
+
 #define LOCK_CODE(code)                                             \
     assert(!_PyInterpreterState_GET()->stoptheworld.world_stopped); \
     Py_BEGIN_CRITICAL_SECTION(code)
@@ -37,8 +46,6 @@
 
 #else
 
-#define ASSERT_WORLD_STOPPED_OR_LOCKED(obj)
-#define ASSERT_WORLD_STOPPED()
 #define LOCK_CODE(code)
 #define UNLOCK_CODE()
 
