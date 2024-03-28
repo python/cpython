@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"          // PyGC_Head
-#  include "pycore_runtime.h"     // _Py_ID()
-#endif
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-
 PyDoc_STRVAR(_csv_list_dialects__doc__,
 "list_dialects($module, /)\n"
 "--\n"
@@ -37,48 +31,21 @@ PyDoc_STRVAR(_csv_unregister_dialect__doc__,
 "    csv.unregister_dialect(name)");
 
 #define _CSV_UNREGISTER_DIALECT_METHODDEF    \
-    {"unregister_dialect", _PyCFunction_CAST(_csv_unregister_dialect), METH_FASTCALL|METH_KEYWORDS, _csv_unregister_dialect__doc__},
+    {"unregister_dialect", (PyCFunction)(void(*)(void))_csv_unregister_dialect, METH_VARARGS|METH_KEYWORDS, _csv_unregister_dialect__doc__},
 
 static PyObject *
 _csv_unregister_dialect_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_csv_unregister_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "unregister_dialect",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static char *_keywords[] = {"name", NULL};
     PyObject *name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:unregister_dialect", _keywords,
+        &name))
         goto exit;
-    }
-    name = args[0];
     return_value = _csv_unregister_dialect_impl(module, name);
 
 exit:
@@ -94,48 +61,21 @@ PyDoc_STRVAR(_csv_get_dialect__doc__,
 "    dialect = csv.get_dialect(name)");
 
 #define _CSV_GET_DIALECT_METHODDEF    \
-    {"get_dialect", _PyCFunction_CAST(_csv_get_dialect), METH_FASTCALL|METH_KEYWORDS, _csv_get_dialect__doc__},
+    {"get_dialect", (PyCFunction)(void(*)(void))_csv_get_dialect, METH_VARARGS|METH_KEYWORDS, _csv_get_dialect__doc__},
 
 static PyObject *
 _csv_get_dialect_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_csv_get_dialect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_csv_get_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(name), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "get_dialect",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static char *_keywords[] = {"name", NULL};
     PyObject *name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
-    if (!args) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:get_dialect", _keywords,
+        &name))
         goto exit;
-    }
-    name = args[0];
     return_value = _csv_get_dialect_impl(module, name);
 
 exit:
@@ -154,56 +94,24 @@ PyDoc_STRVAR(_csv_field_size_limit__doc__,
 "the old limit is returned");
 
 #define _CSV_FIELD_SIZE_LIMIT_METHODDEF    \
-    {"field_size_limit", _PyCFunction_CAST(_csv_field_size_limit), METH_FASTCALL|METH_KEYWORDS, _csv_field_size_limit__doc__},
+    {"field_size_limit", (PyCFunction)(void(*)(void))_csv_field_size_limit, METH_VARARGS|METH_KEYWORDS, _csv_field_size_limit__doc__},
 
 static PyObject *
 _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit);
 
 static PyObject *
-_csv_field_size_limit(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_csv_field_size_limit(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(new_limit), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"new_limit", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "field_size_limit",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    static char *_keywords[] = {"new_limit", NULL};
     PyObject *new_limit = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
-    if (!args) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:field_size_limit", _keywords,
+        &new_limit))
         goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    new_limit = args[0];
-skip_optional_pos:
     return_value = _csv_field_size_limit_impl(module, new_limit);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ec59717f5414d8b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16f9da39244ce644 input=a9049054013a1b77]*/

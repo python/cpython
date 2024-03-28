@@ -8,15 +8,17 @@ module instead.
 
 */
 
-// clinic/_csv.c.h uses internal pycore_modsupport.h API
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
+// Need limited C API version 3.13 for PyType_GetModuleByDef()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
 
-#include <stddef.h>               // offsetof()
 #include <stdbool.h>
+#include <stddef.h>               // offsetof()
+#include <string.h>               // strlen()
 
 /*[clinic input]
 module _csv
@@ -250,8 +252,8 @@ _set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt
         if (src != Py_None) {
             if (!PyUnicode_Check(src)) {
                 PyErr_Format(PyExc_TypeError,
-                    "\"%s\" must be string or None, not %.200s", name,
-                    Py_TYPE(src)->tp_name);
+                    "\"%s\" must be string or None, not %T", name,
+                    src);
                 return -1;
             }
             Py_ssize_t len = PyUnicode_GetLength(src);
@@ -264,7 +266,7 @@ _set_char_or_none(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt
                     name);
                 return -1;
             }
-            *target = PyUnicode_READ_CHAR(src, 0);
+            *target = PyUnicode_ReadChar(src, 0);
         }
     }
     return 0;
@@ -279,8 +281,8 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
     else {
         if (!PyUnicode_Check(src)) {
             PyErr_Format(PyExc_TypeError,
-                         "\"%s\" must be string, not %.200s", name,
-                         Py_TYPE(src)->tp_name);
+                         "\"%s\" must be string, not %T", name,
+                         src);
                 return -1;
         }
         Py_ssize_t len = PyUnicode_GetLength(src);
@@ -293,7 +295,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
                          name);
             return -1;
         }
-        *target = PyUnicode_READ_CHAR(src, 0);
+        *target = PyUnicode_ReadChar(src, 0);
     }
     return 0;
 }
@@ -312,7 +314,9 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
             return -1;
         }
         else {
-            Py_XSETREF(*target, Py_NewRef(src));
+            PyObject *old_target = *target;
+            *target = Py_NewRef(src);
+            Py_XDECREF(old_target);
         }
     }
     return 0;
@@ -340,7 +344,7 @@ dialect_check_char(const char *name, Py_UCS4 c, DialectObj *dialect, bool allows
     }
     if (PyUnicode_FindChar(
         dialect->lineterminator, c, 0,
-        PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0)
+        PyUnicode_GetLength(dialect->lineterminator), 1) >= 0)
     {
         PyErr_Format(PyExc_ValueError, "bad %s or lineterminator value", name);
         return -1;
@@ -379,9 +383,10 @@ static PyGetSetDef Dialect_getsetlist[] = {
 static void
 Dialect_dealloc(DialectObj *self)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE((PyObject*)self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    inquiry tp_clear = PyType_GetSlot(tp, Py_tp_clear);
+    tp_clear((PyObject *)self);
     PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
@@ -469,7 +474,8 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             return dialect;
     }
 
-    self = (DialectObj *)type->tp_alloc(type, 0);
+    allocfunc tp_alloc = PyType_GetSlot(type, Py_tp_alloc);
+    self = (DialectObj *)tp_alloc(type, 0);
     if (self == NULL) {
         Py_CLEAR(dialect);
         return NULL;
@@ -550,7 +556,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto err;
     }
 
-    ret = Py_NewRef(self);
+    ret = Py_NewRef((PyObject*)self);
 err:
     Py_CLEAR(self);
     Py_CLEAR(dialect);
@@ -572,8 +578,7 @@ PyDoc_STRVAR(dialect_reduce_doc, "raises an exception to avoid pickling");
 
 static PyObject *
 Dialect_reduce(PyObject *self, PyObject *args) {
-    PyErr_Format(PyExc_TypeError,
-        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    PyErr_Format(PyExc_TypeError, "cannot pickle '%T' instances", self);
     return NULL;
 }
 
@@ -599,7 +604,7 @@ static int
 Dialect_traverse(DialectObj *self, visitproc visit, void *arg)
 {
     Py_VISIT(self->lineterminator);
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE((PyObject*)self));
     return 0;
 }
 
@@ -633,12 +638,27 @@ _call_dialect(_csvstate *module_state, PyObject *dialect_inst, PyObject *kwargs)
 {
     PyObject *type = (PyObject *)module_state->dialect_type;
     if (dialect_inst) {
-        return PyObject_VectorcallDict(type, &dialect_inst, 1, kwargs);
+        PyObject *args = PyTuple_Pack(1, dialect_inst);
+        if (args == NULL) {
+            return NULL;
+        }
+        PyObject *res = PyObject_Call(type, args, kwargs);
+        Py_DECREF(args);
+        return res;
     }
     else {
-        return PyObject_VectorcallDict(type, NULL, 0, kwargs);
+        PyObject *args = Py_GetConstantBorrowed(Py_CONSTANT_EMPTY_TUPLE);
+        return PyObject_Call(type, args, kwargs);
     }
 }
+
+
+static PyObject*
+unicode_from_ucs4(Py_UCS4 *data, Py_ssize_t len)
+{
+    return PyUnicode_DecodeUTF32((const char*)data, len * 4, NULL, 0);
+}
+
 
 /*
  * READER
@@ -656,8 +676,7 @@ parse_save_field(ReaderObj *self)
         field = Py_NewRef(Py_None);
     }
     else {
-        field = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                        (void *) self->field, self->field_len);
+        field = unicode_from_ucs4(self->field, self->field_len);
         if (field == NULL) {
             return -1;
         }
@@ -901,7 +920,9 @@ parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 static int
 parse_reset(ReaderObj *self)
 {
-    Py_XSETREF(self->fields, PyList_New(0));
+    PyObject *old_fields = self->fields;
+    self->fields = PyList_New(0);
+    Py_XDECREF(old_fields);
     if (self->fields == NULL)
         return -1;
     self->field_len = 0;
@@ -916,11 +937,9 @@ Reader_iternext(ReaderObj *self)
     PyObject *fields = NULL;
     Py_UCS4 c;
     Py_ssize_t pos, linelen;
-    int kind;
-    const void *data;
     PyObject *lineobj;
 
-    _csvstate *module_state = _csv_state_from_type(Py_TYPE(self),
+    _csvstate *module_state = _csv_state_from_type(Py_TYPE((PyObject*)self),
                                                    "Reader.__next__");
     if (module_state == NULL) {
         return NULL;
@@ -945,20 +964,18 @@ Reader_iternext(ReaderObj *self)
         if (!PyUnicode_Check(lineobj)) {
             PyErr_Format(module_state->error_obj,
                          "iterator should return strings, "
-                         "not %.200s "
+                         "not %T "
                          "(the file should be opened in text mode)",
-                         Py_TYPE(lineobj)->tp_name
+                         lineobj
                 );
             Py_DECREF(lineobj);
             return NULL;
         }
         ++self->line_num;
-        kind = PyUnicode_KIND(lineobj);
-        data = PyUnicode_DATA(lineobj);
         pos = 0;
-        linelen = PyUnicode_GET_LENGTH(lineobj);
+        linelen = PyUnicode_GetLength(lineobj);
         while (linelen--) {
-            c = PyUnicode_READ(kind, data, pos);
+            c = PyUnicode_ReadChar(lineobj, pos);
             if (parse_process_char(self, module_state, c) < 0) {
                 Py_DECREF(lineobj);
                 goto err;
@@ -979,9 +996,10 @@ err:
 static void
 Reader_dealloc(ReaderObj *self)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE((PyObject*)self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    inquiry tp_clear = PyType_GetSlot(tp, Py_tp_clear);
+    tp_clear((PyObject *)self);
     if (self->field != NULL) {
         PyMem_Free(self->field);
         self->field = NULL;
@@ -996,7 +1014,7 @@ Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
     Py_VISIT(self->dialect);
     Py_VISIT(self->input_iter);
     Py_VISIT(self->fields);
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE((PyObject*)self));
     return 0;
 }
 
@@ -1110,7 +1128,7 @@ join_reset(WriterObj *self)
  * record length.
  */
 static Py_ssize_t
-join_append_data(WriterObj *self, int field_kind, const void *field_data,
+join_append_data(WriterObj *self, PyObject *field,
                  Py_ssize_t field_len, int *quoted,
                  int copy_phase)
 {
@@ -1145,8 +1163,8 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
 
     /* Copy/count field data */
     /* If field is null just pass over */
-    for (i = 0; field_data && (i < field_len); i++) {
-        Py_UCS4 c = PyUnicode_READ(field_kind, field_data, i);
+    for (i = 0; field != NULL && (i < field_len); i++) {
+        Py_UCS4 c = PyUnicode_ReadChar(field, i);
         int want_escape = 0;
 
         if (c == dialect->delimiter ||
@@ -1156,7 +1174,7 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
             c == '\r'  ||
             PyUnicode_FindChar(
                 dialect->lineterminator, c, 0,
-                PyUnicode_GET_LENGTH(dialect->lineterminator), 1) >= 0) {
+                PyUnicode_GetLength(dialect->lineterminator), 1) >= 0) {
             if (dialect->quoting == QUOTE_NONE)
                 want_escape = 1;
             else {
@@ -1226,15 +1244,11 @@ static int
 join_append(WriterObj *self, PyObject *field, int quoted)
 {
     DialectObj *dialect = self->dialect;
-    int field_kind = -1;
-    const void *field_data = NULL;
     Py_ssize_t field_len = 0;
     Py_ssize_t rec_len;
 
     if (field != NULL) {
-        field_kind = PyUnicode_KIND(field);
-        field_data = PyUnicode_DATA(field);
-        field_len = PyUnicode_GET_LENGTH(field);
+        field_len = PyUnicode_GetLength(field);
     }
     if (!field_len && dialect->delimiter == ' ' && dialect->skipinitialspace) {
         if (dialect->quoting == QUOTE_NONE ||
@@ -1249,8 +1263,7 @@ join_append(WriterObj *self, PyObject *field, int quoted)
         }
         quoted = 1;
     }
-    rec_len = join_append_data(self, field_kind, field_data, field_len,
-                               &quoted, 0);
+    rec_len = join_append_data(self, field, field_len, &quoted, 0);
     if (rec_len < 0)
         return 0;
 
@@ -1258,8 +1271,7 @@ join_append(WriterObj *self, PyObject *field, int quoted)
     if (!join_check_rec_size(self, rec_len))
         return 0;
 
-    self->rec_len = join_append_data(self, field_kind, field_data, field_len,
-                                     &quoted, 1);
+    self->rec_len = join_append_data(self, field, field_len, &quoted, 1);
     self->num_fields++;
 
     return 1;
@@ -1269,10 +1281,8 @@ static int
 join_append_lineterminator(WriterObj *self)
 {
     Py_ssize_t terminator_len, i;
-    int term_kind;
-    const void *term_data;
 
-    terminator_len = PyUnicode_GET_LENGTH(self->dialect->lineterminator);
+    terminator_len = PyUnicode_GetLength(self->dialect->lineterminator);
     if (terminator_len == -1)
         return 0;
 
@@ -1280,10 +1290,9 @@ join_append_lineterminator(WriterObj *self)
     if (!join_check_rec_size(self, self->rec_len + terminator_len))
         return 0;
 
-    term_kind = PyUnicode_KIND(self->dialect->lineterminator);
-    term_data = PyUnicode_DATA(self->dialect->lineterminator);
-    for (i = 0; i < terminator_len; i++)
-        self->rec[self->rec_len + i] = PyUnicode_READ(term_kind, term_data, i);
+    for (i = 0; i < terminator_len; i++) {
+        self->rec[self->rec_len + i] = PyUnicode_ReadChar(self->dialect->lineterminator, i);
+    }
     self->rec_len += terminator_len;
 
     return 1;
@@ -1306,8 +1315,8 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (iter == NULL) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(self->error_obj,
-                         "iterable expected, not %.200s",
-                         Py_TYPE(seq)->tp_name);
+                         "iterable expected, not %T",
+                         seq);
         }
         return NULL;
     }
@@ -1388,12 +1397,11 @@ csv_writerow(WriterObj *self, PyObject *seq)
         return NULL;
     }
 
-    line = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-                                     (void *) self->rec, self->rec_len);
+    line = unicode_from_ucs4(self->rec, self->rec_len);
     if (line == NULL) {
         return NULL;
     }
-    result = PyObject_CallOneArg(self->write, line);
+    result = PyObject_CallFunctionObjArgs(self->write, line, NULL);
     Py_DECREF(line);
     return result;
 }
@@ -1448,7 +1456,7 @@ Writer_traverse(WriterObj *self, visitproc visit, void *arg)
     Py_VISIT(self->dialect);
     Py_VISIT(self->write);
     Py_VISIT(self->error_obj);
-    Py_VISIT(Py_TYPE(self));
+    Py_VISIT(Py_TYPE((PyObject*)self));
     return 0;
 }
 
@@ -1464,9 +1472,10 @@ Writer_clear(WriterObj *self)
 static void
 Writer_dealloc(WriterObj *self)
 {
-    PyTypeObject *tp = Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE((PyObject*)self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    inquiry tp_clear = PyType_GetSlot(tp, Py_tp_clear);
+    tp_clear((PyObject *)self);
     if (self->rec != NULL) {
         PyMem_Free(self->rec);
     }
@@ -1606,12 +1615,10 @@ _csv_unregister_dialect_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=0813ebca6c058df4 input=6b5c1557bf60c7e7]*/
 {
     _csvstate *module_state = get_csv_state(module);
-    int rc = PyDict_Pop(module_state->dialects, name, NULL);
-    if (rc < 0) {
-        return NULL;
-    }
-    if (rc == 0) {
-        PyErr_Format(module_state->error_obj, "unknown dialect");
+    if (PyDict_DelItem(module_state->dialects, name) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_Format(module_state->error_obj, "unknown dialect");
+        }
         return NULL;
     }
     Py_RETURN_NONE;
