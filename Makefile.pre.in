@@ -186,11 +186,17 @@ PYTHONFRAMEWORKPREFIX=	@PYTHONFRAMEWORKPREFIX@
 PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 PYTHONFRAMEWORKINSTALLNAMEPREFIX= @PYTHONFRAMEWORKINSTALLNAMEPREFIX@
 RESSRCDIR= @RESSRCDIR@
-# Deployment target selected during configure, to be checked
+# macOS deployment target selected during configure, to be checked
 # by distutils. The export statement is needed to ensure that the
 # deployment target is active during build.
 MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 @EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
+
+# iOS Deployment target selected during configure. Unlike macOS, the iOS
+# deployment target is controlled using `-mios-version-min` arguments added to
+# CFLAGS and LDFLAGS by the configure script. This variable is not used during
+# the build, and is only listed here so it will be included in sysconfigdata.
+IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 # Option to install to strip binaries
 STRIPFLAG=-s
@@ -2038,11 +2044,23 @@ testios:
 	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
 	# Copy the framework from the install location to the testbed project.
 	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
+
 	# Run the test suite for the Xcode project, targeting the iOS simulator.
-	# If the suite fails, extract and print the console output, then re-raise the failure
+	# If the suite fails, touch a file in the test folder as a marker
 	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) ; then \
-		xcrun xcresulttool get --path $(XCRESULT) --id $$(xcrun xcresulttool get --path $(XCRESULT) --format json | $(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])"); \
-		echo ; \
+	 	touch $(XCFOLDER)/failed; \
+	fi
+
+	# Regardless of success or failure, extract and print the test output
+	xcrun xcresulttool get --path $(XCRESULT) \
+		--id $$( \
+			xcrun xcresulttool get --path $(XCRESULT) --format json | \
+			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
+		) \
+		--format json | \
+		$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"
+
+	@if test -e $(XCFOLDER)/failed ; then \
 		exit 1; \
 	fi
 
@@ -2777,8 +2795,8 @@ frameworkinstallmobileheaders: frameworkinstallunversionedstructure inclinstall
 		echo "Removing old framework headers"; \
 		rm -rf $(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers; \
 	fi
-	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
-	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(VERSION)"
+	mv "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(LDVERSION)" "$(DESTDIR)$(PYTHONFRAMEWORKINSTALLDIR)/Headers"
+	$(LN) -fs "../$(PYTHONFRAMEWORKDIR)/Headers" "$(DESTDIR)$(PYTHONFRAMEWORKPREFIX)/include/python$(LDVERSION)"
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
