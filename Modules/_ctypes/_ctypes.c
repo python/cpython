@@ -795,7 +795,7 @@ PyDoc_STRVAR(from_buffer_copy_doc,
 "C.from_buffer_copy(object, offset=0) -> C instance\ncreate a C instance from a readable buffer");
 
 static inline PyObject *
-_GenericPyCData_new(ctypes_state *st,
+generic_pycdata_new(ctypes_state *st,
                     PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
@@ -842,7 +842,7 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
         return NULL;
     }
 
-    result = _GenericPyCData_new(st, (PyTypeObject *)type, NULL, NULL);
+    result = generic_pycdata_new(st, (PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
         memcpy(((CDataObject *)result)->b_ptr,
                (char *)buffer.buf + offset, info->size);
@@ -3199,11 +3199,11 @@ static PyObject *
 GenericPyCData_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     ctypes_state *st = GLOBAL_STATE();
-    return _GenericPyCData_new(st, type, args, kwds);
+    return generic_pycdata_new(st, type, args, kwds);
 }
 
 static inline PyObject *
-_GenericPyCData_new(ctypes_state *st,
+generic_pycdata_new(ctypes_state *st,
                     PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     CDataObject *obj;
@@ -3641,7 +3641,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    self = (PyCFuncPtrObject *)_GenericPyCData_new(st, type, args, kwds);
+    self = (PyCFuncPtrObject *)generic_pycdata_new(st, type, args, kwds);
     if (!self) {
         Py_DECREF(ftuple);
         return NULL;
@@ -3681,7 +3681,7 @@ PyCFuncPtr_FromVtblIndex(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!_validate_paramflags(st, type, paramflags)) {
         return NULL;
     }
-    self = (PyCFuncPtrObject *)_GenericPyCData_new(st, type, args, kwds);
+    self = (PyCFuncPtrObject *)generic_pycdata_new(st, type, args, kwds);
     self->index = index + 0x1000;
     self->paramflags = Py_XNewRef(paramflags);
     if (iid_len == sizeof(GUID))
@@ -3779,7 +3779,7 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!thunk)
         return NULL;
 
-    self = (PyCFuncPtrObject *)_GenericPyCData_new(st, type, args, kwds);
+    self = (PyCFuncPtrObject *)generic_pycdata_new(st, type, args, kwds);
     if (self == NULL) {
         Py_DECREF(thunk);
         return NULL;
@@ -5162,7 +5162,7 @@ Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                         "Cannot create instance: has no _type_");
         return NULL;
     }
-    return _GenericPyCData_new(st, type, args, kw);
+    return generic_pycdata_new(st, type, args, kw);
 }
 
 static PyObject *
