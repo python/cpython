@@ -104,7 +104,8 @@ def getctime(filename):
 # Return the longest prefix of all list elements.
 def commonprefix(m):
     "Given a list of pathnames, returns the longest common leading component"
-    if not m: return ''
+    if not m:
+        return ''
     # Some people pass in a list of pathname parts to operate in an OS-agnostic
     # fashion; don't try to translate in that case as that's an abuse of the
     # API and they are already doing what they need to be OS-agnostic and so
@@ -122,8 +123,7 @@ def commonprefix(m):
 # describing the same file?
 def samestat(s1, s2):
     """Test whether two stat buffers reference the same file"""
-    return (s1.st_ino == s2.st_ino and
-            s1.st_dev == s2.st_dev)
+    return s1.st_ino == s2.st_ino and s1.st_dev == s2.st_dev
 
 
 # Are two filenames really pointing to the same file?

@@ -43,10 +43,9 @@ def _get_bothseps(path):
 # (this is done by normpath).
 
 try:
-    from _winapi import (
-        LCMapStringEx as _LCMapStringEx,
-        LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
-        LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
+    from _winapi import LCMapStringEx as _LCMapStringEx
+    from _winapi import LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT
+    from _winapi import LCMAP_LOWERCASE as _LCMAP_LOWERCASE
 except ImportError:
     def normcase(s):
         """Normalize case of pathname.
@@ -69,8 +68,7 @@ else:
         if isinstance(s, bytes):
             encoding = sys.getfilesystemencoding()
             s = s.decode(encoding, 'surrogateescape').replace('/', '\\')
-            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT,
-                               _LCMAP_LOWERCASE, s)
+            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT, _LCMAP_LOWERCASE, s)
             return s.encode(encoding, 'surrogateescape')
         else:
             return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
@@ -279,9 +277,9 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
         """Test whether a path is a junction"""
         try:
             st = os.lstat(path)
-            return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
         except (OSError, ValueError, AttributeError):
             return False
+        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
 else:
     # Use genericpath.isjunction as imported above
     pass
@@ -336,8 +334,8 @@ def isreserved(path):
     """Return true if the pathname is reserved by the system."""
     # Refer to "Naming Files, Paths, and Namespaces":
     # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
-    path = os.fsdecode(splitroot(path)[2]).replace(altsep, sep)
-    return any(_isreservedname(name) for name in reversed(path.split(sep)))
+    path = os.fsdecode(splitroot(path)[2]).replace('/', '\\')
+    return any(_isreservedname(name) for name in reversed(path.split('\\')))
 
 def _isreservedname(name):
     """Return true if the filename is reserved by the system."""
@@ -381,14 +379,11 @@ def expanduser(path):
 
     if 'USERPROFILE' in os.environ:
         userhome = os.environ['USERPROFILE']
-    elif not 'HOMEPATH' in os.environ:
-        return path
-    else:
-        try:
-            drive = os.environ['HOMEDRIVE']
-        except KeyError:
-            drive = ''
+    elif 'HOMEPATH' in os.environ:
+        drive = os.environ.get('HOMEDRIVE', '')
         userhome = join(drive, os.environ['HOMEPATH'])
+    else:
+        return path
 
     if i != 1: #~user
         target_user = path[1:i]
@@ -719,7 +714,8 @@ else:
             new_unc_prefix = b'\\\\'
             cwd = os.getcwdb()
             # bpo-38081: Special case for realpath(b'nul')
-            if normcase(path) == normcase(os.fsencode(devnull)):
+            devnul = b'nul'
+            if normcase(path) == devnul:
                 return b'\\\\.\\NUL'
         else:
             prefix = '\\\\?\\'
@@ -727,7 +723,8 @@ else:
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
             # bpo-38081: Special case for realpath('nul')
-            if normcase(path) == normcase(devnull):
+            devnul = 'nul'
+            if normcase(path) == devnul:
                 return '\\\\.\\NUL'
         had_prefix = path[:4] == prefix
         if not had_prefix and not isabs(path):
