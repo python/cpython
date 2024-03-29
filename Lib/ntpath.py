@@ -47,17 +47,6 @@ try:
         LCMapStringEx as _LCMapStringEx,
         LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
         LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
-except ImportError:
-    def normcase(s):
-        """Normalize case of pathname.
-
-        Makes all characters lowercase and all slashes into backslashes.
-        """
-        s = os.fspath(s)
-        if isinstance(s, bytes):
-            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
-        return s.replace('/', '\\').lower()
-else:
     def normcase(s):
         """Normalize case of pathname.
 
@@ -76,6 +65,16 @@ else:
             return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
                                   _LCMAP_LOWERCASE,
                                   s.replace('/', '\\'))
+except ImportError:
+    def normcase(s):
+        """Normalize case of pathname.
+
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if isinstance(s, bytes):
+            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
+        return s.replace('/', '\\').lower()
 
 
 def isabs(s):
@@ -238,8 +237,8 @@ def split(p):
     i = len(p)
     while i and p[i-1] not in seps:
         i -= 1
-    head, p = p[:i], p[i:]  # now tail has no slashes
-    return d + r + head.rstrip(seps), p
+    head, tail = p[:i], p[i:]  # now tail has no slashes
+    return d + r + head.rstrip(seps), tail
 
 
 # Split a path in root and extension.
@@ -299,8 +298,6 @@ try:
     from nt import _getvolumepathname
 except ImportError:
     _getvolumepathname = None
-
-
 def ismount(path):
     """Test whether a path is a mount point (a drive root, the root of a
     share, or a mounted volume)"""
@@ -312,11 +309,13 @@ def ismount(path):
         return not rest
     if root and not rest:
         return True
-    if not _getvolumepathname:
+
+    if _getvolumepathname:
+        x = path.rstrip(seps)
+        y = _getvolumepathname(path).rstrip(seps)
+        return x.casefold() == y.casefold()
+    else:
         return False
-    x = path.rstrip(seps)
-    y = _getvolumepathname(path).rstrip(seps)
-    return x.casefold() == y.casefold()
 
 
 _reserved_chars = frozenset(
@@ -379,11 +378,11 @@ def expanduser(path):
 
     if 'USERPROFILE' in os.environ:
         userhome = os.environ['USERPROFILE']
-    elif 'HOMEPATH' in os.environ:
+    elif 'HOMEPATH' not in os.environ:
+        return path
+    else:
         drive = os.environ.get('HOMEDRIVE', '')
         userhome = join(drive, os.environ['HOMEPATH'])
-    else:
-        return path
 
     if i != 1: #~user
         target_user = path[1:i]
@@ -531,12 +530,6 @@ def expandvars(path):
 try:
     from nt import _path_normpath
 
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
 except ImportError:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
@@ -559,19 +552,27 @@ except ImportError:
         while i < len(comps):
             if not comps[i] or comps[i] == curdir:
                 del comps[i]
-            elif comps[i] != pardir:
-                i += 1
-            elif i > 0 and comps[i-1] != pardir:
-                del comps[i-1:i+1]
-                i -= 1
-            elif i == 0 and root:
-                del comps[i]
+            elif comps[i] == pardir:
+                if i > 0 and comps[i-1] != pardir:
+                    del comps[i-1:i+1]
+                    i -= 1
+                elif i == 0 and root:
+                    del comps[i]
+                else:
+                    i += 1
             else:
                 i += 1
         # If the path is now empty, substitute '.'
         if not prefix and not comps:
             comps.append(curdir)
         return prefix + sep.join(comps)
+else:
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
+        return _path_normpath(path) or "."
 
 
 def _abspath_fallback(path):
@@ -593,8 +594,10 @@ def _abspath_fallback(path):
 # Return an absolute path.
 try:
     from nt import _getfullpathname
+
 except ImportError: # not running on Windows - mock up something sensible
     abspath = _abspath_fallback
+
 else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
@@ -849,14 +852,15 @@ def commonpath(paths):
     try:
         drivesplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
 
-        # Check that all drive letters or UNC paths match. The check is made
-        # only now otherwise type errors for mixing strings and bytes would not
-        # be caught.
+        # Check that absolute and relative paths aren't mixed. The check is
+        # made only now otherwise type errors for mixing strings and bytes
+        # would not be caught.
+        if len({r for _, r, _ in drivesplits}) != 1:
+            raise ValueError("Can't mix absolute and relative paths")
+
         if len({d for d, _, _ in drivesplits}) != 1:
             raise ValueError("Paths don't have the same drive")
 
-        if len({r for _, r, _ in drivesplits}) != 1:
-            raise ValueError("Can't mix absolute and relative paths")
 
         drive, root, path = splitroot(paths[0].replace(altsep, sep))
         common = [c for c in path.split(sep) if c and c != curdir]
@@ -891,13 +895,12 @@ except ImportError:
 
 try:
     from nt import _path_isdevdrive
-except ImportError:
-    # Use genericpath.isdevdrive as imported above
-    pass
-else:
     def isdevdrive(path):
         """Determines whether the specified path is on a Windows Dev Drive."""
         try:
             return _path_isdevdrive(abspath(path))
         except OSError:
             return False
+except ImportError:
+    # Use genericpath.isdevdrive as imported above
+    pass

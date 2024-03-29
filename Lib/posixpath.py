@@ -315,12 +315,13 @@ def expandvars(path):
                 value = os.fsencode(os.environ[os.fsdecode(name)])
             else:
                 value = environ[name]
+        except KeyError:
+            i = j
+        else:
             tail = path[j:]
             path = path[:i] + value
             i = len(path)
             path += tail
-        except KeyError:
-            i = j
     return path
 
 
@@ -425,11 +426,12 @@ def _joinrealpath(path, rest, strict, seen):
         newpath = join(path, name)
         try:
             st = os.lstat(newpath)
-            is_link = stat.S_ISLNK(st.st_mode)
         except OSError:
             if strict:
                 raise
             is_link = False
+        else:
+            is_link = stat.S_ISLNK(st.st_mode)
         if not is_link:
             path = newpath
             continue
@@ -441,11 +443,12 @@ def _joinrealpath(path, rest, strict, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            if not strict:
+            if strict:
+                # Raise OSError(errno.ELOOP)
+                os.stat(newpath)
+            else:
                 # Return already resolved part + rest of the path unchanged.
                 return join(newpath, rest), False
-            # Raise OSError(errno.ELOOP)
-            os.stat(newpath)
         seen[newpath] = None # not resolved symlink
         path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
         if not ok:
