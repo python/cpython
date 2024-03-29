@@ -549,17 +549,31 @@ class _ReadState:
     errors : list[ParsingError] = field(default_factory=list)
 
 
+@dataclass
+class _Prefixes:
+    full : Iterable[str]
+    inline : Iterable[str]
+
+
 class _Line(str):
-    def _strip_comments(self, prefixes, inline_prefixes):
-        self.clean = self._strip_full(prefixes) and self._strip_inline(inline_prefixes)
+
+    def __new__(cls, val, *args, **kwargs):
+        return super().__new__(cls, val)
+
+    def __init__(self, val, prefixes: _Prefixes):
+        self.prefixes = prefixes
+
+    @functools.cached_property
+    def clean(self):
+        return self._strip_full() and self._strip_inline()
 
     @property
     def has_comments(self):
         return self.strip() != self.clean
 
-    def _strip_inline(self, prefixes):
+    def _strip_inline(self):
         starts = []
-        prefixes = {p: -1 for p in prefixes}
+        prefixes = {p: -1 for p in self.prefixes.inline}
         while not starts and prefixes:
             next_prefixes = {}
             for prefix, index in prefixes.items():
@@ -572,8 +586,8 @@ class _Line(str):
             prefixes = next_prefixes
         return self[:min(starts, default=None)].strip()
 
-    def _strip_full(self, prefixes):
-        return '' if any(map(self.strip().startswith, prefixes)) else True
+    def _strip_full(self):
+        return '' if any(map(self.strip().startswith, self.prefixes.full)) else True
 
 
 class RawConfigParser(MutableMapping):
@@ -1043,9 +1057,11 @@ class RawConfigParser(MutableMapping):
     def _read_inner(self, fp, fpname):
         st = _ReadState()
 
-        for st.lineno, line in enumerate(map(_Line, fp), start=1):
-            line._strip_comments(self._comment_prefixes, self._inline_comment_prefixes)
-
+        Line = functools.partial(
+            _Line,
+            prefixes=_Prefixes(full=self._comment_prefixes, inline=self._inline_comment_prefixes),
+        )
+        for st.lineno, line in enumerate(map(Line, fp), start=1):
             if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
