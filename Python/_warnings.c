@@ -994,8 +994,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
@@ -1149,8 +1151,10 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         }
     }
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
@@ -1296,8 +1300,10 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     }
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
@@ -1367,8 +1373,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
+#ifdef Py_GIL_DISABLED
             WarningsState *st = warnings_get_state(tstate->interp);
             assert(st != NULL);
+#endif
 
             Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
             res = warn_explicit(tstate, category, message, filename, lineno,
