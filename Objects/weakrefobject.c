@@ -353,15 +353,10 @@ try_reuse_basic_ref(PyWeakReference *list, PyTypeObject *type,
         cand = proxy;
     }
 
-#ifdef Py_GIL_DISABLED
-    if (cand != NULL && !_Py_TryIncref((PyObject *) cand)) {
-        cand = NULL;
+    if (cand != NULL && _Py_TryIncref((PyObject *) cand)) {
+        return cand;
     }
-#else
-    Py_XINCREF(cand);
-#endif
-
-    return cand;
+    return NULL;
 }
 
 static int
