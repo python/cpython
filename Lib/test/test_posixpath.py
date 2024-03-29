@@ -708,6 +708,8 @@ class PosixPathTest(unittest.TestCase):
         self.assertRaises(ValueError, posixpath.commonpath, iter([]))
         check_error(ValueError, ['/usr', 'usr'])
         check_error(ValueError, ['usr', '/usr'])
+        check_error(ValueError, ['//usr', 'usr'])
+        check_error(ValueError, ['//usr', '/usr', 'usr'])
 
         check(['/usr/local'], '/usr/local')
         check(['/usr/local', '/usr/local'], '/usr/local')
