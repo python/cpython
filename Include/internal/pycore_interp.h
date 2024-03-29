@@ -62,7 +62,7 @@ struct _stoptheworld_state {
 #ifdef Py_GIL_DISABLED
 // This should be prime but otherwise the choice is arbitrary. A larger value
 // increases concurrency at the expense of memory.
-#define NUM_WEAKREF_LIST_LOCKS 127
+#  define NUM_WEAKREF_LIST_LOCKS 127
 #endif
 
 /* cross-interpreter data registry */
