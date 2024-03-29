@@ -1471,7 +1471,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
     else if (argcount > n) {
         /* Too many postional args. Error is reported later */
         for (j = n; j < argcount; j++) {
-            Py_DECREF(Py_CLEAR_TAG(args[j]));
+            Py_DECREF_TAGGED(args[j]);
         }
     }
 
@@ -1644,14 +1644,14 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 
 fail_pre_positional:
     for (j = 0; j < argcount; j++) {
-        Py_DECREF(Py_CLEAR_TAG(args[j]));
+        Py_DECREF_TAGGED(args[j]);
     }
     /* fall through */
 fail_post_positional:
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (j = argcount; j < argcount+kwcount; j++) {
-            Py_DECREF(Py_CLEAR_TAG(args[j]));
+            Py_DECREF_TAGGED(args[j]);
         }
     }
     /* fall through */
@@ -1725,12 +1725,12 @@ _PyEvalFramePushAndInit(PyThreadState *tstate, PyFunctionObject *func,
 fail:
     /* Consume the references */
     for (size_t i = 0; i < argcount; i++) {
-        Py_DECREF(Py_CLEAR_TAG(args[i]));
+        Py_DECREF_TAGGED(args[i]);
     }
     if (kwnames) {
         Py_ssize_t kwcount = PyTuple_GET_SIZE(kwnames);
         for (Py_ssize_t i = 0; i < kwcount; i++) {
-            Py_DECREF(Py_CLEAR_TAG(args[i+argcount]));
+            Py_DECREF_TAGGED(args[i+argcount]);
         }
     }
     PyErr_NoMemory();
@@ -2138,7 +2138,7 @@ _PyEval_UnpackTaggedIterable(PyThreadState *tstate, PyObject *v,
 
 Error:
     for (; i > 0; i--, sp++) {
-        Py_DECREF(Py_CLEAR_TAG(*sp));
+        Py_DECREF_TAGGED(*sp);
     }
     Py_XDECREF(it);
     return 0;

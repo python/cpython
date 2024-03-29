@@ -213,13 +213,13 @@ dummy_func(
                 );
                 ERROR_IF(1, error);
             }
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
         }
 
         replicate(8) pure inst(LOAD_FAST, (-- value: _Py_TaggedObject)) {
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
         }
 
         inst(LOAD_FAST_AND_CLEAR, (-- value: _Py_TaggedObject)) {
@@ -233,8 +233,8 @@ dummy_func(
             uint32_t oparg2 = oparg & 15;
             value1 = GETLOCAL(oparg1);
             value2 = GETLOCAL(oparg2);
-            Py_INCREF(Py_CLEAR_TAG(value1));
-            Py_INCREF(Py_CLEAR_TAG(value2));
+            Py_INCREF_TAGGED(value1);
+            Py_INCREF_TAGGED(value2);
         }
 
         pure inst(LOAD_CONST, (-- value: _Py_TaggedObject)) {
@@ -256,7 +256,7 @@ dummy_func(
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
             value2 = GETLOCAL(oparg2);
-            Py_INCREF(Py_CLEAR_TAG(value2));
+            Py_INCREF_TAGGED(value2);
         }
 
         inst(STORE_FAST_STORE_FAST, (value2: _Py_TaggedObject, value1: _Py_TaggedObject --)) {
@@ -3119,7 +3119,7 @@ dummy_func(
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             ERROR_IF(res == NULL, error);
         }
@@ -3366,9 +3366,9 @@ dummy_func(
             res = PyObject_TypeVectorcall_Tagged(tp, args, total_args, NULL);
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(Py_CLEAR_TAG(callable));
+            Py_DECREF_TAGGED(callable);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3431,7 +3431,7 @@ dummy_func(
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
                 // Note: unpacked above.
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
@@ -3465,9 +3465,9 @@ dummy_func(
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(Py_CLEAR_TAG(callable));
+            Py_DECREF_TAGGED(callable);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3607,7 +3607,7 @@ dummy_func(
 
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
@@ -3676,7 +3676,7 @@ dummy_func(
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             Py_DECREF(callable);
             ERROR_IF(res == NULL, error);
@@ -3768,7 +3768,7 @@ dummy_func(
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             Py_DECREF(callable);
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();

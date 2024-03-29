@@ -421,7 +421,7 @@ _PyTuple_FromTaggedArraySteal(_Py_TaggedObject const *src, Py_ssize_t n)
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
         for (Py_ssize_t i = 0; i < n; i++) {
-            Py_DECREF(Py_CLEAR_TAG(src[i]));
+            Py_DECREF_TAGGED(src[i]);
         }
         return NULL;
     }

@@ -54,6 +54,11 @@ _Py_untag_stack(PyObject **dst, const _Py_TaggedObject *src, size_t length) {
         } \
     } while (0)
 
+// KJ: These can be replaced with a more efficient routine in the future with
+// deferred reference counting.
+#define Py_DECREF_TAGGED(op) Py_DECREF(Py_CLEAR_TAG(op))
+#define Py_INCREF_TAGGED(op) Py_INCREF(Py_CLEAR_TAG(op))
+
 #ifdef __cplusplus
 }
 #endif

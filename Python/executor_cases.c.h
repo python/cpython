@@ -37,7 +37,7 @@
                 );
                 if (1) JUMP_TO_ERROR();
             }
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -49,7 +49,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -61,7 +61,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -73,7 +73,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -85,7 +85,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -97,7 +97,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -109,7 +109,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -121,7 +121,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -133,7 +133,7 @@
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -144,7 +144,7 @@
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             assert(Py_CLEAR_TAG(value) != NULL);
-            Py_INCREF(Py_CLEAR_TAG(value));
+            Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -1450,7 +1450,7 @@
             pieces = &stack_pointer[-oparg];
             str = _PyUnicode_JoinTaggedArray(&_Py_STR(empty), pieces, oparg);
             for (int _i = oparg; --_i >= 0;) {
-                Py_DECREF(Py_CLEAR_TAG(pieces[_i]));
+                Py_DECREF_TAGGED(pieces[_i]);
             }
             if (str == NULL) JUMP_TO_ERROR();
             stack_pointer[-oparg] = Py_OBJ_PACK(str);
@@ -1532,7 +1532,7 @@
                 values+1, 2,
                 oparg);
             for (int _i = oparg*2; --_i >= 0;) {
-                Py_DECREF(Py_CLEAR_TAG(values[_i]));
+                Py_DECREF_TAGGED(values[_i]);
             }
             if (map == NULL) JUMP_TO_ERROR();
             stack_pointer[-oparg*2] = Py_OBJ_PACK(map);
@@ -1577,7 +1577,7 @@
                 &PyTuple_GET_ITEM(keys, 0), 1,
                 values, 1, oparg);
             for (int _i = oparg; --_i >= 0;) {
-                Py_DECREF(Py_CLEAR_TAG(values[_i]));
+                Py_DECREF_TAGGED(values[_i]);
             }
             Py_DECREF(keys);
             if (map == NULL) JUMP_TO_ERROR();
@@ -3026,9 +3026,9 @@
             res = PyObject_TypeVectorcall_Tagged(tp, args, total_args, NULL);
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(Py_CLEAR_TAG(callable));
+            Py_DECREF_TAGGED(callable);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
             stack_pointer += -1 - oparg;
@@ -3099,7 +3099,7 @@
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
                 // Note: unpacked above.
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
@@ -3137,9 +3137,9 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(Py_CLEAR_TAG(callable));
+            Py_DECREF_TAGGED(callable);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
             stack_pointer += -1 - oparg;
@@ -3290,7 +3290,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
@@ -3368,7 +3368,7 @@
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Clear the stack of the arguments. */
             for (int i = 0; i < total_args; i++) {
-                Py_DECREF(Py_CLEAR_TAG(args[i]));
+                Py_DECREF_TAGGED(args[i]);
             }
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
