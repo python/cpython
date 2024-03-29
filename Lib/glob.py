@@ -62,14 +62,18 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
 
     select = _selector(parts, recursive, include_hidden)
     if pathname:
-        # Absolute pattern.
-        drive = os.path.splitdrive(pathname)[0]
-        paths = select(pathname, pathname, dir_fd, not drive)
+        # Non-relative pattern. The anchor is guaranteed to exist unless it
+        # has a Windows drive component.
+        exists = not os.path.splitdrive(pathname)[0]
+        paths = select(pathname, pathname, dir_fd, exists)
     else:
         # Relative pattern.
         if root_dir is None:
             root_dir = os.path.curdir
         paths = _relative_glob(select, root_dir, dir_fd)
+
+        # Ensure that the empty string is not yielded when given a pattern
+        # like '' or '**'.
         paths = itertools.dropwhile(operator.not_, paths)
     if is_bytes:
         paths = map(os.fsencode, paths)
@@ -165,7 +169,10 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 
 @functools.lru_cache(maxsize=32768)
 def _compile_pattern(pattern, recursive, include_hidden):
+    """Compile an re.Pattern object for the given glob-style pattern.
+    """
     if include_hidden:
+        # Optimization: don't compile patterns that would match all inputs.
         if recursive:
             if pattern == '**':
                 return None
@@ -246,12 +253,17 @@ def _literal_selector(parts, recursive, include_hidden):
     """Returns a function that selects a literal descendant of a given path.
     """
     part = parts.pop()
+
+    # Optimization: if the part is special, it doesn't affect whether paths
+    # are known to exist.
     is_special = part in _special_parts
+
+    # Optimization: consume and join any subsequent literal parts here, rather
+    # than leaving them for the next selector. This reduces the number of
+    # string concatenation operations and calls to _add_trailing_slash().
     while parts and magic_check.search(parts[-1]) is None:
-        # Consume next non-wildcard component (speeds up joining).
         next_part = parts.pop()
-        if next_part not in _special_parts:
-            is_special = False
+        is_special = is_special and next_part in _special_parts
         part += os.path.sep + next_part
 
     select_next = _selector(parts, recursive, include_hidden)
@@ -269,42 +281,15 @@ def _wildcard_selector(parts, recursive, include_hidden):
     """
     match = _compile_pattern(parts.pop(), False, include_hidden)
 
-    if parts:
-        select_next = _selector(parts, recursive, include_hidden)
-        def select_wildcard(path, rel_path, dir_fd, exists):
-            close_fd = False
-            try:
-                arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
-                if fd is not None:
-                    prefix = _add_trailing_slash(path)
-                # Ensure we don't exhaust file descriptors when globbing deep
-                # trees by closing the directory *before* yielding anything.
-                with os.scandir(arg) as scandir_it:
-                    entries = list(scandir_it)
-                for entry in entries:
-                    if match is None or match(entry.name):
-                        try:
-                            if entry.is_dir():
-                                entry_path = entry.path
-                                if fd is not None:
-                                    entry_path = prefix + entry_path
-                                yield from select_next(entry_path, entry.name, fd, True)
-                        except OSError:
-                            pass
-            except OSError:
-                pass
-            finally:
-                if close_fd:
-                    os.close(fd)
-
-    else:
-        def select_wildcard(path, rel_path, dir_fd, exists):
+    if not parts:
+        # Optimization: use os.listdir() rather than os.scandir(), because we
+        # don't need to distinguish between files and directories. We also
+        # yield results directly rather than passing them through a selector.
+        def select_last_wildcard(path, rel_path, dir_fd, exists):
             close_fd = False
             try:
                 arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
                 prefix = _add_trailing_slash(path)
-                # We use listdir() rather than scandir() because we don't need
-                # to check for subdirectories; we only need the child names.
                 for name in os.listdir(arg):
                     if match is None or match(name):
                         yield prefix + name
@@ -313,7 +298,36 @@ def _wildcard_selector(parts, recursive, include_hidden):
             finally:
                 if close_fd:
                     os.close(fd)
+        return select_last_wildcard
 
+    select_next = _selector(parts, recursive, include_hidden)
+
+    def select_wildcard(path, rel_path, dir_fd, exists):
+        close_fd = False
+        try:
+            arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
+            if fd is not None:
+                prefix = _add_trailing_slash(path)
+            # Ensure we don't exhaust file descriptors when globbing deep
+            # trees by closing the directory *before* yielding anything.
+            with os.scandir(arg) as scandir_it:
+                entries = list(scandir_it)
+            for entry in entries:
+                if match is None or match(entry.name):
+                    try:
+                        if entry.is_dir():
+                            entry_path = entry.path
+                            if fd is not None:
+                                entry_path = prefix + entry_path
+                            yield from select_next(
+                                entry_path, entry.name, fd, True)
+                    except OSError:
+                        pass
+        except OSError:
+            pass
+        finally:
+            if close_fd:
+                os.close(fd)
     return select_wildcard
 
 
@@ -322,10 +336,17 @@ def _recursive_selector(parts, recursive, include_hidden):
     recursively, filtering by pattern.
     """
     part = parts.pop()
+
+    # Optimization: consume following '**' parts, which have no effect.
     while parts and parts[-1] == '**':
         parts.pop()
+
+    # Optimization: consume and join any following non-special parts here,
+    # rather than leaving them for the next selector. They're used to build a
+    # regular expression, which we use to filter the results of the recursive
+    # walk. As a result, non-special pattern segments following a '**'
+    # wildcard don't require additional filesystem access to expand.
     while parts and parts[-1] not in _special_parts:
-        # Consume next non-special component (used to build regex).
         part += os.path.sep + parts.pop()
 
     match = _compile_pattern(part, True, include_hidden)
@@ -364,11 +385,15 @@ def _recursive_selector(parts, recursive, include_hidden):
                         entry_path = prefix + entry_path
                     if match is None or match(entry_path, match_pos):
                         if dir_only:
-                            yield from select_next(entry_path, entry.name, fd, True)
+                            yield from select_next(
+                                entry_path, entry.name, fd, True)
                         else:
+                            # Optimization: directly yield the path if this is
+                            # last pattern part.
                             yield entry_path
                     if is_dir:
-                        yield from select_recursive_step(entry_path, entry.name, fd, match_pos)
+                        yield from select_recursive_step(
+                            entry_path, entry.name, fd, match_pos)
         except OSError:
             pass
         finally:
@@ -381,6 +406,8 @@ def _select_exists(path, rel_path, dir_fd, exists):
     """Yields the given path, if it exists.
     """
     if exists:
+        # Optimization: this path is already known to exist, e.g. because it
+        # was returned from os.scandir(), so we skip calling lstat().
         yield path
     elif dir_fd is None:
         try:
