@@ -1173,11 +1173,14 @@ warnings_filters_mutated_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
+
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     st->filters_version++;
+    Py_END_CRITICAL_SECTION();
+
     Py_RETURN_NONE;
 }
 
