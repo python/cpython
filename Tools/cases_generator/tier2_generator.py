@@ -30,7 +30,11 @@ from typing import TextIO, Iterator
 from lexer import Token
 from stack import StackOffset, Stack, SizeMismatch
 
-DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
+DEFAULT_OUTPUT = [
+    ROOT / "Python/executor_cases.c.h",
+    ROOT / "Python/executor_stubs.c.h",
+    ROOT / "Python/executor_stubs.h"
+]
 
 
 def declare_variable(
@@ -150,12 +154,13 @@ TIER2_REPLACEMENT_FUNCTIONS["EXIT_IF"] = tier2_replace_exit_if
 def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
     try:
         out.start_line()
-        if uop.properties.oparg:
+        if uop.properties.oparg and not uop.properties.stub:
             out.emit("oparg = CURRENT_OPARG();\n")
             assert uop.properties.const_oparg < 0
         elif uop.properties.const_oparg >= 0:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
-            out.emit(f"assert(oparg == CURRENT_OPARG());\n")
+            if not uop.properties.stub:
+                out.emit("assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
             out.emit(stack.pop(var))
         if not uop.properties.stores_sp:
@@ -207,12 +212,20 @@ def generate_tier2(
             out.emit(f"/* {uop.name} is not a viable micro-op for tier 2 because it {why_not_viable} */\n\n")
             continue
         out.emit(f"case {uop.name}: {{\n")
-        declare_variables(uop, out)
-        stack = Stack()
-        write_uop(uop, out, stack)
+        if uop.properties.stub:
+            out.emit(f"stack_pointer = {uop.name}_func(tstate, frame, stack_pointer")
+            if uop.properties.const_oparg < 0:
+                out.emit(", oparg")
+            out.emit(");\n")
+            stack = None
+        else:
+            declare_variables(uop, out)
+            stack = Stack()
+            write_uop(uop, out, stack)
         out.start_line()
         if not uop.properties.always_exits:
-            stack.flush(out)
+            if stack is not None:
+                stack.flush(out)
             if uop.properties.ends_with_eval_breaker:
                 out.emit("CHECK_EVAL_BREAKER();\n")
             out.emit("break;\n")
@@ -222,13 +235,77 @@ def generate_tier2(
     outfile.write("#undef TIER_TWO\n")
 
 
+def get_stub_signature(name: str, uop: Uop) -> str:
+    args = [
+        "PyThreadState *tstate",
+        "_PyInterpreterFrame *frame",
+        "PyObject **stack_pointer"
+    ]
+    if uop.properties.const_oparg < 0:
+        args.append("int oparg")
+    return f"PyObject ** {name}_func({', '.join(args)})"
+
+
+def generate_tier2_stubs(
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    write_header(__file__, filenames, outfile)
+    outfile.write(
+        """
+#ifdef TIER_ONE
+    #error "This file is for Tier 2 only"
+#endif
+#define TIER_TWO 2
+"""
+    )
+
+    out = CWriter(outfile, 2, lines)
+    out.emit("\n")
+    for name, uop in analysis.uops.items():
+        if uop.properties.tier == 1:
+            continue
+        if uop.properties.stub:
+            out.emit(get_stub_signature(name, uop))
+            out.emit(" {\n")
+
+            if uop.properties.const_oparg >= 0:
+                out.emit("int oparg;\n")
+
+            declare_variables(uop, out)
+            stack = Stack()
+            write_uop(uop, out, stack)
+            stack.flush(out)
+            if uop.properties.ends_with_eval_breaker:
+                out.emit("CHECK_EVAL_BREAKER();\n")
+            out.start_line()
+            out.emit("return stack_pointer;\n")
+            out.emit("}\n\n")
+
+    outfile.write("#undef TIER_TWO\n")
+
+
+def generate_tier2_stubs_header(
+    filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    write_header(__file__, filenames, outfile)
+
+    out = CWriter(outfile, 2, lines)
+    out.emit("\n")
+    for name, uop in analysis.uops.items():
+        if uop.properties.tier == 1:
+            continue
+        if uop.properties.stub:
+            out.emit(get_stub_signature(name, uop))
+            out.emit(";\n\n")
+
+
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the tier 2 interpreter.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 
 arg_parser.add_argument(
-    "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+    "-o", "--output", type=str, help="Generated code", nargs=3, default=DEFAULT_OUTPUT
 )
 
 arg_parser.add_argument(
@@ -244,5 +321,10 @@ if __name__ == "__main__":
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
     data = analyze_files(args.input)
-    with open(args.output, "w") as outfile:
+    print(args.output)
+    with open(args.output[0], "w") as outfile:
         generate_tier2(args.input, data, outfile, args.emit_line_directives)
+    with open(args.output[1], "w") as outfile:
+        generate_tier2_stubs(args.input, data, outfile, args.emit_line_directives)
+    with open(args.output[2], "w") as outfile:
+        generate_tier2_stubs_header(args.input, data, outfile, args.emit_line_directives)

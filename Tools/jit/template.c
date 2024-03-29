@@ -17,6 +17,8 @@
 
 #include "ceval_macros.h"
 
+#include "executor_stubs.h"
+
 #undef CURRENT_OPARG
 #define CURRENT_OPARG() (_oparg)
 

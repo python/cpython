@@ -223,6 +223,7 @@ annotations = {
     "replaced",
     "pure",
     "split",
+    "stub",
     "replicate",
     "tier1",
     "tier2",

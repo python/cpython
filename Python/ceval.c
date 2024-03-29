@@ -685,6 +685,8 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
 #endif
 
+#include "executor_stubs.c.h"
+
 PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {

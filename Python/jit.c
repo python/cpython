@@ -16,6 +16,8 @@
 #include "pycore_sliceobject.h"
 #include "pycore_jit.h"
 
+#include "executor_stubs.h"
+
 #include "jit_stencils.h"
 
 // Memory management stuff: ////////////////////////////////////////////////////

@@ -3157,7 +3157,7 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        stub replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;

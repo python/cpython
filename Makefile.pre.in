@@ -1905,8 +1905,10 @@ regen-generated-cases:
 .PHONY: regen-executor-cases
 regen-executor-cases:
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/tier2_generator.py \
-	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/bytecodes.c
+	    -o $(srcdir)/Python/executor_cases.c.h.new $(srcdir)/Python/executor_stubs.c.h.new $(srcdir)/Python/executor_stubs.h.new $(srcdir)/Python/bytecodes.c
 	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/executor_stubs.c.h $(srcdir)/Python/executor_stubs.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/executor_stubs.h $(srcdir)/Python/executor_stubs.h.new
 
 .PHONY: regen-optimizer-cases
 regen-optimizer-cases:
