@@ -100,7 +100,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
     PyWeakReference *current = *list;
     // Weakrefs may be added or removed since the count was computed.
     while (num_added < count && current != NULL) {
-        if (_Py_TryIncref((PyObject**) &current, (PyObject *) current)) {
+        if (_Py_TryIncrefCompare((PyObject**) &current, (PyObject *) current)) {
             PyList_SET_ITEM(result, num_added, current);
             num_added++;
         }

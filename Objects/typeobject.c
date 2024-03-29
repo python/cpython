@@ -379,7 +379,7 @@ _PyType_GetMRO(PyTypeObject *self)
     if (mro == NULL) {
         return NULL;
     }
-    if (_Py_TryIncref(&self->tp_mro, mro)) {
+    if (_Py_TryIncrefCompare(&self->tp_mro, mro)) {
         return mro;
     }
 

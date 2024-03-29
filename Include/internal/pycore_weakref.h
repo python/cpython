@@ -70,7 +70,7 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
         UNLOCK_WEAKREFS(obj);
         return NULL;
     }
-    if (_Py_TryIncref(&obj, obj)) {
+    if (_Py_TryIncrefCompare(&obj, obj)) {
         UNLOCK_WEAKREFS(obj);
         return obj;
     }
