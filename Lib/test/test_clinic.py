@@ -52,6 +52,20 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     return cm.exception
 
 
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, clinic.converters,
+                        clinic.converters.copy())
+    testcase.addCleanup(restore_dict, clinic.legacy_converters,
+                        clinic.legacy_converters.copy())
+    testcase.addCleanup(restore_dict, clinic.return_converters,
+                        clinic.return_converters.copy())
+
+
 class ClinicWholeFileTest(TestCase):
     maxDiff = None
 
@@ -60,6 +74,7 @@ class ClinicWholeFileTest(TestCase):
                         filename=filename, lineno=lineno)
 
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = _make_clinic(filename="test.c")
 
     def test_eol(self):
@@ -2430,6 +2445,9 @@ class ClinicParserTest(TestCase):
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
+
+    def setUp(self):
+        save_restore_converters(self)
 
     def run_clinic(self, *args):
         with (
