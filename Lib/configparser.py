@@ -572,19 +572,16 @@ class _Line(str):
         return self.strip() != self.clean
 
     def _strip_inline(self):
-        starts = []
-        prefixes = {p: -1 for p in self.prefixes.inline}
-        while not starts and prefixes:
-            next_prefixes = {}
-            for prefix, index in prefixes.items():
-                index = self.find(prefix, index+1)
-                if index == -1:
-                    continue
-                next_prefixes[prefix] = index
-                if index == 0 or (index > 0 and self[index-1].isspace()):
-                    starts.append(index)
-            prefixes = next_prefixes
-        return self[:min(starts, default=None)].strip()
+        """
+        Search for the earliest prefix at the beginning of the line or following a space.
+        """
+        matcher = re.compile(
+            '|'.join(fr'(^|\s)({re.escape(prefix)})' for prefix in self.prefixes.inline)
+            # match nothing if no prefixes
+            or '(?!)'
+        )
+        match = matcher.search(self)
+        return self[:match.start() if match else None].strip()
 
     def _strip_full(self):
         return '' if any(map(self.strip().startswith, self.prefixes.full)) else True
