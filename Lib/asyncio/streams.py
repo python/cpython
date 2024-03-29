@@ -595,7 +595,7 @@ class StreamReader:
         if seplen == 0:
             raise ValueError('Separator should be at least one-byte string')
 
-        if self._exception is not None:
+        if self._exception is not None and not self._buffer:
             raise self._exception
 
         # Consume whole buffer except last bytes, which length is
@@ -641,6 +641,11 @@ class StreamReader:
                         'Separator is not found, and chunk exceed the limit',
                         offset)
 
+            # All data that was in the buffer has been returned, if there is
+            # an exception dont wait and just raise the exception.
+            if self._exception is not None:
+                raise self._exception
+
             # Complete message (with full separator) may be present in buffer
             # even when EOF flag is set. This may happen when the last chunk
             # adds data which makes separator be found. That's why we check for
@@ -685,7 +690,15 @@ class StreamReader:
         """
 
         if self._exception is not None:
-            raise self._exception
+            # If some data came into the buffer and its
+            # still pending to be proccessed return it but
+            # just raise the last exception.
+            if self._buffer and n > 0:
+                data = bytes(self._buffer[:n])
+                del self._buffer[:n]
+                return data
+            else:
+                raise self._exception
 
         if n == 0:
             return b''
@@ -732,12 +745,20 @@ class StreamReader:
             raise ValueError('readexactly size can not be less than zero')
 
         if self._exception is not None:
+            # if there is pending data in the buffer and the
+            # n asked meets that size, return the data before
+            # raise the exception.
+            if n != 0 and len(self._buffer) >= n:
+                data = bytes(self._buffer[:n])
+                del self._buffer[:n]
+                return data
             raise self._exception
 
         if n == 0:
             return b''
 
         while len(self._buffer) < n:
+
             if self._eof:
                 incomplete = bytes(self._buffer)
                 self._buffer.clear()
