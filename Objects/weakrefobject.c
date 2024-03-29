@@ -380,15 +380,11 @@ is_basic_proxy(PyWeakReference *proxy)
     return (proxy->wr_callback == NULL) && PyWeakref_CheckProxy(proxy);
 }
 
-#ifdef Py_GIL_DISABLED
-
 static int
 is_basic_ref_or_proxy(PyWeakReference *wr)
 {
     return is_basic_ref(wr) || is_basic_proxy(wr);
 }
-
-#endif
 
 /* Insert `newref` in the appropriate position in `list` */
 static void
@@ -1035,16 +1031,15 @@ PyObject_ClearWeakRefs(PyObject *object)
         PyErr_BadInternalCall();
         return;
     }
+
     list = GET_WEAKREFS_LISTPTR(object);
-#ifdef Py_GIL_DISABLED
-    if (_Py_atomic_load_ptr(list) == NULL) {
+    if (FT_ATOMIC_LOAD_PTR(list) == NULL) {
         // Fast path for the common case
         return;
     }
 
     /* Remove the callback-less basic and proxy references, which always appear
-       at the head of the list. There may be two of each - one live and one in
-       the process of being destroyed.
+       at the head of the list.
     */
     for (int done = 0; !done;) {
         PyObject *callback = NULL;
@@ -1103,69 +1098,6 @@ PyObject_ClearWeakRefs(PyObject *object)
 
     assert(!PyErr_Occurred());
     PyErr_SetRaisedException(exc);
-#else
-    /* Remove the callback-less basic and proxy references */
-    if (*list != NULL && (*list)->wr_callback == NULL) {
-        clear_weakref(*list);
-        if (*list != NULL && (*list)->wr_callback == NULL)
-            clear_weakref(*list);
-    }
-    if (*list != NULL) {
-        PyWeakReference *current = *list;
-        Py_ssize_t count = _PyWeakref_GetWeakrefCount(object);
-        PyObject *exc = PyErr_GetRaisedException();
-
-        if (count == 1) {
-            PyObject *callback = current->wr_callback;
-
-            current->wr_callback = NULL;
-            clear_weakref(current);
-            if (callback != NULL) {
-                if (Py_REFCNT((PyObject *)current) > 0) {
-                    handle_callback(current, callback);
-                }
-                Py_DECREF(callback);
-            }
-        }
-        else {
-            PyObject *tuple;
-            Py_ssize_t i = 0;
-
-            tuple = PyTuple_New(count * 2);
-            if (tuple == NULL) {
-                _PyErr_ChainExceptions1(exc);
-                return;
-            }
-
-            for (i = 0; i < count; ++i) {
-                PyWeakReference *next = current->wr_next;
-
-                if (Py_REFCNT((PyObject *)current) > 0) {
-                    PyTuple_SET_ITEM(tuple, i * 2, Py_NewRef(current));
-                    PyTuple_SET_ITEM(tuple, i * 2 + 1, current->wr_callback);
-                }
-                else {
-                    Py_DECREF(current->wr_callback);
-                }
-                current->wr_callback = NULL;
-                clear_weakref(current);
-                current = next;
-            }
-            for (i = 0; i < count; ++i) {
-                PyObject *callback = PyTuple_GET_ITEM(tuple, i * 2 + 1);
-
-                /* The tuple may have slots left to NULL */
-                if (callback != NULL) {
-                    PyObject *item = PyTuple_GET_ITEM(tuple, i * 2);
-                    handle_callback((PyWeakReference *)item, callback);
-                }
-            }
-            Py_DECREF(tuple);
-        }
-        assert(!PyErr_Occurred());
-        PyErr_SetRaisedException(exc);
-    }
-#endif  // Py_GIL_DISABLED
 }
 
 /* This function is called by _PyStaticType_Dealloc() to clear weak references.
