@@ -1367,6 +1367,36 @@ class HandlerTests(unittest.TestCase):
         fp = urllib.request.urlopen("http://python.org/path")
         self.assertEqual(fp.geturl(), "http://python.org/path?query")
 
+    def test_redirect_to_cross_domain_with_sensitive_header(self):
+        from_url = "http://example.com/index.html"
+        to_url = "http://cracker.com/index.html"
+        h = urllib.request.HTTPRedirectHandler()
+        o = h.parent = MockOpener()
+        req = Request(from_url)
+        req.add_header("Authorization", "Basic foo")
+        req.add_header("Cookie", "bar")
+        req.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
+        h.http_error_302(req, MockFile(), 302, "",
+            MockHeaders({"location": to_url}))
+
+        self.assertNotIn("Authorization", o.req.headers)
+        self.assertNotIn("Cookie", o.req.headers)
+
+    def test_redirect_to_same_domain_with_sensitive_header(self):
+        from_url = "http://example.com/index.html"
+        to_url = "http://example.com/index.html"
+        h = urllib.request.HTTPRedirectHandler()
+        o = h.parent = MockOpener()
+        req = Request(from_url)
+        req.add_header("Authorization", "Basic foo")
+        req.add_header("Cookie", "bar")
+        req.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
+        h.http_error_302(req, MockFile(), 302, "",
+            MockHeaders({"location": to_url}))
+
+        self.assertIn("Authorization", o.req.headers)
+        self.assertIn("Cookie", o.req.headers)
+
     def test_redirect_encoding(self):
         # Some characters in the redirect target may need special handling,
         # but most ASCII characters should be treated as already encoded

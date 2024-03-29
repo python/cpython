@@ -649,10 +649,17 @@ class HTTPRedirectHandler(BaseHandler):
         CONTENT_HEADERS = ("content-length", "content-type")
         newheaders = {k: v for k, v in req.headers.items()
                       if k.lower() not in CONTENT_HEADERS}
-        return Request(newurl,
+        newrequest = Request(newurl,
                        headers=newheaders,
                        origin_req_host=req.origin_req_host,
                        unverifiable=True)
+
+        SENSITIVE_HEADERS = ("authorization", "cookie")
+        if newrequest.host != req.host:
+            newrequest.headers = {k: v for k, v in newrequest.headers.items()
+                                  if k.lower() not in SENSITIVE_HEADERS}
+
+        return newrequest
 
     # Implementation note: To avoid the server sending us into an
     # infinite loop, the request object needs to track what URLs we
