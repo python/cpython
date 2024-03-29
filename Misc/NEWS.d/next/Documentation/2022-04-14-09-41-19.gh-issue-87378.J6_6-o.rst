@@ -1,0 +1,2 @@
+Add inline links to source code on GitHub to most symbols defined in Python
+and some in C.
