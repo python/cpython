@@ -551,17 +551,17 @@ def commonpath(paths):
     except ValueError:
         raise ValueError('commonpath() arg is an empty iterable') from None
 
+    if isinstance(roots[0], bytes):
+        sep = b'/'
+        curdir = b'.'
+    else:
+        sep = '/'
+        curdir = '.'
+
     try:
         root = min(roots)
         if not root and max(roots):
             raise ValueError("Can't mix absolute and relative paths")
-
-        if isinstance(root, bytes):
-            sep = b'/'
-            curdir = b'.'
-        else:
-            sep = '/'
-            curdir = '.'
 
         split_paths = [
             [c for c in tail.split(sep) if c and c != curdir] for tail in tails
