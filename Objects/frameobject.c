@@ -892,8 +892,7 @@ frame_dealloc(PyFrameObject *f)
         Py_CLEAR(frame->f_locals);
         _Py_TaggedObject *locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
-            PyObject *obj = Py_CLEAR_TAG(locals[i]);
-            Py_CLEAR(obj);
+            Py_CLEAR_TAGGED(locals[i]);
         }
     }
     Py_CLEAR(f->f_back);
