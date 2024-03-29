@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_lock.h"
 #include "pycore_object.h"           // _Py_REF_IS_MERGED()
+#include "pycore_pyatomic_ft_wrappers.h"
 
 #ifdef Py_GIL_DISABLED
 
@@ -50,24 +51,19 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
     assert(PyWeakref_Check(ref_obj));
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
 
-#if !defined(Py_GIL_DISABLED)
-    PyObject *obj = ref->wr_object;
+    PyObject *obj = FT_ATOMIC_LOAD_PTR(ref->wr_object);
     if (obj == Py_None) {
         // clear_weakref() was called
         return NULL;
     }
 
+#if !defined(Py_GIL_DISABLED)
     if (_is_dead(obj)) {
         return NULL;
     }
     assert(Py_REFCNT(obj) > 0);
     return Py_NewRef(obj);
 #else
-    PyObject *obj = _Py_atomic_load_ptr(&ref->wr_object);
-    if (obj == Py_None) {
-        // clear_weakref() was called
-        return NULL;
-    }
     LOCK_WEAKREFS(obj);
     if (ref->wr_object == Py_None) {
         // clear_weakref() was called
@@ -88,11 +84,7 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
     assert(PyWeakref_Check(ref_obj));
     int ret = 0;
     PyWeakReference *ref = _Py_CAST(PyWeakReference*, ref_obj);
-#ifdef Py_GIL_DISABLED
-    PyObject *obj = _Py_atomic_load_ptr(&ref->wr_object);
-#else
-    PyObject *obj = ref->wr_object;
-#endif
+    PyObject *obj = FT_ATOMIC_LOAD_PTR(ref->wr_object);
     if (obj == Py_None) {
         // clear_weakref() was called
         ret = 1;
