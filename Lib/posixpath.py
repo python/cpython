@@ -559,8 +559,8 @@ def commonpath(paths):
         curdir = '.'
 
     try:
-        root = min(roots)
-        if not root and max(roots):
+        prefix = min(roots)
+        if not prefix and max(roots):
             raise ValueError("Can't mix absolute and relative paths")
 
         split_paths = [
@@ -570,9 +570,9 @@ def commonpath(paths):
         s2 = max(split_paths)
         for i, c in enumerate(s1):
             if c != s2[i]:
-                return root + sep.join(s1[:i])
+                return prefix + sep.join(s1[:i])
 
-        return root + sep.join(s1)
+        return prefix + sep.join(s1)
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *(
             # Can't use paths, can be an iterable
