@@ -215,7 +215,7 @@ def generate_tier2(
         if uop.properties.stub:
             out.emit(f"stack_pointer = {uop.name}_func(tstate, frame, stack_pointer")
             if uop.properties.const_oparg < 0:
-                out.emit(", oparg")
+                out.emit(", CURRENT_OPARG()")
             out.emit(");\n")
             stack = None
         else:

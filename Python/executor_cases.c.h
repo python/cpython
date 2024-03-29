@@ -2784,7 +2784,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
-            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_func(tstate, frame, stack_pointer, oparg);
+            stack_pointer = _INIT_CALL_PY_EXACT_ARGS_func(tstate, frame, stack_pointer, CURRENT_OPARG());
             break;
         }
 

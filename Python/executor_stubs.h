@@ -3,11 +3,6 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-#ifdef TIER_ONE
-    #error "This file is for Tier 2 only"
-#endif
-#define TIER_TWO 2
-
         PyObject ** _INIT_CALL_PY_EXACT_ARGS_0_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer);
 
         PyObject ** _INIT_CALL_PY_EXACT_ARGS_1_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer);
@@ -20,4 +15,3 @@
 
         PyObject ** _INIT_CALL_PY_EXACT_ARGS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject **stack_pointer, int oparg);
 
-#undef TIER_TWO
