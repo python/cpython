@@ -340,7 +340,7 @@ def isreserved(path):
 def _isreservedname(name):
     """Return true if the filename is reserved by the system."""
     # Trailing dots and spaces are reserved.
-    if name.endswith(('.', ' ')) and name not in ('.', '..'):
+    if name[-1:] in ('.', ' ') and name not in ('.', '..'):
         return True
     # Wildcards, separators, colon, and pipe (*?"<>/\:|) are reserved.
     # ASCII control characters (0-31) are reserved.
@@ -373,7 +373,7 @@ def expanduser(path):
         tilde = b'~'
     else:
         tilde = '~'
-    if not path.startswith(tilde):
+    if path[:1] != tilde:
         return path
     i, n = 1, len(path)
     while i < n and path[i] not in _get_bothseps(path):

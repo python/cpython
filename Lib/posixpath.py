@@ -61,7 +61,7 @@ def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
     sep = _get_sep(s)
-    return s.startswith(sep)
+    return s[:1] == sep
 
 
 # Join pathnames.
@@ -80,9 +80,9 @@ def join(a, *p):
         if not p:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in map(os.fspath, p):
-            if b.startswith(sep):
+            if b[:1] == sep:
                 path = b
-            elif not path or path.endswith(sep):
+            elif not path or path[-1:] == sep:
                 path += b
             else:
                 path += sep + b
@@ -229,7 +229,7 @@ def expanduser(path):
         tilde = b'~'
     else:
         tilde = '~'
-    if not path.startswith(tilde):
+    if path[:1] != tilde:
         return path
     sep = _get_sep(path)
     i = path.find(sep, 1)
@@ -311,7 +311,7 @@ def expandvars(path):
             break
         i, j = m.span(0)
         name = m.group(1)
-        if name.startswith(start) and name.endswith(end):
+        if name[:1] == start and name[-1:] == end:
             name = name[1:-1]
         try:
             if environ is None:
@@ -331,6 +331,34 @@ def expandvars(path):
 # It should be understood that this may change the meaning of the path
 # if it contains symbolic links!
 
+def _normpath_fallback(path):
+    """Normalize path, eliminating double slashes, etc."""
+    path = os.fspath(path)
+    if isinstance(path, bytes):
+        sep = b'/'
+        curdir = b'.'
+        pardir = b'..'
+    else:
+        sep = '/'
+        curdir = '.'
+        pardir = '..'
+    if not path:
+        return curdir
+    _, root, tail = splitroot(path)
+    comps = []
+    for comp in tail.split(sep):
+        if not comp or comp == curdir:
+            continue
+        if (
+            comp != pardir
+            or (not root and not comps)
+            or (comps and comps[-1] == pardir)
+        ):
+            comps.append(comp)
+        elif comps:
+            comps.pop()
+    return (root + sep.join(comps)) or curdir
+
 try:
     from posix import _path_normpath
     def normpath(path):
@@ -340,33 +368,7 @@ try:
             return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
         return _path_normpath(path) or "."
 except ImportError:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            sep = b'/'
-            curdir = b'.'
-            pardir = b'..'
-        else:
-            sep = '/'
-            curdir = '.'
-            pardir = '..'
-        if not path:
-            return curdir
-        _, root, tail = splitroot(path)
-        comps = []
-        for comp in tail.split(sep):
-            if not comp or comp == curdir:
-                continue
-            if (
-                comp != pardir
-                or (not root and not comps)
-                or (comps and comps[-1] == pardir)
-            ):
-                comps.append(comp)
-            elif comps:
-                comps.pop()
-        return (root + sep.join(comps)) or curdir
+    normpath = _normpath_fallback
 
 
 def abspath(path):
@@ -388,11 +390,11 @@ def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, ok = _joinrealpath(filename[:0], filename, strict, {})
+    path, _ = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
-# Join two paths, normalizing and eliminating any symbolic links
-# encountered in the second path.
+# Join two paths, normalizing and eliminating any symbolic links encountered in
+# the second path. Two leading slashes are replaced by a single slash.
 def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
@@ -414,22 +416,24 @@ def _joinrealpath(path, rest, strict, seen):
             continue
         if name == pardir:
             # parent dir
-            if path:
-                path, name = split(path)
-                if name == pardir:
-                    path = join(path, pardir, pardir)
-            else:
+            if not path:
+                # ..
                 path = pardir
+            elif basename(path) == pardir:
+                # ../..
+                path = join(path, pardir)
+            else:
+                # foo/bar/.. -> foo
+                path = dirname(path)
             continue
         newpath = join(path, name)
         try:
             st = os.lstat(newpath)
+            is_link = stat.S_ISLNK(st.st_mode)
         except OSError:
             if strict:
                 raise
             is_link = False
-        else:
-            is_link = stat.S_ISLNK(st.st_mode)
         if not is_link:
             path = newpath
             continue
@@ -441,12 +445,11 @@ def _joinrealpath(path, rest, strict, seen):
                 # use cached value
                 continue
             # The symlink is not resolved, so we must have a symlink loop.
-            if strict:
-                # Raise OSError(errno.ELOOP)
-                os.stat(newpath)
-            else:
+            if not strict:
                 # Return already resolved part + rest of the path unchanged.
                 return join(newpath, rest), False
+            # Raise OSError(errno.ELOOP)
+            os.stat(newpath)
         seen[newpath] = None # not resolved symlink
         path, ok = _joinrealpath(path, os.readlink(newpath), strict, seen)
         if not ok:
