@@ -129,8 +129,6 @@ PyTypeObject _PyDefaultOptimizer_Type = {
 static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
-    .backedge_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
-    .side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD,
 };
 
 static uint32_t
@@ -190,12 +188,6 @@ _Py_SetOptimizer(PyInterpreterState *interp, _PyOptimizerObject *optimizer)
     }
     Py_INCREF(optimizer);
     interp->optimizer = optimizer;
-    interp->optimizer_backedge_threshold = shift_and_offset_threshold(optimizer->backedge_threshold);
-    interp->optimizer_side_threshold = shift_and_offset_threshold(optimizer->side_threshold);
-    if (optimizer == &_PyOptimizer_Default) {
-        assert(interp->optimizer_backedge_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
-        assert(interp->optimizer_side_threshold == OPTIMIZER_UNREACHABLE_THRESHOLD);
-    }
     return old;
 }
 
@@ -1109,7 +1101,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = interp->optimizer_side_threshold;
+        executor->exits[i].temperature = UNREACHABLE_BACKOFF;
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -1291,10 +1283,6 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
         return NULL;
     }
     opt->optimize = uop_optimize;
-    // Need a few iterations to settle specializations,
-    // and to ammortize the cost of optimization.
-    opt->backedge_threshold = 16;
-    opt->side_threshold = 16;
     return (PyObject *)opt;
 }
 
@@ -1384,8 +1372,6 @@ PyUnstable_Optimizer_NewCounter(void)
         return NULL;
     }
     opt->base.optimize = counter_optimize;
-    opt->base.backedge_threshold = 0;
-    opt->base.side_threshold = OPTIMIZER_UNREACHABLE_THRESHOLD;
     opt->count = 0;
     return (PyObject *)opt;
 }

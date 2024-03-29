@@ -115,9 +115,6 @@ typedef int (*optimize_func)(
 struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
-    /* Initial values for adaptive-style counters */
-    uint16_t backedge_threshold;
-    uint16_t side_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
 };
 
