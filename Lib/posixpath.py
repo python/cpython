@@ -117,12 +117,9 @@ def split(p):
 def splitext(p):
     p = os.fspath(p)
     if isinstance(p, bytes):
-        sep = b'/'
-        extsep = b'.'
+        return genericpath._splitext(p, b'/', None, b'.')
     else:
-        sep = '/'
-        extsep = '.'
-    return genericpath._splitext(p, sep, None, extsep)
+        return genericpath._splitext(p, '/', None, '.')
 splitext.__doc__ = genericpath._splitext.__doc__
 
 # Split a pathname into a drive specification and the rest of the
@@ -248,9 +245,7 @@ def expanduser(path):
             # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
             return path
-    elif 'HOME' in os.environ:
-        userhome = os.environ['HOME']
-    else:
+    elif 'HOME' not in os.environ:
         try:
             import pwd
             userhome = pwd.getpwuid(os.getuid()).pw_dir
@@ -259,6 +254,8 @@ def expanduser(path):
             # bpo-10496: if the current user identifier doesn't exist in the
             # password database, return the path unchanged
             return path
+    else:
+        userhome = os.environ['HOME']
 
     # if no user home, return the path unchanged on VxWorks
     if userhome is None and sys.platform == "vxworks":
@@ -361,14 +358,15 @@ def _normpath_fallback(path):
 
 try:
     from posix import _path_normpath
+except ImportError:
+    normpath = _normpath_fallback
+else:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
         path = os.fspath(path)
         if isinstance(path, bytes):
             return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
         return _path_normpath(path) or "."
-except ImportError:
-    normpath = _normpath_fallback
 
 
 def abspath(path):

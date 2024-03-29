@@ -47,7 +47,17 @@ try:
         LCMapStringEx as _LCMapStringEx,
         LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
         LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
+except ImportError:
+    def normcase(s):
+        """Normalize case of pathname.
 
+        Makes all characters lowercase and all slashes into backslashes.
+        """
+        s = os.fspath(s)
+        if isinstance(s, bytes):
+            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
+        return s.replace('/', '\\').lower()
+else:
     def normcase(s):
         """Normalize case of pathname.
 
@@ -66,16 +76,6 @@ try:
             return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
                                   _LCMAP_LOWERCASE,
                                   s.replace('/', '\\'))
-except ImportError:
-    def normcase(s):
-        """Normalize case of pathname.
-
-        Makes all characters lowercase and all slashes into backslashes.
-        """
-        s = os.fspath(s)
-        if isinstance(s, bytes):
-            return os.fsencode(os.fsdecode(s).replace('/', '\\').lower())
-        return s.replace('/', '\\').lower()
 
 
 def isabs(s):
@@ -279,9 +279,9 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
         """Test whether a path is a junction"""
         try:
             st = os.lstat(path)
+            return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
         except (OSError, ValueError, AttributeError):
             return False
-        return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
 else:
     # Use genericpath.isjunction as imported above
     pass
@@ -301,6 +301,8 @@ try:
     from nt import _getvolumepathname
 except ImportError:
     _getvolumepathname = None
+
+
 def ismount(path):
     """Test whether a path is a mount point (a drive root, the root of a
     share, or a mounted volume)"""
@@ -312,24 +314,22 @@ def ismount(path):
         return not tail
     if root and not tail:
         return True
-
-    if _getvolumepathname:
-        x = path.rstrip(seps)
-        y =_getvolumepathname(path).rstrip(seps)
-        return x.casefold() == y.casefold()
-    else:
+    if not _getvolumepathname:
         return False
+    x = path.rstrip(seps)
+    y = _getvolumepathname(path).rstrip(seps)
+    return x.casefold() == y.casefold()
 
 
 _reserved_chars = frozenset(
-    {chr(i) for i in range(32)} |
-    {'"', '*', ':', '<', '>', '?', '|', '/', '\\'}
+    {chr(i) for i in range(32)}
+    | {'"', '*', ':', '<', '>', '?', '|', '/', '\\'}
 )
 
 _reserved_names = frozenset(
-    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
-    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'}
+    | {f'COM{c}' for c in '123456789\xb9\xb2\xb3'}
+    | {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
 )
 
 def isreserved(path):
@@ -352,9 +352,7 @@ def _isreservedname(name):
     # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
     # are complex and vary across Windows versions. On the side of
     # caution, return True for names that may not be reserved.
-    if name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
-        return True
-    return False
+    return name.partition('.')[0].rstrip(' ').upper() in _reserved_names
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -477,19 +475,17 @@ def expandvars(path):
                 pathlen = len(path)
                 try:
                     index = path.index(percent)
+                    var = path[:index]
+                    if environ is None:
+                        value = os.fsencode(os.environ[os.fsdecode(var)])
+                    else:
+                        value = environ[var]
+                    res += value
                 except ValueError:
                     res += percent + path
                     index = pathlen - 1
-                else:
-                    var = path[:index]
-                    try:
-                        if environ is None:
-                            value = os.fsencode(os.environ[os.fsdecode(var)])
-                        else:
-                            value = environ[var]
-                    except KeyError:
-                        value = percent + var + percent
-                    res += value
+                except KeyError:
+                    res += percent + var + percent
         elif c == dollar:  # variable or '$$'
             if path[index + 1:index + 2] == dollar:
                 res += c
@@ -499,19 +495,17 @@ def expandvars(path):
                 pathlen = len(path)
                 try:
                     index = path.index(rbrace)
+                    var = path[:index]
+                    if environ is None:
+                        value = os.fsencode(os.environ[os.fsdecode(var)])
+                    else:
+                        value = environ[var]
+                    res += value
                 except ValueError:
                     res += dollar + brace + path
                     index = pathlen - 1
-                else:
-                    var = path[:index]
-                    try:
-                        if environ is None:
-                            value = os.fsencode(os.environ[os.fsdecode(var)])
-                        else:
-                            value = environ[var]
-                    except KeyError:
-                        value = dollar + brace + var + rbrace
-                    res += value
+                except KeyError:
+                    res += dollar + brace + var + rbrace
             else:
                 var = path[:0]
                 index += 1
@@ -525,9 +519,9 @@ def expandvars(path):
                         value = os.fsencode(os.environ[os.fsdecode(var)])
                     else:
                         value = environ[var]
+                    res += value
                 except KeyError:
-                    value = dollar + var
-                res += value
+                    res += dollar + var
                 if c:
                     index -= 1
         else:
@@ -542,6 +536,12 @@ def expandvars(path):
 try:
     from nt import _path_normpath
 
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
+        return _path_normpath(path) or "."
 except ImportError:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
@@ -564,28 +564,19 @@ except ImportError:
         while i < len(comps):
             if not comps[i] or comps[i] == curdir:
                 del comps[i]
-            elif comps[i] == pardir:
-                if i > 0 and comps[i-1] != pardir:
-                    del comps[i-1:i+1]
-                    i -= 1
-                elif i == 0 and root:
-                    del comps[i]
-                else:
-                    i += 1
+            elif comps[i] != pardir:
+                i += 1
+            elif i > 0 and comps[i-1] != pardir:
+                del comps[i-1:i+1]
+                i -= 1
+            elif i == 0 and root:
+                del comps[i]
             else:
                 i += 1
         # If the path is now empty, substitute '.'
         if not prefix and not comps:
             comps.append(curdir)
         return prefix + sep.join(comps)
-
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
 
 
 def _abspath_fallback(path):
@@ -607,10 +598,8 @@ def _abspath_fallback(path):
 # Return an absolute path.
 try:
     from nt import _getfullpathname
-
 except ImportError: # not running on Windows - mock up something sensible
     abspath = _abspath_fallback
-
 else:  # use native Windows method on Windows
     def abspath(path):
         """Return the absolute version of a path."""
@@ -697,28 +686,28 @@ else:
             except OSError as ex:
                 if ex.winerror not in allowed_winerror:
                     raise
+            try:
+                # The OS could not resolve this path fully, so we attempt
+                # to follow the link ourselves. If we succeed, join the tail
+                # and return.
+                new_path = _readlink_deep(path)
+                if new_path != path:
+                    return join(new_path, tail) if tail else new_path
+            except OSError:
+                # If we fail to readlink(), let's keep traversing
+                pass
+            # If we get these errors, try to get the real name of the file without accessing it.
+            if ex.winerror in (1, 5, 32, 50, 87, 1920, 1921):
                 try:
-                    # The OS could not resolve this path fully, so we attempt
-                    # to follow the link ourselves. If we succeed, join the tail
-                    # and return.
-                    new_path = _readlink_deep(path)
-                    if new_path != path:
-                        return join(new_path, tail) if tail else new_path
+                    name = _findfirstfile(path)
+                    path, _ = split(path)
                 except OSError:
-                    # If we fail to readlink(), let's keep traversing
-                    pass
-                # If we get these errors, try to get the real name of the file without accessing it.
-                if ex.winerror in (1, 5, 32, 50, 87, 1920, 1921):
-                    try:
-                        name = _findfirstfile(path)
-                        path, _ = split(path)
-                    except OSError:
-                        path, name = split(path)
-                else:
                     path, name = split(path)
-                if path and not name:
-                    return path + tail
-                tail = join(name, tail) if tail else name
+            else:
+                path, name = split(path)
+            if path and not name:
+                return path + tail
+            tail = join(name, tail) if tail else name
         return tail
 
     def realpath(path, *, strict=False):
@@ -904,12 +893,13 @@ except ImportError:
 
 try:
     from nt import _path_isdevdrive
+except ImportError:
+    # Use genericpath.isdevdrive as imported above
+    pass
+else:
     def isdevdrive(path):
         """Determines whether the specified path is on a Windows Dev Drive."""
         try:
             return _path_isdevdrive(abspath(path))
         except OSError:
             return False
-except ImportError:
-    # Use genericpath.isdevdrive as imported above
-    pass
