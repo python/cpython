@@ -318,8 +318,8 @@ static inline void _PyObject_GC_TRACK(
     PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    _PyGCHead_SET_NEXT(gc, generation0);
-    assert((gc->_gc_next & _PyGC_NEXT_MASK_OLD_SPACE_1) == 0);
+    /* Young objects will be moved into the visited space during GC, so set the bit here */
+    gc->_gc_next = ((uintptr_t)generation0) | interp->gc.visited_space;
     generation0->_gc_prev = (uintptr_t)gc;
 #endif
 }

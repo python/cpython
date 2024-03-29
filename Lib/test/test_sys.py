@@ -562,7 +562,8 @@ class SysModuleTest(unittest.TestCase):
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
-            self.assertTrue(sourceline.startswith("if leave_g.wait("))
+            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
+                             sourceline.startswith("g_raised.set()")))
         finally:
             # Reap the spawned thread.
             leave_g.set()
