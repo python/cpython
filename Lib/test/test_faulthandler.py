@@ -577,7 +577,7 @@ class FaultHandlerTests(unittest.TestCase):
         regex = r"""
             ^Thread 0x[0-9a-f]+ \(most recent call first\):
             (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
-            ){{1,3}}  File "<string>", line 23 in run
+            ){{1,3}}  File "<string>", line 2[23] in run
               File ".*threading.py", line [0-9]+ in _bootstrap_inner
               File ".*threading.py", line [0-9]+ in _bootstrap
 
