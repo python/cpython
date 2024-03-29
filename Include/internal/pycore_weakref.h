@@ -69,7 +69,7 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
         return NULL;
     }
     LOCK_WEAKREFS(obj);
-    if (_Py_atomic_load_ptr(&ref->wr_object) == Py_None) {
+    if (ref->wr_object == Py_None) {
         // clear_weakref() was called
         UNLOCK_WEAKREFS(obj);
         return NULL;
@@ -101,8 +101,7 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
         LOCK_WEAKREFS(obj);
         // See _PyWeakref_GET_REF() for the rationale of this test
 #ifdef Py_GIL_DISABLED
-        PyObject *obj_reloaded = _Py_atomic_load_ptr(&ref->wr_object);
-        ret = (obj_reloaded == Py_None) || _is_dead(obj);
+        ret = (ref->wr_object == Py_None) || _is_dead(obj);
 #else
         ret = _is_dead(obj);
 #endif
