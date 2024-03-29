@@ -214,6 +214,12 @@ Other Language Changes
 
   (Contributed by William Woodruff in :gh:`112389`.)
 
+* The :class:`configparser.ConfigParser` now accepts unnamed sections before named
+   ones if configured to do so.
+
+   (Contributed by Pedro Sousa Lacerda in :gh:`66449`)
+
+
 New Modules
 ===========
 
