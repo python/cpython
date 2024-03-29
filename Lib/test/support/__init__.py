@@ -1169,11 +1169,11 @@ def requires_limited_api(test):
     return test
 
 
-TEST_MODULES = sysconfig.get_config_var('TEST_MODULES')
+TEST_MODULES_ENABLED = sysconfig.get_config_var('TEST_MODULES') == 'yes'
 
 
 def requires_test_modules(test):
-    if TEST_MODULES != 'yes':
+    if TEST_MODULES_ENABLED != 'yes':
         return unittest.skip('needs test modules')(test)
     return test
 

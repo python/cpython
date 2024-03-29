@@ -486,10 +486,7 @@ class FastCallTests(unittest.TestCase):
     ]
 
     # Add all the calling conventions and variants of C callables
-    @classmethod
-    def setUpClass(cls):
-        if _testcapi is None:
-            return
+    if _testcapi:
         _instance = _testcapi.MethInstance()
         for obj, expected_self in (
             (_testcapi, _testcapi),  # module-level function
@@ -498,7 +495,7 @@ class FastCallTests(unittest.TestCase):
             (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
             (_testcapi.MethStatic, None),  # static method
         ):
-            cls.CALLS_POSARGS.extend([
+            CALLS_POSARGS.extend([
                 (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
                 (obj.meth_varargs_keywords,
                     (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
@@ -512,7 +509,7 @@ class FastCallTests(unittest.TestCase):
                 (obj.meth_o, (123, ), (expected_self, 123)),
             ])
 
-            cls.CALLS_KWARGS.extend([
+            CALLS_KWARGS.extend([
                 (obj.meth_varargs_keywords,
                     (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
                 (obj.meth_varargs_keywords,
