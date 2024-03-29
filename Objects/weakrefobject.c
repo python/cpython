@@ -1193,7 +1193,6 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
     static_builtin_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
-#ifdef Py_GIL_DISABLED
     for (int done = 0; !done;) {
         PyObject *callback = NULL;
         LOCK_WEAKREFS(type);
@@ -1204,14 +1203,6 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
         UNLOCK_WEAKREFS(type);
         Py_XDECREF(callback);
     }
-#else
-    while (*list != NULL) {
-        /* Note that clear_weakref() pops the first ref off the type's
-           weaklist before clearing its wr_object and wr_callback.
-           That is how we're able to loop over the list. */
-        clear_weakref((PyWeakReference *)*list);
-    }
-#endif
 }
 
 void
