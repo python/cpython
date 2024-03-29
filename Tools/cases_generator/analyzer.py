@@ -520,8 +520,9 @@ def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
         variable_used(op, "PyCell_New")
-        or variable_used(op, "PyCell_GET")
-        or variable_used(op, "PyCell_SET")
+        or variable_used(op, "PyCell_GetRef")
+        or variable_used(op, "PyCell_SetTakeRef")
+        or variable_used(op, "PyCell_SwapTakeRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF")
