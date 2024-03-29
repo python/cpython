@@ -3971,6 +3971,9 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Abstract(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Bytes(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
