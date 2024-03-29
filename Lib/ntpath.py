@@ -737,7 +737,7 @@ else:
             # bpo-38081: Special case for realpath('nul')
             if normcase(path) == normcase(devnull):
                 return '\\\\.\\NUL'
-        had_prefix = path.startswith(prefix)
+        had_prefix = path[:4] == prefix
         if not had_prefix and not isabs(path):
             path = join(cwd, path)
         try:
@@ -759,10 +759,10 @@ else:
         # The path returned by _getfinalpathname will always start with \\?\ -
         # strip off that prefix unless it was already provided on the original
         # path.
-        if not had_prefix and path.startswith(prefix):
+        if not had_prefix and path[:4] == prefix:
             # For UNC paths, the prefix will actually be \\?\UNC\
             # Handle that case as well.
-            if path.startswith(unc_prefix):
+            if path[:8] == unc_prefix:
                 spath = new_unc_prefix + path[len(unc_prefix):]
             else:
                 spath = path[len(prefix):]
