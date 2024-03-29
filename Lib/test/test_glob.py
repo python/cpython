@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 import unittest
+import warnings
 
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
@@ -382,13 +383,35 @@ class GlobTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), p)
 
-    def test_glob0_deprecated(self):
+    def test_glob0(self):
         with self.assertWarns(DeprecationWarning):
             glob.glob0(self.tempdir, 'a')
 
-    def test_glob1_deprecated(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            eq = self.assertSequencesEqual_noorder
+            eq(glob.glob0(self.tempdir, 'a'), ['a'])
+            eq(glob.glob0(self.tempdir, '.bb'), ['.bb'])
+            eq(glob.glob0(self.tempdir, '.b*'), [])
+            eq(glob.glob0(self.tempdir, 'b'), [])
+            eq(glob.glob0(self.tempdir, '?'), [])
+            eq(glob.glob0(self.tempdir, '*a'), [])
+            eq(glob.glob0(self.tempdir, 'a*'), [])
+
+    def test_glob1(self):
         with self.assertWarns(DeprecationWarning):
             glob.glob1(self.tempdir, 'a')
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            eq = self.assertSequencesEqual_noorder
+            eq(glob.glob1(self.tempdir, 'a'), ['a'])
+            eq(glob.glob1(self.tempdir, '.bb'), ['.bb'])
+            eq(glob.glob1(self.tempdir, '.b*'), ['.bb'])
+            eq(glob.glob1(self.tempdir, 'b'), [])
+            eq(glob.glob1(self.tempdir, '?'), ['a'])
+            eq(glob.glob1(self.tempdir, '*a'), ['a', 'aaa'])
+            eq(glob.glob1(self.tempdir, 'a*'), ['a', 'aaa', 'aab'])
 
     def test_translate_matching(self):
         match = re.compile(glob.translate('*')).match
