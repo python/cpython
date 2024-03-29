@@ -110,34 +110,36 @@ def join(path, *paths):
     try:
         if not paths:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
-        result_drive, result_root, result_path = splitroot(path)
+        result_drive, result_root, result_tail = splitroot(path)
         for p in map(os.fspath, paths):
-            p_drive, p_root, p_path = splitroot(p)
+            p_drive, p_root, p_tail = splitroot(p)
             if p_root:
                 # Second path is absolute
                 if p_drive or not result_drive:
                     result_drive = p_drive
                 result_root = p_root
-                result_path = p_path
+                result_tail = p_tail
                 continue
             elif p_drive and p_drive != result_drive:
                 if p_drive.lower() != result_drive.lower():
                     # Different drives => ignore the first path entirely
                     result_drive = p_drive
                     result_root = p_root
-                    result_path = p_path
+                    result_tail = p_tail
                     continue
                 # Same drive in different case
                 result_drive = p_drive
             # Second path is relative to the first
-            if result_path and result_path[-1] not in seps:
-                result_path = result_path + sep
-            result_path = result_path + p_path
+            if result_tail and result_tail[-1] not in seps:
+                result_tail = result_tail + sep
+            result_tail = result_tail + p_tail
         ## add separator between UNC and non-absolute path
-        if (result_path and not result_root and
-            result_drive and result_drive[-1:] not in colon + seps):
-            return result_drive + sep + result_path
-        return result_drive + result_root + result_path
+        if (
+            result_tail and not result_root
+            and result_drive and result_drive[-1] not in colon + seps
+        ):
+            return result_drive + sep + result_tail
+        return result_drive + result_root + result_tail
     except (TypeError, AttributeError, BytesWarning):
         genericpath._check_arg_types('join', path, *paths)
         raise
@@ -233,13 +235,13 @@ def split(p):
     Either part may be empty."""
     p = os.fspath(p)
     seps = _get_bothseps(p)
-    d, r, p = splitroot(p)
+    drive, root, tail = splitroot(p)
     # set i to index beyond p's last slash
-    i = len(p)
-    while i and p[i-1] not in seps:
+    i = len(tail)
+    while i and tail[i-1] not in seps:
         i -= 1
-    head, tail = p[:i], p[i:]  # now tail has no slashes
-    return d + r + head.rstrip(seps), tail
+    head, tail = tail[:i], tail[i:]  # now tail has no slashes
+    return drive + root + head.rstrip(seps), tail
 
 
 # Split a path in root and extension.
@@ -305,10 +307,10 @@ def ismount(path):
     path = os.fspath(path)
     seps = _get_bothseps(path)
     path = abspath(path)
-    drive, root, rest = splitroot(path)
+    drive, root, tail = splitroot(path)
     if drive and drive[0] in seps:
-        return not rest
-    if root and not rest:
+        return not tail
+    if root and not tail:
         return True
 
     if _getvolumepathname:
@@ -555,9 +557,9 @@ except ImportError:
             curdir = '.'
             pardir = '..'
         path = path.replace(altsep, sep)
-        drive, root, path = splitroot(path)
+        drive, root, tail = splitroot(path)
         prefix = drive + root
-        comps = path.split(sep)
+        comps = tail.split(sep)
         i = 0
         while i < len(comps):
             if not comps[i] or comps[i] == curdir:
@@ -763,14 +765,14 @@ else:
             # For UNC paths, the prefix will actually be \\?\UNC\
             # Handle that case as well.
             if path[:8] == unc_prefix:
-                spath = new_unc_prefix + path[len(unc_prefix):]
+                spath = new_unc_prefix + path[8:]
             else:
-                spath = path[len(prefix):]
+                spath = path[4:]
             # Ensure that the non-prefixed path resolves to the same path
             try:
                 if _getfinalpathname(spath) == path:
                     path = spath
-            except ValueError as ex:
+            except ValueError:
                 # Unexpected, as an invalid path should not have gained a prefix
                 # at any point, but we ignore this error just in case.
                 pass
@@ -807,14 +809,14 @@ def relpath(path, start=None):
     try:
         start_abs = abspath(normpath(start))
         path_abs = abspath(normpath(path))
-        start_drive, _, start_rest = splitroot(start_abs)
-        path_drive, _, path_rest = splitroot(path_abs)
+        start_drive, _, start_tail = splitroot(start_abs)
+        path_drive, _, path_tail = splitroot(path_abs)
         if normcase(start_drive) != normcase(path_drive):
             raise ValueError("path is on mount %r, start on mount %r" % (
                 path_drive, start_drive))
 
-        start_list = [x for x in start_rest.split(sep) if x]
-        path_list = [x for x in path_rest.split(sep) if x]
+        start_list = [x for x in start_tail.split(sep) if x]
+        path_list = [x for x in path_tail.split(sep) if x]
         # Work out how much of the filepath is shared by start and path.
         i = 0
         for e1, e2 in zip(start_list, path_list):
@@ -863,18 +865,18 @@ def commonpath(paths):
         # Check that all drive letters or UNC paths match. The check is made
         # only now otherwise type errors for mixing strings and bytes would not
         # be caught.
-        if len({d for d, _, _ in rootsplits}) != 1:
+        if len({drive for drive, _, _ in rootsplits}) != 1:
             raise ValueError("Paths don't have the same drive")
 
-        if len({r for _, r, _ in rootsplits}) != 1:
+        if len({root for _, root, _ in rootsplits}) != 1:
             raise ValueError("Can't mix absolute and relative paths")
 
         drive, root, tail = splitroot(paths[0].replace(altsep, sep))
         common = [c for c in tail.split(sep) if c and c != curdir]
 
         split_paths = [
-            [c for c in t.split(sep) if c and c != curdir]
-            for _, _, t in rootsplits
+            [c for c in tail.split(sep) if c and c != curdir]
+            for _, _, tail in rootsplits
         ]
         s1 = min(split_paths)
         s2 = max(split_paths)
