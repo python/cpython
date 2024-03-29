@@ -87,8 +87,7 @@ static inline backoff_counter_t
 advance_backoff_counter(backoff_counter_t counter)
 {
     if (!is_unreachable_backoff_counter(counter)) {
-        assert(counter.value != 0);
-        return make_backoff_counter(counter.value - 1, counter.backoff);
+        return make_backoff_counter((counter.value - 1) & 0xFFF, counter.backoff);
     }
     else {
         return counter;
