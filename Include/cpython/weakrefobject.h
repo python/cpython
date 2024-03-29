@@ -30,6 +30,13 @@ struct _PyWeakReference {
     PyWeakReference *wr_prev;
     PyWeakReference *wr_next;
     vectorcallfunc vectorcall;
+
+#ifdef Py_GIL_DISABLED
+    /* Used in free-threaded builds to provide a stable index into the striped
+     * lock. Always contains the original value of wr_object.
+     */
+     PyObject *orig_object;
+#endif
 };
 
 Py_DEPRECATED(3.13) static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj)
