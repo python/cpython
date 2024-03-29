@@ -141,6 +141,26 @@ class AnyTests(BaseTestCase):
         self.assertIsInstance(ms, Something)
         self.assertIsInstance(ms, Mock)
 
+    def test_subclassing_with_custom_constructor(self):
+        class Sub(Any):
+            def __init__(self, *args, **kwargs): pass
+        # The instantiation must not fail.
+        Sub(0, s="")
+
+    def test_multiple_inheritance_with_custom_constructors(self):
+        class Foo:
+            def __init__(self, x):
+                self.x = x
+
+        class Bar(Any, Foo):
+            def __init__(self, x, y):
+                self.y = y
+                super().__init__(x)
+
+        b = Bar(1, 2)
+        self.assertEqual(b.x, 1)
+        self.assertEqual(b.y, 2)
+
     def test_cannot_instantiate(self):
         with self.assertRaises(TypeError):
             Any()
