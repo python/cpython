@@ -18,13 +18,21 @@ typedef union {
 #define Py_OBJECT_TAG (0b0)
 #define Py_OBJECT_TEST_TAG (0b1)
 
-#ifdef Py_GIL_DISABLED
-#define Py_CLEAR_TAG(tagged) ((PyObject *)((tagged).bits & ~(Py_OBJECT_TAG)))
+#if defined(Py_OBJECT_TEST_TAG)
+    #define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_OBJECT_TEST_TAG)))
+#elif defined(Py_GIL_DISABLED)
+    #define Py_CLEAR_TAG(tagged) ((PyObject *)((tagged).bits & ~(Py_OBJECT_TAG)))
 #else
-#define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_OBJECT_TEST_TAG)))
+    #define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
 #endif
 
-#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = ((uintptr_t)(obj) | Py_OBJECT_TEST_TAG)})
+#if defined(Py_OBJECT_TEST_TAG)
+    #define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = ((uintptr_t)(obj) | Py_OBJECT_TEST_TAG)})
+#elif defined(Py_GIL_DISABLED)
+    #define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = ((uintptr_t)(obj) | Py_OBJECT_TAG}))
+#else
+    #define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = ((uintptr_t)(obj)}))
+#endif
 
 #define MAX_UNTAG_SCRATCH 10
 
