@@ -1,0 +1,1 @@
+Isolate :mod:`!_ctypes` (apply :pep:`687`).
