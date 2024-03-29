@@ -34,21 +34,25 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, variables: set[str], out: CWriter
+    var: StackItem, uop: Uop, variables: set[str], out: CWriter,
+    dir_out: bool = False
 ) -> None:
     if var.name in variables:
         return
     type = var.type if var.type else "PyObject *"
     variables.add(var.name)
     if var.condition:
-        space = " " if type[-1] != "*" else ""
-        out.emit(f"{type}{space}{var.name} = NULL;\n")
+        if not dir_out:
+            out.emit(f"_PyTaggedPtr {var.name}_tagged = Py_OBJ_TAG(NULL);\n")
+        out.emit(f"{type}{var.name} = NULL;\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        out.emit(f"{type} {var.name};\n")
+        if not dir_out:
+            out.emit(f"_PyTaggedPtr {var.name}_tagged;\n")
+        out.emit(f"{type}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
@@ -56,7 +60,7 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
     for var in reversed(uop.stack.inputs):
         declare_variable(var, uop, variables, out)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, variables, out)
+        declare_variable(var, uop, variables, out, dir_out=True)
 
 
 def tier2_replace_error(

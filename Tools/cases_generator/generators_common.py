@@ -134,11 +134,11 @@ def replace_decrefs(
             out.emit("}\n")
         elif var.condition:
             if var.condition == "1":
-                out.emit(f"Py_DECREF({var.name});\n")
+                out.emit(f"Py_DECREF_TAGGED({var.name}_tagged);\n")
             elif var.condition != "0":
-                out.emit(f"Py_XDECREF({var.name});\n")
+                out.emit(f"Py_XDECREF_TAGGED({var.name}_tagged);\n")
         else:
-            out.emit(f"Py_DECREF({var.name});\n")
+            out.emit(f"Py_XDECREF_TAGGED({var.name}_tagged);\n")
 
 
 def replace_sync_sp(

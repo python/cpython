@@ -124,12 +124,12 @@ class Stack:
         self.variables: list[StackItem] = []
         self.defined: set[str] = set()
 
-    def pop(self, var: StackItem, clear_tag: bool = True) -> str:
+    def pop(self, var: StackItem, should_untag: bool = True) -> str:
+        untag = "Py_OBJ_UNTAG" if should_untag else ""
         self.top_offset.pop(var)
         if not var.peek:
             self.peek_offset.pop(var)
         indirect = "&" if var.is_array() else ""
-        clear = "Py_OBJ_UNTAG" if clear_tag and (var.type or "").strip() != "_PyTaggedPtr" else ""
         if self.variables:
             popped = self.variables.pop()
             if popped.size != var.size:
@@ -147,7 +147,8 @@ class Stack:
                     )
                 else:
                     return (
-                        f"{var.name} = {clear}(stack_pointer[{self.top_offset.to_c()}]);\n"
+                        f"{var.name}_tagged = stack_pointer[{self.top_offset.to_c()}];\n"
+                        f"{var.name} = {untag}({var.name}_tagged);\n"
                     )
             elif var.name in UNUSED:
                 return ""
@@ -162,11 +163,12 @@ class Stack:
         cast = f"({var.type})" if (not indirect and var.type and var.type != "_PyTaggedPtr") else ""
         if indirect:
             assign = (
-                f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
+                f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
             )
         else:
             assign = (
-                f"{var.name} = {cast}{clear}(stack_pointer[{self.base_offset.to_c()}]);"
+                f"{var.name}_tagged = stack_pointer[{self.base_offset.to_c()}];\n"
+                f"{var.name} = {cast}{untag}({var.name}_tagged);\n"
             )
         if var.condition:
             if var.condition == "1":
@@ -188,7 +190,7 @@ class Stack:
             self.top_offset.push(var)
             return ""
 
-    def flush(self, out: CWriter, cast_type: str = "PyObject *", should_pack: bool=True) -> None:
+    def flush(self, out: CWriter, cast_type: str = "PyObject *", should_tag: bool = True) -> None:
         out.start_line()
         for var in self.variables:
             if not var.peek:
@@ -199,9 +201,9 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    pack = "Py_OBJ_TAG" if should_pack and ((var.type or "").strip() != "_PyTaggedPtr") else ""
+                    tag = "Py_OBJ_TAG" if should_tag else ""
                     out.emit(
-                        f"stack_pointer[{self.base_offset.to_c()}] = {pack}({cast}{var.name});\n"
+                        f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
                     )
             self.base_offset.push(var)
         if self.base_offset.to_c() != self.top_offset.to_c():

@@ -412,6 +412,12 @@ NON_ESCAPING_FUNCTIONS = (
     "maybe_lltrace_resume_frame",
     "_PyUnicode_JoinArray",
     "_PyUnicode_JoinTaggedArray",
+    "Py_OBJ_TAG",
+    "Py_OBJ_UNTAG",
+    "Py_DECREF_TAGGED",
+    "Py_XDECREF_TAGGED",
+    "Py_INCREF_TAGGED",
+    "Py_XINCREF_TAGGED",
 )
 
 ESCAPING_FUNCTIONS = (

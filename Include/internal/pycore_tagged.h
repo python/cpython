@@ -16,7 +16,7 @@ typedef union {
 } _PyTaggedPtr;
 
 #define Py_TAG (0b0)
-//#define Py_TEST_TAG (0b1)
+#define Py_TEST_TAG (0b1)
 
 #if defined(Py_TEST_TAG)
     #define Py_OBJ_UNTAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_TEST_TAG)))
@@ -52,7 +52,7 @@ _Py_untag_stack(PyObject **dst, const _PyTaggedPtr *src, size_t length) {
         Py_XDECREF(Py_OBJ_UNTAG(_tmp_old_dst)); \
     } while (0)
 
-#define Py_OBJ_UNTAGGED(op) \
+#define Py_CLEAR_TAGGED(op) \
     do { \
         _PyTaggedPtr *_tmp_op_ptr = _Py_CAST(_PyTaggedPtr*, &(op)); \
         _PyTaggedPtr _tmp_old_op = (*_tmp_op_ptr); \
@@ -66,6 +66,13 @@ _Py_untag_stack(PyObject **dst, const _PyTaggedPtr *src, size_t length) {
 // deferred reference counting.
 #define Py_DECREF_TAGGED(op) Py_DECREF(Py_OBJ_UNTAG(op))
 #define Py_INCREF_TAGGED(op) Py_INCREF(Py_OBJ_UNTAG(op))
+
+#define Py_XDECREF_TAGGED(op) \
+    do {                      \
+        if (Py_OBJ_UNTAG(op) != NULL) { \
+            Py_DECREF_TAGGED(op); \
+        } \
+    } while (0)
 
 #ifdef __cplusplus
 }

@@ -892,7 +892,7 @@ frame_dealloc(PyFrameObject *f)
         Py_CLEAR(frame->f_locals);
         _PyTaggedPtr *locals = _PyFrame_GetLocalsArray(frame);
         for (int i = 0; i < frame->stacktop; i++) {
-            Py_OBJ_UNTAGGED(locals[i]);
+            Py_CLEAR_TAGGED(locals[i]);
         }
     }
     Py_CLEAR(f->f_back);
@@ -923,7 +923,7 @@ frame_tp_clear(PyFrameObject *f)
     _PyTaggedPtr *locals = _PyFrame_GetLocalsArray(f->f_frame);
     assert(f->f_frame->stacktop >= 0);
     for (int i = 0; i < f->f_frame->stacktop; i++) {
-        Py_OBJ_UNTAGGED(locals[i]);
+        Py_CLEAR_TAGGED(locals[i]);
     }
     f->f_frame->stacktop = 0;
     Py_CLEAR(f->f_frame->f_locals);
