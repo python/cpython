@@ -334,7 +334,8 @@ insert_head(PyWeakReference *newref, PyWeakReference **list)
  * creating a new weakref
  */
 static PyWeakReference *
-try_reuse_basic_ref(PyWeakReference *list, PyTypeObject *type, PyObject *callback)
+try_reuse_basic_ref(PyWeakReference *list, PyTypeObject *type,
+                    PyObject *callback)
 {
     if (callback != NULL) {
         return NULL;
@@ -1125,8 +1126,7 @@ _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
 
        This is never triggered for static types so we can avoid the
        (slightly) more costly _PyObject_GET_WEAKREFS_LISTPTR(). */
-    PyWeakReference **list =                                            \
-            _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(obj);
+    PyWeakReference **list = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(obj);
     LOCK_WEAKREFS(obj);
     while (*list) {
         _PyWeakref_ClearRef(*list);
