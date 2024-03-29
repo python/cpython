@@ -533,7 +533,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             PyObject *above;
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *below;
             above = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1 - oparg*2];
@@ -558,7 +558,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             PyObject *below;
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *above;
             values = &stack_pointer[-1];
             spam(values, oparg);
@@ -581,7 +581,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *above;
             values = &stack_pointer[-oparg];
             spam(values, oparg);
@@ -604,7 +604,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *extra;
             values = &stack_pointer[-oparg];
             extra = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);

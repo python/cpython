@@ -9808,7 +9808,7 @@ _PyUnicode_JoinArray(PyObject *separator, PyObject *const *items, Py_ssize_t seq
 }
 
 PyObject*
-_PyUnicode_JoinTaggedArray_Slow(PyObject *separator, _Py_TaggedObject const *tagged, Py_ssize_t seqlen)
+_PyUnicode_JoinTaggedArray_Slow(PyObject *separator, _PyTaggedPtr const *tagged, Py_ssize_t seqlen)
 {
     PyObject **args = PyMem_Malloc(seqlen * sizeof(PyObject *));
     if (args == NULL) {
@@ -9822,7 +9822,7 @@ _PyUnicode_JoinTaggedArray_Slow(PyObject *separator, _Py_TaggedObject const *tag
 }
 
 PyObject *
-_PyUnicode_JoinTaggedArray(PyObject *separator, _Py_TaggedObject const *items_tagged, Py_ssize_t seqlen)
+_PyUnicode_JoinTaggedArray(PyObject *separator, _PyTaggedPtr const *items_tagged, Py_ssize_t seqlen)
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     PyObject *args[MAX_UNTAG_SCRATCH];

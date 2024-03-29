@@ -3191,7 +3191,7 @@ _PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
-_PyList_FromTaggedArraySteal(_Py_TaggedObject const *src, Py_ssize_t n)
+_PyList_FromTaggedArraySteal(_PyTaggedPtr const *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);

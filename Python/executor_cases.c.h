@@ -27,7 +27,7 @@
         /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 because it is instrumented */
 
         case _LOAD_FAST_CHECK: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             if (Py_OBJ_UNTAG(value) == NULL) {
@@ -44,7 +44,7 @@
         }
 
         case _LOAD_FAST_0: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -56,7 +56,7 @@
         }
 
         case _LOAD_FAST_1: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -68,7 +68,7 @@
         }
 
         case _LOAD_FAST_2: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -80,7 +80,7 @@
         }
 
         case _LOAD_FAST_3: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -92,7 +92,7 @@
         }
 
         case _LOAD_FAST_4: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -104,7 +104,7 @@
         }
 
         case _LOAD_FAST_5: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -116,7 +116,7 @@
         }
 
         case _LOAD_FAST_6: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -128,7 +128,7 @@
         }
 
         case _LOAD_FAST_7: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
@@ -140,7 +140,7 @@
         }
 
         case _LOAD_FAST: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
@@ -151,7 +151,7 @@
         }
 
         case _LOAD_FAST_AND_CLEAR: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
@@ -162,7 +162,7 @@
         }
 
         case _LOAD_CONST: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             PyObject *v = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(v);
@@ -173,7 +173,7 @@
         }
 
         case _STORE_FAST_0: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -183,7 +183,7 @@
         }
 
         case _STORE_FAST_1: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -193,7 +193,7 @@
         }
 
         case _STORE_FAST_2: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -203,7 +203,7 @@
         }
 
         case _STORE_FAST_3: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -213,7 +213,7 @@
         }
 
         case _STORE_FAST_4: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -223,7 +223,7 @@
         }
 
         case _STORE_FAST_5: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -233,7 +233,7 @@
         }
 
         case _STORE_FAST_6: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -243,7 +243,7 @@
         }
 
         case _STORE_FAST_7: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = (stack_pointer[-1]);
@@ -253,7 +253,7 @@
         }
 
         case _STORE_FAST: {
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
@@ -837,7 +837,7 @@
         }
 
         case _POP_FRAME: {
-            _Py_TaggedObject retval;
+            _PyTaggedPtr retval;
             retval = (stack_pointer[-1]);
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -1058,7 +1058,7 @@
             PyObject * seq;
             oparg = CURRENT_OPARG();
             seq = Py_OBJ_UNTAG(stack_pointer[-1]);
-            _Py_TaggedObject *top = stack_pointer + oparg - 1;
+            _PyTaggedPtr *top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
             Py_DECREF(seq);
             if (res == 0) JUMP_TO_ERROR();
@@ -1087,7 +1087,7 @@
 
         case _UNPACK_SEQUENCE_TUPLE: {
             PyObject * seq;
-            _Py_TaggedObject * values;
+            _PyTaggedPtr * values;
             oparg = CURRENT_OPARG();
             seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
@@ -1105,7 +1105,7 @@
 
         case _UNPACK_SEQUENCE_LIST: {
             PyObject * seq;
-            _Py_TaggedObject * values;
+            _PyTaggedPtr * values;
             oparg = CURRENT_OPARG();
             seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
@@ -1126,7 +1126,7 @@
             oparg = CURRENT_OPARG();
             seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _Py_TaggedObject *top = stack_pointer + totalargs - 1;
+            _PyTaggedPtr *top = stack_pointer + totalargs - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             Py_DECREF(seq);
             if (res == 0) JUMP_TO_ERROR();
@@ -1439,7 +1439,7 @@
         }
 
         case _BUILD_STRING: {
-            _Py_TaggedObject * pieces;
+            _PyTaggedPtr * pieces;
             PyObject * str;
             oparg = CURRENT_OPARG();
             pieces = &stack_pointer[-oparg];
@@ -1454,7 +1454,7 @@
         }
 
         case _BUILD_TUPLE: {
-            _Py_TaggedObject * values;
+            _PyTaggedPtr * values;
             PyObject * tup;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
@@ -1466,7 +1466,7 @@
         }
 
         case _BUILD_LIST: {
-            _Py_TaggedObject * values;
+            _PyTaggedPtr * values;
             PyObject * list;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg];
@@ -1518,7 +1518,7 @@
         /* _BUILD_SET is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _BUILD_MAP: {
-            _Py_TaggedObject * values;
+            _PyTaggedPtr * values;
             PyObject * map;
             oparg = CURRENT_OPARG();
             values = &stack_pointer[-oparg*2];
@@ -1561,7 +1561,7 @@
 
         case _BUILD_CONST_KEY_MAP: {
             PyObject * keys;
-            _Py_TaggedObject * values;
+            _PyTaggedPtr * values;
             PyObject * map;
             oparg = CURRENT_OPARG();
             keys = Py_OBJ_UNTAG(stack_pointer[-1]);
@@ -2755,7 +2755,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_0: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             _PyInterpreterFrame * new_frame;
@@ -2768,7 +2768,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -2779,7 +2779,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_1: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             _PyInterpreterFrame * new_frame;
@@ -2792,7 +2792,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -2803,7 +2803,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_2: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             _PyInterpreterFrame * new_frame;
@@ -2816,7 +2816,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -2827,7 +2827,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_3: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             _PyInterpreterFrame * new_frame;
@@ -2840,7 +2840,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -2851,7 +2851,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS_4: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             _PyInterpreterFrame * new_frame;
@@ -2864,7 +2864,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -2875,7 +2875,7 @@
         }
 
         case _INIT_CALL_PY_EXACT_ARGS: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             _PyInterpreterFrame * new_frame;
@@ -2887,7 +2887,7 @@
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3001,9 +3001,9 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
-            _Py_TaggedObject callable;
+            _PyTaggedPtr callable;
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
@@ -3031,7 +3031,7 @@
         }
 
         case _CALL_BUILTIN_O: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;
@@ -3066,7 +3066,7 @@
         }
 
         case _CALL_BUILTIN_FAST: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;
@@ -3104,9 +3104,9 @@
         }
 
         case _CALL_BUILTIN_FAST_WITH_KEYWORDS: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
-            _Py_TaggedObject callable;
+            _PyTaggedPtr callable;
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
@@ -3142,7 +3142,7 @@
         }
 
         case _CALL_LEN: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;
@@ -3178,7 +3178,7 @@
         }
 
         case _CALL_ISINSTANCE: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;
@@ -3216,7 +3216,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_O: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;
@@ -3255,7 +3255,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;
@@ -3295,7 +3295,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;
@@ -3333,7 +3333,7 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
-            _Py_TaggedObject * args;
+            _PyTaggedPtr * args;
             PyObject * self_or_null;
             PyObject * callable;
             PyObject * res;

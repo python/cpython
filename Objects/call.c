@@ -1047,10 +1047,11 @@ _PyStack_UnpackDict_FreeNoDecRef(PyObject *const *stack, PyObject *kwnames)
 
 static PyObject *
 PyObject_VectorcallTaggedSlow(PyObject *callable,
-                              const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+                              const _PyTaggedPtr *tagged, size_t nargsf, PyObject *kwnames)
 {
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
-    if (kwnames != NULL && PyTuple_CheckExact(kwnames)) {
+    if (kwnames != NULL) {
+        assert(PyTuple_CheckExact(kwnames));
         nargs += PyTuple_GET_SIZE(kwnames);
     }
     PyObject **args = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
@@ -1066,7 +1067,7 @@ PyObject_VectorcallTaggedSlow(PyObject *callable,
 
 PyObject *
 PyObject_Vectorcall_Tagged(PyObject *callable,
-                           const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+                           const _PyTaggedPtr *tagged, size_t nargsf, PyObject *kwnames)
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
@@ -1088,7 +1089,7 @@ PyObject_Vectorcall_Tagged(PyObject *callable,
 
 static PyObject *
 PyObject_TypeVectorcall_TaggedSlow(PyTypeObject *callable,
-                                    const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+                                    const _PyTaggedPtr *tagged, size_t nargsf, PyObject *kwnames)
 {
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject **args = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
@@ -1106,7 +1107,7 @@ PyObject_TypeVectorcall_TaggedSlow(PyTypeObject *callable,
 
 PyObject *
 PyObject_TypeVectorcall_Tagged(PyTypeObject *callable,
-                               const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
+                               const _PyTaggedPtr *tagged, size_t nargsf, PyObject *kwnames)
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
@@ -1126,7 +1127,7 @@ PyObject_TypeVectorcall_Tagged(PyTypeObject *callable,
 static PyObject *
 PyObject_PyCFunctionFastCall_TaggedSlow(PyCFunctionFast cfunc,
                                    PyObject *self,
-                                   const _Py_TaggedObject *tagged, Py_ssize_t nargsf)
+                                   const _PyTaggedPtr *tagged, Py_ssize_t nargsf)
 {
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject **args = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
@@ -1143,7 +1144,7 @@ PyObject_PyCFunctionFastCall_TaggedSlow(PyCFunctionFast cfunc,
 PyObject *
 PyObject_PyCFunctionFastCall_Tagged(PyCFunctionFast cfunc,
                                     PyObject *self,
-                                    const _Py_TaggedObject *tagged, Py_ssize_t nargsf)
+                                    const _PyTaggedPtr *tagged, Py_ssize_t nargsf)
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
@@ -1162,7 +1163,7 @@ PyObject_PyCFunctionFastCall_Tagged(PyCFunctionFast cfunc,
 static PyObject *
 PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow(PyCFunctionFastWithKeywords cfunc,
                                         PyObject *self,
-                                        const _Py_TaggedObject *tagged, Py_ssize_t nargsf,
+                                        const _PyTaggedPtr *tagged, Py_ssize_t nargsf,
                                         PyObject *kwds)
 {
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
@@ -1180,7 +1181,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_TaggedSlow(PyCFunctionFastWithKeywords 
 PyObject *
 PyObject_PyCFunctionFastWithKeywordsCall_Tagged(PyCFunctionFastWithKeywords cfunc,
                                     PyObject *self,
-                                    const _Py_TaggedObject *tagged, Py_ssize_t nargsf,
+                                    const _PyTaggedPtr *tagged, Py_ssize_t nargsf,
                                     PyObject *kwds)
 {
 #if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)

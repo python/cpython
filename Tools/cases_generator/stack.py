@@ -129,7 +129,7 @@ class Stack:
         if not var.peek:
             self.peek_offset.pop(var)
         indirect = "&" if var.is_array() else ""
-        clear = "Py_OBJ_UNTAG" if clear_tag and (var.type or "").strip() != "_Py_TaggedObject" else ""
+        clear = "Py_OBJ_UNTAG" if clear_tag and (var.type or "").strip() != "_PyTaggedPtr" else ""
         if self.variables:
             popped = self.variables.pop()
             if popped.size != var.size:
@@ -159,7 +159,7 @@ class Stack:
             return ""
         else:
             self.defined.add(var.name)
-        cast = f"({var.type})" if (not indirect and var.type and var.type != "_Py_TaggedObject") else ""
+        cast = f"({var.type})" if (not indirect and var.type and var.type != "_PyTaggedPtr") else ""
         if indirect:
             assign = (
                 f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}];"
@@ -192,14 +192,14 @@ class Stack:
         out.start_line()
         for var in self.variables:
             if not var.peek:
-                cast = f"({cast_type})" if (var.type and var.type != "_Py_TaggedObject") else ""
+                cast = f"({cast_type})" if (var.type and var.type != "_PyTaggedPtr") else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    pack = "Py_OBJ_TAG" if should_pack and ((var.type or "").strip() != "_Py_TaggedObject") else ""
+                    pack = "Py_OBJ_TAG" if should_pack and ((var.type or "").strip() != "_PyTaggedPtr") else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {pack}({cast}{var.name});\n"
                     )

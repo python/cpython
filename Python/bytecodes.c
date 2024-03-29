@@ -205,7 +205,7 @@ dummy_func(
             LOAD_FAST,
         };
 
-        inst(LOAD_FAST_CHECK, (-- value: _Py_TaggedObject)) {
+        inst(LOAD_FAST_CHECK, (-- value: _PyTaggedPtr)) {
             value = GETLOCAL(oparg);
             if (Py_OBJ_UNTAG(value) == NULL) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
@@ -217,19 +217,19 @@ dummy_func(
             Py_INCREF_TAGGED(value);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value: _Py_TaggedObject)) {
+        replicate(8) pure inst(LOAD_FAST, (-- value: _PyTaggedPtr)) {
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
         }
 
-        inst(LOAD_FAST_AND_CLEAR, (-- value: _Py_TaggedObject)) {
+        inst(LOAD_FAST_AND_CLEAR, (-- value: _PyTaggedPtr)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = Py_OBJ_TAG(NULL);
         }
 
-        inst(LOAD_FAST_LOAD_FAST, ( -- value1: _Py_TaggedObject, value2: _Py_TaggedObject)) {
+        inst(LOAD_FAST_LOAD_FAST, ( -- value1: _PyTaggedPtr, value2: _PyTaggedPtr)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             value1 = GETLOCAL(oparg1);
@@ -238,13 +238,13 @@ dummy_func(
             Py_INCREF_TAGGED(value2);
         }
 
-        pure inst(LOAD_CONST, (-- value: _Py_TaggedObject)) {
+        pure inst(LOAD_CONST, (-- value: _PyTaggedPtr)) {
             PyObject *v = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(v);
             value = Py_OBJ_TAG(v);
         }
 
-        replicate(8) inst(STORE_FAST, (value: _Py_TaggedObject --)) {
+        replicate(8) inst(STORE_FAST, (value: _PyTaggedPtr --)) {
             SETLOCAL(oparg, value);
         }
 
@@ -252,7 +252,7 @@ dummy_func(
             STORE_FAST,
         };
 
-        inst(STORE_FAST_LOAD_FAST, (value1: _Py_TaggedObject -- value2: _Py_TaggedObject)) {
+        inst(STORE_FAST_LOAD_FAST, (value1: _PyTaggedPtr -- value2: _PyTaggedPtr)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -260,7 +260,7 @@ dummy_func(
             Py_INCREF_TAGGED(value2);
         }
 
-        inst(STORE_FAST_STORE_FAST, (value2: _Py_TaggedObject, value1: _Py_TaggedObject --)) {
+        inst(STORE_FAST_STORE_FAST, (value2: _PyTaggedPtr, value1: _PyTaggedPtr --)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -515,7 +515,7 @@ dummy_func(
         // At the end we just skip over the STORE_FAST.
         tier1 op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             assert(next_instr->op.code == STORE_FAST);
-            _Py_TaggedObject *target_local = &GETLOCAL(next_instr->op.arg);
+            _PyTaggedPtr *target_local = &GETLOCAL(next_instr->op.arg);
             DEOPT_IF(Py_OBJ_UNTAG(*target_local) != left);
             STAT_INC(BINARY_OP, hit);
             /* Handle `left = left + right` or `left += right` for str.
@@ -660,7 +660,7 @@ dummy_func(
             ERROR_IF(rc <= 0, error); // not found or error
         }
 
-        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub: _Py_TaggedObject -- unused)) {
+        inst(BINARY_SUBSCR_GETITEM, (unused/1, container, sub: _PyTaggedPtr -- unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyTypeObject *tp = Py_TYPE(container);
             DEOPT_IF(!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
@@ -806,7 +806,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        op(_POP_FRAME, (retval: _Py_TaggedObject --)) {
+        op(_POP_FRAME, (retval: _PyTaggedPtr --)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -832,7 +832,7 @@ dummy_func(
         macro(RETURN_VALUE) =
             _POP_FRAME;
 
-        inst(INSTRUMENTED_RETURN_VALUE, (retval: _Py_TaggedObject --)) {
+        inst(INSTRUMENTED_RETURN_VALUE, (retval: _PyTaggedPtr --)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
                     frame, this_instr, Py_OBJ_UNTAG(retval));
@@ -983,7 +983,7 @@ dummy_func(
             SEND_GEN,
         };
 
-        specializing op(_SPECIALIZE_SEND, (counter/1, receiver_packed: _Py_TaggedObject, unused -- receiver_packed, unused)) {
+        specializing op(_SPECIALIZE_SEND, (counter/1, receiver_packed: _PyTaggedPtr, unused -- receiver_packed, unused)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
@@ -995,7 +995,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_SEND, (receiver_packed: _Py_TaggedObject, v_packed: _Py_TaggedObject -- receiver_packed: _Py_TaggedObject, retval)) {
+        op(_SEND, (receiver_packed: _PyTaggedPtr, v_packed: _PyTaggedPtr -- receiver_packed: _PyTaggedPtr, retval)) {
             PyObject *receiver = Py_OBJ_UNTAG(receiver_packed);
             PyObject *v = Py_OBJ_UNTAG(v_packed);
 
@@ -1039,7 +1039,7 @@ dummy_func(
 
         macro(SEND) = _SPECIALIZE_SEND + _SEND;
 
-        inst(SEND_GEN, (unused/1, receiver, v: _Py_TaggedObject -- receiver, unused)) {
+        inst(SEND_GEN, (unused/1, receiver, v: _PyTaggedPtr -- receiver, unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyGenObject *gen = (PyGenObject *)receiver;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type);
@@ -1056,7 +1056,7 @@ dummy_func(
             DISPATCH_INLINED(gen_frame);
         }
 
-        inst(INSTRUMENTED_YIELD_VALUE, (retval: _Py_TaggedObject -- unused)) {
+        inst(INSTRUMENTED_YIELD_VALUE, (retval: _PyTaggedPtr -- unused)) {
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
@@ -1081,7 +1081,7 @@ dummy_func(
             goto resume_frame;
         }
 
-        tier1 inst(YIELD_VALUE, (retval: _Py_TaggedObject -- unused)) {
+        tier1 inst(YIELD_VALUE, (retval: _PyTaggedPtr -- unused)) {
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
             // or throw() call.
@@ -1230,7 +1230,7 @@ dummy_func(
         }
 
         op(_UNPACK_SEQUENCE, (seq -- unused[oparg])) {
-            _Py_TaggedObject *top = stack_pointer + oparg - 1;
+            _PyTaggedPtr *top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
@@ -1272,7 +1272,7 @@ dummy_func(
 
         inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8])) {
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _Py_TaggedObject *top = stack_pointer + totalargs - 1;
+            _PyTaggedPtr *top = stack_pointer + totalargs - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             DECREF_INPUTS();
             ERROR_IF(res == 0, error);
@@ -2026,7 +2026,7 @@ dummy_func(
             unused/2 +
             _LOAD_ATTR_CLASS;
 
-        inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner: _Py_TaggedObject -- unused, unused if (0))) {
+        inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner: _PyTaggedPtr -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
 
@@ -2050,7 +2050,7 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner: _Py_TaggedObject -- unused, unused if (0))) {
+        inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner: _PyTaggedPtr -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
             PyTypeObject *cls = Py_TYPE(Py_OBJ_UNTAG(owner));
@@ -3164,7 +3164,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-            _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+            _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
             new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
@@ -3349,7 +3349,7 @@ dummy_func(
             }
         }
 
-        op(_CALL_BUILTIN_CLASS, (callable: _Py_TaggedObject, self_or_null, args[oparg] -- res)) {
+        op(_CALL_BUILTIN_CLASS, (callable: _PyTaggedPtr, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3439,7 +3439,7 @@ dummy_func(
             _CALL_BUILTIN_FAST +
             _CHECK_PERIODIC;
 
-        op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable: _Py_TaggedObject, self_or_null, args[oparg] -- res)) {
+        op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable: _PyTaggedPtr, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
             if (self_or_null != NULL) {

@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_freelist.h"  // _PyFreeListState
-#include "pycore_tagged.h" // _Py_TaggedObject
+#include "pycore_tagged.h" // _PyTaggedPtr
 
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
@@ -56,7 +56,7 @@ typedef struct {
 } _PyListIterObject;
 
 PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
-PyAPI_FUNC(PyObject *)_PyList_FromTaggedArraySteal(_Py_TaggedObject const *src, Py_ssize_t n);
+PyAPI_FUNC(PyObject *)_PyList_FromTaggedArraySteal(_PyTaggedPtr const *src, Py_ssize_t n);
 
 #ifdef __cplusplus
 }

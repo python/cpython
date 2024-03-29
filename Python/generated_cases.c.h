@@ -244,7 +244,7 @@
             // _BINARY_OP_INPLACE_ADD_UNICODE
             {
                 assert(next_instr->op.code == STORE_FAST);
-                _Py_TaggedObject *target_local = &GETLOCAL(next_instr->op.arg);
+                _PyTaggedPtr *target_local = &GETLOCAL(next_instr->op.arg);
                 DEOPT_IF(Py_OBJ_UNTAG(*target_local) != left, BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 /* Handle `left = left + right` or `left += right` for str.
@@ -486,7 +486,7 @@
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             static_assert(INLINE_CACHE_ENTRIES_BINARY_SUBSCR == 1, "incorrect cache size");
-            _Py_TaggedObject sub;
+            _PyTaggedPtr sub;
             PyObject *container;
             /* Skip 1 cache entry */
             sub = (stack_pointer[-1]);
@@ -603,7 +603,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_CONST_KEY_MAP);
             PyObject *keys;
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *map;
             keys = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1 - oparg];
@@ -626,7 +626,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_LIST);
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *list;
             values = &stack_pointer[-oparg];
             list = _PyList_FromTaggedArraySteal(values, oparg);
@@ -640,7 +640,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_MAP);
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *map;
             values = &stack_pointer[-oparg*2];
             map = _PyDict_FromTaggedItems(
@@ -660,7 +660,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SET);
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *set;
             values = &stack_pointer[-oparg];
             set = PySet_New(NULL);
@@ -707,7 +707,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_STRING);
-            _Py_TaggedObject *pieces;
+            _PyTaggedPtr *pieces;
             PyObject *str;
             pieces = &stack_pointer[-oparg];
             str = _PyUnicode_JoinTaggedArray(&_Py_STR(empty), pieces, oparg);
@@ -724,7 +724,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_TUPLE);
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             PyObject *tup;
             values = &stack_pointer[-oparg];
             tup = _PyTuple_FromTaggedArraySteal(values, oparg);
@@ -750,7 +750,7 @@
             PREDICTED(CALL);
             _Py_CODEUNIT *this_instr = next_instr - 4;
             (void)this_instr;
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -854,7 +854,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *null;
             PyObject *callable;
             /* Skip 1 cache entry */
@@ -921,7 +921,7 @@
             PyObject *func;
             PyObject *self;
             PyObject *self_or_null;
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -970,7 +970,7 @@
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-                _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+                _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
                 new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
                 for (int i = 0; i < oparg; i++) {
                     first_non_self_local[i] = args[i];
@@ -1013,9 +1013,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_CLASS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
-            _Py_TaggedObject callable;
+            _PyTaggedPtr callable;
             PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1055,7 +1055,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1105,9 +1105,9 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
-            _Py_TaggedObject callable;
+            _PyTaggedPtr callable;
             PyObject *res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -1155,7 +1155,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1322,7 +1322,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ISINSTANCE);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1368,7 +1368,7 @@
             _Py_CODEUNIT *this_instr = next_instr - 1;
             (void)this_instr;
             PyObject *kwnames;
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1456,7 +1456,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LEN);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1528,7 +1528,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1580,7 +1580,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1632,7 +1632,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_NOARGS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1682,7 +1682,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_O);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             PyObject *res;
@@ -1735,7 +1735,7 @@
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
             PyObject *self_or_null;
             PyObject *callable;
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -1768,7 +1768,7 @@
                 STAT_INC(CALL, hit);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
-                _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
+                _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
                 new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
                 for (int i = 0; i < oparg; i++) {
                     first_non_self_local[i] = args[i];
@@ -1811,7 +1811,7 @@
             next_instr += 4;
             INSTRUCTION_STATS(CALL_PY_WITH_DEFAULTS);
             static_assert(INLINE_CACHE_ENTRIES_CALL == 3, "incorrect cache size");
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             PyObject *self_or_null;
             PyObject *callable;
             /* Skip 1 cache entry */
@@ -3331,7 +3331,7 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_RETURN_VALUE);
-            _Py_TaggedObject retval;
+            _PyTaggedPtr retval;
             retval = (stack_pointer[-1]);
             int err = _Py_call_instrumentation_arg(
                 tstate, PY_MONITORING_EVENT_PY_RETURN,
@@ -3356,7 +3356,7 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INSTRUMENTED_YIELD_VALUE);
-            _Py_TaggedObject retval;
+            _PyTaggedPtr retval;
             retval = (stack_pointer[-1]);
             assert(frame != &entry_frame);
             frame->instr_ptr = next_instr;
@@ -3641,7 +3641,7 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            _Py_TaggedObject owner;
+            _PyTaggedPtr owner;
             /* Skip 1 cache entry */
             owner = (stack_pointer[-1]);
             uint32_t type_version = read_u32(&this_instr[2].cache);
@@ -3954,7 +3954,7 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
-            _Py_TaggedObject owner;
+            _PyTaggedPtr owner;
             /* Skip 1 cache entry */
             owner = (stack_pointer[-1]);
             uint32_t type_version = read_u32(&this_instr[2].cache);
@@ -4093,7 +4093,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             PyObject *v = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(v);
             value = Py_OBJ_TAG(v);
@@ -4122,7 +4122,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST);
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
@@ -4135,7 +4135,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_AND_CLEAR);
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = Py_OBJ_TAG(NULL);
@@ -4148,7 +4148,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             value = GETLOCAL(oparg);
             if (Py_OBJ_UNTAG(value) == NULL) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
@@ -4167,8 +4167,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_LOAD_FAST);
-            _Py_TaggedObject value1;
-            _Py_TaggedObject value2;
+            _PyTaggedPtr value1;
+            _PyTaggedPtr value2;
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             value1 = GETLOCAL(oparg1);
@@ -4883,7 +4883,7 @@
             (void)this_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RAISE_VARARGS);
-            _Py_TaggedObject *args;
+            _PyTaggedPtr *args;
             args = &stack_pointer[-oparg];
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
@@ -4914,7 +4914,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(RERAISE);
             PyObject *exc;
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             exc = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1 - oparg];
             assert(oparg >= 0 && oparg <= 2);
@@ -4993,8 +4993,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_CONST);
-            _Py_TaggedObject value;
-            _Py_TaggedObject retval;
+            _PyTaggedPtr value;
+            _PyTaggedPtr retval;
             // _LOAD_CONST
             {
                 PyObject *v = GETITEM(FRAME_CO_CONSTS, oparg);
@@ -5059,7 +5059,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_VALUE);
-            _Py_TaggedObject retval;
+            _PyTaggedPtr retval;
             retval = (stack_pointer[-1]);
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -5091,8 +5091,8 @@
             PREDICTED(SEND);
             _Py_CODEUNIT *this_instr = next_instr - 2;
             (void)this_instr;
-            _Py_TaggedObject receiver_packed;
-            _Py_TaggedObject v_packed;
+            _PyTaggedPtr receiver_packed;
+            _PyTaggedPtr v_packed;
             PyObject *retval;
             // _SPECIALIZE_SEND
             receiver_packed = (stack_pointer[-2]);
@@ -5160,7 +5160,7 @@
             next_instr += 2;
             INSTRUCTION_STATS(SEND_GEN);
             static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
-            _Py_TaggedObject v;
+            _PyTaggedPtr v;
             PyObject *receiver;
             /* Skip 1 cache entry */
             v = (stack_pointer[-1]);
@@ -5458,7 +5458,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST);
-            _Py_TaggedObject value;
+            _PyTaggedPtr value;
             value = (stack_pointer[-1]);
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -5469,8 +5469,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST_LOAD_FAST);
-            _Py_TaggedObject value1;
-            _Py_TaggedObject value2;
+            _PyTaggedPtr value1;
+            _PyTaggedPtr value2;
             value1 = (stack_pointer[-1]);
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
@@ -5485,8 +5485,8 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST_STORE_FAST);
-            _Py_TaggedObject value1;
-            _Py_TaggedObject value2;
+            _PyTaggedPtr value1;
+            _PyTaggedPtr value2;
             value1 = (stack_pointer[-1]);
             value2 = (stack_pointer[-2]);
             uint32_t oparg1 = oparg >> 4;
@@ -5879,7 +5879,7 @@
             PyObject *seq;
             seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
-            _Py_TaggedObject *top = stack_pointer + totalargs - 1;
+            _PyTaggedPtr *top = stack_pointer + totalargs - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
             Py_DECREF(seq);
             if (res == 0) goto pop_1_error;
@@ -5914,7 +5914,7 @@
             }
             // _UNPACK_SEQUENCE
             {
-                _Py_TaggedObject *top = stack_pointer + oparg - 1;
+                _PyTaggedPtr *top = stack_pointer + oparg - 1;
                 int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
                 Py_DECREF(seq);
                 if (res == 0) goto pop_1_error;
@@ -5929,7 +5929,7 @@
             INSTRUCTION_STATS(UNPACK_SEQUENCE_LIST);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             /* Skip 1 cache entry */
             seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
@@ -5951,7 +5951,7 @@
             INSTRUCTION_STATS(UNPACK_SEQUENCE_TUPLE);
             static_assert(INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE == 1, "incorrect cache size");
             PyObject *seq;
-            _Py_TaggedObject *values;
+            _PyTaggedPtr *values;
             /* Skip 1 cache entry */
             seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
@@ -6034,7 +6034,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(YIELD_VALUE);
-            _Py_TaggedObject retval;
+            _PyTaggedPtr retval;
             retval = (stack_pointer[-1]);
             // NOTE: It's important that YIELD_VALUE never raises an exception!
             // The compiler treats any exception raised here as a failed close()
