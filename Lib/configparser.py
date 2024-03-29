@@ -573,11 +573,7 @@ class _Line(str):
         return comment_start
 
     def _strip_full(self, prefixes):
-        for prefix in prefixes:
-            if self.strip().startswith(prefix):
-                return 0
-                break
-        return sys.maxsize
+        return sys.maxsize * (not any(map(self.strip().startswith, prefixes)))
 
 
 class RawConfigParser(MutableMapping):
