@@ -656,8 +656,10 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        self._comment_prefixes = tuple(comment_prefixes or ())
-        self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
+        self._prefixes = _Prefixes(
+            full=tuple(comment_prefixes or ()),
+            inline=tuple(inline_comment_prefixes or ()),
+        )
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
@@ -1057,10 +1059,7 @@ class RawConfigParser(MutableMapping):
     def _read_inner(self, fp, fpname):
         st = _ReadState()
 
-        Line = functools.partial(
-            _Line,
-            prefixes=_Prefixes(full=self._comment_prefixes, inline=self._inline_comment_prefixes),
-        )
+        Line = functools.partial(_Line, prefixes=self._prefixes)
         for st.lineno, line in enumerate(map(Line, fp), start=1):
             if not line.clean:
                 if self._empty_lines_in_values:
