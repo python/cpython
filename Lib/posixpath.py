@@ -333,25 +333,25 @@ def _normpath_fallback(path):
     path = os.fspath(path)
     if isinstance(path, bytes):
         sep = b'/'
-        curdir = b'.'
-        pardir = b'..'
+        dot = b'.'
+        dotdot = b'..'
     else:
         sep = '/'
-        curdir = '.'
-        pardir = '..'
+        dot = '.'
+        dotdot = '..'
     if not path:
-        return curdir
-    _, root, tail = splitroot(path)
-    comps = []
-    for comp in tail.split(sep):
-        if not comp or comp == curdir:
+        return dot
+    _, initial_slashes, path = splitroot(path)
+    new_comps = []
+    for comp in path.split(sep):
+        if not comp or comp == dot:
             continue
-        if (comp != pardir or (not root and not comps) or
-             (comps and comps[-1] == pardir)):
-            comps.append(comp)
-        elif comps:
-            comps.pop()
-    return (root + sep.join(comps)) or curdir
+        if (comp != dotdot or (not initial_slashes and not new_comps) or
+             (new_comps and new_comps[-1] == dotdot)):
+            new_comps.append(comp)
+        elif new_comps:
+            new_comps.pop()
+    return (initial_slashes + sep.join(new_comps)) or dot
 
 try:
     from posix import _path_normpath
