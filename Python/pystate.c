@@ -1660,7 +1660,6 @@ static void
 tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
-    assert(tstate->state != _Py_THREAD_ATTACHED);
     tstate_verify_not_active(tstate);
     assert(!_PyThreadState_IsRunningMain(tstate));
 
@@ -1740,7 +1739,6 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
-    tstate_set_detached(tstate, _Py_THREAD_DETACHED);
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate);
     _PyEval_ReleaseLock(tstate->interp, NULL);
