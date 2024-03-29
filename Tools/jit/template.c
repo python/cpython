@@ -14,6 +14,7 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_descrobject.h"
+#include "pycore_tagged.h"
 
 #include "ceval_macros.h"
 

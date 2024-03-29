@@ -36,6 +36,7 @@
 #include "opcode.h"
 #include "pydtrace.h"
 #include "setobject.h"
+#include "pycore_tagged.h"
 
 #include <stdbool.h>              // bool
 

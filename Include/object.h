@@ -228,30 +228,6 @@ struct _object {
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
-typedef union {
-    uintptr_t bits;
-} _Py_TaggedObject;
-
-#define Py_OBJECT_TAG (0b0)
-#define Py_OBJECT_TEST_TAG (0b1)
-
-#ifdef Py_GIL_DISABLED
-#define Py_CLEAR_TAG(tagged) ((PyObject *)((tagged).bits & ~(Py_OBJECT_TAG)))
-#else
-#define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_OBJECT_TEST_TAG)))
-#endif
-
-#define Py_OBJ_PACK(obj) ((_Py_TaggedObject){.bits = ((uintptr_t)(obj) | Py_OBJECT_TEST_TAG)})
-
-#define MAX_UNTAG_SCRATCH 10
-
-static inline void
-_Py_untag_stack(PyObject **dst, const _Py_TaggedObject *src, size_t length) {
-    for (size_t i = 0; i < length; i++) {
-        dst[i] = Py_CLEAR_TAG(src[i]);
-    }
-}
-
 typedef struct {
     PyObject ob_base;
     Py_ssize_t ob_size; /* Number of items in variable part */
@@ -1039,15 +1015,6 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
     } while (0)
 #endif
 
-#define Py_CLEAR_TAGGED(op) \
-    do { \
-        _Py_TaggedObject *_tmp_op_ptr = _Py_CAST(_Py_TaggedObject*, &(op)); \
-        _Py_TaggedObject _tmp_old_op = (*_tmp_op_ptr); \
-        if (Py_CLEAR_TAG(_tmp_old_op) != NULL) { \
-            *_tmp_op_ptr = Py_OBJ_PACK(_Py_NULL); \
-            Py_DECREF(Py_CLEAR_TAG(_tmp_old_op)); \
-        } \
-    } while (0)
 
 /* Function to use in case the object pointer can be NULL: */
 static inline void Py_XINCREF(PyObject *op)
