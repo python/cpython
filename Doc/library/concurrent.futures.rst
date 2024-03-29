@@ -43,9 +43,11 @@ Executor Objects
        Similar to :func:`map(func, *iterables) <map>` except:
 
        * the *iterables* are collected immediately rather than lazily; If *fn*
-         takes only one argument like `fn(x)`, then *iterables* can be simply
-         like `[x1, x2, ...]`. If *fn* takes multiple arguments like `fn(x,
-         y)`, the iterables can be formatted as `[(x1, x2), (y1, y2), ...]`.
+         takes only one argument like `fn(x)`, then *iterables* can be passed
+         in like `map(fn, [x1, x2, ...])`. If *fn* takes multiple arguments like
+         `fn(x, y)`, then *iterables* can be passed in like `map(fn,
+         *zip*([(x1, x2), (y1, y2), ...])` using the `*zip(*)` trick, which is
+         needed because `*iterables` will get zipped again inside `map`.
 
        * *func* is executed asynchronously and several calls to
          *func* may be made concurrently.
