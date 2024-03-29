@@ -21,7 +21,7 @@ typedef union {
 #if defined(Py_OBJECT_TEST_TAG)
     #define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits & (~Py_OBJECT_TEST_TAG)))
 #elif defined(Py_GIL_DISABLED)
-    #define Py_CLEAR_TAG(tagged) ((PyObject *)((tagged).bits & ~(Py_OBJECT_TAG)))
+    #define Py_CLEAR_TAG(tagged) ((PyObject *)((tagged).bits & (~Py_OBJECT_TAG)))
 #else
     #define Py_CLEAR_TAG(tagged) ((PyObject *)(uintptr_t)((tagged).bits))
 #endif
