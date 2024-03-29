@@ -2341,14 +2341,7 @@ is_subtype_with_mro(PyObject *a_mro, PyTypeObject *a, PyTypeObject *b)
 int
 PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 {
-#ifdef Py_GIL_DISABLED
-    PyObject *mro = _PyType_GetMRO(a);
-    int res = is_subtype_with_mro(mro, a, b);
-    Py_XDECREF(mro);
-    return res;
-#else
-    return is_subtype_with_mro(lookup_tp_mro(a), a, b);
-#endif
+    return is_subtype_with_mro(a->tp_mro, a, b);
 }
 
 /* Routines to do a method lookup in the type without looking in the

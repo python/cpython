@@ -2331,14 +2331,13 @@
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_DEREF);
             PyObject *cell = Py_CLEAR_TAG(GETLOCAL(oparg));
-            PyObject *oldobj = PyCell_GET(cell);
             // Can't use ERROR_IF here.
             // Fortunately we don't need its superpower.
+            PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
             if (oldobj == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 goto error;
             }
-            PyCell_SET(cell, NULL);
             Py_DECREF(oldobj);
             DISPATCH();
         }
@@ -4108,13 +4107,12 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_DEREF);
             PyObject *value;
-            PyObject *cell = Py_CLEAR_TAG(GETLOCAL(oparg));
-            value = PyCell_GET(cell);
+            PyCellObject *cell = (PyCellObject *)Py_CLEAR_TAG(GETLOCAL(oparg));
+            value = PyCell_GetRef(cell);
             if (value == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 if (true) goto error;
             }
-            Py_INCREF(value);
             stack_pointer[0] = Py_OBJ_PACK(value);
             stack_pointer += 1;
             DISPATCH();
@@ -4198,13 +4196,12 @@
                 goto error;
             }
             if (!value) {
-                PyObject *cell = Py_CLEAR_TAG(GETLOCAL(oparg));
-                value = PyCell_GET(cell);
+                PyCellObject *cell = (PyCellObject *)Py_CLEAR_TAG(GETLOCAL(oparg));
+                value = PyCell_GetRef(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                     goto error;
                 }
-                Py_INCREF(value);
             }
             Py_DECREF(class_dict);
             stack_pointer[-1] = Py_OBJ_PACK(value);
@@ -5451,10 +5448,8 @@
             INSTRUCTION_STATS(STORE_DEREF);
             PyObject *v;
             v = Py_CLEAR_TAG(stack_pointer[-1]);
-            PyObject *cell = Py_CLEAR_TAG(GETLOCAL(oparg));
-            PyObject *oldobj = PyCell_GET(cell);
-            PyCell_SET(cell, v);
-            Py_XDECREF(oldobj);
+            PyCellObject *cell = (PyCellObject *)Py_CLEAR_TAG(GETLOCAL(oparg));
+            PyCell_SetTakeRef(cell, v);
             stack_pointer += -1;
             DISPATCH();
         }
