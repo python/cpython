@@ -1213,7 +1213,7 @@ The :mod:`socket` module also offers various network-related services:
    buffer.  Raises :exc:`OverflowError` if *length* is outside the
    permissible range of values.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       Most Unix platforms.
 
@@ -1236,7 +1236,7 @@ The :mod:`socket` module also offers various network-related services:
    amount of ancillary data that can be received, since additional
    data may be able to fit into the padding area.
 
-   .. availability:: Unix, not Emscripten, not WASI.
+   .. availability:: Unix, not WASI.
 
       most Unix platforms.
 
@@ -1276,7 +1276,7 @@ The :mod:`socket` module also offers various network-related services:
    (index int, name string) tuples.
    :exc:`OSError` if the system call fails.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1303,7 +1303,7 @@ The :mod:`socket` module also offers various network-related services:
    interface name.
    :exc:`OSError` if no interface with the given name exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1320,7 +1320,7 @@ The :mod:`socket` module also offers various network-related services:
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
    .. versionadded:: 3.3
 
@@ -1337,7 +1337,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1351,7 +1351,7 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not Emscripten, not WASI.
+   .. availability:: Unix, Windows, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.

@@ -1191,9 +1191,9 @@ class DocTestRunner:
            2 tests in _TestClass
            2 tests in _TestClass.__init__
            2 tests in _TestClass.get
-           1 tests in _TestClass.square
+           1 test in _TestClass.square
         7 tests in 4 items.
-        7 passed and 0 failed.
+        7 passed.
         Test passed.
         TestResults(failed=0, attempted=7)
 
@@ -1568,49 +1568,59 @@ class DocTestRunner:
         """
         if verbose is None:
             verbose = self._verbose
-        notests = []
-        passed = []
-        failed = []
+
+        notests, passed, failed = [], [], []
         total_tries = total_failures = total_skips = 0
-        for item in self._stats.items():
-            name, (failures, tries, skips) = item
+
+        for name, (failures, tries, skips) in self._stats.items():
             assert failures <= tries
             total_tries += tries
             total_failures += failures
             total_skips += skips
+
             if tries == 0:
                 notests.append(name)
             elif failures == 0:
                 passed.append((name, tries))
             else:
-                failed.append(item)
+                failed.append((name, (failures, tries, skips)))
+
         if verbose:
             if notests:
-                print(f"{len(notests)} items had no tests:")
+                print(f"{_n_items(notests)} had no tests:")
                 notests.sort()
                 for name in notests:
                     print(f"    {name}")
+
             if passed:
-                print(f"{len(passed)} items passed all tests:")
-                passed.sort()
-                for name, count in passed:
-                    print(f" {count:3d} tests in {name}")
+                print(f"{_n_items(passed)} passed all tests:")
+                for name, count in sorted(passed):
+                    s = "" if count == 1 else "s"
+                    print(f" {count:3d} test{s} in {name}")
+
         if failed:
             print(self.DIVIDER)
-            print(f"{len(failed)} items had failures:")
-            failed.sort()
-            for name, (failures, tries, skips) in failed:
+            print(f"{_n_items(failed)} had failures:")
+            for name, (failures, tries, skips) in sorted(failed):
                 print(f" {failures:3d} of {tries:3d} in {name}")
+
         if verbose:
-            print(f"{total_tries} tests in {len(self._stats)} items.")
-            print(f"{total_tries - total_failures} passed and {total_failures} failed.")
+            s = "" if total_tries == 1 else "s"
+            print(f"{total_tries} test{s} in {_n_items(self._stats)}.")
+
+            and_f = f" and {total_failures} failed" if total_failures else ""
+            print(f"{total_tries - total_failures} passed{and_f}.")
+
         if total_failures:
-            msg = f"***Test Failed*** {total_failures} failures"
+            s = "" if total_failures == 1 else "s"
+            msg = f"***Test Failed*** {total_failures} failure{s}"
             if total_skips:
-                msg = f"{msg} and {total_skips} skipped tests"
+                s = "" if total_skips == 1 else "s"
+                msg = f"{msg} and {total_skips} skipped test{s}"
             print(f"{msg}.")
         elif verbose:
             print("Test passed.")
+
         return TestResults(total_failures, total_tries, skipped=total_skips)
 
     #/////////////////////////////////////////////////////////////////
@@ -1625,6 +1635,15 @@ class DocTestRunner:
                 tries = tries + tries2
                 skips = skips + skips2
             d[name] = (failures, tries, skips)
+
+
+def _n_items(items: list) -> str:
+    """
+    Helper to pluralise the number of items in a list.
+    """
+    n = len(items)
+    s = "" if n == 1 else "s"
+    return f"{n} item{s}"
 
 
 class OutputChecker:
@@ -2262,12 +2281,13 @@ class DocTestCase(unittest.TestCase):
 
         try:
             runner.DIVIDER = "-"*70
-            failures, tries = runner.run(
-                test, out=new.write, clear_globs=False)
+            results = runner.run(test, out=new.write, clear_globs=False)
+            if results.skipped == results.attempted:
+                raise unittest.SkipTest("all examples were skipped")
         finally:
             sys.stdout = old
 
-        if failures:
+        if results.failed:
             raise self.failureException(self.format_failure(new.getvalue()))
 
     def format_failure(self, err):

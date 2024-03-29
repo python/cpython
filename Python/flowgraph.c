@@ -2717,13 +2717,14 @@ _PyCfg_ToInstructionSequence(cfg_builder *g, _PyCompile_InstructionSequence *seq
     int lbl = 0;
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         b->b_label = (jump_target_label){lbl};
-        lbl += b->b_iused;
+        lbl += 1;
     }
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
         RETURN_IF_ERROR(_PyCompile_InstructionSequence_UseLabel(seq, b->b_label.id));
         for (int i = 0; i < b->b_iused; i++) {
             cfg_instr *instr = &b->b_instr[i];
-            if (OPCODE_HAS_JUMP(instr->i_opcode) || is_block_push(instr)) {
+            if (HAS_TARGET(instr->i_opcode)) {
+                /* Set oparg to the label id (it will later be mapped to an offset) */
                 instr->i_oparg = instr->i_target->b_label.id;
             }
             RETURN_IF_ERROR(
