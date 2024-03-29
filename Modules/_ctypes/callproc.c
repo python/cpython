@@ -1956,7 +1956,7 @@ create_pointer_type(PyObject *module, PyObject *cls)
     PyTypeObject *typ;
     PyObject *key;
 
-	assert(module);
+    assert(module);
     ctypes_state *st = get_module_state(module);
     if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, cls, &result) != 0) {
         // found or error
