@@ -274,6 +274,10 @@ may be treated as parts of multiline values or ignored.
 By default, a valid section name can be any string that does not contain '\\n'.
 To change this, see :attr:`ConfigParser.SECTCRE`.
 
+The first section name can be ommitted if the parser is configured to allow
+an unnamed top level section with `allow_unnamed_section=True`. Then key/values
+can be retrieved by :attr:`UNNAMED_SECTION` as in `config[UNNAMED_SECTION]`.
+
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
 their own on an otherwise empty line, possibly indented. [1]_
