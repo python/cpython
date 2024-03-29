@@ -827,6 +827,12 @@ function.
        .. versionchanged:: 3.10
          The *globals*, *locals*, and *eval_str* parameters were added.
 
+   .. classmethod:: Signature.from_frame(frame)
+
+       Return a :class:`Signature` (or its subclass) object for a given frame object.
+
+       .. versionadded:: 3.13
+
 
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
@@ -1117,6 +1123,11 @@ Classes and functions
    are the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
    locals dictionary of the given frame.
 
+   .. deprecated-removed:: 3.13 3.15
+      Use :meth:`Signature.from_frame` instead.
+      For Python version older than 3.13 use
+      `inspect313 <https://pypi.org/project/inspect313/>`_ PyPI package.
+
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.
 
@@ -1126,6 +1137,11 @@ Classes and functions
    Format a pretty argument spec from the four values returned by
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
+
+   .. deprecated-removed:: 3.13 3.15
+      Use :meth:`Signature.from_frame` instead.
+      For Python version older than 3.13 use
+      `inspect313 <https://pypi.org/project/inspect313/>`_ PyPI package.
 
    .. note::
       This function was inadvertently marked as deprecated in Python 3.5.

@@ -1060,6 +1060,11 @@ Pending Removal in Python 3.15
   and was only useful for Jython support.
   (Contributed by Nikita Sobolev in :gh:`116349`.)
 
+* :func:`inspect.getargvalues` and :func:`inspect.formatargvalues`
+  are deprecated and slated for removal in 3.15;
+  use :meth:`inspect.Signature.from_frame` instead.
+  (Contributed by Nikita Sobolev in :gh:`108901`.)
+
 Pending Removal in Python 3.16
 ------------------------------
 
@@ -1478,8 +1483,11 @@ CPython bytecode changes
 Porting to Python 3.13
 ======================
 
-This section lists previously described changes and other bugfixes
-that may require changes to your code.
+* :func:`inspect.getargvalues` and :func:`inspect.formatargvalues`
+  are deprecated. For Python 3.13+ use
+  new :meth:`inspect.Signature.from_frame` API.
+  For older versions, use `inspect313 <https://pypi.org/project/inspect313/>`_
+  PyPI package which is a backport of this API for Pythons from 3.8 to 3.12.
 
 Changes in the Python API
 -------------------------
