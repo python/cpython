@@ -47,6 +47,7 @@ try:
         LCMapStringEx as _LCMapStringEx,
         LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
         LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
+
     def normcase(s):
         """Normalize case of pathname.
 
@@ -129,12 +130,14 @@ def join(path, *paths):
                 # Same drive in different case
                 result_drive = p_drive
             # Second path is relative to the first
-            if result_path and result_path[-1] not in seps:
+            # gh-117349: Indexing bytes is not correct here
+            if result_path and result_path[-1:] not in seps:
                 result_path = result_path + sep
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
+        ## Indexing bytes is not correct here
         if (result_path and not result_root and
-            result_drive and result_drive[-1] not in colon + seps):
+            result_drive and result_drive[-1:] not in colon + seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
@@ -312,7 +315,7 @@ def ismount(path):
 
     if _getvolumepathname:
         x = path.rstrip(seps)
-        y = _getvolumepathname(path).rstrip(seps)
+        y =_getvolumepathname(path).rstrip(seps)
         return x.casefold() == y.casefold()
     else:
         return False
@@ -566,6 +569,7 @@ except ImportError:
         if not prefix and not comps:
             comps.append(curdir)
         return prefix + sep.join(comps)
+
 else:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
@@ -762,7 +766,7 @@ else:
             try:
                 if _getfinalpathname(spath) == path:
                     path = spath
-            except ValueError:
+            except ValueError as ex:
                 # Unexpected, as an invalid path should not have gained a prefix
                 # at any point, but we ignore this error just in case.
                 pass
@@ -855,10 +859,10 @@ def commonpath(paths):
         # Check that absolute and relative paths aren't mixed. The check is
         # made only now otherwise type errors for mixing strings and bytes
         # would not be caught.
-        if len({r for _, r, _ in drivesplits}) != 1:
+        if len({r for d, r, p in drivesplits}) != 1:
             raise ValueError("Can't mix absolute and relative paths")
 
-        if len({d for d, _, _ in drivesplits}) != 1:
+        if len({d for d, r, p in drivesplits}) != 1:
             raise ValueError("Paths don't have the same drive")
 
 
@@ -867,7 +871,7 @@ def commonpath(paths):
 
         split_paths = [
             [c for c in p.split(sep) if c and c != curdir]
-            for _, _, p in drivesplits
+            for d, r, p in drivesplits
         ]
         s1 = min(split_paths)
         s2 = max(split_paths)
