@@ -2024,7 +2024,7 @@ create_pointer_inst(PyObject *module, PyObject *arg)
         return NULL;
     }
     if (typ == NULL) {
-        typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
+        typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
         if (typ == NULL)
             return NULL;
     }
