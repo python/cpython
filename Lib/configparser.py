@@ -924,7 +924,7 @@ class RawConfigParser(MutableMapping):
     def _write_section(self, fp, section_name, section_items, delimiter):
         """Write a single section to the specified `fp`."""
         if section_name is not TOP_LEVEL:
-            fp.write("[{}]\n".format(section_name))
+            fp.write(f"[{section_name}]\n")
         for key, value in section_items:
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
