@@ -1,0 +1,2 @@
+Refactored :meth:`configparser.RawConfigParser._read` to reduce cyclometric
+complexity and improve comprehensibility.
