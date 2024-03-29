@@ -93,7 +93,10 @@ def isabs(s):
         double_sep = '\\\\'
     s = s[:3].replace(altsep, sep)
     # Absolute: UNC, device, and paths with a drive and root.
-    return s.startswith(colon_sep, 1) or s.startswith(double_sep)
+    return (
+        (s.startswith(colon_sep, 1) and not s.startswith(sep))
+        or s.startswith(double_sep)
+    )
 
 
 # Join two (or more) paths.
