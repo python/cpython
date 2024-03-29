@@ -529,15 +529,13 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
         }
     }
-    Py_FatalError("No terminating instruction");
     Py_UNREACHABLE();
 }
 
 /* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
  * PyCodeObject *. Retrieve the code object if possible.
  */
-static PyCodeObject *
-get_co(_PyUOpInstruction *op) {
+static PyCodeObject *get_co(_PyUOpInstruction *op) {
     assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME);
     PyCodeObject *co = NULL;
     uint64_t operand = op->operand;
@@ -556,13 +554,19 @@ get_co(_PyUOpInstruction *op) {
     return co;
 }
 
-// _PUSH_FRAME is 3 ops in front of _CHECK_STACK_SPACE
-#define _CHECK_STACK_TO_PUSH_FRAME_OFFSET 3
+/* Get the frame size from a _PUSH_FRAME/_POP_FRAME instruction,
+ * -1 if the information isn't available.
+ */
+static int get_framesize(_PyUOpInstruction *op) {
+    PyCodeObject *co = get_co(op);
+    if (co == NULL) {
+        return -1;
+    }
+    return co->co_framesize;
+}
 
 /* Compute the maximum stack space needed for this trace and consolidate
  * all possible _CHECK_STACK_SPACE ops to one _CHECK_STACK_SPACE_OPERAND.
- * This calculation is essentially a traversal over the tree of function
- * calls in this trace.
  */
 static void
 combine_stack_space_checks(
@@ -570,89 +574,78 @@ combine_stack_space_checks(
     int buffer_size
 )
 {
-#ifdef Py_DEBUG
-    // assume there's a _PUSH_FRAME after every _CHECK_STACK_SPACE
-    bool expecting_push = false;
-    // if we ever can't get a framesize from _PUSH_FRAME, must exit soon
-    bool must_exit = false;
-#endif
-    int depth = 0;
-    uint32_t space_at_depth[MAX_ABSTRACT_FRAME_DEPTH];
-    uint32_t curr_space = 0;
-    uint32_t max_space = 0;
+    int curr_framesize = -1;
+    int curr_space = 0;
+    int max_space = 0;
     _PyUOpInstruction *first_valid_check_stack = NULL;
+    _PyUOpInstruction *corresponding_check_stack = NULL;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
             case _CHECK_STACK_SPACE: {
-#ifdef Py_DEBUG
-                assert(expecting_push == false);
-                assert(must_exit == false);
-                expecting_push = true;
-#endif
-                uint32_t framesize = 0;
-                if (pc + _CHECK_STACK_TO_PUSH_FRAME_OFFSET < buffer_size) {
-                    _PyUOpInstruction *uop = &buffer[
-                        pc + _CHECK_STACK_TO_PUSH_FRAME_OFFSET
-                    ];
-                    assert(uop->opcode == _PUSH_FRAME);
-                    PyCodeObject *code = get_co(uop);
-                    if (code != NULL) {
-                        framesize = code->co_framesize;
-                    }
+                assert(corresponding_check_stack == NULL);
+                corresponding_check_stack = &buffer[pc];
+                break;
+            }
+            case _PUSH_FRAME: {
+                assert(corresponding_check_stack != NULL);
+                curr_framesize = get_framesize(&buffer[pc]);
+                if (curr_framesize == -1) {
+                    goto finish;
                 }
-                if (framesize == 0) {
-#ifdef Py_DEBUG
-                    must_exit = true;
-#endif
-                    break;
+                assert(curr_framesize > 0);
+                curr_space += curr_framesize;
+                if (curr_space < 0 || curr_space > UINT32_MAX) {
+                    // overflow or won't fit in operand
+                    goto finish;
                 }
+                max_space = curr_space > max_space ? curr_space : max_space;
                 if (first_valid_check_stack == NULL) {
-                    first_valid_check_stack = &buffer[pc];
+                    first_valid_check_stack = corresponding_check_stack;
                 }
                 else {
                     // delete all but the first valid _CHECK_STACK_SPACE
-                    buffer[pc].opcode = _NOP;
+                    corresponding_check_stack->opcode = _NOP;
                 }
-                space_at_depth[depth] = framesize;
-                curr_space += framesize;
-                max_space = curr_space > max_space ? curr_space : max_space;
-                depth++;
-                assert(depth < MAX_ABSTRACT_FRAME_DEPTH);
+                corresponding_check_stack = NULL;
                 break;
             }
             case _POP_FRAME: {
-#ifdef Py_DEBUG
-                assert(expecting_push == false);
-                assert(must_exit == false);
-#endif
-                depth--;
-                assert(depth >= 0);
-                curr_space -= space_at_depth[depth];
+                assert(corresponding_check_stack == NULL);
+                assert(curr_framesize > 0);
+                assert(curr_framesize <= curr_space);
+                curr_space -= curr_framesize;
+                curr_framesize = get_framesize(&buffer[pc]);
+                assert(curr_framesize > 0);
+                if (curr_framesize == -1) {
+                    goto finish;
+                }
                 break;
             }
-#ifdef Py_DEBUG
-            case _PUSH_FRAME: {
-                assert(expecting_push == true);
-                expecting_push = false;
-                break;
-            }
-#endif
             case _JUMP_TO_TOP:
             case _EXIT_TRACE: {
-                if (first_valid_check_stack != NULL) {
-                    assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
-                    assert(max_space > 0);
-                    assert(max_space < INT_MAX);
-                    first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
-                    first_valid_check_stack->operand = max_space;
-                }
-                return;
+                goto finish;
             }
+#ifdef Py_DEBUG
+            case _CHECK_STACK_SPACE_OPERAND: {
+                /* We should never see _CHECK_STACK_SPACE_OPERANDs.
+                 * They are only created at the end of this pass. */
+                assert(false);
+                break;
+            }
+#endif
         }
     }
-    Py_FatalError("No terminating instruction");
     Py_UNREACHABLE();
+finish:
+    if (first_valid_check_stack != NULL) {
+        assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
+        assert(max_space > 0);
+        assert(max_space <= INT_MAX);
+        assert(max_space <= UINT32_MAX);
+        first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
+        first_valid_check_stack->operand = max_space;
+    }
 }
 
 static void

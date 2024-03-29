@@ -579,14 +579,6 @@ class TestUops(unittest.TestCase):
 @requires_specialization
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
-    FRAMESIZE_ADJUSTMENT = 1 if platform.architecture()[0] == "32bit" else 0
-
-    def _assert_framesize_cross_platform(self, fn_obj, expected_framesize):
-        self.assertEqual(
-            _testinternalcapi.get_co_framesize(fn_obj.__code__),
-            expected_framesize + self.FRAMESIZE_ADJUSTMENT
-        )
-
     def _run_with_optimizer(self, testfunc, arg):
         res = None
         opt = _testinternalcapi.new_uop_optimizer()
@@ -974,8 +966,6 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d
             return a
 
-        self._assert_framesize_cross_platform((dummy12), 12)
-        self._assert_framesize_cross_platform((dummy13), 13)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 832)
@@ -1004,8 +994,6 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c
             return a
 
-        self._assert_framesize_cross_platform((dummy12), 12)
-        self._assert_framesize_cross_platform((dummy15), 15)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 224)
@@ -1042,9 +1030,6 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d + e
             return a
 
-        self._assert_framesize_cross_platform((dummy12), 12)
-        self._assert_framesize_cross_platform((dummy13), 13)
-        self._assert_framesize_cross_platform((dummy18), 18)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 800)
@@ -1082,9 +1067,6 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d + e
             return a
 
-        self._assert_framesize_cross_platform((dummy12), 12)
-        self._assert_framesize_cross_platform((dummy13), 13)
-        self._assert_framesize_cross_platform((dummy18), 18)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 800)
@@ -1130,13 +1112,6 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d
             return a
 
-        self._assert_framesize_cross_platform(dummy0, 11)
-        self._assert_framesize_cross_platform(dummy1, 14)
-        self._assert_framesize_cross_platform(dummy2, 14)
-        self._assert_framesize_cross_platform(dummy3, 14)
-        self._assert_framesize_cross_platform(dummy4, 16)
-        self._assert_framesize_cross_platform(dummy5, 14)
-        self._assert_framesize_cross_platform(dummy6, 18)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 96)
@@ -1198,8 +1173,6 @@ class TestUopsOptimization(unittest.TestCase):
                 b += dummy15(7)
             return b
 
-        self._assert_framesize_cross_platform((dummy_large), repetitions + 12)
-        self._assert_framesize_cross_platform((dummy15), 15)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 32 * (repetitions + 9))
@@ -1235,7 +1208,6 @@ class TestUopsOptimization(unittest.TestCase):
                 a += dummy15(n)
             return a
 
-        self._assert_framesize_cross_platform((dummy15), 15)
 
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 42 * 32)
