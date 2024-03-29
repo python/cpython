@@ -346,11 +346,8 @@ def _normpath_fallback(path):
     for comp in tail.split(sep):
         if not comp or comp == curdir:
             continue
-        if (
-            comp != pardir
-            or (not root and not comps)
-            or (comps and comps[-1] == pardir)
-        ):
+        if (comp != pardir or (not root and not comps) or
+             (comps and comps[-1] == pardir)):
             comps.append(comp)
         elif comps:
             comps.pop()

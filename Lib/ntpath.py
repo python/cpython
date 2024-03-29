@@ -43,9 +43,10 @@ def _get_bothseps(path):
 # (this is done by normpath).
 
 try:
-    from _winapi import LCMapStringEx as _LCMapStringEx
-    from _winapi import LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT
-    from _winapi import LCMAP_LOWERCASE as _LCMAP_LOWERCASE
+    from _winapi import (
+        LCMapStringEx as _LCMapStringEx,
+        LOCALE_NAME_INVARIANT as _LOCALE_NAME_INVARIANT,
+        LCMAP_LOWERCASE as _LCMAP_LOWERCASE)
 except ImportError:
     def normcase(s):
         """Normalize case of pathname.
@@ -68,7 +69,8 @@ else:
         if isinstance(s, bytes):
             encoding = sys.getfilesystemencoding()
             s = s.decode(encoding, 'surrogateescape').replace('/', '\\')
-            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT, _LCMAP_LOWERCASE, s)
+            s = _LCMapStringEx(_LOCALE_NAME_INVARIANT,
+                               _LCMAP_LOWERCASE, s)
             return s.encode(encoding, 'surrogateescape')
         else:
             return _LCMapStringEx(_LOCALE_NAME_INVARIANT,
@@ -132,10 +134,8 @@ def join(path, *paths):
                 result_tail = result_tail + sep
             result_tail = result_tail + p_tail
         ## add separator between UNC and non-absolute path
-        if (
-            result_tail and not result_root
-            and result_drive and result_drive[-1] not in colon + seps
-        ):
+        if (result_tail and not result_root and
+            result_drive and result_drive[-1] not in colon + seps):
             return result_drive + sep + result_tail
         return result_drive + result_root + result_tail
     except (TypeError, AttributeError, BytesWarning):
@@ -320,14 +320,14 @@ def ismount(path):
 
 
 _reserved_chars = frozenset(
-    {chr(i) for i in range(32)}
-    | {'"', '*', ':', '<', '>', '?', '|', '/', '\\'}
+    {chr(i) for i in range(32)} |
+    {'"', '*', ':', '<', '>', '?', '|', '/', '\\'}
 )
 
 _reserved_names = frozenset(
-    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'}
-    | {f'COM{c}' for c in '123456789\xb9\xb2\xb3'}
-    | {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
 )
 
 def isreserved(path):
