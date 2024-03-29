@@ -387,7 +387,7 @@ def realpath(filename, *, strict=False):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
     filename = os.fspath(filename)
-    path, _ = _joinrealpath(filename[:0], filename, strict, {})
+    path, ok = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
 # Join two paths, normalizing and eliminating any symbolic links encountered in
