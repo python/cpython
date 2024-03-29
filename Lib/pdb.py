@@ -82,13 +82,12 @@ import pprint
 import signal
 import inspect
 import tokenize
-import functools
 import traceback
 import linecache
 
 from contextlib import contextmanager
 from rlcompleter import Completer
-from typing import Union
+from types import CodeType
 
 
 class Restart(Exception):
@@ -156,52 +155,58 @@ class _rstr(str):
         return self
 
 
-class _ScriptTarget(str):
-    def __new__(cls, val):
-        # Mutate self to be the "real path".
-        res = super().__new__(cls, os.path.realpath(val))
+class _ExecutableTarget:
+    filename: str
+    code: CodeType | str
+    namespace: dict
 
-        # Store the original path for error reporting.
-        res.orig = val
 
-        return res
+class _ScriptTarget(_ExecutableTarget):
+    def __init__(self, target):
+        self._target = os.path.realpath(target)
 
-    def check(self):
-        if not os.path.exists(self):
-            print('Error:', self.orig, 'does not exist')
+        if not os.path.exists(self._target):
+            print(f'Error: {target} does not exist')
             sys.exit(1)
-        if os.path.isdir(self):
-            print('Error:', self.orig, 'is a directory')
+        if os.path.isdir(self._target):
+            print(f'Error: {target} is a directory')
             sys.exit(1)
 
         # If safe_path(-P) is not set, sys.path[0] is the directory
         # of pdb, and we should replace it with the directory of the script
         if not sys.flags.safe_path:
-            sys.path[0] = os.path.dirname(self)
+            sys.path[0] = os.path.dirname(self._target)
+
+    def __repr__(self):
+        return self._target
 
     @property
     def filename(self):
-        return self
+        return self._target
+
+    @property
+    def code(self):
+        # Open the file each time because the file may be modified
+        with io.open_code(self._target) as fp:
+            return f"exec(compile({fp.read()!r}, {self._target!r}, 'exec'))"
 
     @property
     def namespace(self):
         return dict(
             __name__='__main__',
-            __file__=self,
+            __file__=self._target,
             __builtins__=__builtins__,
             __spec__=None,
         )
 
-    @property
-    def code(self):
-        with io.open_code(self) as fp:
-            return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
 
+class _ModuleTarget(_ExecutableTarget):
+    def __init__(self, target):
+        self._target = target
 
-class _ModuleTarget(str):
-    def check(self):
+        import runpy
         try:
-            self._details
+            _, self._spec, self._code = runpy._get_module_details(self._target)
         except ImportError as e:
             print(f"ImportError: {e}")
             sys.exit(1)
@@ -209,24 +214,16 @@ class _ModuleTarget(str):
             traceback.print_exc()
             sys.exit(1)
 
-    @functools.cached_property
-    def _details(self):
-        import runpy
-        return runpy._get_module_details(self)
+    def __repr__(self):
+        return self._target
 
     @property
     def filename(self):
-        return self.code.co_filename
+        return self._code.co_filename
 
     @property
     def code(self):
-        name, spec, code = self._details
-        return code
-
-    @property
-    def _spec(self):
-        name, spec, code = self._details
-        return spec
+        return self._code
 
     @property
     def namespace(self):
@@ -2029,7 +2026,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _run(self, target: Union[_ModuleTarget, _ScriptTarget]):
+    def _run(self, target: _ExecutableTarget):
         # When bdb sets tracing, a number of call and line events happen
         # BEFORE debugger even reaches user's code (and the exact sequence of
         # events depends on python version). Take special measures to
@@ -2281,8 +2278,6 @@ def main():
         file = opts.args.pop(0)
         target = _ScriptTarget(file)
 
-    target.check()
-
     sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
@@ -2306,8 +2301,8 @@ def main():
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
             pdb.interaction(None, e)
-            print("Post mortem debugger finished. The " + target +
-                  " will be restarted")
+            print(f"Post mortem debugger finished. The {target} will "
+                  "be restarted")
         if pdb._user_requested_quit:
             break
         print("The program finished and will be restarted")
