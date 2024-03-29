@@ -68,7 +68,7 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
     self->wr_callback = Py_XNewRef(callback);
     self->vectorcall = weakref_vectorcall;
 #ifdef Py_GIL_DISABLED
-    self->orig_object = ob;
+    self->weakrefs_lock = &WEAKREF_LIST_LOCK(ob);
     _PyObject_SetMaybeWeakref(ob);
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
@@ -119,16 +119,11 @@ static void
 clear_weakref(PyWeakReference *self)
 {
     PyObject *callback = NULL;
-#ifdef Py_GIL_DISABLED
-    // self->wr_object may be Py_None if the GC cleared the weakref, however,
-    // we still need the original value of wr_object so that we can lock the
-    // appropriate lock to clear the callback.
-    LOCK_WEAKREFS(self->orig_object);
-#endif
+    // self->wr_object may be Py_None if the GC cleared the weakref, so lock
+    // using the pointer in the weakref.
+    LOCK_WEAKREFS_FOR_WR(self);
     clear_weakref_lock_held(self, &callback);
-#ifdef Py_GIL_DISABLED
-    UNLOCK_WEAKREFS(self->orig_object);
-#endif
+    UNLOCK_WEAKREFS_FOR_WR(self);
     Py_XDECREF(callback);
 }
 

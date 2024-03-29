@@ -32,10 +32,11 @@ struct _PyWeakReference {
     vectorcallfunc vectorcall;
 
 #ifdef Py_GIL_DISABLED
-    /* Used in free-threaded builds to provide a stable index into the striped
-     * lock. Always contains the original value of wr_object.
+    /* Pointer to the lock used when clearing in free-threaded builds.
+     * Normally this can be derived from wr_object, but in some cases we need
+     * to lock after wr_object has been set to Py_None.
      */
-     PyObject *orig_object;
+     struct _PyMutex *weakrefs_lock;
 #endif
 };
 

@@ -19,14 +19,23 @@ extern "C" {
     _PyInterpreterState_GET()  \
         ->weakref_locks[((uintptr_t)obj) % NUM_WEAKREF_LIST_LOCKS]
 
+// Lock using the referenced object
 #define LOCK_WEAKREFS(obj) \
     PyMutex_LockFlags(&WEAKREF_LIST_LOCK(obj), _Py_LOCK_DONT_DETACH)
 #define UNLOCK_WEAKREFS(obj) PyMutex_Unlock(&WEAKREF_LIST_LOCK(obj))
+
+// Lock using a weakref
+#define LOCK_WEAKREFS_FOR_WR(wr) \
+    PyMutex_LockFlags(wr->weakrefs_lock, _Py_LOCK_DONT_DETACH)
+#define UNLOCK_WEAKREFS_FOR_WR(wr) PyMutex_Unlock(wr->weakrefs_lock)
 
 #else
 
 #define LOCK_WEAKREFS(obj)
 #define UNLOCK_WEAKREFS(obj)
+
+#define LOCK_WEAKREFS_FOR_WR(wr)
+#define UNLOCK_WEAKREFS_FOR_WR(wr)
 
 #endif
 
