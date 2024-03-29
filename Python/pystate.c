@@ -625,9 +625,6 @@ init_interpreter(PyInterpreterState *interp,
     _PyType_InitCache(interp);
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
-    for (int i = 0; i < NUM_WEAKREF_LIST_LOCKS; i++) {
-        interp->weakref_locks[i] = (PyMutex){0};
-    }
 #endif
     llist_init(&interp->mem_free_queue.head);
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
