@@ -374,7 +374,8 @@ except ImportError:
 def abspath(path):
     """Return an absolute path."""
     path = os.fspath(path)
-    if not isabs(path):
+    sep = _get_sep(path)
+    if path[:1] != sep:
         if isinstance(path, bytes):
             cwd = os.getcwdb()
         else:
@@ -405,7 +406,7 @@ def _joinrealpath(path, rest, strict, seen):
         curdir = '.'
         pardir = '..'
 
-    if isabs(rest):
+    if rest[:1] == sep:
         rest = rest[1:]
         path = sep
 
