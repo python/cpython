@@ -398,9 +398,9 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         return -1;
 
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return -1;
-    }
+    assert(st != NULL);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
         return -1;
@@ -994,8 +994,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
@@ -1149,8 +1151,10 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         }
     }
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
@@ -1173,11 +1177,14 @@ warnings_filters_mutated_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
+
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     st->filters_version++;
+    Py_END_CRITICAL_SECTION();
+
     Py_RETURN_NONE;
 }
 
@@ -1296,8 +1303,10 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     }
 
+#ifdef Py_GIL_DISABLED
     WarningsState *st = warnings_get_state(tstate->interp);
     assert(st != NULL);
+#endif
 
     Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
@@ -1367,8 +1376,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
+#ifdef Py_GIL_DISABLED
             WarningsState *st = warnings_get_state(tstate->interp);
             assert(st != NULL);
+#endif
 
             Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
             res = warn_explicit(tstate, category, message, filename, lineno,
