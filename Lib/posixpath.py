@@ -553,30 +553,29 @@ def commonpath(paths):
 
     try:
         root = min(roots)
+        if not root and max(roots):
+            raise ValueError("Can't mix absolute and relative paths")
+
+        if isinstance(root, bytes):
+            sep = b'/'
+            curdir = b'.'
+        else:
+            sep = '/'
+            curdir = '.'
+
+        split_paths = [
+            [c for c in tail.split(sep) if c and c != curdir] for tail in tails
+        ]
+        s1 = min(split_paths)
+        s2 = max(split_paths)
+        for i, c in enumerate(s1):
+            if c != s2[i]:
+                return root + sep.join(s1[:i])
+
+        return root + sep.join(s1)
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *(
             # Can't use paths, can be an iterable
             root + tail for root, tail in zip(roots, tails)
         ))
         raise
-
-    if not root and max(roots):
-        raise ValueError("Can't mix absolute and relative paths")
-
-    if isinstance(root, bytes):
-        sep = b'/'
-        curdir = b'.'
-    else:
-        sep = '/'
-        curdir = '.'
-
-    split_paths = [
-        [c for c in tail.split(sep) if c and c != curdir] for tail in tails
-    ]
-    s1 = min(split_paths)
-    s2 = max(split_paths)
-    for i, c in enumerate(s1):
-        if c != s2[i]:
-            return root + sep.join(s1[:i])
-
-    return root + sep.join(s1)
