@@ -15,9 +15,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* Minimum of 16 additional executions before retry */
-#define MIN_TIER2_BACKOFF 4
-
 #define NEED_OPCODE_METADATA
 #include "pycore_uop_metadata.h" // Uop tables
 #undef NEED_OPCODE_METADATA
@@ -130,15 +127,6 @@ static _PyOptimizerObject _PyOptimizer_Default = {
     PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = never_optimize,
 };
-
-static uint32_t
-shift_and_offset_threshold(uint32_t threshold)
-{
-    if (threshold == OPTIMIZER_UNREACHABLE_THRESHOLD) {
-        return threshold;
-    }
-    return make_backoff_counter(threshold, MIN_TIER2_BACKOFF).counter;
-}
 
 _PyOptimizerObject *
 PyUnstable_GetOptimizer(void)
@@ -1101,7 +1089,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = UNREACHABLE_BACKOFF;
+        executor->exits[i].temperature = initial_backoff_counter();
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -1538,7 +1526,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_DECREF(executor->exits[i].executor);
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = OPTIMIZER_UNREACHABLE_THRESHOLD;
+        executor->exits[i].temperature = UNREACHABLE_BACKOFF;
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);

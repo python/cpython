@@ -44,15 +44,11 @@ typedef struct {
 static_assert(sizeof(backoff_counter_t) == 2, "backoff counter size should be 2 bytes");
 
 #define UNREACHABLE_BACKOFF 0xFFFF
-#define UNREACHABLE_BACKOFF_COUNTER ((backoff_counter_t){.counter = UNREACHABLE_BACKOFF})
-
-/* Alias used by optimizer */
-#define OPTIMIZER_UNREACHABLE_THRESHOLD UNREACHABLE_BACKOFF
 
 static inline bool
 is_unreachable_backoff_counter(backoff_counter_t counter)
 {
-    return counter.counter == 0xFFFF;
+    return counter.counter == UNREACHABLE_BACKOFF;
 }
 
 static inline backoff_counter_t
@@ -103,6 +99,13 @@ static inline bool
 backoff_counter_is_zero(backoff_counter_t counter)
 {
     return counter.value == 0;
+}
+
+static inline uint16_t
+initial_backoff_counter(void)
+{
+    // Backoff sequence 16, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096
+    return make_backoff_counter(16, 3).counter;
 }
 
 #ifdef __cplusplus

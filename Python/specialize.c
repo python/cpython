@@ -423,8 +423,7 @@ _PyCode_Quicken(PyCodeObject *code)
             int initial_value;
             switch (opcode) {
                 case JUMP_BACKWARD:
-                    // Backoff sequence 16, 32, 64, ..., 4096
-                    initial_value = make_backoff_counter(16, 4).counter;
+                    initial_value = initial_backoff_counter();
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
