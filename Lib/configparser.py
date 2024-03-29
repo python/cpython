@@ -552,7 +552,10 @@ class _ReadState:
 class _Line(str):
     def _strip_comments(self, prefixes, inline_prefixes):
         self.clean = self._strip_full(prefixes) and self._strip_inline(inline_prefixes)
-        self.has_comments = self.strip() != self.clean
+
+    @property
+    def has_comments(self):
+        return self.strip() != self.clean
 
     def _strip_inline(self, prefixes):
         starts = []
