@@ -142,7 +142,6 @@
     <ClCompile Include="..\Objects\funcobject.c" />
     <ClCompile Include="..\Objects\genericaliasobject.c" />
     <ClCompile Include="..\Objects\genobject.c" />
-    <ClCompile Include="..\Objects\interpreteridobject.c" />
     <ClCompile Include="..\Objects\iterobject.c" />
     <ClCompile Include="..\Objects\listobject.c" />
     <ClCompile Include="..\Objects\longobject.c" />

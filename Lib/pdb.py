@@ -87,6 +87,7 @@ import traceback
 import linecache
 
 from contextlib import contextmanager
+from rlcompleter import Completer
 from typing import Union
 
 
@@ -573,20 +574,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     @contextmanager
-    def _disable_tab_completion(self):
-        if self.use_rawinput and self.completekey == 'tab':
-            try:
-                import readline
-            except ImportError:
-                yield
-                return
-            try:
-                readline.parse_and_bind('tab: self-insert')
-                yield
-            finally:
-                readline.parse_and_bind('tab: complete')
-        else:
+    def _disable_command_completion(self):
+        completenames = self.completenames
+        try:
+            self.completenames = self.completedefault
             yield
+        finally:
+            self.completenames = completenames
+        return
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
@@ -595,7 +590,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                with self._disable_tab_completion():
+                with self._disable_command_completion():
                     buffer = line
                     continue_prompt = "...   "
                     while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
@@ -771,7 +766,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if commands:
             return commands
         else:
-            return self._complete_expression(text, line, begidx, endidx)
+            expressions = self._complete_expression(text, line, begidx, endidx)
+            if expressions:
+                return expressions
+            return self.completedefault(text, line, begidx, endidx)
 
     def _complete_location(self, text, line, begidx, endidx):
         # Complete a file/module/function location for break/tbreak/clear.
@@ -827,6 +825,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    def completedefault(self, text, line, begidx, endidx):
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
+
+        # Use rlcompleter to do the completion
+        state = 0
+        matches = []
+        completer = Completer(self.curframe.f_globals | self.curframe_locals)
+        while (match := completer.complete(text, state)) is not None:
+            matches.append(match)
+            state += 1
+        return matches
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
@@ -2237,15 +2250,19 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(prog="pdb",
+                                     usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
                                      description=_usage,
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)
 
-    parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-m', metavar='module')
-    group.add_argument('pyfile', nargs='?')
-    parser.add_argument('args', nargs="*")
+    # We need to maunally get the script from args, because the first positional
+    # arguments could be either the script we need to debug, or the argument
+    # to the -m module
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
+                        help='pdb commands to execute as if given in a .pdbrc file')
+    parser.add_argument('-m', metavar='module', dest='module')
+    parser.add_argument('args', nargs='*',
+                        help="when -m is not specified, the first arg is the script to debug")
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2255,11 +2272,13 @@ def main():
 
     opts = parser.parse_args()
 
-    if opts.m:
-        file = opts.m
+    if opts.module:
+        file = opts.module
         target = _ModuleTarget(file)
     else:
-        file = opts.pyfile
+        if not opts.args:
+            parser.error("no module or script to run")
+        file = opts.args.pop(0)
         target = _ScriptTarget(file)
 
     target.check()
@@ -2271,7 +2290,7 @@ def main():
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
-    pdb.rcLines.extend(opts.command)
+    pdb.rcLines.extend(opts.commands)
     while True:
         try:
             pdb._run(target)

@@ -6891,12 +6891,6 @@ PyDoc_STRVAR(object_doc,
 "When called, it accepts no arguments and returns a new featureless\n"
 "instance that has no instance attributes and cannot be given any.\n");
 
-static Py_hash_t
-object_hash(PyObject *obj)
-{
-    return _Py_HashPointer(obj);
-}
-
 PyTypeObject PyBaseObject_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "object",                                   /* tp_name */
@@ -6911,7 +6905,7 @@ PyTypeObject PyBaseObject_Type = {
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    object_hash,                                /* tp_hash */
+    PyObject_GenericHash,                       /* tp_hash */
     0,                                          /* tp_call */
     object_str,                                 /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
@@ -10884,7 +10878,7 @@ super_init_without_args(_PyInterpreterFrame *cframe, PyCodeObject *co,
 
     // Look for __class__ in the free vars.
     PyTypeObject *type = NULL;
-    int i = PyCode_GetFirstFree(co);
+    int i = PyUnstable_Code_GetFirstFree(co);
     for (; i < co->co_nlocalsplus; i++) {
         assert((_PyLocals_GetKind(co->co_localspluskinds, i) & CO_FAST_FREE) != 0);
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);

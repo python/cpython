@@ -111,6 +111,14 @@ Improved Error Messages
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
     TypeError: split() got an unexpected keyword argument 'max_split'. Did you mean 'maxsplit'?
 
+Incremental Garbage Collection
+------------------------------
+
+* The cycle garbage collector is now incremental.
+  This means that maximum pause times are reduced
+  by an order of magnitude or more for larger heaps.
+
+
 Other Language Changes
 ======================
 
@@ -276,7 +284,7 @@ asyncio
   (Contributed by Pierre Ossman in :gh:`113538`.)
 
 base64
----
+------
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding z85 data.
@@ -350,6 +358,28 @@ fractions
   sign handling, minimum width and grouping. (Contributed by Mark Dickinson
   in :gh:`111320`.)
 
+gc
+--
+
+* The cyclic garbage collector is now incremental, which changes the meanings
+  of the results of :meth:`gc.get_threshold` and :meth:`gc.get_threshold` as
+  well as :meth:`gc.get_count` and :meth:`gc.get_stats`.
+* :meth:`gc.get_threshold` returns a three-tuple for backwards compatibility,
+  the first value is the threshold for young collections, as before, the second
+  value determines the rate at which the old collection is scanned; the
+  default is 10 and higher values mean that the old collection is scanned more slowly.
+  The third value is meangless and is always zero.
+* :meth:`gc.set_threshold` ignores any items after the second.
+* :meth:`gc.get_count` and :meth:`gc.get_stats`.
+  These functions return the same format of results as before.
+  The only difference is that instead of the results refering to
+  the young, aging and old generations, the results refer to the
+  young generation and the aging and collecting spaces of the old generation.
+
+In summary, code that attempted to manipulate the behavior of the cycle GC may
+not work exactly as intended, but it is very unlikely to harmful.
+All other code will work just fine.
+
 glob
 ----
 
@@ -371,6 +401,8 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
+  and ``IPv6Network``.
 
 itertools
 ---------
@@ -667,6 +699,12 @@ xml.etree.ElementTree
 * Add the :meth:`!close` method for the iterator returned by
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
+
+zipimport
+---------
+
+* Gains support for ZIP64 format files.  Everybody loves huge code right?
+  (Contributed by Tim Hatch in :gh:`94146`.)
 
 
 Optimizations
@@ -1471,6 +1509,10 @@ Changes in the Python API
   than directories only. Users may add a trailing slash to match only
   directories.
 
+* :c:func:`!PyCode_GetFirstFree` is an ustable API now and has been renamed
+  to :c:func:`PyUnstable_Code_GetFirstFree`.
+  (Contributed by Bogdan Romanyuk in :gh:`115781`)
+
 
 Build Changes
 =============
@@ -1493,7 +1535,7 @@ Build Changes
 * The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
   ``termios``, ``winsound``,
   ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
-  ``_statistics``, ``_testimportmultiple`` and ``_uuid``
+  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
   C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
@@ -1666,6 +1708,10 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`PyObject_GenericHash` function that implements the default
+  hashing function of a Python object.
+  (Contributed by Serhiy Storchaka in :gh:`113024`.)
+
 * Add PyTime C API:
 
   * :c:type:`PyTime_t` type.
@@ -1696,6 +1742,14 @@ New Features
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions
+  to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
+  :term:`strong reference` to the constant zero.
+  (Contributed by Victor Stinner in :gh:`115754`.)
+
+* Add :c:func:`PyType_GetModuleByDef` to the limited C API
+  (Contributed by Victor Stinner in :gh:`116936`.)
 
 
 Porting to Python 3.13
