@@ -86,7 +86,6 @@ new_weakref(PyObject *ob, PyObject *callback)
     return result;
 }
 
-#ifdef Py_GIL_DISABLED
 
 // Clear the weakref and steal its callback into `callback`, if provided.
 static void
@@ -99,8 +98,8 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
             /* If 'self' is the end of the list (and thus self->wr_next ==
                NULL) then the weakref list itself (and thus the value of *list)
                will end up being set to NULL. */
-            _Py_atomic_store_ptr(list, self->wr_next);
-        _Py_atomic_store_ptr(&self->wr_object, Py_None);
+            FT_ATOMIC_STORE_PTR(*list, self->wr_next);
+        FT_ATOMIC_STORE_PTR(self->wr_object, Py_None);
         if (self->wr_prev != NULL)
             self->wr_prev->wr_next = self->wr_next;
         if (self->wr_next != NULL)
@@ -114,7 +113,10 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
     }
 }
 
-// Clear the weakref while the world is stopped
+#ifdef Py_GIL_DISABLED
+
+// Clear the weakref while the world is stopped. This is called during GC in
+// free-threaded builds and can't lock.
 static void
 gc_clear_weakref(PyWeakReference *self)
 {
@@ -123,14 +125,12 @@ gc_clear_weakref(PyWeakReference *self)
     Py_XDECREF(callback);
 }
 
+#endif
+
 // Clear the weakref and its callback
 static void
 clear_weakref(PyWeakReference *self)
 {
-    PyObject *object = _Py_atomic_load_ptr(&self->wr_object);
-    if (object == Py_None) {
-        return;
-    }
     PyObject *callback = NULL;
     LOCK_WEAKREFS(object);
     clear_weakref_lock_held(self, &callback);
@@ -138,41 +138,6 @@ clear_weakref(PyWeakReference *self)
     Py_XDECREF(callback);
 }
 
-#else
-
-/* This function clears the passed-in reference and removes it from the
- * list of weak references for the referent.  This is the only code that
- * removes an item from the doubly-linked list of weak references for an
- * object; it is also responsible for clearing the callback slot.
- */
-static void
-clear_weakref(PyWeakReference *self)
-{
-    PyObject *callback = self->wr_callback;
-
-    if (self->wr_object != Py_None) {
-        PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
-
-        if (*list == self)
-            /* If 'self' is the end of the list (and thus self->wr_next == NULL)
-               then the weakref list itself (and thus the value of *list) will
-               end up being set to NULL. */
-            *list = self->wr_next;
-        self->wr_object = Py_None;
-        if (self->wr_prev != NULL)
-            self->wr_prev->wr_next = self->wr_next;
-        if (self->wr_next != NULL)
-            self->wr_next->wr_prev = self->wr_prev;
-        self->wr_prev = NULL;
-        self->wr_next = NULL;
-    }
-    if (callback != NULL) {
-        Py_DECREF(callback);
-        self->wr_callback = NULL;
-    }
-}
-
-#endif  // Py_GIL_DISABLED
 
 /* Cyclic gc uses this to *just* clear the passed-in reference, leaving
  * the callback intact and uncalled.  It must be possible to call self's
