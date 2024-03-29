@@ -82,6 +82,14 @@ _Py_untag_stack(PyObject **dst, const _PyTaggedPtr *src, size_t length) {
         } \
     } while (0)
 
+static inline _PyTaggedPtr _Py_NewRef_Tagged(_PyTaggedPtr obj)
+{
+    Py_INCREF_TAGGED(obj);
+    return obj;
+}
+
+#define Py_NewRef_Tagged(op) _Py_NewRef_Tagged(op);
+
 #ifdef __cplusplus
 }
 #endif

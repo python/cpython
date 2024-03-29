@@ -907,9 +907,9 @@ callable = Py_OBJ_UNTAG(callable_tagged);
                     args--;
                     total_args++;
                     PyObject *self = ((PyMethodObject *)callable)->im_self;
-                    args[0] = Py_OBJ_TAG(Py_NewRef(self));
+                    args[0] = Py_NewRef_Tagged(Py_OBJ_TAG(self));
                     PyObject *method = ((PyMethodObject *)callable)->im_func;
-                    args[-1] = Py_OBJ_TAG(Py_NewRef(method));
+                    args[-1] = Py_NewRef_Tagged(Py_OBJ_TAG(method));
                     Py_DECREF(callable);
                     callable = method;
                 }
@@ -1108,7 +1108,7 @@ self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
                 _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-                new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+                new_frame->localsplus[0] = self_or_null_tagged;
                 for (int i = 0; i < oparg; i++) {
                     first_non_self_local[i] = args[i];
                 }
@@ -1234,7 +1234,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
                 assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 /* Free the arguments. */
                 for (int i = 0; i < total_args; i++) {
-                    // Note: unpacked above.
                     Py_DECREF_TAGGED(args[i]);
                 }
                 Py_DECREF(callable);
@@ -1579,9 +1578,9 @@ callable = Py_OBJ_UNTAG(callable_tagged);
                 args--;
                 total_args++;
                 PyObject *self = ((PyMethodObject *)callable)->im_self;
-                args[0] = Py_OBJ_TAG(Py_NewRef(self));
+                args[0] = Py_NewRef_Tagged(Py_OBJ_TAG(self));
                 PyObject *method = ((PyMethodObject *)callable)->im_func;
-                args[-1] = Py_OBJ_TAG(Py_NewRef(method));
+                args[-1] = Py_NewRef_Tagged(Py_OBJ_TAG(method));
                 Py_DECREF_TAGGED(callable_tagged);
                 callable = method;
             }
@@ -2011,7 +2010,7 @@ self_or_null = Py_OBJ_UNTAG(self_or_null_tagged);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
                 _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-                new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+                new_frame->localsplus[0] = self_or_null_tagged;
                 for (int i = 0; i < oparg; i++) {
                     first_non_self_local[i] = args[i];
                 }
@@ -2092,7 +2091,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             }
             for (int i = argcount; i < code->co_argcount; i++) {
                 PyObject *def = PyTuple_GET_ITEM(func->func_defaults, i - min_args);
-                new_frame->localsplus[i] = Py_OBJ_TAG(Py_NewRef(def));
+                new_frame->localsplus[i] = Py_NewRef_Tagged(Py_OBJ_TAG(def));
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
@@ -2651,7 +2650,7 @@ bottom = Py_OBJ_UNTAG(bottom_tagged);
             int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
-                frame->localsplus[offset + i] = Py_OBJ_TAG(Py_NewRef(o));
+                frame->localsplus[offset + i] = Py_NewRef_Tagged(Py_OBJ_TAG(o));
             }
             DISPATCH();
         }
@@ -4151,7 +4150,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner_tagged;
-            new_frame->localsplus[1] = Py_OBJ_TAG(Py_NewRef(name));
+            new_frame->localsplus[1] = Py_NewRef_Tagged(Py_OBJ_TAG(name));
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
@@ -6119,12 +6118,10 @@ v = Py_OBJ_UNTAG(v_tagged);
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST);
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            _PyTaggedPtr value;
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             DISPATCH();
         }
@@ -6696,7 +6693,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_OBJ_TAG(Py_NewRef(items[i]));
+                *values++ = Py_NewRef_Tagged(Py_OBJ_TAG(items[i]));
             }
             Py_XDECREF_TAGGED(seq_tagged);
             stack_pointer += -1 + oparg;
@@ -6721,7 +6718,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_OBJ_TAG(Py_NewRef(items[i]));
+                *values++ = Py_NewRef_Tagged(Py_OBJ_TAG(items[i]));
             }
             Py_XDECREF_TAGGED(seq_tagged);
             stack_pointer += -1 + oparg;

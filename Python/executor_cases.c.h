@@ -173,117 +173,99 @@
         }
 
         case _STORE_FAST_0: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST_1: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST_2: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST_3: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST_4: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST_5: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST_6: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST_7: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
 
         case _STORE_FAST: {
-            _PyTaggedPtr value_tagged;
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
-            value_tagged = stack_pointer[-1];
-value = Py_OBJ_UNTAG(value_tagged);
+            value = stack_pointer[-1];
 
-            SETLOCAL(oparg, value_tagged);
+            SETLOCAL(oparg, value);
             stack_pointer += -1;
             break;
         }
@@ -1352,7 +1334,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_OBJ_TAG(Py_NewRef(items[i]));
+                *values++ = Py_NewRef_Tagged(Py_OBJ_TAG(items[i]));
             }
             Py_XDECREF_TAGGED(seq_tagged);
             stack_pointer += -1 + oparg;
@@ -1373,7 +1355,7 @@ seq = Py_OBJ_UNTAG(seq_tagged);
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_OBJ_TAG(Py_NewRef(items[i]));
+                *values++ = Py_NewRef_Tagged(Py_OBJ_TAG(items[i]));
             }
             Py_XDECREF_TAGGED(seq_tagged);
             stack_pointer += -1 + oparg;
@@ -1716,7 +1698,7 @@ v = Py_OBJ_UNTAG(v_tagged);
             int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
-                frame->localsplus[offset + i] = Py_OBJ_TAG(Py_NewRef(o));
+                frame->localsplus[offset + i] = Py_NewRef_Tagged(Py_OBJ_TAG(o));
             }
             break;
         }
@@ -3355,7 +3337,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+            new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
@@ -3386,7 +3368,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+            new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
@@ -3417,7 +3399,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+            new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
@@ -3448,7 +3430,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+            new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
@@ -3479,7 +3461,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+            new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
@@ -3509,7 +3491,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _PyTaggedPtr *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
+            new_frame->localsplus[0] = self_or_null_tagged;
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
@@ -3768,7 +3750,6 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
-                // Note: unpacked above.
                 Py_DECREF_TAGGED(args[i]);
             }
             Py_DECREF(callable);
