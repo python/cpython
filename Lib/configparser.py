@@ -323,6 +323,16 @@ class ParsingError(Error):
                 self.append(*error)
         return self
 
+    @staticmethod
+    def _raise_all(exceptions: Iterable['ParsingError']):
+        """
+        Combine any number of ParsingErrors into one and raise it.
+        """
+        exceptions = iter(exceptions)
+        with contextlib.suppress(StopIteration):
+            raise next(exceptions).combine(exceptions)
+
+
 
 class MissingSectionHeaderError(ParsingError):
     """Raised when a key-value pair is found before any section header."""
@@ -1025,17 +1035,9 @@ class RawConfigParser(MutableMapping):
         """
 
         try:
-            self._raise_all(self._read_inner(fp, fpname))
+            ParsingError._raise_all(self._read_inner(fp, fpname))
         finally:
             self._join_multiline_values()
-
-    def _raise_all(self, exceptions: Iterable[ParsingError]):
-        """
-        Combine any number of ParsingErrors into one and raise it.
-        """
-        exceptions = iter(exceptions)
-        with contextlib.suppress(StopIteration):
-            raise next(exceptions).combine(exceptions)
 
     def _read_inner(self, fp, fpname):
         st = _ReadState()
