@@ -329,6 +329,24 @@ For example:
            # Did I mention we can indent comments, too?
 
 
+Unnamed sections
+----------------
+THe name of the first section (or unique) can be ommitted and values
+retrieved by the :attr:`UNNAMED_SECTION` attribute.
+
+.. doctest::
+
+   >>> config = """
+   ... option = value
+   ...
+   ... [  Section 2  ]
+   ... another = val
+   ... """
+   >>> typical = configparser.ConfigParser(allow_unamed_section=True)
+   >>> typical.read_string(config)
+   >>> config.get(UNNAMED_SECTION, 'option')
+   'value'
+
 Interpolation of values
 -----------------------
 
