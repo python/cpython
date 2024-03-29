@@ -1459,7 +1459,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
         }
         else {
             assert(args != NULL);
-            u = _PyTuple_FromArraySteal((PyObject **)(args + n), argcount - n);
+            u = _PyTuple_FromTaggedArraySteal((args + n), argcount - n);
         }
         if (u == NULL) {
             goto fail_post_positional;

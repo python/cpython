@@ -256,6 +256,10 @@ PyAPI_FUNC(PyObject *)_PyDict_FromTaggedItems(
     _Py_TaggedObject const *keys, Py_ssize_t keys_offset,
     _Py_TaggedObject const *values, Py_ssize_t values_offset,
     Py_ssize_t length);
+PyAPI_FUNC(PyObject *)_PyDict_FromTaggedItemsUntaggedKeys(
+    PyObject *const *keys, Py_ssize_t keys_offset,
+    _Py_TaggedObject const *values, Py_ssize_t values_offset,
+    Py_ssize_t length);
 
 static inline void
 _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)

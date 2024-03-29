@@ -9824,16 +9824,17 @@ _PyUnicode_JoinTaggedArray_Slow(PyObject *separator, _Py_TaggedObject const *tag
 PyObject *
 _PyUnicode_JoinTaggedArray(PyObject *separator, _Py_TaggedObject const *items_tagged, Py_ssize_t seqlen)
 {
-#ifdef Py_GIL_DISABLED
+#if defined(Py_GIL_DISABLED) || defined(Py_OBJECT_TEST_TAG)
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (seqlen > MAX_UNTAG_SCRATCH) {
         return _PyUnicode_JoinTaggedArray_Slow(separator, items_tagged, seqlen);
     }
     _Py_untag_stack(args, items_tagged, seqlen);
     return _PyUnicode_JoinArray(separator, args, seqlen);
-#endif
+#else
     (void)_PyUnicode_JoinTaggedArray_Slow;
     return _PyUnicode_JoinArray(separator, (PyObject **)items_tagged, seqlen);
+#endif
 }
 
 void
