@@ -1126,6 +1126,16 @@ def attrs_wo_objs(cls):
 
 
 class TestClassesAndFunctions(unittest.TestCase):
+    def assertDeprecated(self):
+        import re
+        return self.assertWarnsRegex(
+            DeprecationWarning,
+            re.escape(
+                "'getfullargspec' is deprecated since 3.13 "
+                "and slated for removal in Python 3.15"
+            ),
+        )
+
     def test_newstyle_mro(self):
         # The same w/ new-class MRO.
         class A(object):    pass
@@ -1142,8 +1152,9 @@ class TestClassesAndFunctions(unittest.TestCase):
                                     posonlyargs_e=[], kwonlyargs_e=[],
                                     kwonlydefaults_e=None,
                                     ann_e={}):
-        args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-            inspect.getfullargspec(routine)
+        with self.assertDeprecated():
+            args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
+                inspect.getfullargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)
@@ -1196,11 +1207,13 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def test_getfullargspec_signature_annos(self):
         def test(a:'spam') -> 'ham': pass
-        spec = inspect.getfullargspec(test)
+        with self.assertDeprecated():
+            spec = inspect.getfullargspec(test)
         self.assertEqual(test.__annotations__, spec.annotations)
 
         def test(): pass
-        spec = inspect.getfullargspec(test)
+        with self.assertDeprecated():
+            spec = inspect.getfullargspec(test)
         self.assertEqual(test.__annotations__, spec.annotations)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
@@ -1222,7 +1235,8 @@ class TestClassesAndFunctions(unittest.TestCase):
     def test_getfullargspec_builtin_func(self):
         import _testcapi
         builtin = _testcapi.docstring_with_signature_with_defaults
-        spec = inspect.getfullargspec(builtin)
+        with self.assertDeprecated():
+            spec = inspect.getfullargspec(builtin)
         self.assertEqual(spec.defaults[0], 'avocado')
 
     @cpython_only
@@ -1231,7 +1245,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     def test_getfullargspec_builtin_func_no_signature(self):
         import _testcapi
         builtin = _testcapi.docstring_no_signature
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError), self.assertDeprecated():
             inspect.getfullargspec(builtin)
 
         cls = _testcapi.DocStringNoSignatureTest
@@ -1272,17 +1286,22 @@ class TestClassesAndFunctions(unittest.TestCase):
             tests.append((stat.S_IMODE, meth_o))
         for builtin, template in tests:
             with self.subTest(builtin):
-                self.assertEqual(inspect.getfullargspec(builtin),
-                                 inspect.getfullargspec(template))
+                with self.assertDeprecated():
+                    builtin_args = inspect.getfullargspec(builtin)
+                with self.assertDeprecated():
+                    template_args = inspect.getfullargspec(template)
+                self.assertEqual(builtin_args, template_args)
 
     def test_getfullargspec_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
-            signature = inspect.getfullargspec(fn)
+            with self.assertDeprecated():
+                signature = inspect.getfullargspec(fn)
             l = list(signature.kwonlyargs)
             sorted_l = sorted(l)
             self.assertTrue(l)
             self.assertEqual(l, sorted_l)
-        signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
+        with self.assertDeprecated():
+            signature = inspect.getfullargspec(unsorted_keyword_only_parameters_fn)
         l = list(signature.kwonlyargs)
         self.assertEqual(l, unsorted_keyword_only_parameters)
 
@@ -4640,6 +4659,49 @@ class TestSignatureObject(unittest.TestCase):
             pass
 
         self.assertEqual(inspect.signature(D2), inspect.signature(D1))
+
+    def test_signature_as_getfullargspec_replacement(self):
+        def decorator(func):
+            @functools.wraps(func)  # set `__wrapper__` attribute
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+
+        @decorator
+        def func(a: int, /, b: str = '', *, c : bool = True) -> int: ...
+
+        sig = inspect.signature(func, follow_wrapped=False, skip_bound_arg=False)
+        self.assertEqual(str(sig), '(*args, **kwargs) -> int')
+        self.assertEqual(
+            str(sig),
+            str(inspect.Signature.from_callable(func,
+                                                follow_wrapped=False,
+                                                skip_bound_arg=False)),
+        )
+
+        class My:
+            def method(self, arg: int) -> None: ...
+            @classmethod
+            def cl(cls, arg2: str) -> None: ...
+
+        sigs = {
+            My.method: '(self, arg: int) -> None',
+            My().method: '(self, arg: int) -> None',
+            My.cl: '(cls, arg2: str) -> None',
+            My().cl: '(cls, arg2: str) -> None',
+        }
+        for f, text_sig in sigs.items():
+            with self.subTest(f=f):
+                sig = inspect.signature(f,
+                                        follow_wrapped=False,
+                                        skip_bound_arg=False)
+                self.assertEqual(str(sig), text_sig)
+                self.assertEqual(
+                    str(sig),
+                    str(inspect.Signature.from_callable(f,
+                                                        follow_wrapped=False,
+                                                        skip_bound_arg=False)),
+                )
 
 
 class TestParameterObject(unittest.TestCase):

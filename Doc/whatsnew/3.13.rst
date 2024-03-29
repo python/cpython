@@ -1060,6 +1060,11 @@ Pending Removal in Python 3.15
   and was only useful for Jython support.
   (Contributed by Nikita Sobolev in :gh:`116349`.)
 
+* :func:`inspect.getfullargspec` is deprecated and slated for removal in 3.15,
+  use :func:`inspect.signature` instead or ``inspect313`` PyPI package
+  for older versions.
+  (Contributed by Nikita Sobolev in :gh:`108901`.)
+
 Pending Removal in Python 3.16
 ------------------------------
 

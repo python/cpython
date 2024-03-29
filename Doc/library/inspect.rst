@@ -1108,6 +1108,21 @@ Classes and functions
       order of keyword-only parameters as of version 3.7, although in practice
       this order had always been preserved in Python 3.
 
+   .. deprecated-removed:: 3.13, 3.15
+      Now all :func:`getfullargspec` differences from :class:`Signature`
+      can be solved by passing ``follow_wrapped=False, skip_bound_arg=False``
+      arguments::
+
+         from inspect import signature
+
+         signature(your_obj, follow_wrapped=False, skip_bound_arg=False)
+
+      For Python versions older than 3.13 you can use ``inspect313`` PyPI package::
+
+         from inspect313 import signature
+
+         signature(your_obj, follow_wrapped=False, skip_bound_arg=False)
+
 
 .. function:: getargvalues(frame)
 
