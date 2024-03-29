@@ -766,7 +766,6 @@ PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
                                       PyObject *op);
 PyAPI_FUNC(void) _Py_INCREF_IncRefTotal(void);
 PyAPI_FUNC(void) _Py_DECREF_DecRefTotal(void);
-PyAPI_FUNC(void) _Py_IncRefTotal(PyInterpreterState *);
 #endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);

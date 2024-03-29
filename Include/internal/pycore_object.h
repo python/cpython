@@ -87,6 +87,7 @@ PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
 extern void _Py_AddRefTotal(PyInterpreterState *, Py_ssize_t);
+extern void _Py_IncRefTotal(PyInterpreterState *);
 extern void _Py_DecRefTotal(PyInterpreterState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \

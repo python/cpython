@@ -113,7 +113,7 @@ typedef enum _PyLockFlags {
 
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
-PyAPI_FUNC(PyLockStatus)
+extern PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Lock a mutex with aditional options. See _PyLockFlags for details.
