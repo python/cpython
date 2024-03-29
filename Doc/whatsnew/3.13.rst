@@ -1618,6 +1618,13 @@ Build Changes
 * ``wasm32-wasi`` is now a :pep:`11` tier 2 platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
+* iOS is now a :pep:`11` supported platform. ``arm64-apple-ios`` (iPhone and
+  iPad devices released after 2013) and ``arm64-apple-ios-simulator`` (Xcode
+  iOS simulator running on Apple Silicon hardware) are now tier 3 platforms.
+  ``x86_64-apple-ios-simulator`` (Xcode iOS simulator running on older x86_64
+  hardware) is not a tier 3 supported platform, but will be supported on a
+  best-effort basis. (Contributed by Russell Keith-Magee in :gh:`114099`.)
+
 * ``wasm32-emscripten`` is no longer a :pep:`11` supported platform.
   (Contributed by Brett Cannon in :gh:`115192`.)
 
