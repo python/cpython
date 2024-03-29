@@ -150,9 +150,7 @@ extern PyTypeObject _PyBufferWrapper_Type;
 PyAPI_FUNC(PyObject*) _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
                                  PyObject *name, int *meth_found);
 
-
-// This is exported for the _testinternalcapi module.
-PyAPI_FUNC(PyObject *) _PyType_GetModuleName(PyTypeObject *);
+extern PyObject* _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep);
 
 
 #ifdef __cplusplus

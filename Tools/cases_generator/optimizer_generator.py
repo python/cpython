@@ -83,14 +83,14 @@ def emit_default(out: CWriter, uop: Uop) -> None:
         if var.name != "unused" and not var.peek:
             if var.is_array():
                 out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                out.emit(f"{var.name}[_i] = sym_new_unknown(ctx);\n")
+                out.emit(f"{var.name}[_i] = sym_new_not_null(ctx);\n")
                 out.emit(f"if ({var.name}[_i] == NULL) goto out_of_space;\n")
                 out.emit("}\n")
             elif var.name == "null":
                 out.emit(f"{var.name} = sym_new_null(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
             else:
-                out.emit(f"{var.name} = sym_new_unknown(ctx);\n")
+                out.emit(f"{var.name} = sym_new_not_null(ctx);\n")
                 out.emit(f"if ({var.name} == NULL) goto out_of_space;\n")
 
 

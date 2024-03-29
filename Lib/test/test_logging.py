@@ -80,6 +80,9 @@ except ImportError:
 skip_if_asan_fork = unittest.skipIf(
     support.HAVE_ASAN_FORK_BUG,
     "libasan has a pthread_create() dead lock related to thread+fork")
+skip_if_tsan_fork = unittest.skipIf(
+    support.check_sanitizer(thread=True),
+    "TSAN doesn't support threads after fork")
 
 
 class BaseTest(unittest.TestCase):
@@ -731,6 +734,7 @@ class HandlerTest(BaseTest):
     @support.requires_fork()
     @threading_helper.requires_working_threading()
     @skip_if_asan_fork
+    @skip_if_tsan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -6573,6 +6577,129 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
 
         fh.close()
 
+    # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
+    # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_compute_rollover_MIDNIGHT_local_interval(self):
+        # DST begins at 2012-3-11T02:00:00 and ends at 2012-11-4T02:00:00.
+        DT = datetime.datetime
+        def test(current, expected):
+            actual = fh.computeRollover(current.timestamp())
+            diff = actual - expected.timestamp()
+            if diff:
+                self.assertEqual(diff, 0, datetime.timedelta(seconds=diff))
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False, interval=3)
+
+        test(DT(2012, 3, 8, 23, 59, 59), DT(2012, 3, 11, 0, 0))
+        test(DT(2012, 3, 9, 0, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 9, 1, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 10, 23, 59, 59), DT(2012, 3, 13, 0, 0))
+        test(DT(2012, 3, 11, 0, 0), DT(2012, 3, 14, 0, 0))
+        test(DT(2012, 3, 11, 1, 0), DT(2012, 3, 14, 0, 0))
+
+        test(DT(2012, 11, 1, 23, 59, 59), DT(2012, 11, 4, 0, 0))
+        test(DT(2012, 11, 2, 0, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 11, 2, 1, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 11, 3, 23, 59, 59), DT(2012, 11, 6, 0, 0))
+        test(DT(2012, 11, 4, 0, 0), DT(2012, 11, 7, 0, 0))
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 7, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False, interval=3,
+            atTime=datetime.time(12, 0, 0))
+
+        test(DT(2012, 3, 8, 11, 59, 59), DT(2012, 3, 10, 12, 0))
+        test(DT(2012, 3, 8, 12, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 8, 13, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 10, 11, 59, 59), DT(2012, 3, 12, 12, 0))
+        test(DT(2012, 3, 10, 12, 0), DT(2012, 3, 13, 12, 0))
+        test(DT(2012, 3, 10, 13, 0), DT(2012, 3, 13, 12, 0))
+
+        test(DT(2012, 11, 1, 11, 59, 59), DT(2012, 11, 3, 12, 0))
+        test(DT(2012, 11, 1, 12, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 11, 1, 13, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 11, 3, 11, 59, 59), DT(2012, 11, 5, 12, 0))
+        test(DT(2012, 11, 3, 12, 0), DT(2012, 11, 6, 12, 0))
+        test(DT(2012, 11, 3, 13, 0), DT(2012, 11, 6, 12, 0))
+
+        fh.close()
+
+    # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
+    # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_compute_rollover_W6_local_interval(self):
+        # DST begins at 2012-3-11T02:00:00 and ends at 2012-11-4T02:00:00.
+        DT = datetime.datetime
+        def test(current, expected):
+            actual = fh.computeRollover(current.timestamp())
+            diff = actual - expected.timestamp()
+            if diff:
+                self.assertEqual(diff, 0, datetime.timedelta(seconds=diff))
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False, interval=3)
+
+        test(DT(2012, 2, 19, 23, 59, 59), DT(2012, 3, 5, 0, 0))
+        test(DT(2012, 2, 20, 0, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 2, 20, 1, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 4, 23, 59, 59), DT(2012, 3, 19, 0, 0))
+        test(DT(2012, 3, 5, 0, 0), DT(2012, 3, 26, 0, 0))
+        test(DT(2012, 3, 5, 1, 0), DT(2012, 3, 26, 0, 0))
+
+        test(DT(2012, 10, 14, 23, 59, 59), DT(2012, 10, 29, 0, 0))
+        test(DT(2012, 10, 15, 0, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 10, 15, 1, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 10, 28, 23, 59, 59), DT(2012, 11, 12, 0, 0))
+        test(DT(2012, 10, 29, 0, 0), DT(2012, 11, 19, 0, 0))
+        test(DT(2012, 10, 29, 1, 0), DT(2012, 11, 19, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False, interval=3,
+            atTime=datetime.time(0, 0, 0))
+
+        test(DT(2012, 2, 25, 23, 59, 59), DT(2012, 3, 11, 0, 0))
+        test(DT(2012, 2, 26, 0, 0), DT(2012, 3, 18, 0, 0))
+        test(DT(2012, 2, 26, 1, 0), DT(2012, 3, 18, 0, 0))
+        test(DT(2012, 3, 10, 23, 59, 59), DT(2012, 3, 25, 0, 0))
+        test(DT(2012, 3, 11, 0, 0), DT(2012, 4, 1, 0, 0))
+        test(DT(2012, 3, 11, 1, 0), DT(2012, 4, 1, 0, 0))
+
+        test(DT(2012, 10, 20, 23, 59, 59), DT(2012, 11, 4, 0, 0))
+        test(DT(2012, 10, 21, 0, 0), DT(2012, 11, 11, 0, 0))
+        test(DT(2012, 10, 21, 1, 0), DT(2012, 11, 11, 0, 0))
+        test(DT(2012, 11, 3, 23, 59, 59), DT(2012, 11, 18, 0, 0))
+        test(DT(2012, 11, 4, 0, 0), DT(2012, 11, 25, 0, 0))
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 25, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False, interval=3,
+            atTime=datetime.time(12, 0, 0))
+
+        test(DT(2012, 2, 18, 11, 59, 59), DT(2012, 3, 4, 12, 0))
+        test(DT(2012, 2, 19, 12, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 2, 19, 13, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 4, 11, 59, 59), DT(2012, 3, 18, 12, 0))
+        test(DT(2012, 3, 4, 12, 0), DT(2012, 3, 25, 12, 0))
+        test(DT(2012, 3, 4, 13, 0), DT(2012, 3, 25, 12, 0))
+
+        test(DT(2012, 10, 14, 11, 59, 59), DT(2012, 10, 28, 12, 0))
+        test(DT(2012, 10, 14, 12, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 10, 14, 13, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 10, 28, 11, 59, 59), DT(2012, 11, 11, 12, 0))
+        test(DT(2012, 10, 28, 12, 0), DT(2012, 11, 18, 12, 0))
+        test(DT(2012, 10, 28, 13, 0), DT(2012, 11, 18, 12, 0))
+
+        fh.close()
+
+
 def secs(**kw):
     return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)
 
@@ -6584,40 +6711,49 @@ for when, exp in (('S', 1),
                   # current time (epoch start) is a Thursday, W0 means Monday
                   ('W0', secs(days=4, hours=24)),
                  ):
-    def test_compute_rollover(self, when=when, exp=exp):
-        rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, encoding="utf-8", when=when, interval=1, backupCount=0, utc=True)
-        currentTime = 0.0
-        actual = rh.computeRollover(currentTime)
-        if exp != actual:
-            # Failures occur on some systems for MIDNIGHT and W0.
-            # Print detailed calculation for MIDNIGHT so we can try to see
-            # what's going on
-            if when == 'MIDNIGHT':
-                try:
-                    if rh.utc:
-                        t = time.gmtime(currentTime)
-                    else:
-                        t = time.localtime(currentTime)
-                    currentHour = t[3]
-                    currentMinute = t[4]
-                    currentSecond = t[5]
-                    # r is the number of seconds left between now and midnight
-                    r = logging.handlers._MIDNIGHT - ((currentHour * 60 +
-                                                       currentMinute) * 60 +
-                            currentSecond)
-                    result = currentTime + r
-                    print('t: %s (%s)' % (t, rh.utc), file=sys.stderr)
-                    print('currentHour: %s' % currentHour, file=sys.stderr)
-                    print('currentMinute: %s' % currentMinute, file=sys.stderr)
-                    print('currentSecond: %s' % currentSecond, file=sys.stderr)
-                    print('r: %s' % r, file=sys.stderr)
-                    print('result: %s' % result, file=sys.stderr)
-                except Exception as e:
-                    print('exception in diagnostic code: %s' % e, file=sys.stderr)
-        self.assertEqual(exp, actual)
-        rh.close()
-    setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
+    for interval in 1, 3:
+        def test_compute_rollover(self, when=when, interval=interval, exp=exp):
+            rh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, encoding="utf-8", when=when, interval=interval, backupCount=0, utc=True)
+            currentTime = 0.0
+            actual = rh.computeRollover(currentTime)
+            if when.startswith('W'):
+                exp += secs(days=7*(interval-1))
+            else:
+                exp *= interval
+            if exp != actual:
+                # Failures occur on some systems for MIDNIGHT and W0.
+                # Print detailed calculation for MIDNIGHT so we can try to see
+                # what's going on
+                if when == 'MIDNIGHT':
+                    try:
+                        if rh.utc:
+                            t = time.gmtime(currentTime)
+                        else:
+                            t = time.localtime(currentTime)
+                        currentHour = t[3]
+                        currentMinute = t[4]
+                        currentSecond = t[5]
+                        # r is the number of seconds left between now and midnight
+                        r = logging.handlers._MIDNIGHT - ((currentHour * 60 +
+                                                        currentMinute) * 60 +
+                                currentSecond)
+                        result = currentTime + r
+                        print('t: %s (%s)' % (t, rh.utc), file=sys.stderr)
+                        print('currentHour: %s' % currentHour, file=sys.stderr)
+                        print('currentMinute: %s' % currentMinute, file=sys.stderr)
+                        print('currentSecond: %s' % currentSecond, file=sys.stderr)
+                        print('r: %s' % r, file=sys.stderr)
+                        print('result: %s' % result, file=sys.stderr)
+                    except Exception as e:
+                        print('exception in diagnostic code: %s' % e, file=sys.stderr)
+            self.assertEqual(exp, actual)
+            rh.close()
+        name = "test_compute_rollover_%s" % when
+        if interval > 1:
+            name += "_interval"
+        test_compute_rollover.__name__ = name
+        setattr(TimedRotatingFileHandlerTest, name, test_compute_rollover)
 
 
 @unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
