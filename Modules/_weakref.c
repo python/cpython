@@ -86,50 +86,32 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
         return PyList_New(0);
     }
 
-    PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-    Py_ssize_t count = _PyWeakref_GetWeakrefCount(object);
-
-    PyObject *result = PyList_New(count);
+    PyObject *result = PyList_New(0);
     if (result == NULL) {
         return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    Py_ssize_t num_added = 0;
     LOCK_WEAKREFS(object);
-    PyWeakReference *current = *list;
-    // Weakrefs may be added or removed since the count was computed.
-    while (num_added < count && current != NULL) {
-        if (_Py_TryIncref((PyObject *) current)) {
-            PyList_SET_ITEM(result, num_added, current);
-            num_added++;
+    PyWeakReference *current = *GET_WEAKREFS_LISTPTR(object);
+    while (current != NULL) {
+        PyObject *curobj = (PyObject *) current;
+        if (_Py_TryIncref(curobj)) {
+            if (PyList_Append(result, curobj)) {
+                UNLOCK_WEAKREFS(object);
+                Py_DECREF(curobj);
+                Py_DECREF(result);
+                return NULL;
+            }
+            else {
+                // Undo our _Py_TryIncref. This is safe to do with the lock
+                // held in free-threaded builds; the list holds a reference to
+                // curobj so we're guaranteed not to invoke the destructor.
+                Py_DECREF(curobj);
+            }
         }
         current = current->wr_next;
     }
     UNLOCK_WEAKREFS(object);
-
-    // Don't return an incomplete list
-    if (num_added != count) {
-        PyObject *new_list = PyList_New(num_added);
-        if (new_list == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        for (Py_ssize_t i = 0; i < num_added; i++) {
-            PyObject *obj = PyList_GET_ITEM(result, i);
-            PyList_SET_ITEM(new_list, i, obj);
-            PyList_SET_ITEM(result, i, NULL);
-        }
-        Py_DECREF(result);
-        result = new_list;
-    }
-#else
-    PyWeakReference *current = *list;
-    for (Py_ssize_t i = 0; i < count; ++i) {
-        PyList_SET_ITEM(result, i, Py_NewRef(current));
-        current = current->wr_next;
-    }
-#endif
     return result;
 }
 
