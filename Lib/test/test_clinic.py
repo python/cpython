@@ -21,6 +21,20 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, clinic.converters,
+                        clinic.converters.copy())
+    testcase.addCleanup(restore_dict, clinic.legacy_converters,
+                        clinic.legacy_converters.copy())
+    testcase.addCleanup(restore_dict, clinic.return_converters,
+                        clinic.return_converters.copy())
+
+
 class _ParserBase(TestCase):
     maxDiff = None
 
@@ -107,6 +121,7 @@ class FakeClinic:
 
 class ClinicWholeFileTest(_ParserBase):
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
 
     def expect_failure(self, raw):
@@ -1368,6 +1383,9 @@ class ClinicParserTest(_ParserBase):
 class ClinicExternalTest(TestCase):
     maxDiff = None
     clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
+
+    def setUp(self):
+        save_restore_converters(self)
 
     def _do_test(self, *args, expect_success=True):
         with subprocess.Popen(
