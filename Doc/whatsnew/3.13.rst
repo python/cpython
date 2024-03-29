@@ -1060,6 +1060,13 @@ Pending Removal in Python 3.15
   and was only useful for Jython support.
   (Contributed by Nikita Sobolev in :gh:`116349`.)
 
+* The undocumented function ``inspect.getargs`` is deprecated in Python 3.13
+  and slated for removal in Python 3.15. :func:`inspect.signature` is the most
+  accurate way to obtain the signature of a callable. If you only have access
+  to a code object, however, ``inspect.signature(types.FunctionType(co, {}))``
+  can be used as a direct replacement for ``inspect.getargs()``.
+  (Contributed by Nikita Sobolev in :gh:`108901`.)
+
 Pending Removal in Python 3.16
 ------------------------------
 
