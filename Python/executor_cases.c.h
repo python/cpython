@@ -27,7 +27,7 @@
         /* _INSTRUMENTED_RESUME is not a viable micro-op for tier 2 because it is instrumented */
 
         case _LOAD_FAST_CHECK: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             if (Py_OBJ_UNTAG(value) == NULL) {
@@ -38,136 +38,136 @@
                 if (1) JUMP_TO_ERROR();
             }
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_0: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_1: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_2: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_3: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_4: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_5: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_6: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_7: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_FAST_AND_CLEAR: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = Py_OBJ_TAG(NULL);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
 
         case _LOAD_CONST: {
-            PyObject *value;
+            _PyTaggedPtr value;
             oparg = CURRENT_OPARG();
-            PyObject *v = GETITEM(FRAME_CO_CONSTS, oparg);
-            Py_INCREF(v);
-            value = Py_OBJ_TAG(v);
-            stack_pointer[0] = Py_OBJ_TAG(value);
+            value = Py_OBJ_TAG(GETITEM(FRAME_CO_CONSTS, oparg));
+            // Perhaps consider making co_consts tagged too?
+            Py_INCREF_TAGGED(value);
+            stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
         }
@@ -180,7 +180,7 @@
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -193,7 +193,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -206,7 +206,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -219,7 +219,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -232,7 +232,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -245,7 +245,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -258,7 +258,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -271,7 +271,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -283,7 +283,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             value_tagged = stack_pointer[-1];
 value = Py_OBJ_UNTAG(value_tagged);
 
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
             stack_pointer += -1;
             break;
         }
@@ -1068,10 +1068,8 @@ value2 = Py_OBJ_UNTAG(value2_tagged);
         }
 
         case _POP_FRAME: {
-            _PyTaggedPtr retval_tagged;
-            PyObject *retval;
-            retval_tagged = stack_pointer[-1];
-retval = Py_OBJ_UNTAG(retval_tagged);
+            _PyTaggedPtr retval;
+            retval = stack_pointer[-1];
 
             #if TIER_ONE
             assert(frame != &entry_frame);
@@ -3677,8 +3675,8 @@ callable = Py_OBJ_UNTAG(callable_tagged);
                 args--;
                 total_args++;
             }
-            if (!PyType_Check(Py_OBJ_UNTAG(callable))) JUMP_TO_JUMP_TARGET();
-            PyTypeObject *tp = (PyTypeObject *)Py_OBJ_UNTAG(callable);
+            if (!PyType_Check(callable)) JUMP_TO_JUMP_TARGET();
+            PyTypeObject *tp = (PyTypeObject *)callable;
             if (tp->tp_vectorcall == NULL) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             res = PyObject_TypeVectorcall_Tagged(tp, args, total_args, NULL);
@@ -3686,7 +3684,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF_TAGGED(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
@@ -3802,23 +3800,22 @@ callable = Py_OBJ_UNTAG(callable_tagged);
                 args--;
                 total_args++;
             }
-            PyObject *cb = Py_OBJ_UNTAG(callable);
-            if (!PyCFunction_CheckExact(cb)) JUMP_TO_JUMP_TARGET();
-            if (PyCFunction_GET_FLAGS(cb) != (METH_FASTCALL | METH_KEYWORDS)) JUMP_TO_JUMP_TARGET();
+            if (!PyCFunction_CheckExact(callable)) JUMP_TO_JUMP_TARGET();
+            if (PyCFunction_GET_FLAGS(callable) != (METH_FASTCALL | METH_KEYWORDS)) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             /* res = func(self, args, nargs, kwnames) */
             PyCFunctionFastWithKeywords cfunc =
             (PyCFunctionFastWithKeywords)(void(*)(void))
-            PyCFunction_GET_FUNCTION(cb);
+            PyCFunction_GET_FUNCTION(callable);
             res = PyObject_PyCFunctionFastWithKeywordsCall_Tagged(
-                cfunc, PyCFunction_GET_SELF(cb), args, total_args, NULL
+                cfunc, PyCFunction_GET_SELF(callable), args, total_args, NULL
             );
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             /* Free the arguments. */
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF_TAGGED(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
@@ -3894,9 +3891,9 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyInterpreterState *interp = tstate->interp;
             if (callable != interp->callable_cache.isinstance) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
-            PyObject *cls = Py_OBJ_UNTAG(args[1]);
-            PyObject *inst = Py_OBJ_UNTAG(args[0]);
-            int retval = PyObject_IsInstance(inst, cls);
+            _PyTaggedPtr cls_tagged = args[1];
+            _PyTaggedPtr inst_tagged = args[0];
+            int retval = PyObject_IsInstance(Py_OBJ_UNTAG(inst_tagged), Py_OBJ_UNTAG(cls_tagged));
             if (retval < 0) {
                 JUMP_TO_ERROR();
             }
@@ -3905,9 +3902,9 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             if (res == NULL) {
                 GOTO_ERROR(error);
             }
-            Py_DECREF(inst);
-            Py_DECREF(cls);
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(inst_tagged);
+            Py_DECREF_TAGGED(cls_tagged);
+            Py_DECREF_TAGGED(callable_tagged);
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
@@ -3941,8 +3938,10 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             if (meth->ml_flags != METH_O) JUMP_TO_JUMP_TARGET();
             // CPython promises to check all non-vectorcall function calls.
             if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET();
-            PyObject *arg = Py_OBJ_UNTAG(args[1]);
-            PyObject *self = Py_OBJ_UNTAG(args[0]);
+            _PyTaggedPtr arg_tagged = args[1];
+            _PyTaggedPtr self_tagged = args[0];
+            PyObject *self = Py_OBJ_UNTAG(self_tagged);
+            PyObject *arg = Py_OBJ_UNTAG(arg_tagged);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -3950,9 +3949,9 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(self);
-            Py_DECREF(arg);
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(self_tagged);
+            Py_DECREF_TAGGED(arg_tagged);
+            Py_DECREF_TAGGED(callable_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
@@ -3999,7 +3998,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
@@ -4032,7 +4031,8 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
             if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET();
             PyMethodDef *meth = method->d_method;
-            PyObject *self = Py_OBJ_UNTAG(args[0]);
+            _PyTaggedPtr self_tagged = args[0];
+            PyObject *self = Py_OBJ_UNTAG(self_tagged);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET();
             if (meth->ml_flags != METH_NOARGS) JUMP_TO_JUMP_TARGET();
             // CPython promises to check all non-vectorcall function calls.
@@ -4043,8 +4043,8 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(self);
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(self_tagged);
+            Py_DECREF_TAGGED(callable_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
@@ -4091,7 +4091,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             if (res == NULL) JUMP_TO_ERROR();
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;

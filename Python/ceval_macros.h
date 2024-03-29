@@ -95,7 +95,8 @@
 
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
-    { \
+    {              \
+        fprintf(stderr, "OP: %s, ARG: %d\n", _PyOpcode_OpName[opcode], oparg);\
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \

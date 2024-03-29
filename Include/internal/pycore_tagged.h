@@ -52,6 +52,14 @@ _Py_untag_stack(PyObject **dst, const _PyTaggedPtr *src, size_t length) {
         Py_XDECREF(Py_OBJ_UNTAG(_tmp_old_dst)); \
     } while (0)
 
+#define Py_SETREF_TAGGED(dst, src) \
+    do { \
+        _PyTaggedPtr *_tmp_dst_ptr = _Py_CAST(_PyTaggedPtr*, &(dst)); \
+        _PyTaggedPtr _tmp_old_dst = (*_tmp_dst_ptr); \
+        *_tmp_dst_ptr = (src); \
+        Py_DECREF(Py_OBJ_UNTAG(_tmp_old_dst)); \
+    } while (0)
+
 #define Py_CLEAR_TAGGED(op) \
     do { \
         _PyTaggedPtr *_tmp_op_ptr = _Py_CAST(_PyTaggedPtr*, &(op)); \

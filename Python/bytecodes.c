@@ -205,7 +205,7 @@ dummy_func(
             LOAD_FAST,
         };
 
-        inst(LOAD_FAST_CHECK, (-- value)) {
+        inst(LOAD_FAST_CHECK, (-- value: _PyTaggedPtr)) {
             value = GETLOCAL(oparg);
             if (Py_OBJ_UNTAG(value) == NULL) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
@@ -217,19 +217,19 @@ dummy_func(
             Py_INCREF_TAGGED(value);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value)) {
+        replicate(8) pure inst(LOAD_FAST, (-- value: _PyTaggedPtr)) {
             value = GETLOCAL(oparg);
             assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
         }
 
-        inst(LOAD_FAST_AND_CLEAR, (-- value)) {
+        inst(LOAD_FAST_AND_CLEAR, (-- value: _PyTaggedPtr)) {
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
             GETLOCAL(oparg) = Py_OBJ_TAG(NULL);
         }
 
-        inst(LOAD_FAST_LOAD_FAST, ( -- value1, value2)) {
+        inst(LOAD_FAST_LOAD_FAST, ( -- value1: _PyTaggedPtr, value2: _PyTaggedPtr)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             value1 = GETLOCAL(oparg1);
@@ -238,21 +238,21 @@ dummy_func(
             Py_INCREF_TAGGED(value2);
         }
 
-        pure inst(LOAD_CONST, (-- value)) {
-            PyObject *v = GETITEM(FRAME_CO_CONSTS, oparg);
-            Py_INCREF(v);
-            value = Py_OBJ_TAG(v);
+        pure inst(LOAD_CONST, (-- value: _PyTaggedPtr)) {
+            value = Py_OBJ_TAG(GETITEM(FRAME_CO_CONSTS, oparg));
+            // Perhaps consider making co_consts tagged too?
+            Py_INCREF_TAGGED(value);
         }
 
         replicate(8) inst(STORE_FAST, (value --)) {
-            SETLOCAL(oparg, value);
+            SETLOCAL(oparg, value_tagged);
         }
 
         pseudo(STORE_FAST_MAYBE_NULL) = {
             STORE_FAST,
         };
 
-        inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
+        inst(STORE_FAST_LOAD_FAST, (value1: _PyTaggedPtr -- value2: _PyTaggedPtr)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -260,7 +260,7 @@ dummy_func(
             Py_INCREF_TAGGED(value2);
         }
 
-        inst(STORE_FAST_STORE_FAST, (value2, value1 --)) {
+        inst(STORE_FAST_STORE_FAST, (value2: _PyTaggedPtr, value1: _PyTaggedPtr --)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             SETLOCAL(oparg1, value1);
@@ -806,7 +806,7 @@ dummy_func(
         // We definitely pop the return value off the stack on entry.
         // We also push it onto the stack on exit, but that's a
         // different frame, and it's accounted for by _PUSH_FRAME.
-        op(_POP_FRAME, (retval --)) {
+        op(_POP_FRAME, (retval: _PyTaggedPtr --)) {
             #if TIER_ONE
             assert(frame != &entry_frame);
             #endif
@@ -835,7 +835,7 @@ dummy_func(
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, this_instr, Py_OBJ_UNTAG(retval));
+                    frame, this_instr, retval);
             if (err) ERROR_NO_POP();
             STACK_SHRINK(1);
             assert(EMPTY());
@@ -846,7 +846,7 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            _PyFrame_StackPush(frame, retval);
+            _PyFrame_StackPush(frame, retval_tagged);
             LOAD_IP(frame->return_offset);
             goto resume_frame;
         }
@@ -983,11 +983,11 @@ dummy_func(
             SEND_GEN,
         };
 
-        specializing op(_SPECIALIZE_SEND, (counter/1, receiver_packed, unused -- receiver_packed, unused)) {
+        specializing op(_SPECIALIZE_SEND, (counter/1, receiver, unused -- receiver, unused)) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
                 next_instr = this_instr;
-                _Py_Specialize_Send(Py_OBJ_UNTAG(receiver_packed), next_instr);
+                _Py_Specialize_Send(receiver, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(SEND, deferred);
@@ -995,10 +995,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION */
         }
 
-        op(_SEND, (receiver_packed, v_packed -- receiver_packed, retval)) {
-            PyObject *receiver = Py_OBJ_UNTAG(receiver_packed);
-            PyObject *v = Py_OBJ_UNTAG(v_packed);
-
+        op(_SEND, (receiver, v -- receiver, retval)) {
             assert(frame != &entry_frame);
             if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver) == &PyGen_Type || Py_TYPE(receiver) == &PyCoro_Type) &&
@@ -1007,7 +1004,7 @@ dummy_func(
                 PyGenObject *gen = (PyGenObject *)receiver;
                 _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
                 STACK_SHRINK(1);
-                _PyFrame_StackPush(gen_frame, v_packed);
+                _PyFrame_StackPush(gen_frame, v_tagged);
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -1047,7 +1044,7 @@ dummy_func(
             STAT_INC(SEND, hit);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
             STACK_SHRINK(1);
-            _PyFrame_StackPush(gen_frame, v);
+            _PyFrame_StackPush(gen_frame, v_tagged);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -1066,7 +1063,7 @@ dummy_func(
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, this_instr, Py_OBJ_UNTAG(retval));
+                    frame, this_instr, retval);
             if (err) ERROR_NO_POP();
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
@@ -1074,7 +1071,7 @@ dummy_func(
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
+            _PyFrame_StackPush(frame, retval_tagged);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
@@ -1098,7 +1095,7 @@ dummy_func(
             _PyInterpreterFrame *gen_frame = frame;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-            _PyFrame_StackPush(frame, retval);
+            _PyFrame_StackPush(frame, retval_tagged);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
@@ -2030,7 +2027,7 @@ dummy_func(
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
 
-            PyTypeObject *cls = Py_TYPE(Py_OBJ_UNTAG(owner));
+            PyTypeObject *cls = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(cls->tp_version_tag != type_version);
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
@@ -2045,7 +2042,7 @@ dummy_func(
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
-            new_frame->localsplus[0] = owner;
+            new_frame->localsplus[0] = owner_tagged;
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
         }
@@ -2053,7 +2050,7 @@ dummy_func(
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
-            PyTypeObject *cls = Py_TYPE(Py_OBJ_UNTAG(owner));
+            PyTypeObject *cls = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(cls->tp_version_tag != type_version);
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
@@ -2070,7 +2067,7 @@ dummy_func(
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 2);
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
-            new_frame->localsplus[0] = owner;
+            new_frame->localsplus[0] = owner_tagged;
             new_frame->localsplus[1] = Py_OBJ_TAG(Py_NewRef(name));
             frame->return_offset = (uint16_t)(next_instr - this_instr);
             DISPATCH_INLINED(new_frame);
@@ -3364,7 +3361,7 @@ dummy_func(
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF_TAGGED(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3462,7 +3459,7 @@ dummy_func(
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF_TAGGED(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3508,9 +3505,9 @@ dummy_func(
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.isinstance);
             STAT_INC(CALL, hit);
-            _PyTaggedPtr cls = args[1];
-            _PyTaggedPtr inst = args[0];
-            int retval = PyObject_IsInstance(Py_OBJ_UNTAG(inst), Py_OBJ_UNTAG(cls));
+            _PyTaggedPtr cls_tagged = args[1];
+            _PyTaggedPtr inst_tagged = args[0];
+            int retval = PyObject_IsInstance(Py_OBJ_UNTAG(inst_tagged), Py_OBJ_UNTAG(cls_tagged));
             if (retval < 0) {
                 ERROR_NO_POP();
             }
@@ -3519,8 +3516,8 @@ dummy_func(
             if (res == NULL) {
                 GOTO_ERROR(error);
             }
-            Py_DECREF_TAGGED(inst);
-            Py_DECREF_TAGGED(cls);
+            Py_DECREF_TAGGED(inst_tagged);
+            Py_DECREF_TAGGED(cls_tagged);
             Py_DECREF_TAGGED(callable_tagged);
         }
 
@@ -3535,8 +3532,8 @@ dummy_func(
             if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
                 goto pop_1_error;  // Since arg is DECREF'ed already
             }
-            Py_DECREF(self);
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(self_tagged);
+            Py_DECREF_TAGGED(callable_tagged);
             STACK_SHRINK(3);
             // Skip POP_TOP
             assert(next_instr->op.code == POP_TOP);
@@ -3557,8 +3554,10 @@ dummy_func(
             DEOPT_IF(meth->ml_flags != METH_O);
             // CPython promises to check all non-vectorcall function calls.
             DEOPT_IF(tstate->c_recursion_remaining <= 0);
-            PyObject *arg = Py_OBJ_UNTAG(args[1]);
-            PyObject *self = Py_OBJ_UNTAG(args[0]);
+            _PyTaggedPtr arg_tagged = args[1];
+            _PyTaggedPtr self_tagged = args[0];
+            PyObject *self = Py_OBJ_UNTAG(self_tagged);
+            PyObject *arg = Py_OBJ_UNTAG(arg_tagged);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -3566,9 +3565,9 @@ dummy_func(
             res = _PyCFunction_TrampolineCall(cfunc, self, arg);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(self);
-            Py_DECREF(arg);
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(self_tagged);
+            Py_DECREF_TAGGED(arg_tagged);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3604,7 +3603,7 @@ dummy_func(
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3625,7 +3624,8 @@ dummy_func(
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
             DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
-            PyObject *self = Py_OBJ_UNTAG(args[0]);
+            _PyTaggedPtr self_tagged = args[0];
+            PyObject *self = Py_OBJ_UNTAG(self_tagged);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             DEOPT_IF(meth->ml_flags != METH_NOARGS);
             // CPython promises to check all non-vectorcall function calls.
@@ -3636,8 +3636,8 @@ dummy_func(
             res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(self);
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(self_tagged);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3673,7 +3673,7 @@ dummy_func(
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3710,7 +3710,7 @@ dummy_func(
                 args[0] = Py_OBJ_TAG(Py_NewRef(self));
                 PyObject *method = ((PyMethodObject *)callable)->im_func;
                 args[-1] = Py_OBJ_TAG(Py_NewRef(method));
-                Py_DECREF(callable);
+                Py_DECREF_TAGGED(callable_tagged);
                 callable = method;
             }
             int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames);
@@ -3725,7 +3725,7 @@ dummy_func(
                     tstate, (PyFunctionObject *)callable, locals,
                     args, positional_args, kwnames
                 );
-                Py_DECREF(kwnames);
+                Py_DECREF_TAGGED(kwnames_tagged);
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
                 STACK_SHRINK(oparg + 3);
                 // The frame has stolen all the arguments from the stack,
@@ -3759,9 +3759,9 @@ dummy_func(
                     }
                 }
             }
-            Py_DECREF(kwnames);
+            Py_DECREF_TAGGED(kwnames_tagged);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }

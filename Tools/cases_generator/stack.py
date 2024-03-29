@@ -146,10 +146,15 @@ class Stack:
                         f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
                     )
                 else:
-                    return (
-                        f"{var.name}_tagged = stack_pointer[{self.top_offset.to_c()}];\n"
-                        f"{var.name} = {untag}({var.name}_tagged);\n"
-                    )
+                    if var.type != "_PyTaggedPtr":
+                        return (
+                            f"{var.name}_tagged = stack_pointer[{self.top_offset.to_c()}];\n"
+                            f"{var.name} = {untag}({var.name}_tagged);\n"
+                        )
+                    else:
+                        return (
+                            f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n"
+                        )
             elif var.name in UNUSED:
                 return ""
             else:
@@ -166,10 +171,15 @@ class Stack:
                 f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
             )
         else:
-            assign = (
-                f"{var.name}_tagged = stack_pointer[{self.base_offset.to_c()}];\n"
-                f"{var.name} = {cast}{untag}({var.name}_tagged);\n"
-            )
+            if var.type != "_PyTaggedPtr":
+                assign = (
+                    f"{var.name}_tagged = stack_pointer[{self.base_offset.to_c()}];\n"
+                    f"{var.name} = {cast}{untag}({var.name}_tagged);\n"
+                )
+            else:
+                assign = (
+                    f"{var.name} = stack_pointer[{self.base_offset.to_c()}];\n"
+                )
         if var.condition:
             if var.condition == "1":
                 return f"{assign}\n"
@@ -201,7 +211,7 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    tag = "Py_OBJ_TAG" if should_tag else ""
+                    tag = "Py_OBJ_TAG" if should_tag and var.type != "_PyTaggedPtr" else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
                     )

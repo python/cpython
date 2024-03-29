@@ -40,19 +40,20 @@ def declare_variable(
     if var.name in variables:
         return
     type = var.type if var.type else "PyObject *"
+    space = " " if type[-1] != "*" else ""
     variables.add(var.name)
     if var.condition:
-        if not dir_out:
+        if not dir_out and var.type != "_PyTaggedPtr":
             out.emit(f"_PyTaggedPtr {var.name}_tagged = Py_OBJ_TAG(NULL);\n")
-        out.emit(f"{type}{var.name} = NULL;\n")
+        out.emit(f"{type}{space}{var.name} = NULL;\n")
         if uop.replicates:
             # Replicas may not use all their conditional variables
             # So avoid a compiler warning with a fake use
             out.emit(f"(void){var.name};\n")
     else:
-        if not dir_out:
+        if not dir_out and var.type != "_PyTaggedPtr":
             out.emit(f"_PyTaggedPtr {var.name}_tagged;\n")
-        out.emit(f"{type}{var.name};\n")
+        out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
