@@ -426,16 +426,18 @@ insert_head(PyWeakReference *newref, PyWeakReference **list)
     *list = newref;
 }
 
-/* See if we can reuse either the basic ref or proxy instead of creating a new
- * weakref
+/* See if we can reuse either the basic ref or proxy in list instead of
+ * creating a new weakref
  */
 static PyWeakReference *
-try_reuse_basic_ref(PyWeakReference *ref, PyWeakReference *proxy,
-                    PyTypeObject *type, PyObject *callback)
+try_reuse_basic_ref(PyWeakReference *list, PyTypeObject *type, PyObject *callback)
 {
     if (callback != NULL) {
         return NULL;
     }
+
+    PyWeakReference *ref, *proxy;
+    get_basic_refs(list, &ref, &proxy);
 
     PyWeakReference *cand = NULL;
     if (type == &_PyWeakref_RefType) {
@@ -479,19 +481,30 @@ is_basic_ref_or_proxy(PyWeakReference *wr)
 
 #endif
 
-/* Return the node that `newref` should be inserted after or NULL if `newref`
- * should be inserted at the head of the list.
- */
-static PyWeakReference *
-get_prev(PyWeakReference *newref, PyWeakReference *ref, PyWeakReference *proxy)
+/* Insert `newref` in the appropriate position in `list` */
+static void
+insert_weakref(PyWeakReference *newref, PyWeakReference **list)
 {
+    PyWeakReference *ref, *proxy;
+    get_basic_refs(*list, &ref, &proxy);
+
+    PyWeakReference *prev;
     if (is_basic_ref(newref)) {
-        return NULL;
+        prev = NULL;
     }
-    if (is_basic_proxy(newref)) {
-        return ref;
+    else if (is_basic_proxy(newref)) {
+        prev = ref;
     }
-    return (proxy == NULL) ? ref : proxy;
+    else {
+        prev = (proxy == NULL) ? ref : proxy;
+    }
+
+    if (prev == NULL) {
+        insert_head(newref, list);
+    }
+    else {
+        insert_after(newref, prev);
+    }
 }
 
 typedef PyWeakReference *(*weakref_alloc_fn)(PyTypeObject *, PyObject *,
@@ -511,43 +524,34 @@ get_or_create_weakref(PyTypeObject *type, weakref_alloc_fn allocate,
         callback = NULL;
 
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(obj);
-    PyWeakReference *ref, *proxy;
-
-    LOCK_WEAKREFS(obj);
-    get_basic_refs(*list, &ref, &proxy);
-    PyWeakReference *basic_ref =
-        try_reuse_basic_ref(ref, proxy, type, callback);
-    if (basic_ref != NULL) {
+    if ((type == &_PyWeakref_RefType) ||
+        (type == &_PyWeakref_ProxyType) ||
+        (type == &_PyWeakref_CallableProxyType)) {
+        LOCK_WEAKREFS(obj);
+        PyWeakReference *basic_ref = try_reuse_basic_ref(*list, type, callback);
+        if (basic_ref != NULL) {
+            UNLOCK_WEAKREFS(obj);
+            return basic_ref;
+        }
+        PyWeakReference *newref = allocate(type, obj, callback);
+        if (newref == NULL) {
+            return NULL;
+        }
+        insert_weakref(newref, list);
         UNLOCK_WEAKREFS(obj);
-        return basic_ref;
+        return newref;
     }
-    UNLOCK_WEAKREFS(obj);
-
-    PyWeakReference *newref = allocate(type, obj, callback);
-    if (newref == NULL) {
-        return NULL;
-    }
-
-    LOCK_WEAKREFS(obj);
-    /* A new basic ref or proxy may be inserted if the GIL is released during
-     * allocation in default builds or while the weakref lock is released in
-     * free-threaded builds.
-     */
-    get_basic_refs(*list, &ref, &proxy);
-    basic_ref = try_reuse_basic_ref(ref, proxy, type, callback);
-    if (basic_ref != NULL) {
+    else {
+        // We may not be able to safely allocate inside the lock
+        PyWeakReference *newref = allocate(type, obj, callback);
+        if (newref == NULL) {
+            return NULL;
+        }
+        LOCK_WEAKREFS(obj);
+        insert_weakref(newref, list);
         UNLOCK_WEAKREFS(obj);
-        Py_DECREF(newref);
-        return basic_ref;
+        return newref;
     }
-    PyWeakReference *prev = get_prev(newref, ref, proxy);
-    if (prev == NULL)
-        insert_head(newref, list);
-    else
-        insert_after(newref, prev);
-    UNLOCK_WEAKREFS(obj);
-
-    return newref;
 }
 
 static int
