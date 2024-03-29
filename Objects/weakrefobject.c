@@ -358,7 +358,7 @@ try_reuse_basic_ref(PyWeakReference *list, PyTypeObject *type, PyObject *callbac
     }
 
 #ifdef Py_GIL_DISABLED
-    if (cand != NULL && !_Py_TryIncrefCompare((PyObject **) &cand, (PyObject *) cand)) {
+    if (cand != NULL && !_Py_TryIncref((PyObject *) cand)) {
         cand = NULL;
     }
 #else
@@ -1077,7 +1077,7 @@ PyObject_ClearWeakRefs(PyObject *object)
         PyWeakReference *cur = *list;
         if (cur != NULL) {
             clear_weakref_lock_held(cur, &callback);
-            if (_Py_TryIncrefCompare((PyObject **) &cur, (PyObject *) cur)) {
+            if (_Py_TryIncref((PyObject *) cur)) {
                 assert(num_items / 2 < num_weakrefs);
                 PyTuple_SET_ITEM(tuple, num_items, (PyObject *) cur);
                 PyTuple_SET_ITEM(tuple, num_items + 1, callback);

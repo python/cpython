@@ -527,6 +527,21 @@ _PyObject_SetMaybeWeakref(PyObject *op)
 
 #endif
 
+/* Tries to incref op and returns 1 if successful or 0 otherwise. */
+static inline int
+_Py_TryIncref(PyObject *op)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_TryIncrefFast(op) || _Py_TryIncRefShared(op);
+#else
+    if (Py_REFCNT(op) > 0) {
+        Py_INCREF(op);
+        return 1;
+    }
+    return 0;
+#endif
+}
+
 #ifdef Py_REF_DEBUG
 extern void _PyInterpreterState_FinalizeRefTotal(PyInterpreterState *);
 extern void _Py_FinalizeRefTotal(_PyRuntimeState *);

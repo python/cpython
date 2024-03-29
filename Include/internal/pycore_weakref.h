@@ -57,26 +57,20 @@ static inline PyObject* _PyWeakref_GET_REF(PyObject *ref_obj)
         return NULL;
     }
 
-#if !defined(Py_GIL_DISABLED)
-    if (_is_dead(obj)) {
-        return NULL;
-    }
-    assert(Py_REFCNT(obj) > 0);
-    return Py_NewRef(obj);
-#else
     LOCK_WEAKREFS(obj);
+#ifdef Py_GIL_DISABLED
     if (ref->wr_object == Py_None) {
         // clear_weakref() was called
         UNLOCK_WEAKREFS(obj);
         return NULL;
     }
-    if (_Py_TryIncrefCompare(&obj, obj)) {
+#endif
+    if (_Py_TryIncref(obj)) {
         UNLOCK_WEAKREFS(obj);
         return obj;
     }
     UNLOCK_WEAKREFS(obj);
     return NULL;
-#endif
 }
 
 static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
