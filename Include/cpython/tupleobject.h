@@ -32,9 +32,9 @@ PyTuple_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyTupleObject *tuple = _PyTuple_CAST(op);
     assert(0 <= index);
     assert(index < Py_SIZE(tuple));
-#ifdef Py_OBJECT_TEST_TAG
+#ifdef Py_TEST_TAG
     // Make sure it's not a tagged pointer
-    assert(((uintptr_t)op & Py_OBJECT_TEST_TAG) == 0);
+    assert(((uintptr_t)op & Py_TEST_TAG) == 0);
 #endif
     tuple->ob_item[index] = value;
 }

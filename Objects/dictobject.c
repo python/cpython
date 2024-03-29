@@ -2101,7 +2101,7 @@ _PyDict_FromTaggedItems(_Py_TaggedObject const *keys, Py_ssize_t keys_offset,
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        if (!PyUnicode_CheckExact(Py_CLEAR_TAG(*ks))) {
+        if (!PyUnicode_CheckExact(Py_OBJ_UNTAG(*ks))) {
             unicode = false;
             break;
         }
@@ -2117,8 +2117,8 @@ _PyDict_FromTaggedItems(_Py_TaggedObject const *keys, Py_ssize_t keys_offset,
     _Py_TaggedObject const *vs = values;
 
     for (Py_ssize_t i = 0; i < length; i++) {
-        PyObject *key = Py_CLEAR_TAG(*ks);
-        PyObject *value = Py_CLEAR_TAG(*vs);
+        PyObject *key = Py_OBJ_UNTAG(*ks);
+        PyObject *value = Py_OBJ_UNTAG(*vs);
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -2158,7 +2158,7 @@ _PyDict_FromTaggedItemsUntaggedKeys(
 
     for (Py_ssize_t i = 0; i < length; i++) {
         PyObject *key = *ks;
-        PyObject *value = Py_CLEAR_TAG(*vs);
+        PyObject *value = Py_OBJ_UNTAG(*vs);
         if (setitem_lock_held((PyDictObject *)dict, key, value) < 0) {
             Py_DECREF(dict);
             return NULL;

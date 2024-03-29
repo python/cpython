@@ -427,7 +427,7 @@ _PyTuple_FromTaggedArraySteal(_Py_TaggedObject const *src, Py_ssize_t n)
     }
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
-        PyObject *item = Py_CLEAR_TAG(src[i]);
+        PyObject *item = Py_OBJ_UNTAG(src[i]);
         dst[i] = item;
     }
     _PyObject_GC_TRACK(tuple);

@@ -1068,7 +1068,7 @@ PyObject *
 PyObject_Vectorcall_Tagged(PyObject *callable,
                            const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_OBJECT_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     if (kwnames != NULL && PyTuple_CheckExact(kwnames)) {
         nargs += PyTuple_GET_SIZE(kwnames);
@@ -1108,7 +1108,7 @@ PyObject *
 PyObject_TypeVectorcall_Tagged(PyTypeObject *callable,
                                const _Py_TaggedObject *tagged, size_t nargsf, PyObject *kwnames)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_OBJECT_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
@@ -1145,7 +1145,7 @@ PyObject_PyCFunctionFastCall_Tagged(PyCFunctionFast cfunc,
                                     PyObject *self,
                                     const _Py_TaggedObject *tagged, Py_ssize_t nargsf)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_OBJECT_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {
@@ -1183,7 +1183,7 @@ PyObject_PyCFunctionFastWithKeywordsCall_Tagged(PyCFunctionFastWithKeywords cfun
                                     const _Py_TaggedObject *tagged, Py_ssize_t nargsf,
                                     PyObject *kwds)
 {
-#if defined(Py_GIL_DISABLED) || defined(Py_OBJECT_TEST_TAG)
+#if defined(Py_GIL_DISABLED) || defined(Py_TEST_TAG)
     size_t nargs = nargsf & ~PY_VECTORCALL_ARGUMENTS_OFFSET;
     PyObject *args[MAX_UNTAG_SCRATCH];
     if (nargs >= MAX_UNTAG_SCRATCH) {

@@ -129,7 +129,7 @@ class Stack:
         if not var.peek:
             self.peek_offset.pop(var)
         indirect = "&" if var.is_array() else ""
-        clear = "Py_CLEAR_TAG" if clear_tag and (var.type or "").strip() != "_Py_TaggedObject" else ""
+        clear = "Py_OBJ_UNTAG" if clear_tag and (var.type or "").strip() != "_Py_TaggedObject" else ""
         if self.variables:
             popped = self.variables.pop()
             if popped.size != var.size:
@@ -199,7 +199,7 @@ class Stack:
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    pack = "Py_OBJ_PACK" if should_pack and ((var.type or "").strip() != "_Py_TaggedObject") else ""
+                    pack = "Py_OBJ_TAG" if should_pack and ((var.type or "").strip() != "_Py_TaggedObject") else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {pack}({cast}{var.name});\n"
                     )

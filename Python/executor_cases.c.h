@@ -30,7 +30,7 @@
             _Py_TaggedObject value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
-            if (Py_CLEAR_TAG(value) == NULL) {
+            if (Py_OBJ_UNTAG(value) == NULL) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
@@ -48,7 +48,7 @@
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -60,7 +60,7 @@
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -72,7 +72,7 @@
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -84,7 +84,7 @@
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -96,7 +96,7 @@
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -108,7 +108,7 @@
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -120,7 +120,7 @@
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -132,7 +132,7 @@
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -143,7 +143,7 @@
             _Py_TaggedObject value;
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
-            assert(Py_CLEAR_TAG(value) != NULL);
+            assert(Py_OBJ_UNTAG(value) != NULL);
             Py_INCREF_TAGGED(value);
             stack_pointer[0] = (value);
             stack_pointer += 1;
@@ -155,7 +155,7 @@
             oparg = CURRENT_OPARG();
             value = GETLOCAL(oparg);
             // do not use SETLOCAL here, it decrefs the old value
-            GETLOCAL(oparg) = Py_OBJ_PACK(NULL);
+            GETLOCAL(oparg) = Py_OBJ_TAG(NULL);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -166,7 +166,7 @@
             oparg = CURRENT_OPARG();
             PyObject *v = GETITEM(FRAME_CO_CONSTS, oparg);
             Py_INCREF(v);
-            value = Py_OBJ_PACK(v);
+            value = Py_OBJ_TAG(v);
             stack_pointer[0] = (value);
             stack_pointer += 1;
             break;
@@ -263,7 +263,7 @@
 
         case _POP_TOP: {
             PyObject * value;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             Py_DECREF(value);
             stack_pointer += -1;
             break;
@@ -272,7 +272,7 @@
         case _PUSH_NULL: {
             PyObject * res;
             res = NULL;
-            stack_pointer[0] = Py_OBJ_PACK(res);
+            stack_pointer[0] = Py_OBJ_TAG(res);
             stack_pointer += 1;
             break;
         }
@@ -280,10 +280,10 @@
         case _END_SEND: {
             PyObject * value;
             PyObject * receiver;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
-            receiver = Py_CLEAR_TAG(stack_pointer[-2]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
+            receiver = Py_OBJ_UNTAG(stack_pointer[-2]);
             Py_DECREF(receiver);
-            stack_pointer[-2] = Py_OBJ_PACK(value);
+            stack_pointer[-2] = Py_OBJ_TAG(value);
             stack_pointer += -1;
             break;
         }
@@ -291,39 +291,39 @@
         case _UNARY_NEGATIVE: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             res = PyNumber_Negative(value);
             Py_DECREF(value);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _UNARY_NOT: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(PyBool_Check(value));
             res = Py_IsFalse(value) ? Py_True : Py_False;
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _TO_BOOL: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
             if (err < 0) JUMP_TO_ERROR();
             res = err ? Py_True : Py_False;
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _TO_BOOL_BOOL: {
             PyObject * value;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             if (!PyBool_Check(value)) JUMP_TO_JUMP_TARGET();
             STAT_INC(TO_BOOL, hit);
             break;
@@ -332,7 +332,7 @@
         case _TO_BOOL_INT: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             if (!PyLong_CheckExact(value)) JUMP_TO_JUMP_TARGET();
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value)) {
@@ -343,38 +343,38 @@
                 Py_DECREF(value);
                 res = Py_True;
             }
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _TO_BOOL_LIST: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             if (!PyList_CheckExact(value)) JUMP_TO_JUMP_TARGET();
             STAT_INC(TO_BOOL, hit);
             res = Py_SIZE(value) ? Py_True : Py_False;
             Py_DECREF(value);
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _TO_BOOL_NONE: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             // This one is a bit weird, because we expect *some* failures:
             if (!Py_IsNone(value)) JUMP_TO_JUMP_TARGET();
             STAT_INC(TO_BOOL, hit);
             res = Py_False;
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _TO_BOOL_STR: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             if (!PyUnicode_CheckExact(value)) JUMP_TO_JUMP_TARGET();
             STAT_INC(TO_BOOL, hit);
             if (value == &_Py_STR(empty)) {
@@ -386,36 +386,36 @@
                 Py_DECREF(value);
                 res = Py_True;
             }
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _REPLACE_WITH_TRUE: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             Py_DECREF(value);
             res = Py_True;
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _UNARY_INVERT: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             res = PyNumber_Invert(value);
             Py_DECREF(value);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
         case _GUARD_BOTH_INT: {
             PyObject * right;
             PyObject * left;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyLong_CheckExact(left)) JUMP_TO_JUMP_TARGET();
             if (!PyLong_CheckExact(right)) JUMP_TO_JUMP_TARGET();
             break;
@@ -425,14 +425,14 @@
             PyObject * right;
             PyObject * left;
             PyObject * res;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Multiply((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -441,14 +441,14 @@
             PyObject * right;
             PyObject * left;
             PyObject * res;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Add((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -457,14 +457,14 @@
             PyObject * right;
             PyObject * left;
             PyObject * res;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(BINARY_OP, hit);
             res = _PyLong_Subtract((PyLongObject *)left, (PyLongObject *)right);
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -472,8 +472,8 @@
         case _GUARD_BOTH_FLOAT: {
             PyObject * right;
             PyObject * left;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyFloat_CheckExact(left)) JUMP_TO_JUMP_TARGET();
             if (!PyFloat_CheckExact(right)) JUMP_TO_JUMP_TARGET();
             break;
@@ -483,14 +483,14 @@
             PyObject * right;
             PyObject * left;
             PyObject * res;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(BINARY_OP, hit);
             double dres =
             ((PyFloatObject *)left)->ob_fval *
             ((PyFloatObject *)right)->ob_fval;
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -499,14 +499,14 @@
             PyObject * right;
             PyObject * left;
             PyObject * res;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(BINARY_OP, hit);
             double dres =
             ((PyFloatObject *)left)->ob_fval +
             ((PyFloatObject *)right)->ob_fval;
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -515,14 +515,14 @@
             PyObject * right;
             PyObject * left;
             PyObject * res;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(BINARY_OP, hit);
             double dres =
             ((PyFloatObject *)left)->ob_fval -
             ((PyFloatObject *)right)->ob_fval;
             DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dres, res);
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -530,8 +530,8 @@
         case _GUARD_BOTH_UNICODE: {
             PyObject * right;
             PyObject * left;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyUnicode_CheckExact(left)) JUMP_TO_JUMP_TARGET();
             if (!PyUnicode_CheckExact(right)) JUMP_TO_JUMP_TARGET();
             break;
@@ -541,14 +541,14 @@
             PyObject * right;
             PyObject * left;
             PyObject * res;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(BINARY_OP, hit);
             res = PyUnicode_Concat(left, right);
             _Py_DECREF_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             _Py_DECREF_SPECIALIZED(right, _PyUnicode_ExactDealloc);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -557,13 +557,13 @@
             PyObject * sub;
             PyObject * container;
             PyObject * res;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            container = Py_CLEAR_TAG(stack_pointer[-2]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            container = Py_OBJ_UNTAG(stack_pointer[-2]);
             res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -573,9 +573,9 @@
             PyObject * start;
             PyObject * container;
             PyObject * res;
-            stop = Py_CLEAR_TAG(stack_pointer[-1]);
-            start = Py_CLEAR_TAG(stack_pointer[-2]);
-            container = Py_CLEAR_TAG(stack_pointer[-3]);
+            stop = Py_OBJ_UNTAG(stack_pointer[-1]);
+            start = Py_OBJ_UNTAG(stack_pointer[-2]);
+            container = Py_OBJ_UNTAG(stack_pointer[-3]);
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
@@ -588,7 +588,7 @@
             }
             Py_DECREF(container);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-3] = Py_OBJ_PACK(res);
+            stack_pointer[-3] = Py_OBJ_TAG(res);
             stack_pointer += -2;
             break;
         }
@@ -598,10 +598,10 @@
             PyObject * start;
             PyObject * container;
             PyObject * v;
-            stop = Py_CLEAR_TAG(stack_pointer[-1]);
-            start = Py_CLEAR_TAG(stack_pointer[-2]);
-            container = Py_CLEAR_TAG(stack_pointer[-3]);
-            v = Py_CLEAR_TAG(stack_pointer[-4]);
+            stop = Py_OBJ_UNTAG(stack_pointer[-1]);
+            start = Py_OBJ_UNTAG(stack_pointer[-2]);
+            container = Py_OBJ_UNTAG(stack_pointer[-3]);
+            v = Py_OBJ_UNTAG(stack_pointer[-4]);
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             int err;
             if (slice == NULL) {
@@ -622,8 +622,8 @@
             PyObject * sub;
             PyObject * list;
             PyObject * res;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            list = Py_CLEAR_TAG(stack_pointer[-2]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            list = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
             if (!PyList_CheckExact(list)) JUMP_TO_JUMP_TARGET();
             // Deopt unless 0 <= sub < PyList_Size(list)
@@ -636,7 +636,7 @@
             Py_INCREF(res);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(list);
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -645,8 +645,8 @@
             PyObject * sub;
             PyObject * str;
             PyObject * res;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            str = Py_CLEAR_TAG(stack_pointer[-2]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            str = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
             if (!PyUnicode_CheckExact(str)) JUMP_TO_JUMP_TARGET();
             if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) JUMP_TO_JUMP_TARGET();
@@ -659,7 +659,7 @@
             res = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(str);
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -668,8 +668,8 @@
             PyObject * sub;
             PyObject * tuple;
             PyObject * res;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            tuple = Py_CLEAR_TAG(stack_pointer[-2]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            tuple = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
             if (!PyTuple_CheckExact(tuple)) JUMP_TO_JUMP_TARGET();
             // Deopt unless 0 <= sub < PyTuple_Size(list)
@@ -682,7 +682,7 @@
             Py_INCREF(res);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
             Py_DECREF(tuple);
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -691,8 +691,8 @@
             PyObject * sub;
             PyObject * dict;
             PyObject * res;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            dict = Py_CLEAR_TAG(stack_pointer[-2]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            dict = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyDict_CheckExact(dict)) JUMP_TO_JUMP_TARGET();
             STAT_INC(BINARY_SUBSCR, hit);
             int rc = PyDict_GetItemRef(dict, sub, &res);
@@ -703,7 +703,7 @@
             Py_DECREF(sub);
             if (rc <= 0) JUMP_TO_ERROR();
             // not found or error
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -714,8 +714,8 @@
             PyObject * v;
             PyObject * list;
             oparg = CURRENT_OPARG();
-            v = Py_CLEAR_TAG(stack_pointer[-1]);
-            list = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
+            v = Py_OBJ_UNTAG(stack_pointer[-1]);
+            list = Py_OBJ_UNTAG(stack_pointer[-2 - (oparg-1)]);
             if (_PyList_AppendTakeRef((PyListObject *)list, v) < 0) JUMP_TO_ERROR();
             stack_pointer += -1;
             break;
@@ -725,8 +725,8 @@
             PyObject * v;
             PyObject * set;
             oparg = CURRENT_OPARG();
-            v = Py_CLEAR_TAG(stack_pointer[-1]);
-            set = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
+            v = Py_OBJ_UNTAG(stack_pointer[-1]);
+            set = Py_OBJ_UNTAG(stack_pointer[-2 - (oparg-1)]);
             int err = PySet_Add(set, v);
             Py_DECREF(v);
             if (err) JUMP_TO_ERROR();
@@ -738,9 +738,9 @@
             PyObject * sub;
             PyObject * container;
             PyObject * v;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            container = Py_CLEAR_TAG(stack_pointer[-2]);
-            v = Py_CLEAR_TAG(stack_pointer[-3]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            container = Py_OBJ_UNTAG(stack_pointer[-2]);
+            v = Py_OBJ_UNTAG(stack_pointer[-3]);
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
@@ -755,9 +755,9 @@
             PyObject * sub;
             PyObject * list;
             PyObject * value;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            list = Py_CLEAR_TAG(stack_pointer[-2]);
-            value = Py_CLEAR_TAG(stack_pointer[-3]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            list = Py_OBJ_UNTAG(stack_pointer[-2]);
+            value = Py_OBJ_UNTAG(stack_pointer[-3]);
             if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
             if (!PyList_CheckExact(list)) JUMP_TO_JUMP_TARGET();
             // Ensure nonnegative, zero-or-one-digit ints.
@@ -780,9 +780,9 @@
             PyObject * sub;
             PyObject * dict;
             PyObject * value;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            dict = Py_CLEAR_TAG(stack_pointer[-2]);
-            value = Py_CLEAR_TAG(stack_pointer[-3]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            dict = Py_OBJ_UNTAG(stack_pointer[-2]);
+            value = Py_OBJ_UNTAG(stack_pointer[-3]);
             if (!PyDict_CheckExact(dict)) JUMP_TO_JUMP_TARGET();
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
@@ -795,8 +795,8 @@
         case _DELETE_SUBSCR: {
             PyObject * sub;
             PyObject * container;
-            sub = Py_CLEAR_TAG(stack_pointer[-1]);
-            container = Py_CLEAR_TAG(stack_pointer[-2]);
+            sub = Py_OBJ_UNTAG(stack_pointer[-1]);
+            container = Py_OBJ_UNTAG(stack_pointer[-2]);
             /* del container[sub] */
             int err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
@@ -810,12 +810,12 @@
             PyObject * value;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(oparg <= MAX_INTRINSIC_1);
             res = _PyIntrinsics_UnaryFunctions[oparg].func(tstate, value);
             Py_DECREF(value);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
@@ -824,14 +824,14 @@
             PyObject * value2;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            value1 = Py_CLEAR_TAG(stack_pointer[-1]);
-            value2 = Py_CLEAR_TAG(stack_pointer[-2]);
+            value1 = Py_OBJ_UNTAG(stack_pointer[-1]);
+            value2 = Py_OBJ_UNTAG(stack_pointer[-2]);
             assert(oparg <= MAX_INTRINSIC_2);
             res = _PyIntrinsics_BinaryFunctions[oparg].func(tstate, value2, value1);
             Py_DECREF(value2);
             Py_DECREF(value1);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -869,7 +869,7 @@
         case _GET_AITER: {
             PyObject * obj;
             PyObject * iter;
-            obj = Py_CLEAR_TAG(stack_pointer[-1]);
+            obj = Py_OBJ_UNTAG(stack_pointer[-1]);
             unaryfunc getter = NULL;
             PyTypeObject *type = Py_TYPE(obj);
             if (type->tp_as_async != NULL) {
@@ -895,14 +895,14 @@
                 Py_DECREF(iter);
                 if (true) JUMP_TO_ERROR();
             }
-            stack_pointer[-1] = Py_OBJ_PACK(iter);
+            stack_pointer[-1] = Py_OBJ_TAG(iter);
             break;
         }
 
         case _GET_ANEXT: {
             PyObject * aiter;
             PyObject * awaitable;
-            aiter = Py_CLEAR_TAG(stack_pointer[-1]);
+            aiter = Py_OBJ_UNTAG(stack_pointer[-1]);
             unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyTypeObject *type = Py_TYPE(aiter);
@@ -941,7 +941,7 @@
                     Py_DECREF(next_iter);
                 }
             }
-            stack_pointer[0] = Py_OBJ_PACK(awaitable);
+            stack_pointer[0] = Py_OBJ_TAG(awaitable);
             stack_pointer += 1;
             break;
         }
@@ -950,7 +950,7 @@
             PyObject * iterable;
             PyObject * iter;
             oparg = CURRENT_OPARG();
-            iterable = Py_CLEAR_TAG(stack_pointer[-1]);
+            iterable = Py_OBJ_UNTAG(stack_pointer[-1]);
             iter = _PyCoro_GetAwaitableIter(iterable);
             if (iter == NULL) {
                 _PyEval_FormatAwaitableError(tstate, Py_TYPE(iterable), oparg);
@@ -970,7 +970,7 @@
                 }
             }
             if (iter == NULL) JUMP_TO_ERROR();
-            stack_pointer[-1] = Py_OBJ_PACK(iter);
+            stack_pointer[-1] = Py_OBJ_TAG(iter);
             break;
         }
 
@@ -982,7 +982,7 @@
 
         case _POP_EXCEPT: {
             PyObject * exc_value;
-            exc_value = Py_CLEAR_TAG(stack_pointer[-1]);
+            exc_value = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             Py_XSETREF(exc_info->exc_value, exc_value == Py_None ? NULL : exc_value);
             stack_pointer += -1;
@@ -992,7 +992,7 @@
         case _LOAD_ASSERTION_ERROR: {
             PyObject * value;
             value = Py_NewRef(PyExc_AssertionError);
-            stack_pointer[0] = Py_OBJ_PACK(value);
+            stack_pointer[0] = Py_OBJ_TAG(value);
             stack_pointer += 1;
             break;
         }
@@ -1005,7 +1005,7 @@
                                  "__build_class__ not found");
                 if (true) JUMP_TO_ERROR();
             }
-            stack_pointer[0] = Py_OBJ_PACK(bc);
+            stack_pointer[0] = Py_OBJ_TAG(bc);
             stack_pointer += 1;
             break;
         }
@@ -1013,7 +1013,7 @@
         case _STORE_NAME: {
             PyObject * v;
             oparg = CURRENT_OPARG();
-            v = Py_CLEAR_TAG(stack_pointer[-1]);
+            v = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -1057,7 +1057,7 @@
         case _UNPACK_SEQUENCE: {
             PyObject * seq;
             oparg = CURRENT_OPARG();
-            seq = Py_CLEAR_TAG(stack_pointer[-1]);
+            seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             _Py_TaggedObject *top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg, -1, top);
             Py_DECREF(seq);
@@ -1071,7 +1071,7 @@
             PyObject * val1;
             PyObject * val0;
             oparg = CURRENT_OPARG();
-            seq = Py_CLEAR_TAG(stack_pointer[-1]);
+            seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(oparg == 2);
             if (!PyTuple_CheckExact(seq)) JUMP_TO_JUMP_TARGET();
             if (PyTuple_GET_SIZE(seq) != 2) JUMP_TO_JUMP_TARGET();
@@ -1079,8 +1079,8 @@
             val0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
             val1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
             Py_DECREF(seq);
-            stack_pointer[-1] = Py_OBJ_PACK(val1);
-            stack_pointer[0] = Py_OBJ_PACK(val0);
+            stack_pointer[-1] = Py_OBJ_TAG(val1);
+            stack_pointer[0] = Py_OBJ_TAG(val0);
             stack_pointer += 1;
             break;
         }
@@ -1089,14 +1089,14 @@
             PyObject * seq;
             _Py_TaggedObject * values;
             oparg = CURRENT_OPARG();
-            seq = Py_CLEAR_TAG(stack_pointer[-1]);
+            seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
             if (!PyTuple_CheckExact(seq)) JUMP_TO_JUMP_TARGET();
             if (PyTuple_GET_SIZE(seq) != oparg) JUMP_TO_JUMP_TARGET();
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_OBJ_PACK(Py_NewRef(items[i]));
+                *values++ = Py_OBJ_TAG(Py_NewRef(items[i]));
             }
             Py_DECREF(seq);
             stack_pointer += -1 + oparg;
@@ -1107,14 +1107,14 @@
             PyObject * seq;
             _Py_TaggedObject * values;
             oparg = CURRENT_OPARG();
-            seq = Py_CLEAR_TAG(stack_pointer[-1]);
+            seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1];
             if (!PyList_CheckExact(seq)) JUMP_TO_JUMP_TARGET();
             if (PyList_GET_SIZE(seq) != oparg) JUMP_TO_JUMP_TARGET();
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyList_ITEMS(seq);
             for (int i = oparg; --i >= 0; ) {
-                *values++ = Py_OBJ_PACK(Py_NewRef(items[i]));
+                *values++ = Py_OBJ_TAG(Py_NewRef(items[i]));
             }
             Py_DECREF(seq);
             stack_pointer += -1 + oparg;
@@ -1124,7 +1124,7 @@
         case _UNPACK_EX: {
             PyObject * seq;
             oparg = CURRENT_OPARG();
-            seq = Py_CLEAR_TAG(stack_pointer[-1]);
+            seq = Py_OBJ_UNTAG(stack_pointer[-1]);
             int totalargs = 1 + (oparg & 0xFF) + (oparg >> 8);
             _Py_TaggedObject *top = stack_pointer + totalargs - 1;
             int res = _PyEval_UnpackTaggedIterable(tstate, seq, oparg & 0xFF, oparg >> 8, top);
@@ -1138,8 +1138,8 @@
             PyObject * owner;
             PyObject * v;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
-            v = Py_CLEAR_TAG(stack_pointer[-2]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
+            v = Py_OBJ_UNTAG(stack_pointer[-2]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
             Py_DECREF(v);
@@ -1152,7 +1152,7 @@
         case _DELETE_ATTR: {
             PyObject * owner;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_DelAttr(owner, name);
             Py_DECREF(owner);
@@ -1164,7 +1164,7 @@
         case _STORE_GLOBAL: {
             PyObject * v;
             oparg = CURRENT_OPARG();
-            v = Py_CLEAR_TAG(stack_pointer[-1]);
+            v = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyDict_SetItem(GLOBALS(), name, v);
             Py_DECREF(v);
@@ -1198,7 +1198,7 @@
                 if (true) JUMP_TO_ERROR();
             }
             Py_INCREF(locals);
-            stack_pointer[0] = Py_OBJ_PACK(locals);
+            stack_pointer[0] = Py_OBJ_TAG(locals);
             stack_pointer += 1;
             break;
         }
@@ -1207,7 +1207,7 @@
             PyObject * mod_or_class_dict;
             PyObject * v;
             oparg = CURRENT_OPARG();
-            mod_or_class_dict = Py_CLEAR_TAG(stack_pointer[-1]);
+            mod_or_class_dict = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                 JUMP_TO_ERROR();
@@ -1229,7 +1229,7 @@
                 }
             }
             Py_DECREF(mod_or_class_dict);
-            stack_pointer[-1] = Py_OBJ_PACK(v);
+            stack_pointer[-1] = Py_OBJ_TAG(v);
             break;
         }
 
@@ -1273,8 +1273,8 @@
                 }
             }
             null = NULL;
-            stack_pointer[0] = Py_OBJ_PACK(res);
-            if (oparg & 1) stack_pointer[1] = Py_OBJ_PACK(null);
+            stack_pointer[0] = Py_OBJ_TAG(res);
+            if (oparg & 1) stack_pointer[1] = Py_OBJ_TAG(null);
             stack_pointer += 1 + (oparg & 1);
             break;
         }
@@ -1309,8 +1309,8 @@
             Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
-            stack_pointer[0] = Py_OBJ_PACK(res);
-            if (oparg & 1) stack_pointer[1] = Py_OBJ_PACK(null);
+            stack_pointer[0] = Py_OBJ_TAG(res);
+            if (oparg & 1) stack_pointer[1] = Py_OBJ_TAG(null);
             stack_pointer += 1 + (oparg & 1);
             break;
         }
@@ -1327,15 +1327,15 @@
             Py_INCREF(res);
             STAT_INC(LOAD_GLOBAL, hit);
             null = NULL;
-            stack_pointer[0] = Py_OBJ_PACK(res);
-            if (oparg & 1) stack_pointer[1] = Py_OBJ_PACK(null);
+            stack_pointer[0] = Py_OBJ_TAG(res);
+            if (oparg & 1) stack_pointer[1] = Py_OBJ_TAG(null);
             stack_pointer += 1 + (oparg & 1);
             break;
         }
 
         case _DELETE_FAST: {
             oparg = CURRENT_OPARG();
-            PyObject *v = Py_CLEAR_TAG(GETLOCAL(oparg));
+            PyObject *v = Py_OBJ_UNTAG(GETLOCAL(oparg));
             if (v == NULL) {
                 _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
                     UNBOUNDLOCAL_ERROR_MSG,
@@ -1343,7 +1343,7 @@
                 );
                 if (1) JUMP_TO_ERROR();
             }
-            SETLOCAL(oparg, Py_OBJ_PACK(NULL));
+            SETLOCAL(oparg, Py_OBJ_TAG(NULL));
             break;
         }
 
@@ -1351,18 +1351,18 @@
             oparg = CURRENT_OPARG();
             // "initial" is probably NULL but not if it's an arg (or set
             // via PyFrame_LocalsToFast() before MAKE_CELL has run).
-            PyObject *initial = Py_CLEAR_TAG(GETLOCAL(oparg));
+            PyObject *initial = Py_OBJ_UNTAG(GETLOCAL(oparg));
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
                 JUMP_TO_ERROR();
             }
-            SETLOCAL(oparg, Py_OBJ_PACK(cell));
+            SETLOCAL(oparg, Py_OBJ_TAG(cell));
             break;
         }
 
         case _DELETE_DEREF: {
             oparg = CURRENT_OPARG();
-            PyObject *cell = Py_CLEAR_TAG(GETLOCAL(oparg));
+            PyObject *cell = Py_OBJ_UNTAG(GETLOCAL(oparg));
             // Can't use ERROR_IF here.
             // Fortunately we don't need its superpower.
             PyObject *oldobj = PyCell_SwapTakeRef((PyCellObject *)cell, NULL);
@@ -1378,7 +1378,7 @@
             PyObject * class_dict;
             PyObject * value;
             oparg = CURRENT_OPARG();
-            class_dict = Py_CLEAR_TAG(stack_pointer[-1]);
+            class_dict = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *name;
             assert(class_dict);
             assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
@@ -1387,7 +1387,7 @@
                 JUMP_TO_ERROR();
             }
             if (!value) {
-                PyCellObject *cell = (PyCellObject *)Py_CLEAR_TAG(GETLOCAL(oparg));
+                PyCellObject *cell = (PyCellObject *)Py_OBJ_UNTAG(GETLOCAL(oparg));
                 value = PyCell_GetRef(cell);
                 if (value == NULL) {
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
@@ -1395,20 +1395,20 @@
                 }
             }
             Py_DECREF(class_dict);
-            stack_pointer[-1] = Py_OBJ_PACK(value);
+            stack_pointer[-1] = Py_OBJ_TAG(value);
             break;
         }
 
         case _LOAD_DEREF: {
             PyObject * value;
             oparg = CURRENT_OPARG();
-            PyCellObject *cell = (PyCellObject *)Py_CLEAR_TAG(GETLOCAL(oparg));
+            PyCellObject *cell = (PyCellObject *)Py_OBJ_UNTAG(GETLOCAL(oparg));
             value = PyCell_GetRef(cell);
             if (value == NULL) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 if (true) JUMP_TO_ERROR();
             }
-            stack_pointer[0] = Py_OBJ_PACK(value);
+            stack_pointer[0] = Py_OBJ_TAG(value);
             stack_pointer += 1;
             break;
         }
@@ -1416,8 +1416,8 @@
         case _STORE_DEREF: {
             PyObject * v;
             oparg = CURRENT_OPARG();
-            v = Py_CLEAR_TAG(stack_pointer[-1]);
-            PyCellObject *cell = (PyCellObject *)Py_CLEAR_TAG(GETLOCAL(oparg));
+            v = Py_OBJ_UNTAG(stack_pointer[-1]);
+            PyCellObject *cell = (PyCellObject *)Py_OBJ_UNTAG(GETLOCAL(oparg));
             PyCell_SetTakeRef(cell, v);
             stack_pointer += -1;
             break;
@@ -1433,7 +1433,7 @@
             int offset = co->co_nlocalsplus - oparg;
             for (int i = 0; i < oparg; ++i) {
                 PyObject *o = PyTuple_GET_ITEM(closure, i);
-                frame->localsplus[offset + i] = Py_OBJ_PACK(Py_NewRef(o));
+                frame->localsplus[offset + i] = Py_OBJ_TAG(Py_NewRef(o));
             }
             break;
         }
@@ -1448,7 +1448,7 @@
                 Py_DECREF_TAGGED(pieces[_i]);
             }
             if (str == NULL) JUMP_TO_ERROR();
-            stack_pointer[-oparg] = Py_OBJ_PACK(str);
+            stack_pointer[-oparg] = Py_OBJ_TAG(str);
             stack_pointer += 1 - oparg;
             break;
         }
@@ -1460,7 +1460,7 @@
             values = &stack_pointer[-oparg];
             tup = _PyTuple_FromTaggedArraySteal(values, oparg);
             if (tup == NULL) JUMP_TO_ERROR();
-            stack_pointer[-oparg] = Py_OBJ_PACK(tup);
+            stack_pointer[-oparg] = Py_OBJ_TAG(tup);
             stack_pointer += 1 - oparg;
             break;
         }
@@ -1472,7 +1472,7 @@
             values = &stack_pointer[-oparg];
             list = _PyList_FromTaggedArraySteal(values, oparg);
             if (list == NULL) JUMP_TO_ERROR();
-            stack_pointer[-oparg] = Py_OBJ_PACK(list);
+            stack_pointer[-oparg] = Py_OBJ_TAG(list);
             stack_pointer += 1 - oparg;
             break;
         }
@@ -1481,8 +1481,8 @@
             PyObject * iterable;
             PyObject * list;
             oparg = CURRENT_OPARG();
-            iterable = Py_CLEAR_TAG(stack_pointer[-1]);
-            list = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
+            iterable = Py_OBJ_UNTAG(stack_pointer[-1]);
+            list = Py_OBJ_UNTAG(stack_pointer[-2 - (oparg-1)]);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
@@ -1506,8 +1506,8 @@
             PyObject * iterable;
             PyObject * set;
             oparg = CURRENT_OPARG();
-            iterable = Py_CLEAR_TAG(stack_pointer[-1]);
-            set = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-1)]);
+            iterable = Py_OBJ_UNTAG(stack_pointer[-1]);
+            set = Py_OBJ_UNTAG(stack_pointer[-2 - (oparg-1)]);
             int err = _PySet_Update(set, iterable);
             Py_DECREF(iterable);
             if (err < 0) JUMP_TO_ERROR();
@@ -1530,7 +1530,7 @@
                 Py_DECREF_TAGGED(values[_i]);
             }
             if (map == NULL) JUMP_TO_ERROR();
-            stack_pointer[-oparg*2] = Py_OBJ_PACK(map);
+            stack_pointer[-oparg*2] = Py_OBJ_TAG(map);
             stack_pointer += 1 - oparg*2;
             break;
         }
@@ -1564,7 +1564,7 @@
             _Py_TaggedObject * values;
             PyObject * map;
             oparg = CURRENT_OPARG();
-            keys = Py_CLEAR_TAG(stack_pointer[-1]);
+            keys = Py_OBJ_UNTAG(stack_pointer[-1]);
             values = &stack_pointer[-1 - oparg];
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
@@ -1576,7 +1576,7 @@
             }
             Py_DECREF(keys);
             if (map == NULL) JUMP_TO_ERROR();
-            stack_pointer[-1 - oparg] = Py_OBJ_PACK(map);
+            stack_pointer[-1 - oparg] = Py_OBJ_TAG(map);
             stack_pointer += -oparg;
             break;
         }
@@ -1585,8 +1585,8 @@
             PyObject * update;
             PyObject * dict;
             oparg = CURRENT_OPARG();
-            update = Py_CLEAR_TAG(stack_pointer[-1]);
-            dict = Py_CLEAR_TAG(stack_pointer[-2 - (oparg - 1)]);
+            update = Py_OBJ_UNTAG(stack_pointer[-1]);
+            dict = Py_OBJ_UNTAG(stack_pointer[-2 - (oparg - 1)]);
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -1606,9 +1606,9 @@
             PyObject * dict;
             PyObject * callable;
             oparg = CURRENT_OPARG();
-            update = Py_CLEAR_TAG(stack_pointer[-1]);
-            dict = Py_CLEAR_TAG(stack_pointer[-2 - (oparg - 1)]);
-            callable = Py_CLEAR_TAG(stack_pointer[-5 - (oparg - 1)]);
+            update = Py_OBJ_UNTAG(stack_pointer[-1]);
+            dict = Py_OBJ_UNTAG(stack_pointer[-2 - (oparg - 1)]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-5 - (oparg - 1)]);
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
                 _PyEval_FormatKwargsError(tstate, callable, update);
                 Py_DECREF(update);
@@ -1624,9 +1624,9 @@
             PyObject * key;
             PyObject * dict;
             oparg = CURRENT_OPARG();
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
-            key = Py_CLEAR_TAG(stack_pointer[-2]);
-            dict = Py_CLEAR_TAG(stack_pointer[-3 - (oparg - 1)]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
+            key = Py_OBJ_UNTAG(stack_pointer[-2]);
+            dict = Py_OBJ_UNTAG(stack_pointer[-3 - (oparg - 1)]);
             assert(PyDict_CheckExact(dict));
             /* dict[key] = value */
             // Do not DECREF INPUTS because the function steals the references
@@ -1643,9 +1643,9 @@
             PyObject * global_super;
             PyObject * attr;
             oparg = CURRENT_OPARG();
-            self = Py_CLEAR_TAG(stack_pointer[-1]);
-            class = Py_CLEAR_TAG(stack_pointer[-2]);
-            global_super = Py_CLEAR_TAG(stack_pointer[-3]);
+            self = Py_OBJ_UNTAG(stack_pointer[-1]);
+            class = Py_OBJ_UNTAG(stack_pointer[-2]);
+            global_super = Py_OBJ_UNTAG(stack_pointer[-3]);
             assert(!(oparg & 1));
             if (global_super != (PyObject *)&PySuper_Type) JUMP_TO_JUMP_TARGET();
             if (!PyType_Check(class)) JUMP_TO_JUMP_TARGET();
@@ -1656,7 +1656,7 @@
             Py_DECREF(class);
             Py_DECREF(self);
             if (attr == NULL) JUMP_TO_ERROR();
-            stack_pointer[-3] = Py_OBJ_PACK(attr);
+            stack_pointer[-3] = Py_OBJ_TAG(attr);
             stack_pointer += -2;
             break;
         }
@@ -1668,9 +1668,9 @@
             PyObject * attr;
             PyObject * self_or_null;
             oparg = CURRENT_OPARG();
-            self = Py_CLEAR_TAG(stack_pointer[-1]);
-            class = Py_CLEAR_TAG(stack_pointer[-2]);
-            global_super = Py_CLEAR_TAG(stack_pointer[-3]);
+            self = Py_OBJ_UNTAG(stack_pointer[-1]);
+            class = Py_OBJ_UNTAG(stack_pointer[-2]);
+            global_super = Py_OBJ_UNTAG(stack_pointer[-3]);
             assert(oparg & 1);
             if (global_super != (PyObject *)&PySuper_Type) JUMP_TO_JUMP_TARGET();
             if (!PyType_Check(class)) JUMP_TO_JUMP_TARGET();
@@ -1692,8 +1692,8 @@
                 Py_DECREF(self);
                 self_or_null = NULL;
             }
-            stack_pointer[-3] = Py_OBJ_PACK(attr);
-            stack_pointer[-2] = Py_OBJ_PACK(self_or_null);
+            stack_pointer[-3] = Py_OBJ_TAG(attr);
+            stack_pointer[-2] = Py_OBJ_TAG(self_or_null);
             stack_pointer += -1;
             break;
         }
@@ -1703,7 +1703,7 @@
             PyObject * attr;
             PyObject *self_or_null = NULL;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
@@ -1734,15 +1734,15 @@
                 Py_DECREF(owner);
                 if (attr == NULL) JUMP_TO_ERROR();
             }
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            if (oparg & 1) stack_pointer[0] = Py_OBJ_PACK(self_or_null);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            if (oparg & 1) stack_pointer[0] = Py_OBJ_TAG(self_or_null);
             stack_pointer += (oparg & 1);
             break;
         }
 
         case _GUARD_TYPE_VERSION: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
@@ -1752,7 +1752,7 @@
 
         case _CHECK_MANAGED_OBJECT_HAS_VALUES: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(Py_TYPE(owner)->tp_dictoffset < 0);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
@@ -1765,7 +1765,7 @@
             PyObject * attr;
             PyObject *null = NULL;
             (void)null;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
@@ -1774,7 +1774,7 @@
             Py_INCREF(attr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
         }
 
@@ -1783,7 +1783,7 @@
             PyObject * attr;
             PyObject *null = NULL;
             (void)null;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             attr = _PyDictOrValues_GetValues(dorv)->values[index];
@@ -1792,8 +1792,8 @@
             Py_INCREF(attr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            stack_pointer[0] = Py_OBJ_PACK(null);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            stack_pointer[0] = Py_OBJ_TAG(null);
             stack_pointer += 1;
             break;
         }
@@ -1802,7 +1802,7 @@
 
         case _CHECK_ATTR_MODULE: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint32_t dict_version = (uint32_t)CURRENT_OPERAND();
             if (!PyModule_CheckExact(owner)) JUMP_TO_JUMP_TARGET();
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
@@ -1816,7 +1816,7 @@
             PyObject * attr;
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
@@ -1828,15 +1828,15 @@
             Py_INCREF(attr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            if (oparg & 1) stack_pointer[0] = Py_OBJ_PACK(null);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            if (oparg & 1) stack_pointer[0] = Py_OBJ_TAG(null);
             stack_pointer += (oparg & 1);
             break;
         }
 
         case _CHECK_ATTR_WITH_HINT: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             if (_PyDictOrValues_IsValues(dorv)) JUMP_TO_JUMP_TARGET();
@@ -1851,7 +1851,7 @@
             PyObject * attr;
             PyObject *null = NULL;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint16_t hint = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
@@ -1872,8 +1872,8 @@
             Py_INCREF(attr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            if (oparg & 1) stack_pointer[0] = Py_OBJ_PACK(null);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            if (oparg & 1) stack_pointer[0] = Py_OBJ_TAG(null);
             stack_pointer += (oparg & 1);
             break;
         }
@@ -1883,7 +1883,7 @@
             PyObject * attr;
             PyObject *null = NULL;
             (void)null;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
@@ -1892,7 +1892,7 @@
             Py_INCREF(attr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
         }
 
@@ -1901,7 +1901,7 @@
             PyObject * attr;
             PyObject *null = NULL;
             (void)null;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
@@ -1910,8 +1910,8 @@
             Py_INCREF(attr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            stack_pointer[0] = Py_OBJ_PACK(null);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            stack_pointer[0] = Py_OBJ_TAG(null);
             stack_pointer += 1;
             break;
         }
@@ -1920,7 +1920,7 @@
 
         case _CHECK_ATTR_CLASS: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint32_t type_version = (uint32_t)CURRENT_OPERAND();
             if (!PyType_Check(owner)) JUMP_TO_JUMP_TARGET();
             assert(type_version != 0);
@@ -1933,14 +1933,14 @@
             PyObject * attr;
             PyObject *null = NULL;
             (void)null;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
         }
 
@@ -1949,15 +1949,15 @@
             PyObject * attr;
             PyObject *null = NULL;
             (void)null;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
             null = NULL;
             Py_DECREF(owner);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            stack_pointer[0] = Py_OBJ_PACK(null);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            stack_pointer[0] = Py_OBJ_TAG(null);
             stack_pointer += 1;
             break;
         }
@@ -1970,7 +1970,7 @@
 
         case _GUARD_DORV_VALUES: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             if (!_PyDictOrValues_IsValues(dorv)) JUMP_TO_JUMP_TARGET();
@@ -1980,8 +1980,8 @@
         case _STORE_ATTR_INSTANCE_VALUE: {
             PyObject * owner;
             PyObject * value;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
-            value = Py_CLEAR_TAG(stack_pointer[-2]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-2]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
@@ -2004,8 +2004,8 @@
         case _STORE_ATTR_SLOT: {
             PyObject * owner;
             PyObject * value;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
-            value = Py_CLEAR_TAG(stack_pointer[-2]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-2]);
             uint16_t index = (uint16_t)CURRENT_OPERAND();
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
@@ -2022,8 +2022,8 @@
             PyObject * left;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             assert((oparg >> 5) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg >> 5);
             Py_DECREF(left);
@@ -2035,7 +2035,7 @@
                 if (res_bool < 0) JUMP_TO_ERROR();
                 res = res_bool ? Py_True : Py_False;
             }
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -2045,8 +2045,8 @@
             PyObject * left;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(COMPARE_OP, hit);
             double dleft = PyFloat_AS_DOUBLE(left);
             double dright = PyFloat_AS_DOUBLE(right);
@@ -2056,7 +2056,7 @@
             _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
             res = (sign_ish & oparg) ? Py_True : Py_False;
             // It's always a bool, so we don't care about oparg & 16.
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -2066,8 +2066,8 @@
             PyObject * left;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!_PyLong_IsCompact((PyLongObject *)left)) JUMP_TO_JUMP_TARGET();
             if (!_PyLong_IsCompact((PyLongObject *)right)) JUMP_TO_JUMP_TARGET();
             STAT_INC(COMPARE_OP, hit);
@@ -2081,7 +2081,7 @@
             _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
             res = (sign_ish & oparg) ? Py_True : Py_False;
             // It's always a bool, so we don't care about oparg & 16.
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -2091,8 +2091,8 @@
             PyObject * left;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             STAT_INC(COMPARE_OP, hit);
             int eq = _PyUnicode_Equal(left, right);
             assert((oparg >> 5) == Py_EQ || (oparg >> 5) == Py_NE);
@@ -2103,7 +2103,7 @@
             assert(COMPARISON_NOT_EQUALS + 1 == COMPARISON_EQUALS);
             res = ((COMPARISON_NOT_EQUALS + eq) & oparg) ? Py_True : Py_False;
             // It's always a bool, so we don't care about oparg & 16.
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -2113,13 +2113,13 @@
             PyObject * left;
             PyObject * b;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             int res = Py_Is(left, right) ^ oparg;
             Py_DECREF(left);
             Py_DECREF(right);
             b = res ? Py_True : Py_False;
-            stack_pointer[-2] = Py_OBJ_PACK(b);
+            stack_pointer[-2] = Py_OBJ_TAG(b);
             stack_pointer += -1;
             break;
         }
@@ -2129,14 +2129,14 @@
             PyObject * left;
             PyObject * b;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             int res = PySequence_Contains(right, left);
             Py_DECREF(left);
             Py_DECREF(right);
             if (res < 0) JUMP_TO_ERROR();
             b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = Py_OBJ_PACK(b);
+            stack_pointer[-2] = Py_OBJ_TAG(b);
             stack_pointer += -1;
             break;
         }
@@ -2146,8 +2146,8 @@
             PyObject * left;
             PyObject * b;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right))) JUMP_TO_JUMP_TARGET();
             STAT_INC(CONTAINS_OP, hit);
             // Note: both set and frozenset use the same seq_contains method!
@@ -2156,7 +2156,7 @@
             Py_DECREF(right);
             if (res < 0) JUMP_TO_ERROR();
             b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = Py_OBJ_PACK(b);
+            stack_pointer[-2] = Py_OBJ_TAG(b);
             stack_pointer += -1;
             break;
         }
@@ -2166,8 +2166,8 @@
             PyObject * left;
             PyObject * b;
             oparg = CURRENT_OPARG();
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (!PyDict_CheckExact(right)) JUMP_TO_JUMP_TARGET();
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right, left);
@@ -2175,7 +2175,7 @@
             Py_DECREF(right);
             if (res < 0) JUMP_TO_ERROR();
             b = (res ^ oparg) ? Py_True : Py_False;
-            stack_pointer[-2] = Py_OBJ_PACK(b);
+            stack_pointer[-2] = Py_OBJ_TAG(b);
             stack_pointer += -1;
             break;
         }
@@ -2185,8 +2185,8 @@
             PyObject * exc_value;
             PyObject * rest;
             PyObject * match;
-            match_type = Py_CLEAR_TAG(stack_pointer[-1]);
-            exc_value = Py_CLEAR_TAG(stack_pointer[-2]);
+            match_type = Py_OBJ_UNTAG(stack_pointer[-1]);
+            exc_value = Py_OBJ_UNTAG(stack_pointer[-2]);
             if (_PyEval_CheckExceptStarTypeValid(tstate, match_type) < 0) {
                 Py_DECREF(exc_value);
                 Py_DECREF(match_type);
@@ -2204,8 +2204,8 @@
             if (!Py_IsNone(match)) {
                 PyErr_SetHandledException(match);
             }
-            stack_pointer[-2] = Py_OBJ_PACK(rest);
-            stack_pointer[-1] = Py_OBJ_PACK(match);
+            stack_pointer[-2] = Py_OBJ_TAG(rest);
+            stack_pointer[-1] = Py_OBJ_TAG(match);
             break;
         }
 
@@ -2213,8 +2213,8 @@
             PyObject * right;
             PyObject * left;
             PyObject * b;
-            right = Py_CLEAR_TAG(stack_pointer[-1]);
-            left = Py_CLEAR_TAG(stack_pointer[-2]);
+            right = Py_OBJ_UNTAG(stack_pointer[-1]);
+            left = Py_OBJ_UNTAG(stack_pointer[-2]);
             assert(PyExceptionInstance_Check(left));
             if (_PyEval_CheckExceptTypeValid(tstate, right) < 0) {
                 Py_DECREF(right);
@@ -2223,7 +2223,7 @@
             int res = PyErr_GivenExceptionMatches(left, right);
             Py_DECREF(right);
             b = res ? Py_True : Py_False;
-            stack_pointer[-1] = Py_OBJ_PACK(b);
+            stack_pointer[-1] = Py_OBJ_TAG(b);
             break;
         }
 
@@ -2234,7 +2234,7 @@
         case _IS_NONE: {
             PyObject * value;
             PyObject * b;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             if (Py_IsNone(value)) {
                 b = Py_True;
             }
@@ -2242,20 +2242,20 @@
                 b = Py_False;
                 Py_DECREF(value);
             }
-            stack_pointer[-1] = Py_OBJ_PACK(b);
+            stack_pointer[-1] = Py_OBJ_TAG(b);
             break;
         }
 
         case _GET_LEN: {
             PyObject * obj;
             PyObject * len_o;
-            obj = Py_CLEAR_TAG(stack_pointer[-1]);
+            obj = Py_OBJ_UNTAG(stack_pointer[-1]);
             // PUSH(len(TOS))
             Py_ssize_t len_i = PyObject_Length(obj);
             if (len_i < 0) JUMP_TO_ERROR();
             len_o = PyLong_FromSsize_t(len_i);
             if (len_o == NULL) JUMP_TO_ERROR();
-            stack_pointer[0] = Py_OBJ_PACK(len_o);
+            stack_pointer[0] = Py_OBJ_TAG(len_o);
             stack_pointer += 1;
             break;
         }
@@ -2266,9 +2266,9 @@
             PyObject * subject;
             PyObject * attrs;
             oparg = CURRENT_OPARG();
-            names = Py_CLEAR_TAG(stack_pointer[-1]);
-            type = Py_CLEAR_TAG(stack_pointer[-2]);
-            subject = Py_CLEAR_TAG(stack_pointer[-3]);
+            names = Py_OBJ_UNTAG(stack_pointer[-1]);
+            type = Py_OBJ_UNTAG(stack_pointer[-2]);
+            subject = Py_OBJ_UNTAG(stack_pointer[-3]);
             // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
             // None on failure.
             assert(PyTuple_CheckExact(names));
@@ -2284,7 +2284,7 @@
                 // Error!
                 attrs = Py_None;  // Failure!
             }
-            stack_pointer[-3] = Py_OBJ_PACK(attrs);
+            stack_pointer[-3] = Py_OBJ_TAG(attrs);
             stack_pointer += -2;
             break;
         }
@@ -2292,10 +2292,10 @@
         case _MATCH_MAPPING: {
             PyObject * subject;
             PyObject * res;
-            subject = Py_CLEAR_TAG(stack_pointer[-1]);
+            subject = Py_OBJ_UNTAG(stack_pointer[-1]);
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
             res = match ? Py_True : Py_False;
-            stack_pointer[0] = Py_OBJ_PACK(res);
+            stack_pointer[0] = Py_OBJ_TAG(res);
             stack_pointer += 1;
             break;
         }
@@ -2303,10 +2303,10 @@
         case _MATCH_SEQUENCE: {
             PyObject * subject;
             PyObject * res;
-            subject = Py_CLEAR_TAG(stack_pointer[-1]);
+            subject = Py_OBJ_UNTAG(stack_pointer[-1]);
             int match = Py_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
             res = match ? Py_True : Py_False;
-            stack_pointer[0] = Py_OBJ_PACK(res);
+            stack_pointer[0] = Py_OBJ_TAG(res);
             stack_pointer += 1;
             break;
         }
@@ -2315,12 +2315,12 @@
             PyObject * keys;
             PyObject * subject;
             PyObject * values_or_none;
-            keys = Py_CLEAR_TAG(stack_pointer[-1]);
-            subject = Py_CLEAR_TAG(stack_pointer[-2]);
+            keys = Py_OBJ_UNTAG(stack_pointer[-1]);
+            subject = Py_OBJ_UNTAG(stack_pointer[-2]);
             // On successful match, PUSH(values). Otherwise, PUSH(None).
             values_or_none = _PyEval_MatchKeys(tstate, subject, keys);
             if (values_or_none == NULL) JUMP_TO_ERROR();
-            stack_pointer[0] = Py_OBJ_PACK(values_or_none);
+            stack_pointer[0] = Py_OBJ_TAG(values_or_none);
             stack_pointer += 1;
             break;
         }
@@ -2328,19 +2328,19 @@
         case _GET_ITER: {
             PyObject * iterable;
             PyObject * iter;
-            iterable = Py_CLEAR_TAG(stack_pointer[-1]);
+            iterable = Py_OBJ_UNTAG(stack_pointer[-1]);
             /* before: [obj]; after [getiter(obj)] */
             iter = PyObject_GetIter(iterable);
             Py_DECREF(iterable);
             if (iter == NULL) JUMP_TO_ERROR();
-            stack_pointer[-1] = Py_OBJ_PACK(iter);
+            stack_pointer[-1] = Py_OBJ_TAG(iter);
             break;
         }
 
         case _GET_YIELD_FROM_ITER: {
             PyObject * iterable;
             PyObject * iter;
-            iterable = Py_CLEAR_TAG(stack_pointer[-1]);
+            iterable = Py_OBJ_UNTAG(stack_pointer[-1]);
             /* before: [obj]; after [getiter(obj)] */
             if (PyCoro_CheckExact(iterable)) {
                 /* `iterable` is a coroutine */
@@ -2365,7 +2365,7 @@
                 }
                 Py_DECREF(iterable);
             }
-            stack_pointer[-1] = Py_OBJ_PACK(iter);
+            stack_pointer[-1] = Py_OBJ_TAG(iter);
             break;
         }
 
@@ -2374,7 +2374,7 @@
         case _FOR_ITER_TIER_TWO: {
             PyObject * iter;
             PyObject * next;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next == NULL) {
@@ -2391,7 +2391,7 @@
                 if (true) JUMP_TO_JUMP_TARGET();
             }
             // Common case: no jump, leave it to the code generator
-            stack_pointer[0] = Py_OBJ_PACK(next);
+            stack_pointer[0] = Py_OBJ_TAG(next);
             stack_pointer += 1;
             break;
         }
@@ -2400,7 +2400,7 @@
 
         case _ITER_CHECK_LIST: {
             PyObject * iter;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             if (Py_TYPE(iter) != &PyListIter_Type) JUMP_TO_JUMP_TARGET();
             break;
         }
@@ -2409,7 +2409,7 @@
 
         case _GUARD_NOT_EXHAUSTED_LIST: {
             PyObject * iter;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
@@ -2421,21 +2421,21 @@
         case _ITER_NEXT_LIST: {
             PyObject * iter;
             PyObject * next;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyListIterObject *it = (_PyListIterObject *)iter;
             assert(Py_TYPE(iter) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
             assert(seq);
             assert(it->it_index < PyList_GET_SIZE(seq));
             next = Py_NewRef(PyList_GET_ITEM(seq, it->it_index++));
-            stack_pointer[0] = Py_OBJ_PACK(next);
+            stack_pointer[0] = Py_OBJ_TAG(next);
             stack_pointer += 1;
             break;
         }
 
         case _ITER_CHECK_TUPLE: {
             PyObject * iter;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             if (Py_TYPE(iter) != &PyTupleIter_Type) JUMP_TO_JUMP_TARGET();
             break;
         }
@@ -2444,7 +2444,7 @@
 
         case _GUARD_NOT_EXHAUSTED_TUPLE: {
             PyObject * iter;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
@@ -2456,21 +2456,21 @@
         case _ITER_NEXT_TUPLE: {
             PyObject * iter;
             PyObject * next;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter;
             assert(Py_TYPE(iter) == &PyTupleIter_Type);
             PyTupleObject *seq = it->it_seq;
             assert(seq);
             assert(it->it_index < PyTuple_GET_SIZE(seq));
             next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
-            stack_pointer[0] = Py_OBJ_PACK(next);
+            stack_pointer[0] = Py_OBJ_TAG(next);
             stack_pointer += 1;
             break;
         }
 
         case _ITER_CHECK_RANGE: {
             PyObject * iter;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             if (Py_TYPE(r) != &PyRangeIter_Type) JUMP_TO_JUMP_TARGET();
             break;
@@ -2480,7 +2480,7 @@
 
         case _GUARD_NOT_EXHAUSTED_RANGE: {
             PyObject * iter;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             if (r->len <= 0) JUMP_TO_JUMP_TARGET();
@@ -2490,7 +2490,7 @@
         case _ITER_NEXT_RANGE: {
             PyObject * iter;
             PyObject * next;
-            iter = Py_CLEAR_TAG(stack_pointer[-1]);
+            iter = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyRangeIterObject *r = (_PyRangeIterObject *)iter;
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             assert(r->len > 0);
@@ -2499,7 +2499,7 @@
             r->len--;
             next = PyLong_FromLong(value);
             if (next == NULL) JUMP_TO_ERROR();
-            stack_pointer[0] = Py_OBJ_PACK(next);
+            stack_pointer[0] = Py_OBJ_TAG(next);
             stack_pointer += 1;
             break;
         }
@@ -2515,9 +2515,9 @@
             PyObject * lasti;
             PyObject * exit_func;
             PyObject * res;
-            val = Py_CLEAR_TAG(stack_pointer[-1]);
-            lasti = Py_CLEAR_TAG(stack_pointer[-3]);
-            exit_func = Py_CLEAR_TAG(stack_pointer[-4]);
+            val = Py_OBJ_UNTAG(stack_pointer[-1]);
+            lasti = Py_OBJ_UNTAG(stack_pointer[-3]);
+            exit_func = Py_OBJ_UNTAG(stack_pointer[-4]);
             /* At the top of the stack are 4 values:
                - val: TOP = exc_info()
                - unused: SECOND = previous exception
@@ -2542,7 +2542,7 @@
             res = PyObject_Vectorcall(exit_func, stack + 1,
                                       3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[0] = Py_OBJ_PACK(res);
+            stack_pointer[0] = Py_OBJ_TAG(res);
             stack_pointer += 1;
             break;
         }
@@ -2550,7 +2550,7 @@
         case _PUSH_EXC_INFO: {
             PyObject * new_exc;
             PyObject * prev_exc;
-            new_exc = Py_CLEAR_TAG(stack_pointer[-1]);
+            new_exc = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyErr_StackItem *exc_info = tstate->exc_info;
             if (exc_info->exc_value != NULL) {
                 prev_exc = exc_info->exc_value;
@@ -2560,15 +2560,15 @@
             }
             assert(PyExceptionInstance_Check(new_exc));
             exc_info->exc_value = Py_NewRef(new_exc);
-            stack_pointer[-1] = Py_OBJ_PACK(prev_exc);
-            stack_pointer[0] = Py_OBJ_PACK(new_exc);
+            stack_pointer[-1] = Py_OBJ_TAG(prev_exc);
+            stack_pointer[0] = Py_OBJ_TAG(new_exc);
             stack_pointer += 1;
             break;
         }
 
         case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
             if (!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv)) JUMP_TO_JUMP_TARGET();
@@ -2577,7 +2577,7 @@
 
         case _GUARD_KEYS_VERSION: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             uint32_t keys_version = (uint32_t)CURRENT_OPERAND();
             PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
@@ -2590,7 +2590,7 @@
             PyObject * attr;
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             /* Cached method object */
@@ -2599,8 +2599,8 @@
             attr = Py_NewRef(descr);
             assert(_PyType_HasFeature(Py_TYPE(attr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             self = owner;
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            stack_pointer[0] = Py_OBJ_PACK(self);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            stack_pointer[0] = Py_OBJ_TAG(self);
             stack_pointer += 1;
             break;
         }
@@ -2610,7 +2610,7 @@
             PyObject * attr;
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
@@ -2619,8 +2619,8 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
             self = owner;
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            stack_pointer[0] = Py_OBJ_PACK(self);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            stack_pointer[0] = Py_OBJ_TAG(self);
             stack_pointer += 1;
             break;
         }
@@ -2629,14 +2629,14 @@
             PyObject * owner;
             PyObject * attr;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
         }
 
@@ -2644,7 +2644,7 @@
             PyObject * owner;
             PyObject * attr;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert((oparg & 1) == 0);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
@@ -2652,13 +2652,13 @@
             assert(descr != NULL);
             Py_DECREF(owner);
             attr = Py_NewRef(descr);
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
             break;
         }
 
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
             PyObject * owner;
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
             assert(dictoffset > 0);
             PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
@@ -2672,7 +2672,7 @@
             PyObject * attr;
             PyObject *self = NULL;
             oparg = CURRENT_OPARG();
-            owner = Py_CLEAR_TAG(stack_pointer[-1]);
+            owner = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *descr = (PyObject *)CURRENT_OPERAND();
             assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
@@ -2680,8 +2680,8 @@
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
             self = owner;
-            stack_pointer[-1] = Py_OBJ_PACK(attr);
-            stack_pointer[0] = Py_OBJ_PACK(self);
+            stack_pointer[-1] = Py_OBJ_TAG(attr);
+            stack_pointer[0] = Py_OBJ_TAG(self);
             stack_pointer += 1;
             break;
         }
@@ -2699,8 +2699,8 @@
             PyObject * null;
             PyObject * callable;
             oparg = CURRENT_OPARG();
-            null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             if (null != NULL) JUMP_TO_JUMP_TARGET();
             if (Py_TYPE(callable) != &PyMethod_Type) JUMP_TO_JUMP_TARGET();
             break;
@@ -2711,15 +2711,15 @@
             PyObject * func;
             PyObject * self;
             oparg = CURRENT_OPARG();
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             STAT_INC(CALL, hit);
             self = Py_NewRef(((PyMethodObject *)callable)->im_self);
-            stack_pointer[-1 - oparg] = Py_OBJ_PACK(self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
+            stack_pointer[-1 - oparg] = Py_OBJ_TAG(self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
             func = Py_NewRef(((PyMethodObject *)callable)->im_func);
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(func);  // This is used by CALL, upon deoptimization
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(func);  // This is used by CALL, upon deoptimization
             Py_DECREF(callable);
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(func);
-            stack_pointer[-1 - oparg] = Py_OBJ_PACK(self);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(func);
+            stack_pointer[-1 - oparg] = Py_OBJ_TAG(self);
             break;
         }
 
@@ -2732,8 +2732,8 @@
             PyObject * self_or_null;
             PyObject * callable;
             oparg = CURRENT_OPARG();
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             if (!PyFunction_Check(callable)) JUMP_TO_JUMP_TARGET();
             PyFunctionObject *func = (PyFunctionObject *)callable;
@@ -2746,7 +2746,7 @@
         case _CHECK_STACK_SPACE: {
             PyObject * callable;
             oparg = CURRENT_OPARG();
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) JUMP_TO_JUMP_TARGET();
@@ -2762,18 +2762,18 @@
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_PACK(self_or_null);
+            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK((PyObject *)new_frame);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG((PyObject *)new_frame);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -2786,18 +2786,18 @@
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_PACK(self_or_null);
+            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK((PyObject *)new_frame);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG((PyObject *)new_frame);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -2810,18 +2810,18 @@
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_PACK(self_or_null);
+            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK((PyObject *)new_frame);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG((PyObject *)new_frame);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -2834,18 +2834,18 @@
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_PACK(self_or_null);
+            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK((PyObject *)new_frame);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG((PyObject *)new_frame);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -2858,18 +2858,18 @@
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_PACK(self_or_null);
+            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK((PyObject *)new_frame);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG((PyObject *)new_frame);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -2881,25 +2881,25 @@
             _PyInterpreterFrame * new_frame;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             new_frame = _PyFrame_PushUnchecked(tstate, func, oparg + has_self);
             _Py_TaggedObject *first_non_self_local = new_frame->localsplus + has_self;
-            new_frame->localsplus[0] = Py_OBJ_PACK(self_or_null);
+            new_frame->localsplus[0] = Py_OBJ_TAG(self_or_null);
             for (int i = 0; i < oparg; i++) {
                 first_non_self_local[i] = args[i];
             }
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK((PyObject *)new_frame);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG((PyObject *)new_frame);
             stack_pointer += -1 - oparg;
             break;
         }
 
         case _PUSH_FRAME: {
             _PyInterpreterFrame * new_frame;
-            new_frame = (_PyInterpreterFrame *)Py_CLEAR_TAG(stack_pointer[-1]);
+            new_frame = (_PyInterpreterFrame *)Py_OBJ_UNTAG(stack_pointer[-1]);
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             assert(tstate->interp->eval_frame == NULL);
@@ -2928,16 +2928,16 @@
             PyObject * callable;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            arg = Py_CLEAR_TAG(stack_pointer[-1]);
-            null = Py_CLEAR_TAG(stack_pointer[-2]);
-            callable = Py_CLEAR_TAG(stack_pointer[-3]);
+            arg = Py_OBJ_UNTAG(stack_pointer[-1]);
+            null = Py_OBJ_UNTAG(stack_pointer[-2]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-3]);
             assert(oparg == 1);
             if (null != NULL) JUMP_TO_JUMP_TARGET();
             if (callable != (PyObject *)&PyType_Type) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             res = Py_NewRef(Py_TYPE(arg));
             Py_DECREF(arg);
-            stack_pointer[-3] = Py_OBJ_PACK(res);
+            stack_pointer[-3] = Py_OBJ_TAG(res);
             stack_pointer += -2;
             break;
         }
@@ -2948,9 +2948,9 @@
             PyObject * callable;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            arg = Py_CLEAR_TAG(stack_pointer[-1]);
-            null = Py_CLEAR_TAG(stack_pointer[-2]);
-            callable = Py_CLEAR_TAG(stack_pointer[-3]);
+            arg = Py_OBJ_UNTAG(stack_pointer[-1]);
+            null = Py_OBJ_UNTAG(stack_pointer[-2]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-3]);
             assert(oparg == 1);
             if (null != NULL) JUMP_TO_JUMP_TARGET();
             if (callable != (PyObject *)&PyUnicode_Type) JUMP_TO_JUMP_TARGET();
@@ -2958,7 +2958,7 @@
             res = PyObject_Str(arg);
             Py_DECREF(arg);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-3] = Py_OBJ_PACK(res);
+            stack_pointer[-3] = Py_OBJ_TAG(res);
             stack_pointer += -2;
             break;
         }
@@ -2969,9 +2969,9 @@
             PyObject * callable;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            arg = Py_CLEAR_TAG(stack_pointer[-1]);
-            null = Py_CLEAR_TAG(stack_pointer[-2]);
-            callable = Py_CLEAR_TAG(stack_pointer[-3]);
+            arg = Py_OBJ_UNTAG(stack_pointer[-1]);
+            null = Py_OBJ_UNTAG(stack_pointer[-2]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-3]);
             assert(oparg == 1);
             if (null != NULL) JUMP_TO_JUMP_TARGET();
             if (callable != (PyObject *)&PyTuple_Type) JUMP_TO_JUMP_TARGET();
@@ -2979,7 +2979,7 @@
             res = PySequence_Tuple(arg);
             Py_DECREF(arg);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-3] = Py_OBJ_PACK(res);
+            stack_pointer[-3] = Py_OBJ_TAG(res);
             stack_pointer += -2;
             break;
         }
@@ -2988,7 +2988,7 @@
 
         case _EXIT_INIT_CHECK: {
             PyObject * should_be_none;
-            should_be_none = Py_CLEAR_TAG(stack_pointer[-1]);
+            should_be_none = Py_OBJ_UNTAG(stack_pointer[-1]);
             assert(STACK_LEVEL() == 2);
             if (should_be_none != Py_None) {
                 PyErr_Format(PyExc_TypeError,
@@ -3007,15 +3007,15 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
             callable = (stack_pointer[-2 - oparg]);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
                 total_args++;
             }
-            if (!PyType_Check(Py_CLEAR_TAG(callable))) JUMP_TO_JUMP_TARGET();
-            PyTypeObject *tp = (PyTypeObject *)Py_CLEAR_TAG(callable);
+            if (!PyType_Check(Py_OBJ_UNTAG(callable))) JUMP_TO_JUMP_TARGET();
+            PyTypeObject *tp = (PyTypeObject *)Py_OBJ_UNTAG(callable);
             if (tp->tp_vectorcall == NULL) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             res = PyObject_TypeVectorcall_Tagged(tp, args, total_args, NULL);
@@ -3025,7 +3025,7 @@
             }
             Py_DECREF_TAGGED(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3037,8 +3037,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             /* Builtin METH_O functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3052,7 +3052,7 @@
             if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            PyObject *arg = Py_CLEAR_TAG(args[0]);
+            PyObject *arg = Py_OBJ_UNTAG(args[0]);
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
             res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
             _Py_LeaveRecursiveCallTstate(tstate);
@@ -3060,7 +3060,7 @@
             Py_DECREF(arg);
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3072,8 +3072,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             /* Builtin METH_FASTCALL functions, without keywords */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3098,7 +3098,7 @@
             }
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3110,7 +3110,7 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
             callable = (stack_pointer[-2 - oparg]);
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
@@ -3118,7 +3118,7 @@
                 args--;
                 total_args++;
             }
-            PyObject *cb = Py_CLEAR_TAG(callable);
+            PyObject *cb = Py_OBJ_UNTAG(callable);
             if (!PyCFunction_CheckExact(cb)) JUMP_TO_JUMP_TARGET();
             if (PyCFunction_GET_FLAGS(cb) != (METH_FASTCALL | METH_KEYWORDS)) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
@@ -3136,7 +3136,7 @@
             }
             Py_DECREF_TAGGED(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3148,8 +3148,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             /* len(o) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3160,7 +3160,7 @@
             PyInterpreterState *interp = tstate->interp;
             if (callable != interp->callable_cache.len) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
-            PyObject *arg = Py_CLEAR_TAG(args[0]);
+            PyObject *arg = Py_OBJ_UNTAG(args[0]);
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 JUMP_TO_ERROR();
@@ -3172,7 +3172,7 @@
             }
             Py_DECREF(callable);
             Py_DECREF(arg);
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3184,8 +3184,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             /* isinstance(o, o2) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3196,8 +3196,8 @@
             PyInterpreterState *interp = tstate->interp;
             if (callable != interp->callable_cache.isinstance) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
-            PyObject *cls = Py_CLEAR_TAG(args[1]);
-            PyObject *inst = Py_CLEAR_TAG(args[0]);
+            PyObject *cls = Py_OBJ_UNTAG(args[1]);
+            PyObject *inst = Py_OBJ_UNTAG(args[0]);
             int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
                 JUMP_TO_ERROR();
@@ -3210,7 +3210,7 @@
             Py_DECREF(inst);
             Py_DECREF(cls);
             Py_DECREF(callable);
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3222,8 +3222,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3236,8 +3236,8 @@
             if (meth->ml_flags != METH_O) JUMP_TO_JUMP_TARGET();
             // CPython promises to check all non-vectorcall function calls.
             if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET();
-            PyObject *arg = Py_CLEAR_TAG(args[1]);
-            PyObject *self = Py_CLEAR_TAG(args[0]);
+            PyObject *arg = Py_OBJ_UNTAG(args[1]);
+            PyObject *self = Py_OBJ_UNTAG(args[0]);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
@@ -3249,7 +3249,7 @@
             Py_DECREF(arg);
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3261,8 +3261,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3273,7 +3273,7 @@
             PyMethodDef *meth = method->d_method;
             if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) JUMP_TO_JUMP_TARGET();
             PyTypeObject *d_type = method->d_common.d_type;
-            PyObject *self = Py_CLEAR_TAG(args[0]);
+            PyObject *self = Py_OBJ_UNTAG(args[0]);
             if (!Py_IS_TYPE(self, d_type)) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -3289,7 +3289,7 @@
             }
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3301,8 +3301,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3313,7 +3313,7 @@
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
             if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET();
             PyMethodDef *meth = method->d_method;
-            PyObject *self = Py_CLEAR_TAG(args[0]);
+            PyObject *self = Py_OBJ_UNTAG(args[0]);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET();
             if (meth->ml_flags != METH_NOARGS) JUMP_TO_JUMP_TARGET();
             // CPython promises to check all non-vectorcall function calls.
@@ -3327,7 +3327,7 @@
             Py_DECREF(self);
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3339,8 +3339,8 @@
             PyObject * res;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
-            self_or_null = Py_CLEAR_TAG(stack_pointer[-1 - oparg]);
-            callable = Py_CLEAR_TAG(stack_pointer[-2 - oparg]);
+            self_or_null = Py_OBJ_UNTAG(stack_pointer[-1 - oparg]);
+            callable = Py_OBJ_UNTAG(stack_pointer[-2 - oparg]);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3351,7 +3351,7 @@
             if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET();
             PyMethodDef *meth = method->d_method;
             if (meth->ml_flags != METH_FASTCALL) JUMP_TO_JUMP_TARGET();
-            PyObject *self = Py_CLEAR_TAG(args[0]);
+            PyObject *self = Py_OBJ_UNTAG(args[0]);
             if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET();
             STAT_INC(CALL, hit);
             PyCFunctionFast cfunc =
@@ -3367,7 +3367,7 @@
             }
             Py_DECREF(callable);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - oparg] = Py_OBJ_PACK(res);
+            stack_pointer[-2 - oparg] = Py_OBJ_TAG(res);
             stack_pointer += -1 - oparg;
             break;
         }
@@ -3383,7 +3383,7 @@
         case _MAKE_FUNCTION: {
             PyObject * codeobj;
             PyObject * func;
-            codeobj = Py_CLEAR_TAG(stack_pointer[-1]);
+            codeobj = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyFunctionObject *func_obj = (PyFunctionObject *)
             PyFunction_New(codeobj, GLOBALS());
             Py_DECREF(codeobj);
@@ -3393,7 +3393,7 @@
             _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
             func = (PyObject *)func_obj;
-            stack_pointer[-1] = Py_OBJ_PACK(func);
+            stack_pointer[-1] = Py_OBJ_TAG(func);
             break;
         }
 
@@ -3401,8 +3401,8 @@
             PyObject * func;
             PyObject * attr;
             oparg = CURRENT_OPARG();
-            func = Py_CLEAR_TAG(stack_pointer[-1]);
-            attr = Py_CLEAR_TAG(stack_pointer[-2]);
+            func = Py_OBJ_UNTAG(stack_pointer[-1]);
+            attr = Py_OBJ_UNTAG(stack_pointer[-2]);
             assert(PyFunction_Check(func));
             PyFunctionObject *func_obj = (PyFunctionObject *)func;
             switch(oparg) {
@@ -3427,7 +3427,7 @@
                 default:
                 Py_UNREACHABLE();
             }
-            stack_pointer[-2] = Py_OBJ_PACK(func);
+            stack_pointer[-2] = Py_OBJ_TAG(func);
             stack_pointer += -1;
             break;
         }
@@ -3438,15 +3438,15 @@
             PyObject * start;
             PyObject * slice;
             oparg = CURRENT_OPARG();
-            if (oparg == 3) { step = Py_CLEAR_TAG(stack_pointer[-((oparg == 3) ? 1 : 0)]); }
-            stop = Py_CLEAR_TAG(stack_pointer[-1 - ((oparg == 3) ? 1 : 0)]);
-            start = Py_CLEAR_TAG(stack_pointer[-2 - ((oparg == 3) ? 1 : 0)]);
+            if (oparg == 3) { step = Py_OBJ_UNTAG(stack_pointer[-((oparg == 3) ? 1 : 0)]); }
+            stop = Py_OBJ_UNTAG(stack_pointer[-1 - ((oparg == 3) ? 1 : 0)]);
+            start = Py_OBJ_UNTAG(stack_pointer[-2 - ((oparg == 3) ? 1 : 0)]);
             slice = PySlice_New(start, stop, step);
             Py_DECREF(start);
             Py_DECREF(stop);
             Py_XDECREF(step);
             if (slice == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = Py_OBJ_PACK(slice);
+            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = Py_OBJ_TAG(slice);
             stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
             break;
         }
@@ -3455,21 +3455,21 @@
             PyObject * value;
             PyObject * result;
             oparg = CURRENT_OPARG();
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             conversion_func conv_fn;
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
             conv_fn = _PyEval_ConversionFuncs[oparg];
             result = conv_fn(value);
             Py_DECREF(value);
             if (result == NULL) JUMP_TO_ERROR();
-            stack_pointer[-1] = Py_OBJ_PACK(result);
+            stack_pointer[-1] = Py_OBJ_TAG(result);
             break;
         }
 
         case _FORMAT_SIMPLE: {
             PyObject * value;
             PyObject * res;
-            value = Py_CLEAR_TAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-1]);
             /* If value is a unicode object, then we know the result
              * of format(value) is value itself. */
             if (!PyUnicode_CheckExact(value)) {
@@ -3480,7 +3480,7 @@
             else {
                 res = value;
             }
-            stack_pointer[-1] = Py_OBJ_PACK(res);
+            stack_pointer[-1] = Py_OBJ_TAG(res);
             break;
         }
 
@@ -3488,13 +3488,13 @@
             PyObject * fmt_spec;
             PyObject * value;
             PyObject * res;
-            fmt_spec = Py_CLEAR_TAG(stack_pointer[-1]);
-            value = Py_CLEAR_TAG(stack_pointer[-2]);
+            fmt_spec = Py_OBJ_UNTAG(stack_pointer[-1]);
+            value = Py_OBJ_UNTAG(stack_pointer[-2]);
             res = PyObject_Format(value, fmt_spec);
             Py_DECREF(value);
             Py_DECREF(fmt_spec);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -3503,10 +3503,10 @@
             PyObject * bottom;
             PyObject * top;
             oparg = CURRENT_OPARG();
-            bottom = Py_CLEAR_TAG(stack_pointer[-1 - (oparg-1)]);
+            bottom = Py_OBJ_UNTAG(stack_pointer[-1 - (oparg-1)]);
             assert(oparg > 0);
             top = Py_NewRef(bottom);
-            stack_pointer[0] = Py_OBJ_PACK(top);
+            stack_pointer[0] = Py_OBJ_TAG(top);
             stack_pointer += 1;
             break;
         }
@@ -3516,14 +3516,14 @@
             PyObject * lhs;
             PyObject * res;
             oparg = CURRENT_OPARG();
-            rhs = Py_CLEAR_TAG(stack_pointer[-1]);
-            lhs = Py_CLEAR_TAG(stack_pointer[-2]);
+            rhs = Py_OBJ_UNTAG(stack_pointer[-1]);
+            lhs = Py_OBJ_UNTAG(stack_pointer[-2]);
             assert(_PyEval_BinaryOps[oparg]);
             res = _PyEval_BinaryOps[oparg](lhs, rhs);
             Py_DECREF(lhs);
             Py_DECREF(rhs);
             if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = Py_OBJ_PACK(res);
+            stack_pointer[-2] = Py_OBJ_TAG(res);
             stack_pointer += -1;
             break;
         }
@@ -3532,11 +3532,11 @@
             PyObject * top;
             PyObject * bottom;
             oparg = CURRENT_OPARG();
-            top = Py_CLEAR_TAG(stack_pointer[-1]);
-            bottom = Py_CLEAR_TAG(stack_pointer[-2 - (oparg-2)]);
+            top = Py_OBJ_UNTAG(stack_pointer[-1]);
+            bottom = Py_OBJ_UNTAG(stack_pointer[-2 - (oparg-2)]);
             assert(oparg >= 2);
-            stack_pointer[-2 - (oparg-2)] = Py_OBJ_PACK(top);
-            stack_pointer[-1] = Py_OBJ_PACK(bottom);
+            stack_pointer[-2 - (oparg-2)] = Py_OBJ_TAG(top);
+            stack_pointer[-1] = Py_OBJ_TAG(bottom);
             break;
         }
 
@@ -3556,7 +3556,7 @@
 
         case _GUARD_IS_TRUE_POP: {
             PyObject * flag;
-            flag = Py_CLEAR_TAG(stack_pointer[-1]);
+            flag = Py_OBJ_UNTAG(stack_pointer[-1]);
             stack_pointer += -1;
             if (!Py_IsTrue(flag)) JUMP_TO_JUMP_TARGET();
             assert(Py_IsTrue(flag));
@@ -3565,7 +3565,7 @@
 
         case _GUARD_IS_FALSE_POP: {
             PyObject * flag;
-            flag = Py_CLEAR_TAG(stack_pointer[-1]);
+            flag = Py_OBJ_UNTAG(stack_pointer[-1]);
             stack_pointer += -1;
             if (!Py_IsFalse(flag)) JUMP_TO_JUMP_TARGET();
             assert(Py_IsFalse(flag));
@@ -3574,7 +3574,7 @@
 
         case _GUARD_IS_NONE_POP: {
             PyObject * val;
-            val = Py_CLEAR_TAG(stack_pointer[-1]);
+            val = Py_OBJ_UNTAG(stack_pointer[-1]);
             stack_pointer += -1;
             if (!Py_IsNone(val)) {
                 Py_DECREF(val);
@@ -3585,7 +3585,7 @@
 
         case _GUARD_IS_NOT_NONE_POP: {
             PyObject * val;
-            val = Py_CLEAR_TAG(stack_pointer[-1]);
+            val = Py_OBJ_UNTAG(stack_pointer[-1]);
             stack_pointer += -1;
             if (Py_IsNone(val)) JUMP_TO_JUMP_TARGET();
             Py_DECREF(val);
@@ -3631,7 +3631,7 @@
             PyObject * value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             value = Py_NewRef(ptr);
-            stack_pointer[0] = Py_OBJ_PACK(value);
+            stack_pointer[0] = Py_OBJ_TAG(value);
             stack_pointer += 1;
             break;
         }
@@ -3640,7 +3640,7 @@
             PyObject * value;
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             value = ptr;
-            stack_pointer[0] = Py_OBJ_PACK(value);
+            stack_pointer[0] = Py_OBJ_TAG(value);
             stack_pointer += 1;
             break;
         }
@@ -3648,11 +3648,11 @@
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             PyObject * pop;
             PyObject * value;
-            pop = Py_CLEAR_TAG(stack_pointer[-1]);
+            pop = Py_OBJ_UNTAG(stack_pointer[-1]);
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             Py_DECREF(pop);
             value = ptr;
-            stack_pointer[-1] = Py_OBJ_PACK(value);
+            stack_pointer[-1] = Py_OBJ_TAG(value);
             break;
         }
 
@@ -3662,8 +3662,8 @@
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             value = Py_NewRef(ptr);
             null = NULL;
-            stack_pointer[0] = Py_OBJ_PACK(value);
-            stack_pointer[1] = Py_OBJ_PACK(null);
+            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[1] = Py_OBJ_TAG(null);
             stack_pointer += 2;
             break;
         }
@@ -3674,8 +3674,8 @@
             PyObject *ptr = (PyObject *)CURRENT_OPERAND();
             value = ptr;
             null = NULL;
-            stack_pointer[0] = Py_OBJ_PACK(value);
-            stack_pointer[1] = Py_OBJ_PACK(null);
+            stack_pointer[0] = Py_OBJ_TAG(value);
+            stack_pointer[1] = Py_OBJ_TAG(null);
             stack_pointer += 2;
             break;
         }
@@ -3689,7 +3689,7 @@
 
         case _INTERNAL_INCREMENT_OPT_COUNTER: {
             PyObject * opt;
-            opt = Py_CLEAR_TAG(stack_pointer[-1]);
+            opt = Py_OBJ_UNTAG(stack_pointer[-1]);
             _PyCounterOptimizerObject *exe = (_PyCounterOptimizerObject *)opt;
             exe->count++;
             stack_pointer += -1;

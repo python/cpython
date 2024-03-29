@@ -85,7 +85,7 @@ static inline _Py_TaggedObject *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
 
 static inline _Py_TaggedObject _PyFrame_StackPeek(_PyInterpreterFrame *f) {
     assert(f->stacktop > _PyFrame_GetCode(f)->co_nlocalsplus);
-    assert(Py_CLEAR_TAG(f->localsplus[f->stacktop-1]) != NULL);
+    assert(Py_OBJ_UNTAG(f->localsplus[f->stacktop-1]) != NULL);
     return f->localsplus[f->stacktop-1];
 }
 
@@ -134,7 +134,7 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
-        frame->localsplus[i] = Py_OBJ_PACK(NULL);
+        frame->localsplus[i] = Py_OBJ_TAG(NULL);
     }
 }
 

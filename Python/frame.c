@@ -20,7 +20,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     int i = 0;
     /* locals and stack */
     for (; i <frame->stacktop; i++) {
-        Py_VISIT(Py_CLEAR_TAG(locals[i]));
+        Py_VISIT(Py_OBJ_UNTAG(locals[i]));
     }
     return 0;
 }
@@ -128,7 +128,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     }
     assert(frame->stacktop >= 0);
     for (int i = 0; i < frame->stacktop; i++) {
-        Py_XDECREF(Py_CLEAR_TAG(frame->localsplus[i]));
+        Py_XDECREF(Py_OBJ_UNTAG(frame->localsplus[i]));
     }
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
