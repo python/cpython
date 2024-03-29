@@ -551,28 +551,33 @@ class _ReadState:
 
 class _Line(str):
     def _strip_comments(self, prefixes, inline_prefixes):
+        comment_start = min(self._strip_inline(inline_prefixes), self._strip_full(prefixes))
+        if comment_start == sys.maxsize:
+            comment_start = None
+        self.clean = self[:comment_start].strip()
+        self.has_comments = comment_start is not None
+
+    def _strip_inline(self, prefixes):
         comment_start = sys.maxsize
-        # strip inline comments
-        inline_prefixes = {p: -1 for p in inline_prefixes}
-        while comment_start == sys.maxsize and inline_prefixes:
+        prefixes = {p: -1 for p in prefixes}
+        while comment_start == sys.maxsize and prefixes:
             next_prefixes = {}
-            for prefix, index in inline_prefixes.items():
+            for prefix, index in prefixes.items():
                 index = self.find(prefix, index+1)
                 if index == -1:
                     continue
                 next_prefixes[prefix] = index
                 if index == 0 or (index > 0 and self[index-1].isspace()):
                     comment_start = min(comment_start, index)
-            inline_prefixes = next_prefixes
-        # strip full line comments
+            prefixes = next_prefixes
+        return comment_start
+
+    def _strip_full(self, prefixes):
         for prefix in prefixes:
             if self.strip().startswith(prefix):
-                comment_start = 0
+                return 0
                 break
-        if comment_start == sys.maxsize:
-            comment_start = None
-        self.clean = self[:comment_start].strip()
-        self.has_comments = comment_start is not None
+        return sys.maxsize
 
 
 class RawConfigParser(MutableMapping):
