@@ -69,7 +69,8 @@ class TestOptimizerAPI(unittest.TestCase):
                 self.assertEqual(opt.get_count(), 0)
                 with clear_executors(loop):
                     loop()
-                self.assertEqual(opt.get_count(), 1000)
+                # Subtract 16 because optimizer doesn't kick in until 16
+                self.assertEqual(opt.get_count(), 1000 - 16)
 
     def test_long_loop(self):
         "Check that we aren't confused by EXTENDED_ARG"
@@ -81,7 +82,7 @@ class TestOptimizerAPI(unittest.TestCase):
                 pass
 
             def long_loop():
-                for _ in range(10):
+                for _ in range(20):
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
                     nop(); nop(); nop(); nop(); nop(); nop(); nop(); nop();
@@ -96,7 +97,7 @@ class TestOptimizerAPI(unittest.TestCase):
         with temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
-            self.assertEqual(opt.get_count(), 10)
+            self.assertEqual(opt.get_count(), 20 - 16)  # Need 16 iterations to warm up
 
     def test_code_restore_for_ENTER_EXECUTOR(self):
         def testfunc(x):
