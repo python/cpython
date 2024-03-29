@@ -1,0 +1,2 @@
+Deprecate undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
+functions.

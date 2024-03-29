@@ -382,6 +382,14 @@ class GlobTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), p)
 
+    def test_glob0_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            glob.glob0(self.tempdir, 'a')
+
+    def test_glob1_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            glob.glob1(self.tempdir, 'a')
+
     def test_translate_matching(self):
         match = re.compile(glob.translate('*')).match
         self.assertIsNotNone(match('foo'))
