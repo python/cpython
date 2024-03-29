@@ -398,9 +398,9 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         return -1;
 
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return -1;
-    }
+    assert(st != NULL);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
         return -1;
@@ -1177,11 +1177,14 @@ warnings_filters_mutated_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
+
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     st->filters_version++;
+    Py_END_CRITICAL_SECTION();
+
     Py_RETURN_NONE;
 }
 
