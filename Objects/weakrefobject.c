@@ -114,20 +114,6 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
     }
 }
 
-#ifdef Py_GIL_DISABLED
-
-// Clear the weakref while the world is stopped. This is called during GC in
-// free-threaded builds and can't lock.
-static void
-gc_clear_weakref(PyWeakReference *self)
-{
-    PyObject *callback = NULL;
-    clear_weakref_lock_held(self, &callback);
-    Py_XDECREF(callback);
-}
-
-#endif
-
 // Clear the weakref and its callback
 static void
 clear_weakref(PyWeakReference *self)
@@ -163,15 +149,7 @@ _PyWeakref_ClearRef(PyWeakReference *self)
 {
     assert(self != NULL);
     assert(PyWeakref_Check(self));
-#ifdef Py_GIL_DISABLED
     clear_weakref_lock_held(self, NULL);
-#else
-    /* Preserve and restore the callback around clear_weakref. */
-    PyObject *callback = self->wr_callback;
-    self->wr_callback = NULL;
-    clear_weakref(self);
-    self->wr_callback = callback;
-#endif
 }
 
 static void
@@ -194,11 +172,11 @@ gc_traverse(PyWeakReference *self, visitproc visit, void *arg)
 static int
 gc_clear(PyWeakReference *self)
 {
-#ifdef Py_GIL_DISABLED
-    gc_clear_weakref(self);
-#else
-    clear_weakref(self);
-#endif
+    PyObject *callback;
+    // The world is stopped during GC in free-threaded builds. It's safe to
+    // call this without holding the lock.
+    clear_weakref_lock_held(self, &callback);
+    Py_XDECREF(callback);
     return 0;
 }
 
