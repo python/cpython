@@ -12,6 +12,7 @@ on:
       - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"
+      - "Tools/jit/**"
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
       - "Tools/wasm/**"
@@ -38,6 +39,7 @@ jobs:
           "Tools/build/",
           "Tools/cases_generator",
           "Tools/clinic",
+          "Tools/jit",
           "Tools/peg_generator",
           "Tools/wasm",
         ]

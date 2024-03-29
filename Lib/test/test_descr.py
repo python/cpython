@@ -1594,7 +1594,11 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
         cm = classmethod(f)
         cm_dict = {'__annotations__': {},
-                   '__doc__': "f docstring",
+                   '__doc__': (
+                       "f docstring"
+                       if support.HAVE_DOCSTRINGS
+                       else None
+                    ),
                    '__module__': __name__,
                    '__name__': 'f',
                    '__qualname__': f.__qualname__}
@@ -4734,6 +4738,20 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del X.__abstractmethods__
 
+    def test_gh55664(self):
+        # gh-55664: issue a warning when the
+        # __dict__ of a class contains non-string keys
+        with self.assertWarnsRegex(RuntimeWarning, 'MyClass'):
+            MyClass = type('MyClass', (), {1: 2})
+
+        class meta(type):
+            def __new__(mcls, name, bases, ns):
+                ns[1] = 2
+                return super().__new__(mcls, name, bases, ns)
+
+        with self.assertWarnsRegex(RuntimeWarning, 'MyClass'):
+            MyClass = meta('MyClass', (), {})
+
     def test_proxy_call(self):
         class FakeStr:
             __class__ = str
@@ -5062,7 +5080,8 @@ class DictProxyTests(unittest.TestCase):
         keys = list(it)
         keys.sort()
         self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
-                                '__weakref__', 'meth'])
+                                '__static_attributes__', '__weakref__',
+                                'meth'])
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                         'trace function introduces __local__')
@@ -5071,7 +5090,7 @@ class DictProxyTests(unittest.TestCase):
         it = self.C.__dict__.values()
         self.assertNotIsInstance(it, list)
         values = list(it)
-        self.assertEqual(len(values), 5)
+        self.assertEqual(len(values), 6)
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                         'trace function introduces __local__')
@@ -5082,7 +5101,8 @@ class DictProxyTests(unittest.TestCase):
         keys = [item[0] for item in it]
         keys.sort()
         self.assertEqual(keys, ['__dict__', '__doc__', '__module__',
-                                '__weakref__', 'meth'])
+                                '__static_attributes__', '__weakref__',
+                                'meth'])
 
     def test_dict_type_with_metaclass(self):
         # Testing type of __dict__ when metaclass set...
@@ -5151,7 +5171,8 @@ class MiscTests(unittest.TestCase):
             mykey = 'from Base2'
             mykey2 = 'from Base2'
 
-        X = type('X', (Base,), {MyKey(): 5})
+        with self.assertWarnsRegex(RuntimeWarning, 'X'):
+            X = type('X', (Base,), {MyKey(): 5})
         # mykey is read from Base
         self.assertEqual(X.mykey, 'from Base')
         # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__

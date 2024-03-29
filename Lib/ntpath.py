@@ -26,10 +26,11 @@ from genericpath import *
 __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","getctime", "islink","exists","lexists","isdir","isfile",
-           "ismount", "expanduser","expandvars","normpath","abspath",
-           "curdir","pardir","sep","pathsep","defpath","altsep",
+           "ismount","isreserved","expanduser","expandvars","normpath",
+           "abspath","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction"]
+           "samefile", "sameopenfile", "samestat", "commonpath", "isjunction",
+           "isdevdrive"]
 
 def _get_bothseps(path):
     if isinstance(path, bytes):
@@ -280,21 +281,9 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
             return False
         return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
 else:
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        os.fspath(path)
-        return False
+    # Use genericpath.isjunction as imported above
+    pass
 
-
-# Being true for dangling symbolic links is also useful.
-
-def lexists(path):
-    """Test whether a path exists.  Returns True for broken symbolic links"""
-    try:
-        st = os.lstat(path)
-    except (OSError, ValueError):
-        return False
-    return True
 
 # Is a path a mount point?
 # Any drive letter root (eg c:\)
@@ -328,6 +317,42 @@ def ismount(path):
         return x.casefold() == y.casefold()
     else:
         return False
+
+
+_reserved_chars = frozenset(
+    {chr(i) for i in range(32)} |
+    {'"', '*', ':', '<', '>', '?', '|', '/', '\\'}
+)
+
+_reserved_names = frozenset(
+    {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
+    {f'COM{c}' for c in '123456789\xb9\xb2\xb3'} |
+    {f'LPT{c}' for c in '123456789\xb9\xb2\xb3'}
+)
+
+def isreserved(path):
+    """Return true if the pathname is reserved by the system."""
+    # Refer to "Naming Files, Paths, and Namespaces":
+    # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file
+    path = os.fsdecode(splitroot(path)[2]).replace(altsep, sep)
+    return any(_isreservedname(name) for name in reversed(path.split(sep)))
+
+def _isreservedname(name):
+    """Return true if the filename is reserved by the system."""
+    # Trailing dots and spaces are reserved.
+    if name.endswith(('.', ' ')) and name not in ('.', '..'):
+        return True
+    # Wildcards, separators, colon, and pipe (*?"<>/\:|) are reserved.
+    # ASCII control characters (0-31) are reserved.
+    # Colon is reserved for file streams (e.g. "name:stream[:type]").
+    if _reserved_chars.intersection(name):
+        return True
+    # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
+    # are complex and vary across Windows versions. On the side of
+    # caution, return True for names that may not be reserved.
+    if name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
+        return True
+    return False
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -806,23 +831,22 @@ def relpath(path, start=None):
         raise
 
 
-# Return the longest common sub-path of the sequence of paths given as input.
+# Return the longest common sub-path of the iterable of paths given as input.
 # The function is case-insensitive and 'separator-insensitive', i.e. if the
 # only difference between two paths is the use of '\' versus '/' as separator,
 # they are deemed to be equal.
 #
 # However, the returned path will have the standard '\' separator (even if the
 # given paths had the alternative '/' separator) and will have the case of the
-# first path given in the sequence. Additionally, any trailing separator is
+# first path given in the iterable. Additionally, any trailing separator is
 # stripped from the returned path.
 
 def commonpath(paths):
-    """Given a sequence of path names, returns the longest common sub-path."""
-
-    if not paths:
-        raise ValueError('commonpath() arg is an empty sequence')
-
+    """Given an iterable of path names, returns the longest common sub-path."""
     paths = tuple(map(os.fspath, paths))
+    if not paths:
+        raise ValueError('commonpath() arg is an empty iterable')
+
     if isinstance(paths[0], bytes):
         sep = b'\\'
         altsep = b'/'
@@ -880,15 +904,12 @@ except ImportError:
 
 try:
     from nt import _path_isdevdrive
-except ImportError:
-    def isdevdrive(path):
-        """Determines whether the specified path is on a Windows Dev Drive."""
-        # Never a Dev Drive
-        return False
-else:
     def isdevdrive(path):
         """Determines whether the specified path is on a Windows Dev Drive."""
         try:
             return _path_isdevdrive(abspath(path))
         except OSError:
             return False
+except ImportError:
+    # Use genericpath.isdevdrive as imported above
+    pass

@@ -9,6 +9,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_freelist.h"      // _PyFreeListState
 #include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_object.h"        // PyDictOrValues
 
@@ -51,7 +52,7 @@ PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
    of a key wins, if override is 2, a KeyError with conflicting key as
    argument is raised.
 */
-extern int _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
 
 extern void _PyDict_DebugMallocStats(FILE *out);
 
@@ -65,12 +66,6 @@ typedef struct {
 
 extern PyObject* _PyDictView_New(PyObject *, PyTypeObject *);
 extern PyObject* _PyDictView_Intersect(PyObject* self, PyObject *other);
-
-
-/* runtime lifecycle */
-
-extern void _PyDict_Fini(PyInterpreterState *interp);
-
 
 /* other API */
 
@@ -105,10 +100,10 @@ extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t has
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
-extern PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
+PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 
 /* Consumes references to key and value */
-extern int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
+PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern int _PyDict_Pop_KnownHash(
@@ -141,6 +136,11 @@ struct _dictkeysobject {
     /* Kind of keys */
     uint8_t dk_kind;
 
+#ifdef Py_GIL_DISABLED
+    /* Lock used to protect shared keys */
+    PyMutex dk_mutex;
+#endif
+
     /* Version number -- Reset to 0 by any modification to keys */
     uint32_t dk_version;
 
@@ -149,6 +149,7 @@ struct _dictkeysobject {
 
     /* Number of used entries in dk_entries. */
     Py_ssize_t dk_nentries;
+
 
     /* Actual hash table of dk_size entries. It holds indices in dk_entries,
        or DKIX_EMPTY(-1) or DKIX_DUMMY(-2).
@@ -166,7 +167,7 @@ struct _dictkeysobject {
     char dk_indices[];  /* char is required to avoid strict aliasing. */
 
     /* "PyDictKeyEntry or PyDictUnicodeEntry dk_entries[USABLE_FRACTION(DK_SIZE(dk))];" array follows:
-       see the DK_ENTRIES() macro */
+       see the DK_ENTRIES() / DK_UNICODE_ENTRIES() functions below */
 };
 
 /* This must be no more than 250, for the prefix size to fit in one byte. */
@@ -206,11 +207,21 @@ static inline PyDictUnicodeEntry* DK_UNICODE_ENTRIES(PyDictKeysObject *dk) {
 
 #define DK_IS_UNICODE(dk) ((dk)->dk_kind != DICT_KEYS_GENERAL)
 
-#define DICT_VERSION_INCREMENT (1 << DICT_MAX_WATCHERS)
-#define DICT_VERSION_MASK (DICT_VERSION_INCREMENT - 1)
+#define DICT_VERSION_INCREMENT (1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS))
+#define DICT_WATCHER_MASK ((1 << DICT_MAX_WATCHERS) - 1)
+#define DICT_WATCHER_AND_MODIFICATION_MASK ((1 << (DICT_MAX_WATCHERS + DICT_WATCHED_MUTATION_BITS)) - 1)
 
+#define DICT_VALUES_SIZE(values) ((uint8_t *)values)[-1]
+#define DICT_VALUES_USED_SIZE(values) ((uint8_t *)values)[-2]
+
+#ifdef Py_GIL_DISABLED
+#define DICT_NEXT_VERSION(INTERP) \
+    (_Py_atomic_add_uint64(&(INTERP)->dict_state.global_version, DICT_VERSION_INCREMENT) + DICT_VERSION_INCREMENT)
+
+#else
 #define DICT_NEXT_VERSION(INTERP) \
     ((INTERP)->dict_state.global_version += DICT_VERSION_INCREMENT)
+#endif
 
 void
 _PyDict_SendEvent(int watcher_bits,
@@ -227,17 +238,17 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
                     PyObject *value)
 {
     assert(Py_REFCNT((PyObject*)mp) > 0);
-    int watcher_bits = mp->ma_version_tag & DICT_VERSION_MASK;
+    int watcher_bits = mp->ma_version_tag & DICT_WATCHER_MASK;
     if (watcher_bits) {
+        RARE_EVENT_STAT_INC(watched_dict_modification);
         _PyDict_SendEvent(watcher_bits, event, mp, key, value);
-        return DICT_NEXT_VERSION(interp) | watcher_bits;
     }
-    return DICT_NEXT_VERSION(interp);
+    return DICT_NEXT_VERSION(interp) | (mp->ma_version_tag & DICT_WATCHER_AND_MODIFICATION_MASK);
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
-extern bool _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
-extern PyObject *_PyDict_FromItems(
+PyAPI_FUNC(bool) _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
+PyAPI_FUNC(PyObject *)_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,
         Py_ssize_t length);
@@ -248,7 +259,7 @@ _PyDictValues_AddToInsertionOrder(PyDictValues *values, Py_ssize_t ix)
     assert(ix < SHARED_KEYS_MAX_SIZE);
     uint8_t *size_ptr = ((uint8_t *)values)-2;
     int size = *size_ptr;
-    assert(size+2 < ((uint8_t *)values)[-1]);
+    assert(size+2 < DICT_VALUES_SIZE(values));
     size++;
     size_ptr[-size] = (uint8_t)ix;
     *size_ptr = size;

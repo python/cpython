@@ -15,7 +15,6 @@ extern "C" {
 
 extern void _PyFloat_InitState(PyInterpreterState *);
 extern PyStatus _PyFloat_InitTypes(PyInterpreterState *);
-extern void _PyFloat_Fini(_PyFreeListState *);
 extern void _PyFloat_FiniType(PyInterpreterState *);
 
 
@@ -35,7 +34,7 @@ struct _Py_float_runtime_state {
 
 
 
-void _PyFloat_ExactDealloc(PyObject *op);
+PyAPI_FUNC(void) _PyFloat_ExactDealloc(PyObject *op);
 
 
 extern void _PyFloat_DebugMallocStats(FILE* out);

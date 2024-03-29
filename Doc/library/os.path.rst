@@ -4,7 +4,7 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+**Source code:** :source:`Lib/genericpath.py`, :source:`Lib/posixpath.py` (for POSIX) and
 :source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
@@ -79,18 +79,19 @@ the :mod:`glob` module.)
 
 .. function:: commonpath(paths)
 
-   Return the longest common sub-path of each pathname in the sequence
+   Return the longest common sub-path of each pathname in the iterable
    *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
    and relative pathnames, the *paths* are on the different drives or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
    valid path.
 
-   .. availability:: Unix, Windows.
-
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.6
       Accepts a sequence of :term:`path-like objects <path-like object>`.
+
+   .. versionchanged:: 3.13
+      Any iterable can now be passed, rather than just sequences.
 
 
 .. function:: commonprefix(list)
@@ -321,9 +322,32 @@ the :mod:`glob` module.)
    Dev Drives. See `the Windows documentation <https://learn.microsoft.com/windows/dev-drive/>`_
    for information on enabling and creating Dev Drives.
 
+   .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      The function is now available on all platforms, and will always return ``False`` on those that have no support for Dev Drives
+
+
+.. function:: isreserved(path)
+
+   Return ``True`` if *path* is a reserved pathname on the current system.
+
+   On Windows, reserved filenames include those that end with a space or dot;
+   those that contain colons (i.e. file streams such as "name:stream"),
+   wildcard characters (i.e. ``'*?"<>'``), pipe, or ASCII control characters;
+   as well as DOS device names such as "NUL", "CON", "CONIN$", "CONOUT$",
+   "AUX", "PRN", "COM1", and "LPT1".
+
+   .. note::
+
+      This function approximates rules for reserved paths on most Windows
+      systems. These rules change over time in various Windows releases.
+      This function may be updated in future Python releases as changes to
+      the rules become broadly available.
+
    .. availability:: Windows.
 
-   .. versionadded:: 3.12
+   .. versionadded:: 3.13
 
 
 .. function:: join(path, *paths)
@@ -417,8 +441,6 @@ the :mod:`glob` module.)
 
    *start* defaults to :data:`os.curdir`.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -428,8 +450,6 @@ the :mod:`glob` module.)
    Return ``True`` if both pathname arguments refer to the same file or directory.
    This is determined by the device number and i-node number and raises an
    exception if an :func:`os.stat` call on either pathname fails.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -445,8 +465,6 @@ the :mod:`glob` module.)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.2
       Added Windows support.
 
@@ -460,8 +478,6 @@ the :mod:`glob` module.)
    These structures may have been returned by :func:`os.fstat`,
    :func:`os.lstat`, or :func:`os.stat`.  This function implements the
    underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Added Windows support.

@@ -546,8 +546,8 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: END_FOR
 
-   Removes the top two values from the stack.
-   Equivalent to ``POP_TOP``; ``POP_TOP``.
+   Removes the top-of-stack item.
+   Equivalent to ``POP_TOP``.
    Used to clean up at the end of loops, hence the name.
 
    .. versionadded:: 3.12
@@ -576,7 +576,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
    Swap the top of the stack with the i-th element::
 
-      STACK[-i], STACK[-1] = stack[-1], STACK[-i]
+      STACK[-i], STACK[-1] = STACK[-1], STACK[-i]
 
    .. versionadded:: 3.11
 
@@ -1224,7 +1224,7 @@ iterations of the loop.
    except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`, which results in pushing ``None`` and the loaded method.
+   :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
    When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
@@ -1606,7 +1606,7 @@ iterations of the loop.
 
       value = STACK.pop()
       result = func(value)
-      STACK.push(result)
+      STACK.append(result)
 
    * ``oparg == 1``: call :func:`str` on *value*
    * ``oparg == 2``: call :func:`repr` on *value*
@@ -1623,7 +1623,7 @@ iterations of the loop.
 
       value = STACK.pop()
       result = value.__format__("")
-      STACK.push(result)
+      STACK.append(result)
 
    Used for implementing formatted literal strings (f-strings).
 
@@ -1636,7 +1636,7 @@ iterations of the loop.
       spec = STACK.pop()
       value = STACK.pop()
       result = value.__format__(spec)
-      STACK.push(result)
+      STACK.append(result)
 
    Used for implementing formatted literal strings (f-strings).
 
@@ -1783,7 +1783,7 @@ iterations of the loop.
       arg2 = STACK.pop()
       arg1 = STACK.pop()
       result = intrinsic2(arg1, arg2)
-      STACK.push(result)
+      STACK.append(result)
 
    The operand determines which intrinsic function is called:
 

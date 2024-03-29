@@ -144,6 +144,7 @@ __all__ = [
     'override',
     'ParamSpecArgs',
     'ParamSpecKwargs',
+    'ReadOnly',
     'Required',
     'reveal_type',
     'runtime_checkable',
@@ -308,19 +309,33 @@ def _unpack_args(args):
             newargs.append(arg)
     return newargs
 
-def _deduplicate(params):
+def _deduplicate(params, *, unhashable_fallback=False):
     # Weed out strict duplicates, preserving the first of each occurrence.
-    all_params = set(params)
-    if len(all_params) < len(params):
-        new_params = []
-        for t in params:
-            if t in all_params:
-                new_params.append(t)
-                all_params.remove(t)
-        params = new_params
-        assert not all_params, all_params
-    return params
+    try:
+        return dict.fromkeys(params)
+    except TypeError:
+        if not unhashable_fallback:
+            raise
+        # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
+        return _deduplicate_unhashable(params)
 
+def _deduplicate_unhashable(unhashable_params):
+    new_unhashable = []
+    for t in unhashable_params:
+        if t not in new_unhashable:
+            new_unhashable.append(t)
+    return new_unhashable
+
+def _compare_args_orderless(first_args, second_args):
+    first_unhashable = _deduplicate_unhashable(first_args)
+    second_unhashable = _deduplicate_unhashable(second_args)
+    t = list(second_unhashable)
+    try:
+        for elem in first_unhashable:
+            t.remove(elem)
+    except ValueError:
+        return False
+    return not t
 
 def _remove_dups_flatten(parameters):
     """Internal helper for Union creation and substitution.
@@ -335,7 +350,7 @@ def _remove_dups_flatten(parameters):
         else:
             params.append(p)
 
-    return tuple(_deduplicate(params))
+    return tuple(_deduplicate(params, unhashable_fallback=True))
 
 
 def _flatten_literal_params(parameters):
@@ -524,7 +539,7 @@ class Any(metaclass=_AnyMeta):
     def __new__(cls, *args, **kwargs):
         if cls is Any:
             raise TypeError("Any cannot be instantiated")
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
 
 @_SpecialForm
@@ -639,7 +654,7 @@ def ClassVar(self, parameters):
     Note that ClassVar is not a class itself, and should not
     be used with isinstance() or issubclass().
     """
-    item = _type_check(parameters, f'{self} accepts only single type.')
+    item = _type_check(parameters, f'{self} accepts only single type.', allow_special_forms=True)
     return _GenericAlias(self, (item,))
 
 @_SpecialForm
@@ -661,7 +676,7 @@ def Final(self, parameters):
 
     There is no runtime checking of these properties.
     """
-    item = _type_check(parameters, f'{self} accepts only single type.')
+    item = _type_check(parameters, f'{self} accepts only single type.', allow_special_forms=True)
     return _GenericAlias(self, (item,))
 
 @_SpecialForm
@@ -866,7 +881,7 @@ class ForwardRef(_Final, _root=True):
         # If we do `def f(*args: *Ts)`, then we'll have `arg = '*Ts'`.
         # Unfortunately, this isn't a valid expression on its own, so we
         # do the unpacking manually.
-        if arg[0] == '*':
+        if arg.startswith('*'):
             arg_to_compile = f'({arg},)[0]'  # E.g. (*Ts,)[0] or (*tuple[int, int],)[0]
         else:
             arg_to_compile = arg
@@ -1127,7 +1142,9 @@ class _BaseGenericAlias(_Final, _root=True):
         result = self.__origin__(*args, **kwargs)
         try:
             result.__orig_class__ = self
-        except AttributeError:
+        # Some objects raise TypeError (or something even more exotic)
+        # if you try to set attributes on them; we guard against that here
+        except Exception:
             pass
         return result
 
@@ -1135,9 +1152,29 @@ class _BaseGenericAlias(_Final, _root=True):
         res = []
         if self.__origin__ not in bases:
             res.append(self.__origin__)
+
+        # Check if any base that occurs after us in `bases` is either itself a
+        # subclass of Generic, or something which will add a subclass of Generic
+        # to `__bases__` via its `__mro_entries__`. If not, add Generic
+        # ourselves. The goal is to ensure that Generic (or a subclass) will
+        # appear exactly once in the final bases tuple. If we let it appear
+        # multiple times, we risk "can't form a consistent MRO" errors.
         i = bases.index(self)
         for b in bases[i+1:]:
-            if isinstance(b, _BaseGenericAlias) or issubclass(b, Generic):
+            if isinstance(b, _BaseGenericAlias):
+                break
+            if not isinstance(b, type):
+                meth = getattr(b, "__mro_entries__", None)
+                new_bases = meth(bases) if meth else None
+                if (
+                    isinstance(new_bases, tuple) and
+                    any(
+                        isinstance(b2, type) and issubclass(b2, Generic)
+                        for b2 in new_bases
+                    )
+                ):
+                    break
+            elif issubclass(b, Generic):
                 break
         else:
             res.append(Generic)
@@ -1533,7 +1570,10 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __eq__(self, other):
         if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
             return NotImplemented
-        return set(self.__args__) == set(other.__args__)
+        try:  # fast path
+            return set(self.__args__) == set(other.__args__)
+        except TypeError:  # not hashable, slow path
+            return _compare_args_orderless(self.__args__, other.__args__)
 
     def __hash__(self):
         return hash(frozenset(self.__args__))
@@ -1677,7 +1717,7 @@ _SPECIAL_NAMES = frozenset({
     '__abstractmethods__', '__annotations__', '__dict__', '__doc__',
     '__init__', '__module__', '__new__', '__slots__',
     '__subclasshook__', '__weakref__', '__class_getitem__',
-    '__match_args__',
+    '__match_args__', '__static_attributes__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -2262,7 +2302,7 @@ def _strip_annotations(t):
     """Strip the annotations from a given type."""
     if isinstance(t, _AnnotatedAlias):
         return _strip_annotations(t.__origin__)
-    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired):
+    if hasattr(t, "__origin__") and t.__origin__ in (Required, NotRequired, ReadOnly):
         return _strip_annotations(t.__args__[0])
     if isinstance(t, _GenericAlias):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
@@ -2883,6 +2923,28 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
+def _get_typeddict_qualifiers(annotation_type):
+    while True:
+        annotation_origin = get_origin(annotation_type)
+        if annotation_origin is Annotated:
+            annotation_args = get_args(annotation_type)
+            if annotation_args:
+                annotation_type = annotation_args[0]
+            else:
+                break
+        elif annotation_origin is Required:
+            yield Required
+            (annotation_type,) = get_args(annotation_type)
+        elif annotation_origin is NotRequired:
+            yield NotRequired
+            (annotation_type,) = get_args(annotation_type)
+        elif annotation_origin is ReadOnly:
+            yield ReadOnly
+            (annotation_type,) = get_args(annotation_type)
+        else:
+            break
+
+
 class _TypedDictMeta(type):
     def __new__(cls, name, bases, ns, total=True):
         """Create a new typed dict class object.
@@ -2916,6 +2978,8 @@ class _TypedDictMeta(type):
         }
         required_keys = set()
         optional_keys = set()
+        readonly_keys = set()
+        mutable_keys = set()
 
         for base in bases:
             annotations.update(base.__dict__.get('__annotations__', {}))
@@ -2928,18 +2992,15 @@ class _TypedDictMeta(type):
             required_keys -= base_optional
             optional_keys |= base_optional
 
+            readonly_keys.update(base.__dict__.get('__readonly_keys__', ()))
+            mutable_keys.update(base.__dict__.get('__mutable_keys__', ()))
+
         annotations.update(own_annotations)
         for annotation_key, annotation_type in own_annotations.items():
-            annotation_origin = get_origin(annotation_type)
-            if annotation_origin is Annotated:
-                annotation_args = get_args(annotation_type)
-                if annotation_args:
-                    annotation_type = annotation_args[0]
-                    annotation_origin = get_origin(annotation_type)
-
-            if annotation_origin is Required:
+            qualifiers = set(_get_typeddict_qualifiers(annotation_type))
+            if Required in qualifiers:
                 is_required = True
-            elif annotation_origin is NotRequired:
+            elif NotRequired in qualifiers:
                 is_required = False
             else:
                 is_required = total
@@ -2951,6 +3012,17 @@ class _TypedDictMeta(type):
                 optional_keys.add(annotation_key)
                 required_keys.discard(annotation_key)
 
+            if ReadOnly in qualifiers:
+                if annotation_key in mutable_keys:
+                    raise TypeError(
+                        f"Cannot override mutable key {annotation_key!r}"
+                        " with read-only key"
+                    )
+                readonly_keys.add(annotation_key)
+            else:
+                mutable_keys.add(annotation_key)
+                readonly_keys.discard(annotation_key)
+
         assert required_keys.isdisjoint(optional_keys), (
             f"Required keys overlap with optional keys in {name}:"
             f" {required_keys=}, {optional_keys=}"
@@ -2958,6 +3030,8 @@ class _TypedDictMeta(type):
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
+        tp_dict.__readonly_keys__ = frozenset(readonly_keys)
+        tp_dict.__mutable_keys__ = frozenset(mutable_keys)
         tp_dict.__total__ = total
         return tp_dict
 
@@ -3016,6 +3090,14 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
             y: NotRequired[int]  # the "y" key can be omitted
 
     See PEP 655 for more details on Required and NotRequired.
+
+    The ReadOnly special form can be used
+    to mark individual keys as immutable for type checkers::
+
+        class DatabaseUser(TypedDict):
+            id: ReadOnly[int]  # the "id" key must not be modified
+            username: str      # the "username" key can be changed
+
     """
     if fields is _sentinel or fields is None:
         import warnings
@@ -3087,6 +3169,26 @@ def NotRequired(self, parameters):
             title='The Matrix',  # typechecker error if key is omitted
             year=1999,
         )
+    """
+    item = _type_check(parameters, f'{self._name} accepts only a single type.')
+    return _GenericAlias(self, (item,))
+
+
+@_SpecialForm
+def ReadOnly(self, parameters):
+    """A special typing construct to mark an item of a TypedDict as read-only.
+
+    For example::
+
+        class Movie(TypedDict):
+            title: ReadOnly[str]
+            year: int
+
+        def mutate_movie(m: Movie) -> None:
+            m["year"] = 1992  # allowed
+            m["title"] = "The Matrix"  # typechecker error
+
+    There is no runtime checking for this property.
     """
     item = _type_check(parameters, f'{self._name} accepts only a single type.')
     return _GenericAlias(self, (item,))

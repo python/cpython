@@ -667,10 +667,9 @@ class DictConfigurator(BaseConfigurator):
             except TypeError as te:
                 if "'format'" not in str(te):
                     raise
-                #Name of parameter changed from fmt to format.
-                #Retry with old name.
-                #This is so that code can be used with older Python versions
-                #(e.g. by Django)
+                # logging.Formatter and its subclasses expect the `fmt`
+                # parameter instead of `format`. Retry passing configuration
+                # with `fmt`.
                 config['fmt'] = config.pop('format')
                 config['()'] = factory
                 result = self.configure_custom(config)

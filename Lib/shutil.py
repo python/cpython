@@ -47,7 +47,8 @@ else:
 COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
-_USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
+_USE_CP_SENDFILE = (hasattr(os, "sendfile")
+                    and sys.platform.startswith(("linux", "android")))
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
@@ -680,7 +681,7 @@ def _rmtree_safe_fd(topfd, path, onexc):
                     continue
         if is_dir:
             try:
-                dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
+                dirfd = os.open(entry.name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=topfd)
                 dirfd_closed = False
             except FileNotFoundError:
                 continue
@@ -785,7 +786,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
             onexc(os.lstat, path, err)
             return
         try:
-            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
+            fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dir_fd)
             fd_closed = False
         except OSError as err:
             onexc(os.open, path, err)
@@ -861,12 +862,12 @@ def move(src, dst, copy_function=copy2):
     similar to the Unix "mv" command. Return the file or directory's
     destination.
 
-    If the destination is a directory or a symlink to a directory, the source
-    is moved inside the directory. The destination path must not already
-    exist.
+    If dst is an existing directory or a symlink to a directory, then src is
+    moved inside that directory. The destination path in that directory must
+    not already exist.
 
-    If the destination already exists but is not a directory, it may be
-    overwritten depending on os.rename() semantics.
+    If dst already exists but is not a directory, it may be overwritten
+    depending on os.rename() semantics.
 
     If the destination is on our current filesystem, then rename() is used.
     Otherwise, src is copied to the destination and then removed. Symlinks are

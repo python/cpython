@@ -3395,8 +3395,8 @@ Zackery Spytz.
 .. nonce: S0Irst
 .. section: Library
 
-Fix parsing non-ASCII identifiers in :mod:`lib2to3.pgen2.tokenize` (PEP
-3131).
+Fix parsing non-ASCII identifiers in :mod:`!lib2to3.pgen2.tokenize`
+(:pep:`3131`).
 
 ..
 

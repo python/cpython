@@ -194,7 +194,7 @@ The :mod:`functools` module defines the following functions:
    In contrast, the tuple arguments ``('answer', Decimal(42))`` and
    ``('answer', Fraction(42))`` are treated as equivalent.
 
-   The wrapped function is instrumented with a :func:`cache_parameters`
+   The wrapped function is instrumented with a :func:`!cache_parameters`
    function that returns a new :class:`dict` showing the values for *maxsize*
    and *typed*.  This is for information purposes only.  Mutating the values
    has no effect.
@@ -275,8 +275,8 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.8
       Added the *user_function* option.
 
-   .. versionadded:: 3.9
-      Added the function :func:`cache_parameters`
+   .. versionchanged:: 3.9
+      Added the function :func:`!cache_parameters`
 
 .. decorator:: total_ordering
 
@@ -667,13 +667,9 @@ The :mod:`functools` module defines the following functions:
    on the wrapper function). :exc:`AttributeError` is still raised if the
    wrapper function itself is missing any attributes named in *updated*.
 
-   .. versionadded:: 3.2
-      Automatic addition of the ``__wrapped__`` attribute.
-
-   .. versionadded:: 3.2
-      Copying of the ``__annotations__`` attribute by default.
-
    .. versionchanged:: 3.2
+      The ``__wrapped__`` attribute is now automatically added.
+      The ``__annotations__`` attribute is now copied by default.
       Missing attributes no longer trigger an :exc:`AttributeError`.
 
    .. versionchanged:: 3.4

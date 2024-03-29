@@ -138,7 +138,7 @@ Replaced :opcode:`JUMP_ABSOLUTE` by the relative jump
 .. nonce: SwrrFO
 .. section: Core and Builtins
 
-:c:func:`PyFrame_FastToLocalsWithError` and :c:func:`PyFrame_LocalsToFast`
+:c:func:`!PyFrame_FastToLocalsWithError` and :c:func:`!PyFrame_LocalsToFast`
 are no longer called during profiling nor tracing. C code can access the
 ``f_locals`` attribute of :c:type:`PyFrameObject` by calling
 :c:func:`PyFrame_GetLocals`.
@@ -295,7 +295,7 @@ oparg) as an adaptive counter.
 .. nonce: O12Pba
 .. section: Core and Builtins
 
-Use inline caching for :opcode:`PRECALL` and :opcode:`CALL`, and remove the
+Use inline caching for :opcode:`!PRECALL` and :opcode:`CALL`, and remove the
 internal machinery for managing the (now unused) non-inline caches.
 
 ..

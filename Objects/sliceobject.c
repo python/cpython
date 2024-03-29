@@ -103,18 +103,18 @@ PyObject _Py_EllipsisObject = _PyObject_HEAD_INIT(&PyEllipsis_Type);
 
 /* Slice object implementation */
 
-void _PySlice_ClearCache(_PyFreeListState *state)
+void _PySlice_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
 {
-    PySliceObject *obj = state->slice_state.slice_cache;
+    if (!is_finalization) {
+        return;
+    }
+#ifdef WITH_FREELISTS
+    PySliceObject *obj = freelists->slices.slice_cache;
     if (obj != NULL) {
-        state->slice_state.slice_cache = NULL;
+        freelists->slices.slice_cache = NULL;
         PyObject_GC_Del(obj);
     }
-}
-
-void _PySlice_Fini(_PyFreeListState *state)
-{
-    _PySlice_ClearCache(state);
+#endif
 }
 
 /* start, stop, and step are python objects with None indicating no
@@ -125,15 +125,17 @@ static PySliceObject *
 _PyBuildSlice_Consume2(PyObject *start, PyObject *stop, PyObject *step)
 {
     assert(start != NULL && stop != NULL && step != NULL);
-
-    _PyFreeListState *state = _PyFreeListState_GET();
     PySliceObject *obj;
-    if (state->slice_state.slice_cache != NULL) {
-        obj = state->slice_state.slice_cache;
-        state->slice_state.slice_cache = NULL;
+#ifdef WITH_FREELISTS
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    if (freelists->slices.slice_cache != NULL) {
+        obj = freelists->slices.slice_cache;
+        freelists->slices.slice_cache = NULL;
         _Py_NewReference((PyObject *)obj);
     }
-    else {
+    else
+#endif
+    {
         obj = PyObject_GC_New(PySliceObject, &PySlice_Type);
         if (obj == NULL) {
             goto error;
@@ -358,15 +360,18 @@ Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 static void
 slice_dealloc(PySliceObject *r)
 {
-    _PyFreeListState *state = _PyFreeListState_GET();
     _PyObject_GC_UNTRACK(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
     Py_DECREF(r->stop);
-    if (state->slice_state.slice_cache == NULL) {
-        state->slice_state.slice_cache = r;
+#ifdef WITH_FREELISTS
+    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
+    if (freelists->slices.slice_cache == NULL) {
+        freelists->slices.slice_cache = r;
     }
-    else {
+    else
+#endif
+    {
         PyObject_GC_Del(r);
     }
 }

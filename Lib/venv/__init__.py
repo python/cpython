@@ -129,8 +129,7 @@ class EnvBuilder:
         context = types.SimpleNamespace()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
-        prompt = self.prompt if self.prompt is not None else context.env_name
-        context.prompt = '(%s) ' % prompt
+        context.prompt = self.prompt if self.prompt is not None else context.env_name
         create_if_needed(env_dir)
         executable = sys._base_executable
         if not executable:  # see gh-96861
