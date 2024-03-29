@@ -14,50 +14,15 @@
  *
  * In free-threaded builds we need to protect mutable state of:
  *
- * - The weakref (the referenced object, the hash)
+ * - The weakref (wr_object, wr_hash)
  * - The referenced object (its head-of-list pointer)
  * - The linked list of weakrefs
- *
- * The above may be modified concurrently when creating weakrefs, destroying
- * weakrefs, or destroying the referenced object.
- *
- * To avoid diverging from the default implementation too much, we must
- * implement the following:
- *
- * - When a weakref is destroyed it must be removed from the linked list and
- *   its borrowed reference must be cleared.
- * - When the referenced object is destroyed each of its weak references must
- *   be removed from the linked list and their internal reference cleared.
- *
- * A natural arrangement would be to use the per-object lock in the referenced
- * object to protect its mutable state and the linked list. Similarly, we could
- * use the per-object in each weakref to protect the weakref's mutable
- * state. This is complicated by a few things:
- *
- * - The referenced object and the weakrefs only hold borrowed references to
- *   each other.
- * - The referenced object and its weakrefs may be destroyed concurrently.
- * - The GC may run while the referenced object or the weakrefs are being
- *   destroyed and free their counterpart.
- *
- * If a weakref needs to be unlinked from the linked list during destruction,
- * we need to ensure that the memory backing the referenced object is not freed
- * during this process. Since the referenced object may be destroyed
- * concurrently, we cannot rely on being able to incref it. To complicate
- * matters further, if we do not hold a strong reference we cannot guarantee
- * that the if the GC runs it won't reclaim the referenced object, and we
- * cannot guarantee that GC won't run (unless it is disabled) because lock
- * acquisition may suspend.
- *
- * The inverse is true when destroying the referenced object. We must ensure
- * that the memory backing the weakrefs remains alive while we're unlinking
- * them, but we only hold borrowed references and they may also be destroyed
- * concurrently.
  *
  * For now we've chosen to address this in a straightforward way:
  *
  * - The weakref's hash is protected using the weakref's per-object lock.
- * - The other mutable is protected by a striped lock owned by the interpreter.
+ * - The other mutable is protected by a striped lock keyed on the referenced
+ *   object's address.
  * - The striped lock must be locked using `_Py_LOCK_DONT_DETACH` in order to
  *   support atomic deletion from WeakValueDictionaries. As a result, we must
  *   be careful not to perform any operations that could suspend while the
