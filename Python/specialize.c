@@ -247,8 +247,9 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization optimizer successes: %" PRIu64 "\n", stats->optimizer_successes);
     fprintf(out, "Optimization optimizer failure no memory: %" PRIu64 "\n",
             stats->optimizer_failure_reason_no_memory);
+    fprintf(out, "Optimizer remove globals builtins changed: %" PRIu64 "\n", stats->remove_globals_builtins_changed);
+    fprintf(out, "Optimizer remove globals incorrect keys: %" PRIu64 "\n", stats->remove_globals_incorrect_keys);
 
-    const char* const* names;
     for (int i = 0; i <= MAX_UOP_ID; i++) {
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
@@ -265,6 +266,17 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
                 "unsupported_opcode[%s].count : %" PRIu64 "\n",
                 _PyOpcode_OpName[i],
                 stats->unsupported_opcode[i]
+            );
+        }
+    }
+
+    for (int i = 0; i < MAX_UOP_ID; i++) {
+        if (stats->error_in_opcode[i]) {
+            fprintf(
+                out,
+                "error_in_opcode[%s].count : %" PRIu64 "\n",
+                _PyUOpName(i),
+                stats->error_in_opcode[i]
             );
         }
     }
@@ -599,6 +611,12 @@ _PyCode_Quicken(PyCodeObject *code)
 #define SPEC_FAIL_TO_BOOL_SEQUENCE    16
 #define SPEC_FAIL_TO_BOOL_SET         17
 #define SPEC_FAIL_TO_BOOL_TUPLE       18
+
+// CONTAINS_OP
+#define SPEC_FAIL_CONTAINS_OP_STR        9
+#define SPEC_FAIL_CONTAINS_OP_TUPLE      10
+#define SPEC_FAIL_CONTAINS_OP_LIST       11
+#define SPEC_FAIL_CONTAINS_OP_USER_CLASS 12
 
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
@@ -2562,34 +2580,40 @@ success:
     cache->counter = adaptive_counter_cooldown();
 }
 
+#ifdef Py_STATS
+static int containsop_fail_kind(PyObject *value) {
+    if (PyUnicode_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_STR;
+    }
+    if (PyList_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_LIST;
+    }
+    if (PyTuple_CheckExact(value)) {
+        return SPEC_FAIL_CONTAINS_OP_TUPLE;
+    }
+    if (PyType_Check(value)) {
+        return SPEC_FAIL_CONTAINS_OP_USER_CLASS;
+    }
+    return SPEC_FAIL_OTHER;
+}
+#endif   // Py_STATS
+
 void
 _Py_Specialize_ContainsOp(PyObject *value, _Py_CODEUNIT *instr)
 {
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[CONTAINS_OP] == INLINE_CACHE_ENTRIES_COMPARE_OP);
     _PyContainsOpCache *cache = (_PyContainsOpCache  *)(instr + 1);
-    if (PyUnicode_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_STR;
-        goto success;
-    }
-    if (PyList_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_LIST;
-        goto success;
-    }
-    if (PyTuple_CheckExact(value)) {
-        instr->op.code = CONTAINS_OP_TUPLE;
-        goto success;
-    }
     if (PyDict_CheckExact(value)) {
         instr->op.code = CONTAINS_OP_DICT;
         goto success;
     }
-    if (PySet_CheckExact(value)) {
+    if (PySet_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
         instr->op.code = CONTAINS_OP_SET;
         goto success;
     }
 
-
+    SPECIALIZATION_FAIL(CONTAINS_OP, containsop_fail_kind(value));
     STAT_INC(CONTAINS_OP, failure);
     instr->op.code = CONTAINS_OP;
     cache->counter = adaptive_counter_backoff(cache->counter);

@@ -130,7 +130,8 @@ class Benchmark:
 
     def _prepare_data(self, loops: int) -> list[float]:
         bench = BENCHMARKS[self._name]
-        return [bench(self._size, self._random)] * loops
+        data = bench(self._size, self._random)
+        return [data.copy() for _ in range(loops)]
 
 
 def add_cmdline_args(cmd: list[str], args) -> None:

@@ -320,7 +320,7 @@ static Py_hash_t
 meth_hash(PyCFunctionObject *a)
 {
     Py_hash_t x, y;
-    x = _Py_HashPointer(a->m_self);
+    x = PyObject_GenericHash(a->m_self);
     y = _Py_HashPointer((void*)(a->m_ml->ml_meth));
     x ^= y;
     if (x == -1)

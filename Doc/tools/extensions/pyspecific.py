@@ -133,7 +133,7 @@ class Availability(SphinxDirective):
     known_platforms = frozenset({
         "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
         "GNU/kFreeBSD", "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris",
-        "Unix", "VxWorks", "WASI", "Windows", "macOS",
+        "Unix", "VxWorks", "WASI", "Windows", "macOS", "iOS",
         # libc
         "BSD libc", "glibc", "musl",
         # POSIX platforms with pthreads
@@ -164,7 +164,7 @@ class Availability(SphinxDirective):
 
         Example::
 
-           .. availability:: Windows, Linux >= 4.2, not Emscripten, not WASI
+           .. availability:: Windows, Linux >= 4.2, not WASI
 
         Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
         parsed into separate tokens.

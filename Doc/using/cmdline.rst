@@ -242,12 +242,13 @@ Miscellaneous options
 
 .. option:: -b
 
-   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
-   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error when the
-   option is given twice (:option:`!-bb`).
+   Issue a warning when converting :class:`bytes` or :class:`bytearray` to
+   :class:`str` without specifying encoding or comparing :class:`!bytes` or
+   :class:`!bytearray` with :class:`!str` or :class:`!bytes` with :class:`int`.
+   Issue an error when the option is given twice (:option:`!-bb`).
 
    .. versionchanged:: 3.5
-      Affects comparisons of :class:`bytes` with :class:`int`.
+      Affects also comparisons of :class:`bytes` with :class:`int`.
 
 .. option:: -B
 
@@ -386,6 +387,8 @@ Miscellaneous options
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
    :data:`sys.path`.
 
+   See also :envvar:`PYTHONNOUSERSITE`.
+
    .. seealso::
 
       :pep:`370` -- Per user site-packages directory
@@ -517,7 +520,7 @@ Miscellaneous options
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
-     default.
+     default.  See also :envvar:`PYTHONDEVMODE`.
    * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
      ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
      (even when it would otherwise activate automatically).
@@ -559,6 +562,9 @@ Miscellaneous options
      :mod:`__main__`. This can be used to execute code early during Python
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
+   * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
+     respectively. Only available in builds configured with
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -600,6 +606,9 @@ Miscellaneous options
 
    .. versionchanged:: 3.13
       Added the ``-X cpu_count`` and ``-X presite`` options.
+
+   .. versionchanged:: 3.13
+      Added the ``-X gil`` option.
 
 .. _using-on-controlling-color:
 
@@ -1135,6 +1144,18 @@ conflict.
    This environment variable can be used to set the location of a
    ``.python_history`` file (by default, it is ``.python_history`` in the
    user's home directory).
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_GIL
+
+   If this variable is set to ``1``, the global interpreter lock (GIL) will be
+   forced on. Setting it to ``0`` forces the GIL off.
+
+   See also the :option:`-X gil <-X>` command-line option, which takes
+   precedence over this variable.
+
+   Needs Python configured with the :option:`--disable-gil` build option.
 
    .. versionadded:: 3.13
 
