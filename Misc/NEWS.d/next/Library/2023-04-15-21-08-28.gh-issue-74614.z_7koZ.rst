@@ -1,0 +1,2 @@
+:mod:`bdb` and :mod:`pdb` now support ``watch``,
+``rwatch``, and ``awatch`` commands. Patch by Louie Lu.
