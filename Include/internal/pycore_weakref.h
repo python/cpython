@@ -111,11 +111,7 @@ static inline int _PyWeakref_IS_DEAD(PyObject *ref_obj)
     return ret;
 }
 
-// NB: In free-threaded builds the weakref list lock for the referenced object
-// must be held around calls to this function.
-extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyWeakReference *head);
-
-extern Py_ssize_t _PyWeakref_GetWeakrefCountThreadsafe(PyObject *obj);
+extern Py_ssize_t _PyWeakref_GetWeakrefCount(PyObject *obj);
 
 // Clear all the weak references to obj but leave their callbacks uncalled and
 // intact.

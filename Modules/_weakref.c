@@ -26,10 +26,7 @@ static Py_ssize_t
 _weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
 /*[clinic end generated code: output=301806d59558ff3e input=7d4d04fcaccf64d5]*/
 {
-    if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))) {
-        return 0;
-    }
-    return _PyWeakref_GetWeakrefCountThreadsafe(object);
+    return _PyWeakref_GetWeakrefCount(object);
 }
 
 
@@ -90,7 +87,7 @@ _weakref_getweakrefs(PyObject *module, PyObject *object)
     }
 
     PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-    Py_ssize_t count = _PyWeakref_GetWeakrefCountThreadsafe(object);
+    Py_ssize_t count = _PyWeakref_GetWeakrefCount(object);
 
     PyObject *result = PyList_New(count);
     if (result == NULL) {

@@ -39,26 +39,19 @@
 
 
 Py_ssize_t
-_PyWeakref_GetWeakrefCount(PyWeakReference *head)
-{
-    Py_ssize_t count = 0;
-
-    while (head != NULL) {
-        ++count;
-        head = head->wr_next;
-    }
-    return count;
-}
-
-Py_ssize_t
-_PyWeakref_GetWeakrefCountThreadsafe(PyObject *obj)
+_PyWeakref_GetWeakrefCount(PyObject *obj)
 {
     if (!_PyType_SUPPORTS_WEAKREFS(Py_TYPE(obj))) {
         return 0;
     }
-    Py_ssize_t count;
+
     LOCK_WEAKREFS(obj);
-    count = _PyWeakref_GetWeakrefCount(*GET_WEAKREFS_LISTPTR(obj));
+    Py_ssize_t count = 0;
+    PyWeakReference *head = *GET_WEAKREFS_LISTPTR(obj);
+    while (head != NULL) {
+        ++count;
+        head = head->wr_next;
+    }
     UNLOCK_WEAKREFS(obj);
     return count;
 }
@@ -1114,7 +1107,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
 
     /* Deal with non-canonical (subtypes or refs with callbacks) references. */
-    Py_ssize_t num_weakrefs = _PyWeakref_GetWeakrefCountThreadsafe(object);
+    Py_ssize_t num_weakrefs = _PyWeakref_GetWeakrefCount(object);
     if (num_weakrefs == 0) {
         return;
     }
@@ -1168,7 +1161,7 @@ PyObject_ClearWeakRefs(PyObject *object)
     }
     if (*list != NULL) {
         PyWeakReference *current = *list;
-        Py_ssize_t count = _PyWeakref_GetWeakrefCount(current);
+        Py_ssize_t count = _PyWeakref_GetWeakrefCount(object);
         PyObject *exc = PyErr_GetRaisedException();
 
         if (count == 1) {
