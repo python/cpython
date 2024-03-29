@@ -1,0 +1,1 @@
+Hardode constants in :mod:`ntpath`.
