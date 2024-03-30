@@ -554,27 +554,17 @@ static PyCodeObject *get_co(_PyUOpInstruction *op) {
     return co;
 }
 
-/* Get the frame size from a _PUSH_FRAME/_POP_FRAME instruction,
- * -1 if the information isn't available.
- */
-static int get_framesize(_PyUOpInstruction *op) {
-    PyCodeObject *co = get_co(op);
-    if (co == NULL) {
-        return -1;
-    }
-    return co->co_framesize;
-}
-
 /* Compute the maximum stack space needed for this trace and consolidate
  * all possible _CHECK_STACK_SPACE ops to one _CHECK_STACK_SPACE_OPERAND.
  */
 static void
 combine_stack_space_checks(
+    _PyInterpreterFrame *frame,
     _PyUOpInstruction *buffer,
     int buffer_size
 )
 {
-    int curr_framesize = -1;
+    PyCodeObject *co = _PyFrame_GetCode(frame);
     int curr_space = 0;
     int max_space = 0;
     _PyUOpInstruction *first_valid_check_stack = NULL;
@@ -589,13 +579,15 @@ combine_stack_space_checks(
             }
             case _PUSH_FRAME: {
                 assert(corresponding_check_stack != NULL);
-                curr_framesize = get_framesize(&buffer[pc]);
-                if (curr_framesize == -1) {
+                co = get_co(&buffer[pc]);
+                if (co == NULL) {
+                    // should be about to _EXIT_TRACE anyway
                     goto finish;
                 }
-                assert(curr_framesize > 0);
-                curr_space += curr_framesize;
-                if (curr_space < 0 || curr_space > UINT32_MAX) {
+                int framesize = co->co_framesize;
+                assert(framesize > 0);
+                curr_space += framesize;
+                if (curr_space < 0 || curr_space > INT32_MAX) {
                     // overflow or won't fit in operand
                     goto finish;
                 }
@@ -612,12 +604,14 @@ combine_stack_space_checks(
             }
             case _POP_FRAME: {
                 assert(corresponding_check_stack == NULL);
-                assert(curr_framesize > 0);
-                assert(curr_framesize <= curr_space);
-                curr_space -= curr_framesize;
-                curr_framesize = get_framesize(&buffer[pc]);
-                assert(curr_framesize > 0);
-                if (curr_framesize == -1) {
+                assert(co != NULL);
+                int framesize = co->co_framesize;
+                assert(framesize > 0);
+                assert(framesize <= curr_space);
+                curr_space -= framesize;
+                co = get_co(&buffer[pc]);
+                if (co == NULL) {
+                    // might be impossible, but bailing is still safe
                     goto finish;
                 }
                 break;
@@ -642,7 +636,7 @@ finish:
         assert(first_valid_check_stack->opcode == _CHECK_STACK_SPACE);
         assert(max_space > 0);
         assert(max_space <= INT_MAX);
-        assert(max_space <= UINT32_MAX);
+        assert(max_space <= INT32_MAX);
         first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
         first_valid_check_stack->operand = max_space;
     }
@@ -675,6 +669,7 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
             case _POP_FRAME:
             {
                 co = get_co(&buffer[pc]);
+                // if co is NULL, goto finish probably makes sense
                 break;
             }
             case _JUMP_TO_TOP:
@@ -704,6 +699,7 @@ _Py_uop_analyze_and_optimize(
     }
 
     peephole_opt(frame, buffer, length);
+    combine_stack_space_checks(frame, buffer, length);
 
     length = optimize_uops(
         _PyFrame_GetCode(frame), buffer,
@@ -713,7 +709,6 @@ _Py_uop_analyze_and_optimize(
         return length;
     }
 
-    combine_stack_space_checks(buffer, length);
     length = remove_unneeded_uops(buffer, length);
     assert(length > 0);
 
