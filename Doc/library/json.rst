@@ -159,7 +159,7 @@ Basic Usage
    handled.  If *skipkeys* is true (default: ``False``), then such keys will be
    skipped.  Otherwise, if *convert_keys* is true (default: ``False``), such
    keys are converted to a supported type by calling the encoder's
-   :meth:`~JSONEncoder.default()` method.  If `.default()` returns an
+   :meth:`JSONEncoder.default` method.  If :meth:`JSONEncoder.default` returns an
    unsupported type, or *convert_keys* is False, :exc:`TypeError` is raised.
 
    The :mod:`json` module always produces :class:`str` objects, not
