@@ -344,9 +344,9 @@ the following constants:
    .. versionadded:: 3.13
 
 The version number and string formats are as defined in by C library. The
-integer is represented in decimal digits as ``MJJJPPPS`` where ``M`` is the
-major version, ``JJJ`` is the minor version, ``PPP`` is the patch level, and
-``S`` is the "stability indicator" (2 means stable)::
+integer is represented in decimal digits as ``jmmmppps`` where ``j`` is the
+major version, ``mmm`` is the minor version, ``ppp`` is the patch level, and
+``s`` is the "stability indicator" (2 means stable)::
 
    >>> import lzma
    >>> lzma.LZMA_VERSION
