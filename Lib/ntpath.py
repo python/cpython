@@ -130,14 +130,12 @@ def join(path, *paths):
                 # Same drive in different case
                 result_drive = p_drive
             # Second path is relative to the first
-            # gh-117349: Indexing bytes is not correct here
-            if result_path and result_path[-1:] not in seps:
+            if result_path and result_path[-1] not in seps:
                 result_path = result_path + sep
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
-        ## Indexing bytes is not correct here
         if (result_path and not result_root and
-            result_drive and result_drive[-1:] not in colon + seps):
+            result_drive and result_drive[-1] not in colon + seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
