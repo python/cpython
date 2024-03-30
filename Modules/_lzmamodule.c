@@ -1611,7 +1611,8 @@ lzma_exec(PyObject *module)
     }
 
     if (PyModule_AddStringConstant(
-                module, "LZMA_HEADER_VERSION_STRING", LZMA_VERSION_STRING) < 0) {
+                module, "LZMA_HEADER_VERSION_STRING",
+                LZMA_VERSION_STRING) < 0) {
         return -1;
     }
     if (PyModule_AddStringConstant(
