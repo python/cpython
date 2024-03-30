@@ -688,10 +688,8 @@ else:
                 path = _getfinalpathname(path)
                 return join(path, tail) if tail else path
             except OSError as ex:
-                winerror = ex.winerror
-                if winerror not in allowed_winerror:
+                if ex.winerror not in allowed_winerror:
                     raise
-            if True:  # Indent for git blame
                 try:
                     # The OS could not resolve this path fully, so we attempt
                     # to follow the link ourselves. If we succeed, join the tail
@@ -703,7 +701,7 @@ else:
                     # If we fail to readlink(), let's keep traversing
                     pass
                 # If we get these errors, try to get the real name of the file without accessing it.
-                if winerror in (1, 5, 32, 50, 87, 1920, 1921):
+                if ex.winerror in (1, 5, 32, 50, 87, 1920, 1921):
                     try:
                         name = _findfirstfile(path)
                         path, _ = split(path)
