@@ -328,36 +328,34 @@ def expandvars(path):
 # It should be understood that this may change the meaning of the path
 # if it contains symbolic links!
 
-def _normpath_fallback(path):
-    """Normalize path, eliminating double slashes, etc."""
-    path = os.fspath(path)
-    if isinstance(path, bytes):
-        sep = b'/'
-        dot = b'.'
-        dotdot = b'..'
-    else:
-        sep = '/'
-        dot = '.'
-        dotdot = '..'
-    if not path:
-        return dot
-    _, initial_slashes, path = splitroot(path)
-    new_comps = []
-    for comp in path.split(sep):
-        if not comp or comp == dot:
-            continue
-        if (comp != dotdot or (not initial_slashes and not new_comps) or
-             (new_comps and new_comps[-1] == dotdot)):
-            new_comps.append(comp)
-        elif new_comps:
-            new_comps.pop()
-    return (initial_slashes + sep.join(new_comps)) or dot
-
 try:
     from posix import _path_normpath
 
 except ImportError:
-    normpath = _normpath_fallback
+    def normpath(path):
+        """Normalize path, eliminating double slashes, etc."""
+        path = os.fspath(path)
+        if isinstance(path, bytes):
+            sep = b'/'
+            dot = b'.'
+            dotdot = b'..'
+        else:
+            sep = '/'
+            dot = '.'
+            dotdot = '..'
+        if not path:
+            return dot
+        _, initial_slashes, path = splitroot(path)
+        new_comps = []
+        for comp in path.split(sep):
+            if not comp or comp == dot:
+                continue
+            if (comp != dotdot or (not initial_slashes and not new_comps) or
+                (new_comps and new_comps[-1] == dotdot)):
+                new_comps.append(comp)
+            elif new_comps:
+                new_comps.pop()
+        return (initial_slashes + sep.join(new_comps)) or dot
 else:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
