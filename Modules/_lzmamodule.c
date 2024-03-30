@@ -28,8 +28,7 @@
 /*
  * If the lzma.h we're building against is so old as not to define these, this
  * provides their equivalent values so that the names remain defined in Python
- * regardless.  lzma.LZMA_RUNTIME_VERSION is exposed to Python and is what
- * people can use to decide if they can use them at runtime.
+ * regardless of the header versions used at build time.
  */
 #ifndef LZMA_FILTER_ARM64
 #define LZMA_FILTER_ARM64       LZMA_VLI_C(0x0A)
@@ -1611,12 +1610,23 @@ lzma_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_Add(module, "LZMA_VERSION",
-                     PyUnicode_FromString(LZMA_VERSION_STRING)) < 0) {
+    if (PyModule_AddStringConstant(
+                module, "LZMA_HEADER_VERSION_STRING", LZMA_VERSION_STRING) < 0) {
         return -1;
     }
-    if (PyModule_Add(module, "LZMA_RUNTIME_VERSION",
-                     PyUnicode_FromString(lzma_version_string())) < 0) {
+    if (PyModule_AddStringConstant(
+                module, "LZMA_VERSION_STRING",
+                lzma_version_string()) < 0) {
+        return -1;
+    }
+    PyObject *uint32_obj = PyLong_FromUnsignedLong(LZMA_VERSION);
+    if (PyModule_AddObject(module, "LZMA_HEADER_VERSION", uint32_obj) < 0) {
+        Py_XDECREF(uint32_obj);
+        return -1;
+    }
+    uint32_obj = PyLong_FromUnsignedLong(lzma_version_number());
+    if (PyModule_AddObject(module, "LZMA_VERSION", uint32_obj) < 0) {
+        Py_XDECREF(uint32_obj);
         return -1;
     }
 

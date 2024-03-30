@@ -20,16 +20,6 @@ lzma = import_module("lzma")
 from lzma import LZMACompressor, LZMADecompressor, LZMAError, LZMAFile
 
 
-def _lzma_runtime_version_tuple(lzma_version=lzma.LZMA_RUNTIME_VERSION):
-    v = lzma_version.split('.', 3)
-    if not v[-1].isnumeric():
-        v[-1] = re.search(r'\d+', v[-1]).group()
-    return tuple(map(int, v))
-
-
-LZMA_RUNTIME_VERSION_TUPLE = _lzma_runtime_version_tuple()
-
-
 class CompressorDecompressorTestCase(unittest.TestCase):
 
     # Test error cases.
@@ -395,20 +385,19 @@ class CompressorDecompressorTestCase(unittest.TestCase):
         self.assertEqual(LZMADecompressor.__new__(LZMADecompressor).
                          decompress(bytes()), b'')
 
-    # Test the existence of the relatively new BCJ filters.  These just
-    # ensure that the constant was found at compile time and exposed.
-
-    @unittest.skipUnless(
-            LZMA_RUNTIME_VERSION_TUPLE >= (5, 6, 0),
-            "RISC-V filter is only available on lzma 5.6.0 or later")
-    def test_riscv_filter_exists(self):
+    def test_riscv_filter_constant_exists(self):
         self.assertTrue(lzma.FILTER_RISCV)
 
-    @unittest.skipUnless(
-            LZMA_RUNTIME_VERSION_TUPLE >= (5, 4, 0),
-            "ARM64 filter is only available on lzma 5.4.0 or later")
-    def test_arm64_filter_exists(self):
+    def test_arm64_filter_constant_exists(self):
         self.assertTrue(lzma.FILTER_ARM64)
+
+    def test_lzma_header_versions(self):
+        self.assertIsInstance(lzma.LZMA_HEADER_VERSION_STRING, str)
+        self.assertGreater(lzma.LZMA_HEADER_VERSION, 0)
+
+    def test_lzma_versions(self):
+        self.assertIsInstance(lzma.LZMA_VERSION_STRING, str)
+        self.assertGreater(lzma.LZMA_VERSION, 0)
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):

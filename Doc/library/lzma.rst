@@ -327,19 +327,33 @@ the following constants:
 
 
 .. data:: LZMA_VERSION
+.. data:: LZMA_VERSION_STRING
 
-   The version string of the lzma library that was used for building the module.
-   This may be different from the lzma library actually used at runtime, which
-   is available as :const:`LZMA_RUNTIME_VERSION`.
+   The version of the lzma C library actually loaded at runtime, in both
+   integer and string forms.
+
+   .. versionadded:: 3.13
+
+.. data:: LZMA_HEADER_VERSION
+.. data:: LZMA_HEADER_VERSION_STRING
+
+   The version of the lzma library that was used for building the module, in
+   both integer and string forms.  This may be different from the lzma library
+   actually used at runtime.
 
    .. versionadded:: 3.13
 
+The version number and string formats are as defined in by C library. The
+integer is represented in decimal digits as ``MJJJPPPS`` where ``M`` is the
+major version, ``JJJ`` is the minor version, ``PPP`` is the patch level, and
+``S`` is the "stability indicator" (2 means stable)::
 
-.. data:: LZMA_RUNTIME_VERSION
+   >>> import lzma
+   >>> lzma.LZMA_VERSION
+   50020052
+   >>> lzma.LZMA_VERSION_STRING
+   '5.2.5'
 
-   The version string of the lzma library actually loaded by the interpreter.
-
-   .. versionadded:: 3.13
 
 .. _filter-chain-specs:
 
@@ -373,13 +387,13 @@ options. Valid filter IDs are as follows:
 
   * :const:`!FILTER_ARM64`
 
-    Only works if :data:`LZMA_RUNTIME_VERSION` is 5.4.0 or later.
+    Only works if the lzma version is 5.4.0 or later.
 
     .. versionadded:: 3.13
 
   * :const:`!FILTER_RISCV`
 
-    Only works if :data:`LZMA_RUNTIME_VERSION` is 5.6.0 or later.
+    Only works if the lzma version is 5.6.0 or later.
 
     .. versionadded:: 3.13
 
