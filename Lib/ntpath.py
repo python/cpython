@@ -691,28 +691,29 @@ else:
                 winerror = ex.winerror
                 if winerror not in allowed_winerror:
                     raise
-            try:
-                # The OS could not resolve this path fully, so we attempt
-                # to follow the link ourselves. If we succeed, join the tail
-                # and return.
-                new_path = _readlink_deep(path)
-                if new_path != path:
-                    return join(new_path, tail) if tail else new_path
-            except OSError:
-                # If we fail to readlink(), let's keep traversing
-                pass
-            # If we get these errors, try to get the real name of the file without accessing it.
-            if winerror in (1, 5, 32, 50, 87, 1920, 1921):
+            if True:  # Indent for git blame
                 try:
-                    name = _findfirstfile(path)
-                    path, _ = split(path)
+                    # The OS could not resolve this path fully, so we attempt
+                    # to follow the link ourselves. If we succeed, join the tail
+                    # and return.
+                    new_path = _readlink_deep(path)
+                    if new_path != path:
+                        return join(new_path, tail) if tail else new_path
                 except OSError:
+                    # If we fail to readlink(), let's keep traversing
+                    pass
+                # If we get these errors, try to get the real name of the file without accessing it.
+                if winerror in (1, 5, 32, 50, 87, 1920, 1921):
+                    try:
+                        name = _findfirstfile(path)
+                        path, _ = split(path)
+                    except OSError:
+                        path, name = split(path)
+                else:
                     path, name = split(path)
-            else:
-                path, name = split(path)
-            if path and not name:
-                return path + tail
-            tail = join(name, tail) if tail else name
+                if path and not name:
+                    return path + tail
+                tail = join(name, tail) if tail else name
         return tail
 
     def realpath(path, *, strict=False):
