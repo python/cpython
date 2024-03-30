@@ -390,8 +390,9 @@ symbolic links encountered in the path."""
     path, ok = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
-# Join two paths, normalizing and eliminating any symbolic links encountered in
-# the second path. Two leading slashes are replaced by a single slash.
+# Join two paths, normalizing and eliminating any symbolic links
+# encountered in the second path.
+# Two leading slashes are replaced by a single slash.
 def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
