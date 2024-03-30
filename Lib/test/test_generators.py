@@ -1164,22 +1164,22 @@ merged E into F
  A->F B->B C->C D->D E->F F->F G->G H->H I->I J->J K->B L->L M->M
 merged D into C
  A->F B->B C->C D->C E->F F->F G->G H->H I->I J->J K->B L->L M->M
-merged M into C
- A->F B->B C->C D->C E->F F->F G->G H->H I->I J->J K->B L->L M->C
-merged J into B
- A->F B->B C->C D->C E->F F->F G->G H->H I->I J->B K->B L->L M->C
+merged M into B
+ A->F B->B C->C D->C E->F F->F G->G H->H I->I J->J K->B L->L M->B
+merged H into G
+ A->F B->B C->C D->C E->F F->F G->G H->G I->I J->J K->B L->L M->B
 merged B into C
- A->F B->C C->C D->C E->F F->F G->G H->H I->I J->C K->C L->L M->C
-merged F into G
- A->G B->C C->C D->C E->G F->G G->G H->H I->I J->C K->C L->L M->C
-merged L into C
- A->G B->C C->C D->C E->G F->G G->G H->H I->I J->C K->C L->C M->C
-merged G into I
- A->I B->C C->C D->C E->I F->I G->I H->H I->I J->C K->C L->C M->C
-merged I into H
- A->H B->C C->C D->C E->H F->H G->H H->H I->H J->C K->C L->C M->C
-merged C into H
- A->H B->H C->H D->H E->H F->H G->H H->H I->H J->H K->H L->H M->H
+ A->F B->C C->C D->C E->F F->F G->G H->G I->I J->J K->C L->L M->C
+merged C into G
+ A->F B->G C->G D->G E->F F->F G->G H->G I->I J->J K->G L->L M->G
+merged G into J
+ A->F B->J C->J D->J E->F F->F G->J H->J I->I J->J K->J L->L M->J
+merged J into F
+ A->F B->F C->F D->F E->F F->F G->F H->F I->I J->F K->F L->L M->F
+merged L into F
+ A->F B->F C->F D->F E->F F->F G->F H->F I->I J->F K->F L->F M->F
+merged I into F
+ A->F B->F C->F D->F E->F F->F G->F H->F I->F J->F K->F L->F M->F
 
 """
 # Emacs turd '
