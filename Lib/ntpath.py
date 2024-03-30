@@ -470,17 +470,19 @@ def expandvars(path):
                 pathlen = len(path)
                 try:
                     index = path.index(percent)
-                    var = path[:index]
-                    if environ is None:
-                        value = os.fsencode(os.environ[os.fsdecode(var)])
-                    else:
-                        value = environ[var]
-                    res += value
                 except ValueError:
                     res += percent + path
                     index = pathlen - 1
-                except KeyError:
-                    res += percent + var + percent
+                else:
+                    var = path[:index]
+                    try:
+                        if environ is None:
+                            value = os.fsencode(os.environ[os.fsdecode(var)])
+                        else:
+                            value = environ[var]
+                    except KeyError:
+                        value = percent + var + percent
+                    res += value
         elif c == dollar:  # variable or '$$'
             if path[index + 1:index + 2] == dollar:
                 res += c
@@ -490,17 +492,19 @@ def expandvars(path):
                 pathlen = len(path)
                 try:
                     index = path.index(rbrace)
-                    var = path[:index]
-                    if environ is None:
-                        value = os.fsencode(os.environ[os.fsdecode(var)])
-                    else:
-                        value = environ[var]
-                    res += value
                 except ValueError:
                     res += dollar + brace + path
                     index = pathlen - 1
-                except KeyError:
-                    res += dollar + brace + var + rbrace
+                else:
+                    var = path[:index]
+                    try:
+                        if environ is None:
+                            value = os.fsencode(os.environ[os.fsdecode(var)])
+                        else:
+                            value = environ[var]
+                    except KeyError:
+                        value = dollar + brace + var + rbrace
+                    res += value
             else:
                 var = path[:0]
                 index += 1
@@ -514,9 +518,9 @@ def expandvars(path):
                         value = os.fsencode(os.environ[os.fsdecode(var)])
                     else:
                         value = environ[var]
-                    res += value
                 except KeyError:
-                    res += dollar + var
+                    value = dollar + var
+                res += value
                 if c:
                     index -= 1
         else:
