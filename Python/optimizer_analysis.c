@@ -554,15 +554,8 @@ static PyCodeObject *get_co(_PyUOpInstruction *op) {
     return co;
 }
 
-/* Compute the maximum stack space needed for this trace and consolidate
- * all possible _CHECK_STACK_SPACE ops to one _CHECK_STACK_SPACE_OPERAND.
- */
 static void
-combine_stack_space_checks(
-    _PyInterpreterFrame *frame,
-    _PyUOpInstruction *buffer,
-    int buffer_size
-)
+peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
 {
     PyCodeObject *co = _PyFrame_GetCode(frame);
     int curr_space = 0;
@@ -571,7 +564,22 @@ combine_stack_space_checks(
     _PyUOpInstruction *corresponding_check_stack = NULL;
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
-        switch (opcode) {
+        switch(opcode) {
+            case _LOAD_CONST: {
+                assert(co != NULL);
+                PyObject *val = PyTuple_GET_ITEM(co->co_consts, buffer[pc].oparg);
+                buffer[pc].opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+                buffer[pc].operand = (uintptr_t)val;
+                break;
+            }
+            case _CHECK_PEP_523: {
+                /* Setting the eval frame function invalidates
+                 * all executors, so no need to check dynamically */
+                if (_PyInterpreterState_GET()->eval_frame == NULL) {
+                    buffer[pc].opcode = _NOP;
+                }
+                break;
+            }
             case _CHECK_STACK_SPACE: {
                 assert(corresponding_check_stack == NULL);
                 corresponding_check_stack = &buffer[pc];
@@ -617,15 +625,13 @@ combine_stack_space_checks(
                 break;
             }
             case _JUMP_TO_TOP:
-            case _EXIT_TRACE: {
+            case _EXIT_TRACE:
                 goto finish;
-            }
 #ifdef Py_DEBUG
             case _CHECK_STACK_SPACE_OPERAND: {
                 /* We should never see _CHECK_STACK_SPACE_OPERANDs.
                  * They are only created at the end of this pass. */
-                assert(false);
-                break;
+                Py_UNREACHABLE();
             }
 #endif
         }
@@ -639,43 +645,6 @@ finish:
         assert(max_space <= INT32_MAX);
         first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
         first_valid_check_stack->operand = max_space;
-    }
-}
-
-static void
-peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_size)
-{
-    PyCodeObject *co = _PyFrame_GetCode(frame);
-    for (int pc = 0; pc < buffer_size; pc++) {
-        int opcode = buffer[pc].opcode;
-        switch(opcode) {
-            case _LOAD_CONST: {
-                assert(co != NULL);
-                PyObject *val = PyTuple_GET_ITEM(co->co_consts, buffer[pc].oparg);
-                buffer[pc].opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-                buffer[pc].operand = (uintptr_t)val;
-                break;
-            }
-            case _CHECK_PEP_523:
-            {
-                /* Setting the eval frame function invalidates
-                 * all executors, so no need to check dynamically */
-                if (_PyInterpreterState_GET()->eval_frame == NULL) {
-                    buffer[pc].opcode = _NOP;
-                }
-                break;
-            }
-            case _PUSH_FRAME:
-            case _POP_FRAME:
-            {
-                co = get_co(&buffer[pc]);
-                // if co is NULL, goto finish probably makes sense
-                break;
-            }
-            case _JUMP_TO_TOP:
-            case _EXIT_TRACE:
-                return;
-        }
     }
 }
 
@@ -699,7 +668,6 @@ _Py_uop_analyze_and_optimize(
     }
 
     peephole_opt(frame, buffer, length);
-    combine_stack_space_checks(frame, buffer, length);
 
     length = optimize_uops(
         _PyFrame_GetCode(frame), buffer,
