@@ -545,12 +545,13 @@ def relpath(path, start=None):
 
 def commonpath(paths):
     """Given an iterable of path names, returns the longest common sub-path."""
-    try:
-        # Raises TypeError if paths is not iterable
-        _, roots, tails = zip(*map(splitroot, paths))
-    except ValueError:
-        raise ValueError('commonpath() arg is an empty iterable') from None
 
+    paths = tuple(paths)
+
+    if not paths:
+        raise ValueError('commonpath() arg is an empty iterable')
+
+    _, roots, tails = zip(*map(splitroot, paths))
     if isinstance(roots[0], bytes):
         sep = b'/'
         curdir = b'.'
@@ -560,6 +561,7 @@ def commonpath(paths):
 
     try:
         prefix = min(roots)
+
         if not prefix and max(roots):
             raise ValueError("Can't mix absolute and relative paths")
 
@@ -568,11 +570,13 @@ def commonpath(paths):
         ]
         s1 = min(split_paths)
         s2 = max(split_paths)
+        common = s1
         for i, c in enumerate(s1):
             if c != s2[i]:
-                return prefix + sep.join(s1[:i])
+                common = s1[:i]
+                break
 
-        return prefix + sep.join(s1)
+        return prefix + sep.join(common)
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *(
             # Can't use paths, can be an iterable
