@@ -502,19 +502,19 @@ class EncodingTest(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         with open(self.source_path, 'w', encoding='utf-8') as file:
-            file.write('# -*- coding: utf-8 -*-\n')
-            file.write('print u"\u20ac"\n')
+            file.write('print(b"\u20ac")\n')  # intentional error
 
     def tearDown(self):
         shutil.rmtree(self.directory)
 
     def test_error(self):
-        try:
-            orig_stdout = sys.stdout
-            sys.stdout = io.TextIOWrapper(io.BytesIO(),encoding='ascii')
-            compileall.compile_dir(self.directory)
-        finally:
-            sys.stdout = orig_stdout
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            compiled = compileall.compile_dir(self.directory)
+        self.assertFalse(compiled)  # should not be successful
+        res = buffer.getvalue()
+        self.assertIn('SyntaxError', res)
+        self.assertIn('print(b"€")', res)
 
 
 class CommandLineTestsBase:
