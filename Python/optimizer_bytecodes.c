@@ -144,8 +144,12 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
             OUT_OF_SPACE_IF_NULL(res);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and add tests!
+            if (_PyLong_IsCompact((PyLongObject *)temp)) {
+                Py_ssize_t val = _PyLong_CompactValue((PyLongObject *)temp);
+                if (val == (int64_t)val) {
+                    REPLACE_OP(this_instr, _POP_TWO_LOAD_INT, 0, (int64_t)val);
+                }
+            }
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
@@ -166,8 +170,12 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
             OUT_OF_SPACE_IF_NULL(res);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and add tests!
+            if (_PyLong_IsCompact((PyLongObject *)temp)) {
+                Py_ssize_t val = _PyLong_CompactValue((PyLongObject *)temp);
+                if (val == (int64_t)val) {
+                    REPLACE_OP(this_instr, _POP_TWO_LOAD_INT, 0, (int64_t)val);
+                }
+            }
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));
@@ -188,8 +196,12 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
             OUT_OF_SPACE_IF_NULL(res);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and add tests!
+            if (_PyLong_IsCompact((PyLongObject *)temp)) {
+                Py_ssize_t val = _PyLong_CompactValue((PyLongObject *)temp);
+                if (val == (int64_t)val) {
+                    REPLACE_OP(this_instr, _POP_TWO_LOAD_INT, 0, (int64_t)val);
+                }
+            }
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyLong_Type));

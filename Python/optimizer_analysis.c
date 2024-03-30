@@ -449,7 +449,67 @@ done:
     return trace_len;
 }
 
+static bool
+op_is_simple_load(int opcode) {
+    switch (opcode) {
+        case _LOAD_CONST_INLINE_BORROW:
+        case _LOAD_CONST_INLINE:
+        case _LOAD_FAST:
+        case _LOAD_INT:
+            return true;
+        default:
+            return false;
+    }
+}
 
+static bool
+remove_simple_pops(int num_popped, _PyUOpInstruction *curr, _PyUOpInstruction *limit){
+    int remaining = num_popped;
+    _PyUOpInstruction *original_curr = curr;
+    while (curr > limit && remaining != 0) {
+        int opcode = curr->opcode;
+        switch (opcode) {
+            case _NOP:
+            case _CHECK_VALIDITY_AND_SET_IP:
+            case _CHECK_VALIDITY:
+            case _SET_IP:
+                break;
+            default:
+                if (op_is_simple_load(opcode)) {
+                    remaining--;
+                }
+                // Hit a non-simple instruction. Just bail early,
+                // so we don't end up with quadratic time.
+                else {
+                    return false;
+                }
+        }
+        curr--;
+    }
+    if (remaining != 0) {
+        return false;
+    }
+    // Can eliminate.
+    remaining = num_popped;
+    curr = original_curr;
+    while (remaining != 0) {
+        int opcode = curr->opcode;
+        switch (opcode) {
+            case _NOP:
+            case _CHECK_VALIDITY_AND_SET_IP:
+            case _CHECK_VALIDITY:
+            case _SET_IP:
+                break;
+            default:
+                assert (op_is_simple_load(opcode));
+                curr->opcode = _NOP;
+                remaining--;
+                break;
+        }
+        curr--;
+    }
+    return true;
+}
 static int
 remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 {
@@ -462,6 +522,16 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
     for (int pc = 0; pc < buffer_size; pc++) {
         int opcode = buffer[pc].opcode;
         switch (opcode) {
+            case _POP_TOP_LOAD_CONST_INLINE_BORROW:
+                if (remove_simple_pops(1, &buffer[pc-1], buffer)) {
+                    buffer[pc].opcode = _LOAD_CONST_INLINE_BORROW;
+                }
+                break;
+            case _POP_TWO_LOAD_INT:
+                if (remove_simple_pops(2, &buffer[pc-1], buffer)) {
+                    buffer[pc].opcode = _LOAD_INT;
+                }
+                break;
             case _SET_IP:
                 buffer[pc].opcode = _NOP;
                 last_set_ip = pc;

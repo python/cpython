@@ -939,7 +939,8 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_BOTH_INT", uops)
-        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        # Constant folded
+        self.assertIn("_LOAD_INT", uops)
         # Try again, but between the runs, set the global to a float.
         # This should result in no executor the second time.
         ns = {}
@@ -978,6 +979,36 @@ class TestUopsOptimization(unittest.TestCase):
 
         self._run_with_optimizer(testfunc, 32)
 
+    def test_int_constant_propagation(self):
+        def testfunc(n):
+            for _ in range(n):
+                a = 1
+                x = a + a - a * a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+        self.assertNotIn("_BINARY_OP_MULTIPLY_INT", uops)
+        self.assertNotIn("_BINARY_OP_SUBTRACT_INT", uops)
+
+    def test_no_bigint_constant_propagation(self):
+        # We don't want to hold strong references in the trace.
+        def testfunc(n):
+            for _ in range(n):
+                a = 100000000000000000000000000000000000000
+                x = a + a - a * a
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertTrue(res)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_ADD_INT", uops)
+        self.assertIn("_BINARY_OP_MULTIPLY_INT", uops)
+        self.assertIn("_BINARY_OP_SUBTRACT_INT", uops)
 
 if __name__ == "__main__":
     unittest.main()
