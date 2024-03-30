@@ -378,7 +378,23 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 key = _intstr(key)
             elif _convert_keys:
                 key = _default(key)
-                if key is not None and not isinstance(key, (int, bool, float, str)):
+                if isinstance(key, str):
+                    pass
+                # JavaScript is weakly typed for these, so it makes sense to
+                # also allow them.  Many encoders seem to do something like this.
+                elif isinstance(key, float):
+                    # see comment for int/float in _make_iterencode
+                    key = _floatstr(key)
+                elif key is True:
+                    key = 'true'
+                elif key is False:
+                    key = 'false'
+                elif key is None:
+                    key = 'null'
+                elif isinstance(key, int):
+                    # see comment for int/float in _make_iterencode
+                    key = _intstr(key)
+                else:
                     raise TypeError(f'keys must be str, int, float, bool '
                                     f'or None, not {key.__class__.__name__}')
             elif _skipkeys:
