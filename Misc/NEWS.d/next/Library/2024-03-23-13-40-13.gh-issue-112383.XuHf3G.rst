@@ -1,0 +1,1 @@
+Fix :mod:`dis` module's handling of ``ENTER_EXECUTOR`` instructions.

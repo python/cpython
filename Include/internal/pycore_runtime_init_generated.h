@@ -722,6 +722,7 @@ extern "C" {
     INIT_ID(__slotnames__), \
     INIT_ID(__slots__), \
     INIT_ID(__spec__), \
+    INIT_ID(__static_attributes__), \
     INIT_ID(__str__), \
     INIT_ID(__sub__), \
     INIT_ID(__subclasscheck__), \
@@ -751,6 +752,7 @@ extern "C" {
     INIT_ID(_check_retval_), \
     INIT_ID(_dealloc_warn), \
     INIT_ID(_feature_version), \
+    INIT_ID(_field_types), \
     INIT_ID(_fields_), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
@@ -980,7 +982,6 @@ extern "C" {
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
-    INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \

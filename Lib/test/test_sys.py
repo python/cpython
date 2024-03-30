@@ -562,7 +562,8 @@ class SysModuleTest(unittest.TestCase):
             # And the next record must be for g456().
             filename, lineno, funcname, sourceline = stack[i+1]
             self.assertEqual(funcname, "g456")
-            self.assertTrue(sourceline.startswith("if leave_g.wait("))
+            self.assertTrue((sourceline.startswith("if leave_g.wait(") or
+                             sourceline.startswith("g_raised.set()")))
         finally:
             # Reap the spawned thread.
             leave_g.set()
@@ -668,7 +669,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info), 3)
         self.assertIn(info.name, ('nt', 'pthread', 'pthread-stubs', 'solaris', None))
         self.assertIn(info.lock, ('semaphore', 'mutex+cond', None))
-        if sys.platform.startswith(("linux", "freebsd")):
+        if sys.platform.startswith(("linux", "android", "freebsd")):
             self.assertEqual(info.name, "pthread")
         elif sys.platform == "win32":
             self.assertEqual(info.name, "nt")
@@ -729,7 +730,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIs(t, s)
 
         interp = interpreters.create()
-        interp.exec_sync(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) != {id(s)}, (id(t), {id(s)})
@@ -744,7 +745,7 @@ class SysModuleTest(unittest.TestCase):
         t = sys.intern(s)
 
         interp = interpreters.create()
-        interp.exec_sync(textwrap.dedent(f'''
+        interp.exec(textwrap.dedent(f'''
             import sys
             t = sys.intern({s!r})
             assert id(t) == {id(t)}, (id(t), {id(t)})
@@ -1101,8 +1102,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(stdout.rstrip(), b"")
         self.assertEqual(stderr.rstrip(), b"")
 
-    @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
-                         'need sys.getandroidapilevel()')
+    @unittest.skipUnless(sys.platform == "android", "Android only")
     def test_getandroidapilevel(self):
         level = sys.getandroidapilevel()
         self.assertIsInstance(level, int)

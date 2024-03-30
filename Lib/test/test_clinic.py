@@ -21,9 +21,9 @@ with test_tools.imports_under_tool('clinic'):
     from clinic import DSLParser
 
 
-def _make_clinic(*, filename='clinic_tests'):
+def _make_clinic(*, filename='clinic_tests', limited_capi=False):
     clang = clinic.CLanguage(filename)
-    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
+    c = clinic.Clinic(clang, filename=filename, limited_capi=limited_capi)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -52,6 +52,20 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     return cm.exception
 
 
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, clinic.converters,
+                        clinic.converters.copy())
+    testcase.addCleanup(restore_dict, clinic.legacy_converters,
+                        clinic.legacy_converters.copy())
+    testcase.addCleanup(restore_dict, clinic.return_converters,
+                        clinic.return_converters.copy())
+
+
 class ClinicWholeFileTest(TestCase):
     maxDiff = None
 
@@ -60,6 +74,7 @@ class ClinicWholeFileTest(TestCase):
                         filename=filename, lineno=lineno)
 
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = _make_clinic(filename="test.c")
 
     def test_eol(self):
@@ -2146,6 +2161,14 @@ class ClinicParserTest(TestCase):
                 expected_error = err_template.format(invalid_kind)
                 self.expect_failure(block, expected_error, lineno=3)
 
+    def test_init_cannot_define_a_return_type(self):
+        block = """
+            class Foo "" ""
+            Foo.__init__ -> long
+        """
+        expected_error = "__init__ methods cannot define a return type"
+        self.expect_failure(block, expected_error, lineno=1)
+
     def test_invalid_getset(self):
         annotations = ["@getter", "@setter"]
         for annotation in annotations:
@@ -2167,7 +2190,7 @@ class ClinicParserTest(TestCase):
                        obj: int
                        /
                 """
-                expected_error = f"{annotation} method cannot define parameters"
+                expected_error = f"{annotation} methods cannot define parameters"
                 self.expect_failure(block, expected_error)
 
     def test_setter_docstring(self):
@@ -2423,6 +2446,9 @@ class ClinicParserTest(TestCase):
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
+    def setUp(self):
+        save_restore_converters(self)
+
     def run_clinic(self, *args):
         with (
             support.captured_stdout() as out,
@@ -2647,9 +2673,9 @@ class ClinicExternalTest(TestCase):
                 bool()
                 double()
                 float()
-                init()
                 int()
                 long()
+                object()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()
@@ -3607,6 +3633,46 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
 
 
+class LimitedCAPIOutputTests(unittest.TestCase):
+
+    def setUp(self):
+        self.clinic = _make_clinic(limited_capi=True)
+
+    @staticmethod
+    def wrap_clinic_input(block):
+        return dedent(f"""
+            /*[clinic input]
+            output everything buffer
+            {block}
+            [clinic start generated code]*/
+            /*[clinic input]
+            dump buffer
+            [clinic start generated code]*/
+        """)
+
+    def test_limited_capi_float(self):
+        block = self.wrap_clinic_input("""
+            func
+                f: float
+                /
+        """)
+        generated = self.clinic.parse(block)
+        self.assertNotIn("PyFloat_AS_DOUBLE", generated)
+        self.assertIn("float f;", generated)
+        self.assertIn("f = (float) PyFloat_AsDouble", generated)
+
+    def test_limited_capi_double(self):
+        block = self.wrap_clinic_input("""
+            func
+                f: double
+                /
+        """)
+        generated = self.clinic.parse(block)
+        self.assertNotIn("PyFloat_AS_DOUBLE", generated)
+        self.assertIn("double f;", generated)
+        self.assertIn("f = PyFloat_AsDouble", generated)
+
+
 try:
     import _testclinic_limited
 except ImportError:
@@ -3637,6 +3703,53 @@ class LimitedCAPIFunctionalTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _testclinic_limited.my_int_sum(1, "str")
 
+    def test_my_double_sum(self):
+        for func in (
+            _testclinic_limited.my_float_sum,
+            _testclinic_limited.my_double_sum,
+        ):
+            with self.subTest(func=func.__name__):
+                self.assertEqual(func(1.0, 2.5), 3.5)
+                with self.assertRaises(TypeError):
+                    func()
+                with self.assertRaises(TypeError):
+                    func(1)
+                with self.assertRaises(TypeError):
+                    func(1., "2")
+
+    def test_get_file_descriptor(self):
+        # test 'file descriptor' converter: call PyObject_AsFileDescriptor()
+        get_fd = _testclinic_limited.get_file_descriptor
+
+        class MyInt(int):
+            pass
+
+        class MyFile:
+            def __init__(self, fd):
+                self._fd = fd
+            def fileno(self):
+                return self._fd
+
+        for fd in (0, 1, 2, 5, 123_456):
+            self.assertEqual(get_fd(fd), fd)
+
+            myint = MyInt(fd)
+            self.assertEqual(get_fd(myint), fd)
+
+            myfile = MyFile(fd)
+            self.assertEqual(get_fd(myfile), fd)
+
+        with self.assertRaises(OverflowError):
+            get_fd(2**256)
+        with self.assertWarnsRegex(RuntimeWarning,
+                                   "bool is used as a file descriptor"):
+            get_fd(True)
+        with self.assertRaises(TypeError):
+            get_fd(1.0)
+        with self.assertRaises(TypeError):
+            get_fd("abc")
+        with self.assertRaises(TypeError):
+            get_fd(None)
 
 
 class PermutationTests(unittest.TestCase):
@@ -3937,7 +4050,7 @@ class ClinicReprTests(unittest.TestCase):
             cls=None,
             c_basename=None,
             full_name='foofoo',
-            return_converter=clinic.init_return_converter(),
+            return_converter=clinic.int_return_converter(),
             kind=clinic.FunctionKind.METHOD_INIT,
             coexist=False
         )
