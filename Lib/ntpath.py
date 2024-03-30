@@ -871,8 +871,7 @@ def commonpath(paths):
             if drive:
                 raise ValueError("Can't mix absolute and relative paths")
             else:
-                raise ValueError("Can't mix rooted relative paths and "
-                                 "not-rooted relative paths")
+                raise ValueError("Can't mix rooted and not-rooted paths")
 
         common = path.split(sep)
         common = [c for c in common if c and c != curdir]
