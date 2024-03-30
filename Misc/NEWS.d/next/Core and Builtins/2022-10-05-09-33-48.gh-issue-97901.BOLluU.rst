@@ -1,0 +1,1 @@
+Mime type ``text/rtf`` is now supported by :mod:`mimetypes`.

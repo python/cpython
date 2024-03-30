@@ -274,6 +274,11 @@ may be treated as parts of multiline values or ignored.
 By default, a valid section name can be any string that does not contain '\\n'.
 To change this, see :attr:`ConfigParser.SECTCRE`.
 
+The first section name may be omitted if the parser is configured to allow an
+unnamed top level section with ``allow_unnamed_section=True``. In this case,
+the keys/values may be retrieved by :const:`UNNAMED_SECTION` as in
+``config[UNNAMED_SECTION]``.
+
 Configuration files may include comments, prefixed by specific
 characters (``#`` and ``;`` by default [1]_).  Comments may appear on
 their own on an otherwise empty line, possibly indented. [1]_
@@ -324,6 +329,27 @@ For example:
                of a value
            # Did I mention we can indent comments, too?
 
+
+.. _unnamed-sections:
+
+Unnamed Sections
+----------------
+
+The name of the first section (or unique) may be omitted and values
+retrieved by the :const:`UNNAMED_SECTION` attribute.
+
+.. doctest::
+
+   >>> config = """
+   ... option = value
+   ...
+   ... [  Section 2  ]
+   ... another = val
+   ... """
+   >>> unnamed = configparser.ConfigParser(allow_unnamed_section=True)
+   >>> unnamed.read_string(config)
+   >>> unnamed.get(configparser.UNNAMED_SECTION, 'option')
+   'value'
 
 Interpolation of values
 -----------------------
@@ -1214,6 +1240,11 @@ ConfigParser Objects
 
       Note that when reading configuration files, whitespace around the option
       names is stripped before :meth:`optionxform` is called.
+
+
+.. data:: UNNAMED_SECTION
+
+   A special object representing a section name used to reference the unnamed section (see :ref:`unnamed-sections`).
 
 
 .. data:: MAX_INTERPOLATION_DEPTH
