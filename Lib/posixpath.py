@@ -243,12 +243,11 @@ def expanduser(path):
                 # pwd module unavailable, return path unchanged
                 return path
             try:
-                pwent = pwd.getpwnam(name)
+                userhome = pwd.getpwuid(os.getuid()).pw_dir
             except KeyError:
                 # bpo-10496: if the current user identifier doesn't exist in the
                 # password database, return the path unchanged
                 return path
-            userhome = pwent.pw_dir
         else:
             userhome = os.environ['HOME']
     else:
@@ -261,11 +260,12 @@ def expanduser(path):
         if isinstance(name, bytes):
             name = name.decode('ascii')
         try:
-            userhome = pwd.getpwnam(name).pw_dir
+            pwent = pwd.getpwnam(name)
         except KeyError:
             # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
             return path
+        userhome = pwent.pw_dir
     # if no user home, return the path unchanged on VxWorks
     if userhome is None and sys.platform == "vxworks":
         return path
