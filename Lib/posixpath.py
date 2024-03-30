@@ -351,7 +351,7 @@ except ImportError:
             if not comp or comp == dot:
                 continue
             if (comp != dotdot or (not initial_slashes and not new_comps) or
-                (new_comps and new_comps[-1] == dotdot)):
+                 (new_comps and new_comps[-1] == dotdot)):
                 new_comps.append(comp)
             elif new_comps:
                 new_comps.pop()
