@@ -199,7 +199,7 @@ def ismount(path):
     if stat.S_ISLNK(s1.st_mode):
         return False
 
-    parent = realpath(dirname(path))
+    parent = dirname(abspath(path))
     try:
         s2 = os.lstat(parent)
     except (OSError, ValueError):
