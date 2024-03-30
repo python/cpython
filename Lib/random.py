@@ -246,7 +246,7 @@ class Random(_random.Random):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
         getrandbits = self.getrandbits
-        k = n.bit_length()
+        k = (n - 1).bit_length()
         r = getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
             r = getrandbits(k)
