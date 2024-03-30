@@ -865,7 +865,8 @@ def commonpath(paths):
             raise ValueError("Paths don't have the same drive")
 
         drive, root, path = splitroot(paths[0].replace(altsep, sep))
-        common = [c for c in path.split(sep) if c and c != curdir]
+        common = path.split(sep)
+        common = [c for c in common if c and c != curdir]
 
         split_paths = [
             [c for c in p.split(sep) if c and c != curdir]
