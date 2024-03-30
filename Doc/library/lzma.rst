@@ -368,15 +368,18 @@ options. Valid filter IDs are as follows:
   * :const:`!FILTER_ARMTHUMB`
   * :const:`!FILTER_POWERPC`
   * :const:`!FILTER_SPARC`
+
+    The above work on all lzma runtime library versions.
+
   * :const:`!FILTER_ARM64`
 
-    Only works if lzma runtime library version is 5.4.0 or later.
+    Only works if :data:`LZMA_VERSION` and :data:`LZMA_RUNTIME_VERSION` are 5.4.0 or later.
 
     .. versionadded:: 3.13
 
   * :const:`!FILTER_RISCV`
 
-    Only works if lzma runtime library version is 5.6.0 or later.
+    Only works if :data:`LZMA_VERSION` and :data:`LZMA_RUNTIME_VERSION` are 5.6.0 or later.
 
     .. versionadded:: 3.13
 
