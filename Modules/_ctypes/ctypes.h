@@ -95,10 +95,22 @@ get_module_state_by_class(PyTypeObject *cls)
 static inline ctypes_state *
 get_module_state_by_def(PyTypeObject *cls)
 {
-    // NOTE: class's tp_mro slot can be cleared by the GC during a module
-    // finalization, which PyType_GetModuleByDef() does not expect.
     PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
     assert(mod != NULL);
+    return get_module_state(mod);
+}
+
+static inline ctypes_state *
+get_module_state_by_def_final(PyTypeObject *cls)
+{
+    if (cls->tp_mro == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
+    if (mod == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
     return get_module_state(mod);
 }
 

@@ -457,13 +457,11 @@ _ctype_clear_stginfo(StgInfo *info)
 static int
 CType_Type_clear(PyObject *self)
 {
-    PyTypeObject *type = Py_TYPE(self);
-    ctypes_state *st = type->tp_mro ? get_module_state_by_def(type) : NULL;
-
+    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, self, &info) < 0) {
-            return -1;
+            PyErr_WriteUnraisable(self);
         }
         if (info) {
             _ctype_clear_stginfo(info);
@@ -475,8 +473,7 @@ CType_Type_clear(PyObject *self)
 static void
 CType_Type_dealloc(PyObject *self)
 {
-    PyTypeObject *type = Py_TYPE(self);
-    ctypes_state *st = type->tp_mro ? get_module_state_by_def(type) : NULL;
+    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
 
     if (st && st->PyCType_Type) {
         StgInfo *info;
@@ -494,8 +491,9 @@ CType_Type_dealloc(PyObject *self)
         }
     }
 
+    PyTypeObject *tp = Py_TYPE(self);
     PyType_Type.tp_dealloc(self);
-    Py_DECREF(type);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -991,13 +989,11 @@ CDataType_repeat(PyObject *self, Py_ssize_t length)
 static int
 CDataType_clear(PyTypeObject *self)
 {
-    PyTypeObject *type = Py_TYPE(self);
-    ctypes_state *st = type->tp_mro ? get_module_state_by_def(type) : NULL;
-
+    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-            return -1;
+            PyErr_WriteUnraisable(self);
         }
         if (info) {
             Py_CLEAR(info->proto);
@@ -1009,19 +1005,17 @@ CDataType_clear(PyTypeObject *self)
 static int
 CDataType_traverse(PyTypeObject *self, visitproc visit, void *arg)
 {
-    PyTypeObject *type = Py_TYPE(self);
-    ctypes_state *st = type->tp_mro ? get_module_state_by_def(type) : NULL;
-
+    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-            return -1;
+            PyErr_WriteUnraisable(self);
         }
         if (info) {
             Py_VISIT(info->proto);
         }
     }
-    Py_VISIT(type);
+    Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
 }
 
