@@ -56,7 +56,7 @@ from libclinic.language import Language, PythonLanguage
 from libclinic.block_parser import Block, BlockParser
 from libclinic.crenderdata import CRenderData, Include, TemplateDict
 from libclinic.converter import (
-    CConverter, CConverterClassT,
+    CConverter, CConverterClassT, ConverterType,
     converters, legacy_converters)
 
 
@@ -1988,13 +1988,38 @@ def parse_file(
     libclinic.write_file(output, cooked)
 
 
+@functools.cache
+def _create_parser_base_namespace() -> dict[str, Any]:
+    ns = dict(
+        CConverter=CConverter,
+        CReturnConverter=CReturnConverter,
+        buffer=buffer,
+        robuffer=robuffer,
+        rwbuffer=rwbuffer,
+        unspecified=unspecified,
+        NoneType=NoneType,
+    )
+    for name, converter in converters.items():
+        ns[f'{name}_converter'] = converter
+    for name, return_converter in return_converters.items():
+        ns[f'{name}_return_converter'] = return_converter
+    return ns
+
+
+def create_parser_namespace() -> dict[str, Any]:
+    base_namespace = _create_parser_base_namespace()
+    return base_namespace.copy()
+
+
+
 class PythonParser:
     def __init__(self, clinic: Clinic) -> None:
         pass
 
     def parse(self, block: Block) -> None:
+        namespace = create_parser_namespace()
         with contextlib.redirect_stdout(io.StringIO()) as s:
-            exec(block.input)
+            exec(block.input, namespace)
             block.output = s.getvalue()
 
 
@@ -3443,7 +3468,6 @@ class float_return_converter(double_return_converter):
 
 def eval_ast_expr(
         node: ast.expr,
-        globals: dict[str, Any],
         *,
         filename: str = '-'
 ) -> Any:
@@ -3460,8 +3484,9 @@ def eval_ast_expr(
         node = node.value
 
     expr = ast.Expression(node)
+    namespace = create_parser_namespace()
     co = compile(expr, filename, 'eval')
-    fn = FunctionType(co, globals)
+    fn = FunctionType(co, namespace)
     return fn()
 
 
@@ -4463,12 +4488,11 @@ class DSLParser:
             case ast.Name(name):
                 return name, False, {}
             case ast.Call(func=ast.Name(name)):
-                symbols = globals()
                 kwargs: ConverterArgs = {}
                 for node in annotation.keywords:
                     if not isinstance(node.arg, str):
                         fail("Cannot use a kwarg splat in a function-call annotation")
-                    kwargs[node.arg] = eval_ast_expr(node.value, symbols)
+                    kwargs[node.arg] = eval_ast_expr(node.value)
                 return name, False, kwargs
             case _:
                 fail(
@@ -4984,25 +5008,21 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
             parser.error(
                 "can't specify --converters and a filename at the same time"
             )
-        converters: list[tuple[str, str]] = []
-        return_converters: list[tuple[str, str]] = []
-        ignored = set("""
-            add_c_converter
-            add_c_return_converter
-            add_default_legacy_c_converter
-            add_legacy_c_converter
-            """.strip().split())
-        module = globals()
-        for name in module:
-            for suffix, ids in (
-                ("_return_converter", return_converters),
-                ("_converter", converters),
-            ):
-                if name in ignored:
-                    continue
-                if name.endswith(suffix):
-                    ids.append((name, name.removesuffix(suffix)))
-                    break
+        AnyConverterType = ConverterType | ReturnConverterType
+        converter_list: list[tuple[str, AnyConverterType]] = []
+        return_converter_list: list[tuple[str, AnyConverterType]] = []
+
+        for name, converter in converters.items():
+            converter_list.append((
+                name,
+                converter,
+            ))
+        for name, return_converter in return_converters.items():
+            return_converter_list.append((
+                name,
+                return_converter
+            ))
+
         print()
 
         print("Legacy converters:")
@@ -5012,15 +5032,17 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
         print()
 
         for title, attribute, ids in (
-            ("Converters", 'converter_init', converters),
-            ("Return converters", 'return_converter_init', return_converters),
+            ("Converters", 'converter_init', converter_list),
+            ("Return converters", 'return_converter_init', return_converter_list),
         ):
             print(title + ":")
+
+            ids.sort(key=lambda item: item[0].lower())
             longest = -1
-            for name, short_name in ids:
-                longest = max(longest, len(short_name))
-            for name, short_name in sorted(ids, key=lambda x: x[1].lower()):
-                cls = module[name]
+            for name, _ in ids:
+                longest = max(longest, len(name))
+
+            for name, cls in ids:
                 callable = getattr(cls, attribute, None)
                 if not callable:
                     continue
@@ -5033,7 +5055,7 @@ def run_clinic(parser: argparse.ArgumentParser, ns: argparse.Namespace) -> None:
                         else:
                             s = parameter_name
                         parameters.append(s)
-                print('    {}({})'.format(short_name, ', '.join(parameters)))
+                print('    {}({})'.format(name, ', '.join(parameters)))
             print()
         print("All converters also accept (c_default=None, py_default=None, annotation=None).")
         print("All return converters also accept (py_default=None).")
