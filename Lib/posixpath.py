@@ -202,12 +202,7 @@ def ismount(path):
         if stat.S_ISLNK(s1.st_mode):
             return False
 
-    path = os.fspath(path)
-    if isinstance(path, bytes):
-        parent = join(path, b'..')
-    else:
-        parent = join(path, '..')
-    parent = realpath(parent)
+    parent = dirname(abspath(path))
     try:
         s2 = os.lstat(parent)
     except (OSError, ValueError):
