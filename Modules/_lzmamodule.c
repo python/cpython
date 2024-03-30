@@ -25,6 +25,12 @@
 #endif
 
 
+/*
+ * If the lzma.h we're building against is so old as not to define these, this
+ * provides their equivalent values so that the names remain defined in Python
+ * regardless.  lzma.LZMA_RUNTIME_VERSION is exposed to Python and is what
+ * people can use to decide if they can use them at runtime.
+ */
 #ifndef LZMA_FILTER_ARM64
 #define LZMA_FILTER_ARM64       LZMA_VLI_C(0x0A)
 #endif
