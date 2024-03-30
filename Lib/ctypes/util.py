@@ -67,7 +67,7 @@ if os.name == "nt":
                 return fname
         return None
 
-elif os.name == "posix" and sys.platform == "darwin":
+elif os.name == "posix" and sys.platform in {"darwin", "ios", "tvos", "watchos"}:
     from ctypes.macholib.dyld import dyld_find as _dyld_find
     def find_library(name):
         possible = ['lib%s.dylib' % name,
@@ -88,6 +88,15 @@ elif sys.platform.startswith("aix"):
     # see issue#26439 and _aix.py for more details
 
     from ctypes._aix import find_library
+
+elif sys.platform == "android":
+    def find_library(name):
+        directory = "/system/lib"
+        if "64" in os.uname().machine:
+            directory += "64"
+
+        fname = f"{directory}/lib{name}.so"
+        return fname if os.path.isfile(fname) else None
 
 elif os.name == "posix":
     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump

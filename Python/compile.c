@@ -235,6 +235,28 @@ _PyCompile_InstructionSequence_UseLabel(instr_sequence *seq, int lbl)
     return SUCCESS;
 }
 
+int
+_PyCompile_InstructionSequence_ApplyLabelMap(instr_sequence *instrs)
+{
+    /* Replace labels by offsets in the code */
+    for (int i=0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (HAS_TARGET(instr->i_opcode)) {
+            assert(instr->i_oparg < instrs->s_labelmap_size);
+            instr->i_oparg = instrs->s_labelmap[instr->i_oparg];
+        }
+        _PyCompile_ExceptHandlerInfo *hi = &instr->i_except_handler_info;
+        if (hi->h_label >= 0) {
+            assert(hi->h_label < instrs->s_labelmap_size);
+            hi->h_label = instrs->s_labelmap[hi->h_label];
+        }
+    }
+    /* Clear label map so it's never used again */
+    PyMem_Free(instrs->s_labelmap);
+    instrs->s_labelmap = NULL;
+    instrs->s_labelmap_size = 0;
+    return SUCCESS;
+}
 
 #define MAX_OPCODE 511
 
@@ -358,7 +380,8 @@ struct compiler_unit {
 
     int u_scope_type;
 
-    PyObject *u_private;        /* for private name mangling */
+    PyObject *u_private;            /* for private name mangling */
+    PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
 
     instr_sequence u_instr_sequence; /* codegen output */
 
@@ -690,7 +713,24 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_metadata.u_cellvars);
     Py_CLEAR(u->u_metadata.u_fasthidden);
     Py_CLEAR(u->u_private);
+    Py_CLEAR(u->u_static_attributes);
     PyMem_Free(u);
+}
+
+static struct compiler_unit *
+get_class_compiler_unit(struct compiler *c)
+{
+    Py_ssize_t stack_size = PyList_GET_SIZE(c->c_stack);
+    for (Py_ssize_t i = stack_size - 1; i >= 0; i--) {
+        PyObject *capsule = PyList_GET_ITEM(c->c_stack, i);
+        struct compiler_unit *u = (struct compiler_unit *)PyCapsule_GetPointer(
+                                                              capsule, CAPSULE_NAME);
+        assert(u);
+        if (u->u_scope_type == COMPILER_SCOPE_CLASS) {
+            return u;
+        }
+    }
+    return NULL;
 }
 
 static int
@@ -1336,6 +1376,16 @@ compiler_enter_scope(struct compiler *c, identifier name,
     }
 
     u->u_private = NULL;
+    if (scope_type == COMPILER_SCOPE_CLASS) {
+        u->u_static_attributes = PySet_New(0);
+        if (!u->u_static_attributes) {
+            compiler_unit_free(u);
+            return ERROR;
+        }
+    }
+    else {
+        u->u_static_attributes = NULL;
+    }
 
     /* Push the old compiler_unit on the stack. */
     if (c->u) {
@@ -1830,7 +1880,7 @@ compiler_make_closure(struct compiler *c, location loc,
                       PyCodeObject *co, Py_ssize_t flags)
 {
     if (co->co_nfreevars) {
-        int i = PyCode_GetFirstFree(co);
+        int i = PyUnstable_Code_GetFirstFree(co);
         for (; i < co->co_nlocalsplus; ++i) {
             /* Bypass com_addop_varname because it will generate
                LOAD_DEREF but LOAD_CLOSURE is needed.
@@ -2517,6 +2567,18 @@ compiler_class_body(struct compiler *c, stmt_ty s, int firstlineno)
         compiler_exit_scope(c);
         return ERROR;
     }
+    assert(c->u->u_static_attributes);
+    PyObject *static_attributes = PySequence_Tuple(c->u->u_static_attributes);
+    if (static_attributes == NULL) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
+    ADDOP_LOAD_CONST(c, NO_LOCATION, static_attributes);
+    Py_CLEAR(static_attributes);
+    if (compiler_nameop(c, NO_LOCATION, &_Py_ID(__static_attributes__), Store) < 0) {
+        compiler_exit_scope(c);
+        return ERROR;
+    }
     /* The following code is artificial */
     /* Set __classdictcell__ if necessary */
     if (c->u->u_ste->ste_needs_classdict) {
@@ -2657,6 +2719,7 @@ compiler_class(struct compiler *c, stmt_ty s)
                                                          s->v.ClassDef.keywords));
 
         PyCodeObject *co = optimize_and_assemble(c, 0);
+
         compiler_exit_scope(c);
         if (co == NULL) {
             return ERROR;
@@ -6246,6 +6309,17 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
             ADDOP(c, loc, NOP);
             return SUCCESS;
         }
+        if (e->v.Attribute.value->kind == Name_kind &&
+            _PyUnicode_EqualToASCIIString(e->v.Attribute.value->v.Name.id, "self"))
+        {
+            struct compiler_unit *class_u = get_class_compiler_unit(c);
+            if (class_u != NULL) {
+                assert(class_u->u_scope_type == COMPILER_SCOPE_CLASS);
+                assert(class_u->u_static_attributes);
+                RETURN_IF_ERROR(
+                    PySet_Add(class_u->u_static_attributes, e->v.Attribute.attr));
+            }
+        }
         VISIT(c, expr, e->v.Attribute.value);
         loc = LOC(e);
         loc = update_start_location_to_match_attr(c, loc, e);
@@ -7772,11 +7846,8 @@ instr_sequence_to_instructions(instr_sequence *seq)
     for (int i = 0; i < seq->s_used; i++) {
         instruction *instr = &seq->s_instrs[i];
         location loc = instr->i_loc;
-        int arg = HAS_TARGET(instr->i_opcode) ?
-                  seq->s_labelmap[instr->i_oparg] : instr->i_oparg;
-
         PyObject *inst_tuple = Py_BuildValue(
-            "(iiiiii)", instr->i_opcode, arg,
+            "(iiiiii)", instr->i_opcode, instr->i_oparg,
             loc.lineno, loc.end_lineno,
             loc.col_offset, loc.end_col_offset);
         if (inst_tuple == NULL) {
@@ -7801,6 +7872,9 @@ cfg_to_instructions(cfg_builder *g)
     instr_sequence seq;
     memset(&seq, 0, sizeof(seq));
     if (_PyCfg_ToInstructionSequence(g, &seq) < 0) {
+        return NULL;
+    }
+    if (_PyCompile_InstructionSequence_ApplyLabelMap(&seq) < 0) {
         return NULL;
     }
     PyObject *res = instr_sequence_to_instructions(&seq);
@@ -7972,6 +8046,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
     int addNone = mod->kind != Expression_kind;
     if (add_return_at_end(c, addNone) < 0) {
         goto finally;
+    }
+
+    if (_PyCompile_InstructionSequence_ApplyLabelMap(INSTR_SEQUENCE(c)) < 0) {
+        return NULL;
     }
 
     PyObject *insts = instr_sequence_to_instructions(INSTR_SEQUENCE(c));

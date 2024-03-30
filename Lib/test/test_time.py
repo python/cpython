@@ -511,7 +511,7 @@ class TimeTestCase(unittest.TestCase):
 
     def test_thread_time(self):
         if not hasattr(time, 'thread_time'):
-            if sys.platform.startswith(('linux', 'win')):
+            if sys.platform.startswith(('linux', 'android', 'win')):
                 self.fail("time.thread_time() should be available on %r"
                           % (sys.platform,))
             else:

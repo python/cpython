@@ -96,10 +96,9 @@ which is recognized also by GNU Emacs, and ::
 
 which is recognized by Bram Moolenaar's VIM.
 
-If no encoding declaration is found, the default encoding is UTF-8.  In
-addition, if the first bytes of the file are the UTF-8 byte-order mark
-(``b'\xef\xbb\xbf'``), the declared file encoding is UTF-8 (this is supported,
-among others, by Microsoft's :program:`notepad`).
+If no encoding declaration is found, the default encoding is UTF-8.  If the
+implicit or explicit encoding of a file is UTF-8, an initial UTF-8 byte-order
+mark (b'\xef\xbb\xbf') is ignored rather than being a syntax error.
 
 If an encoding is declared, the encoding name must be recognized by Python
 (see :ref:`standard-encodings`). The
@@ -514,7 +513,6 @@ is not supported.
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
    of ``'br'``.
 
-.. versionadded:: 3.3
    Support for the unicode legacy literal (``u'value'``) was reintroduced
    to simplify the maintenance of dual Python 2.x and 3.x codebases.
    See :pep:`414` for more information.
@@ -734,7 +732,7 @@ for the contents of the string is:
                :   ("," `conditional_expression` | "," "*" `or_expr`)* [","]
                : | `yield_expression`
    conversion: "s" | "r" | "a"
-   format_spec: (`literal_char` | NULL | `replacement_field`)*
+   format_spec: (`literal_char` | `replacement_field`)*
    literal_char: <any code point except "{", "}" or NULL>
 
 The parts of the string outside curly braces are treated literally,

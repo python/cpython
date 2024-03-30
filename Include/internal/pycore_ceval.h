@@ -138,12 +138,12 @@ extern void _PyEval_DeactivateOpCache(void);
 /* With USE_STACKCHECK macro defined, trigger stack checks in
    _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->c_recursion_remaining-- <= 0
+    return (tstate->c_recursion_remaining-- < 0
             || (tstate->c_recursion_remaining & 63) == 0);
 }
 #else
 static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->c_recursion_remaining-- <= 0;
+    return tstate->c_recursion_remaining-- < 0;
 }
 #endif
 
@@ -159,6 +159,11 @@ int _Py_CheckRecursiveCallPy(
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
                                                const char *where) {
     return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
+}
+
+static inline void _Py_EnterRecursiveCallTstateUnchecked(PyThreadState *tstate)  {
+    assert(tstate->c_recursion_remaining > 0);
+    tstate->c_recursion_remaining--;
 }
 
 static inline int _Py_EnterRecursiveCall(const char *where) {
@@ -181,22 +186,26 @@ extern PyObject* _Py_MakeCoro(PyFunctionObject *func);
 
 /* Handle signals, pending calls, GIL drop request
    and asynchronous exception */
-extern int _Py_HandlePending(PyThreadState *tstate);
+PyAPI_FUNC(int) _Py_HandlePending(PyThreadState *tstate);
 
 extern PyObject * _PyEval_GetFrameLocals(void);
 
-extern const binaryfunc _PyEval_BinaryOps[];
-int _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
-int _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
-int _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
-void _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
-void _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
-void _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
-void _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
-PyObject *_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
-PyObject *_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
-int _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
-void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
+typedef PyObject *(*conversion_func)(PyObject *);
+
+PyAPI_DATA(const binaryfunc) _PyEval_BinaryOps[];
+PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
+
+PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
+PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
+PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
+PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
+PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
+PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
+PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
+PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
+PyAPI_FUNC(int) _PyEval_UnpackIterable(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, PyObject **sp);
+PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 
 
 /* Bits that can be set in PyThreadState.eval_breaker */

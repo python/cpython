@@ -7,7 +7,6 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_namespace.h"     //_PyNamespace_New()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
-#include "pycore_typeobject.h"    // _PyType_GetModuleName()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
@@ -510,7 +509,7 @@ _excinfo_init_type(struct _excinfo_type *info, PyObject *exc)
     }
 
     // __module__
-    strobj = _PyType_GetModuleName(type);
+    strobj = PyType_GetModuleName(type);
     if (strobj == NULL) {
         return -1;
     }

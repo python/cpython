@@ -12,7 +12,7 @@ extern "C" {
 #include <stdbool.h>
 
 // This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 512
+#define UOP_MAX_TRACE_LENGTH 800
 
 #define TRACE_STACK_SIZE 5
 
@@ -27,12 +27,12 @@ extern PyTypeObject _PyUOpExecutor_Type;
 extern PyTypeObject _PyUOpOptimizer_Type;
 
 /* Symbols */
+/* See explanation in optimizer_symbols.c */
 
 struct _Py_UopsSymbol {
-    int flags;
-    PyTypeObject *typ;
-    // constant propagated value (might be NULL)
-    PyObject *const_val;
+    int flags;  // 0 bits: Top; 2 or more bits: Bottom
+    PyTypeObject *typ;  // Borrowed reference
+    PyObject *const_val;  // Owned reference (!)
 };
 
 // Holds locals, stack, locals, stack ... co_consts (in that order)
@@ -90,9 +90,15 @@ extern _Py_UopsSymbol *_Py_uop_sym_new_type(
     _Py_UOpsContext *ctx, PyTypeObject *typ);
 extern _Py_UopsSymbol *_Py_uop_sym_new_const(_Py_UOpsContext *ctx, PyObject *const_val);
 extern _Py_UopsSymbol *_Py_uop_sym_new_null(_Py_UOpsContext *ctx);
+extern bool _Py_uop_sym_has_type(_Py_UopsSymbol *sym);
 extern bool _Py_uop_sym_matches_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
-extern void _Py_uop_sym_set_null(_Py_UopsSymbol *sym);
-extern void _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *tp);
+extern bool _Py_uop_sym_set_null(_Py_UopsSymbol *sym);
+extern bool _Py_uop_sym_set_non_null(_Py_UopsSymbol *sym);
+extern bool _Py_uop_sym_set_type(_Py_UopsSymbol *sym, PyTypeObject *typ);
+extern bool _Py_uop_sym_set_const(_Py_UopsSymbol *sym, PyObject *const_val);
+extern bool _Py_uop_sym_is_bottom(_Py_UopsSymbol *sym);
+extern int _Py_uop_sym_truthiness(_Py_UopsSymbol *sym);
+
 
 extern int _Py_uop_abstractcontext_init(_Py_UOpsContext *ctx);
 extern void _Py_uop_abstractcontext_fini(_Py_UOpsContext *ctx);
@@ -106,6 +112,8 @@ extern _Py_UOpsAbstractFrame *_Py_uop_frame_new(
 extern int _Py_uop_frame_pop(_Py_UOpsContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
+
+PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
 #ifdef __cplusplus
 }
