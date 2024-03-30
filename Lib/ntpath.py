@@ -85,16 +85,16 @@ def isabs(s):
         sep = b'\\'
         altsep = b'/'
         colon_sep = b':\\'
-        double_sep = b'\\\\'
     else:
         sep = '\\'
         altsep = '/'
         colon_sep = ':\\'
-        double_sep = '\\\\'
     s = s[:3].replace(altsep, sep)
     # Absolute: UNC, device, and paths with a drive and root.
-    return (s[1:3] == colon_sep and s[:1] != sep) or s[:2] == double_sep
-
+    if s[:1] == sep:
+        return s[1:2] == sep
+    else:
+        return s[1:3] == colon_sep
 
 # Join two (or more) paths.
 def join(path, *paths):
