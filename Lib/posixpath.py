@@ -250,14 +250,12 @@ def expanduser(path):
             name = path[1:i]
             if isinstance(name, bytes):
                 name = name.decode('ascii')
-
             userhome = pwd.getpwnam(name).pw_dir
         except (ImportError, KeyError):
             # pwd module unavailable, return path unchanged
             # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
             return path
-
     # if no user home, return the path unchanged on VxWorks
     if userhome is None and sys.platform == "vxworks":
         return path
