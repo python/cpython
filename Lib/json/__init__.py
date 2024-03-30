@@ -119,13 +119,16 @@ _default_encoder = JSONEncoder(
 
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, **kw):
+        default=None, sort_keys=False, convert_keys=False, **kw):
     """Serialize ``obj`` as a JSON formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
 
-    If ``skipkeys`` is true then ``dict`` keys that are not basic types
-    (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
-    instead of raising a ``TypeError``.
+    Dict keys in JSON must be str, int, float, bool, or None.  ``skipkeys`` and
+    ``convert_keys`` control how keys that are not one of these types are
+    handled.  If ``skipkeys`` is True, then those items are simply skipped.
+    Otherwise, if ``convert_keys`` is True, the keys will be passed to
+    ``.default()`` to be converted.  If ``convert_keys`` is False, or
+    ``.default()`` returns an unsupported type, ``TypeError`` is raised.
 
     If ``ensure_ascii`` is false, then the strings written to ``fp`` can
     contain non-ASCII characters if they appear in strings contained in
@@ -165,7 +168,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     if (not skipkeys and ensure_ascii and
         check_circular and allow_nan and
         cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
+        default is None and not sort_keys and not convert_keys and not kw):
         iterable = _default_encoder.iterencode(obj)
     else:
         if cls is None:
@@ -173,7 +176,8 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         iterable = cls(skipkeys=skipkeys, ensure_ascii=ensure_ascii,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
             separators=separators,
-            default=default, sort_keys=sort_keys, **kw).iterencode(obj)
+            default=default, sort_keys=sort_keys, convert_keys=convert_keys,
+            **kw).iterencode(obj)
     # could accelerate with writelines in some versions of Python, at
     # a debuggability cost
     for chunk in iterable:
@@ -182,12 +186,15 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
 def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, **kw):
+        default=None, sort_keys=False, convert_keys=False, **kw):
     """Serialize ``obj`` to a JSON formatted ``str``.
 
-    If ``skipkeys`` is true then ``dict`` keys that are not basic types
-    (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
-    instead of raising a ``TypeError``.
+    Dict keys in JSON must be str, int, float, bool, or None.  ``skipkeys`` and
+    ``convert_keys`` control how keys that are not one of these types are
+    handled.  If ``skipkeys`` is True, then those items are simply skipped.
+    Otherwise, if ``convert_keys`` is True, the keys will be passed to
+    ``.default()`` to be converted.  If ``convert_keys`` is False, or
+    ``.default()`` returns an unsupported type, ``TypeError`` is raised.
 
     If ``ensure_ascii`` is false, then the return value can contain non-ASCII
     characters if they appear in strings contained in ``obj``. Otherwise, all
@@ -227,7 +234,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     if (not skipkeys and ensure_ascii and
         check_circular and allow_nan and
         cls is None and indent is None and separators is None and
-        default is None and not sort_keys and not kw):
+        default is None and not sort_keys and not convert_keys and not kw):
         return _default_encoder.encode(obj)
     if cls is None:
         cls = JSONEncoder
@@ -235,7 +242,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         skipkeys=skipkeys, ensure_ascii=ensure_ascii,
         check_circular=check_circular, allow_nan=allow_nan, indent=indent,
         separators=separators, default=default, sort_keys=sort_keys,
-        **kw).encode(obj)
+        convert_keys=convert_keys, **kw).encode(obj)
 
 
 _default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None)
