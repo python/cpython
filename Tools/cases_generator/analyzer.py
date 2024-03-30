@@ -8,7 +8,8 @@ from typing import Optional
 @dataclass
 class Properties:
     escapes: bool
-    infallible: bool
+    error_with_pop: bool
+    error_without_pop: bool
     deopts: bool
     oparg: bool
     jumps: bool
@@ -17,7 +18,6 @@ class Properties:
     needs_this: bool
     always_exits: bool
     stores_sp: bool
-    tier_one_only: bool
     uses_co_consts: bool
     uses_co_names: bool
     uses_locals: bool
@@ -25,6 +25,7 @@ class Properties:
     side_exit: bool
     pure: bool
     passthrough: bool
+    tier: int | None = None
     oparg_and_1: bool = False
     const_oparg: int = -1
 
@@ -37,7 +38,8 @@ class Properties:
     def from_list(properties: list["Properties"]) -> "Properties":
         return Properties(
             escapes=any(p.escapes for p in properties),
-            infallible=all(p.infallible for p in properties),
+            error_with_pop=any(p.error_with_pop for p in properties),
+            error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
             oparg=any(p.oparg for p in properties),
             jumps=any(p.jumps for p in properties),
@@ -46,7 +48,6 @@ class Properties:
             needs_this=any(p.needs_this for p in properties),
             always_exits=any(p.always_exits for p in properties),
             stores_sp=any(p.stores_sp for p in properties),
-            tier_one_only=any(p.tier_one_only for p in properties),
             uses_co_consts=any(p.uses_co_consts for p in properties),
             uses_co_names=any(p.uses_co_names for p in properties),
             uses_locals=any(p.uses_locals for p in properties),
@@ -56,10 +57,16 @@ class Properties:
             passthrough=all(p.passthrough for p in properties),
         )
 
+    @property
+    def infallible(self) -> bool:
+        return not self.error_with_pop and not self.error_without_pop
+
+
 
 SKIP_PROPERTIES = Properties(
     escapes=False,
-    infallible=True,
+    error_with_pop=False,
+    error_without_pop=False,
     deopts=False,
     oparg=False,
     jumps=False,
@@ -68,7 +75,6 @@ SKIP_PROPERTIES = Properties(
     needs_this=False,
     always_exits=False,
     stores_sp=False,
-    tier_one_only=False,
     uses_co_consts=False,
     uses_co_names=False,
     uses_locals=False,
@@ -159,20 +165,32 @@ class Uop:
             self._size = sum(c.size for c in self.caches)
         return self._size
 
-    def is_viable(self) -> bool:
+    def why_not_viable(self) -> str | None:
         if self.name == "_SAVE_RETURN_OFFSET":
-            return True  # Adjusts next_instr, but only in tier 1 code
-        if self.properties.needs_this:
-            return False
+            return None  # Adjusts next_instr, but only in tier 1 code
         if "INSTRUMENTED" in self.name:
-            return False
+            return "is instrumented"
         if "replaced" in self.annotations:
-            return False
+            return "is replaced"
         if self.name in ("INTERPRETER_EXIT", "JUMP_BACKWARD"):
-            return False
+            return "has tier 1 control flow"
+        if self.properties.needs_this:
+            return "uses the 'this_instr' variable"
         if len([c for c in self.caches if c.name != "unused"]) > 1:
-            return False
-        return True
+            return "has unused cache entries"
+        if self.properties.error_with_pop and self.properties.error_without_pop:
+            return "has both popping and not-popping errors"
+        if self.properties.eval_breaker:
+            if self.properties.error_with_pop or self.properties.error_without_pop:
+                return "has error handling and eval-breaker check"
+            if self.properties.side_exit:
+                return "exits and eval-breaker check"
+            if self.properties.deopts:
+                return "deopts and eval-breaker check"
+        return None
+
+    def is_viable(self) -> bool:
+        return self.why_not_viable() is None
 
     def is_super(self) -> bool:
         for tkn in self.body:
@@ -312,11 +330,27 @@ def variable_used(node: parser.InstDef, name: str) -> bool:
         token.kind == "IDENTIFIER" and token.text == name for token in node.tokens
     )
 
+def tier_variable(node: parser.InstDef) -> int | None:
+    """Determine whether a tier variable is used in a node."""
+    for token in node.tokens:
+        if token.kind == "ANNOTATION":
+            if token.text == "specializing":
+                return 1
+            if re.fullmatch(r"tier\d", token.text):
+                return int(token.text[-1])
+    return None
 
-def is_infallible(op: parser.InstDef) -> bool:
-    return not (
+def has_error_with_pop(op: parser.InstDef) -> bool:
+    return (
         variable_used(op, "ERROR_IF")
-        or variable_used(op, "error")
+        or variable_used(op, "pop_1_error")
+        or variable_used(op, "exception_unwind")
+        or variable_used(op, "resume_with_error")
+    )
+
+def has_error_without_pop(op: parser.InstDef) -> bool:
+    return (
+        variable_used(op, "ERROR_NO_POP")
         or variable_used(op, "pop_1_error")
         or variable_used(op, "exception_unwind")
         or variable_used(op, "resume_with_error")
@@ -328,6 +362,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyDictOrValues_IsValues",
     "_PyObject_DictOrValuesPointer",
     "_PyDictOrValues_GetValues",
+    "_PyDictValues_AddToInsertionOrder",
     "_PyObject_MakeInstanceAttributesFromDict",
     "Py_DECREF",
     "_Py_DECREF_SPECIALIZED",
@@ -348,8 +383,10 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsCompact",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_CompactValue",
+    "_PyLong_DigitCount",
     "_Py_NewRef",
     "_Py_IsImmortal",
+    "PyLong_FromLong",
     "_Py_STR",
     "_PyLong_Add",
     "_PyLong_Multiply",
@@ -361,6 +398,17 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_atomic_load_uintptr_relaxed",
     "_PyFrame_GetCode",
     "_PyThreadState_HasStackSpace",
+    "_PyUnicode_Equal",
+    "_PyFrame_SetStackPointer",
+    "_PyType_HasFeature",
+    "PyUnicode_Concat",
+    "_PyList_FromArraySteal",
+    "_PyTuple_FromArraySteal",
+    "PySlice_New",
+    "_Py_LeaveRecursiveCallPy",
+    "CALL_STAT_INC",
+    "maybe_lltrace_resume_frame",
+    "_PyUnicode_JoinArray",
 )
 
 ESCAPING_FUNCTIONS = (
@@ -371,6 +419,8 @@ ESCAPING_FUNCTIONS = (
 
 def makes_escaping_api_call(instr: parser.InstDef) -> bool:
     if "CALL_INTRINSIC" in instr.name:
+        return True
+    if instr.name == "_BINARY_OP":
         return True
     tkns = iter(instr.tokens)
     for tkn in tkns:
@@ -470,8 +520,9 @@ def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
         variable_used(op, "PyCell_New")
-        or variable_used(op, "PyCell_GET")
-        or variable_used(op, "PyCell_SET")
+        or variable_used(op, "PyCell_GetRef")
+        or variable_used(op, "PyCell_SetTakeRef")
+        or variable_used(op, "PyCell_SwapTakeRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF")
@@ -484,12 +535,15 @@ def compute_properties(op: parser.InstDef) -> Properties:
             tkn.column,
             op.name,
         )
-    infallible = is_infallible(op)
+    error_with_pop = has_error_with_pop(op)
+    error_without_pop = has_error_without_pop(op)
+    infallible = not error_with_pop and not error_without_pop
     passthrough = stack_effect_only_peeks(op) and infallible
     return Properties(
         escapes=makes_escaping_api_call(op),
-        infallible=infallible,
-        deopts=deopts_if or exits_if,
+        error_with_pop=error_with_pop,
+        error_without_pop=error_without_pop,
+        deopts=deopts_if,
         side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
         jumps=variable_used(op, "JUMPBY"),
@@ -498,7 +552,6 @@ def compute_properties(op: parser.InstDef) -> Properties:
         needs_this=variable_used(op, "this_instr"),
         always_exits=always_exits(op),
         stores_sp=variable_used(op, "SYNC_SP"),
-        tier_one_only=variable_used(op, "TIER_ONE_ONLY"),
         uses_co_consts=variable_used(op, "FRAME_CO_CONSTS"),
         uses_co_names=variable_used(op, "FRAME_CO_NAMES"),
         uses_locals=(variable_used(op, "GETLOCAL") or variable_used(op, "SETLOCAL"))
@@ -506,6 +559,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         has_free=has_free,
         pure="pure" in op.annotations,
         passthrough=passthrough,
+        tier=tier_variable(op),
     )
 
 

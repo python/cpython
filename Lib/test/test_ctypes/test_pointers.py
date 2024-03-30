@@ -33,6 +33,11 @@ class PointersTestCase(unittest.TestCase):
                 self.assertTrue(_Pointer.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(_Pointer.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
 
+    def test_metaclass_details(self):
+        # Cannot call the metaclass __init__ more than once
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCPointerType.__init__(POINTER(c_byte), 'ptr', (), {})
+
     def test_pointer_crash(self):
 
         class A(POINTER(c_ulong)):

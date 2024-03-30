@@ -15,7 +15,7 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import is_emscripten, is_wasi
-from test.support import set_recursion_limit
+from test.support import infinite_recursion
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
 from test.test_pathlib import test_pathlib_abc
@@ -796,7 +796,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
-    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
+    @os_helper.skip_unless_hardlink
     def test_hardlink_to(self):
         P = self.cls(self.base)
         target = P / 'fileA'
@@ -1103,15 +1103,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
 
     def test_is_char_device_true(self):
-        # Under Unix, /dev/null should generally be a char device.
-        P = self.cls('/dev/null')
+        # os.devnull should generally be a char device.
+        P = self.cls(os.devnull)
         if not P.exists():
-            self.skipTest("/dev/null required")
+            self.skipTest("null device required")
         self.assertTrue(P.is_char_device())
         self.assertFalse(P.is_block_device())
         self.assertFalse(P.is_file())
-        self.assertIs(self.cls('/dev/null\udfff').is_char_device(), False)
-        self.assertIs(self.cls('/dev/null\x00').is_char_device(), False)
+        self.assertIs(self.cls(f'{os.devnull}\udfff').is_char_device(), False)
+        self.assertIs(self.cls(f'{os.devnull}\x00').is_char_device(), False)
 
     def test_is_mount_root(self):
         if os.name == 'nt':
@@ -1199,7 +1199,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
-        with set_recursion_limit(recursion_limit):
+        with infinite_recursion(recursion_limit):
             list(base.walk())
             list(base.walk(top_down=False))
 
@@ -1239,7 +1239,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
-        with set_recursion_limit(recursion_limit):
+        with infinite_recursion(recursion_limit):
             list(base.glob('**/'))
 
     def test_glob_pathlike(self):

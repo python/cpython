@@ -114,7 +114,7 @@ def load_raw_data(input: Path) -> RawData:
         return data
 
     else:
-        raise ValueError(f"{input:r} is not a file or directory path")
+        raise ValueError(f"{input} is not a file or directory path")
 
 
 def save_raw_data(data: RawData, json_output: TextIO):
@@ -451,6 +451,7 @@ class Stats:
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
         low_confidence = self._data["Optimization low confidence"]
+        executors_invalidated = self._data["Executors invalidated"]
 
         return {
             Doc(
@@ -458,10 +459,7 @@ class Stats:
                 "The number of times a potential trace is identified.  Specifically, this "
                 "occurs in the JUMP BACKWARD instruction when the counter reaches a "
                 "threshold.",
-            ): (
-                attempts,
-                None,
-            ),
+            ): (attempts, None),
             Doc(
                 "Traces created", "The number of traces that were successfully created."
             ): (created, attempts),
@@ -493,14 +491,52 @@ class Stats:
                 "A trace is abandoned because the likelihood of the jump to top being taken "
                 "is too low.",
             ): (low_confidence, attempts),
+            Doc(
+                "Executors invalidated",
+                "The number of executors that were invalidated due to watched "
+                "dictionary changes.",
+            ): (executors_invalidated, created),
             Doc("Traces executed", "The number of traces that were executed"): (
                 executed,
                 None,
             ),
-            Doc("Uops executed", "The total number of uops (micro-operations) that were executed"): (
+            Doc(
+                "Uops executed",
+                "The total number of uops (micro-operations) that were executed",
+            ): (
                 uops,
                 executed,
             ),
+        }
+
+    def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
+        attempts = self._data["Optimization optimizer attempts"]
+        successes = self._data["Optimization optimizer successes"]
+        no_memory = self._data["Optimization optimizer failure no memory"]
+        builtins_changed = self._data["Optimizer remove globals builtins changed"]
+        incorrect_keys = self._data["Optimizer remove globals incorrect keys"]
+
+        return {
+            Doc(
+                "Optimizer attempts",
+                "The number of times the trace optimizer (_Py_uop_analyze_and_optimize) was run.",
+            ): (attempts, None),
+            Doc(
+                "Optimizer successes",
+                "The number of traces that were successfully optimized.",
+            ): (successes, attempts),
+            Doc(
+                "Optimizer no memory",
+                "The number of optimizations that failed due to no memory.",
+            ): (no_memory, attempts),
+            Doc(
+                "Remove globals builtins changed",
+                "The builtins changed during optimization",
+            ): (builtins_changed, attempts),
+            Doc(
+                "Remove globals incorrect keys",
+                "The keys in the globals dictionary aren't what was expected",
+            ): (incorrect_keys, attempts),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -1109,6 +1145,14 @@ def optimization_section() -> Section:
             for label, (value, den) in optimization_stats.items()
         ]
 
+    def calc_optimizer_table(stats: Stats) -> Rows:
+        optimizer_stats = stats.get_optimizer_stats()
+
+        return [
+            (label, Count(value), Ratio(value, den))
+            for label, (value, den) in optimizer_stats.items()
+        ]
+
     def calc_histogram_table(key: str, den: str) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
             histogram = stats.get_histogram(key)
@@ -1143,6 +1187,17 @@ def optimization_section() -> Section:
             reverse=True,
         )
 
+    def calc_error_in_opcodes_table(stats: Stats) -> Rows:
+        error_in_opcodes = stats.get_opcode_stats("error_in_opcode")
+        return sorted(
+            [
+                (opcode, Count(count))
+                for opcode, count in error_in_opcodes.get_opcode_counts().items()
+            ],
+            key=itemgetter(1),
+            reverse=True,
+        )
+
     def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None):
         if not base_stats.get_optimization_stats() or (
             head_stats is not None and not head_stats.get_optimization_stats()
@@ -1150,6 +1205,7 @@ def optimization_section() -> Section:
             return
 
         yield Table(("", "Count:", "Ratio:"), calc_optimization_table, JoinMode.CHANGE)
+        yield Table(("", "Count:", "Ratio:"), calc_optimizer_table, JoinMode.CHANGE)
         for name, den in [
             ("Trace length", "Optimization traces created"),
             ("Optimized trace length", "Optimization traces created"),
@@ -1187,6 +1243,11 @@ def optimization_section() -> Section:
                     JoinMode.CHANGE,
                 )
             ],
+        )
+        yield Section(
+            "Optimizer errored out with opcode",
+            "Optimization stopped after encountering this opcode",
+            [Table(("Opcode", "Count:"), calc_error_in_opcodes_table, JoinMode.CHANGE)],
         )
 
     return Section(

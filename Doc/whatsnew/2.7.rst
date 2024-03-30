@@ -1130,7 +1130,7 @@ changes, or look through the Subversion logs for all the details.
   (Added by Raymond Hettinger; :issue:`1818`.)
 
   Finally, the :class:`~collections.abc.Mapping` abstract base class now
-  returns :const:`NotImplemented` if a mapping is compared to
+  returns :data:`NotImplemented` if a mapping is compared to
   another type that isn't a :class:`Mapping`.
   (Fixed by Daniel Stutzbach; :issue:`8729`.)
 

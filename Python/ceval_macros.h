@@ -296,11 +296,19 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define ADAPTIVE_COUNTER_IS_MAX(COUNTER) \
     (((COUNTER) >> ADAPTIVE_BACKOFF_BITS) == ((1 << MAX_BACKOFF_VALUE) - 1))
 
+#ifdef Py_GIL_DISABLED
+#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)                             \
+    do {                                                                \
+        /* gh-115999 tracks progress on addressing this. */             \
+        static_assert(0, "The specializing interpreter is not yet thread-safe"); \
+    } while (0);
+#else
 #define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
     do {                                              \
         assert(!ADAPTIVE_COUNTER_IS_ZERO((COUNTER))); \
         (COUNTER) -= (1 << ADAPTIVE_BACKOFF_BITS);    \
     } while (0);
+#endif
 
 #define INCREMENT_ADAPTIVE_COUNTER(COUNTER)          \
     do {                                             \
@@ -348,13 +356,6 @@ do { \
     } \
 } while (0);
 
-typedef PyObject *(*convertion_func_ptr)(PyObject *);
-
-static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
-    [FVC_STR] = PyObject_Str,
-    [FVC_REPR] = PyObject_Repr,
-    [FVC_ASCII] = PyObject_ASCII
-};
 
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
@@ -371,12 +372,6 @@ static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
 static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
-
-/* Marker to specify tier 1 only instructions */
-#define TIER_ONE_ONLY
-
-/* Marker to specify tier 2 only instructions */
-#define TIER_TWO_ONLY
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
@@ -397,6 +392,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 #ifdef _Py_JIT
 #define GOTO_TIER_TWO(EXECUTOR)                        \
 do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
     jit_func jitted = (EXECUTOR)->jit_code;            \
     next_instr = jitted(frame, stack_pointer, tstate); \
     Py_DECREF(tstate->previous_executor);              \
@@ -411,6 +407,7 @@ do {                                                   \
 #else
 #define GOTO_TIER_TWO(EXECUTOR) \
 do { \
+    OPT_STAT_INC(traces_executed); \
     next_uop = (EXECUTOR)->trace; \
     assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
     goto enter_tier_two; \
@@ -428,3 +425,9 @@ do { \
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
 #define CURRENT_OPERAND() (next_uop[-1].operand)
+
+#define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
+#define JUMP_TO_ERROR() goto jump_to_error_target
+#define GOTO_UNWIND() goto error_tier_two
+#define EXIT_TO_TRACE() goto exit_to_trace
+#define EXIT_TO_TIER1() goto exit_to_tier1
