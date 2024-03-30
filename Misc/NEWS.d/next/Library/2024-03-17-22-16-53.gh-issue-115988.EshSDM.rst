@@ -1,2 +1,2 @@
-The lzma module adds build and runtime version info of the underlying C library
-and supports new BCJ filters: ARM64 and RISC-V.
+:mod:`lzma` gains C library version info constants and adds constants to
+support the newer BCJ filters for ARM64 and RISC-V.
