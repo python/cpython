@@ -374,13 +374,12 @@ else:
 def abspath(path):
     """Return an absolute path."""
     path = os.fspath(path)
-    sep = _get_sep(path)
-    if path[:1] != sep:
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
+    if isinstance(path, bytes):
+        if path[:1] != b'/':
+            path = join(os.getcwdb(), path)
+    else:
+        if path[:1] != '/':
+            path = join(os.getcwd(), path)
     return normpath(path)
 
 
