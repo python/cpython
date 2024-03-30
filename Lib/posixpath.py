@@ -369,6 +369,7 @@ except ImportError:
         comps = new_comps
         path = initial_slashes + sep.join(comps)
         return path or dot
+
 else:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""
@@ -424,15 +425,16 @@ def _joinrealpath(path, rest, strict, seen):
             continue
         if name == pardir:
             # parent dir
-            if not path:
+            if path:
+                if basename(path) == pardir:
+                    # ../..
+                    path = join(path, pardir)
+                else:
+                    # foo/bar/.. -> foo
+                    path = dirname(path)
+            else:
                 # ..
                 path = pardir
-            elif basename(path) == pardir:
-                # ../..
-                path = join(path, pardir)
-            else:
-                # foo/bar/.. -> foo
-                path = dirname(path)
             continue
         newpath = join(path, name)
         try:
