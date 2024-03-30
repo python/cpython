@@ -27,7 +27,12 @@ class TestDump:
         with self.assertRaises(TypeError):
             self.json.dumps(v)
 
-        s = self.json.dumps(v, convert_keys=True, default=lambda b: b.hex(':'))
+        def default(val):
+            if isinstance(val, bytes):
+                return val.hex(':')
+            return str(val)
+
+        s = self.json.dumps(v, convert_keys=True, default=default)
         o = self.json.loads(s)
         self.assertIn('valid_key', o)
         self.assertIn('62:79:74:65:73:5f:6b:65:79', o)

@@ -378,7 +378,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 key = _intstr(key)
             elif _convert_keys:
                 key = _default(key)
-                if not isinstance(key, (int, bool, float, str, type(None))):
+                if key is not None and not isinstance(key, (int, bool, float, str)):
                     raise TypeError(f'keys must be str, int, float, bool '
                                     f'or None, not {key.__class__.__name__}')
             elif _skipkeys:

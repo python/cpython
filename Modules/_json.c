@@ -1478,70 +1478,41 @@ encoder_encode_key_value(PyEncoderObject *s, _PyUnicodeWriter *writer, bool *fir
     else if (PyLong_Check(key)) {
         keystr = PyLong_Type.tp_repr(key);
     }
+    else if (s->skipkeys) {
+        return 0;
+    }
     else if (s->convert_keys) {
-        PyObject *ident = NULL;
-        PyObject *newobj = NULL;
-        int rv;
-        if (s->markers != Py_None)
-        {
-            int has_key;
-            ident = PyLong_FromVoidPtr(key);
-            if (ident == NULL)
-                return -1;
-            has_key = PyDict_Contains(s->markers, ident);
-            if (has_key)
-            {
-                if (has_key != -1)
-                    Py_XDECREF(ident);
-                return -1;
-            }
-            Py_XDECREF(ident);
-        }
-
+        PyObject *newobj;
         newobj = PyObject_CallOneArg(s->defaultfn, key);
-        if (newobj == NULL)
-        {
-            Py_XDECREF(ident);
+        if (newobj == NULL) {
             return -1;
         }
-
-        if (_Py_EnterRecursiveCall(" while encoding a JSON object"))
-        {
+        if (!(newobj == Py_True || newobj == Py_False || newobj == Py_None || PyUnicode_Check(newobj)
+                || PyFloat_Check(newobj) || PyLong_Check(newobj))) {
             Py_DECREF(newobj);
-            Py_XDECREF(ident);
-            return -1;
-        }
-        rv = encoder_listencode_obj(s, writer, newobj, indent_level);
-        _Py_LeaveRecursiveCall();
-
-        Py_DECREF(newobj);
-        if (rv)
-        {
-            Py_XDECREF(ident);
-            return -1;
-        }
-        if (ident != NULL)
-        {
-            if (PyDict_DelItem(s->markers, ident))
-            {
-                Py_XDECREF(ident);
-                return -1;
-            }
-            Py_XDECREF(ident);
-        }
-
-        if (!(PyUnicode_Check(newobj) || PyFloat_Check(newobj) || newobj == Py_True
-                || newobj == Py_False || newobj == Py_None || PyLong_Check(newobj))) {
             PyErr_Format(PyExc_TypeError,
                          "keys must be str, int, float, bool or None, "
                          "not %.100s",
                          Py_TYPE(newobj)->tp_name);
             return -1;
         }
-        return rv;
-    }
-    else if (s->skipkeys) {
-        return 0;
+
+        if (newobj == Py_None || newobj == Py_True || newobj == Py_False) {
+          keystr = _encoded_const(key);
+        }
+        else if (PyUnicode_Check(newobj)) {
+            keystr = Py_NewRef(newobj);
+        }
+        else if (PyLong_Check(newobj)) {
+            keystr = PyLong_Type.tp_repr(newobj);
+            if (keystr == NULL)
+                return -1;
+        }
+        else if (PyFloat_Check(newobj)) {
+            keystr = encoder_encode_float(s, newobj);
+            if (keystr == NULL)
+                return -1;
+        }
     }
     else {
         PyErr_Format(PyExc_TypeError,
