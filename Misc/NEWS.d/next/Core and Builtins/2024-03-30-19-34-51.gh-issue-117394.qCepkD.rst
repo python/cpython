@@ -1,1 +1,2 @@
-Reduce syscalls for :func:`posixpath.ismount`.
+Speedup :func:`os.path.ismount` on Unix systems by reducing the number of
+syscalls.
