@@ -993,7 +993,7 @@ CDataType_clear(PyTypeObject *self)
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
+            PyErr_WriteUnraisable((PyObject *)self);
         }
         if (info) {
             Py_CLEAR(info->proto);
@@ -1009,7 +1009,7 @@ CDataType_traverse(PyTypeObject *self, visitproc visit, void *arg)
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-            PyErr_WriteUnraisable(self);
+            PyErr_WriteUnraisable((PyObject *)self);
         }
         if (info) {
             Py_VISIT(info->proto);
