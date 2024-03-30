@@ -199,7 +199,7 @@ def ismount(path):
         if stat.S_ISLNK(s1.st_mode):
             return False
 
-    parent = realpath(dirname(path))
+    parent = dirname(abspath(path))
     try:
         s2 = os.lstat(parent)
     except (OSError, ValueError):
@@ -392,8 +392,9 @@ symbolic links encountered in the path."""
     path, ok = _joinrealpath(filename[:0], filename, strict, {})
     return abspath(path)
 
-# Join two paths, normalizing and eliminating any symbolic links encountered in
-# the second path. Two leading slashes are replaced by a single slash.
+# Join two paths, normalizing and eliminating any symbolic links
+# encountered in the second path.
+# Two leading slashes are replaced by a single slash.
 def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
