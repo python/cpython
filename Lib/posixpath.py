@@ -117,9 +117,12 @@ def split(p):
 def splitext(p):
     p = os.fspath(p)
     if isinstance(p, bytes):
-        return genericpath._splitext(p, b'/', None, b'.')
+        sep = b'/'
+        extsep = b'.'
     else:
-        return genericpath._splitext(p, '/', None, '.')
+        sep = '/'
+        extsep = '.'
+    return genericpath._splitext(p, sep, None, extsep)
 splitext.__doc__ = genericpath._splitext.__doc__
 
 # Split a pathname into a drive specification and the rest of the
@@ -240,11 +243,12 @@ def expanduser(path):
                 # pwd module unavailable, return path unchanged
                 return path
             try:
-                userhome = pwd.getpwuid(os.getuid()).pw_dir
+                pwent = pwd.getpwnam(name)
             except KeyError:
                 # bpo-10496: if the current user identifier doesn't exist in the
                 # password database, return the path unchanged
                 return path
+            userhome = pwent.pw_dir
         else:
             userhome = os.environ['HOME']
     else:
@@ -352,8 +356,9 @@ except ImportError:
         if not path:
             return dot
         _, initial_slashes, path = splitroot(path)
+        comps = path.split(sep)
         new_comps = []
-        for comp in path.split(sep):
+        for comp in comps:
             if not comp or comp == dot:
                 continue
             if (comp != dotdot or (not initial_slashes and not new_comps) or
@@ -361,7 +366,9 @@ except ImportError:
                 new_comps.append(comp)
             elif new_comps:
                 new_comps.pop()
-        return (initial_slashes + sep.join(new_comps)) or dot
+        comps = new_comps
+        path = initial_slashes + sep.join(comps)
+        return path or dot
 else:
     def normpath(path):
         """Normalize path, eliminating double slashes, etc."""

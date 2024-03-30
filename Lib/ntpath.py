@@ -876,8 +876,12 @@ def commonpath(paths):
         s2 = max(split_paths)
         for i, c in enumerate(s1):
             if c != s2[i]:
-                return drive + root + sep.join(common[:i])
-        return drive + root + sep.join(common[:len(s1)])
+                common = common[:i]
+                break
+        else:
+            common = common[:len(s1)]
+
+        return drive + root + sep.join(common)
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *paths)
         raise
