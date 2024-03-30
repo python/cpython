@@ -721,8 +721,8 @@ else:
             new_unc_prefix = b'\\\\'
             cwd = os.getcwdb()
             # bpo-38081: Special case for realpath(b'nul')
-            devnul = b'nul'
-            if normcase(path) == devnul:
+            devnull = b'nul'
+            if normcase(path) == devnull:
                 return b'\\\\.\\NUL'
         else:
             prefix = '\\\\?\\'
@@ -730,8 +730,8 @@ else:
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
             # bpo-38081: Special case for realpath('nul')
-            devnul = 'nul'
-            if normcase(path) == devnul:
+            devnull = 'nul'
+            if normcase(path) == devnull:
                 return '\\\\.\\NUL'
         had_prefix = path[:4] == prefix
         if not had_prefix and not isabs(path):

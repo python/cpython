@@ -194,10 +194,10 @@ def ismount(path):
     except (OSError, ValueError):
         # It doesn't exist -- so not a mount point. :-)
         return False
-
-    # A symlink can never be a mount point
-    if stat.S_ISLNK(s1.st_mode):
-        return False
+    else:
+        # A symlink can never be a mount point
+        if stat.S_ISLNK(s1.st_mode):
+            return False
 
     parent = realpath(dirname(path))
     try:
@@ -232,7 +232,19 @@ def expanduser(path):
     i = path.find(sep, 1)
     if i < 0:
         i = len(path)
-    if i != 1:
+    if i == 1:
+        if 'HOME' not in os.environ:
+            try:
+                import pwd
+                userhome = pwd.getpwuid(os.getuid()).pw_dir
+            except (ImportError, KeyError):
+                # pwd module unavailable, return path unchanged
+                # bpo-10496: if the current user identifier doesn't exist in the
+                # password database, return the path unchanged
+                return path
+        else:
+            userhome = os.environ['HOME']
+    else:
         try:
             import pwd
             name = path[1:i]
@@ -245,17 +257,6 @@ def expanduser(path):
             # bpo-10496: if the user name from the path doesn't exist in the
             # password database, return the path unchanged
             return path
-    elif 'HOME' not in os.environ:
-        try:
-            import pwd
-            userhome = pwd.getpwuid(os.getuid()).pw_dir
-        except (ImportError, KeyError):
-            # pwd module unavailable, return path unchanged
-            # bpo-10496: if the current user identifier doesn't exist in the
-            # password database, return the path unchanged
-            return path
-    else:
-        userhome = os.environ['HOME']
 
     # if no user home, return the path unchanged on VxWorks
     if userhome is None and sys.platform == "vxworks":
@@ -356,6 +357,7 @@ def _normpath_fallback(path):
 
 try:
     from posix import _path_normpath
+
 except ImportError:
     normpath = _normpath_fallback
 else:
