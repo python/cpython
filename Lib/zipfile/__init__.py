@@ -1562,7 +1562,8 @@ class ZipFile:
         self._didModify = True
 
     def read(self, name, pwd=None):
-        """Return file bytes for name."""
+        """Return file bytes for name. 'pwd' is the password to decrypt
+        encrypted files."""
         with self.open(name, "r", pwd) as fp:
             return fp.read()
 
@@ -1714,7 +1715,8 @@ class ZipFile:
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
            as possible. `member' may be a filename or a ZipInfo object. You can
-           specify a different directory using `path'.
+           specify a different directory using `path'. You can specify the
+           password to decrypt the file using 'pwd'.
         """
         if path is None:
             path = os.getcwd()
@@ -1727,7 +1729,8 @@ class ZipFile:
         """Extract all members from the archive to the current working
            directory. `path' specifies a different directory to extract to.
            `members' is optional and must be a subset of the list returned
-           by namelist().
+           by namelist(). You can specify the password to decrypt all files
+           using 'pwd'.
         """
         if members is None:
             members = self.namelist()
