@@ -2330,10 +2330,10 @@ expression support in the :mod:`re` module).
    flexibility, and/or extensibility.
 
 The % operator (modulo) can also be used for string formatting. Given ``'string'
-% values``, instances of ``%`` inside of the ``string`` starts a conversion
-specifier, which will be replaced with zero or more elements of ``values``.
-This operation is commonly known as string interpolation. The effect is similar
-to using the :c:func:`sprintf` in the C language. For example::
+% values``, instances of ``%`` in ``string`` are replaced with zero or more
+elements of ``values``. This operation is commonly known as string
+interpolation. The effect is similar to using the :c:func:`sprintf` in the C
+language. For example::
 
    >>> print('%s has %d quote types.' % ('Python', 2))
    Python has 2 quote types.
