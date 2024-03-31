@@ -2336,7 +2336,7 @@ interpolation. The effect is similar to using the :c:func:`sprintf` in the C
 language. For example::
 
    >>> print('%s has %d quote types.' % ('Python', 2))
-   Python has 2 quote types.
+   Python has 002 quote types.
 
 If *string* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
