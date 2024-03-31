@@ -247,7 +247,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "b;array item must be integer", &x))
         return -1;
     if (i >= 0)
-        ((char *)ap->ob_item)[i] = x;
+        ((unsigned char *)ap->ob_item)[i] = x;
     return 0;
 }
 
@@ -868,6 +868,21 @@ array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     return (PyObject *)np;
 }
 
+/*[clinic input]
+array.array.clear
+
+Remove all items from the array.
+[clinic start generated code]*/
+
+static PyObject *
+array_array_clear_impl(arrayobject *self)
+/*[clinic end generated code: output=5efe0417062210a9 input=5dffa30e94e717a4]*/
+{
+    if (array_resize(self, 0) == -1) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 array.array.__copy__
@@ -2342,6 +2357,7 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_APPEND_METHODDEF
     ARRAY_ARRAY_BUFFER_INFO_METHODDEF
     ARRAY_ARRAY_BYTESWAP_METHODDEF
+    ARRAY_ARRAY_CLEAR_METHODDEF
     ARRAY_ARRAY___COPY___METHODDEF
     ARRAY_ARRAY_COUNT_METHODDEF
     ARRAY_ARRAY___DEEPCOPY___METHODDEF

@@ -2045,12 +2045,22 @@ static PyObject *
 swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
 {
     PyObject *prev_task;
+
+    if (task == Py_None) {
+        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
+            return NULL;
+        }
+        if (prev_task == NULL) {
+            Py_RETURN_NONE;
+        }
+        return prev_task;
+    }
+
     Py_hash_t hash;
     hash = PyObject_Hash(loop);
     if (hash == -1) {
         return NULL;
     }
-
     prev_task = _PyDict_GetItem_KnownHash(state->current_tasks, loop, hash);
     if (prev_task == NULL) {
         if (PyErr_Occurred()) {
@@ -2059,22 +2069,12 @@ swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
         prev_task = Py_None;
     }
     Py_INCREF(prev_task);
-
-    if (task == Py_None) {
-        if (_PyDict_DelItem_KnownHash(state->current_tasks, loop, hash) == -1) {
-            goto error;
-        }
-    } else {
-        if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
-            goto error;
-        }
+    if (_PyDict_SetItem_KnownHash(state->current_tasks, loop, task, hash) == -1) {
+        Py_DECREF(prev_task);
+        return NULL;
     }
 
     return prev_task;
-
-error:
-    Py_DECREF(prev_task);
-    return NULL;
 }
 
 /* ----- Task */

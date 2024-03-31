@@ -3,19 +3,19 @@ from test.support import bigmemtest, _4G
 
 import array
 import unittest
+import io
 from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import glob
 import tempfile
-import pathlib
 import random
 import shutil
 import subprocess
 import threading
 from test.support import import_helper
 from test.support import threading_helper
-from test.support.os_helper import unlink
+from test.support.os_helper import unlink, FakePath
 import _compression
 import sys
 
@@ -537,12 +537,136 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             self.assertEqual(bz2f.read(), data1 + data2)
 
+    def testOpenFilename(self):
+        with BZ2File(self.filename, "wb") as f:
+            f.write(b'content')
+            self.assertIsInstance(f.fileno(), int)
+            self.assertIs(f.readable(), False)
+            self.assertIs(f.writable(), True)
+            self.assertIs(f.seekable(), False)
+            self.assertIs(f.closed, False)
+        self.assertIs(f.closed, True)
+        self.assertRaises(ValueError, f.fileno)
+        self.assertRaises(ValueError, f.readable)
+        self.assertRaises(ValueError, f.writable)
+        self.assertRaises(ValueError, f.seekable)
+
+        with BZ2File(self.filename, "ab") as f:
+            f.write(b'appendix')
+            self.assertIsInstance(f.fileno(), int)
+            self.assertIs(f.readable(), False)
+            self.assertIs(f.writable(), True)
+            self.assertIs(f.seekable(), False)
+            self.assertIs(f.closed, False)
+        self.assertIs(f.closed, True)
+        self.assertRaises(ValueError, f.fileno)
+        self.assertRaises(ValueError, f.readable)
+        self.assertRaises(ValueError, f.writable)
+        self.assertRaises(ValueError, f.seekable)
+
+        with BZ2File(self.filename, 'rb') as f:
+            self.assertEqual(f.read(), b'contentappendix')
+            self.assertIsInstance(f.fileno(), int)
+            self.assertIs(f.readable(), True)
+            self.assertIs(f.writable(), False)
+            self.assertIs(f.seekable(), True)
+            self.assertIs(f.closed, False)
+        self.assertIs(f.closed, True)
+        with self.assertRaises(ValueError):
+            f.fileno()
+        self.assertRaises(ValueError, f.readable)
+        self.assertRaises(ValueError, f.writable)
+        self.assertRaises(ValueError, f.seekable)
+
+    def testOpenFileWithName(self):
+        with open(self.filename, 'wb') as raw:
+            with BZ2File(raw, 'wb') as f:
+                f.write(b'content')
+                self.assertEqual(f.fileno(), raw.fileno())
+                self.assertIs(f.readable(), False)
+                self.assertIs(f.writable(), True)
+                self.assertIs(f.seekable(), False)
+                self.assertIs(f.closed, False)
+            self.assertIs(f.closed, True)
+            self.assertRaises(ValueError, f.fileno)
+            self.assertRaises(ValueError, f.readable)
+            self.assertRaises(ValueError, f.writable)
+            self.assertRaises(ValueError, f.seekable)
+
+        with open(self.filename, 'ab') as raw:
+            with BZ2File(raw, 'ab') as f:
+                f.write(b'appendix')
+                self.assertEqual(f.fileno(), raw.fileno())
+                self.assertIs(f.readable(), False)
+                self.assertIs(f.writable(), True)
+                self.assertIs(f.seekable(), False)
+                self.assertIs(f.closed, False)
+            self.assertIs(f.closed, True)
+            self.assertRaises(ValueError, f.fileno)
+            self.assertRaises(ValueError, f.readable)
+            self.assertRaises(ValueError, f.writable)
+            self.assertRaises(ValueError, f.seekable)
+
+        with open(self.filename, 'rb') as raw:
+            with BZ2File(raw, 'rb') as f:
+                self.assertEqual(f.read(), b'contentappendix')
+                self.assertEqual(f.fileno(), raw.fileno())
+                self.assertIs(f.readable(), True)
+                self.assertIs(f.writable(), False)
+                self.assertIs(f.seekable(), True)
+                self.assertIs(f.closed, False)
+            self.assertIs(f.closed, True)
+            with self.assertRaises(ValueError):
+                f.fileno()
+            self.assertRaises(ValueError, f.readable)
+            self.assertRaises(ValueError, f.writable)
+            self.assertRaises(ValueError, f.seekable)
+
+    def testOpenFileWithoutName(self):
+        bio = BytesIO()
+        with BZ2File(bio, 'wb') as f:
+            f.write(b'content')
+            self.assertRaises(io.UnsupportedOperation, f.fileno)
+        self.assertRaises(ValueError, f.fileno)
+
+        with BZ2File(bio, 'ab') as f:
+            f.write(b'appendix')
+            self.assertRaises(io.UnsupportedOperation, f.fileno)
+        self.assertRaises(ValueError, f.fileno)
+
+        bio.seek(0)
+        with BZ2File(bio, 'rb') as f:
+            self.assertEqual(f.read(), b'contentappendix')
+            self.assertRaises(io.UnsupportedOperation, f.fileno)
+        with self.assertRaises(ValueError):
+            f.fileno()
+
+    def testOpenFileWithIntName(self):
+        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
+        with open(fd, 'wb') as raw:
+            with BZ2File(raw, 'wb') as f:
+                f.write(b'content')
+                self.assertEqual(f.fileno(), raw.fileno())
+            self.assertRaises(ValueError, f.fileno)
+
+        fd = os.open(self.filename, os.O_WRONLY | os.O_CREAT | os.O_APPEND)
+        with open(fd, 'ab') as raw:
+            with BZ2File(raw, 'ab') as f:
+                f.write(b'appendix')
+                self.assertEqual(f.fileno(), raw.fileno())
+            self.assertRaises(ValueError, f.fileno)
+
+        fd = os.open(self.filename, os.O_RDONLY)
+        with open(fd, 'rb') as raw:
+            with BZ2File(raw, 'rb') as f:
+                self.assertEqual(f.read(), b'contentappendix')
+                self.assertEqual(f.fileno(), raw.fileno())
+            with self.assertRaises(ValueError):
+                f.fileno()
+
     def testOpenBytesFilename(self):
         str_filename = self.filename
-        try:
-            bytes_filename = str_filename.encode("ascii")
-        except UnicodeEncodeError:
-            self.skipTest("Temporary file name needs to be ASCII")
+        bytes_filename = os.fsencode(str_filename)
         with BZ2File(bytes_filename, "wb") as f:
             f.write(self.DATA)
         with BZ2File(bytes_filename, "rb") as f:
@@ -552,7 +676,7 @@ class BZ2FileTest(BaseTest):
             self.assertEqual(f.read(), self.DATA)
 
     def testOpenPathLikeFilename(self):
-        filename = pathlib.Path(self.filename)
+        filename = FakePath(self.filename)
         with BZ2File(filename, "wb") as f:
             f.write(self.DATA)
         with BZ2File(filename, "rb") as f:

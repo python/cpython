@@ -113,8 +113,8 @@ class Dialect:
         try:
             _Dialect(self)
         except TypeError as e:
-            # We do this for compatibility with py2.3
-            raise Error(str(e))
+            # Re-raise to get a traceback showing more user code.
+            raise Error(str(e)) from None
 
 class excel(Dialect):
     """Describe the usual properties of Excel-generated CSV files."""

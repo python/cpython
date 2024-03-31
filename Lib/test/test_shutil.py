@@ -667,6 +667,23 @@ class TestRmTree(BaseTest, unittest.TestCase):
         finally:
             shutil.rmtree(TESTFN, ignore_errors=True)
 
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    @unittest.skipIf(sys.platform == "vxworks",
+                    "fifo requires special path on VxWorks")
+    def test_rmtree_on_named_pipe(self):
+        os.mkfifo(TESTFN)
+        try:
+            with self.assertRaises(NotADirectoryError):
+                shutil.rmtree(TESTFN)
+            self.assertTrue(os.path.exists(TESTFN))
+        finally:
+            os.unlink(TESTFN)
+
+        os.mkdir(TESTFN)
+        os.mkfifo(os.path.join(TESTFN, 'mypipe'))
+        shutil.rmtree(TESTFN)
+        self.assertFalse(os.path.exists(TESTFN))
+
     @unittest.skipIf(sys.platform[:6] == 'cygwin',
                      "This test can't be run on Cygwin (issue #1071513).")
     @os_helper.skip_if_dac_override
@@ -2148,6 +2165,7 @@ class TestMisc(BaseTest, unittest.TestCase):
             check_chown(dirname, uid, gid)
 
 
+@support.requires_subprocess()
 class TestWhich(BaseTest, unittest.TestCase):
 
     def setUp(self):
@@ -3181,6 +3199,7 @@ class TestGetTerminalSize(unittest.TestCase):
         self.assertGreaterEqual(size.lines, 0)
 
     @unittest.skipUnless(os.isatty(sys.__stdout__.fileno()), "not on tty")
+    @support.requires_subprocess()
     @unittest.skipUnless(hasattr(os, 'get_terminal_size'),
                          'need os.get_terminal_size()')
     def test_stty_match(self):

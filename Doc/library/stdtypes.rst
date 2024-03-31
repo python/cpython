@@ -1491,8 +1491,7 @@ objects that compare equal might have different :attr:`~range.start`,
    sequence of values they define (instead of comparing based on
    object identity).
 
-.. versionadded:: 3.3
-   The :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
+   Added the :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
    attributes.
 
 .. seealso::
@@ -1528,7 +1527,7 @@ between them will be implicitly converted to a single string literal. That
 is, ``("spam " "eggs") == "spam eggs"``.
 
 See :ref:`strings` for more about the various forms of string literal,
-including supported escape sequences, and the ``r`` ("raw") prefix that
+including supported :ref:`escape sequences <escape-sequences>`, and the ``r`` ("raw") prefix that
 disables most escape sequence processing.
 
 Strings may also be created from other objects using the :class:`str`
@@ -5450,10 +5449,10 @@ The NotImplemented Object
 
 This object is returned from comparisons and binary operations when they are
 asked to operate on types they don't support. See :ref:`comparisons` for more
-information.  There is exactly one ``NotImplemented`` object.
-``type(NotImplemented)()`` produces the singleton instance.
+information.  There is exactly one :data:`NotImplemented` object.
+:code:`type(NotImplemented)()` produces the singleton instance.
 
-It is written as ``NotImplemented``.
+It is written as :code:`NotImplemented`.
 
 
 .. _typesinternal:

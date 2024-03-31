@@ -1956,6 +1956,8 @@ Build Changes
   :file:`!configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
+* Windows builds and macOS installers from python.org now use OpenSSL 3.0.
+
 
 C API Changes
 =============

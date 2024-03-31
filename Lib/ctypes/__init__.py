@@ -348,6 +348,17 @@ class CDLL(object):
                  winmode=None):
         if name:
             name = _os.fspath(name)
+
+            # If the filename that has been provided is an iOS/tvOS/watchOS
+            # .fwork file, dereference the location to the true origin of the
+            # binary.
+            if name.endswith(".fwork"):
+                with open(name) as f:
+                    name = _os.path.join(
+                        _os.path.dirname(_sys.executable),
+                        f.read().strip()
+                    )
+
         self._name = name
         flags = self._func_flags_
         if use_errno:
@@ -468,6 +479,8 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
+elif _sys.platform == "android":
+    pythonapi = PyDLL("libpython%d.%d.so" % _sys.version_info[:2])
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
 else:

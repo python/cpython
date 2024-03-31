@@ -19,7 +19,8 @@ import sysconfig
 import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
-                          requires_subprocess, is_emscripten, is_wasi,
+                          requires_subprocess, is_android, is_apple_mobile,
+                          is_emscripten, is_wasi,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
@@ -39,8 +40,8 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-if is_emscripten or is_wasi:
-    raise unittest.SkipTest("venv is not available on Emscripten/WASI.")
+if is_android or is_apple_mobile or is_emscripten or is_wasi:
+    raise unittest.SkipTest("venv is not available on this platform")
 
 @requires_subprocess()
 def check_output(cmd, encoding=None):
@@ -530,7 +531,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
-        subprocess.check_call([self.envpy(real_env_dir=True), script])
+        subprocess.check_call([self.envpy(real_env_dir=True), "-I", script])
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):

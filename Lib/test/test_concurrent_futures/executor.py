@@ -1,8 +1,10 @@
 import threading
 import time
+import unittest
 import weakref
 from concurrent import futures
 from test import support
+from test.support import Py_GIL_DISABLED
 
 
 def mul(x, y):
@@ -83,9 +85,20 @@ class ExecutorTest:
         my_object_collected = threading.Event()
         my_object_callback = weakref.ref(
             my_object, lambda obj: my_object_collected.set())
-        # Deliberately discarding the future.
-        self.executor.submit(my_object.my_method)
+        fut = self.executor.submit(my_object.my_method)
         del my_object
+
+        if Py_GIL_DISABLED:
+            # Due to biased reference counting, my_object might only be
+            # deallocated while the thread that created it runs -- if the
+            # thread is paused waiting on an event, it may not merge the
+            # refcount of the queued object. For that reason, we wait for the
+            # task to finish (so that it's no longer referenced) and force a
+            # GC to ensure that it is collected.
+            fut.result()  # Wait for the task to finish.
+            support.gc_collect()
+        else:
+            del fut  # Deliberately discard the future.
 
         collected = my_object_collected.wait(timeout=support.SHORT_TIMEOUT)
         self.assertTrue(collected,

@@ -767,11 +767,17 @@ PyBuffer_FillInfo(Py_buffer *view, PyObject *obj, void *buf, Py_ssize_t len,
         return -1;
     }
 
-    if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
-        (readonly == 1)) {
-        PyErr_SetString(PyExc_BufferError,
-                        "Object is not writable.");
-        return -1;
+    if (flags != PyBUF_SIMPLE) {  /* fast path */
+        if (flags == PyBUF_READ || flags == PyBUF_WRITE) {
+            PyErr_BadInternalCall();
+            return -1;
+        }
+        if (((flags & PyBUF_WRITABLE) == PyBUF_WRITABLE) &&
+            (readonly == 1)) {
+            PyErr_SetString(PyExc_BufferError,
+                            "Object is not writable.");
+            return -1;
+        }
     }
 
     view->obj = Py_XNewRef(obj);
@@ -1384,7 +1390,7 @@ _PyNumber_InPlacePowerNoMod(PyObject *lhs, PyObject *rhs)
     }
 
 UNARY_FUNC(PyNumber_Negative, nb_negative, __neg__, "unary -")
-UNARY_FUNC(PyNumber_Positive, nb_positive, __pow__, "unary +")
+UNARY_FUNC(PyNumber_Positive, nb_positive, __pos__, "unary +")
 UNARY_FUNC(PyNumber_Invert, nb_invert, __invert__, "unary ~")
 UNARY_FUNC(PyNumber_Absolute, nb_absolute, __abs__, "abs()")
 
