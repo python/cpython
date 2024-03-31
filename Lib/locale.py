@@ -25,7 +25,7 @@ import functools
 # Yuck:  LC_MESSAGES is non-standard:  can't tell whether it exists before
 # trying the import.  So __all__ is also fiddled at the end of the file.
 __all__ = ["getlocale", "getdefaultlocale", "getpreferredencoding", "Error",
-           "setlocale", "resetlocale", "localeconv", "strcoll", "strxfrm",
+           "setlocale", "localeconv", "strcoll", "strxfrm",
            "str", "atof", "atoi", "format_string", "currency",
            "normalize", "LC_CTYPE", "LC_COLLATE", "LC_TIME", "LC_MONETARY",
            "LC_NUMERIC", "LC_ALL", "CHAR_MAX", "getencoding"]
@@ -541,11 +541,15 @@ def getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     """
 
     import warnings
-    warnings.warn(
-        "Use setlocale(), getencoding() and getlocale() instead",
-        DeprecationWarning, stacklevel=2
-    )
+    warnings._deprecated(
+        "locale.getdefaultlocale",
+        "{name!r} is deprecated and slated for removal in Python {remove}. "
+        "Use setlocale(), getencoding() and getlocale() instead.",
+        remove=(3, 15))
+    return _getdefaultlocale(envvars)
 
+
+def _getdefaultlocale(envvars=('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')):
     try:
         # check if it's supported by the _locale module
         import _locale
@@ -610,40 +614,15 @@ def setlocale(category, locale=None):
         locale = normalize(_build_localename(locale))
     return _setlocale(category, locale)
 
-def resetlocale(category=LC_ALL):
-
-    """ Sets the locale for category to the default setting.
-
-        The default setting is determined by calling
-        getdefaultlocale(). category defaults to LC_ALL.
-
-    """
-    import warnings
-    warnings.warn(
-        'Use locale.setlocale(locale.LC_ALL, "") instead',
-        DeprecationWarning, stacklevel=2
-    )
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=DeprecationWarning)
-        loc = getdefaultlocale()
-
-    _setlocale(category, _build_localename(loc))
-
 
 try:
     from _locale import getencoding
 except ImportError:
+    # When _locale.getencoding() is missing, locale.getencoding() uses the
+    # Python filesystem encoding.
     def getencoding():
-        if hasattr(sys, 'getandroidapilevel'):
-            # On Android langinfo.h and CODESET are missing, and UTF-8 is
-            # always used in mbstowcs() and wcstombs().
-            return 'utf-8'
-        encoding = getdefaultlocale()[1]
-        if encoding is None:
-            # LANG not set, default to UTF-8
-            encoding = 'utf-8'
-        return encoding
+        return sys.getfilesystemencoding()
+
 
 try:
     CODESET
@@ -960,7 +939,7 @@ locale_alias = {
     'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
-    'c.utf8':                               'en_US.UTF-8',
+    'c.utf8':                               'C.UTF-8',
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',
@@ -1720,17 +1699,6 @@ def _print_locale():
 
     print('Locale settings on startup:')
     print('-'*72)
-    for name,category in categories.items():
-        print(name, '...')
-        lang, enc = getlocale(category)
-        print('   Language: ', lang or '(undefined)')
-        print('   Encoding: ', enc or '(undefined)')
-        print()
-
-    print()
-    print('Locale settings after calling resetlocale():')
-    print('-'*72)
-    resetlocale()
     for name,category in categories.items():
         print(name, '...')
         lang, enc = getlocale(category)

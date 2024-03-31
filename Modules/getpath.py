@@ -229,16 +229,15 @@ use_environment = config.get('use_environment', 1)
 
 pythonpath = config.get('module_search_paths')
 pythonpath_was_set = config.get('module_search_paths_set')
+stdlib_dir = config.get('stdlib_dir')
+stdlib_dir_was_set_in_config = bool(stdlib_dir)
 
 real_executable_dir = None
-stdlib_dir = None
 platstdlib_dir = None
 
 # ******************************************************************************
 # CALCULATE program_name
 # ******************************************************************************
-
-program_name_was_set = bool(program_name)
 
 if not program_name:
     try:
@@ -509,11 +508,12 @@ if ((not home_was_set and real_executable_dir and not py_setpath)
             build_stdlib_prefix = build_prefix
         else:
             build_stdlib_prefix = search_up(build_prefix, *BUILDSTDLIB_LANDMARKS)
-        # Always use the build prefix for stdlib
-        if build_stdlib_prefix:
-            stdlib_dir = joinpath(build_stdlib_prefix, 'Lib')
-        else:
-            stdlib_dir = joinpath(build_prefix, 'Lib')
+        # Use the build prefix for stdlib when not explicitly set
+        if not stdlib_dir_was_set_in_config:
+            if build_stdlib_prefix:
+                stdlib_dir = joinpath(build_stdlib_prefix, 'Lib')
+            else:
+                stdlib_dir = joinpath(build_prefix, 'Lib')
         # Only use the build prefix for prefix if it hasn't already been set
         if not prefix:
             prefix = build_stdlib_prefix
@@ -545,8 +545,9 @@ else:
         prefix, had_delim, exec_prefix = home.partition(DELIM)
         if not had_delim:
             exec_prefix = prefix
-        # Reset the standard library directory if it was already set
-        stdlib_dir = None
+        # Reset the standard library directory if it was not explicitly set
+        if not stdlib_dir_was_set_in_config:
+            stdlib_dir = None
 
 
     # First try to detect prefix by looking alongside our runtime library, if known
@@ -562,7 +563,8 @@ else:
         if STDLIB_SUBDIR and STDLIB_LANDMARKS and not prefix:
             if any(isfile(joinpath(library_dir, f)) for f in STDLIB_LANDMARKS):
                 prefix = library_dir
-                stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
+                if not stdlib_dir_was_set_in_config:
+                    stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
 
 
     # Detect prefix by looking for zip file
@@ -573,7 +575,7 @@ else:
                 prefix = executable_dir
         else:
             prefix = search_up(executable_dir, ZIP_LANDMARK)
-        if prefix:
+        if prefix and not stdlib_dir_was_set_in_config:
             stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
             if not isdir(stdlib_dir):
                 stdlib_dir = None
@@ -582,7 +584,7 @@ else:
     # Detect prefix by searching from our executable location for the stdlib_dir
     if STDLIB_SUBDIR and STDLIB_LANDMARKS and executable_dir and not prefix:
         prefix = search_up(executable_dir, *STDLIB_LANDMARKS)
-        if prefix:
+        if prefix and not stdlib_dir:
             stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
 
     if PREFIX and not prefix:
@@ -629,20 +631,6 @@ else:
 
     if not prefix or not exec_prefix:
         warn('Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]')
-
-
-# If we haven't set [plat]stdlib_dir already, set them now
-if not stdlib_dir:
-    if prefix:
-        stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
-    else:
-        stdlib_dir = ''
-
-if not platstdlib_dir:
-    if exec_prefix:
-        platstdlib_dir = joinpath(exec_prefix, PLATSTDLIB_LANDMARK)
-    else:
-        platstdlib_dir = ''
 
 
 # For a venv, update the main prefix/exec_prefix but leave the base ones unchanged
@@ -706,8 +694,9 @@ elif not pythonpath_was_set:
                             pythonpath.extend(v.split(DELIM))
                         i += 1
                     # Paths from the core key get appended last, but only
-                    # when home was not set and we aren't in a build dir
-                    if not home_was_set and not venv_prefix and not build_prefix:
+                    # when home was not set and we haven't found our stdlib
+                    # some other way.
+                    if not home and not stdlib_dir:
                         v = winreg.QueryValue(key, None)
                         if isinstance(v, str):
                             pythonpath.extend(v.split(DELIM))
@@ -722,6 +711,11 @@ elif not pythonpath_was_set:
             pythonpath.append(joinpath(prefix, p))
 
     # Then add stdlib_dir and platstdlib_dir
+    if not stdlib_dir and prefix:
+        stdlib_dir = joinpath(prefix, STDLIB_SUBDIR)
+    if not platstdlib_dir and exec_prefix:
+        platstdlib_dir = joinpath(exec_prefix, PLATSTDLIB_LANDMARK)
+
     if os_name == 'nt':
         # QUIRK: Windows generates paths differently
         if platstdlib_dir:
@@ -792,5 +786,6 @@ config['base_prefix'] = base_prefix or prefix
 config['base_exec_prefix'] = base_exec_prefix or exec_prefix
 
 config['platlibdir'] = platlibdir
-config['stdlib_dir'] = stdlib_dir
-config['platstdlib_dir'] = platstdlib_dir
+# test_embed expects empty strings, not None
+config['stdlib_dir'] = stdlib_dir or ''
+config['platstdlib_dir'] = platstdlib_dir or ''

@@ -6,7 +6,6 @@ import sys
 import traceback
 import types
 import functools
-import warnings
 
 from fnmatch import fnmatch, fnmatchcase
 
@@ -85,9 +84,13 @@ class TestLoader(object):
             raise TypeError("Test cases should not be derived from "
                             "TestSuite. Maybe you meant to derive from "
                             "TestCase?")
-        testCaseNames = self.getTestCaseNames(testCaseClass)
-        if not testCaseNames and hasattr(testCaseClass, 'runTest'):
-            testCaseNames = ['runTest']
+        if testCaseClass in (case.TestCase, case.FunctionTestCase):
+            # We don't load any tests from base types that should not be loaded.
+            testCaseNames = []
+        else:
+            testCaseNames = self.getTestCaseNames(testCaseClass)
+            if not testCaseNames and hasattr(testCaseClass, 'runTest'):
+                testCaseNames = ['runTest']
         loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return loaded_suite
 
@@ -96,7 +99,11 @@ class TestLoader(object):
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
-            if isinstance(obj, type) and issubclass(obj, case.TestCase):
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, case.TestCase)
+                and obj not in (case.TestCase, case.FunctionTestCase)
+            ):
                 tests.append(self.loadTestsFromTestCase(obj))
 
         load_tests = getattr(module, 'load_tests', None)
@@ -165,7 +172,11 @@ class TestLoader(object):
 
         if isinstance(obj, types.ModuleType):
             return self.loadTestsFromModule(obj)
-        elif isinstance(obj, type) and issubclass(obj, case.TestCase):
+        elif (
+            isinstance(obj, type)
+            and issubclass(obj, case.TestCase)
+            and obj not in (case.TestCase, case.FunctionTestCase)
+        ):
             return self.loadTestsFromTestCase(obj)
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and
@@ -438,47 +449,3 @@ class TestLoader(object):
 
 
 defaultTestLoader = TestLoader()
-
-
-# These functions are considered obsolete for long time.
-# They will be removed in Python 3.13.
-
-def _makeLoader(prefix, sortUsing, suiteClass=None, testNamePatterns=None):
-    loader = TestLoader()
-    loader.sortTestMethodsUsing = sortUsing
-    loader.testMethodPrefix = prefix
-    loader.testNamePatterns = testNamePatterns
-    if suiteClass:
-        loader.suiteClass = suiteClass
-    return loader
-
-def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp, testNamePatterns=None):
-    import warnings
-    warnings.warn(
-        "unittest.getTestCaseNames() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.getTestCaseNames() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _makeLoader(prefix, sortUsing, testNamePatterns=testNamePatterns).getTestCaseNames(testCaseClass)
-
-def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
-              suiteClass=suite.TestSuite):
-    import warnings
-    warnings.warn(
-        "unittest.makeSuite() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.loadTestsFromTestCase() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromTestCase(
-        testCaseClass)
-
-def findTestCases(module, prefix='test', sortUsing=util.three_way_cmp,
-                  suiteClass=suite.TestSuite):
-    import warnings
-    warnings.warn(
-        "unittest.findTestCases() is deprecated and will be removed in Python 3.13. "
-        "Please use unittest.TestLoader.loadTestsFromModule() instead.",
-        DeprecationWarning, stacklevel=2
-    )
-    return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromModule(\
-        module)
