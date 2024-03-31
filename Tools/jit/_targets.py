@@ -38,6 +38,7 @@ class _Target(typing.Generic[_S, _R]):
     _: dataclasses.KW_ONLY
     alignment: int = 1
     args: typing.Sequence[str] = ()
+    ghccc: bool = False
     prefix: str = ""
     debug: bool = False
     force: bool = False
@@ -85,7 +86,8 @@ class _Target(typing.Generic[_S, _R]):
         sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
-        assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
+        entry_symbol = "_JIT_ENTRY" if "_JIT_ENTRY" in group.symbols else "_ENTRY"
+        assert group.symbols[entry_symbol] == (_stencils.HoleValue.CODE, 0)
         if group.data.body:
             line = f"0: {str(bytes(group.data.body)).removeprefix('b')}"
             group.data.disassembly.append(line)
@@ -103,6 +105,8 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
+        if opname == "trampoline" and not self.ghccc:
+            return _stencils.StencilGroup()
         o = tempdir / f"{opname}.o"
         args = [
             f"--target={self.triple}",
@@ -130,13 +134,28 @@ class _Target(typing.Generic[_S, _R]):
             "-fno-plt",
             # Don't call stack-smashing canaries that we can't find or patch:
             "-fno-stack-protector",
-            "-o",
-            f"{o}",
             "-std=c11",
-            f"{c}",
             *self.args,
         ]
-        await _llvm.run("clang", args, echo=self.verbose)
+        if self.ghccc:
+            ll = tempdir / f"{opname}.ll"
+            args_ll = args + ["-S", "-emit-llvm", "-o", f"{ll}", f"{c}"]
+            await _llvm.run("clang", args_ll, echo=self.verbose)
+            ir = ll.read_text()
+            # Hack! Use __attribute__((preserve_none)) once we have Clang 19:
+            ir = re.sub(r"((noalias |nonnull )*ptr @_JIT_\w+\()", r"ghccc \1", ir)
+            for line in ir.splitlines():
+                if re.match(r"ptr @_JIT_\w+\(", line):
+                    assert re.match(r"ghccc (\w+ )*ptr @_JIT_\w+\(", line)
+            ir = re.sub(r"musttail call ([^g])", r"musttail call ghccc \1", ir)
+            for line in ir.splitlines():
+                if re.match(r"musttail", line):
+                    assert re.match(r"musttail call ghccc", line)
+            ll.write_text(ir)
+            args_o = args + ["-Wno-unused-command-line-argument", "-o", f"{o}", f"{ll}"]
+        else:
+            args_o = args + ["-o", f"{o}", f"{c}"]
+        await _llvm.run("clang", args_o, echo=self.verbose)
         return await self._parse(o)
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
@@ -146,6 +165,8 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
+                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
+                tasks.append(group.create_task(coro, name="trampoline"))
                 for opname in opnames:
                     coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
                     tasks.append(group.create_task(coro, name=opname))
@@ -456,12 +477,13 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         return _ELF(host, alignment=8, args=args)
     if re.fullmatch(r"i686-pc-windows-msvc", host):
         args = ["-DPy_NO_ENABLE_SHARED"]
-        return _COFF(host, args=args, prefix="_")
+        return _COFF(host, args=args, ghccc=True, prefix="_")
     if re.fullmatch(r"x86_64-apple-darwin.*", host):
-        return _MachO(host, prefix="_")
+        args = ["-fomit-frame-pointer"]
+        return _MachO(host, args=args, ghccc=True, prefix="_")
     if re.fullmatch(r"x86_64-pc-windows-msvc", host):
         args = ["-fms-runtime-lib=dll"]
-        return _COFF(host, args=args)
+        return _COFF(host, ghccc=True, args=args)
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        return _ELF(host)
+        return _ELF(host, ghccc=True)
     raise ValueError(host)

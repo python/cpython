@@ -1138,6 +1138,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 #endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
+    executor->jit_code_ghccc = NULL;
     executor->jit_size = 0;
     if (_PyJIT_Compile(executor, executor->trace, length)) {
         Py_DECREF(executor);
@@ -1168,6 +1169,7 @@ init_cold_exit_executor(_PyExecutorObject *executor, int oparg)
 #endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
+    executor->jit_code_ghccc = NULL;
     executor->jit_size = 0;
     if (_PyJIT_Compile(executor, executor->trace, 1)) {
         return -1;
