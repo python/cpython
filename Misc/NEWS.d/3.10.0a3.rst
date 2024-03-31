@@ -153,7 +153,7 @@ Allow an unparenthesized walrus in subscript indexes.
 .. section: Core and Builtins
 
 Make sure that the compiler front-end produces a well-formed control flow
-graph. Be be more aggressive in the compiler back-end, as it is now safe to
+graph. Be more aggressive in the compiler back-end, as it is now safe to
 do so.
 
 ..
@@ -247,8 +247,8 @@ fixes union type expressions not de-duplicating ``GenericAlias`` objects.
 .. nonce: B-Veg7
 .. section: Core and Builtins
 
-The import system triggers a `ImportWarning` when it falls back to using
-`load_module()`.
+The import system triggers a ``ImportWarning`` when it falls back to using
+``load_module()``.
 
 ..
 
@@ -394,7 +394,7 @@ Removed the ``formatter`` module, which was deprecated in Python 3.4. It is
 somewhat obsolete, little used, and not tested. It was originally scheduled
 to be removed in Python 3.6, but such removals were delayed until after
 Python 2.7 EOL. Existing users should copy whatever classes they use into
-their code. Patch by Dong-hee Na and and Terry J. Reedy.
+their code. Patch by Donghee Na and and Terry J. Reedy.
 
 ..
 
@@ -464,8 +464,8 @@ Support signal module on VxWorks.
 .. nonce: r9rNCj
 .. section: Library
 
-We fixed an issue in `pickle.whichmodule` in which importing
-`multiprocessing` could change the how pickle identifies which module an
+We fixed an issue in ``pickle.whichmodule`` in which importing
+``multiprocessing`` could change the how pickle identifies which module an
 object belongs to, potentially breaking the unpickling of those objects.
 
 ..
@@ -602,7 +602,7 @@ function when ``os.open`` fails.
 .. nonce: F363jO
 .. section: Library
 
-Fix `os.sendfile()` on illumos.
+Fix ``os.sendfile()`` on illumos.
 
 ..
 
@@ -718,8 +718,8 @@ Improve asyncio.wait function to create the futures set just one time.
 .. nonce: BzizYV
 .. section: Library
 
-Update various modules in the stdlib to fall back on `__spec__.loader` when
-`__loader__` isn't defined on a module.
+Update various modules in the stdlib to fall back on ``__spec__.loader`` when
+``__loader__`` isn't defined on a module.
 
 ..
 
@@ -728,8 +728,8 @@ Update various modules in the stdlib to fall back on `__spec__.loader` when
 .. nonce: CAsI3O
 .. section: Library
 
-The `load_module()` methods found in importlib now trigger a
-DeprecationWarning.
+The ``load_module()`` methods found in ``importlib`` now trigger a
+``DeprecationWarning``.
 
 ..
 
@@ -763,7 +763,7 @@ as a positional-only argument.
 .. nonce: qLkNh8
 .. section: Library
 
-Enum: fix regression involving inheriting a multiply-inherited enum
+Enum: fix regression involving inheriting a multiply inherited enum
 
 ..
 
@@ -872,7 +872,7 @@ extension during TLS handshake when no custom context is supplied.
 .. nonce: 5mi7b0
 .. section: Library
 
-Add func:`os.eventfd` to provide a low level interface for Linux's event
+Add :func:`os.eventfd` to provide a low level interface for Linux's event
 notification file descriptor.
 
 ..
@@ -949,7 +949,7 @@ branches, are now handled by docsbuild-script.
 .. nonce: W_updK
 .. section: Tests
 
-Reenable test_gdb on gdb 9.2 and newer:
+Re-enable test_gdb on gdb 9.2 and newer:
 https://bugzilla.redhat.com/show_bug.cgi?id=1866884 bug is fixed in gdb
 10.1.
 
@@ -1296,7 +1296,7 @@ Port _struct extension module to multiphase initialization (:pep:`489`)
 .. nonce: 6F9o6L
 .. section: C API
 
-Port :mod:`spwd` extension module to multiphase initialization (:pep:`489`)
+Port :mod:`!spwd` extension module to multiphase initialization (:pep:`489`)
 
 ..
 
@@ -1466,7 +1466,7 @@ success. Patch by Victor Stinner.
 .. nonce: S3FWTP
 .. section: C API
 
-The :c:data:`METH_FASTCALL` calling convention is added to the limited API.
+The :c:macro:`METH_FASTCALL` calling convention is added to the limited API.
 The functions  :c:func:`PyModule_AddType`,
 :c:func:`PyType_FromModuleAndSpec`, :c:func:`PyType_GetModule` and
 :c:func:`PyType_GetModuleState` are added to the limited API on Windows.

@@ -18,7 +18,7 @@ __all__ = [
     'b64encode', 'b64decode', 'b32encode', 'b32decode',
     'b32hexencode', 'b32hexdecode', 'b16encode', 'b16decode',
     # Base85 and Ascii85 encodings
-    'b85encode', 'b85decode', 'a85encode', 'a85decode',
+    'b85encode', 'b85decode', 'a85encode', 'a85decode', 'z85encode', 'z85decode',
     # Standard Base64 encoding
     'standard_b64encode', 'standard_b64decode',
     # Some common Base64 alternatives.  As referenced by RFC 3458, see thread
@@ -76,15 +76,16 @@ def b64decode(s, altchars=None, validate=False):
     normal base-64 alphabet nor the alternative alphabet are discarded prior
     to the padding check.  If validate is True, these non-alphabet characters
     in the input result in a binascii.Error.
+    For more information about the strict base64 check, see:
+
+    https://docs.python.org/3.11/library/binascii.html#binascii.a2b_base64
     """
     s = _bytes_from_decode_data(s)
     if altchars is not None:
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    if validate and not re.fullmatch(b'[A-Za-z0-9+/]*={0,2}', s):
-        raise binascii.Error('Non-base64 digit found')
-    return binascii.a2b_base64(s)
+    return binascii.a2b_base64(s, strict_mode=validate)
 
 
 def standard_b64encode(s):
@@ -163,7 +164,6 @@ _b32tab2 = {}
 _b32rev = {}
 
 def _b32encode(alphabet, s):
-    global _b32tab2
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32tab2:
@@ -181,7 +181,7 @@ def _b32encode(alphabet, s):
     from_bytes = int.from_bytes
     b32tab2 = _b32tab2[alphabet]
     for i in range(0, len(s), 5):
-        c = from_bytes(s[i: i + 5], 'big')
+        c = from_bytes(s[i: i + 5])              # big endian
         encoded += (b32tab2[c >> 30] +           # bits 1 - 10
                     b32tab2[(c >> 20) & 0x3ff] + # bits 11 - 20
                     b32tab2[(c >> 10) & 0x3ff] + # bits 21 - 30
@@ -199,7 +199,6 @@ def _b32encode(alphabet, s):
     return bytes(encoded)
 
 def _b32decode(alphabet, s, casefold=False, map01=None):
-    global _b32rev
     # Delay the initialization of the table to not waste memory
     # if the function is never called
     if alphabet not in _b32rev:
@@ -233,13 +232,13 @@ def _b32decode(alphabet, s, casefold=False, map01=None):
                 acc = (acc << 5) + b32rev[c]
         except KeyError:
             raise binascii.Error('Non-base32 digit found') from None
-        decoded += acc.to_bytes(5, 'big')
+        decoded += acc.to_bytes(5)  # big endian
     # Process the last, partial quanta
     if l % 8 or padchars not in {0, 1, 3, 4, 6}:
         raise binascii.Error('Incorrect padding')
     if padchars and decoded:
         acc <<= 5 * padchars
-        last = acc.to_bytes(5, 'big')
+        last = acc.to_bytes(5)  # big endian
         leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
         decoded[-5:] = last[:leftover]
     return bytes(decoded)
@@ -498,6 +497,33 @@ def b85decode(b):
         result = result[:-padding]
     return result
 
+_z85alphabet = (b'0123456789abcdefghijklmnopqrstuvwxyz'
+                b'ABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
+# Translating b85 valid but z85 invalid chars to b'\x00' is required
+# to prevent them from being decoded as b85 valid chars.
+_z85_b85_decode_diff = b';_`|~'
+_z85_decode_translation = bytes.maketrans(
+    _z85alphabet + _z85_b85_decode_diff,
+    _b85alphabet + b'\x00' * len(_z85_b85_decode_diff)
+)
+_z85_encode_translation = bytes.maketrans(_b85alphabet, _z85alphabet)
+
+def z85encode(s):
+    """Encode bytes-like object b in z85 format and return a bytes object."""
+    return b85encode(s).translate(_z85_encode_translation)
+
+def z85decode(s):
+    """Decode the z85-encoded bytes-like object or ASCII string b
+
+    The result is returned as a bytes object.
+    """
+    s = _bytes_from_decode_data(s)
+    s = s.translate(_z85_decode_translation)
+    try:
+        return b85decode(s)
+    except ValueError as e:
+        raise ValueError(e.args[0].replace('base85', 'z85')) from None
+
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it
 # though.  The files should be opened in binary mode.
@@ -507,14 +533,8 @@ MAXBINSIZE = (MAXLINESIZE//4)*3
 
 def encode(input, output):
     """Encode a file; input and output are binary files."""
-    while True:
-        s = input.read(MAXBINSIZE)
-        if not s:
-            break
-        while len(s) < MAXBINSIZE:
-            ns = input.read(MAXBINSIZE-len(s))
-            if not ns:
-                break
+    while s := input.read(MAXBINSIZE):
+        while len(s) < MAXBINSIZE and (ns := input.read(MAXBINSIZE-len(s))):
             s += ns
         line = binascii.b2a_base64(s)
         output.write(line)
@@ -522,10 +542,7 @@ def encode(input, output):
 
 def decode(input, output):
     """Decode a file; input and output are binary files."""
-    while True:
-        line = input.readline()
-        if not line:
-            break
+    while line := input.readline():
         s = binascii.a2b_base64(line)
         output.write(s)
 
@@ -566,37 +583,28 @@ def decodebytes(s):
 def main():
     """Small main program"""
     import sys, getopt
+    usage = f"""usage: {sys.argv[0]} [-h|-d|-e|-u] [file|-]
+        -h: print this help message and exit
+        -d, -u: decode
+        -e: encode (default)"""
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'deut')
+        opts, args = getopt.getopt(sys.argv[1:], 'hdeu')
     except getopt.error as msg:
         sys.stdout = sys.stderr
         print(msg)
-        print("""usage: %s [-d|-e|-u|-t] [file|-]
-        -d, -u: decode
-        -e: encode (default)
-        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0])
+        print(usage)
         sys.exit(2)
     func = encode
     for o, a in opts:
         if o == '-e': func = encode
         if o == '-d': func = decode
         if o == '-u': func = decode
-        if o == '-t': test(); return
+        if o == '-h': print(usage); return
     if args and args[0] != '-':
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)
     else:
         func(sys.stdin.buffer, sys.stdout.buffer)
-
-
-def test():
-    s0 = b"Aladdin:open sesame"
-    print(repr(s0))
-    s1 = encodebytes(s0)
-    print(repr(s1))
-    s2 = decodebytes(s1)
-    print(repr(s2))
-    assert s0 == s2
 
 
 if __name__ == '__main__':

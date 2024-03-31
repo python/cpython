@@ -392,7 +392,8 @@ class LongTest(unittest.TestCase):
                 return 42
             def __trunc__(self):
                 return 1729
-        self.assertEqual(int(LongTrunc()), 1729)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(int(LongTrunc()), 1729)
 
     def check_float_conversion(self, n):
         # Check that int -> float conversion behaviour matches
@@ -946,8 +947,13 @@ class LongTest(unittest.TestCase):
         self.assertEqual(1 << (sys.maxsize + 1000), 1 << 1000 << sys.maxsize)
 
     def test_huge_rshift(self):
-        self.assertEqual(42 >> (1 << 1000), 0)
-        self.assertEqual((-42) >> (1 << 1000), -1)
+        huge_shift = 1 << 1000
+        self.assertEqual(42 >> huge_shift, 0)
+        self.assertEqual((-42) >> huge_shift, -1)
+        self.assertEqual(1123 >> huge_shift, 0)
+        self.assertEqual((-1123) >> huge_shift, -1)
+        self.assertEqual(2**128 >> huge_shift, 0)
+        self.assertEqual(-2**128 >> huge_shift, -1)
 
     @support.cpython_only
     @support.bigmemtest(sys.maxsize + 500, memuse=2/15, dry_run=False)
@@ -956,6 +962,64 @@ class LongTest(unittest.TestCase):
         self.assertEqual(huge >> (sys.maxsize + 1), (1 << 499) + 5)
         self.assertEqual(huge >> (sys.maxsize + 1000), 0)
 
+    def test_small_rshift(self):
+        self.assertEqual(42 >> 1, 21)
+        self.assertEqual((-42) >> 1, -21)
+        self.assertEqual(43 >> 1, 21)
+        self.assertEqual((-43) >> 1, -22)
+
+        self.assertEqual(1122 >> 1, 561)
+        self.assertEqual((-1122) >> 1, -561)
+        self.assertEqual(1123 >> 1, 561)
+        self.assertEqual((-1123) >> 1, -562)
+
+        self.assertEqual(2**128 >> 1, 2**127)
+        self.assertEqual(-2**128 >> 1, -2**127)
+        self.assertEqual((2**128 + 1) >> 1, 2**127)
+        self.assertEqual(-(2**128 + 1) >> 1, -2**127 - 1)
+
+    def test_medium_rshift(self):
+        self.assertEqual(42 >> 9, 0)
+        self.assertEqual((-42) >> 9, -1)
+        self.assertEqual(1122 >> 9, 2)
+        self.assertEqual((-1122) >> 9, -3)
+        self.assertEqual(2**128 >> 9, 2**119)
+        self.assertEqual(-2**128 >> 9, -2**119)
+        # Exercise corner case of the current algorithm, where the result of
+        # shifting a two-limb int by the limb size still has two limbs.
+        self.assertEqual((1 - BASE*BASE) >> SHIFT, -BASE)
+        self.assertEqual((BASE - 1 - BASE*BASE) >> SHIFT, -BASE)
+
+    def test_big_rshift(self):
+        self.assertEqual(42 >> 32, 0)
+        self.assertEqual((-42) >> 32, -1)
+        self.assertEqual(1122 >> 32, 0)
+        self.assertEqual((-1122) >> 32, -1)
+        self.assertEqual(2**128 >> 32, 2**96)
+        self.assertEqual(-2**128 >> 32, -2**96)
+
+    def test_small_lshift(self):
+        self.assertEqual(42 << 1, 84)
+        self.assertEqual((-42) << 1, -84)
+        self.assertEqual(561 << 1, 1122)
+        self.assertEqual((-561) << 1, -1122)
+        self.assertEqual(2**127 << 1, 2**128)
+        self.assertEqual(-2**127 << 1, -2**128)
+
+    def test_medium_lshift(self):
+        self.assertEqual(42 << 9, 21504)
+        self.assertEqual((-42) << 9, -21504)
+        self.assertEqual(1122 << 9, 574464)
+        self.assertEqual((-1122) << 9, -574464)
+
+    def test_big_lshift(self):
+        self.assertEqual(42 << 32, 42 * 2**32)
+        self.assertEqual((-42) << 32, -42 * 2**32)
+        self.assertEqual(1122 << 32, 1122 * 2**32)
+        self.assertEqual((-1122) << 32, -1122 * 2**32)
+        self.assertEqual(2**128 << 32, 2**160)
+        self.assertEqual(-2**128 << 32, -2**160)
+
     @support.cpython_only
     def test_small_ints_in_huge_calculation(self):
         a = 2 ** 100
@@ -963,6 +1027,48 @@ class LongTest(unittest.TestCase):
         c = a + 1
         self.assertIs(a + b, 1)
         self.assertIs(c - a, 1)
+
+    @support.cpython_only
+    def test_pow_uses_cached_small_ints(self):
+        self.assertIs(pow(10, 3, 998), 2)
+        self.assertIs(10 ** 3 % 998, 2)
+        a, p, m = 10, 3, 998
+        self.assertIs(a ** p % m, 2)
+
+        self.assertIs(pow(2, 31, 2 ** 31 - 1), 1)
+        self.assertIs(2 ** 31 % (2 ** 31 - 1), 1)
+        a, p, m = 2, 31, 2 ** 31 - 1
+        self.assertIs(a ** p % m, 1)
+
+        self.assertIs(pow(2, 100, 2**100 - 3), 3)
+        self.assertIs(2 ** 100 % (2 ** 100 - 3), 3)
+        a, p, m = 2, 100, 2**100 - 3
+        self.assertIs(a ** p % m, 3)
+
+    @support.cpython_only
+    def test_divmod_uses_cached_small_ints(self):
+        big = 10 ** 100
+
+        self.assertIs((big + 1) % big, 1)
+        self.assertIs((big + 1) // big, 1)
+        self.assertIs(big // (big // 2), 2)
+        self.assertIs(big // (big // -4), -4)
+
+        q, r = divmod(2 * big + 3, big)
+        self.assertIs(q, 2)
+        self.assertIs(r, 3)
+
+        q, r = divmod(-4 * big + 100, big)
+        self.assertIs(q, -4)
+        self.assertIs(r, 100)
+
+        q, r = divmod(3 * (-big) - 1, -big)
+        self.assertIs(q, 3)
+        self.assertIs(r, -1)
+
+        q, r = divmod(3 * big - 1, -big)
+        self.assertIs(q, -3)
+        self.assertIs(r, -1)
 
     def test_small_ints(self):
         for i in range(-5, 257):
@@ -1103,6 +1209,13 @@ class LongTest(unittest.TestCase):
 
     def test_to_bytes(self):
         def check(tests, byteorder, signed=False):
+            def equivalent_python(n, length, byteorder, signed=False):
+                if byteorder == 'little':
+                    order = range(length)
+                elif byteorder == 'big':
+                    order = reversed(range(length))
+                return bytes((n >> i*8) & 0xff for i in order)
+
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
@@ -1110,8 +1223,29 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1} and signed={2}"
+                        "failed to convert {} with byteorder={} and signed={}"
                         .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if len(expected) == 1 and byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(test.to_bytes(), expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
+
+                try:
+                    self.assertEqual(
+                        equivalent_python(
+                            test, len(expected), byteorder, signed=signed),
+                        expected
+                    )
+                except Exception as err:
+                    raise AssertionError(
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder byteorder={1} and "
+                        "signed={2}".format(test, byteorder, signed)) from err
 
         # Convert integers to signed big-endian byte arrays.
         tests1 = {
@@ -1200,8 +1334,26 @@ class LongTest(unittest.TestCase):
                          b'\xff\xff\xff\xff\xff')
         self.assertRaises(OverflowError, (1).to_bytes, 0, 'big')
 
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual((0).to_bytes(1, SubStr('big')), b'\x00')
+        self.assertEqual((0).to_bytes(0, SubStr('little')), b'')
+
     def test_from_bytes(self):
         def check(tests, byteorder, signed=False):
+            def equivalent_python(byte_array, byteorder, signed=False):
+                if byteorder == 'little':
+                    little_ordered = list(byte_array)
+                elif byteorder == 'big':
+                    little_ordered = list(reversed(byte_array))
+
+                n = sum(b << i*8 for i, b in enumerate(little_ordered))
+                if signed and little_ordered and (little_ordered[-1] & 0x80):
+                    n -= 1 << 8*len(little_ordered)
+
+                return n
+
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
@@ -1209,7 +1361,29 @@ class LongTest(unittest.TestCase):
                         expected)
                 except Exception as err:
                     raise AssertionError(
-                        "failed to convert {0} with byteorder={1!r} and signed={2}"
+                        "failed to convert {} with byteorder={!r} and signed={}"
+                        .format(test, byteorder, signed)) from err
+
+                # Test for all default arguments.
+                if byteorder == 'big' and not signed:
+                    try:
+                        self.assertEqual(
+                            int.from_bytes(test),
+                            expected)
+                    except Exception as err:
+                        raise AssertionError(
+                            "failed to convert {} with default arguments"
+                            .format(test)) from err
+
+                try:
+                    self.assertEqual(
+                        equivalent_python(test, byteorder, signed=signed),
+                        expected
+                    )
+                except Exception as err:
+                    raise AssertionError(
+                        "Code equivalent from docs is not equivalent for "
+                        "conversion of {0} with byteorder={1!r} and signed={2}"
                         .format(test, byteorder, signed)) from err
 
         # Convert signed big-endian byte arrays to integers.
@@ -1350,6 +1524,40 @@ class LongTest(unittest.TestCase):
         self.assertEqual(i, 1)
         self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
 
+        class ValidBytes:
+            def __bytes__(self):
+                return b'\x01'
+        class InvalidBytes:
+            def __bytes__(self):
+                return 'abc'
+        class MissingBytes: ...
+        class RaisingBytes:
+            def __bytes__(self):
+                1 / 0
+
+        self.assertEqual(int.from_bytes(ValidBytes()), 1)
+        self.assertRaises(TypeError, int.from_bytes, InvalidBytes())
+        self.assertRaises(TypeError, int.from_bytes, MissingBytes())
+        self.assertRaises(ZeroDivisionError, int.from_bytes, RaisingBytes())
+
+        # gh-98783
+        class SubStr(str):
+            pass
+        self.assertEqual(int.from_bytes(b'', SubStr('big')), 0)
+        self.assertEqual(int.from_bytes(b'\x00', SubStr('little')), 0)
+
+    @support.cpython_only
+    def test_from_bytes_small(self):
+        # bpo-46361
+        for i in range(-5, 257):
+            b = i.to_bytes(2, signed=True)
+            self.assertIs(int.from_bytes(b, signed=True), i)
+
+    def test_is_integer(self):
+        self.assertTrue((-1).is_integer())
+        self.assertTrue((0).is_integer())
+        self.assertTrue((1).is_integer())
+
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that
         # ob_digit[0] was being incorrectly accessed for instances of a
@@ -1380,6 +1588,56 @@ class LongTest(unittest.TestCase):
             self.assertEqual((numerator, denominator), (int(value), 1))
             self.assertEqual(type(numerator), int)
             self.assertEqual(type(denominator), int)
+
+    def test_square(self):
+        # Multiplication makes a special case of multiplying an int with
+        # itself, using a special, faster algorithm. This test is mostly
+        # to ensure that no asserts in the implementation trigger, in
+        # cases with a maximal amount of carries.
+        for bitlen in range(1, 400):
+            n = (1 << bitlen) - 1 # solid string of 1 bits
+            with self.subTest(bitlen=bitlen, n=n):
+                # (2**i - 1)**2 = 2**(2*i) - 2*2**i + 1
+                self.assertEqual(n**2,
+                    (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)
+
+    def test___sizeof__(self):
+        self.assertEqual(int.__itemsize__, sys.int_info.sizeof_digit)
+
+        # Pairs (test_value, number of allocated digits)
+        test_values = [
+            # We always allocate space for at least one digit, even for
+            # a value of zero; sys.getsizeof should reflect that.
+            (0, 1),
+            (1, 1),
+            (-1, 1),
+            (BASE-1, 1),
+            (1-BASE, 1),
+            (BASE, 2),
+            (-BASE, 2),
+            (BASE*BASE - 1, 2),
+            (BASE*BASE, 3),
+        ]
+
+        for value, ndigits in test_values:
+            with self.subTest(value):
+                self.assertEqual(
+                    value.__sizeof__(),
+                    int.__basicsize__ + int.__itemsize__ * ndigits
+                )
+
+        # Same test for a subclass of int.
+        class MyInt(int):
+            pass
+
+        self.assertEqual(MyInt.__itemsize__, sys.int_info.sizeof_digit)
+
+        for value, ndigits in test_values:
+            with self.subTest(value):
+                self.assertEqual(
+                    MyInt(value).__sizeof__(),
+                    MyInt.__basicsize__ + MyInt.__itemsize__ * ndigits
+                )
 
 
 if __name__ == "__main__":

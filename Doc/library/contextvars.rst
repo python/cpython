@@ -94,7 +94,7 @@ Context Variables
           # var.get() would raise a LookupError.
 
 
-.. class:: contextvars.Token
+.. class:: Token
 
    *Token* objects are returned by the :meth:`ContextVar.set` method.
    They can be passed to the :meth:`ContextVar.reset` method to revert
@@ -110,7 +110,7 @@ Context Variables
 
       A read-only property.  Set to the value the variable had before
       the :meth:`ContextVar.set` method call that created the token.
-      It points to :attr:`Token.MISSING` is the variable was not set
+      It points to :attr:`Token.MISSING` if the variable was not set
       before the call.
 
    .. attribute:: Token.MISSING
@@ -131,7 +131,7 @@ Manual Context Management
       ctx: Context = copy_context()
       print(list(ctx.items()))
 
-   The function has an O(1) complexity, i.e. works equally fast for
+   The function has an *O*\ (1) complexity, i.e. works equally fast for
    contexts with a few context variables and for contexts that have
    a lot of them.
 
@@ -143,6 +143,11 @@ Manual Context Management
    ``Context()`` creates an empty context with no values in it.
    To get a copy of the current context use the
    :func:`~contextvars.copy_context` function.
+
+   Every thread will have a different top-level :class:`~contextvars.Context`
+   object. This means that a :class:`ContextVar` object behaves in a similar
+   fashion to :func:`threading.local()` when values are assigned in different
+   threads.
 
    Context implements the :class:`collections.abc.Mapping` interface.
 

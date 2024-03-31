@@ -5,19 +5,16 @@ import sys
 import tempfile
 import tokenize
 
-import tkinter.filedialog as tkFileDialog
-import tkinter.messagebox as tkMessageBox
-from tkinter.simpledialog import askstring
+from tkinter import filedialog
+from tkinter import messagebox
+from tkinter.simpledialog import askstring  # loadfile encoding.
 
-import idlelib
 from idlelib.config import idleConf
+from idlelib.util import py_extensions
 
+py_extensions = ' '.join("*"+ext for ext in py_extensions)
 encoding = 'utf-8'
-if sys.platform == 'win32':
-    errors = 'surrogatepass'
-else:
-    errors = 'surrogateescape'
-
+errors = 'surrogatepass' if sys.platform == 'win32' else 'surrogateescape'
 
 
 class IOBinding:
@@ -147,10 +144,10 @@ class IOBinding:
                     eol_convention = f.newlines
                     converted = True
         except OSError as err:
-            tkMessageBox.showerror("I/O Error", str(err), parent=self.text)
+            messagebox.showerror("I/O Error", str(err), parent=self.text)
             return False
         except UnicodeDecodeError:
-            tkMessageBox.showerror("Decoding Error",
+            messagebox.showerror("Decoding Error",
                                    "File %s\nFailed to Decode" % filename,
                                    parent=self.text)
             return False
@@ -159,7 +156,7 @@ class IOBinding:
             # If the file does not contain line separators, it is None.
             # If the file contains mixed line separators, it is a tuple.
             if eol_convention is not None:
-                tkMessageBox.showwarning("Mixed Newlines",
+                messagebox.showwarning("Mixed Newlines",
                                          "Mixed newlines detected.\n"
                                          "The file will be changed on save.",
                                          parent=self.text)
@@ -183,24 +180,25 @@ class IOBinding:
         return True
 
     def maybesave(self):
+        """Return 'yes', 'no', 'cancel' as appropriate.
+
+        Tkinter messagebox.askyesnocancel converts these tk responses
+        to True, False, None.  Convert back, as now expected elsewhere.
+        """
         if self.get_saved():
             return "yes"
-        message = "Do you want to save %s before closing?" % (
-            self.filename or "this untitled document")
-        confirm = tkMessageBox.askyesnocancel(
+        message = ("Do you want to save "
+                   f"{self.filename or 'this untitled document'}"
+                   " before closing?")
+        confirm = messagebox.askyesnocancel(
                   title="Save On Close",
                   message=message,
-                  default=tkMessageBox.YES,
+                  default=messagebox.YES,
                   parent=self.text)
         if confirm:
-            reply = "yes"
             self.save(None)
-            if not self.get_saved():
-                reply = "cancel"
-        elif confirm is None:
-            reply = "cancel"
-        else:
-            reply = "no"
+            reply = "yes" if self.get_saved() else "cancel"
+        else:  reply = "cancel" if confirm is None else "no"
         self.text.focus_set()
         return reply
 
@@ -249,16 +247,22 @@ class IOBinding:
                 os.fsync(f.fileno())
             return True
         except OSError as msg:
-            tkMessageBox.showerror("I/O Error", str(msg),
+            messagebox.showerror("I/O Error", str(msg),
                                    parent=self.text)
             return False
 
     def fixnewlines(self):
-        "Return text with final \n if needed and os eols."
-        if (self.text.get("end-2c") != '\n'
-            and not hasattr(self.editwin, "interp")):  # Not shell.
-            self.text.insert("end-1c", "\n")
-        text = self.text.get("1.0", "end-1c")
+        """Return text with os eols.
+
+        Add prompts if shell else final \n if missing.
+        """
+
+        if hasattr(self.editwin, "interp"):  # Saving shell.
+            text = self.editwin.get_prompt_text('1.0', self.text.index('end-1c'))
+        else:
+            if self.text.get("end-2c") != '\n':
+                self.text.insert("end-1c", "\n")  # Changes 'end-1c' value.
+            text = self.text.get('1.0', "end-1c")
         if self.eol_convention != "\n":
             text = text.replace("\n", self.eol_convention)
         return text
@@ -286,7 +290,7 @@ class IOBinding:
             failed = str(err)
         except UnicodeEncodeError:
             failed = "Invalid encoding '%s'" % enc
-        tkMessageBox.showerror(
+        messagebox.showerror(
             "I/O Error",
             "%s.\nSaving as UTF-8" % failed,
             parent=self.text)
@@ -295,10 +299,10 @@ class IOBinding:
         return chars.encode('utf-8-sig')
 
     def print_window(self, event):
-        confirm = tkMessageBox.askokcancel(
+        confirm = messagebox.askokcancel(
                   title="Print",
                   message="Print to Default Printer",
-                  default=tkMessageBox.OK,
+                  default=messagebox.OK,
                   parent=self.text)
         if not confirm:
             self.text.focus_set()
@@ -336,10 +340,10 @@ class IOBinding:
                          status + output
             if output:
                 output = "Printing command: %s\n" % repr(command) + output
-                tkMessageBox.showerror("Print status", output, parent=self.text)
+                messagebox.showerror("Print status", output, parent=self.text)
         else:  #no printing for this platform
             message = "Printing is not enabled for this platform: %s" % platform
-            tkMessageBox.showinfo("Print status", message, parent=self.text)
+            messagebox.showinfo("Print status", message, parent=self.text)
         if tempfilename:
             os.unlink(tempfilename)
         return "break"
@@ -348,7 +352,7 @@ class IOBinding:
     savedialog = None
 
     filetypes = (
-        ("Python files", "*.py *.pyw", "TEXT"),
+        ("Python files", py_extensions, "TEXT"),
         ("Text files", "*.txt", "TEXT"),
         ("All files", "*"),
         )
@@ -358,7 +362,7 @@ class IOBinding:
     def askopenfile(self):
         dir, base = self.defaultfilename("open")
         if not self.opendialog:
-            self.opendialog = tkFileDialog.Open(parent=self.text,
+            self.opendialog = filedialog.Open(parent=self.text,
                                                 filetypes=self.filetypes)
         filename = self.opendialog.show(initialdir=dir, initialfile=base)
         return filename
@@ -378,7 +382,7 @@ class IOBinding:
     def asksavefile(self):
         dir, base = self.defaultfilename("save")
         if not self.savedialog:
-            self.savedialog = tkFileDialog.SaveAs(
+            self.savedialog = filedialog.SaveAs(
                     parent=self.text,
                     filetypes=self.filetypes,
                     defaultextension=self.defaultextension)
@@ -390,13 +394,15 @@ class IOBinding:
         if self.editwin.flist:
             self.editwin.update_recent_files_list(filename)
 
+
 def _io_binding(parent):  # htest #
     from tkinter import Toplevel, Text
 
-    root = Toplevel(parent)
-    root.title("Test IOBinding")
+    top = Toplevel(parent)
+    top.title("Test IOBinding")
     x, y = map(int, parent.geometry().split('+')[1:])
-    root.geometry("+%d+%d" % (x, y + 175))
+    top.geometry("+%d+%d" % (x, y + 175))
+
     class MyEditWin:
         def __init__(self, text):
             self.text = text
@@ -420,11 +426,12 @@ def _io_binding(parent):  # htest #
         def savecopy(self, event):
             self.text.event_generate("<<save-copy-of-window-as-file>>")
 
-    text = Text(root)
+    text = Text(top)
     text.pack()
     text.focus_set()
     editwin = MyEditWin(text)
     IOBinding(editwin)
+
 
 if __name__ == "__main__":
     from unittest import main

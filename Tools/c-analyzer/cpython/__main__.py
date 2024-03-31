@@ -1,7 +1,7 @@
 import logging
 import sys
+import textwrap
 
-from c_common.fsutil import expand_filenames, iter_files_by_suffix
 from c_common.scriptutil import (
     VERBOSITY,
     add_verbosity_cli,
@@ -10,7 +10,6 @@ from c_common.scriptutil import (
     add_kind_filtering_cli,
     add_files_cli,
     add_progress_cli,
-    main_for_filenames,
     process_args_by_key,
     configure_logger,
     get_prog,
@@ -20,10 +19,43 @@ import c_parser.__main__ as c_parser
 import c_analyzer.__main__ as c_analyzer
 import c_analyzer as _c_analyzer
 from c_analyzer.info import UNKNOWN
-from . import _analyzer, _capi, _files, _parser, REPO_ROOT
+from . import _analyzer, _builtin_types, _capi, _files, _parser, REPO_ROOT
 
 
 logger = logging.getLogger(__name__)
+
+
+CHECK_EXPLANATION = textwrap.dedent('''
+    -------------------------
+
+    Non-constant global variables are generally not supported
+    in the CPython repo.  We use a tool to analyze the C code
+    and report if any unsupported globals are found.  The tool
+    may be run manually with:
+
+      ./python Tools/c-analyzer/check-c-globals.py --format summary [FILE]
+
+    Occasionally the tool is unable to parse updated code.
+    If this happens then add the file to the "EXCLUDED" list
+    in Tools/c-analyzer/cpython/_parser.py and create a new
+    issue for fixing the tool (and CC ericsnowcurrently
+    on the issue).
+
+    If the tool reports an unsupported global variable and
+    it is actually const (and thus supported) then first try
+    fixing the declaration appropriately in the code.  If that
+    doesn't work then add the variable to the "should be const"
+    section of Tools/c-analyzer/cpython/ignored.tsv.
+
+    If the tool otherwise reports an unsupported global variable
+    then first try to make it non-global, possibly adding to
+    PyInterpreterState (for core code) or module state (for
+    extension modules).  In an emergency, you can add the
+    variable to Tools/c-analyzer/cpython/globals-to-fix.tsv
+    to get CI passing, but doing so should be avoided.  If
+    this course it taken, be sure to create an issue for
+    eliminating the global (and CC ericsnowcurrently).
+''')
 
 
 def _resolve_filenames(filenames):
@@ -111,6 +143,7 @@ def cmd_parse(filenames=None, **kwargs):
     c_parser.cmd_parse(
         filenames,
         relroot=REPO_ROOT,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -122,13 +155,26 @@ def _cli_check(parser, **kwargs):
 def cmd_check(filenames=None, **kwargs):
     filenames = _resolve_filenames(filenames)
     kwargs['get_file_preprocessor'] = _parser.get_preprocessor(log_err=print)
-    c_analyzer.cmd_check(
-        filenames,
-        relroot=REPO_ROOT,
-        _analyze=_analyzer.analyze,
-        _CHECKS=CHECKS,
-        **kwargs
-    )
+    try:
+        c_analyzer.cmd_check(
+            filenames,
+            relroot=REPO_ROOT,
+            _analyze=_analyzer.analyze,
+            _CHECKS=CHECKS,
+            file_maxsizes=_parser.MAX_SIZES,
+            **kwargs
+        )
+    except SystemExit as exc:
+        num_failed = exc.args[0] if getattr(exc, 'args', None) else None
+        if isinstance(num_failed, int):
+            if num_failed > 0:
+                sys.stderr.flush()
+                print(CHECK_EXPLANATION, flush=True)
+        raise  # re-raise
+    except Exception:
+        sys.stderr.flush()
+        print(CHECK_EXPLANATION, flush=True)
+        raise  # re-raise
 
 
 def cmd_analyze(filenames=None, **kwargs):
@@ -141,6 +187,7 @@ def cmd_analyze(filenames=None, **kwargs):
         relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
         formats=formats,
+        file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
 
@@ -322,6 +369,47 @@ def cmd_capi(filenames=None, *,
         print(line)
 
 
+def _cli_builtin_types(parser):
+    parser.add_argument('--format', dest='fmt', default='table')
+#    parser.add_argument('--summary', dest='format',
+#                        action='store_const', const='summary')
+    def process_format(args, *, argv=None):
+        orig = args.fmt
+        args.fmt = _builtin_types.resolve_format(args.fmt)
+        if isinstance(args.fmt, str):
+            if args.fmt not in _builtin_types._FORMATS:
+                parser.error(f'unsupported format {orig!r}')
+
+    parser.add_argument('--include-modules', dest='showmodules',
+                        action='store_true')
+    def process_modules(args, *, argv=None):
+        pass
+
+    return [
+        process_format,
+        process_modules,
+    ]
+
+
+def cmd_builtin_types(fmt, *,
+                      showmodules=False,
+                      verbosity=VERBOSITY,
+                      ):
+    render = _builtin_types.get_renderer(fmt)
+    types = _builtin_types.iter_builtin_types()
+    match = _builtin_types.resolve_matcher(showmodules)
+    if match:
+        types = (t for t in types if match(t, log=lambda msg: logger.log(1, msg)))
+
+    lines = render(
+        types,
+#        verbose=verbosity > VERBOSITY,
+    )
+    print()
+    for line in lines:
+        print(line)
+
+
 # We do not define any other cmd_*() handlers here,
 # favoring those defined elsewhere.
 
@@ -342,7 +430,7 @@ COMMANDS = {
         cmd_parse,
     ),
     'data': (
-        'check/manage local data (e.g. knwon types, ignored vars, caches)',
+        'check/manage local data (e.g. known types, ignored vars, caches)',
         [_cli_data],
         cmd_data,
     ),
@@ -350,6 +438,11 @@ COMMANDS = {
         'inspect the C-API',
         [_cli_capi],
         cmd_capi,
+    ),
+    'builtin-types': (
+        'show the builtin types',
+        [_cli_builtin_types],
+        cmd_builtin_types,
     ),
 }
 

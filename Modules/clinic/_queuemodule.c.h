@@ -2,6 +2,13 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+
 PyDoc_STRVAR(simplequeue_new__doc__,
 "SimpleQueue()\n"
 "--\n"
@@ -15,12 +22,13 @@ static PyObject *
 simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = simplequeue_get_state_by_type(type)->SimpleQueueType;
 
-    if ((type == simplequeue_get_state_by_type(type)->SimpleQueueType) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("SimpleQueue", args)) {
         goto exit;
     }
-    if ((type == simplequeue_get_state_by_type(type)->SimpleQueueType) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("SimpleQueue", kwargs)) {
         goto exit;
     }
@@ -40,7 +48,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_put__doc__,
 "never blocks.  They are provided for compatibility with the Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_METHODDEF    \
-    {"put", (PyCFunction)(void(*)(void))_queue_SimpleQueue_put, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
+    {"put", _PyCFunction_CAST(_queue_SimpleQueue_put), METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put__doc__},
 
 static PyObject *
 _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
@@ -50,8 +58,31 @@ static PyObject *
 _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(item), &_Py_ID(block), &_Py_ID(timeout), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"item", "block", "timeout", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "put", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "put",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *item;
@@ -77,7 +108,9 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
     }
     timeout = args[2];
 skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _queue_SimpleQueue_put_impl(self, item, block, timeout);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -93,7 +126,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_put_nowait__doc__,
 "for compatibility with the Queue class.");
 
 #define _QUEUE_SIMPLEQUEUE_PUT_NOWAIT_METHODDEF    \
-    {"put_nowait", (PyCFunction)(void(*)(void))_queue_SimpleQueue_put_nowait, METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put_nowait__doc__},
+    {"put_nowait", _PyCFunction_CAST(_queue_SimpleQueue_put_nowait), METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_put_nowait__doc__},
 
 static PyObject *
 _queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item);
@@ -102,8 +135,31 @@ static PyObject *
 _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(item), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"item", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "put_nowait", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "put_nowait",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *item;
 
@@ -112,7 +168,9 @@ _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py
         goto exit;
     }
     item = args[0];
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _queue_SimpleQueue_put_nowait_impl(self, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -133,26 +191,67 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "in that case).");
 
 #define _QUEUE_SIMPLEQUEUE_GET_METHODDEF    \
-    {"get", (PyCFunction)(void(*)(void))_queue_SimpleQueue_get, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get__doc__},
+    {"get", _PyCFunction_CAST(_queue_SimpleQueue_get), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get__doc__},
 
 static PyObject *
 _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
-                            int block, PyObject *timeout);
+                            int block, PyObject *timeout_obj);
 
 static PyObject *
 _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {"|pO:get", _keywords, 0};
-    int block = 1;
-    PyObject *timeout = Py_None;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &block, &timeout)) {
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(block), &_Py_ID(timeout), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"block", "timeout", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int block = 1;
+    PyObject *timeout_obj = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = _queue_SimpleQueue_get_impl(self, cls, block, timeout);
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        block = PyObject_IsTrue(args[0]);
+        if (block < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    timeout_obj = args[1];
+skip_optional_pos:
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _queue_SimpleQueue_get_impl(self, cls, block, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -168,7 +267,7 @@ PyDoc_STRVAR(_queue_SimpleQueue_get_nowait__doc__,
 "raise the Empty exception.");
 
 #define _QUEUE_SIMPLEQUEUE_GET_NOWAIT_METHODDEF    \
-    {"get_nowait", (PyCFunction)(void(*)(void))_queue_SimpleQueue_get_nowait, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get_nowait__doc__},
+    {"get_nowait", _PyCFunction_CAST(_queue_SimpleQueue_get_nowait), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _queue_SimpleQueue_get_nowait__doc__},
 
 static PyObject *
 _queue_SimpleQueue_get_nowait_impl(simplequeueobject *self,
@@ -178,14 +277,14 @@ static PyObject *
 _queue_SimpleQueue_get_nowait(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = { NULL};
-    static _PyArg_Parser _parser = {":get_nowait", _keywords, 0};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser
-        )) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "get_nowait() takes no arguments");
         goto exit;
     }
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = _queue_SimpleQueue_get_nowait_impl(self, cls);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -209,7 +308,9 @@ _queue_SimpleQueue_empty(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
     PyObject *return_value = NULL;
     int _return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     _return_value = _queue_SimpleQueue_empty_impl(self);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -237,7 +338,9 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     _return_value = _queue_SimpleQueue_qsize_impl(self);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -246,4 +349,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ce56b46fac150909 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44a718f40072018a input=a9049054013a1b77]*/

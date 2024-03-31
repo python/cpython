@@ -142,7 +142,7 @@ class CodeContext:
             self.text.after_cancel(self.t1)
             self._reset()
             menu_status = 'Show'
-        self.editwin.update_menu_label(menu='options', index='* Code Context',
+        self.editwin.update_menu_label(menu='options', index='*ode*ontext',
                                        label=f'{menu_status} Code Context')
         return "break"
 

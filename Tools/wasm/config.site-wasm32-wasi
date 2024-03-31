@@ -1,0 +1,51 @@
+# config.site override for cross compiling to wasm32-wasi platform
+#
+# Written by Christian Heimes <christian@python.org>
+
+# cannot be detected in cross builds
+ac_cv_buggy_getaddrinfo=no
+
+# WASI has no /dev/pt*
+ac_cv_file__dev_ptmx=no
+ac_cv_file__dev_ptc=no
+
+# get/setrlimit are not supported
+ac_cv_header_sys_resource_h=no
+
+# undefined symbols / unsupported features
+ac_cv_func_eventfd=no
+
+# WASI SDK 15.0 has no pipe syscall.
+ac_cv_func_pipe=no
+
+# WASI SDK 15.0 cannot create fifos and special files.
+ac_cv_func_mkfifo=no
+ac_cv_func_mkfifoat=no
+ac_cv_func_mknod=no
+ac_cv_func_mknodat=no
+ac_cv_func_makedev=no
+
+# fdopendir() fails on SDK 15.0,
+# OSError: [Errno 28] Invalid argument: '.'
+ac_cv_func_fdopendir=no
+
+# WASI sockets are limited to operations on given socket fd and inet sockets.
+# Disable AF_UNIX and AF_PACKET support, see socketmodule.h.
+ac_cv_header_sys_un_h=no
+ac_cv_header_netpacket_packet_h=no
+
+# disable accept for WASM runtimes without sock_accept
+#ac_cv_func_accept=no
+#ac_cv_func_accept4=no
+
+# Disable int-conversion for wask-sdk as it triggers an error from version 17.
+ac_cv_disable_int_conversion=yes
+
+# preadv(), readv(), pwritev(), and writev() under wasmtime's WASI 0.2 support
+# do not use more than the first buffer provided, failing under test_posix.
+# Since wasmtime will not be changing this behaviour, disable the functions.
+# https://github.com/bytecodealliance/wasmtime/issues/7830
+ac_cv_func_preadv=no
+ac_cv_func_readv=no
+ac_cv_func_pwritev=no
+ac_cv_func_writev=no

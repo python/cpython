@@ -66,23 +66,24 @@ your system.)
 The above action would run :func:`re.compile` and print profile results like
 the following::
 
-         197 function calls (192 primitive calls) in 0.002 seconds
+         214 function calls (207 primitive calls) in 0.002 seconds
 
-   Ordered by: standard name
+   Ordered by: cumulative time
 
    ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.002    0.002 {built-in method builtins.exec}
         1    0.000    0.000    0.001    0.001 <string>:1(<module>)
-        1    0.000    0.000    0.001    0.001 re.py:212(compile)
-        1    0.000    0.000    0.001    0.001 re.py:268(_compile)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:172(_compile_charset)
-        1    0.000    0.000    0.000    0.000 sre_compile.py:201(_optimize_charset)
-        4    0.000    0.000    0.000    0.000 sre_compile.py:25(_identityfunction)
-      3/1    0.000    0.000    0.000    0.000 sre_compile.py:33(_compile)
+        1    0.000    0.000    0.001    0.001 __init__.py:250(compile)
+        1    0.000    0.000    0.001    0.001 __init__.py:289(_compile)
+        1    0.000    0.000    0.000    0.000 _compiler.py:759(compile)
+        1    0.000    0.000    0.000    0.000 _parser.py:937(parse)
+        1    0.000    0.000    0.000    0.000 _compiler.py:598(_code)
+        1    0.000    0.000    0.000    0.000 _parser.py:435(_parse_sub)
 
-The first line indicates that 197 calls were monitored.  Of those calls, 192
+The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
-next line: ``Ordered by: standard name``, indicates that the text string in the
-far right column was used to sort the output. The column headings include:
+next line: ``Ordered by: cumulative time`` indicates the output is sorted
+by the ``cumtime`` values. The column headings include:
 
 ncalls
    for the number of calls.
@@ -120,6 +121,8 @@ results to a file by specifying a filename to the :func:`run` function::
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
+.. _profile-cli:
+
 The files :mod:`cProfile` and :mod:`profile` can also be invoked as a script to
 profile another script.  For example::
 
@@ -132,11 +135,11 @@ the output by. This only applies when ``-o`` is not supplied.
 
 ``-m`` specifies that a module is being profiled instead of a script.
 
-   .. versionadded:: 3.7
-      Added the ``-m`` option to :mod:`cProfile`.
+.. versionadded:: 3.7
+   Added the ``-m`` option to :mod:`cProfile`.
 
-   .. versionadded:: 3.8
-      Added the ``-m`` option to :mod:`profile`.
+.. versionadded:: 3.8
+   Added the ``-m`` option to :mod:`profile`.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::
@@ -273,7 +276,7 @@ functions:
       with cProfile.Profile() as pr:
           # ... do something ...
 
-      pr.print_stats()
+          pr.print_stats()
 
    .. versionchanged:: 3.8
       Added context manager support.
@@ -295,6 +298,13 @@ functions:
 
       Create a :class:`~pstats.Stats` object based on the current
       profile and print the results to stdout.
+
+      The *sort* parameter specifies the sorting order of the displayed
+      statistics. It accepts a single key or a tuple of keys to enable
+      multi-level sorting, as in :func:`Stats.sort_stats <pstats.Stats.sort_stats>`.
+
+      .. versionadded:: 3.13
+         :meth:`~Profile.print_stats` now accepts a tuple of keys.
 
    .. method:: dump_stats(filename)
 
@@ -622,7 +632,7 @@ procedure can be used to obtain a better constant for a given platform (see
 The method executes the number of Python calls given by the argument, directly
 and again under the profiler, measuring the time for both. It then computes the
 hidden overhead per profiler event, and returns that as a float.  For example,
-on a 1.8Ghz Intel Core i5 running Mac OS X, and using Python's time.process_time() as
+on a 1.8Ghz Intel Core i5 running macOS, and using Python's time.process_time() as
 the timer, the magical number is about 4.04e-6.
 
 The object of this exercise is to get a fairly consistent result. If your

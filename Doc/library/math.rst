@@ -32,8 +32,8 @@ Number-theoretic and representation functions
 .. function:: ceil(x)
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__ceil__()``, which should return an
-   :class:`~numbers.Integral` value.
+   If *x* is not a float, delegates to :meth:`x.__ceil__ <object.__ceil__>`,
+   which should return an :class:`~numbers.Integral` value.
 
 
 .. function:: comb(n, k)
@@ -45,8 +45,8 @@ Number-theoretic and representation functions
    to zero when ``k > n``.
 
    Also called the binomial coefficient because it is equivalent
-   to the coefficient of k-th term in polynomial expansion of the
-   expression ``(1 + x) ** n``.
+   to the coefficient of k-th term in polynomial expansion of
+   ``(1 + x)ⁿ``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
    Raises :exc:`ValueError` if either of the arguments are negative.
@@ -66,20 +66,36 @@ Number-theoretic and representation functions
    Return the absolute value of *x*.
 
 
-.. function:: factorial(x)
+.. function:: factorial(n)
 
-   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
    is negative.
 
-   .. deprecated:: 3.9
-      Accepting floats with integral values (like ``5.0``) is deprecated.
+   .. versionchanged:: 3.10
+      Floats with integral values (like ``5.0``) are no longer accepted.
 
 
 .. function:: floor(x)
 
-   Return the floor of *x*, the largest integer less than or equal to *x*.
-   If *x* is not a float, delegates to ``x.__floor__()``, which should return an
-   :class:`~numbers.Integral` value.
+   Return the floor of *x*, the largest integer less than or equal to *x*.  If
+   *x* is not a float, delegates to :meth:`x.__floor__ <object.__floor__>`, which
+   should return an :class:`~numbers.Integral` value.
+
+
+.. function:: fma(x, y, z)
+
+   Fused multiply-add operation. Return ``(x * y) + z``, computed as though with
+   infinite precision and range followed by a single round to the ``float``
+   format. This operation often provides better accuracy than the direct
+   expression ``(x * y) + z``.
+
+   This function follows the specification of the fusedMultiplyAdd operation
+   described in the IEEE 754 standard. The standard leaves one case
+   implementation-defined, namely the result of ``fma(0, inf, nan)``
+   and ``fma(inf, 0, nan)``. In these cases, ``math.fma`` returns a NaN,
+   and does not raise any exception.
+
+   .. versionadded:: 3.13
 
 
 .. function:: fmod(x, y)
@@ -108,12 +124,7 @@ Number-theoretic and representation functions
 .. function:: fsum(iterable)
 
    Return an accurate floating point sum of values in the iterable.  Avoids
-   loss of precision by tracking multiple intermediate partial sums::
-
-        >>> sum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
-        0.9999999999999999
-        >>> fsum([.1, .1, .1, .1, .1, .1, .1, .1, .1, .1])
-        1.0
+   loss of precision by tracking multiple intermediate partial sums.
 
    The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
    typical case where the rounding mode is half-even.  On some non-Windows
@@ -229,11 +240,11 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
-.. function:: nextafter(x, y)
+.. function:: nextafter(x, y, steps=1)
 
-   Return the next floating-point value after *x* towards *y*.
+   Return the floating-point value *steps* steps after *x* towards *y*.
 
-   If *x* is equal to *y*, return *y*.
+   If *x* is equal to *y*, return *y*, unless *steps* is zero.
 
    Examples:
 
@@ -245,6 +256,9 @@ Number-theoretic and representation functions
    See also :func:`math.ulp`.
 
    .. versionadded:: 3.9
+
+   .. versionchanged:: 3.12
+      Added the *steps* argument.
 
 .. function:: perm(n, k=None)
 
@@ -296,11 +310,29 @@ Number-theoretic and representation functions
    .. versionadded:: 3.7
 
 
+.. function:: sumprod(p, q)
+
+   Return the sum of products of values from two iterables *p* and *q*.
+
+   Raises :exc:`ValueError` if the inputs do not have the same length.
+
+   Roughly equivalent to::
+
+       sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))
+
+   For float and mixed int/float inputs, the intermediate products
+   and sums are computed with extended precision.
+
+   .. versionadded:: 3.12
+
+
 .. function:: trunc(x)
 
-   Return the :class:`~numbers.Real` value *x* truncated to an
-   :class:`~numbers.Integral` (usually an integer). Delegates to
-   :meth:`x.__trunc__() <object.__trunc__>`.
+   Return *x* with the fractional part
+   removed, leaving the integer part.  This rounds toward 0: ``trunc()`` is
+   equivalent to :func:`floor` for positive *x*, and equivalent to :func:`ceil`
+   for negative *x*. If *x* is not a float, delegates to :meth:`x.__trunc__
+   <object.__trunc__>`, which should return an :class:`~numbers.Integral` value.
 
 .. function:: ulp(x)
 
@@ -342,11 +374,25 @@ necessarily has no fractional bits.
 Power and logarithmic functions
 -------------------------------
 
+.. function:: cbrt(x)
+
+   Return the cube root of *x*.
+
+   .. versionadded:: 3.11
+
+
 .. function:: exp(x)
 
    Return *e* raised to the power *x*, where *e* = 2.718281... is the base
    of natural logarithms.  This is usually more accurate than ``math.e ** x``
    or ``pow(math.e, x)``.
+
+
+.. function:: exp2(x)
+
+   Return *2* raised to the power *x*.
+
+   .. versionadded:: 3.11
 
 
 .. function:: expm1(x)
@@ -355,7 +401,7 @@ Power and logarithmic functions
    logarithms.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
    <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
-   function provides a way to compute this quantity to full precision::
+   function provides a way to compute this quantity to full precision:
 
       >>> from math import exp, expm1
       >>> exp(1e-5) - 1  # gives result accurate to 11 places
@@ -402,7 +448,7 @@ Power and logarithmic functions
 .. function:: pow(x, y)
 
    Return ``x`` raised to the power ``y``.  Exceptional cases follow
-   Annex 'F' of the C99 standard as far as possible.  In particular,
+   the IEEE 754 standard as far as possible.  In particular,
    ``pow(1.0, x)`` and ``pow(x, 0.0)`` always return ``1.0``, even
    when ``x`` is a zero or a NaN.  If both ``x`` and ``y`` are finite,
    ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
@@ -411,6 +457,11 @@ Power and logarithmic functions
    Unlike the built-in ``**`` operator, :func:`math.pow` converts both
    its arguments to type :class:`float`.  Use ``**`` or the built-in
    :func:`pow` function for computing exact integer powers.
+
+   .. versionchanged:: 3.11
+      The special cases ``pow(0.0, -inf)`` and ``pow(-0.0, -inf)`` were
+      changed to return ``inf`` instead of raising :exc:`ValueError`,
+      for consistency with IEEE 754.
 
 
 .. function:: sqrt(x)
@@ -513,7 +564,7 @@ Angular conversion
 Hyperbolic functions
 --------------------
 
-`Hyperbolic functions <https://en.wikipedia.org/wiki/Hyperbolic_function>`_
+`Hyperbolic functions <https://en.wikipedia.org/wiki/Hyperbolic_functions>`_
 are analogs of trigonometric functions that are based on hyperbolas
 instead of circles.
 
@@ -557,7 +608,7 @@ Special functions
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_function>`_::
+   <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -627,10 +678,28 @@ Constants
 
 .. data:: nan
 
-   A floating-point "not a number" (NaN) value.  Equivalent to the output of
-   ``float('nan')``.
+   A floating-point "not a number" (NaN) value. Equivalent to the output of
+   ``float('nan')``. Due to the requirements of the `IEEE-754 standard
+   <https://en.wikipedia.org/wiki/IEEE_754>`_, ``math.nan`` and ``float('nan')`` are
+   not considered to equal to any other numeric value, including themselves. To check
+   whether a number is a NaN, use the :func:`isnan` function to test
+   for NaNs instead of ``is`` or ``==``.
+   Example:
+
+      >>> import math
+      >>> math.nan == math.nan
+      False
+      >>> float('nan') == float('nan')
+      False
+      >>> math.isnan(math.nan)
+      True
+      >>> math.isnan(float('nan'))
+      True
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.11
+      It is now always available.
 
 
 .. impl-detail::

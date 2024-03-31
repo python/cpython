@@ -7,8 +7,9 @@ import os
 import sys
 import unittest
 import warnings
-from test.support import os_helper
-from test.support import warnings_helper
+from test.support import (
+    is_apple, is_emscripten, os_helper, warnings_helper
+)
 from test.support.script_helper import assert_python_ok
 from test.support.os_helper import FakePath
 
@@ -154,6 +155,7 @@ class GenericTest:
             self.assertIs(self.pathmodule.lexists(bfilename + b'\x00'), False)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @unittest.skipIf(is_emscripten, "Emscripten pipe fds have no stat")
     def test_exists_fd(self):
         r, w = os.pipe()
         try:
@@ -162,6 +164,12 @@ class GenericTest:
             os.close(r)
             os.close(w)
         self.assertFalse(self.pathmodule.exists(r))
+
+    def test_exists_bool(self):
+        for fd in False, True:
+            with self.assertWarnsRegex(RuntimeWarning,
+                    'bool is used as a file descriptor'):
+                self.pathmodule.exists(fd)
 
     def test_isdir(self):
         filename = os_helper.TESTFN
@@ -246,6 +254,7 @@ class GenericTest:
     def test_samefile_on_symlink(self):
         self._test_samefile_on_link_func(os.symlink)
 
+    @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_samefile_on_link(self):
         try:
             self._test_samefile_on_link_func(os.link)
@@ -288,6 +297,7 @@ class GenericTest:
     def test_samestat_on_symlink(self):
         self._test_samestat_on_link_func(os.symlink)
 
+    @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_samestat_on_link(self):
         try:
             self._test_samestat_on_link_func(os.link)
@@ -456,6 +466,10 @@ class CommonTest(GenericTest):
         for path in ('', '.', '/', '\\', '///foo/.//bar//'):
             self.assertIsInstance(self.pathmodule.normpath(path), str)
 
+    def test_normpath_issue106242(self):
+        for path in ('\x00', 'foo\x00bar', '\x00\x00', '\x00foo', 'foo\x00'):
+            self.assertEqual(self.pathmodule.normpath(path), path)
+
     def test_abspath_issue3426(self):
         # Check that abspath returns unicode when the arg is unicode
         # with both ASCII and non-ASCII cwds.
@@ -475,12 +489,16 @@ class CommonTest(GenericTest):
                     self.assertIsInstance(abspath(path), str)
 
     def test_nonascii_abspath(self):
-        if (os_helper.TESTFN_UNDECODABLE
-        # Mac OS X denies the creation of a directory with an invalid
-        # UTF-8 name. Windows allows creating a directory with an
-        # arbitrary bytes name, but fails to enter this directory
-        # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin')):
+        if (
+            os_helper.TESTFN_UNDECODABLE
+            # Apple platforms and Emscripten/WASI deny the creation of a
+            # directory with an invalid UTF-8 name. Windows allows creating a
+            # directory with an arbitrary bytes name, but fails to enter this
+            # directory (when the bytes name is used).
+            and sys.platform not in {
+                "win32", "emscripten", "wasi"
+            } and not is_apple
+        ):
             name = os_helper.TESTFN_UNDECODABLE
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII

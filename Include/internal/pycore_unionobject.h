@@ -8,9 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-PyAPI_FUNC(PyObject *) _Py_Union(PyObject *args);
-PyAPI_DATA(PyTypeObject) _Py_UnionType;
-PyAPI_FUNC(PyObject *) _Py_union_type_or(PyObject* self, PyObject* param);
+// For extensions created by test_peg_generator
+PyAPI_DATA(PyTypeObject) _PyUnion_Type;
+PyAPI_FUNC(PyObject *) _Py_union_type_or(PyObject *, PyObject *);
+
+#define _PyUnion_Check(op) Py_IS_TYPE((op), &_PyUnion_Type)
+
+#define _PyGenericAlias_Check(op) PyObject_TypeCheck((op), &Py_GenericAliasType)
+extern PyObject *_Py_subs_parameters(PyObject *, PyObject *, PyObject *, PyObject *);
+extern PyObject *_Py_make_parameters(PyObject *);
+extern PyObject *_Py_union_args(PyObject *self);
 
 #ifdef __cplusplus
 }
