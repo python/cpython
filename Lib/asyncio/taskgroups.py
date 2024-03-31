@@ -140,6 +140,11 @@ class TaskGroup:
             self._errors.append(exc)
 
         if self._errors:
+            # If the parent task is being cancelled from the outside,
+            # re-cancel it, while keeping the cancel count stable.
+            if self._parent_task.cancelling():
+                self._parent_task.uncancel()
+                self._parent_task.cancel()
             # Exceptions are heavy objects that can have object
             # cycles (bad for GC); let's not keep a reference to
             # a bunch of them.
