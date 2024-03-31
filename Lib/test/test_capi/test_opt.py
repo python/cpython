@@ -792,8 +792,8 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_float_add_constant_propagation(self):
         def testfunc(n):
-            a = 1.0
             for _ in range(n):
+                a = 1.0
                 a = a + 0.25
                 a = a + 0.25
                 a = a + 0.25
@@ -801,19 +801,16 @@ class TestUopsOptimization(unittest.TestCase):
             return a
 
         res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertAlmostEqual(res, 33.0)
+        self.assertAlmostEqual(res, 2.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
-        self.assertLessEqual(len(guard_both_float_count), 1)
-        # TODO gh-115506: this assertion may change after propagating constants.
-        # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_ADD_FLOAT", uops)
+        self.assertNotIn("_BINARY_OP_ADD_FLOAT", uops)
+        self.assertIn("_LOAD_FLOAT", uops)
 
     def test_float_subtract_constant_propagation(self):
         def testfunc(n):
-            a = 1.0
             for _ in range(n):
+                a = 1.0
                 a = a - 0.25
                 a = a - 0.25
                 a = a - 0.25
@@ -821,19 +818,18 @@ class TestUopsOptimization(unittest.TestCase):
             return a
 
         res, ex = self._run_with_optimizer(testfunc, 32)
-        self.assertAlmostEqual(res, -31.0)
+        self.assertAlmostEqual(res, 0.0)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
         self.assertLessEqual(len(guard_both_float_count), 1)
-        # TODO gh-115506: this assertion may change after propagating constants.
-        # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_SUBTRACT_FLOAT", uops)
+        self.assertNotIn("_BINARY_OP_SUBTRACT_FLOAT", uops)
+        self.assertIn("_LOAD_FLOAT", uops)
 
     def test_float_multiply_constant_propagation(self):
         def testfunc(n):
-            a = 1.0
             for _ in range(n):
+                a = 1.0
                 a = a * 1.0
                 a = a * 1.0
                 a = a * 1.0
@@ -846,9 +842,8 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         guard_both_float_count = [opname for opname in iter_opnames(ex) if opname == "_GUARD_BOTH_FLOAT"]
         self.assertLessEqual(len(guard_both_float_count), 1)
-        # TODO gh-115506: this assertion may change after propagating constants.
-        # We'll also need to verify that propagation actually occurs.
-        self.assertIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
+        self.assertNotIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
+        self.assertIn("_LOAD_FLOAT", uops)
 
     def test_add_unicode_propagation(self):
         def testfunc(n):

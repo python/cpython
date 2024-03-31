@@ -3696,6 +3696,36 @@
             break;
         }
 
+        case _LOAD_FLOAT: {
+            PyObject *value;
+            PyObject *cached = (PyObject *)CURRENT_OPERAND();
+            double dst;
+            memcpy(&dst, &cached, sizeof(PyObject *));
+            value = PyFloat_FromDouble(dst);
+            if (value == NULL) JUMP_TO_ERROR();
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            break;
+        }
+
+        case _POP_TWO_LOAD_FLOAT: {
+            PyObject *pop2;
+            PyObject *pop1;
+            PyObject *value;
+            pop2 = stack_pointer[-1];
+            pop1 = stack_pointer[-2];
+            PyObject *cached = (PyObject *)CURRENT_OPERAND();
+            Py_DECREF(pop1);
+            Py_DECREF(pop2);
+            double dst;
+            memcpy(&dst, &cached, sizeof(PyObject *));
+            value = PyFloat_FromDouble(dst);
+            if (value == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2] = value;
+            stack_pointer += -1;
+            break;
+        }
+
         case _CHECK_FUNCTION: {
             uint32_t func_version = (uint32_t)CURRENT_OPERAND();
             assert(PyFunction_Check(frame->f_funcobj));

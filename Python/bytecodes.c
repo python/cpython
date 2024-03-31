@@ -4150,6 +4150,22 @@ dummy_func(
             ERROR_IF(value == NULL, error);
         }
 
+        tier2 pure op(_LOAD_FLOAT, (cached/4 -- value)) {
+            double dst;
+            memcpy(&dst, &cached, sizeof(PyObject *));
+            value = PyFloat_FromDouble(dst);
+            ERROR_IF(value == NULL, error);
+        }
+
+        tier2 pure op(_POP_TWO_LOAD_FLOAT, (cached/4, pop1, pop2 -- value)) {
+            Py_DECREF(pop1);
+            Py_DECREF(pop2);
+            double dst;
+            memcpy(&dst, &cached, sizeof(PyObject *));
+            value = PyFloat_FromDouble(dst);
+            ERROR_IF(value == NULL, error);
+        }
+
         tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
             assert(PyFunction_Check(frame->f_funcobj));
             DEOPT_IF(((PyFunctionObject *)frame->f_funcobj)->func_version != func_version);

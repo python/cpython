@@ -284,7 +284,13 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     return 0;
 }
 
-
+static int64_t
+double_as_int64_t(double in) {
+    double temp = in;
+    int64_t result;
+    memcpy(&result, &temp, sizeof(double));
+    return result;
+}
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
 
@@ -449,13 +455,14 @@ done:
     return trace_len;
 }
 
-static bool
+static inline bool
 op_is_simple_load(int opcode) {
     switch (opcode) {
         case _LOAD_CONST_INLINE_BORROW:
         case _LOAD_CONST_INLINE:
         case _LOAD_FAST:
         case _LOAD_INT:
+        case _LOAD_FLOAT:
             return true;
         default:
             return false;
@@ -530,6 +537,11 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             case _POP_TWO_LOAD_INT:
                 if (remove_simple_pops(2, &buffer[pc-1], buffer)) {
                     buffer[pc].opcode = _LOAD_INT;
+                }
+                break;
+            case _POP_TWO_LOAD_FLOAT:
+                if (remove_simple_pops(2, &buffer[pc-1], buffer)) {
+                    buffer[pc].opcode = _LOAD_FLOAT;
                 }
                 break;
             case _SET_IP:
