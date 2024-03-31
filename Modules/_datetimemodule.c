@@ -12,6 +12,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_interp.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
@@ -43,6 +44,8 @@
 #define PyTimezone_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeZoneType)
 
 typedef struct {
+    PyDateTime_CAPI capi;
+
     /* Conversion factors. */
     PyObject *us_per_ms;       // 1_000
     PyObject *us_per_second;   // 1_000_000
@@ -61,7 +64,29 @@ typedef struct {
 
 static datetime_state _datetime_global_state;
 
-#define STATIC_STATE() (&_datetime_global_state)
+static inline datetime_state *
+get_module_state(PyObject *module)
+{
+    return &_datetime_global_state;
+}
+
+static inline datetime_state *
+get_module_state_by_interp(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    void *state = interp->datetime_module_state;
+    assert(state != NULL);
+    return (datetime_state *)state;
+}
+
+PyDateTime_CAPI *
+get_datetime_capi(void)
+{
+    return &get_module_state_by_interp()->capi;
+}
+
+#define STATIC_STATE() get_module_state_by_interp()
+
 
 /* We require that C int be at least 32 bits, and use int virtually
  * everywhere.  In just a few cases we use a temp long, where a Python
@@ -6701,44 +6726,27 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-/* Get a new C API by calling this function.
- * Clients get at C API via PyDateTime_IMPORT, defined in datetime.h.
- */
-static inline PyDateTime_CAPI *
-get_datetime_capi(void)
+static void
+set_datetime_capi(datetime_state *st)
 {
-    PyDateTime_CAPI *capi = PyMem_Malloc(sizeof(PyDateTime_CAPI));
-    if (capi == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-    capi->DateType = &PyDateTime_DateType;
-    capi->DateTimeType = &PyDateTime_DateTimeType;
-    capi->TimeType = &PyDateTime_TimeType;
-    capi->DeltaType = &PyDateTime_DeltaType;
-    capi->TZInfoType = &PyDateTime_TZInfoType;
-    capi->Date_FromDate = new_date_ex;
-    capi->DateTime_FromDateAndTime = new_datetime_ex;
-    capi->Time_FromTime = new_time_ex;
-    capi->Delta_FromDelta = new_delta_ex;
-    capi->TimeZone_FromTimeZone = new_timezone;
-    capi->DateTime_FromTimestamp = datetime_fromtimestamp;
-    capi->Date_FromTimestamp = datetime_date_fromtimestamp_capi;
-    capi->DateTime_FromDateAndTimeAndFold = new_datetime_ex2;
-    capi->Time_FromTimeAndFold = new_time_ex2;
+    st->capi.DateType = &PyDateTime_DateType;
+    st->capi.DateTimeType = &PyDateTime_DateTimeType;
+    st->capi.TimeType = &PyDateTime_TimeType;
+    st->capi.DeltaType = &PyDateTime_DeltaType;
+    st->capi.TZInfoType = &PyDateTime_TZInfoType;
+    st->capi.Date_FromDate = new_date_ex;
+    st->capi.DateTime_FromDateAndTime = new_datetime_ex;
+    st->capi.Time_FromTime = new_time_ex;
+    st->capi.Delta_FromDelta = new_delta_ex;
+    st->capi.TimeZone_FromTimeZone = new_timezone;
+    st->capi.DateTime_FromTimestamp = datetime_fromtimestamp;
+    st->capi.Date_FromTimestamp = datetime_date_fromtimestamp_capi;
+    st->capi.DateTime_FromDateAndTimeAndFold = new_datetime_ex2;
+    st->capi.Time_FromTimeAndFold = new_time_ex2;
     // Make sure this function is called after utc has
     // been initialized.
-    datetime_state *st = STATIC_STATE();
     assert(st->utc != NULL);
-    capi->TimeZone_UTC = st->utc; // borrowed ref
-    return capi;
-}
-
-static void
-datetime_destructor(PyObject *op)
-{
-    void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
-    PyMem_Free(ptr);
+    st->capi.TimeZone_UTC = st->utc; // borrowed ref
 }
 
 static int
@@ -6823,6 +6831,10 @@ init_state(datetime_state *st)
 static int
 _datetime_exec(PyObject *module)
 {
+    datetime_state *st = get_module_state(module);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    interp->datetime_module_state = st;
+
     // `&...` is not a constant expression according to a strict reading
     // of C standards. Fill tp_base at run-time rather than statically.
     // See https://bugs.python.org/issue40777
@@ -6889,7 +6901,6 @@ _datetime_exec(PyObject *module)
                                               999999, Py_None, 0));
     DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
-    datetime_state *st = STATIC_STATE();
     if (init_state(st) < 0) {
         goto error;
     }
@@ -6924,18 +6935,12 @@ _datetime_exec(PyObject *module)
     }
 
     /* At last, set up and add the encapsulated C API */
-    PyDateTime_CAPI *capi = get_datetime_capi();
-    if (capi == NULL) {
-        goto error;
-    }
-    PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME,
-                                      datetime_destructor);
+    set_datetime_capi(st);
+    PyObject *capsule = PyCapsule_New(&st->capi, PyDateTime_CAPSULE_NAME, NULL);
     if (capsule == NULL) {
-        PyMem_Free(capi);
         goto error;
     }
     if (PyModule_Add(module, "datetime_CAPI", capsule) < 0) {
-        PyMem_Free(capi);
         goto error;
     }
 
