@@ -431,12 +431,13 @@ def _joinrealpath(path, rest, strict, seen):
         if name == pardir:
             # parent dir
             if path:
-                if basename(path) == pardir:
+                parent, name = split(path)
+                if name == pardir:
                     # ../..
                     path = join(path, pardir)
                 else:
                     # foo/bar/.. -> foo
-                    path = dirname(path)
+                    path = parent
             else:
                 # ..
                 path = pardir
