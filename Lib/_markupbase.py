@@ -9,7 +9,7 @@ import re
 
 _declname_match = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*').match
 _declstringlit_match = re.compile(r'(\'[^\']*\'|"[^"]*")\s*').match
-_commentclose = re.compile(r'--\s*>')
+_commentclose = re.compile(r'--!?>')
 _markedsectionclose = re.compile(r']\s*]\s*>')
 
 # An analysis of the MS-Word extensions is available at
