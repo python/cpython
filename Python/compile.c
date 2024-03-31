@@ -408,7 +408,7 @@ handled by the symbol analysis pass.
 struct compiler {
     PyObject *c_filename;
     struct symtable *c_st;
-    PyFutureFeatures c_future;   /* module's __future__ */
+    _PyFutureFeatures c_future;  /* module's __future__ */
     PyCompilerFlags c_flags;
 
     int c_optimize;              /* optimization level */
@@ -585,7 +585,7 @@ int
 _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
                        int optimize, PyArena *arena)
 {
-    PyFutureFeatures future;
+    _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
         return -1;
     }

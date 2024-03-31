@@ -49,11 +49,6 @@ typedef struct {
 
 /* Future feature support */
 
-typedef struct {
-    int ff_features;                    /* flags set by future statements */
-    _PyCompilerSrcLocation ff_location; /* location of last future statement */
-} PyFutureFeatures;
-
 #define FUTURE_NESTED_SCOPES "nested_scopes"
 #define FUTURE_GENERATORS "generators"
 #define FUTURE_DIVISION "division"
