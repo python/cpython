@@ -562,7 +562,7 @@ def commonpath(paths):
     try:
         prefix = min(roots)
 
-        if not prefix and max(roots):
+        if not prefix and any(roots):
             raise ValueError("Can't mix absolute and relative paths")
 
         split_paths = [
