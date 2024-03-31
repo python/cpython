@@ -477,13 +477,13 @@ symbolic links encountered in the path."""
                 path = newpath
                 querying = False
                 continue
-
         seen[newpath] = None # not resolved symlink
         if target[:1] == sep:
             path = sep
         rest.append(newpath)
         rest.append(None)
         rest.extend(target.split(sep)[::-1])
+
     return path
 
 
