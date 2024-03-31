@@ -6,7 +6,6 @@ import copy
 import pickle
 import random
 import sys
-from test import support
 from test.support import bigmemtest, _1G, _4G, skip_on_s390x
 
 
