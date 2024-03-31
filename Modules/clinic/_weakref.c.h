@@ -2,11 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
 "getweakrefcount($module, object, /)\n"
@@ -26,7 +23,9 @@ _weakref_getweakrefcount(PyObject *module, PyObject *object)
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(object);
     _return_value = _weakref_getweakrefcount_impl(module, object);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -80,6 +79,21 @@ PyDoc_STRVAR(_weakref_getweakrefs__doc__,
 #define _WEAKREF_GETWEAKREFS_METHODDEF    \
     {"getweakrefs", (PyCFunction)_weakref_getweakrefs, METH_O, _weakref_getweakrefs__doc__},
 
+static PyObject *
+_weakref_getweakrefs_impl(PyObject *module, PyObject *object);
+
+static PyObject *
+_weakref_getweakrefs(PyObject *module, PyObject *object)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(object);
+    return_value = _weakref_getweakrefs_impl(module, object);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_weakref_proxy__doc__,
 "proxy($module, object, callback=None, /)\n"
 "--\n"
@@ -116,4 +130,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=28265e89d583273d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d5d30707212a9870 input=a9049054013a1b77]*/

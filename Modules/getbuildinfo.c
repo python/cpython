@@ -1,4 +1,9 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_pylifecycle.h"   // _Py_gitidentifier()
 
 #ifndef DONT_HAVE_STDIO_H
 #include <stdio.h>

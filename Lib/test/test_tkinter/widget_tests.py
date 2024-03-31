@@ -1,7 +1,7 @@
 # Common tests for test_tkinter/test_widgets.py and test_ttk/test_widgets.py
 
 import tkinter
-from test.test_tkinter.support import (AbstractTkTest, tcl_version,
+from test.test_tkinter.support import (AbstractTkTest, tk_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
@@ -22,7 +22,7 @@ class AbstractWidgetTest(AbstractTkTest):
             return self._scaling
 
     def _str(self, value):
-        if not self._stringify and self.wantobjects and tcl_version >= (8, 6):
+        if not self._stringify and self.wantobjects and tk_version >= (8, 6):
             return value
         if isinstance(value, tuple):
             return ' '.join(map(self._str, value))
@@ -156,7 +156,7 @@ class AbstractWidgetTest(AbstractTkTest):
                          'flat', 'groove', 'raised', 'ridge', 'solid', 'sunken')
         errmsg='bad relief "spam": must be '\
                'flat, groove, raised, ridge, solid, or sunken'
-        if tcl_version < (8, 6):
+        if tk_version < (8, 6):
             errmsg = None
         self.checkInvalidParam(widget, name, 'spam',
                 errmsg=errmsg)
@@ -250,7 +250,7 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkParam(widget, 'bitmap', 'questhead')
         self.checkParam(widget, 'bitmap', 'gray50')
-        filename = test.support.findfile('python.xbm', subdir='imghdrdata')
+        filename = test.support.findfile('python.xbm', subdir='tkinterdata')
         self.checkParam(widget, 'bitmap', '@' + filename)
         # Cocoa Tk widgets don't detect invalid -bitmap values
         # See https://core.tcl.tk/tk/info/31cd33dbf0

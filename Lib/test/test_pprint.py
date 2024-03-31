@@ -7,8 +7,8 @@ import io
 import itertools
 import pprint
 import random
+import re
 import test.support
-import test.test_set
 import types
 import unittest
 
@@ -535,7 +535,10 @@ AdvancedNamespace(the=0,
     def test_dataclass_no_repr(self):
         dc = dataclass3()
         formatted = pprint.pformat(dc, width=10)
-        self.assertRegex(formatted, r"<test.test_pprint.dataclass3 object at \w+>")
+        self.assertRegex(
+            formatted,
+            fr"<{re.escape(__name__)}.dataclass3 object at \w+>",
+        )
 
     def test_recursive_dataclass(self):
         dc = dataclass4(None)
@@ -619,9 +622,6 @@ frozenset2({0,
         self.assertEqual(pprint.pformat(frozenset3(range(7)), width=20),
                          'frozenset3({0, 1, 2, 3, 4, 5, 6})')
 
-    @unittest.expectedFailure
-    #See http://bugs.python.org/issue13907
-    @test.support.cpython_only
     def test_set_of_sets_reprs(self):
         # This test creates a complex arrangement of frozensets and
         # compares the pretty-printed repr against a string hard-coded in
@@ -632,204 +632,106 @@ frozenset2({0,
         # partial ordering (subset relationships), the output of the
         # list.sort() method is undefined for lists of sets."
         #
-        # In a nutshell, the test assumes frozenset({0}) will always
-        # sort before frozenset({1}), but:
-        #
         # >>> frozenset({0}) < frozenset({1})
         # False
         # >>> frozenset({1}) < frozenset({0})
         # False
         #
-        # Consequently, this test is fragile and
-        # implementation-dependent.  Small changes to Python's sort
-        # algorithm cause the test to fail when it should pass.
-        # XXX Or changes to the dictionary implementation...
+        # In this test we list all possible invariants of the result
+        # for unordered frozensets.
+        #
+        # This test has a long history, see:
+        # - https://github.com/python/cpython/commit/969fe57baa0eb80332990f9cda936a33e13fabef
+        # - https://github.com/python/cpython/issues/58115
+        # - https://github.com/python/cpython/issues/111147
 
-        cube_repr_tgt = """\
-{frozenset(): frozenset({frozenset({2}), frozenset({0}), frozenset({1})}),
- frozenset({0}): frozenset({frozenset(),
-                            frozenset({0, 2}),
-                            frozenset({0, 1})}),
- frozenset({1}): frozenset({frozenset(),
-                            frozenset({1, 2}),
-                            frozenset({0, 1})}),
- frozenset({2}): frozenset({frozenset(),
-                            frozenset({1, 2}),
-                            frozenset({0, 2})}),
- frozenset({1, 2}): frozenset({frozenset({2}),
-                               frozenset({1}),
-                               frozenset({0, 1, 2})}),
- frozenset({0, 2}): frozenset({frozenset({2}),
-                               frozenset({0}),
-                               frozenset({0, 1, 2})}),
- frozenset({0, 1}): frozenset({frozenset({0}),
-                               frozenset({1}),
-                               frozenset({0, 1, 2})}),
- frozenset({0, 1, 2}): frozenset({frozenset({1, 2}),
-                                  frozenset({0, 2}),
-                                  frozenset({0, 1})})}"""
-        cube = test.test_set.cube(3)
-        self.assertEqual(pprint.pformat(cube), cube_repr_tgt)
-        cubo_repr_tgt = """\
-{frozenset({frozenset({0, 2}), frozenset({0})}): frozenset({frozenset({frozenset({0,
-                                                                                  2}),
-                                                                       frozenset({0,
-                                                                                  1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({0}),
-                                                                       frozenset({0,
-                                                                                  1})}),
-                                                            frozenset({frozenset(),
-                                                                       frozenset({0})}),
-                                                            frozenset({frozenset({2}),
-                                                                       frozenset({0,
-                                                                                  2})})}),
- frozenset({frozenset({0, 1}), frozenset({1})}): frozenset({frozenset({frozenset({0,
-                                                                                  1}),
-                                                                       frozenset({0,
-                                                                                  1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({0}),
-                                                                       frozenset({0,
-                                                                                  1})}),
-                                                            frozenset({frozenset({1}),
-                                                                       frozenset({1,
-                                                                                  2})}),
-                                                            frozenset({frozenset(),
-                                                                       frozenset({1})})}),
- frozenset({frozenset({1, 2}), frozenset({1})}): frozenset({frozenset({frozenset({1,
-                                                                                  2}),
-                                                                       frozenset({0,
-                                                                                  1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({2}),
-                                                                       frozenset({1,
-                                                                                  2})}),
-                                                            frozenset({frozenset(),
-                                                                       frozenset({1})}),
-                                                            frozenset({frozenset({1}),
-                                                                       frozenset({0,
-                                                                                  1})})}),
- frozenset({frozenset({1, 2}), frozenset({2})}): frozenset({frozenset({frozenset({1,
-                                                                                  2}),
-                                                                       frozenset({0,
-                                                                                  1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({1}),
-                                                                       frozenset({1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({2}),
-                                                                       frozenset({0,
-                                                                                  2})}),
-                                                            frozenset({frozenset(),
-                                                                       frozenset({2})})}),
- frozenset({frozenset(), frozenset({0})}): frozenset({frozenset({frozenset({0}),
-                                                                 frozenset({0,
-                                                                            1})}),
-                                                      frozenset({frozenset({0}),
-                                                                 frozenset({0,
-                                                                            2})}),
-                                                      frozenset({frozenset(),
-                                                                 frozenset({1})}),
-                                                      frozenset({frozenset(),
-                                                                 frozenset({2})})}),
- frozenset({frozenset(), frozenset({1})}): frozenset({frozenset({frozenset(),
-                                                                 frozenset({0})}),
-                                                      frozenset({frozenset({1}),
-                                                                 frozenset({1,
-                                                                            2})}),
-                                                      frozenset({frozenset(),
-                                                                 frozenset({2})}),
-                                                      frozenset({frozenset({1}),
-                                                                 frozenset({0,
-                                                                            1})})}),
- frozenset({frozenset({2}), frozenset()}): frozenset({frozenset({frozenset({2}),
-                                                                 frozenset({1,
-                                                                            2})}),
-                                                      frozenset({frozenset(),
-                                                                 frozenset({0})}),
-                                                      frozenset({frozenset(),
-                                                                 frozenset({1})}),
-                                                      frozenset({frozenset({2}),
-                                                                 frozenset({0,
-                                                                            2})})}),
- frozenset({frozenset({0, 1, 2}), frozenset({0, 1})}): frozenset({frozenset({frozenset({1,
-                                                                                        2}),
-                                                                             frozenset({0,
-                                                                                        1,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({0,
-                                                                                        2}),
-                                                                             frozenset({0,
-                                                                                        1,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({0}),
-                                                                             frozenset({0,
-                                                                                        1})}),
-                                                                  frozenset({frozenset({1}),
-                                                                             frozenset({0,
-                                                                                        1})})}),
- frozenset({frozenset({0}), frozenset({0, 1})}): frozenset({frozenset({frozenset(),
-                                                                       frozenset({0})}),
-                                                            frozenset({frozenset({0,
-                                                                                  1}),
-                                                                       frozenset({0,
-                                                                                  1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({0}),
-                                                                       frozenset({0,
-                                                                                  2})}),
-                                                            frozenset({frozenset({1}),
-                                                                       frozenset({0,
-                                                                                  1})})}),
- frozenset({frozenset({2}), frozenset({0, 2})}): frozenset({frozenset({frozenset({0,
-                                                                                  2}),
-                                                                       frozenset({0,
-                                                                                  1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({2}),
-                                                                       frozenset({1,
-                                                                                  2})}),
-                                                            frozenset({frozenset({0}),
-                                                                       frozenset({0,
-                                                                                  2})}),
-                                                            frozenset({frozenset(),
-                                                                       frozenset({2})})}),
- frozenset({frozenset({0, 1, 2}), frozenset({0, 2})}): frozenset({frozenset({frozenset({1,
-                                                                                        2}),
-                                                                             frozenset({0,
-                                                                                        1,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({0,
-                                                                                        1}),
-                                                                             frozenset({0,
-                                                                                        1,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({0}),
-                                                                             frozenset({0,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({2}),
-                                                                             frozenset({0,
-                                                                                        2})})}),
- frozenset({frozenset({1, 2}), frozenset({0, 1, 2})}): frozenset({frozenset({frozenset({0,
-                                                                                        2}),
-                                                                             frozenset({0,
-                                                                                        1,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({0,
-                                                                                        1}),
-                                                                             frozenset({0,
-                                                                                        1,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({2}),
-                                                                             frozenset({1,
-                                                                                        2})}),
-                                                                  frozenset({frozenset({1}),
-                                                                             frozenset({1,
-                                                                                        2})})})}"""
+        import textwrap
 
-        cubo = test.test_set.linegraph(cube)
-        self.assertEqual(pprint.pformat(cubo), cubo_repr_tgt)
+        # Single-line, always ordered:
+        fs0 = frozenset()
+        fs1 = frozenset(('abc', 'xyz'))
+        data = frozenset((fs0, fs1))
+        self.assertEqual(pprint.pformat(data),
+                         'frozenset({%r, %r})' % (fs0, fs1))
+        self.assertEqual(pprint.pformat(data), repr(data))
+
+        fs2 = frozenset(('one', 'two'))
+        data = {fs2: frozenset((fs0, fs1))}
+        self.assertEqual(pprint.pformat(data),
+                         "{%r: frozenset({%r, %r})}" % (fs2, fs0, fs1))
+        self.assertEqual(pprint.pformat(data), repr(data))
+
+        # Single-line, unordered:
+        fs1 = frozenset(("xyz", "qwerty"))
+        fs2 = frozenset(("abcd", "spam"))
+        fs = frozenset((fs1, fs2))
+        self.assertEqual(pprint.pformat(fs), repr(fs))
+
+        # Multiline, unordered:
+        def check(res, invariants):
+            self.assertIn(res, [textwrap.dedent(i).strip() for i in invariants])
+
+        # Inner-most frozensets are singleline, result is multiline, unordered:
+        fs1 = frozenset(('regular string', 'other string'))
+        fs2 = frozenset(('third string', 'one more string'))
+        check(
+            pprint.pformat(frozenset((fs1, fs2))),
+            [
+                """
+                frozenset({%r,
+                           %r})
+                """ % (fs1, fs2),
+                """
+                frozenset({%r,
+                           %r})
+                """ % (fs2, fs1),
+            ],
+        )
+
+        # Everything is multiline, unordered:
+        check(
+            pprint.pformat(
+                frozenset((
+                    frozenset((
+                        "xyz very-very long string",
+                        "qwerty is also absurdly long",
+                    )),
+                    frozenset((
+                        "abcd is even longer that before",
+                        "spam is not so long",
+                    )),
+                )),
+            ),
+            [
+                """
+                frozenset({frozenset({'abcd is even longer that before',
+                                      'spam is not so long'}),
+                           frozenset({'qwerty is also absurdly long',
+                                      'xyz very-very long string'})})
+                """,
+
+                """
+                frozenset({frozenset({'abcd is even longer that before',
+                                      'spam is not so long'}),
+                           frozenset({'xyz very-very long string',
+                                      'qwerty is also absurdly long'})})
+                """,
+
+                """
+                frozenset({frozenset({'qwerty is also absurdly long',
+                                      'xyz very-very long string'}),
+                           frozenset({'abcd is even longer that before',
+                                      'spam is not so long'})})
+                """,
+
+                """
+                frozenset({frozenset({'qwerty is also absurdly long',
+                                      'xyz very-very long string'}),
+                           frozenset({'spam is not so long',
+                                      'abcd is even longer that before'})})
+                """,
+            ],
+        )
 
     def test_depth(self):
         nested_tuple = (1, (2, (3, (4, (5, 6)))))
