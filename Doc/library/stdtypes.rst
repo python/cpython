@@ -2329,18 +2329,15 @@ expression support in the :mod:`re` module).
    alternatives provides their own trade-offs and benefits of simplicity,
    flexibility, and/or extensibility.
 
-The % operator (modulo) can also be used for string formatting. Given ``'string'
-% values``, instances of ``%`` in ``string`` are replaced with zero or more
-elements of ``values``. This operation is commonly known as string
-interpolation. The effect is similar to using the :c:func:`sprintf` in the C
-language. For example::
+String objects have one unique built-in operation: the ``%`` operator (modulo).
+This is also known as the string *formatting* or *interpolation* operator.
+Given ``format % values`` (where *format* is a string), ``%`` conversion
+specifications in *format* are replaced with zero or more elements of *values*.
+The effect is similar to using the :c:func:`sprintf` in the C language.
 
-   >>> print('%s has %d quote types.' % ('Python', 2))
-   Python has 002 quote types.
-
-If *string* requires a single argument, *values* may be a single non-tuple
+If *format* requires a single argument, *values* may be a single non-tuple
 object. [5]_  Otherwise, *values* must be a tuple with exactly the number of
-items specified by the string, or a single mapping object (for example, a
+items specified by the format string, or a single mapping object (for example, a
 dictionary).
 
 .. index::
