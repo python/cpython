@@ -37,8 +37,8 @@ def _ignore_error(exception):
 
 
 @functools.cache
-def _is_case_sensitive(pathmod):
-    return pathmod.normcase('Aa') == 'Aa'
+def _is_case_sensitive(parser):
+    return parser.normcase('Aa') == 'Aa'
 
 #
 # Globbing helpers
@@ -156,12 +156,12 @@ class UnsupportedOperation(NotImplementedError):
     pass
 
 
-class PathModuleBase:
-    """Base class for path modules, which do low-level path manipulation.
+class ParserBase:
+    """Base class for path parsers, which do low-level path manipulation.
 
-    Path modules provide a subset of the os.path API, specifically those
+    Path parsers provide a subset of the os.path API, specifically those
     functions needed to provide PurePathBase functionality. Each PurePathBase
-    subclass references its path module via a 'pathmod' class attribute.
+    subclass references its path parser via a 'parser' class attribute.
 
     Every method in this base class raises an UnsupportedOperation exception.
     """
@@ -221,10 +221,10 @@ class PurePathBase:
         # work from occurring when `resolve()` calls `stat()` or `readlink()`.
         '_resolving',
     )
-    pathmod = PathModuleBase()
+    parser = ParserBase()
 
     def __init__(self, path, *paths):
-        self._raw_path = self.pathmod.join(path, *paths) if paths else path
+        self._raw_path = self.parser.join(path, *paths) if paths else path
         if not isinstance(self._raw_path, str):
             raise TypeError(
                 f"path should be a str, not {type(self._raw_path).__name__!r}")
@@ -245,17 +245,17 @@ class PurePathBase:
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
-        return str(self).replace(self.pathmod.sep, '/')
+        return str(self).replace(self.parser.sep, '/')
 
     @property
     def drive(self):
         """The drive prefix (letter or UNC path), if any."""
-        return self.pathmod.splitdrive(self.anchor)[0]
+        return self.parser.splitdrive(self.anchor)[0]
 
     @property
     def root(self):
         """The root of the path, if any."""
-        return self.pathmod.splitdrive(self.anchor)[1]
+        return self.parser.splitdrive(self.anchor)[1]
 
     @property
     def anchor(self):
@@ -265,7 +265,7 @@ class PurePathBase:
     @property
     def name(self):
         """The final path component, if any."""
-        return self.pathmod.split(self._raw_path)[1]
+        return self.parser.split(self._raw_path)[1]
 
     @property
     def suffix(self):
@@ -306,7 +306,7 @@ class PurePathBase:
 
     def with_name(self, name):
         """Return a new path with the file name changed."""
-        split = self.pathmod.split
+        split = self.parser.split
         if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
         return self.with_segments(split(self._raw_path)[0], name)
@@ -419,7 +419,7 @@ class PurePathBase:
         uppermost parent of the path (equivalent to path.parents[-1]), and
         *parts* is a reversed list of parts following the anchor.
         """
-        split = self.pathmod.split
+        split = self.parser.split
         path = self._raw_path
         parent, name = split(path)
         names = []
@@ -433,7 +433,7 @@ class PurePathBase:
     def parent(self):
         """The logical parent of the path."""
         path = self._raw_path
-        parent = self.pathmod.split(path)[0]
+        parent = self.parser.split(path)[0]
         if path != parent:
             parent = self.with_segments(parent)
             parent._resolving = self._resolving
@@ -443,7 +443,7 @@ class PurePathBase:
     @property
     def parents(self):
         """A sequence of this path's logical parents."""
-        split = self.pathmod.split
+        split = self.parser.split
         path = self._raw_path
         parent = split(path)[0]
         parents = []
@@ -456,7 +456,7 @@ class PurePathBase:
     def is_absolute(self):
         """True if the path is absolute (has both a root and, if applicable,
         a drive)."""
-        return self.pathmod.isabs(self._raw_path)
+        return self.parser.isabs(self._raw_path)
 
     @property
     def _pattern_stack(self):
@@ -481,8 +481,8 @@ class PurePathBase:
         if not isinstance(path_pattern, PurePathBase):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.pathmod)
-        sep = path_pattern.pathmod.sep
+            case_sensitive = _is_case_sensitive(self.parser)
+        sep = path_pattern.parser.sep
         path_parts = self.parts[::-1]
         pattern_parts = path_pattern.parts[::-1]
         if not pattern_parts:
@@ -505,8 +505,8 @@ class PurePathBase:
         if not isinstance(pattern, PurePathBase):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.pathmod)
-        match = _compile_pattern(pattern._pattern_str, pattern.pathmod.sep, case_sensitive)
+            case_sensitive = _is_case_sensitive(self.parser)
+        match = _compile_pattern(pattern._pattern_str, pattern.parser.sep, case_sensitive)
         return match(self._pattern_str) is not None
 
 
@@ -797,12 +797,12 @@ class PathBase(PurePathBase):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             # TODO: evaluate case-sensitivity of each directory in _select_children().
-            case_sensitive = _is_case_sensitive(self.pathmod)
+            case_sensitive = _is_case_sensitive(self.parser)
 
         stack = pattern._pattern_stack
         specials = ('', '.', '..')
         deduplicate_paths = False
-        sep = self.pathmod.sep
+        sep = self.parser.sep
         paths = iter([self] if self.is_dir() else [])
         while stack:
             part = stack.pop()
@@ -973,7 +973,7 @@ class PathBase(PurePathBase):
                     continue
             path_tail.append(part)
             if querying and part != '..':
-                path = self.with_segments(path_root + self.pathmod.sep.join(path_tail))
+                path = self.with_segments(path_root + self.parser.sep.join(path_tail))
                 path._resolving = True
                 try:
                     st = path.stat(follow_symlinks=False)
@@ -1002,7 +1002,7 @@ class PathBase(PurePathBase):
                         raise
                     else:
                         querying = False
-        return self.with_segments(path_root + self.pathmod.sep.join(path_tail))
+        return self.with_segments(path_root + self.parser.sep.join(path_tail))
 
     def symlink_to(self, target, target_is_directory=False):
         """

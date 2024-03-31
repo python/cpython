@@ -524,6 +524,10 @@ pathlib
   shell-style wildcards, including the recursive wildcard "``**``".
   (Contributed by Barney Gale in :gh:`73435`.)
 
+* Add :attr:`pathlib.PurePath.parser` class attribute that stores the
+  implementation of :mod:`os.path` used for low-level path parsing and
+  joining: either ``posixpath`` or ``ntpath``.
+
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
   :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
   :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
