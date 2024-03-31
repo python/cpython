@@ -1,2 +1,0 @@
-Implement the :c:macro:`Py_UNUSED` macro for Windows MSVC compiler. Patch by
-Victor Stinner.

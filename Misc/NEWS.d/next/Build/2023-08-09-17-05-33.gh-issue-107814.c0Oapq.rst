@@ -1,1 +1,0 @@
-When calling ``find_python.bat`` with ``-q`` it did not properly silence the output of nuget. That is now fixed.

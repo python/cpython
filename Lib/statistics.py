@@ -112,6 +112,7 @@ __all__ = [
     'fmean',
     'geometric_mean',
     'harmonic_mean',
+    'kde',
     'linear_regression',
     'mean',
     'median',
@@ -137,7 +138,7 @@ from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
 from math import hypot, sqrt, fabs, exp, erf, tau, log, fsum, sumprod
-from math import isfinite, isinf
+from math import isfinite, isinf, pi, cos, sin, cosh, atan
 from functools import reduce
 from operator import itemgetter
 from collections import Counter, namedtuple, defaultdict
@@ -527,8 +528,10 @@ def fmean(data, weights=None):
 def geometric_mean(data):
     """Convert data to floats and compute the geometric mean.
 
-    Raises a StatisticsError if the input dataset is empty,
-    if it contains a zero, or if it contains a negative value.
+    Raises a StatisticsError if the input dataset is empty
+    or if it contains a negative value.
+
+    Returns zero if the product of inputs is zero.
 
     No special efforts are made to achieve exact results.
     (However, this may change in the future.)
@@ -536,11 +539,25 @@ def geometric_mean(data):
     >>> round(geometric_mean([54, 24, 36]), 9)
     36.0
     """
-    try:
-        return exp(fmean(map(log, data)))
-    except ValueError:
-        raise StatisticsError('geometric mean requires a non-empty dataset '
-                              'containing positive numbers') from None
+    n = 0
+    found_zero = False
+    def count_positive(iterable):
+        nonlocal n, found_zero
+        for n, x in enumerate(iterable, start=1):
+            if x > 0.0 or math.isnan(x):
+                yield x
+            elif x == 0.0:
+                found_zero = True
+            else:
+                raise StatisticsError('No negative inputs allowed', x)
+    total = fsum(map(log, count_positive(data)))
+    if not n:
+        raise StatisticsError('Must have a non-empty dataset')
+    if math.isnan(total):
+        return math.nan
+    if found_zero:
+        return math.nan if total == math.inf else 0.0
+    return exp(total / n)
 
 
 def harmonic_mean(data, weights=None):
@@ -786,6 +803,208 @@ def multimode(data):
     return [value for value, count in counts.items() if count == maxcount]
 
 
+def kde(data, h, kernel='normal', *, cumulative=False):
+    """Kernel Density Estimation:  Create a continuous probability density
+    function or cumulative distribution function from discrete samples.
+
+    The basic idea is to smooth the data using a kernel function
+    to help draw inferences about a population from a sample.
+
+    The degree of smoothing is controlled by the scaling parameter h
+    which is called the bandwidth.  Smaller values emphasize local
+    features while larger values give smoother results.
+
+    The kernel determines the relative weights of the sample data
+    points.  Generally, the choice of kernel shape does not matter
+    as much as the more influential bandwidth smoothing parameter.
+
+    Kernels that give some weight to every sample point:
+
+       normal (gauss)
+       logistic
+       sigmoid
+
+    Kernels that only give weight to sample points within
+    the bandwidth:
+
+       rectangular (uniform)
+       triangular
+       parabolic (epanechnikov)
+       quartic (biweight)
+       triweight
+       cosine
+
+    If *cumulative* is true, will return a cumulative distribution function.
+
+    A StatisticsError will be raised if the data sequence is empty.
+
+    Example
+    -------
+
+    Given a sample of six data points, construct a continuous
+    function that estimates the underlying probability density:
+
+        >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+        >>> f_hat = kde(sample, h=1.5)
+
+    Compute the area under the curve:
+
+        >>> area = sum(f_hat(x) for x in range(-20, 20))
+        >>> round(area, 4)
+        1.0
+
+    Plot the estimated probability density function at
+    evenly spaced points from -6 to 10:
+
+        >>> for x in range(-6, 11):
+        ...     density = f_hat(x)
+        ...     plot = ' ' * int(density * 400) + 'x'
+        ...     print(f'{x:2}: {density:.3f} {plot}')
+        ...
+        -6: 0.002 x
+        -5: 0.009    x
+        -4: 0.031             x
+        -3: 0.070                             x
+        -2: 0.111                                             x
+        -1: 0.125                                                   x
+         0: 0.110                                            x
+         1: 0.086                                   x
+         2: 0.068                            x
+         3: 0.059                        x
+         4: 0.066                           x
+         5: 0.082                                 x
+         6: 0.082                                 x
+         7: 0.058                        x
+         8: 0.028            x
+         9: 0.009    x
+        10: 0.002 x
+
+    Estimate P(4.5 < X <= 7.5), the probability that a new sample value
+    will be between 4.5 and 7.5:
+
+        >>> cdf = kde(sample, h=1.5, cumulative=True)
+        >>> round(cdf(7.5) - cdf(4.5), 2)
+        0.22
+
+    References
+    ----------
+
+    Kernel density estimation and its application:
+    https://www.itm-conferences.org/articles/itmconf/pdf/2018/08/itmconf_sam2018_00037.pdf
+
+    Kernel functions in common use:
+    https://en.wikipedia.org/wiki/Kernel_(statistics)#kernel_functions_in_common_use
+
+    Interactive graphical demonstration and exploration:
+    https://demonstrations.wolfram.com/KernelDensityEstimation/
+
+    Kernel estimation of cumulative distribution function of a random variable with bounded support
+    https://www.econstor.eu/bitstream/10419/207829/1/10.21307_stattrans-2016-037.pdf
+
+    """
+
+    n = len(data)
+    if not n:
+        raise StatisticsError('Empty data sequence')
+
+    if not isinstance(data[0], (int, float)):
+        raise TypeError('Data sequence must contain ints or floats')
+
+    if h <= 0.0:
+        raise StatisticsError(f'Bandwidth h must be positive, not {h=!r}')
+
+    match kernel:
+
+        case 'normal' | 'gauss':
+            sqrt2pi = sqrt(2 * pi)
+            sqrt2 = sqrt(2)
+            K = lambda t: exp(-1/2 * t * t) / sqrt2pi
+            I = lambda t: 1/2 * (1.0 + erf(t / sqrt2))
+            support = None
+
+        case 'logistic':
+            # 1.0 / (exp(t) + 2.0 + exp(-t))
+            K = lambda t: 1/2 / (1.0 + cosh(t))
+            I = lambda t: 1.0 - 1.0 / (exp(t) + 1.0)
+            support = None
+
+        case 'sigmoid':
+            # (2/pi) / (exp(t) + exp(-t))
+            c1 = 1 / pi
+            c2 = 2 / pi
+            K = lambda t: c1 / cosh(t)
+            I = lambda t: c2 * atan(exp(t))
+            support = None
+
+        case 'rectangular' | 'uniform':
+            K = lambda t: 1/2
+            I = lambda t: 1/2 * t + 1/2
+            support = 1.0
+
+        case 'triangular':
+            K = lambda t: 1.0 - abs(t)
+            I = lambda t: t*t * (1/2 if t < 0.0 else -1/2) + t + 1/2
+            support = 1.0
+
+        case 'parabolic' | 'epanechnikov':
+            K = lambda t: 3/4 * (1.0 - t * t)
+            I = lambda t: -1/4 * t**3 + 3/4 * t + 1/2
+            support = 1.0
+
+        case 'quartic' | 'biweight':
+            K = lambda t: 15/16 * (1.0 - t * t) ** 2
+            I = lambda t: 3/16 * t**5 - 5/8 * t**3 + 15/16 * t + 1/2
+            support = 1.0
+
+        case 'triweight':
+            K = lambda t: 35/32 * (1.0 - t * t) ** 3
+            I = lambda t: 35/32 * (-1/7*t**7 + 3/5*t**5 - t**3 + t) + 1/2
+            support = 1.0
+
+        case 'cosine':
+            c1 = pi / 4
+            c2 = pi / 2
+            K = lambda t: c1 * cos(c2 * t)
+            I = lambda t: 1/2 * sin(c2 * t) + 1/2
+            support = 1.0
+
+        case _:
+            raise StatisticsError(f'Unknown kernel name: {kernel!r}')
+
+    if support is None:
+
+        def pdf(x):
+            return sum(K((x - x_i) / h) for x_i in data) / (n * h)
+
+        def cdf(x):
+            return sum(I((x - x_i) / h) for x_i in data) / n
+
+    else:
+
+        sample = sorted(data)
+        bandwidth = h * support
+
+        def pdf(x):
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum(K((x - x_i) / h) for x_i in supported) / (n * h)
+
+        def cdf(x):
+            i = bisect_left(sample, x - bandwidth)
+            j = bisect_right(sample, x + bandwidth)
+            supported = sample[i : j]
+            return sum((I((x - x_i) / h) for x_i in supported), i) / n
+
+    if cumulative:
+        cdf.__doc__ = f'CDF estimate with {h=!r} and {kernel=!r}'
+        return cdf
+
+    else:
+        pdf.__doc__ = f'PDF estimate with {h=!r} and {kernel=!r}'
+        return pdf
+
+
 # Notes on methods for computing quantiles
 # ----------------------------------------
 #
@@ -844,7 +1063,9 @@ def quantiles(data, *, n=4, method='exclusive'):
     data = sorted(data)
     ld = len(data)
     if ld < 2:
-        raise StatisticsError('must have at least two data points')
+        if ld == 1:
+            return data * (n - 1)
+        raise StatisticsError('must have at least one data point')
     if method == 'inclusive':
         m = ld - 1
         result = []

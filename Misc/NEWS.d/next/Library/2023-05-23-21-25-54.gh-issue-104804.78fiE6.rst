@@ -1,2 +1,0 @@
-Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class, deprecated in Python 3.11.
-Patch by Hugo van Kemenade.

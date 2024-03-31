@@ -87,28 +87,40 @@ pickle functions from the :mod:`copyreg` module.
    single: __copy__() (copy protocol)
    single: __deepcopy__() (copy protocol)
 
+.. currentmodule:: None
+
 In order for a class to define its own copy implementation, it can define
-special methods :meth:`__copy__` and :meth:`__deepcopy__`.  The former is called
-to implement the shallow copy operation; no additional arguments are passed.
-The latter is called to implement the deep copy operation; it is passed one
-argument, the ``memo`` dictionary.  If the :meth:`__deepcopy__` implementation needs
-to make a deep copy of a component, it should call the :func:`deepcopy` function
-with the component as first argument and the memo dictionary as second argument.
-The memo dictionary should be treated as an opaque object.
+special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
+
+.. method:: object.__copy__(self)
+   :noindexentry:
+
+   Called to implement the shallow copy operation;
+   no additional arguments are passed.
+
+.. method:: object.__deepcopy__(self, memo)
+   :noindexentry:
+
+   Called to implement the deep copy operation; it is passed one
+   argument, the *memo* dictionary.  If the ``__deepcopy__`` implementation needs
+   to make a deep copy of a component, it should call the :func:`~copy.deepcopy` function
+   with the component as first argument and the *memo* dictionary as second argument.
+   The *memo* dictionary should be treated as an opaque object.
 
 
 .. index::
    single: __replace__() (replace protocol)
 
-Function :func:`replace` is more limited than :func:`copy` and :func:`deepcopy`,
+Function :func:`!copy.replace` is more limited
+than :func:`~copy.copy` and :func:`~copy.deepcopy`,
 and only supports named tuples created by :func:`~collections.namedtuple`,
-:mod:`dataclasses`, and other classes which define method :meth:`!__replace__`.
+:mod:`dataclasses`, and other classes which define method :meth:`~object.__replace__`.
 
-   .. method:: __replace__(self, /, **changes)
-      :noindex:
+.. method:: object.__replace__(self, /, **changes)
+   :noindexentry:
 
-:meth:`!__replace__` should create a new object of the same type,
-replacing fields with values from *changes*.
+   This method should create a new object of the same type,
+   replacing fields with values from *changes*.
 
 
 .. seealso::

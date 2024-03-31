@@ -66,6 +66,7 @@ int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq,
 int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
                                          int opcode, int oparg,
                                          _PyCompilerSrcLocation loc);
+int _PyCompile_InstructionSequence_ApplyLabelMap(_PyCompile_InstructionSequence *seq);
 
 typedef struct {
     PyObject *u_name;
@@ -101,6 +102,20 @@ int _PyCompile_EnsureArrayLargeEnough(
         size_t item_size);
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
+
+
+// Export for '_opcode' extension module
+PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasName(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasJump(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasFree(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasLocal(int opcode);
+PyAPI_FUNC(int) _PyCompile_OpcodeHasExc(int opcode);
+
+PyAPI_FUNC(PyObject*) _PyCompile_GetUnaryIntrinsicName(int index);
+PyAPI_FUNC(PyObject*) _PyCompile_GetBinaryIntrinsicName(int index);
 
 /* Access compiler internals for unit testing */
 

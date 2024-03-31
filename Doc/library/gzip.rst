@@ -61,7 +61,7 @@ The module defines the following items:
 
 .. exception:: BadGzipFile
 
-   An exception raised for invalid gzip files.  It inherits :exc:`OSError`.
+   An exception raised for invalid gzip files.  It inherits from :exc:`OSError`.
    :exc:`EOFError` and :exc:`zlib.error` can also be raised for invalid gzip
    files.
 
@@ -100,12 +100,14 @@ The module defines the following items:
    compression, and ``9`` is slowest and produces the most compression. ``0``
    is no compression. The default is ``9``.
 
-   The *mtime* argument is an optional numeric timestamp to be written to
-   the last modification time field in the stream when compressing.  It
-   should only be provided in compression mode.  If omitted or ``None``, the
-   current time is used.  See the :attr:`mtime` attribute for more details.
+   The optional *mtime* argument is the timestamp requested by gzip. The time
+   is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+   If *mtime* is omitted or None, the current time is used. Use *mtime* = 0
+   to generate a compressed stream that does not depend on creation time.
 
-   Calling a :class:`GzipFile` object's :meth:`close` method does not close
+   See below for the :attr:`mtime` attribute that is set when decompressing.
+
+   Calling a :class:`GzipFile` object's :meth:`!close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
    data.  This also allows you to pass an :class:`io.BytesIO` object opened for
    writing as *fileobj*, and retrieve the resulting memory buffer using the
@@ -131,15 +133,10 @@ The module defines the following items:
 
    .. attribute:: mtime
 
-      When decompressing, the value of the last modification time field in
-      the most recently read header may be read from this attribute, as an
-      integer.  The initial value before reading any headers is ``None``.
-
-      All :program:`gzip` compressed streams are required to contain this
-      timestamp field.  Some programs, such as :program:`gunzip`\ , make use
-      of the timestamp.  The format is the same as the return value of
-      :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
-      the object returned by :func:`os.stat`.
+      When decompressing, this attribute is set to the last timestamp in the most
+      recently read header.  It is an integer, holding the number of seconds
+      since the Unix epoch (00:00:00 UTC, January 1, 1970).
+      The initial value before reading any headers is ``None``.
 
    .. attribute:: name
 
@@ -248,6 +245,8 @@ Example of how to GZIP compress a binary string::
 
 .. program:: gzip
 
+.. _gzip-cli:
+
 Command Line Interface
 ----------------------
 
@@ -264,23 +263,22 @@ Once executed the :mod:`gzip` module keeps the input file(s).
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
-.. cmdoption:: file
+.. option:: file
 
    If *file* is not specified, read from :data:`sys.stdin`.
 
-.. cmdoption:: --fast
+.. option:: --fast
 
    Indicates the fastest compression method (less compression).
 
-.. cmdoption:: --best
+.. option:: --best
 
    Indicates the slowest compression method (best compression).
 
-.. cmdoption:: -d, --decompress
+.. option:: -d, --decompress
 
    Decompress the given file.
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message.
-

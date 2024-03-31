@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(readline_parse_and_bind__doc__,
 "parse_and_bind($module, string, /)\n"
 "--\n"
@@ -682,4 +684,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=790ed2ba01babb60 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=358ab465285c7949 input=a9049054013a1b77]*/

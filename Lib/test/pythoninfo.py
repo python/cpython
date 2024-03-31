@@ -1,16 +1,11 @@
 """
 Collect various information about Python to help debugging test failures.
 """
-from __future__ import print_function
 import errno
 import re
 import sys
 import traceback
-import unittest
 import warnings
-
-
-MS_WINDOWS = (sys.platform == 'win32')
 
 
 def normalize_text(text):
@@ -184,6 +179,9 @@ def collect_platform(info_add):
             info_add(f'platform.freedesktop_os_release[{key}]',
                      os_release[key])
 
+    if sys.platform == 'android':
+        call_func(info_add, 'platform.android_ver', platform, 'android_ver')
+
 
 def collect_locale(info_add):
     import locale
@@ -244,6 +242,7 @@ def collect_os(info_add):
         'getresgid',
         'getresuid',
         'getuid',
+        'process_cpu_count',
         'uname',
     ):
         call_func(info_add, 'os.%s' % func, os, func)
@@ -273,6 +272,7 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
+        "BUILDPYTHON",
         "CC",
         "CFLAGS",
         "COLUMNS",
@@ -290,6 +290,7 @@ def collect_os(info_add):
         "HOMEDRIVE",
         "HOMEPATH",
         "IDLESTARTUP",
+        "IPHONEOS_DEPLOYMENT_TARGET",
         "LANG",
         "LDFLAGS",
         "LDSHARED",
@@ -325,6 +326,7 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
+        "_PYTHON_HOSTRUNNER",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
@@ -340,7 +342,8 @@ def collect_os(info_add):
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
-           # Copy PYTHON* and LC_* variables
+           # Copy PYTHON* variables like PYTHONPATH
+           # Copy LC_* variables like LC_ALL
            or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
@@ -493,12 +496,9 @@ def collect_datetime(info_add):
 
 
 def collect_sysconfig(info_add):
-    # On Windows, sysconfig is not reliable to get macros used
-    # to build Python
-    if MS_WINDOWS:
-        return
-
     import sysconfig
+
+    info_add('sysconfig.is_python_build', sysconfig.is_python_build())
 
     for name in (
         'ABIFLAGS',
@@ -508,6 +508,7 @@ def collect_sysconfig(info_add):
         'CFLAGS',
         'CFLAGSFORSHARED',
         'CONFIG_ARGS',
+        'HOSTRUNNER',
         'HOST_GNU_TYPE',
         'MACHDEP',
         'MULTIARCH',
@@ -520,10 +521,14 @@ def collect_sysconfig(info_add):
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
-        'Py_NOGIL',
+        'Py_GIL_DISABLED',
         'SHELL',
         'SOABI',
+        'TEST_MODULES',
+        'abs_builddir',
+        'abs_srcdir',
         'prefix',
+        'srcdir',
     ):
         value = sysconfig.get_config_var(name)
         if name == 'ANDROID_API_LEVEL' and not value:
@@ -544,6 +549,7 @@ def collect_sysconfig(info_add):
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
         'WITH_FREELISTS',
+        'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',
     ):
@@ -711,6 +717,7 @@ def collect_resource(info_add):
 
 
 def collect_test_socket(info_add):
+    import unittest
     try:
         from test import test_socket
     except (ImportError, unittest.SkipTest):
@@ -722,24 +729,81 @@ def collect_test_socket(info_add):
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
 
 
-def collect_test_support(info_add):
+def collect_support(info_add):
     try:
         from test import support
     except ImportError:
         return
 
-    attributes = ('IPV6_ENABLED',)
-    copy_attributes(info_add, support, 'test_support.%s', attributes)
+    attributes = (
+        'MS_WINDOWS',
+        'has_fork_support',
+        'has_socket_support',
+        'has_strftime_extensions',
+        'has_subprocess_support',
+        'is_android',
+        'is_emscripten',
+        'is_jython',
+        'is_wasi',
+    )
+    copy_attributes(info_add, support, 'support.%s', attributes)
 
-    call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
-    call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+    call_func(info_add, 'support._is_gui_available', support, '_is_gui_available')
+    call_func(info_add, 'support.python_is_optimized', support, 'python_is_optimized')
 
-    info_add('test_support.check_sanitizer(address=True)',
+    info_add('support.check_sanitizer(address=True)',
              support.check_sanitizer(address=True))
-    info_add('test_support.check_sanitizer(memory=True)',
+    info_add('support.check_sanitizer(memory=True)',
              support.check_sanitizer(memory=True))
-    info_add('test_support.check_sanitizer(ub=True)',
+    info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+
+
+def collect_support_os_helper(info_add):
+    try:
+        from test.support import os_helper
+    except ImportError:
+        return
+
+    for name in (
+        'can_symlink',
+        'can_xattr',
+        'can_chmod',
+        'can_dac_override',
+    ):
+        func = getattr(os_helper, name)
+        info_add(f'support_os_helper.{name}', func())
+
+
+def collect_support_socket_helper(info_add):
+    try:
+        from test.support import socket_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'IPV6_ENABLED',
+        'has_gethostname',
+    )
+    copy_attributes(info_add, socket_helper, 'support_socket_helper.%s', attributes)
+
+    for name in (
+        'tcp_blackhole',
+    ):
+        func = getattr(socket_helper, name)
+        info_add(f'support_socket_helper.{name}', func())
+
+
+def collect_support_threading_helper(info_add):
+    try:
+        from test.support import threading_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'can_start_thread',
+    )
+    copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
 def collect_cc(info_add):
@@ -806,26 +870,36 @@ def collect_subprocess(info_add):
 
 
 def collect_windows(info_add):
+    if sys.platform != "win32":
+        # Code specific to Windows
+        return
+
+    # windows.RtlAreLongPathsEnabled: RtlAreLongPathsEnabled()
+    # windows.is_admin: IsUserAnAdmin()
     try:
         import ctypes
+        if not hasattr(ctypes, 'WinDLL'):
+            raise ImportError
     except ImportError:
-        return
-
-    if not hasattr(ctypes, 'WinDLL'):
-        return
-
-    ntdll = ctypes.WinDLL('ntdll')
-    BOOLEAN = ctypes.c_ubyte
-
-    try:
-        RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
-    except AttributeError:
-        res = '<function not available>'
+        pass
     else:
-        RtlAreLongPathsEnabled.restype = BOOLEAN
-        RtlAreLongPathsEnabled.argtypes = ()
-        res = bool(RtlAreLongPathsEnabled())
-    info_add('windows.RtlAreLongPathsEnabled', res)
+        ntdll = ctypes.WinDLL('ntdll')
+        BOOLEAN = ctypes.c_ubyte
+        try:
+            RtlAreLongPathsEnabled = ntdll.RtlAreLongPathsEnabled
+        except AttributeError:
+            res = '<function not available>'
+        else:
+            RtlAreLongPathsEnabled.restype = BOOLEAN
+            RtlAreLongPathsEnabled.argtypes = ()
+            res = bool(RtlAreLongPathsEnabled())
+        info_add('windows.RtlAreLongPathsEnabled', res)
+
+        shell32 = ctypes.windll.shell32
+        IsUserAnAdmin = shell32.IsUserAnAdmin
+        IsUserAnAdmin.restype = BOOLEAN
+        IsUserAnAdmin.argtypes = ()
+        info_add('windows.is_admin', IsUserAnAdmin())
 
     try:
         import _winapi
@@ -834,6 +908,7 @@ def collect_windows(info_add):
     except (ImportError, AttributeError):
         pass
 
+    # windows.version_caption: "wmic os get Caption,Version /value" command
     import subprocess
     try:
         # When wmic.exe output is redirected to a pipe,
@@ -860,12 +935,15 @@ def collect_windows(info_add):
                 if line:
                     info_add('windows.version', line)
 
+    # windows.ver: "ver" command
     try:
         proc = subprocess.Popen(["ver"], shell=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 text=True)
         output = proc.communicate()[0]
+        if proc.returncode == 0xc0000142:
+            return
         if proc.returncode:
             output = ""
     except OSError:
@@ -875,6 +953,22 @@ def collect_windows(info_add):
         line = output.splitlines()[0]
         if line:
             info_add('windows.ver', line)
+
+    # windows.developer_mode: get AllowDevelopmentWithoutDevLicense registry
+    import winreg
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_LOCAL_MACHINE,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock")
+        subkey = "AllowDevelopmentWithoutDevLicense"
+        try:
+            value, value_type = winreg.QueryValueEx(key, subkey)
+        finally:
+            winreg.CloseKey(key)
+    except OSError:
+        pass
+    else:
+        info_add('windows.developer_mode', "enabled" if value else "disabled")
 
 
 def collect_fips(info_add):
@@ -894,6 +988,21 @@ def collect_fips(info_add):
             info_add('fips.linux_crypto_fips_enabled', line)
     except OSError:
         pass
+
+
+def collect_tempfile(info_add):
+    import tempfile
+
+    info_add('tempfile.gettempdir', tempfile.gettempdir())
+
+
+def collect_libregrtest_utils(info_add):
+    try:
+        from test.libregrtest import utils
+    except ImportError:
+        return
+
+    info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
 
 
 def collect_info(info):
@@ -930,14 +1039,19 @@ def collect_info(info):
         collect_sysconfig,
         collect_testcapi,
         collect_testinternalcapi,
+        collect_tempfile,
         collect_time,
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_libregrtest_utils,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
-        collect_test_support,
+        collect_support,
+        collect_support_os_helper,
+        collect_support_socket_helper,
+        collect_support_threading_helper,
     ):
         try:
             collect_func(info_add)

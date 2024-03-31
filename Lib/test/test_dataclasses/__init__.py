@@ -22,6 +22,8 @@ from functools import total_ordering
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
 import dataclasses  # Needed for the string "dataclasses.InitVar[int]" to work as an annotation.
 
+from test import support
+
 # Just any custom exception we can catch.
 class CustomError(Exception): pass
 
@@ -2216,6 +2218,7 @@ class TestDocString(unittest.TestCase):
         #  whitespace stripped.
         self.assertEqual(a.replace(' ', ''), b.replace(' ', ''))
 
+    @support.requires_docstrings
     def test_existing_docstring_not_overridden(self):
         @dataclass
         class C:
@@ -2468,6 +2471,15 @@ class TestRepr(unittest.TestCase):
 
 
 class TestEq(unittest.TestCase):
+    def test_recursive_eq(self):
+        # Test a class with recursive child
+        @dataclass
+        class C:
+            recursive: object = ...
+        c = C()
+        c.recursive = c
+        self.assertEqual(c, c)
+
     def test_no_eq(self):
         # Test a class with no __eq__ and eq=False.
         @dataclass(eq=False)
@@ -2862,6 +2874,101 @@ class TestFrozen(unittest.TestCase):
             @dataclass
             class D(C):
                 j: int
+
+    def test_inherit_frozen_mutliple_inheritance(self):
+        @dataclass
+        class NotFrozen:
+            pass
+
+        @dataclass(frozen=True)
+        class Frozen:
+            pass
+
+        class NotDataclass:
+            pass
+
+        for bases in (
+            (NotFrozen, Frozen),
+            (Frozen, NotFrozen),
+            (Frozen, NotDataclass),
+            (NotDataclass, Frozen),
+        ):
+            with self.subTest(bases=bases):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    'cannot inherit non-frozen dataclass from a frozen one',
+                ):
+                    @dataclass
+                    class NotFrozenChild(*bases):
+                        pass
+
+        for bases in (
+            (NotFrozen, Frozen),
+            (Frozen, NotFrozen),
+            (NotFrozen, NotDataclass),
+            (NotDataclass, NotFrozen),
+        ):
+            with self.subTest(bases=bases):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    'cannot inherit frozen dataclass from a non-frozen one',
+                ):
+                    @dataclass(frozen=True)
+                    class FrozenChild(*bases):
+                        pass
+
+    def test_inherit_frozen_mutliple_inheritance_regular_mixins(self):
+        @dataclass(frozen=True)
+        class Frozen:
+            pass
+
+        class NotDataclass:
+            pass
+
+        class C1(Frozen, NotDataclass):
+            pass
+        self.assertEqual(C1.__mro__, (C1, Frozen, NotDataclass, object))
+
+        class C2(NotDataclass, Frozen):
+            pass
+        self.assertEqual(C2.__mro__, (C2, NotDataclass, Frozen, object))
+
+        @dataclass(frozen=True)
+        class C3(Frozen, NotDataclass):
+            pass
+        self.assertEqual(C3.__mro__, (C3, Frozen, NotDataclass, object))
+
+        @dataclass(frozen=True)
+        class C4(NotDataclass, Frozen):
+            pass
+        self.assertEqual(C4.__mro__, (C4, NotDataclass, Frozen, object))
+
+    def test_multiple_frozen_dataclasses_inheritance(self):
+        @dataclass(frozen=True)
+        class FrozenA:
+            pass
+
+        @dataclass(frozen=True)
+        class FrozenB:
+            pass
+
+        class C1(FrozenA, FrozenB):
+            pass
+        self.assertEqual(C1.__mro__, (C1, FrozenA, FrozenB, object))
+
+        class C2(FrozenB, FrozenA):
+            pass
+        self.assertEqual(C2.__mro__, (C2, FrozenB, FrozenA, object))
+
+        @dataclass(frozen=True)
+        class C3(FrozenA, FrozenB):
+            pass
+        self.assertEqual(C3.__mro__, (C3, FrozenA, FrozenB, object))
+
+        @dataclass(frozen=True)
+        class C4(FrozenB, FrozenA):
+            pass
+        self.assertEqual(C4.__mro__, (C4, FrozenB, FrozenA, object))
 
     def test_inherit_nonfrozen_from_empty(self):
         @dataclass
@@ -3398,6 +3505,17 @@ class TestSlots(unittest.TestCase):
         a = A(1)
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
+
+
+    def test_dataclass_derived_weakref_slot(self):
+        class A:
+            pass
+
+        @dataclass(slots=True, weakref_slot=True)
+        class B(A):
+            pass
+
+        B()
 
 
 class TestDescriptors(unittest.TestCase):
@@ -3965,9 +4083,9 @@ class TestReplace(unittest.TestCase):
         self.assertEqual((c1.x, c1.y, c1.z, c1.t), (3, 2, 10, 100))
 
 
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, x=3, z=20, t=50)
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, z=20)
             replace(c, x=3, z=20, t=50)
 
@@ -4020,10 +4138,10 @@ class TestReplace(unittest.TestCase):
         self.assertEqual((c1.x, c1.y), (5, 10))
 
         # Trying to replace y is an error.
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, x=2, y=30)
 
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, y=30)
 
     def test_classvar(self):
@@ -4056,8 +4174,8 @@ class TestReplace(unittest.TestCase):
 
         c = C(1, 10)
         self.assertEqual(c.x, 10)
-        with self.assertRaisesRegex(ValueError, r"InitVar 'y' must be "
-                                    "specified with replace()"):
+        with self.assertRaisesRegex(TypeError, r"InitVar 'y' must be "
+                                    r"specified with replace\(\)"):
             replace(c, x=3)
         c = replace(c, x=3, y=5)
         self.assertEqual(c.x, 15)

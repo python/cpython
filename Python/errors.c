@@ -16,11 +16,6 @@
 #  include <stdlib.h>             // _sys_nerr
 #endif
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Forward declarations */
 static PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
@@ -126,11 +121,11 @@ _PyErr_GetTopmostException(PyThreadState *tstate)
     _PyErr_StackItem *exc_info = tstate->exc_info;
     assert(exc_info);
 
-    while ((exc_info->exc_value == NULL || exc_info->exc_value == Py_None) &&
-           exc_info->previous_item != NULL)
+    while (exc_info->exc_value == NULL && exc_info->previous_item != NULL)
     {
         exc_info = exc_info->previous_item;
     }
+    assert(!Py_IsNone(exc_info->exc_value));
     return exc_info;
 }
 
@@ -597,7 +592,7 @@ PyErr_GetHandledException(void)
 void
 _PyErr_SetHandledException(PyThreadState *tstate, PyObject *exc)
 {
-    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc));
+    Py_XSETREF(tstate->exc_info->exc_value, Py_XNewRef(exc == Py_None ? NULL : exc));
 }
 
 void
@@ -1513,11 +1508,9 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     }
 
     /* Explicitly call file.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (!res) {
+    if (_PyFile_Flush(file) < 0) {
         return -1;
     }
-    Py_DECREF(res);
 
     return 0;
 }
@@ -1576,14 +1569,16 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
    for Python to handle it. For example, when a destructor raises an exception
    or during garbage collection (gc.collect()).
 
-   If err_msg_str is non-NULL, the error message is formatted as:
-   "Exception ignored %s" % err_msg_str. Otherwise, use "Exception ignored in"
-   error message.
+   If format is non-NULL, the error message is formatted using format and
+   variable arguments as in PyUnicode_FromFormat().
+   Otherwise, use "Exception ignored in" error message.
 
    An exception must be set when calling this function. */
-void
-_PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
+
+static void
+format_unraisable_v(const char *format, va_list va, PyObject *obj)
 {
+    const char *err_msg_str;
     PyThreadState *tstate = _PyThreadState_GET();
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -1617,8 +1612,8 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         }
     }
 
-    if (err_msg_str != NULL) {
-        err_msg = PyUnicode_FromFormat("Exception ignored %s", err_msg_str);
+    if (format != NULL) {
+        err_msg = PyUnicode_FromFormatV(format, va);
         if (err_msg == NULL) {
             PyErr_Clear();
         }
@@ -1683,11 +1678,30 @@ done:
     _PyErr_Clear(tstate); /* Just in case */
 }
 
+void
+PyErr_FormatUnraisable(const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    format_unraisable_v(format, va, NULL);
+    va_end(va);
+}
+
+static void
+format_unraisable(PyObject *obj, const char *format, ...)
+{
+    va_list va;
+
+    va_start(va, format);
+    format_unraisable_v(format, va, obj);
+    va_end(va);
+}
 
 void
 PyErr_WriteUnraisable(PyObject *obj)
 {
-    _PyErr_WriteUnraisableMsg(NULL, obj);
+    format_unraisable(obj, NULL);
 }
 
 
@@ -1776,13 +1790,11 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
         }
     }
     if ((PyObject *)Py_TYPE(exc) != PyExc_SyntaxError) {
-        if (PyObject_GetOptionalAttr(exc, &_Py_ID(msg), &tmp) < 0) {
+        int rc = PyObject_HasAttrWithError(exc, &_Py_ID(msg));
+        if (rc < 0) {
             _PyErr_Clear(tstate);
         }
-        else if (tmp) {
-            Py_DECREF(tmp);
-        }
-        else {
+        else if (!rc) {
             tmp = PyObject_Str(exc);
             if (tmp) {
                 if (PyObject_SetAttr(exc, &_Py_ID(msg), tmp)) {
@@ -1795,13 +1807,11 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
             }
         }
 
-        if (PyObject_GetOptionalAttr(exc, &_Py_ID(print_file_and_line), &tmp) < 0) {
+        rc = PyObject_HasAttrWithError(exc, &_Py_ID(print_file_and_line));
+        if (rc < 0) {
             _PyErr_Clear(tstate);
         }
-        else if (tmp) {
-            Py_DECREF(tmp);
-        }
-        else {
+        else if (!rc) {
             if (PyObject_SetAttr(exc, &_Py_ID(print_file_and_line), Py_None)) {
                 _PyErr_Clear(tstate);
             }
@@ -1924,7 +1934,3 @@ PyErr_ProgramTextObject(PyObject *filename, int lineno)
 {
     return _PyErr_ProgramDecodedTextObject(filename, lineno, NULL);
 }
-
-#ifdef __cplusplus
-}
-#endif

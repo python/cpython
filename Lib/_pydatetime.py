@@ -556,10 +556,6 @@ def _check_tzinfo_arg(tz):
     if tz is not None and not isinstance(tz, tzinfo):
         raise TypeError("tzinfo argument must be None or of a tzinfo subclass")
 
-def _cmperror(x, y):
-    raise TypeError("can't compare '%s' to '%s'" % (
-                    type(x).__name__, type(y).__name__))
-
 def _divide_and_round(a, b):
     """divide a by b and round result to the nearest integer
 
@@ -1015,13 +1011,9 @@ class date:
     def __repr__(self):
         """Convert to formal string, for repr().
 
-        >>> dt = datetime(2010, 1, 1)
-        >>> repr(dt)
-        'datetime.datetime(2010, 1, 1, 0, 0)'
-
-        >>> dt = datetime(2010, 1, 1, tzinfo=timezone.utc)
-        >>> repr(dt)
-        'datetime.datetime(2010, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)'
+        >>> d = date(2010, 1, 1)
+        >>> repr(d)
+        'datetime.date(2010, 1, 1)'
         """
         return "%s.%s(%d, %d, %d)" % (_get_class_module(self),
                                       self.__class__.__qualname__,
@@ -1117,32 +1109,33 @@ class date:
     # Comparisons of date objects with other.
 
     def __eq__(self, other):
-        if isinstance(other, date):
+        if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) == 0
         return NotImplemented
 
     def __le__(self, other):
-        if isinstance(other, date):
+        if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) <= 0
         return NotImplemented
 
     def __lt__(self, other):
-        if isinstance(other, date):
+        if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) < 0
         return NotImplemented
 
     def __ge__(self, other):
-        if isinstance(other, date):
+        if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) >= 0
         return NotImplemented
 
     def __gt__(self, other):
-        if isinstance(other, date):
+        if isinstance(other, date) and not isinstance(other, datetime):
             return self._cmp(other) > 0
         return NotImplemented
 
     def _cmp(self, other):
         assert isinstance(other, date)
+        assert not isinstance(other, datetime)
         y, m, d = self._year, self._month, self._day
         y2, m2, d2 = other._year, other._month, other._day
         return _cmp((y, m, d), (y2, m2, d2))
@@ -1688,7 +1681,7 @@ class datetime(date):
     The year, month and day arguments are required. tzinfo may be None, or an
     instance of a tzinfo subclass. The remaining arguments may be ints.
     """
-    __slots__ = date.__slots__ + time.__slots__
+    __slots__ = time.__slots__
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0):
@@ -1813,7 +1806,7 @@ class datetime(date):
     def utcfromtimestamp(cls, t):
         """Construct a naive UTC datetime from a POSIX timestamp."""
         import warnings
-        warnings.warn("datetime.utcfromtimestamp() is deprecated and scheduled "
+        warnings.warn("datetime.datetime.utcfromtimestamp() is deprecated and scheduled "
                       "for removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
                       "datetime.datetime.fromtimestamp(t, datetime.UTC).",
@@ -1831,8 +1824,8 @@ class datetime(date):
     def utcnow(cls):
         "Construct a UTC datetime from time.time()."
         import warnings
-        warnings.warn("datetime.utcnow() is deprecated and scheduled for "
-                      "removal in a future version. Instead, Use timezone-aware "
+        warnings.warn("datetime.datetime.utcnow() is deprecated and scheduled for "
+                      "removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
                       "datetime.datetime.now(datetime.UTC).",
                       DeprecationWarning,
@@ -2141,42 +2134,32 @@ class datetime(date):
     def __eq__(self, other):
         if isinstance(other, datetime):
             return self._cmp(other, allow_mixed=True) == 0
-        elif not isinstance(other, date):
-            return NotImplemented
         else:
-            return False
+            return NotImplemented
 
     def __le__(self, other):
         if isinstance(other, datetime):
             return self._cmp(other) <= 0
-        elif not isinstance(other, date):
-            return NotImplemented
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __lt__(self, other):
         if isinstance(other, datetime):
             return self._cmp(other) < 0
-        elif not isinstance(other, date):
-            return NotImplemented
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, datetime):
             return self._cmp(other) >= 0
-        elif not isinstance(other, date):
-            return NotImplemented
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __gt__(self, other):
         if isinstance(other, datetime):
             return self._cmp(other) > 0
-        elif not isinstance(other, date):
-            return NotImplemented
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def _cmp(self, other, allow_mixed=False):
         assert isinstance(other, datetime)
@@ -2350,6 +2333,9 @@ class timezone(tzinfo):
                              "strictly between -timedelta(hours=24) and "
                              "timedelta(hours=24).")
         return cls._create(offset, name)
+
+    def __init_subclass__(cls):
+        raise TypeError("type 'datetime.timezone' is not an acceptable base type")
 
     @classmethod
     def _create(cls, offset, name=None):

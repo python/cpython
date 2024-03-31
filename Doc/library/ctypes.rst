@@ -93,7 +93,6 @@ Accessing functions from loaded dlls
 
 Functions are accessed as attributes of dll objects::
 
-   >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
    >>> print(windll.kernel32.GetModuleHandleA)  # doctest: +WINDOWS
@@ -200,7 +199,7 @@ calls).
 Python objects that can directly be used as parameters in these function calls.
 ``None`` is passed as a C ``NULL`` pointer, bytes objects and strings are passed
 as pointer to the memory block that contains their data (:c:expr:`char *` or
-:c:expr:`wchar_t *`).  Python integers are passed as the platforms default C
+:c:expr:`wchar_t *`).  Python integers are passed as the platform's default C
 :c:expr:`int` type, their value is masked to fit into the C type.
 
 Before we move on calling functions with other parameter types, we have to learn
@@ -670,6 +669,10 @@ compiler does it. It is possible to override this behavior by specifying a
 :attr:`~Structure._pack_` class attribute in the subclass definition.
 This must be set to a positive integer and specifies the maximum alignment for the fields.
 This is what ``#pragma pack(n)`` also does in MSVC.
+It is also possible to set a minimum alignment for how the subclass itself is packed in the
+same way ``#pragma align(n)`` works in MSVC.
+This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
 structures with non-native byte order, you can use one of the
@@ -1113,10 +1116,6 @@ api::
    >>> print(hex(version.value))
    0x30c00a0
 
-If the interpreter would have been started with :option:`-O`, the sample would
-have printed ``c_long(1)``, or ``c_long(2)`` if :option:`-OO` would have been
-specified.
-
 An extended example which also demonstrates the use of pointers accesses the
 :c:data:`PyImport_FrozenModules` pointer exported by Python.
 
@@ -1335,8 +1334,9 @@ Here are some examples::
    'libbz2.so.1.0'
    >>>
 
-On macOS, :func:`~ctypes.util.find_library` tries several predefined naming schemes and paths
-to locate the library, and returns a full pathname if successful::
+On macOS and Android, :func:`~ctypes.util.find_library` uses the system's
+standard naming schemes and paths to locate the library, and returns a full
+pathname if successful::
 
    >>> from ctypes.util import find_library
    >>> find_library("c")
@@ -1403,7 +1403,8 @@ way is to instantiate one of the following classes:
    failure, an :class:`OSError` is automatically raised.
 
    .. versionchanged:: 3.3
-      :exc:`WindowsError` used to be raised.
+      :exc:`WindowsError` used to be raised,
+      which is now an alias of :exc:`OSError`.
 
    .. versionchanged:: 3.12
 
@@ -1440,7 +1441,7 @@ function exported by these libraries, and reacquired afterwards.
 All these classes can be instantiated by calling them with at least one
 argument, the pathname of the shared library.  If you have an existing handle to
 an already loaded shared library, it can be passed as the ``handle`` named
-parameter, otherwise the underlying platforms :c:func:`!dlopen` or
+parameter, otherwise the underlying platform's :c:func:`!dlopen` or
 :c:func:`!LoadLibrary` function is used to load the library into
 the process, and to get a handle to it.
 
@@ -1451,7 +1452,7 @@ configurable.
 
 The *use_errno* parameter, when set to true, enables a ctypes mechanism that
 allows accessing the system :data:`errno` error number in a safe way.
-:mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
+:mod:`ctypes` maintains a thread-local copy of the system's :data:`errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
 :data:`errno` value before the function call is swapped with the ctypes private
 copy, the same happens immediately after the function call.
@@ -1737,70 +1738,70 @@ See :ref:`ctypes-callback-functions` for examples.
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
 
+.. function:: prototype(address)
+   :noindex:
+   :module:
 
-   .. function:: prototype(address)
-      :noindex:
-      :module:
-
-      Returns a foreign function at the specified address which must be an integer.
-
-
-   .. function:: prototype(callable)
-      :noindex:
-      :module:
-
-      Create a C callable function (a callback function) from a Python *callable*.
+   Returns a foreign function at the specified address which must be an integer.
 
 
-   .. function:: prototype(func_spec[, paramflags])
-      :noindex:
-      :module:
+.. function:: prototype(callable)
+   :noindex:
+   :module:
 
-      Returns a foreign function exported by a shared library. *func_spec* must
-      be a 2-tuple ``(name_or_ordinal, library)``. The first item is the name of
-      the exported function as string, or the ordinal of the exported function
-      as small integer.  The second item is the shared library instance.
+   Create a C callable function (a callback function) from a Python *callable*.
 
 
-   .. function:: prototype(vtbl_index, name[, paramflags[, iid]])
-      :noindex:
-      :module:
+.. function:: prototype(func_spec[, paramflags])
+   :noindex:
+   :module:
 
-      Returns a foreign function that will call a COM method. *vtbl_index* is
-      the index into the virtual function table, a small non-negative
-      integer. *name* is name of the COM method. *iid* is an optional pointer to
-      the interface identifier which is used in extended error reporting.
+   Returns a foreign function exported by a shared library. *func_spec* must
+   be a 2-tuple ``(name_or_ordinal, library)``. The first item is the name of
+   the exported function as string, or the ordinal of the exported function
+   as small integer.  The second item is the shared library instance.
 
-      COM methods use a special calling convention: They require a pointer to
-      the COM interface as first argument, in addition to those parameters that
-      are specified in the :attr:`!argtypes` tuple.
 
-   The optional *paramflags* parameter creates foreign function wrappers with much
-   more functionality than the features described above.
+.. function:: prototype(vtbl_index, name[, paramflags[, iid]])
+   :noindex:
+   :module:
 
-   *paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
+   Returns a foreign function that will call a COM method. *vtbl_index* is
+   the index into the virtual function table, a small non-negative
+   integer. *name* is name of the COM method. *iid* is an optional pointer to
+   the interface identifier which is used in extended error reporting.
 
-   Each item in this tuple contains further information about a parameter, it must
-   be a tuple containing one, two, or three items.
+   COM methods use a special calling convention: They require a pointer to
+   the COM interface as first argument, in addition to those parameters that
+   are specified in the :attr:`!argtypes` tuple.
 
-   The first item is an integer containing a combination of direction
-   flags for the parameter:
+The optional *paramflags* parameter creates foreign function wrappers with much
+more functionality than the features described above.
 
-      1
-         Specifies an input parameter to the function.
+*paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
 
-      2
-         Output parameter.  The foreign function fills in a value.
+Each item in this tuple contains further information about a parameter, it must
+be a tuple containing one, two, or three items.
 
-      4
-         Input parameter which defaults to the integer zero.
+The first item is an integer containing a combination of direction
+flags for the parameter:
 
-   The optional second item is the parameter name as string.  If this is specified,
-   the foreign function can be called with named parameters.
+   1
+      Specifies an input parameter to the function.
 
-   The optional third item is the default value for this parameter.
+   2
+      Output parameter.  The foreign function fills in a value.
 
-This example demonstrates how to wrap the Windows ``MessageBoxW`` function so
+   4
+      Input parameter which defaults to the integer zero.
+
+The optional second item is the parameter name as string.  If this is specified,
+the foreign function can be called with named parameters.
+
+The optional third item is the default value for this parameter.
+
+
+The following example demonstrates how to wrap the Windows ``MessageBoxW`` function so
 that it supports default parameters and named arguments. The C declaration from
 the windows header file is this::
 
@@ -2088,13 +2089,14 @@ Utility functions
 .. function:: WinError(code=None, descr=None)
 
    Windows only: this function is probably the worst-named thing in ctypes. It
-   creates an instance of OSError.  If *code* is not specified,
+   creates an instance of :exc:`OSError`.  If *code* is not specified,
    ``GetLastError`` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
 
    .. versionchanged:: 3.3
-      An instance of :exc:`WindowsError` used to be created.
+      An instance of :exc:`WindowsError` used to be created, which is now an
+      alias of :exc:`OSError`.
 
 
 .. function:: wstring_at(address, size=-1)
@@ -2531,6 +2533,12 @@ fields, or any other data types containing pointer type fields.
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
       Setting this attribute to 0 is the same as not setting it at all.
 
+
+   .. attribute:: _align_
+
+      An optional small integer that allows overriding the alignment of
+      the structure when being packed or unpacked to/from memory.
+      Setting this attribute to 0 is the same as not setting it at all.
 
    .. attribute:: _anonymous_
 

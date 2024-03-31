@@ -1,5 +1,0 @@
-The ``__module__`` attribute on instances of :class:`functools.cached_property`
-is now set to the name of the module in which the cached_property is defined,
-rather than "functools". This means that doctests in ``cached_property``
-docstrings are now properly collected by the :mod:`doctest` module. Patch by
-Tyler Smart.

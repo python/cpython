@@ -2,6 +2,14 @@
 #  error "this header file must not be included directly"
 #endif
 
+// PY_TIMEOUT_MAX is the highest usable value (in microseconds) of PY_TIMEOUT_T
+// type, and depends on the system threading API.
+//
+// NOTE: this isn't the same value as `_thread.TIMEOUT_MAX`. The _thread module
+// exposes a higher-level API, with timeouts expressed in seconds and
+// floating-point numbers allowed.
+PyAPI_DATA(const long long) PY_TIMEOUT_MAX;
+
 #define PYTHREAD_INVALID_THREAD_ID ((unsigned long)-1)
 
 #ifdef HAVE_PTHREAD_H

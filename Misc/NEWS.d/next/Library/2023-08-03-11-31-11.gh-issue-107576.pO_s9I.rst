@@ -1,3 +1,0 @@
-Fix :func:`types.get_original_bases` to only return
-:attr:`!__orig_bases__` if it is present on ``cls`` directly. Patch by
-James Hilton-Balfe.

@@ -9,6 +9,7 @@ from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
                     _pointer_type_cache,
                     c_void_p, c_char, c_int, c_long)
 from test import support
+from ._support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
@@ -72,6 +73,11 @@ class TestWintypes(unittest.TestCase):
         self.assertEqual(ex.hresult, -1)
         self.assertEqual(ex.text, "text")
         self.assertEqual(ex.details, ("details",))
+
+        self.assertEqual(COMError.mro(),
+                         [COMError, Exception, BaseException, object])
+        self.assertFalse(COMError.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(COMError.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')

@@ -56,6 +56,9 @@ _cache_format = {
     "COMPARE_OP": {
         "counter": 1,
     },
+    "CONTAINS_OP": {
+        "counter": 1,
+    },
     "BINARY_SUBSCR": {
         "counter": 1,
     },
@@ -92,6 +95,18 @@ _cache_format = {
     "TO_BOOL": {
         "counter": 1,
         "version": 2,
+    },
+    "POP_JUMP_IF_TRUE": {
+        "counter": 1,
+    },
+    "POP_JUMP_IF_FALSE": {
+        "counter": 1,
+    },
+    "POP_JUMP_IF_NONE": {
+        "counter": 1,
+    },
+    "POP_JUMP_IF_NOT_NONE": {
+        "counter": 1,
     },
 }
 

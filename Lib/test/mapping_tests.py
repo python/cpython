@@ -1,7 +1,6 @@
 # tests common to dict and UserDict
 import unittest
 import collections
-import sys
 from test.support import Py_C_RECURSION_LIMIT
 
 

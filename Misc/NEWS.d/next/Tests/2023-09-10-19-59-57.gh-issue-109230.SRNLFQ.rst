@@ -1,5 +1,0 @@
-Fix ``test_pyexpat.test_exception()``: it can now be run from a directory
-different than Python source code directory. Before, the test failed in this
-case.  Skip the test if Modules/pyexpat.c source is not available. Skip also
-the test on Python implementations other than CPython. Patch by Victor
-Stinner.

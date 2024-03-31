@@ -7,6 +7,7 @@ import socket
 import stat
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 import unittest
@@ -546,111 +547,6 @@ class TestSupport(unittest.TestCase):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')
 
-    def test_match_test(self):
-        class Test:
-            def __init__(self, test_id):
-                self.test_id = test_id
-
-            def id(self):
-                return self.test_id
-
-        test_access = Test('test.test_os.FileTests.test_access')
-        test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
-
-        # Test acceptance
-        with support.swap_attr(support, '_match_test_func', None):
-            # match all
-            support.set_match_tests([])
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match all using None
-            support.set_match_tests(None, None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match the full test identifier
-            support.set_match_tests([test_access.id()], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # match the module name
-            support.set_match_tests(['test_os'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # Test '*' pattern
-            support.set_match_tests(['test_*'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # Test case sensitivity
-            support.set_match_tests(['filetests'], None)
-            self.assertFalse(support.match_test(test_access))
-            support.set_match_tests(['FileTests'], None)
-            self.assertTrue(support.match_test(test_access))
-
-            # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(['*test_os.*.test_*'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # Multiple patterns
-            support.set_match_tests([test_access.id(), test_chdir.id()], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            support.set_match_tests(['test_access', 'DONTMATCH'], None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-        # Test rejection
-        with support.swap_attr(support, '_match_test_func', None):
-            # match all
-            support.set_match_tests(ignore_patterns=[])
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match all using None
-            support.set_match_tests(None, None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match the full test identifier
-            support.set_match_tests(None, [test_access.id()])
-            self.assertFalse(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match the module name
-            support.set_match_tests(None, ['test_os'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # Test '*' pattern
-            support.set_match_tests(None, ['test_*'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # Test case sensitivity
-            support.set_match_tests(None, ['filetests'])
-            self.assertTrue(support.match_test(test_access))
-            support.set_match_tests(None, ['FileTests'])
-            self.assertFalse(support.match_test(test_access))
-
-            # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(None, ['*test_os.*.test_*'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            # Multiple patterns
-            support.set_match_tests(None, [test_access.id(), test_chdir.id()])
-            self.assertFalse(support.match_test(test_access))
-            self.assertFalse(support.match_test(test_chdir))
-
-            support.set_match_tests(None, ['test_access', 'DONTMATCH'])
-            self.assertFalse(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
     @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
@@ -734,7 +630,7 @@ class TestSupport(unittest.TestCase):
             if depth:
                 recursive_function(depth - 1)
 
-        for max_depth in (5, 25, 250):
+        for max_depth in (5, 25, 250, 2500):
             with support.infinite_recursion(max_depth):
                 available = support.get_recursion_available()
 
@@ -800,6 +696,42 @@ class TestSupport(unittest.TestCase):
             support.max_memuse = old_max_memuse
             support.real_max_memuse = old_real_max_memuse
 
+    def test_copy_python_src_ignore(self):
+        # Get source directory
+        src_dir = sysconfig.get_config_var('abs_srcdir')
+        if not src_dir:
+            src_dir = sysconfig.get_config_var('srcdir')
+        src_dir = os.path.abspath(src_dir)
+
+        # Check that the source code is available
+        if not os.path.exists(src_dir):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {src_dir!r}")
+        # Check that the landmark copy_python_src_ignore() expects is available
+        # (Previously we looked for 'Lib\os.py', which is always present on Windows.)
+        landmark = os.path.join(src_dir, 'Modules')
+        if not os.path.exists(landmark):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {landmark!r} landmark is missing")
+
+        # Test support.copy_python_src_ignore()
+
+        # Source code directory
+        ignored = {'.git', '__pycache__'}
+        names = os.listdir(src_dir)
+        self.assertEqual(support.copy_python_src_ignore(src_dir, names),
+                         ignored | {'build'})
+
+        # Doc/ directory
+        path = os.path.join(src_dir, 'Doc')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored | {'build', 'venv'})
+
+        # Another directory
+        path = os.path.join(src_dir, 'Objects')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
@@ -815,7 +747,6 @@ class TestSupport(unittest.TestCase):
     # precisionbigmemtest
     # bigaddrspacetest
     # requires_resource
-    # run_doctest
     # threading_cleanup
     # reap_threads
     # can_symlink

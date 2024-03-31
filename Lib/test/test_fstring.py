@@ -8,6 +8,7 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import dis
 import os
 import re
 import types
@@ -513,6 +514,54 @@ x = (
         format_spec = fv.format_spec
         self.assertEqual(type(format_spec), ast.JoinedStr)
         self.assertEqual(len(format_spec.values), 0)
+
+    def test_ast_fstring_format_spec(self):
+        expr = "f'{1:{name}}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 1)
+
+        format_spec_value = format_spec.values[0]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name')
+
+        expr = "f'{1:{name1}{name2}}'"
+
+        mod = ast.parse(expr)
+        self.assertEqual(type(mod), ast.Module)
+        self.assertEqual(len(mod.body), 1)
+
+        fstring = mod.body[0].value
+        self.assertEqual(type(fstring), ast.JoinedStr)
+        self.assertEqual(len(fstring.values), 1)
+
+        fv = fstring.values[0]
+        self.assertEqual(type(fv), ast.FormattedValue)
+
+        format_spec = fv.format_spec
+        self.assertEqual(type(format_spec), ast.JoinedStr)
+        self.assertEqual(len(format_spec.values), 2)
+
+        format_spec_value = format_spec.values[0]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name1')
+
+        format_spec_value = format_spec.values[1]
+        self.assertEqual(type(format_spec_value), ast.FormattedValue)
+        self.assertEqual(format_spec_value.value.id, 'name2')
+
 
     def test_docstring(self):
         def f():
@@ -1579,6 +1628,9 @@ x = (
         self.assertEqual(f'X{x  =  }Y', 'Xx  =  '+repr(x)+'Y')
         self.assertEqual(f"sadsd {1 + 1 =  :{1 + 1:1d}f}", "sadsd 1 + 1 =  2.000000")
 
+        self.assertEqual(f"{1+2 = # my comment
+  }", '1+2 = \n  3')
+
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
         # patchcheck doesn't like these tabs.  So the only way to test
@@ -1686,6 +1738,15 @@ print(f'''{{
             _, stdout, stderr = assert_python_ok(script)
             self.assertIn(rb'\1', stdout)
             self.assertEqual(len(stderr.strip().splitlines()), 2)
+
+    def test_fstring_without_formatting_bytecode(self):
+        # f-string without any formatting should emit the same bytecode
+        # as a normal string. See gh-99606.
+        def get_code(s):
+            return [(i.opname, i.oparg) for i in dis.get_instructions(s)]
+
+        for s in ["", "some string"]:
+            self.assertEqual(get_code(f"'{s}'"), get_code(f"f'{s}'"))
 
 if __name__ == '__main__':
     unittest.main()

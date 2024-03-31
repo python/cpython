@@ -1,19 +1,18 @@
 import faulthandler
+import gc
 import os
+import random
 import signal
 import sys
 import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
-try:
-    import gc
-except ImportError:
-    gc = None
 
+from .filter import set_match_tests
 from .runtests import RunTests
 from .utils import (
     setup_unraisable_hook, setup_threading_excepthook, fix_umask,
-    replace_stdout, adjust_rlimit_nofile)
+    adjust_rlimit_nofile)
 
 
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
@@ -51,7 +50,7 @@ def setup_process():
             faulthandler.register(signum, chain=True, file=stderr_fd)
 
     adjust_rlimit_nofile()
-    replace_stdout()
+
     support.record_original_stdout(sys.stdout)
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -94,11 +93,11 @@ def setup_tests(runtests: RunTests):
     support.PGO = runtests.pgo
     support.PGO_EXTENDED = runtests.pgo_extended
 
-    support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
+    set_match_tests(runtests.match_tests)
 
     if runtests.use_junit:
         support.junit_xml_list = []
-        from test.support.testresult import RegressionTestResult
+        from .testresult import RegressionTestResult
         RegressionTestResult.USE_XML = True
     else:
         support.junit_xml_list = None
@@ -113,6 +112,8 @@ def setup_tests(runtests: RunTests):
     timeout = runtests.timeout
     if timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.LOOPBACK_TIMEOUT = max(support.LOOPBACK_TIMEOUT, timeout / 120)
+        # don't increase INTERNET_TIMEOUT
         support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
         support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 
@@ -123,7 +124,10 @@ def setup_tests(runtests: RunTests):
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
     if runtests.hunt_refleak:
-        unittest.BaseTestSuite._cleanup = False
+        # private attribute that mypy doesn't know about:
+        unittest.BaseTestSuite._cleanup = False  # type: ignore[attr-defined]
 
     if runtests.gc_threshold is not None:
         gc.set_threshold(runtests.gc_threshold)
+
+    random.seed(runtests.random_seed)

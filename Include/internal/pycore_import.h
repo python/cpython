@@ -9,8 +9,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_lock.h"          // PyMutex
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_time.h"          // _PyTime_t
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
@@ -47,7 +47,7 @@ struct _import_runtime_state {
     Py_ssize_t last_module_index;
     struct {
         /* A lock to guard the cache. */
-        PyThread_type_lock mutex;
+        PyMutex mutex;
         /* The actual cache of (filename, name, PyModuleDef) for modules.
            Only legacy (single-phase init) extension modules are added
            and only if they support multiple initialization (m_size >- 0)
@@ -102,7 +102,7 @@ struct _import_state {
     /* diagnostic info in PyImport_ImportModuleLevelObject() */
     struct {
         int import_level;
-        _PyTime_t accumulated;
+        PyTime_t accumulated;
         int header;
     } find_and_load;
 };

@@ -1,2 +1,0 @@
-Enum: require ``names=()`` or ``type=...`` to create an empty enum using
-the functional syntax.

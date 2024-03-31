@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_heapq_heappush__doc__,
 "heappush($module, heap, item, /)\n"
 "--\n"
@@ -265,4 +267,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9a22715a8bf0c91d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05f2afdf3bc54c9d input=a9049054013a1b77]*/

@@ -1,2 +1,0 @@
-Fix ``pathlib.PurePosixPath(pathlib.PureWindowsPath(...))`` not converting
-path separators to restore 3.11 compatible behavior.

@@ -1,3 +1,0 @@
-Deprecate passing optional arguments *maxsplit*, *count* and *flags* in
-module-level functions :func:`re.split`, :func:`re.sub` and :func:`re.subn` as positional.
-They should only be passed by keyword.

@@ -3,11 +3,10 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
-
-static PyObject* func_repr(PyFunctionObject *op);
 
 static const char *
 func_event_name(PyFunction_WatchEvent event) {
@@ -34,21 +33,9 @@ notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
             // callback must be non-null if the watcher bit is set
             assert(cb != NULL);
             if (cb(event, func, new_value) < 0) {
-                // Don't risk resurrecting the func if an unraisablehook keeps a
-                // reference; pass a string as context.
-                PyObject *context = NULL;
-                PyObject *repr = func_repr(func);
-                if (repr != NULL) {
-                    context = PyUnicode_FromFormat(
-                        "%s watcher callback for %U",
-                        func_event_name(event), repr);
-                    Py_DECREF(repr);
-                }
-                if (context == NULL) {
-                    context = Py_NewRef(Py_None);
-                }
-                PyErr_WriteUnraisable(context);
-                Py_DECREF(context);
+                PyErr_FormatUnraisable(
+                    "Exception ignored in %s watcher callback for function %U at %p",
+                    func_event_name(event), func->func_qualname, func);
             }
         }
         i++;
@@ -65,6 +52,15 @@ handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
     assert(interp->_initialized);
     if (interp->active_func_watchers) {
         notify_func_watchers(interp, event, func, new_value);
+    }
+    switch (event) {
+        case PyFunction_EVENT_MODIFY_CODE:
+        case PyFunction_EVENT_MODIFY_DEFAULTS:
+        case PyFunction_EVENT_MODIFY_KWDEFAULTS:
+            RARE_EVENT_INTERP_INC(interp, func_modification);
+            break;
+        default:
+            break;
     }
 }
 
@@ -105,8 +101,8 @@ PyFunction_ClearWatcher(int watcher_id)
 PyFunctionObject *
 _PyFunction_FromConstructor(PyFrameConstructor *constr)
 {
-    PyObject *module = Py_XNewRef(PyDict_GetItemWithError(constr->fc_globals, &_Py_ID(__name__)));
-    if (!module && PyErr_Occurred()) {
+    PyObject *module;
+    if (PyDict_GetItemRef(constr->fc_globals, &_Py_ID(__name__), &module) < 0) {
         return NULL;
     }
 
@@ -171,12 +167,11 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     Py_INCREF(doc);
 
     // __module__: Use globals['__name__'] if it exists, or NULL.
-    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
+    PyObject *module;
     PyObject *builtins = NULL;
-    if (module == NULL && _PyErr_Occurred(tstate)) {
+    if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &module) < 0) {
         goto error;
     }
-    Py_XINCREF(module);
 
     builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
     if (builtins == NULL) {
@@ -223,43 +218,61 @@ error:
 }
 
 /*
-Function versions
------------------
+(This is purely internal documentation. There are no public APIs here.)
 
-Function versions are used to detect when a function object has been
-updated, invalidating inline cache data used by the `CALL` bytecode
-(notably `CALL_PY_EXACT_ARGS` and a few other `CALL` specializations).
+Function (and code) versions
+----------------------------
 
-They are also used by the Tier 2 superblock creation code to find
-the function being called (and from there the code object).
+The Tier 1 specializer generates CALL variants that can be invalidated
+by changes to critical function attributes:
 
-How does a function's `func_version` field get initialized?
+- __code__
+- __defaults__
+- __kwdefaults__
+- __closure__
 
-- `PyFunction_New` and friends initialize it to 0.
-- The `MAKE_FUNCTION` instruction sets it from the code's `co_version`.
-- It is reset to 0 when various attributes like `__code__` are set.
-- A new version is allocated by `_PyFunction_GetVersionForCurrentState`
-  when the specializer needs a version and the version is 0.
+For this purpose function objects have a 32-bit func_version member
+that the specializer writes to the specialized instruction's inline
+cache and which is checked by a guard on the specialized instructions.
 
-The latter allocates versions using a counter in the interpreter state;
-when the counter wraps around to 0, no more versions are allocated.
-There is one other special case: functions with a non-standard
-`vectorcall` field are not given a version.
+The MAKE_FUNCTION bytecode sets func_version from the code object's
+co_version field.  The latter is initialized from a counter in the
+interpreter state (interp->func_state.next_version) and never changes.
+When this counter overflows, it remains zero and the specializer loses
+the ability to specialize calls to new functions.
 
-When the function version is 0, the `CALL` bytecode is not specialized.
+The func_version is reset to zero when any of the critical attributes
+is modified; after this point the specializer will no longer specialize
+calls to this function, and the guard will always fail.
 
-Code object versions
---------------------
+The function and code version cache
+-----------------------------------
 
-So where to code objects get their `co_version`?
-There is a per-interpreter counter, `next_func_version`.
-This is initialized to 1 when the interpreter is created.
+The Tier 2 optimizer now has a problem, since it needs to find the
+function and code objects given only the version number from the inline
+cache.  Our solution is to maintain a cache mapping version numbers to
+function and code objects.  To limit the cache size we could hash
+the version number, but for now we simply use it modulo the table size.
 
-Code objects get a new `co_version` allocated from this counter upon
-creation. Since code objects are nominally immutable, `co_version` can
-not be invalidated. The only way it can be 0 is when 2**32 or more
-code objects have been created during the process's lifetime.
-(The counter isn't reset by `fork()`, extending the lifetime.)
+There are some corner cases (e.g. generator expressions) where we will
+be unable to find the function object in the cache but we can still
+find the code object.  For this reason the cache stores both the
+function object and the code object.
+
+The cache doesn't contain strong references; cache entries are
+invalidated whenever the function or code object is deallocated.
+
+Invariants
+----------
+
+These should hold at any time except when one of the cache-mutating
+functions is running.
+
+- For any slot s at index i:
+    - s->func == NULL or s->func->func_version % FUNC_VERSION_CACHE_SIZE == i
+    - s->code == NULL or s->code->co_version % FUNC_VERSION_CACHE_SIZE == i
+    if s->func != NULL, then s->func->func_code == s->code
+
 */
 
 void
@@ -267,28 +280,61 @@ _PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (func->func_version != 0) {
-        PyFunctionObject **slot =
+        struct _func_version_cache_item *slot =
             interp->func_state.func_version_cache
             + (func->func_version % FUNC_VERSION_CACHE_SIZE);
-        if (*slot == func) {
-            *slot = NULL;
+        if (slot->func == func) {
+            slot->func = NULL;
+            // Leave slot->code alone, there may be use for it.
         }
     }
     func->func_version = version;
     if (version != 0) {
-        interp->func_state.func_version_cache[
-            version % FUNC_VERSION_CACHE_SIZE] = func;
+        struct _func_version_cache_item *slot =
+            interp->func_state.func_version_cache
+            + (version % FUNC_VERSION_CACHE_SIZE);
+        slot->func = func;
+        slot->code = func->func_code;
+    }
+}
+
+void
+_PyFunction_ClearCodeByVersion(uint32_t version)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _func_version_cache_item *slot =
+        interp->func_state.func_version_cache
+        + (version % FUNC_VERSION_CACHE_SIZE);
+    if (slot->code) {
+        assert(PyCode_Check(slot->code));
+        PyCodeObject *code = (PyCodeObject *)slot->code;
+        if (code->co_version == version) {
+            slot->code = NULL;
+            slot->func = NULL;
+        }
     }
 }
 
 PyFunctionObject *
-_PyFunction_LookupByVersion(uint32_t version)
+_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyFunctionObject *func = interp->func_state.func_version_cache[
-        version % FUNC_VERSION_CACHE_SIZE];
-    if (func != NULL && func->func_version == version) {
-        return (PyFunctionObject *)Py_NewRef(func);
+    struct _func_version_cache_item *slot =
+        interp->func_state.func_version_cache
+        + (version % FUNC_VERSION_CACHE_SIZE);
+    if (slot->code) {
+        assert(PyCode_Check(slot->code));
+        PyCodeObject *code = (PyCodeObject *)slot->code;
+        if (code->co_version == version) {
+            *p_code = slot->code;
+        }
+    }
+    else {
+        *p_code = NULL;
+    }
+    if (slot->func && slot->func->func_version == version) {
+        assert(slot->func->func_code == slot->code);
+        return slot->func;
     }
     return NULL;
 }
@@ -296,19 +342,7 @@ _PyFunction_LookupByVersion(uint32_t version)
 uint32_t
 _PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
 {
-    if (func->func_version != 0) {
-        return func->func_version;
-    }
-    if (func->vectorcall != _PyFunction_Vectorcall) {
-        return 0;
-    }
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->func_state.next_version == 0) {
-        return 0;
-    }
-    uint32_t v = interp->func_state.next_version++;
-    _PyFunction_SetVersion(func, v);
-    return v;
+    return func->func_version;
 }
 
 PyObject *
@@ -512,7 +546,6 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
-    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
     return 0;
 }
@@ -570,6 +603,20 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
+
+    PyObject *func_code = PyFunction_GET_CODE(op);
+    int old_flags = ((PyCodeObject *)func_code)->co_flags;
+    int new_flags = ((PyCodeObject *)value)->co_flags;
+    int mask = CO_GENERATOR | CO_COROUTINE | CO_ASYNC_GENERATOR;
+    if ((old_flags & mask) != (new_flags & mask)) {
+        if (PyErr_Warn(PyExc_DeprecationWarning,
+            "Assigning a code object of non-matching type is deprecated "
+            "(e.g., from a generator to a plain function)") < 0)
+        {
+            return -1;
+        }
+    }
+
     handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
     _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_code, Py_NewRef(value));
@@ -722,7 +769,6 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    _PyFunction_SetVersion(op, 0);
     Py_XSETREF(op->func_annotations, Py_XNewRef(value));
     return 0;
 }
@@ -809,14 +855,17 @@ function.__new__ as func_new
         a tuple that specifies the default argument values
     closure: object = None
         a tuple that supplies the bindings for free variables
+    kwdefaults: object = None
+        a dictionary that specifies the default keyword argument values
 
 Create a function object.
 [clinic start generated code]*/
 
 static PyObject *
 func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
-              PyObject *name, PyObject *defaults, PyObject *closure)
-/*[clinic end generated code: output=99c6d9da3a24e3be input=93611752fc2daf11]*/
+              PyObject *name, PyObject *defaults, PyObject *closure,
+              PyObject *kwdefaults)
+/*[clinic end generated code: output=de72f4c22ac57144 input=20c9c9f04ad2d3f2]*/
 {
     PyFunctionObject *newfunc;
     Py_ssize_t nclosure;
@@ -842,6 +891,11 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
                 "arg 5 (closure) must be None or tuple");
             return NULL;
         }
+    }
+    if (kwdefaults != Py_None && !PyDict_Check(kwdefaults)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "arg 6 (kwdefaults) must be None or dict");
+        return NULL;
     }
 
     /* check that the closure is well-formed */
@@ -878,6 +932,9 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
     }
     if (closure != Py_None) {
         newfunc->func_closure = Py_NewRef(closure);
+    }
+    if (kwdefaults != Py_None) {
+        newfunc->func_kwdefaults = Py_NewRef(kwdefaults);
     }
 
     return (PyObject *)newfunc;
@@ -1109,10 +1166,6 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
     }
     if (type == NULL)
         type = (PyObject *)(Py_TYPE(obj));
-    if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL) {
-        return Py_TYPE(cm->cm_callable)->tp_descr_get(cm->cm_callable, type,
-                                                      type);
-    }
     return PyMethod_New(cm->cm_callable, type);
 }
 
@@ -1167,7 +1220,8 @@ cm_repr(classmethod *cm)
 }
 
 PyDoc_STRVAR(classmethod_doc,
-"classmethod(function) -> method\n\
+"classmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a class method.\n\
 \n\
@@ -1362,7 +1416,8 @@ sm_repr(staticmethod *sm)
 }
 
 PyDoc_STRVAR(staticmethod_doc,
-"staticmethod(function) -> method\n\
+"staticmethod(function, /)\n\
+--\n\
 \n\
 Convert a function to be a static method.\n\
 \n\

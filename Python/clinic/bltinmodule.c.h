@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(builtin___import____doc__,
 "__import__($module, /, name, globals=None, locals=None, fromlist=(),\n"
@@ -231,25 +232,6 @@ PyDoc_STRVAR(builtin_chr__doc__,
 
 #define BUILTIN_CHR_METHODDEF    \
     {"chr", (PyCFunction)builtin_chr, METH_O, builtin_chr__doc__},
-
-static PyObject *
-builtin_chr_impl(PyObject *module, int i);
-
-static PyObject *
-builtin_chr(PyObject *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    int i;
-
-    i = PyLong_AsInt(arg);
-    if (i == -1 && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = builtin_chr_impl(module, i);
-
-exit:
-    return return_value;
-}
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
@@ -1211,4 +1193,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=607c62f2341ebfc0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=643a8d5f900e0c36 input=a9049054013a1b77]*/

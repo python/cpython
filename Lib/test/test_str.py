@@ -55,6 +55,21 @@ def duplicate_string(text):
 class StrSubclass(str):
     pass
 
+class OtherStrSubclass(str):
+    pass
+
+class WithStr:
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return self.value
+
+class WithRepr:
+    def __init__(self, value):
+        self.value = value
+    def __repr__(self):
+        return self.value
+
 class StrTest(string_tests.StringLikeTest,
         string_tests.MixinStrUnicodeTest,
         unittest.TestCase):
@@ -82,6 +97,10 @@ class StrTest(string_tests.StringLikeTest,
             realresult = method(*args)
             self.assertEqual(realresult, result)
             self.assertTrue(object is not realresult)
+
+    def assertTypedEqual(self, actual, expected):
+        self.assertIs(type(actual), type(expected))
+        self.assertEqual(actual, expected)
 
     def test_literals(self):
         self.assertEqual('\xff', '\u00ff')
@@ -127,10 +146,13 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(ascii("\U00010000" * 39 + "\uffff" * 4096),
                             ascii("\U00010000" * 39 + "\uffff" * 4096))
 
-        class WrongRepr:
-            def __repr__(self):
-                return b'byte-repr'
-        self.assertRaises(TypeError, ascii, WrongRepr())
+        self.assertTypedEqual(ascii('\U0001f40d'), r"'\U0001f40d'")
+        self.assertTypedEqual(ascii(StrSubclass('abc')), "'abc'")
+        self.assertTypedEqual(ascii(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(ascii(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(ascii(WithRepr('<\U0001f40d>')), r'<\U0001f40d>')
+        self.assertTypedEqual(ascii(WithRepr(StrSubclass('<\U0001f40d>'))), r'<\U0001f40d>')
+        self.assertRaises(TypeError, ascii, WithRepr(b'byte-repr'))
 
     def test_repr(self):
         # Test basic sanity of repr()
@@ -168,10 +190,13 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(repr("\U00010000" * 39 + "\uffff" * 4096),
                             repr("\U00010000" * 39 + "\uffff" * 4096))
 
-        class WrongRepr:
-            def __repr__(self):
-                return b'byte-repr'
-        self.assertRaises(TypeError, repr, WrongRepr())
+        self.assertTypedEqual(repr('\U0001f40d'), "'\U0001f40d'")
+        self.assertTypedEqual(repr(StrSubclass('abc')), "'abc'")
+        self.assertTypedEqual(repr(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(repr(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(repr(WithRepr('<\U0001f40d>')), '<\U0001f40d>')
+        self.assertTypedEqual(repr(WithRepr(StrSubclass('<\U0001f40d>'))), StrSubclass('<\U0001f40d>'))
+        self.assertRaises(TypeError, repr, WithRepr(b'byte-repr'))
 
     def test_iterators(self):
         # Make sure unicode objects have an __iter__ method
@@ -2367,28 +2392,37 @@ class StrTest(string_tests.StringLikeTest,
 
     def test_conversion(self):
         # Make sure __str__() works properly
-        class ObjectToStr:
-            def __str__(self):
-                return "foo"
-
-        class StrSubclassToStr(str):
-            def __str__(self):
-                return "foo"
-
-        class StrSubclassToStrSubclass(str):
-            def __new__(cls, content=""):
-                return str.__new__(cls, 2*content)
-            def __str__(self):
+        class StrWithStr(str):
+            def __new__(cls, value):
+                self = str.__new__(cls, "")
+                self.value = value
                 return self
+            def __str__(self):
+                return self.value
 
-        self.assertEqual(str(ObjectToStr()), "foo")
-        self.assertEqual(str(StrSubclassToStr("bar")), "foo")
-        s = str(StrSubclassToStrSubclass("foo"))
-        self.assertEqual(s, "foofoo")
-        self.assertIs(type(s), StrSubclassToStrSubclass)
-        s = StrSubclass(StrSubclassToStrSubclass("foo"))
-        self.assertEqual(s, "foofoo")
-        self.assertIs(type(s), StrSubclass)
+        self.assertTypedEqual(str(WithStr('abc')), 'abc')
+        self.assertTypedEqual(str(WithStr(StrSubclass('abc'))), StrSubclass('abc'))
+        self.assertTypedEqual(StrSubclass(WithStr('abc')), StrSubclass('abc'))
+        self.assertTypedEqual(StrSubclass(WithStr(StrSubclass('abc'))),
+                              StrSubclass('abc'))
+        self.assertTypedEqual(StrSubclass(WithStr(OtherStrSubclass('abc'))),
+                              StrSubclass('abc'))
+
+        self.assertTypedEqual(str(StrWithStr('abc')), 'abc')
+        self.assertTypedEqual(str(StrWithStr(StrSubclass('abc'))), StrSubclass('abc'))
+        self.assertTypedEqual(StrSubclass(StrWithStr('abc')), StrSubclass('abc'))
+        self.assertTypedEqual(StrSubclass(StrWithStr(StrSubclass('abc'))),
+                              StrSubclass('abc'))
+        self.assertTypedEqual(StrSubclass(StrWithStr(OtherStrSubclass('abc'))),
+                              StrSubclass('abc'))
+
+        self.assertTypedEqual(str(WithRepr('<abc>')), '<abc>')
+        self.assertTypedEqual(str(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(StrSubclass(WithRepr('<abc>')), StrSubclass('<abc>'))
+        self.assertTypedEqual(StrSubclass(WithRepr(StrSubclass('<abc>'))),
+                              StrSubclass('<abc>'))
+        self.assertTypedEqual(StrSubclass(WithRepr(OtherStrSubclass('<abc>'))),
+                              StrSubclass('<abc>'))
 
     def test_unicode_repr(self):
         class s1:
