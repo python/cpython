@@ -200,6 +200,7 @@ PyAPI_FUNC(PyDateTime_CAPI *) get_datetime_capi(void);
 
 static inline void pydatetime_import(void) {
     PyDateTime_CAPI *capi = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
+    (void)capi;
     assert(capi == get_datetime_capi());
 }
 #define PyDateTime_IMPORT pydatetime_import()
