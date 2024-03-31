@@ -423,7 +423,7 @@ symbolic links encountered in the path."""
         pardir = '..'
         getcwd = os.getcwd
 
-    path = sep if filename.startswith(sep) else getcwd()
+    path = sep if filename[:1] == sep else getcwd()
     rest = filename.split(sep)[::-1]
     seen = {}
     querying = True
@@ -463,7 +463,7 @@ symbolic links encountered in the path."""
                 # Return already resolved part + rest of the path unchanged.
                 path = newpath
                 querying = False
-            continue
+                continue
         try:
             st = os.lstat(newpath)
             if not stat.S_ISLNK(st.st_mode):
@@ -479,7 +479,7 @@ symbolic links encountered in the path."""
                 continue
 
         seen[newpath] = None # not resolved symlink
-        if target.startswith(sep):
+        if target[:1] == sep:
             path = sep
         rest.append(newpath)
         rest.append(None)
