@@ -52,10 +52,10 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   ``stdout=subprocess.PIPE`` and ``stderr=subprocess.PIPE``. The *stdout* and 
-   *stderr* arguments may not be supplied at the same time as *capture_output*.  
-   If you wish to capture and combine both streams into one, use 
-   ``stdout=subprocess.PIPE`` and ``stderr=subprocess.STDOUT`` instead of 
+   ``stdout=subprocess.PIPE`` and ``stderr=subprocess.PIPE``. The *stdout* and
+   *stderr* arguments may not be supplied at the same time as *capture_output*.
+   If you wish to capture and combine both streams into one, use
+   ``stdout=subprocess.PIPE`` and ``stderr=subprocess.STDOUT`` instead of
    *capture_output*.
 
    A *timeout* may be specified in seconds, it is internally passed on to
