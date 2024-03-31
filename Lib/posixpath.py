@@ -439,11 +439,7 @@ symbolic links encountered in the path."""
             continue
         if name == pardir:
             # parent dir
-            newpath, name = split(path)
-            if name == pardir:
-                path = path + sep + pardir
-            else:
-                path = newpath
+            path = dirname(path)
             continue
         if path == sep:
             newpath = path + name
