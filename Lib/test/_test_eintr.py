@@ -25,6 +25,12 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 
+
+# gh-109592: Tolerate a difference of 20 ms when comparing timings
+# (clock resolution)
+CLOCK_RES = 0.020
+
+
 @contextlib.contextmanager
 def kill_on_error(proc):
     """Context manager killing the subprocess if a Python exception is raised."""
@@ -74,6 +80,9 @@ class EINTRBaseTest(unittest.TestCase):
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
         return subprocess.Popen(cmd_args, **kw)
+
+    def check_elapsed_time(self, elapsed):
+        self.assertGreaterEqual(elapsed, self.sleep_time - CLOCK_RES)
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
@@ -373,7 +382,7 @@ class TimeEINTRTest(EINTRBaseTest):
         time.sleep(self.sleep_time)
         self.stop_alarm()
         dt = time.monotonic() - t0
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
@@ -435,7 +444,7 @@ class SelectEINTRTest(EINTRBaseTest):
         select.select([], [], [], self.sleep_time)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipIf(sys.platform == "darwin",
                      "poll may fail on macOS; see issue #28087")
@@ -447,7 +456,7 @@ class SelectEINTRTest(EINTRBaseTest):
         poller.poll(self.sleep_time * 1e3)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipUnless(hasattr(select, 'epoll'), 'need select.epoll')
     def test_epoll(self):
@@ -458,7 +467,7 @@ class SelectEINTRTest(EINTRBaseTest):
         poller.poll(self.sleep_time)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipUnless(hasattr(select, 'kqueue'), 'need select.kqueue')
     def test_kqueue(self):
@@ -469,7 +478,7 @@ class SelectEINTRTest(EINTRBaseTest):
         kqueue.control(None, 1, self.sleep_time)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
     @unittest.skipUnless(hasattr(select, 'devpoll'), 'need select.devpoll')
     def test_devpoll(self):
@@ -480,7 +489,7 @@ class SelectEINTRTest(EINTRBaseTest):
         poller.poll(self.sleep_time * 1e3)
         dt = time.monotonic() - t0
         self.stop_alarm()
-        self.assertGreaterEqual(dt, self.sleep_time)
+        self.check_elapsed_time(dt)
 
 
 class FNTLEINTRTest(EINTRBaseTest):
@@ -512,8 +521,8 @@ class FNTLEINTRTest(EINTRBaseTest):
                 # potential context switch delay
                 lock_func(f, fcntl.LOCK_EX)
                 dt = time.monotonic() - start_time
-                self.assertGreaterEqual(dt, self.sleep_time)
                 self.stop_alarm()
+                self.check_elapsed_time(dt)
             proc.wait()
 
     # Issue 35633: See https://bugs.python.org/issue35633#msg333662

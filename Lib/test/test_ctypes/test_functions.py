@@ -1,30 +1,35 @@
-"""
-Here is probably the place to write the docs, since the test-cases
-show how the type behave.
+import _ctypes_test
+import ctypes
+import sys
+import unittest
+from ctypes import (CDLL, Structure, Array, CFUNCTYPE,
+                    byref, POINTER, pointer, ArgumentError,
+                    c_char, c_wchar, c_byte, c_char_p, c_wchar_p,
+                    c_short, c_int, c_long, c_longlong, c_void_p,
+                    c_float, c_double, c_longdouble)
+from _ctypes import _Pointer,  _SimpleCData
 
-Later...
-"""
-
-from ctypes import *
-from test.test_ctypes import need_symbol
-import sys, unittest
 
 try:
-    WINFUNCTYPE
-except NameError:
+    WINFUNCTYPE = ctypes.WINFUNCTYPE
+except AttributeError:
     # fake to enable this test on Linux
     WINFUNCTYPE = CFUNCTYPE
 
-import _ctypes_test
 dll = CDLL(_ctypes_test.__file__)
 if sys.platform == "win32":
-    windll = WinDLL(_ctypes_test.__file__)
+    windll = ctypes.WinDLL(_ctypes_test.__file__)
+
 
 class POINT(Structure):
     _fields_ = [("x", c_int), ("y", c_int)]
+
+
 class RECT(Structure):
     _fields_ = [("left", c_int), ("top", c_int),
                 ("right", c_int), ("bottom", c_int)]
+
+
 class FunctionTestCase(unittest.TestCase):
 
     def test_mro(self):
@@ -40,21 +45,34 @@ class FunctionTestCase(unittest.TestCase):
                 _length_ = 5
                 _type_ = "i"
 
-        from _ctypes import _Pointer
         with self.assertRaises(TypeError):
-            class X(object, _Pointer):
+            class X2(object, _Pointer):
                 pass
 
-        from _ctypes import _SimpleCData
         with self.assertRaises(TypeError):
-            class X(object, _SimpleCData):
+            class X3(object, _SimpleCData):
                 _type_ = "i"
 
         with self.assertRaises(TypeError):
-            class X(object, Structure):
+            class X4(object, Structure):
                 _fields_ = []
 
-    @need_symbol('c_wchar')
+    def test_c_char_parm(self):
+        proto = CFUNCTYPE(c_int, c_char)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+
+        self.assertEqual(callback(b"a"), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(b"abc")
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: one character bytes, "
+                         "bytearray or integer expected")
+
     def test_wchar_parm(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_wchar, c_int, c_long, c_float, c_double]
@@ -62,7 +80,66 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(result, 139)
         self.assertEqual(type(result), int)
 
-    @need_symbol('c_wchar')
+        with self.assertRaises(ArgumentError) as cm:
+            f(1, 2, 3, 4, 5.0, 6.0)
+        self.assertEqual(str(cm.exception),
+                         "argument 2: TypeError: unicode string expected "
+                         "instead of int instance")
+
+        with self.assertRaises(ArgumentError) as cm:
+            f(1, "abc", 3, 4, 5.0, 6.0)
+        self.assertEqual(str(cm.exception),
+                         "argument 2: TypeError: one character unicode string "
+                         "expected")
+
+    def test_c_char_p_parm(self):
+        """Test the error message when converting an incompatible type to c_char_p."""
+        proto = CFUNCTYPE(c_int, c_char_p)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+        self.assertEqual(callback(b"abc"), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(10)
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: 'int' object cannot be "
+                         "interpreted as ctypes.c_char_p")
+
+    def test_c_wchar_p_parm(self):
+        """Test the error message when converting an incompatible type to c_wchar_p."""
+        proto = CFUNCTYPE(c_int, c_wchar_p)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+        self.assertEqual(callback("abc"), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(10)
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: 'int' object cannot be "
+                         "interpreted as ctypes.c_wchar_p")
+
+    def test_c_void_p_parm(self):
+        """Test the error message when converting an incompatible type to c_void_p."""
+        proto = CFUNCTYPE(c_int, c_void_p)
+        def callback(*args):
+            return 0
+
+        callback = proto(callback)
+        self.assertEqual(callback(5), 0)
+
+        with self.assertRaises(ArgumentError) as cm:
+            callback(2.5)
+
+        self.assertEqual(str(cm.exception),
+                         "argument 1: TypeError: 'float' object cannot be "
+                         "interpreted as ctypes.c_void_p")
+
     def test_wchar_result(self):
         f = dll._testfunc_i_bhilfd
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_double]
@@ -128,7 +205,6 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(result, -21)
         self.assertEqual(type(result), float)
 
-    @need_symbol('c_longdouble')
     def test_longdoubleresult(self):
         f = dll._testfunc_D_bhilfD
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_longdouble]
@@ -141,7 +217,6 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(result, -21)
         self.assertEqual(type(result), float)
 
-    @need_symbol('c_longlong')
     def test_longlongresult(self):
         f = dll._testfunc_q_bhilfd
         f.restype = c_longlong
@@ -200,7 +275,6 @@ class FunctionTestCase(unittest.TestCase):
         result = f(byref(c_int(99)))
         self.assertNotEqual(result.contents, 99)
 
-    ################################################################
     def test_shorts(self):
         f = dll._testfunc_callback_i_if
 
@@ -218,9 +292,6 @@ class FunctionTestCase(unittest.TestCase):
         f(2**18, cb)
         self.assertEqual(args, expected)
 
-    ################################################################
-
-
     def test_callbacks(self):
         f = dll._testfunc_callback_i_if
         f.restype = c_int
@@ -229,7 +300,6 @@ class FunctionTestCase(unittest.TestCase):
         MyCallback = CFUNCTYPE(c_int, c_int)
 
         def callback(value):
-            #print "called back with", value
             return value
 
         cb = MyCallback(callback)
@@ -262,7 +332,6 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = [c_int, MyCallback]
 
         def callback(value):
-            #print "called back with", value
             self.assertEqual(type(value), int)
             return value
 
@@ -270,7 +339,6 @@ class FunctionTestCase(unittest.TestCase):
         result = f(-10, cb)
         self.assertEqual(result, -18)
 
-    @need_symbol('c_longlong')
     def test_longlong_callbacks(self):
 
         f = dll._testfunc_callback_q_qf
@@ -379,6 +447,7 @@ class FunctionTestCase(unittest.TestCase):
 
         callback = proto(callback)
         self.assertRaises(ArgumentError, lambda: callback((1, 2, 3, 4), POINT()))
+
 
 if __name__ == '__main__':
     unittest.main()
