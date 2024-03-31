@@ -20,7 +20,7 @@ import contextlib
 
 def doctest_skip_if(condition):
     def decorator(func):
-        if condition:
+        if condition and support.HAVE_DOCSTRINGS:
             func.__doc__ = ">>> pass  # doctest: +SKIP"
         return func
     return decorator
