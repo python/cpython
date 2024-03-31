@@ -423,16 +423,16 @@ symbolic links encountered in the path."""
         pardir = '..'
         getcwd = os.getcwd
 
-    seen = {}
     path = sep if filename.startswith(sep) else getcwd()
-    stack = [(False, part) for part in reversed(filename.split(sep))]
+    rest = filename.split(sep)[::-1]
+    seen = {}
     querying = True
 
-    while stack:
-        is_symlink, name = stack.pop()
-        if is_symlink:
+    while rest:
+        name = rest.pop()
+        if name is None:
             # resolved symlink
-            seen[name] = path
+            seen[rest.pop()] = path
             continue
         if not name or name == curdir:
             # current dir
@@ -445,11 +445,9 @@ symbolic links encountered in the path."""
             newpath = path + name
         else:
             newpath = path + sep + name
-
         if not querying:
             path = newpath
             continue
-
         # Resolve the symbolic link
         if newpath in seen:
             # Already seen this path
@@ -483,8 +481,9 @@ symbolic links encountered in the path."""
         seen[newpath] = None # not resolved symlink
         if target.startswith(sep):
             path = sep
-        stack.append((True, newpath))
-        stack.extend((False, part) for part in reversed(target.split(sep)))
+        rest.append(newpath)
+        rest.append(None)
+        rest.extend(target.split(sep)[::-1])
     return path
 
 
