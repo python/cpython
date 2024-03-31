@@ -1,13 +1,14 @@
 import _thread
 import asyncio
 import contextvars
-import gc
 import re
+import signal
+import sys
 import threading
 import unittest
-
-from unittest import mock
 from test.test_asyncio import utils as test_utils
+from unittest import mock
+from unittest.mock import patch
 
 
 def tearDownModule():
@@ -43,6 +44,9 @@ class BaseTest(unittest.TestCase):
     def new_loop(self):
         loop = asyncio.BaseEventLoop()
         loop._process_events = mock.Mock()
+        # Mock waking event loop from select
+        loop._write_to_self = mock.Mock()
+        loop._write_to_self.return_value = None
         loop._selector = mock.Mock()
         loop._selector.select.return_value = ()
         loop.shutdown_ag_run = False
@@ -98,11 +102,14 @@ class RunTests(BaseTest):
             loop = asyncio.get_event_loop()
             self.assertIs(loop.get_debug(), expected)
 
-        asyncio.run(main(False))
+        asyncio.run(main(False), debug=False)
         asyncio.run(main(True), debug=True)
         with mock.patch('asyncio.coroutines._is_debug_mode', lambda: True):
             asyncio.run(main(True))
             asyncio.run(main(False), debug=False)
+        with mock.patch('asyncio.coroutines._is_debug_mode', lambda: False):
+            asyncio.run(main(True), debug=True)
+            asyncio.run(main(False))
 
     def test_asyncio_run_from_running_loop(self):
         async def main():
@@ -193,6 +200,88 @@ class RunTests(BaseTest):
 
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
+
+    def test_asyncio_run_set_event_loop(self):
+        #See https://github.com/python/cpython/issues/93896
+
+        async def main():
+            await asyncio.sleep(0)
+            return 42
+
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop = mock.Mock()
+        asyncio.run(main())
+        self.assertTrue(policy.set_event_loop.called)
+
+    def test_asyncio_run_without_uncancel(self):
+        # See https://github.com/python/cpython/issues/95097
+        class Task:
+            def __init__(self, loop, coro, **kwargs):
+                self._task = asyncio.Task(coro, loop=loop, **kwargs)
+
+            def cancel(self, *args, **kwargs):
+                return self._task.cancel(*args, **kwargs)
+
+            def add_done_callback(self, *args, **kwargs):
+                return self._task.add_done_callback(*args, **kwargs)
+
+            def remove_done_callback(self, *args, **kwargs):
+                return self._task.remove_done_callback(*args, **kwargs)
+
+            @property
+            def _asyncio_future_blocking(self):
+                return self._task._asyncio_future_blocking
+
+            def result(self, *args, **kwargs):
+                return self._task.result(*args, **kwargs)
+
+            def done(self, *args, **kwargs):
+                return self._task.done(*args, **kwargs)
+
+            def cancelled(self, *args, **kwargs):
+                return self._task.cancelled(*args, **kwargs)
+
+            def exception(self, *args, **kwargs):
+                return self._task.exception(*args, **kwargs)
+
+            def get_loop(self, *args, **kwargs):
+                return self._task.get_loop(*args, **kwargs)
+
+            def set_name(self, *args, **kwargs):
+                return self._task.set_name(*args, **kwargs)
+
+        async def main():
+            interrupt_self()
+            await asyncio.Event().wait()
+
+        def new_event_loop():
+            loop = self.new_loop()
+            loop.set_task_factory(Task)
+            return loop
+
+        asyncio.set_event_loop_policy(TestPolicy(new_event_loop))
+        with self.assertRaises(asyncio.CancelledError):
+            asyncio.run(main())
+
+    def test_asyncio_run_loop_factory(self):
+        factory = mock.Mock()
+        loop = factory.return_value = self.new_loop()
+
+        async def main():
+            self.assertEqual(asyncio.get_running_loop(), loop)
+
+        asyncio.run(main(), loop_factory=factory)
+        factory.assert_called_once_with()
+
+    def test_loop_factory_default_event_loop(self):
+        async def main():
+            if sys.platform == "win32":
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.ProactorEventLoop)
+            else:
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
+
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
 
 
 class RunnerTests(BaseTest):
@@ -374,6 +463,55 @@ class RunnerTests(BaseTest):
         with asyncio.Runner() as runner:
             with self.assertRaises(asyncio.CancelledError):
                 runner.run(coro())
+
+    def test_signal_install_not_supported_ok(self):
+        # signal.signal() can throw if the "main thread" doesn't have signals enabled
+        assert threading.current_thread() is threading.main_thread()
+
+        async def coro():
+            pass
+
+        with asyncio.Runner() as runner:
+            with patch.object(
+                signal,
+                "signal",
+                side_effect=ValueError(
+                    "signal only works in main thread of the main interpreter"
+                )
+            ):
+                runner.run(coro())
+
+    def test_set_event_loop_called_once(self):
+        # See https://github.com/python/cpython/issues/95736
+        async def coro():
+            pass
+
+        policy = asyncio.get_event_loop_policy()
+        policy.set_event_loop = mock.Mock()
+        runner = asyncio.Runner()
+        runner.run(coro())
+        runner.run(coro())
+
+        self.assertEqual(1, policy.set_event_loop.call_count)
+        runner.close()
+
+    def test_no_repr_is_call_on_the_task_result(self):
+        # See https://github.com/python/cpython/issues/112559.
+        class MyResult:
+            def __init__(self):
+                self.repr_count = 0
+            def __repr__(self):
+                self.repr_count += 1
+                return super().__repr__()
+
+        async def coro():
+            return MyResult()
+
+
+        with asyncio.Runner() as runner:
+            result = runner.run(coro())
+
+        self.assertEqual(0, result.repr_count)
 
 
 if __name__ == '__main__':

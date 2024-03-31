@@ -2,7 +2,6 @@ import io
 import marshal
 import os
 import sys
-from test import support
 from test.support import import_helper
 import types
 import unittest
@@ -148,19 +147,12 @@ class ABCTestHarness:
 
 class MetaPathFinder:
 
-    def find_module(self, fullname, path):
-        return super().find_module(fullname, path)
+    pass
 
 
 class MetaPathFinderDefaultsTests(ABCTestHarness):
 
     SPLIT = make_abc_subclasses(MetaPathFinder)
-
-    def test_find_module(self):
-        # Default should return None.
-        with self.assertWarns(DeprecationWarning):
-            found = self.ins.find_module('something', None)
-        self.assertIsNone(found)
 
     def test_invalidate_caches(self):
         # Calling the method is a no-op.
@@ -174,21 +166,12 @@ class MetaPathFinderDefaultsTests(ABCTestHarness):
 
 class PathEntryFinder:
 
-    def find_loader(self, fullname):
-        return super().find_loader(fullname)
+    pass
 
 
 class PathEntryFinderDefaultsTests(ABCTestHarness):
 
     SPLIT = make_abc_subclasses(PathEntryFinder)
-
-    def test_find_loader(self):
-        with self.assertWarns(DeprecationWarning):
-            found = self.ins.find_loader('something')
-        self.assertEqual(found, (None, []))
-
-    def find_module(self):
-        self.assertEqual(None, self.ins.find_module('something'))
 
     def test_invalidate_caches(self):
         # Should be a no-op.
@@ -202,8 +185,7 @@ class PathEntryFinderDefaultsTests(ABCTestHarness):
 
 class Loader:
 
-    def load_module(self, fullname):
-        return super().load_module(fullname)
+    pass
 
 
 class LoaderDefaultsTests(ABCTestHarness):
@@ -222,8 +204,6 @@ class LoaderDefaultsTests(ABCTestHarness):
         mod = types.ModuleType('blah')
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            with self.assertRaises(NotImplementedError):
-                self.ins.module_repr(mod)
             original_repr = repr(mod)
             mod.__loader__ = self.ins
             # Should still return a proper repr.
@@ -323,32 +303,6 @@ class ResourceReader:
         return super().contents(*args, **kwargs)
 
 
-class ResourceReaderDefaultsTests(ABCTestHarness):
-
-    SPLIT = make_abc_subclasses(ResourceReader)
-
-    def test_open_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.open_resource('dummy_file')
-
-    def test_resource_path(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.resource_path('dummy_file')
-
-    def test_is_resource(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.is_resource('dummy_file')
-
-    def test_contents(self):
-        with self.assertRaises(FileNotFoundError):
-            self.ins.contents()
-
-
-(Frozen_RRDefaultTests,
- Source_RRDefaultsTests
- ) = test_util.test_both(ResourceReaderDefaultsTests)
-
-
 ##### MetaPathFinder concrete methods ##########################################
 class MetaPathFinderFindModuleTests:
 
@@ -361,14 +315,6 @@ class MetaPathFinderFindModuleTests:
                 return spec
 
         return MetaPathSpecFinder()
-
-    def test_find_module(self):
-        finder = self.finder(None)
-        path = ['a', 'b', 'c']
-        name = 'blah'
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_module(name, path)
-        self.assertIsNone(found)
 
     def test_find_spec_with_explicit_target(self):
         loader = object()
@@ -397,53 +343,6 @@ class MetaPathFinderFindModuleTests:
 (Frozen_MPFFindModuleTests,
  Source_MPFFindModuleTests
  ) = test_util.test_both(MetaPathFinderFindModuleTests, abc=abc, util=util)
-
-
-##### PathEntryFinder concrete methods #########################################
-class PathEntryFinderFindLoaderTests:
-
-    @classmethod
-    def finder(cls, spec):
-        class PathEntrySpecFinder(cls.abc.PathEntryFinder):
-
-            def find_spec(self, fullname, target=None):
-                self.called_for = fullname
-                return spec
-
-        return PathEntrySpecFinder()
-
-    def test_no_spec(self):
-        finder = self.finder(None)
-        name = 'blah'
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_loader(name)
-        self.assertIsNone(found[0])
-        self.assertEqual([], found[1])
-        self.assertEqual(name, finder.called_for)
-
-    def test_spec_with_loader(self):
-        loader = object()
-        spec = self.util.spec_from_loader('blah', loader)
-        finder = self.finder(spec)
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_loader('blah')
-        self.assertIs(found[0], spec.loader)
-
-    def test_spec_with_portions(self):
-        spec = self.machinery.ModuleSpec('blah', None)
-        paths = ['a', 'b', 'c']
-        spec.submodule_search_locations = paths
-        finder = self.finder(spec)
-        with self.assertWarns(DeprecationWarning):
-            found = finder.find_loader('blah')
-        self.assertIsNone(found[0])
-        self.assertEqual(paths, found[1])
-
-
-(Frozen_PEFFindLoaderTests,
- Source_PEFFindLoaderTests
- ) = test_util.test_both(PathEntryFinderFindLoaderTests, abc=abc, util=util,
-                         machinery=machinery)
 
 
 ##### Loader concrete methods ##################################################
@@ -716,9 +615,6 @@ class SourceOnlyLoader:
     def get_filename(self, fullname):
         return self.path
 
-    def module_repr(self, module):
-        return '<module>'
-
 
 SPLIT_SOL = make_abc_subclasses(SourceOnlyLoader, 'SourceLoader')
 
@@ -803,13 +699,7 @@ class SourceLoaderTestHarness:
 
 
 class SourceOnlyLoaderTests(SourceLoaderTestHarness):
-
-    """Test importlib.abc.SourceLoader for source-only loading.
-
-    Reload testing is subsumed by the tests for
-    importlib.util.module_for_loader.
-
-    """
+    """Test importlib.abc.SourceLoader for source-only loading."""
 
     def test_get_source(self):
         # Verify the source code is returned as a string.

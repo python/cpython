@@ -60,9 +60,10 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._pending_write = 0
         self._conn_lost = 0
         self._closing = False  # Set when close() called.
+        self._called_connection_lost = False
         self._eof_written = False
         if self._server is not None:
-            self._server._attach()
+            self._server._attach(self)
         self._loop.call_soon(self._protocol.connection_made, self)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
@@ -113,7 +114,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
     def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
-            self.close()
+            self._sock.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
         try:
@@ -136,7 +137,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
                 self._empty_waiter.set_result(None)
             else:
                 self._empty_waiter.set_exception(exc)
-        if self._closing:
+        if self._closing and self._called_connection_lost:
             return
         self._closing = True
         self._conn_lost += 1
@@ -151,6 +152,8 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
         self._loop.call_soon(self._call_connection_lost, exc)
 
     def _call_connection_lost(self, exc):
+        if self._called_connection_lost:
+            return
         try:
             self._protocol.connection_lost(exc)
         finally:
@@ -164,8 +167,9 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
             self._sock = None
             server = self._server
             if server is not None:
-                server._detach()
+                server._detach(self)
                 self._server = None
+            self._called_connection_lost = True
 
     def get_write_buffer_size(self):
         size = self._pending_write
@@ -284,7 +288,8 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
                         # we got end-of-file so no need to reschedule a new read
                         return
 
-                    data = self._data[:length]
+                    # It's a new slice so make it immutable so protocols upstream don't have problems
+                    data = bytes(memoryview(self._data)[:length])
                 else:
                     # the future will be replaced by next proactor.recv call
                     fut.cancel()
@@ -459,6 +464,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                  waiter=None, extra=None):
         self._address = address
         self._empty_waiter = None
+        self._buffer_size = 0
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.
         super().__init__(loop, sock, protocol, waiter=waiter, extra=extra)
@@ -471,7 +477,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         _set_socket_extra(self, sock)
 
     def get_write_buffer_size(self):
-        return sum(len(data) for data, _ in self._buffer)
+        return self._buffer_size
 
     def abort(self):
         self._force_close(None)
@@ -480,9 +486,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         if not isinstance(data, (bytes, bytearray, memoryview)):
             raise TypeError('data argument must be bytes-like object (%r)',
                             type(data))
-
-        if not data:
-            return
 
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
@@ -496,6 +499,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
+        self._buffer_size += len(data) + 8  # include header bytes
 
         if self._write_fut is None:
             # No current write operations are active, kick one off
@@ -522,6 +526,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
                 return
 
             data, addr = self._buffer.popleft()
+            self._buffer_size -= len(data)
             if self._address is not None:
                 self._write_fut = self._loop._proactor.send(self._sock,
                                                             data)

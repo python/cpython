@@ -32,12 +32,20 @@ EXTENSION_PREFIX = """\
 #include "pegen.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
-#  define D(x) if (Py_DebugFlag) x;
+#  define D(x) if (p->debug) { x; }
 #else
 #  define D(x)
 #endif
 
-# define MAXSTACK 6000
+#ifdef __wasi__
+#  ifdef Py_DEBUG
+#    define MAXSTACK 1000
+#  else
+#    define MAXSTACK 4000
+#  endif
+#else
+#  define MAXSTACK 6000
+#endif
 
 """
 
@@ -64,6 +72,7 @@ class NodeTypes(Enum):
     KEYWORD = 4
     SOFT_KEYWORD = 5
     CUT_OPERATOR = 6
+    F_STRING_CHUNK = 7
 
 
 BASE_NODETYPES = {
@@ -370,8 +379,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
     def add_level(self) -> None:
         self.print("if (p->level++ == MAXSTACK) {")
         with self.indent():
-            self.print("p->error_indicator = 1;")
-            self.print("PyErr_NoMemory();")
+            self.print("_Pypegen_stack_overflow(p);")
         self.print("}")
 
     def remove_level(self) -> None:
@@ -615,7 +623,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.add_return("_res")
                 self.print("}")
             self.print("int _mark = p->mark;")
-            self.print("int _start_mark = p->mark;")
+            if memoize:
+                self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
             self.out_of_memory_return(f"!_children")
             self.print("Py_ssize_t _children_capacity = 1;")
@@ -638,7 +647,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
             self.print("for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")
             self.print("PyMem_Free(_children);")
-            if node.name:
+            if memoize and node.name:
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
             self.add_return("_seq")
 
@@ -797,7 +806,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print(
                     "void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));"
                 )
-                self.out_of_memory_return(f"!_new_children")
+                self.out_of_memory_return(f"!_new_children", cleanup_code="PyMem_Free(_children);")
                 self.print("_children = _new_children;")
             self.print("}")
             self.print("_children[_n++] = _res;")

@@ -1,5 +1,5 @@
 from test import support
-from test.support import os_helper, requires_debug_ranges
+from test.support import is_apple_mobile, os_helper, requires_debug_ranges
 from test.support.script_helper import assert_python_ok
 import array
 import io
@@ -117,7 +117,8 @@ class CodeTestCase(unittest.TestCase):
 
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
-        count = 5000    # more than MAX_MARSHAL_STACK_DEPTH
+        # more than MAX_MARSHAL_STACK_DEPTH
+        count = support.EXCEEDS_RECURSION_LIMIT
         codes = (ExceptionTestCase.test_exceptions.__code__,) * count
         marshal.loads(marshal.dumps(codes))
 
@@ -128,19 +129,45 @@ class CodeTestCase(unittest.TestCase):
         self.assertEqual(co1.co_filename, "f1")
         self.assertEqual(co2.co_filename, "f2")
 
+    def test_no_allow_code(self):
+        data = {'a': [({0},)]}
+        dump = marshal.dumps(data, allow_code=False)
+        self.assertEqual(marshal.loads(dump, allow_code=False), data)
+
+        f = io.BytesIO()
+        marshal.dump(data, f, allow_code=False)
+        f.seek(0)
+        self.assertEqual(marshal.load(f, allow_code=False), data)
+
+        co = ExceptionTestCase.test_exceptions.__code__
+        data = {'a': [({co, 0},)]}
+        dump = marshal.dumps(data, allow_code=True)
+        self.assertEqual(marshal.loads(dump, allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dumps(data, allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.loads(dump, allow_code=False)
+
+        marshal.dump(data, io.BytesIO(), allow_code=True)
+        self.assertEqual(marshal.load(io.BytesIO(dump), allow_code=True), data)
+        with self.assertRaises(ValueError):
+            marshal.dump(data, io.BytesIO(), allow_code=False)
+        with self.assertRaises(ValueError):
+            marshal.load(io.BytesIO(dump), allow_code=False)
+
     @requires_debug_ranges()
-    def test_no_columntable_and_endlinetable_with_no_debug_ranges(self):
+    def test_minimal_linetable_with_no_debug_ranges(self):
         # Make sure when demarshalling objects with `-X no_debug_ranges`
-        # that the columntable and endlinetable are None.
+        # that the columns are None.
         co = ExceptionTestCase.test_exceptions.__code__
         code = textwrap.dedent("""
         import sys
         import marshal
         with open(sys.argv[1], 'rb') as f:
             co = marshal.load(f)
-
-            assert co.co_endlinetable is None
-            assert co.co_columntable is None
+            positions = list(co.co_positions())
+            assert positions[0][2] is None
+            assert positions[0][3] is None
         """)
 
         try:
@@ -256,9 +283,11 @@ class BugsTestCase(unittest.TestCase):
         # The max stack depth should match the value in Python/marshal.c.
         # BUG: https://bugs.python.org/issue33720
         # Windows always limits the maximum depth on release and debug builds
-        #if os.name == 'nt' and hasattr(sys, 'gettotalrefcount'):
+        #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
+        elif sys.platform == 'wasi' or is_apple_mobile:
+            MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000
         for i in range(MAX_MARSHAL_STACK_DEPTH - 2):
@@ -352,7 +381,7 @@ class BugsTestCase(unittest.TestCase):
             for elements in (
                 "float('nan'), b'a', b'b', b'c', 'x', 'y', 'z'",
                 # Also test for bad interactions with backreferencing:
-                "('Spam', 0), ('Spam', 1), ('Spam', 2)",
+                "('Spam', 0), ('Spam', 1), ('Spam', 2), ('Spam', 3), ('Spam', 4), ('Spam', 5)",
             ):
                 s = f"{kind}([{elements}])"
                 with self.subTest(s):

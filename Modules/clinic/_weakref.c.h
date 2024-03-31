@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
 "getweakrefcount($module, object, /)\n"
 "--\n"
@@ -20,7 +23,9 @@ _weakref_getweakrefcount(PyObject *module, PyObject *object)
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(object);
     _return_value = _weakref_getweakrefcount_impl(module, object);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -37,7 +42,7 @@ PyDoc_STRVAR(_weakref__remove_dead_weakref__doc__,
 "Atomically remove key from dict if it points to a dead weakref.");
 
 #define _WEAKREF__REMOVE_DEAD_WEAKREF_METHODDEF    \
-    {"_remove_dead_weakref", (PyCFunction)(void(*)(void))_weakref__remove_dead_weakref, METH_FASTCALL, _weakref__remove_dead_weakref__doc__},
+    {"_remove_dead_weakref", _PyCFunction_CAST(_weakref__remove_dead_weakref), METH_FASTCALL, _weakref__remove_dead_weakref__doc__},
 
 static PyObject *
 _weakref__remove_dead_weakref_impl(PyObject *module, PyObject *dct,
@@ -74,6 +79,21 @@ PyDoc_STRVAR(_weakref_getweakrefs__doc__,
 #define _WEAKREF_GETWEAKREFS_METHODDEF    \
     {"getweakrefs", (PyCFunction)_weakref_getweakrefs, METH_O, _weakref_getweakrefs__doc__},
 
+static PyObject *
+_weakref_getweakrefs_impl(PyObject *module, PyObject *object);
+
+static PyObject *
+_weakref_getweakrefs(PyObject *module, PyObject *object)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(object);
+    return_value = _weakref_getweakrefs_impl(module, object);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_weakref_proxy__doc__,
 "proxy($module, object, callback=None, /)\n"
 "--\n"
@@ -84,7 +104,7 @@ PyDoc_STRVAR(_weakref_proxy__doc__,
 "proxy when \'object\' is about to be finalized.");
 
 #define _WEAKREF_PROXY_METHODDEF    \
-    {"proxy", (PyCFunction)(void(*)(void))_weakref_proxy, METH_FASTCALL, _weakref_proxy__doc__},
+    {"proxy", _PyCFunction_CAST(_weakref_proxy), METH_FASTCALL, _weakref_proxy__doc__},
 
 static PyObject *
 _weakref_proxy_impl(PyObject *module, PyObject *object, PyObject *callback);
@@ -110,4 +130,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5a10a1fa43722399 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d5d30707212a9870 input=a9049054013a1b77]*/

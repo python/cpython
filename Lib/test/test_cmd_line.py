@@ -18,9 +18,6 @@ from test.support.script_helper import (
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-# Debug build?
-Py_DEBUG = hasattr(sys, "gettotalrefcount")
-
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
@@ -28,16 +25,51 @@ def _kill_python_and_exit_code(p):
     returncode = p.wait()
     return data, returncode
 
+
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
         assert_python_failure('< .')
 
     def verify_valid_flag(self, cmd_line):
-        rc, out, err = assert_python_ok(*cmd_line)
+        rc, out, err = assert_python_ok(cmd_line)
         self.assertTrue(out == b'' or out.endswith(b'\n'))
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
+        return out
+
+    @support.cpython_only
+    def test_help(self):
+        self.verify_valid_flag('-h')
+        self.verify_valid_flag('-?')
+        out = self.verify_valid_flag('--help')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertNotIn(b'PYTHONHOME', out)
+        self.assertNotIn(b'-X dev', out)
+        self.assertLess(len(lines), 50)
+
+    @support.cpython_only
+    def test_help_env(self):
+        out = self.verify_valid_flag('--help-env')
+        self.assertIn(b'PYTHONHOME', out)
+
+    @support.cpython_only
+    def test_help_xoptions(self):
+        out = self.verify_valid_flag('--help-xoptions')
+        self.assertIn(b'-X dev', out)
+
+    @support.cpython_only
+    def test_help_all(self):
+        out = self.verify_valid_flag('--help-all')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertIn(b'PYTHONHOME', out)
+        self.assertIn(b'-X dev', out)
+
+        # The first line contains the program name,
+        # but the rest should be ASCII-only
+        b''.join(lines[1:]).decode('ascii')
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -46,14 +78,7 @@ class CmdLineTest(unittest.TestCase):
     def test_site_flag(self):
         self.verify_valid_flag('-S')
 
-    def test_usage(self):
-        rc, out, err = assert_python_ok('-h')
-        lines = out.splitlines()
-        self.assertIn(b'usage', lines[0])
-        # The first line contains the program name,
-        # but the rest should be ASCII-only
-        b''.join(lines[1:]).decode('ascii')
-
+    @support.cpython_only
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
         for switch in '-V', '--version', '-VV':
@@ -85,17 +110,8 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions()
         self.assertEqual(opts, {})
 
-        opts = get_xoptions('-Xno_debug_ranges', '-Xdev=1234')
-        self.assertEqual(opts, {'no_debug_ranges': True, 'dev': '1234'})
-
-    @unittest.skipIf(interpreter_requires_environment(),
-                     'Cannot run -E tests when PYTHON env vars are required.')
-    def test_unknown_xoptions(self):
-        rc, out, err = assert_python_failure('-X', 'blech')
-        self.assertIn(b'Unknown value for option -X', err)
-        msg = b'Fatal Python error: Unknown value for option -X'
-        self.assertEqual(err.splitlines().count(msg), 1)
-        self.assertEqual(b'', out)
+        opts = get_xoptions('-Xa', '-Xb=c,d=e')
+        self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
     def test_showrefcount(self):
         def run_python(*args):
@@ -120,7 +136,7 @@ class CmdLineTest(unittest.TestCase):
         # "-X showrefcount" shows the refcount, but only in debug builds
         rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
@@ -128,6 +144,7 @@ class CmdLineTest(unittest.TestCase):
         else:
             self.assertEqual(err, b'')
 
+    @support.cpython_only
     def test_xoption_frozen_modules(self):
         tests = {
             ('=on', 'FrozenImporter'),
@@ -137,10 +154,21 @@ class CmdLineTest(unittest.TestCase):
         }
         for raw, expected in tests:
             cmd = ['-X', f'frozen_modules{raw}',
-                   #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
                    '-c', 'import os; print(os.__spec__.loader, end="")']
             with self.subTest(raw):
                 res = assert_python_ok(*cmd)
+                self.assertRegex(res.out.decode('utf-8'), expected)
+
+    @support.cpython_only
+    def test_env_var_frozen_modules(self):
+        tests = {
+            ('on', 'FrozenImporter'),
+            ('off', 'SourceFileLoader'),
+        }
+        for raw, expected in tests:
+            cmd = ['-c', 'import os; print(os.__spec__.loader, end="")']
+            with self.subTest(raw):
+                res = assert_python_ok(*cmd, PYTHON_FROZEN_MODULES=raw)
                 self.assertRegex(res.out.decode('utf-8'), expected)
 
     def test_run_module(self):
@@ -170,7 +198,6 @@ class CmdLineTest(unittest.TestCase):
         # Test `python -m unittest` with a relative directory beginning with ./
         # Note: We have to switch to the project's top module's directory, as per
         # the python unittest wiki. We will switch back when we are done.
-        defaultwd = os.getcwd()
         projectlibpath = os.path.dirname(__file__).removesuffix("test")
         with os_helper.change_cwd(projectlibpath):
             # Testing with and without ./
@@ -216,7 +243,7 @@ class CmdLineTest(unittest.TestCase):
         code = (
             b'import locale; '
             b'print(ascii("' + undecodable + b'"), '
-                b'locale.getpreferredencoding())')
+                b'locale.getencoding())')
         p = subprocess.Popen(
             [sys.executable, "-c", code],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -250,7 +277,6 @@ class CmdLineTest(unittest.TestCase):
         #
         # Test with default config, in the C locale, in the Python UTF-8 Mode.
         code = 'import sys, os; s=os.fsencode(sys.argv[1]); print(ascii(s))'
-        base_cmd = [sys.executable, '-c', code]
 
         def run_default(arg):
             cmd = [sys.executable, '-c', code, arg]
@@ -363,6 +389,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertIn(path1.encode('ascii'), out)
         self.assertIn(path2.encode('ascii'), out)
 
+    @unittest.skipIf(sys.flags.safe_path,
+                     'PYTHONSAFEPATH changes default sys.path')
     def test_empty_PYTHONPATH_issue16309(self):
         # On Posix, it is documented that setting PATH to the
         # empty string is equivalent to not setting PATH at all,
@@ -458,8 +486,9 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
         self.assertEqual(120, rc)
-        self.assertRegex(err.decode('ascii', 'ignore'),
-                         'Exception ignored in.*\nOSError: .*')
+        self.assertIn(b'Exception ignored on flushing sys.stdout:\n'
+                      b'OSError: '.replace(b'\n', os.linesep.encode()),
+                      err)
 
     def test_closed_stdout(self):
         # Issue #13444: if stdout has been explicitly closed, we should
@@ -557,6 +586,7 @@ class CmdLineTest(unittest.TestCase):
             print("del sys.modules['__main__']", file=script)
         assert_python_ok(filename)
 
+    @support.cpython_only
     def test_unknown_options(self):
         rc, out, err = assert_python_failure('-E', '-z')
         self.assertIn(b'Unknown option: -z', err)
@@ -579,13 +609,13 @@ class CmdLineTest(unittest.TestCase):
                      'Cannot run -I tests when PYTHON env vars are required.')
     def test_isolatedmode(self):
         self.verify_valid_flag('-I')
-        self.verify_valid_flag('-IEs')
+        self.verify_valid_flag('-IEPs')
         rc, out, err = assert_python_ok('-I', '-c',
             'from sys import flags as f; '
-            'print(f.no_user_site, f.ignore_environment, f.isolated)',
+            'print(f.no_user_site, f.ignore_environment, f.isolated, f.safe_path)',
             # dummyvar to prevent extraneous -E
             dummyvar="")
-        self.assertEqual(out.strip(), b'1 1 1')
+        self.assertEqual(out.strip(), b'1 1 1 True')
         with os_helper.temp_cwd() as tmpdir:
             fake = os.path.join(tmpdir, "uuid.py")
             main = os.path.join(tmpdir, "main.py")
@@ -594,9 +624,10 @@ class CmdLineTest(unittest.TestCase):
             with open(main, "w", encoding="utf-8") as f:
                 f.write("import uuid\n")
                 f.write("print('ok')\n")
+            # Use -E to ignore PYTHONSAFEPATH env var
             self.assertRaises(subprocess.CalledProcessError,
                               subprocess.check_output,
-                              [sys.executable, main], cwd=tmpdir,
+                              [sys.executable, '-E', main], cwd=tmpdir,
                               stderr=subprocess.DEVNULL)
             out = subprocess.check_output([sys.executable, "-I", main],
                                           cwd=tmpdir)
@@ -611,15 +642,13 @@ class CmdLineTest(unittest.TestCase):
                 PYTHONDONTWRITEBYTECODE=value,
                 PYTHONVERBOSE=value,
             )
-            dont_write_bytecode = int(bool(value))
+            expected_bool = int(bool(value))
             code = (
                 "import sys; "
                 "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
-                    sys.flags.debug == sys.flags.optimize ==
-                    sys.flags.verbose ==
-                    {expected}
-                    and sys.flags.dont_write_bytecode == {dont_write_bytecode}
+                    sys.flags.optimize == sys.flags.verbose == {expected}
+                    and sys.flags.debug == sys.flags.dont_write_bytecode == {expected_bool}
                 ))"""
             )
             with self.subTest(envar_value=value):
@@ -670,6 +699,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc)
         return proc.stdout.rstrip()
 
+    @support.cpython_only
     def test_xdev(self):
         # sys.flags.dev_mode
         code = "import sys; print(sys.flags.dev_mode)"
@@ -682,7 +712,7 @@ class CmdLineTest(unittest.TestCase):
         code = ("import warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_filters = "default::Warning"
         else:
             expected_filters = ("default::Warning "
@@ -706,15 +736,17 @@ class CmdLineTest(unittest.TestCase):
 
         # Memory allocator debug hooks
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             pass
         else:
-            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
+            code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
             if support.with_pymalloc():
                 alloc_name = "pymalloc_debug"
+            elif support.Py_GIL_DISABLED:
+                alloc_name = "mimalloc_debug"
             else:
                 alloc_name = "malloc_debug"
             self.assertEqual(out, alloc_name)
@@ -754,7 +786,7 @@ class CmdLineTest(unittest.TestCase):
         expected_filters = ("error::BytesWarning "
                             "once::UserWarning "
                             "always::UserWarning")
-        if not Py_DEBUG:
+        if not support.Py_DEBUG:
             expected_filters += (" "
                                  "default::DeprecationWarning "
                                  "ignore::DeprecationWarning "
@@ -772,7 +804,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out, expected_filters)
 
     def check_pythonmalloc(self, env_var, name):
-        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        code = 'import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())'
         env = dict(os.environ)
         env.pop('PYTHONDEVMODE', None)
         if env_var is not None:
@@ -788,26 +820,40 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), name)
         self.assertEqual(proc.returncode, 0)
 
+    @support.cpython_only
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
+        malloc = not support.Py_GIL_DISABLED
         pymalloc = support.with_pymalloc()
-        if pymalloc:
-            default_name = 'pymalloc_debug' if Py_DEBUG else 'pymalloc'
+        mimalloc = support.with_mimalloc()
+        if support.Py_GIL_DISABLED:
+            default_name = 'mimalloc_debug' if support.Py_DEBUG else 'mimalloc'
+            default_name_debug = 'mimalloc_debug'
+        elif pymalloc:
+            default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
         else:
-            default_name = 'malloc_debug' if Py_DEBUG else 'malloc'
+            default_name = 'malloc_debug' if support.Py_DEBUG else 'malloc'
             default_name_debug = 'malloc_debug'
 
         tests = [
             (None, default_name),
             ('debug', default_name_debug),
-            ('malloc', 'malloc'),
-            ('malloc_debug', 'malloc_debug'),
         ]
+        if malloc:
+            tests.extend([
+                ('malloc', 'malloc'),
+                ('malloc_debug', 'malloc_debug'),
+            ])
         if pymalloc:
             tests.extend((
                 ('pymalloc', 'pymalloc'),
                 ('pymalloc_debug', 'pymalloc_debug'),
+            ))
+        if mimalloc:
+            tests.extend((
+                ('mimalloc', 'mimalloc'),
+                ('mimalloc_debug', 'mimalloc_debug'),
             ))
 
         for env_var, name in tests:
@@ -832,6 +878,39 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_GIL and -X gil only supported in Py_GIL_DISABLED builds")
+    def test_python_gil(self):
+        cases = [
+            # (env, opt, expected, msg)
+            (None, None, 'None', "no options set"),
+            ('0', None, '0', "PYTHON_GIL=0"),
+            ('1', None, '1', "PYTHON_GIL=1"),
+            ('1', '0', '0', "-X gil=0 overrides PYTHON_GIL=1"),
+            (None, '0', '0', "-X gil=0"),
+            (None, '1', '1', "-X gil=1"),
+        ]
+
+        code = "import sys; print(sys.flags.gil)"
+        environ = dict(os.environ)
+
+        for env, opt, expected, msg in cases:
+            with self.subTest(msg, env=env, opt=opt):
+                environ.pop('PYTHON_GIL', None)
+                if env is not None:
+                    environ['PYTHON_GIL'] = env
+                extra_args = []
+                if opt is not None:
+                    extra_args = ['-X', f'gil={opt}']
+
+                proc = subprocess.run([sys.executable, *extra_args, '-c', code],
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
+                                      text=True, env=environ)
+                self.assertEqual(proc.returncode, 0, proc)
+                self.assertEqual(proc.stdout.rstrip(), expected)
+                self.assertEqual(proc.stderr, '')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'bpo-32457 only applies on Windows')
     def test_argv0_normalization(self):
@@ -844,6 +923,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc)
         self.assertEqual(proc.stdout.strip(), b'0')
 
+    @support.cpython_only
     def test_parsing_error(self):
         args = [sys.executable, '-I', '--unknown-option']
         proc = subprocess.run(args,
@@ -853,6 +933,59 @@ class CmdLineTest(unittest.TestCase):
         err_msg = "unknown option --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
+
+    def test_int_max_str_digits(self):
+        code = "import sys; print(sys.flags.int_max_str_digits, sys.get_int_max_str_digits())"
+
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=foo', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=100', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code,
+                              PYTHONINTMAXSTRDIGITS='4000')
+
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
+
+        res = assert_python_ok('-c', code)
+        res2int = self.res2int
+        current_max = sys.get_int_max_str_digits()
+        self.assertEqual(res2int(res), (current_max, current_max))
+        res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-X', 'int_max_str_digits=4000', '-c', code)
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok('-X', 'int_max_str_digits=100000', '-c', code)
+        self.assertEqual(res2int(res), (100000, 100000))
+
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='0')
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='4000')
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok(
+            '-X', 'int_max_str_digits=6000', '-c', code,
+            PYTHONINTMAXSTRDIGITS='4000'
+        )
+        self.assertEqual(res2int(res), (6000, 6000))
+
+    def test_cpu_count(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
+        self.assertEqual(self.res2int(res), (4321, 4321))
+        res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (1234, 1234))
+
+    def test_cpu_count_default(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code)
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def res2int(self, res):
+        out = res.out.strip().decode("utf-8")
+        return tuple(int(i) for i in out.split())
 
 
 @unittest.skipIf(interpreter_requires_environment(),
@@ -880,7 +1013,8 @@ class IgnoreEnvironmentTest(unittest.TestCase):
         # Issue 31845: a startup refactoring broke reading flags from env vars
         expected_outcome = """
             (sys.flags.debug == sys.flags.optimize ==
-             sys.flags.dont_write_bytecode == sys.flags.verbose == 0)
+             sys.flags.dont_write_bytecode ==
+             sys.flags.verbose == sys.flags.safe_path == 0)
         """
         self.run_ignoring_vars(
             expected_outcome,
@@ -888,7 +1022,9 @@ class IgnoreEnvironmentTest(unittest.TestCase):
             PYTHONOPTIMIZE="1",
             PYTHONDONTWRITEBYTECODE="1",
             PYTHONVERBOSE="1",
+            PYTHONSAFEPATH="1",
         )
+
 
 class SyntaxErrorTests(unittest.TestCase):
     def check_string(self, code):

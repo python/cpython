@@ -1,0 +1,50 @@
+digraph ideal {
+
+    rankdir = "LR"
+
+
+    object [
+        shape = none
+        label = <<table border="0" cellspacing="0">
+                    <tr><td><b>object</b></td></tr>
+                    <tr><td port="w" border="1">weakrefs</td></tr>
+                    <tr><td port="dv" border="1">dict or values</td></tr>
+                    <tr><td border="1" >GC info 0</td></tr>
+                    <tr><td border="1" >GC info 1</td></tr>
+                    <tr><td port="r" border="1" >refcount</td></tr>
+                    <tr><td port="h" border="1" >__class__</td></tr>
+                </table>>
+    ]
+
+    values [
+        shape = none
+        label = <<table border="0" cellspacing="0">
+                    <tr><td><b>values</b></td></tr>
+                    <tr><td port="0" border="1">values[0]</td></tr>
+                    <tr><td border="1">values[1]</td></tr>
+                    <tr><td border="1">...</td></tr>
+                </table>>
+
+    ]
+
+    class [ 
+        shape = none
+        label = <<table border="0" cellspacing="0">
+                    <tr><td><b>class</b></td></tr>
+                    <tr><td port="head" bgcolor="lightgreen" border="1">...</td></tr>
+                    <tr><td border="1" bgcolor="lightgreen">dict_offset</td></tr>
+                    <tr><td border="1" bgcolor="lightgreen">...</td></tr>
+                    <tr><td port="k" border="1" bgcolor="lightgreen">cached_keys</td></tr>
+                </table>>
+    ]
+
+    keys [label = "dictionary keys"; fillcolor="lightgreen"; style="filled"]
+    NULL [ label = " NULL"; shape="plain"]
+    object:w ->  NULL
+    object:h -> class:head
+    object:dv -> values:0
+    class:k -> keys
+
+    oop [ label = "pointer"; shape="plain"]
+    oop -> object:r
+}

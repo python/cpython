@@ -78,6 +78,11 @@ def translate(pat):
     """
 
     STAR = object()
+    parts = _translate(pat, STAR, '.')
+    return _join_translated_parts(parts, STAR)
+
+
+def _translate(pat, STAR, QUESTION_MARK):
     res = []
     add = res.append
     i, n = 0, len(pat)
@@ -89,7 +94,7 @@ def translate(pat):
             if (not res) or res[-1] is not STAR:
                 add(STAR)
         elif c == '?':
-            add('.')
+            add(QUESTION_MARK)
         elif c == '[':
             j = i
             if j < n and pat[j] == '!':
@@ -102,7 +107,7 @@ def translate(pat):
                 add('\\[')
             else:
                 stuff = pat[i:j]
-                if '--' not in stuff:
+                if '-' not in stuff:
                     stuff = stuff.replace('\\', r'\\')
                 else:
                     chunks = []
@@ -114,7 +119,16 @@ def translate(pat):
                         chunks.append(pat[i:k])
                         i = k+1
                         k = k+3
-                    chunks.append(pat[i:j])
+                    chunk = pat[i:j]
+                    if chunk:
+                        chunks.append(chunk)
+                    else:
+                        chunks[-1] += '-'
+                    # Remove empty ranges -- invalid in RE.
+                    for k in range(len(chunks)-1, 0, -1):
+                        if chunks[k-1][-1] > chunks[k][0]:
+                            chunks[k-1] = chunks[k-1][:-1] + chunks[k][1:]
+                            del chunks[k]
                     # Escape backslashes and hyphens for set difference (--).
                     # Hyphens that create ranges shouldn't be escaped.
                     stuff = '-'.join(s.replace('\\', r'\\').replace('-', r'\-')
@@ -122,17 +136,26 @@ def translate(pat):
                 # Escape set operations (&&, ~~ and ||).
                 stuff = re.sub(r'([&~|])', r'\\\1', stuff)
                 i = j+1
-                if stuff[0] == '!':
-                    stuff = '^' + stuff[1:]
-                elif stuff[0] in ('^', '['):
-                    stuff = '\\' + stuff
-                add(f'[{stuff}]')
+                if not stuff:
+                    # Empty range: never match.
+                    add('(?!)')
+                elif stuff == '!':
+                    # Negated empty range: match any character.
+                    add('.')
+                else:
+                    if stuff[0] == '!':
+                        stuff = '^' + stuff[1:]
+                    elif stuff[0] in ('^', '['):
+                        stuff = '\\' + stuff
+                    add(f'[{stuff}]')
         else:
             add(re.escape(c))
     assert i == n
+    return res
 
+
+def _join_translated_parts(inp, STAR):
     # Deal with STARs.
-    inp = res
     res = []
     add = res.append
     i, n = 0, len(inp)

@@ -13,14 +13,14 @@
 
 # update when constants are added or removed
 
-MAGIC = 20220402
+MAGIC = 20230612
 
 from _sre import MAXREPEAT, MAXGROUPS
 
 # SRE standard exception (access as sre.error)
 # should this really be here?
 
-class error(Exception):
+class PatternError(Exception):
     """Exception raised for invalid regular expressions.
 
     Attributes:
@@ -53,6 +53,9 @@ class error(Exception):
         super().__init__(msg)
 
 
+# Backward compatibility after renaming in 3.13
+error = PatternError
+
 class _NamedIntConstant(int):
     def __new__(cls, value, name):
         self = super(_NamedIntConstant, cls).__new__(cls, value)
@@ -62,90 +65,92 @@ class _NamedIntConstant(int):
     def __repr__(self):
         return self.name
 
+    __reduce__ = None
+
 MAXREPEAT = _NamedIntConstant(MAXREPEAT, 'MAXREPEAT')
 
-def _makecodes(names):
-    names = names.strip().split()
+def _makecodes(*names):
     items = [_NamedIntConstant(i, name) for i, name in enumerate(names)]
     globals().update({item.name: item for item in items})
     return items
 
 # operators
-# failure=0 success=1 (just because it looks better that way :-)
-OPCODES = _makecodes("""
-    FAILURE SUCCESS
+OPCODES = _makecodes(
+    # failure=0 success=1 (just because it looks better that way :-)
+    'FAILURE', 'SUCCESS',
 
-    ANY ANY_ALL
-    ASSERT ASSERT_NOT
-    AT
-    BRANCH
-    CALL
-    CATEGORY
-    CHARSET BIGCHARSET
-    GROUPREF GROUPREF_EXISTS
-    IN
-    INFO
-    JUMP
-    LITERAL
-    MARK
-    MAX_UNTIL
-    MIN_UNTIL
-    NOT_LITERAL
-    NEGATE
-    RANGE
-    REPEAT
-    REPEAT_ONE
-    SUBPATTERN
-    MIN_REPEAT_ONE
-    ATOMIC_GROUP
-    POSSESSIVE_REPEAT
-    POSSESSIVE_REPEAT_ONE
+    'ANY', 'ANY_ALL',
+    'ASSERT', 'ASSERT_NOT',
+    'AT',
+    'BRANCH',
+    'CATEGORY',
+    'CHARSET', 'BIGCHARSET',
+    'GROUPREF', 'GROUPREF_EXISTS',
+    'IN',
+    'INFO',
+    'JUMP',
+    'LITERAL',
+    'MARK',
+    'MAX_UNTIL',
+    'MIN_UNTIL',
+    'NOT_LITERAL',
+    'NEGATE',
+    'RANGE',
+    'REPEAT',
+    'REPEAT_ONE',
+    'SUBPATTERN',
+    'MIN_REPEAT_ONE',
+    'ATOMIC_GROUP',
+    'POSSESSIVE_REPEAT',
+    'POSSESSIVE_REPEAT_ONE',
 
-    GROUPREF_IGNORE
-    IN_IGNORE
-    LITERAL_IGNORE
-    NOT_LITERAL_IGNORE
+    'GROUPREF_IGNORE',
+    'IN_IGNORE',
+    'LITERAL_IGNORE',
+    'NOT_LITERAL_IGNORE',
 
-    GROUPREF_LOC_IGNORE
-    IN_LOC_IGNORE
-    LITERAL_LOC_IGNORE
-    NOT_LITERAL_LOC_IGNORE
+    'GROUPREF_LOC_IGNORE',
+    'IN_LOC_IGNORE',
+    'LITERAL_LOC_IGNORE',
+    'NOT_LITERAL_LOC_IGNORE',
 
-    GROUPREF_UNI_IGNORE
-    IN_UNI_IGNORE
-    LITERAL_UNI_IGNORE
-    NOT_LITERAL_UNI_IGNORE
-    RANGE_UNI_IGNORE
+    'GROUPREF_UNI_IGNORE',
+    'IN_UNI_IGNORE',
+    'LITERAL_UNI_IGNORE',
+    'NOT_LITERAL_UNI_IGNORE',
+    'RANGE_UNI_IGNORE',
 
-    MIN_REPEAT MAX_REPEAT
-""")
+    # The following opcodes are only occurred in the parser output,
+    # but not in the compiled code.
+    'MIN_REPEAT', 'MAX_REPEAT',
+)
 del OPCODES[-2:] # remove MIN_REPEAT and MAX_REPEAT
 
 # positions
-ATCODES = _makecodes("""
-    AT_BEGINNING AT_BEGINNING_LINE AT_BEGINNING_STRING
-    AT_BOUNDARY AT_NON_BOUNDARY
-    AT_END AT_END_LINE AT_END_STRING
+ATCODES = _makecodes(
+    'AT_BEGINNING', 'AT_BEGINNING_LINE', 'AT_BEGINNING_STRING',
+    'AT_BOUNDARY', 'AT_NON_BOUNDARY',
+    'AT_END', 'AT_END_LINE', 'AT_END_STRING',
 
-    AT_LOC_BOUNDARY AT_LOC_NON_BOUNDARY
+    'AT_LOC_BOUNDARY', 'AT_LOC_NON_BOUNDARY',
 
-    AT_UNI_BOUNDARY AT_UNI_NON_BOUNDARY
-""")
+    'AT_UNI_BOUNDARY', 'AT_UNI_NON_BOUNDARY',
+)
 
 # categories
-CHCODES = _makecodes("""
-    CATEGORY_DIGIT CATEGORY_NOT_DIGIT
-    CATEGORY_SPACE CATEGORY_NOT_SPACE
-    CATEGORY_WORD CATEGORY_NOT_WORD
-    CATEGORY_LINEBREAK CATEGORY_NOT_LINEBREAK
+CHCODES = _makecodes(
+    'CATEGORY_DIGIT', 'CATEGORY_NOT_DIGIT',
+    'CATEGORY_SPACE', 'CATEGORY_NOT_SPACE',
+    'CATEGORY_WORD', 'CATEGORY_NOT_WORD',
+    'CATEGORY_LINEBREAK', 'CATEGORY_NOT_LINEBREAK',
 
-    CATEGORY_LOC_WORD CATEGORY_LOC_NOT_WORD
+    'CATEGORY_LOC_WORD', 'CATEGORY_LOC_NOT_WORD',
 
-    CATEGORY_UNI_DIGIT CATEGORY_UNI_NOT_DIGIT
-    CATEGORY_UNI_SPACE CATEGORY_UNI_NOT_SPACE
-    CATEGORY_UNI_WORD CATEGORY_UNI_NOT_WORD
-    CATEGORY_UNI_LINEBREAK CATEGORY_UNI_NOT_LINEBREAK
-""")
+    'CATEGORY_UNI_DIGIT', 'CATEGORY_UNI_NOT_DIGIT',
+    'CATEGORY_UNI_SPACE', 'CATEGORY_UNI_NOT_SPACE',
+    'CATEGORY_UNI_WORD', 'CATEGORY_UNI_NOT_WORD',
+    'CATEGORY_UNI_LINEBREAK', 'CATEGORY_UNI_NOT_LINEBREAK',
+)
 
 
 # replacement operations for "ignore case" mode
@@ -215,46 +220,3 @@ SRE_FLAG_ASCII = 256 # use ascii "locale"
 SRE_INFO_PREFIX = 1 # has prefix
 SRE_INFO_LITERAL = 2 # entire pattern is literal (given by prefix)
 SRE_INFO_CHARSET = 4 # pattern starts with character from given set
-
-if __name__ == "__main__":
-    def dump(f, d, prefix):
-        items = sorted(d)
-        for item in items:
-            f.write("#define %s_%s %d\n" % (prefix, item, item))
-    with open("sre_constants.h", "w") as f:
-        f.write("""\
-/*
- * Secret Labs' Regular Expression Engine
- *
- * regular expression matching engine
- *
- * NOTE: This file is generated by Lib/re/_constants.py.  If you need
- * to change anything in here, edit Lib/re/_constants.py and run it.
- *
- * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
- *
- * See the sre.c file for information on usage and redistribution.
- */
-
-""")
-
-        f.write("#define SRE_MAGIC %d\n" % MAGIC)
-
-        dump(f, OPCODES, "SRE_OP")
-        dump(f, ATCODES, "SRE")
-        dump(f, CHCODES, "SRE")
-
-        f.write("#define SRE_FLAG_IGNORECASE %d\n" % SRE_FLAG_IGNORECASE)
-        f.write("#define SRE_FLAG_LOCALE %d\n" % SRE_FLAG_LOCALE)
-        f.write("#define SRE_FLAG_MULTILINE %d\n" % SRE_FLAG_MULTILINE)
-        f.write("#define SRE_FLAG_DOTALL %d\n" % SRE_FLAG_DOTALL)
-        f.write("#define SRE_FLAG_UNICODE %d\n" % SRE_FLAG_UNICODE)
-        f.write("#define SRE_FLAG_VERBOSE %d\n" % SRE_FLAG_VERBOSE)
-        f.write("#define SRE_FLAG_DEBUG %d\n" % SRE_FLAG_DEBUG)
-        f.write("#define SRE_FLAG_ASCII %d\n" % SRE_FLAG_ASCII)
-
-        f.write("#define SRE_INFO_PREFIX %d\n" % SRE_INFO_PREFIX)
-        f.write("#define SRE_INFO_LITERAL %d\n" % SRE_INFO_LITERAL)
-        f.write("#define SRE_INFO_CHARSET %d\n" % SRE_INFO_CHARSET)
-
-    print("done")

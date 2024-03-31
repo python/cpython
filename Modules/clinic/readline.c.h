@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(readline_parse_and_bind__doc__,
 "parse_and_bind($module, string, /)\n"
 "--\n"
@@ -20,7 +22,7 @@ PyDoc_STRVAR(readline_read_init_file__doc__,
 "The default filename is the last filename used.");
 
 #define READLINE_READ_INIT_FILE_METHODDEF    \
-    {"read_init_file", (PyCFunction)(void(*)(void))readline_read_init_file, METH_FASTCALL, readline_read_init_file__doc__},
+    {"read_init_file", _PyCFunction_CAST(readline_read_init_file), METH_FASTCALL, readline_read_init_file__doc__},
 
 static PyObject *
 readline_read_init_file_impl(PyObject *module, PyObject *filename_obj);
@@ -54,7 +56,7 @@ PyDoc_STRVAR(readline_read_history_file__doc__,
 "The default filename is ~/.history.");
 
 #define READLINE_READ_HISTORY_FILE_METHODDEF    \
-    {"read_history_file", (PyCFunction)(void(*)(void))readline_read_history_file, METH_FASTCALL, readline_read_history_file__doc__},
+    {"read_history_file", _PyCFunction_CAST(readline_read_history_file), METH_FASTCALL, readline_read_history_file__doc__},
 
 static PyObject *
 readline_read_history_file_impl(PyObject *module, PyObject *filename_obj);
@@ -88,7 +90,7 @@ PyDoc_STRVAR(readline_write_history_file__doc__,
 "The default filename is ~/.history.");
 
 #define READLINE_WRITE_HISTORY_FILE_METHODDEF    \
-    {"write_history_file", (PyCFunction)(void(*)(void))readline_write_history_file, METH_FASTCALL, readline_write_history_file__doc__},
+    {"write_history_file", _PyCFunction_CAST(readline_write_history_file), METH_FASTCALL, readline_write_history_file__doc__},
 
 static PyObject *
 readline_write_history_file_impl(PyObject *module, PyObject *filename_obj);
@@ -124,7 +126,7 @@ PyDoc_STRVAR(readline_append_history_file__doc__,
 "The default filename is ~/.history.");
 
 #define READLINE_APPEND_HISTORY_FILE_METHODDEF    \
-    {"append_history_file", (PyCFunction)(void(*)(void))readline_append_history_file, METH_FASTCALL, readline_append_history_file__doc__},
+    {"append_history_file", _PyCFunction_CAST(readline_append_history_file), METH_FASTCALL, readline_append_history_file__doc__},
 
 static PyObject *
 readline_append_history_file_impl(PyObject *module, int nelements,
@@ -140,7 +142,7 @@ readline_append_history_file(PyObject *module, PyObject *const *args, Py_ssize_t
     if (!_PyArg_CheckPositional("append_history_file", nargs, 1, 2)) {
         goto exit;
     }
-    nelements = _PyLong_AsInt(args[0]);
+    nelements = PyLong_AsInt(args[0]);
     if (nelements == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -177,7 +179,7 @@ readline_set_history_length(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int length;
 
-    length = _PyLong_AsInt(arg);
+    length = PyLong_AsInt(arg);
     if (length == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -216,7 +218,7 @@ PyDoc_STRVAR(readline_set_completion_display_matches_hook__doc__,
 "once each time matches need to be displayed.");
 
 #define READLINE_SET_COMPLETION_DISPLAY_MATCHES_HOOK_METHODDEF    \
-    {"set_completion_display_matches_hook", (PyCFunction)(void(*)(void))readline_set_completion_display_matches_hook, METH_FASTCALL, readline_set_completion_display_matches_hook__doc__},
+    {"set_completion_display_matches_hook", _PyCFunction_CAST(readline_set_completion_display_matches_hook), METH_FASTCALL, readline_set_completion_display_matches_hook__doc__},
 
 static PyObject *
 readline_set_completion_display_matches_hook_impl(PyObject *module,
@@ -252,7 +254,7 @@ PyDoc_STRVAR(readline_set_startup_hook__doc__,
 "before readline prints the first prompt.");
 
 #define READLINE_SET_STARTUP_HOOK_METHODDEF    \
-    {"set_startup_hook", (PyCFunction)(void(*)(void))readline_set_startup_hook, METH_FASTCALL, readline_set_startup_hook__doc__},
+    {"set_startup_hook", _PyCFunction_CAST(readline_set_startup_hook), METH_FASTCALL, readline_set_startup_hook__doc__},
 
 static PyObject *
 readline_set_startup_hook_impl(PyObject *module, PyObject *function);
@@ -290,7 +292,7 @@ PyDoc_STRVAR(readline_set_pre_input_hook__doc__,
 "characters.");
 
 #define READLINE_SET_PRE_INPUT_HOOK_METHODDEF    \
-    {"set_pre_input_hook", (PyCFunction)(void(*)(void))readline_set_pre_input_hook, METH_FASTCALL, readline_set_pre_input_hook__doc__},
+    {"set_pre_input_hook", _PyCFunction_CAST(readline_set_pre_input_hook), METH_FASTCALL, readline_set_pre_input_hook__doc__},
 
 static PyObject *
 readline_set_pre_input_hook_impl(PyObject *module, PyObject *function);
@@ -398,7 +400,7 @@ readline_remove_history_item(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int entry_number;
 
-    entry_number = _PyLong_AsInt(arg);
+    entry_number = PyLong_AsInt(arg);
     if (entry_number == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -417,7 +419,7 @@ PyDoc_STRVAR(readline_replace_history_item__doc__,
 "pos is zero-based.");
 
 #define READLINE_REPLACE_HISTORY_ITEM_METHODDEF    \
-    {"replace_history_item", (PyCFunction)(void(*)(void))readline_replace_history_item, METH_FASTCALL, readline_replace_history_item__doc__},
+    {"replace_history_item", _PyCFunction_CAST(readline_replace_history_item), METH_FASTCALL, readline_replace_history_item__doc__},
 
 static PyObject *
 readline_replace_history_item_impl(PyObject *module, int entry_number,
@@ -433,15 +435,12 @@ readline_replace_history_item(PyObject *module, PyObject *const *args, Py_ssize_
     if (!_PyArg_CheckPositional("replace_history_item", nargs, 2, 2)) {
         goto exit;
     }
-    entry_number = _PyLong_AsInt(args[0]);
+    entry_number = PyLong_AsInt(args[0]);
     if (entry_number == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("replace_history_item", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     line = args[1];
@@ -518,7 +517,7 @@ PyDoc_STRVAR(readline_set_completer__doc__,
 "It should return the next possible completion starting with \'text\'.");
 
 #define READLINE_SET_COMPLETER_METHODDEF    \
-    {"set_completer", (PyCFunction)(void(*)(void))readline_set_completer, METH_FASTCALL, readline_set_completer__doc__},
+    {"set_completer", _PyCFunction_CAST(readline_set_completer), METH_FASTCALL, readline_set_completer__doc__},
 
 static PyObject *
 readline_set_completer_impl(PyObject *module, PyObject *function);
@@ -579,7 +578,7 @@ readline_get_history_item(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int idx;
 
-    idx = _PyLong_AsInt(arg);
+    idx = PyLong_AsInt(arg);
     if (idx == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -685,4 +684,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=f7d390113b27989f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=358ab465285c7949 input=a9049054013a1b77]*/
