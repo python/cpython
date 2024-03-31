@@ -6726,7 +6726,7 @@ static PyMethodDef module_methods[] = {
     {NULL, NULL}
 };
 
-static void
+static inline void
 set_datetime_capi(datetime_state *st)
 {
     st->capi.DateType = &PyDateTime_DateType;
