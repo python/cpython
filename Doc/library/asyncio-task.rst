@@ -334,6 +334,13 @@ and reliable way to wait for all tasks in the group to finish.
 
       Create a task in this task group.
       The signature matches that of :func:`asyncio.create_task`.
+      If the task group is inactive (e.g. not yet entered,
+      already finished, or in the process of shutting down),
+      we will close the given ``coro``.
+
+      .. versionchanged:: 3.13
+
+         Close the given coroutine if the task group is not active.
 
 Example::
 
@@ -425,6 +432,9 @@ Sleeping
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
+
+   .. versionchanged:: 3.13
+      Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
 
 
 Running Tasks Concurrently
@@ -628,9 +638,9 @@ Shielding From Cancellation
 Timeouts
 ========
 
-.. coroutinefunction:: timeout(delay)
+.. function:: timeout(delay)
 
-    An :ref:`asynchronous context manager <async-context-managers>`
+    Return an :ref:`asynchronous context manager <async-context-managers>`
     that can be used to limit the amount of time spent waiting on
     something.
 
@@ -651,16 +661,16 @@ Timeouts
     If ``long_running_task`` takes more than 10 seconds to complete,
     the context manager will cancel the current task and handle
     the resulting :exc:`asyncio.CancelledError` internally, transforming it
-    into an :exc:`asyncio.TimeoutError` which can be caught and handled.
+    into a :exc:`TimeoutError` which can be caught and handled.
 
     .. note::
 
       The :func:`asyncio.timeout` context manager is what transforms
-      the :exc:`asyncio.CancelledError` into an :exc:`asyncio.TimeoutError`,
-      which means the :exc:`asyncio.TimeoutError` can only be caught
+      the :exc:`asyncio.CancelledError` into a :exc:`TimeoutError`,
+      which means the :exc:`TimeoutError` can only be caught
       *outside* of the context manager.
 
-    Example of catching :exc:`asyncio.TimeoutError`::
+    Example of catching :exc:`TimeoutError`::
 
         async def main():
             try:
@@ -721,7 +731,7 @@ Timeouts
 
     .. versionadded:: 3.11
 
-.. coroutinefunction:: timeout_at(when)
+.. function:: timeout_at(when)
 
    Similar to :func:`asyncio.timeout`, except *when* is the absolute time
    to stop waiting, or ``None``.
@@ -764,9 +774,6 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
-
    .. _asyncio_example_waitfor:
 
    Example::
@@ -797,6 +804,9 @@ Timeouts
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
+
 
 Waiting Primitives
 ==================
@@ -825,23 +835,22 @@ Waiting Primitives
    *return_when* indicates when this function should return.  It must
    be one of the following constants:
 
-   .. tabularcolumns:: |l|L|
+   .. list-table::
+      :header-rows: 1
 
-   +-----------------------------+----------------------------------------+
-   | Constant                    | Description                            |
-   +=============================+========================================+
-   | :const:`FIRST_COMPLETED`    | The function will return when any      |
-   |                             | future finishes or is cancelled.       |
-   +-----------------------------+----------------------------------------+
-   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
-   |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
-   |                             | exception then it is equivalent to     |
-   |                             | :const:`ALL_COMPLETED`.                |
-   +-----------------------------+----------------------------------------+
-   | :const:`ALL_COMPLETED`      | The function will return when all      |
-   |                             | futures finish or are cancelled.       |
-   +-----------------------------+----------------------------------------+
+      * - Constant
+        - Description
+
+      * - .. data:: FIRST_COMPLETED
+        - The function will return when any future finishes or is cancelled.
+
+      * - .. data:: FIRST_EXCEPTION
+        - The function will return when any future finishes by raising an
+          exception. If no future raises an exception
+          then it is equivalent to :const:`ALL_COMPLETED`.
+
+      * - .. data:: ALL_COMPLETED
+        - The function will return when all futures finish or are cancelled.
 
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.

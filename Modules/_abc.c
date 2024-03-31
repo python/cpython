@@ -7,7 +7,8 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyType_GetSubclasses()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_typeobject.h"    // _PyType_GetMRO()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "clinic/_abc.c.h"
 
 /*[clinic input]
@@ -150,12 +151,10 @@ _in_weak_set(PyObject *set, PyObject *obj)
 static PyObject *
 _destroy(PyObject *setweakref, PyObject *objweakref)
 {
-    PyObject *set;
-    set = PyWeakref_GET_OBJECT(setweakref);
-    if (set == Py_None) {
+    PyObject *set = _PyWeakref_GET_REF(setweakref);
+    if (set == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(set);
     if (PySet_Discard(set, objweakref) < 0) {
         Py_DECREF(set);
         return NULL;
@@ -362,7 +361,7 @@ compute_abstract_methods(PyObject *self)
         PyObject *item = PyTuple_GET_ITEM(bases, pos);  // borrowed
         PyObject *base_abstracts, *iter;
 
-        if (_PyObject_LookupAttr(item, &_Py_ID(__abstractmethods__),
+        if (PyObject_GetOptionalAttr(item, &_Py_ID(__abstractmethods__),
                                  &base_abstracts) < 0) {
             goto error;
         }
@@ -376,7 +375,7 @@ compute_abstract_methods(PyObject *self)
         Py_DECREF(base_abstracts);
         PyObject *key, *value;
         while ((key = PyIter_Next(iter))) {
-            if (_PyObject_LookupAttr(self, key, &value) < 0) {
+            if (PyObject_GetOptionalAttr(self, key, &value) < 0) {
                 Py_DECREF(key);
                 Py_DECREF(iter);
                 goto error;
@@ -744,18 +743,12 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     Py_DECREF(ok);
 
     /* 4. Check if it's a direct subclass. */
-    PyObject *mro = _PyType_GetMRO((PyTypeObject *)subclass);
-    assert(PyTuple_Check(mro));
-    for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
-        PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
-        assert(mro_item != NULL);
-        if ((PyObject *)self == mro_item) {
-            if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
-                goto end;
-            }
-            result = Py_True;
+    if (PyType_IsSubtype((PyTypeObject *)subclass, (PyTypeObject *)self)) {
+        if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
             goto end;
         }
+        result = Py_True;
+        goto end;
     }
 
     /* 5. Check if it's a subclass of a registered class (recursive). */
@@ -843,16 +836,16 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     assert(i == registry_size);
 
     for (i = 0; i < registry_size; i++) {
-        PyObject *rkey = PyWeakref_GetObject(copy[i]);
-        if (rkey == NULL) {
+        PyObject *rkey;
+        if (PyWeakref_GetRef(copy[i], &rkey) < 0) {
             // Someone inject non-weakref type in the registry.
             ret = -1;
             break;
         }
-        if (rkey == Py_None) {
+
+        if (rkey == NULL) {
             continue;
         }
-        Py_INCREF(rkey);
         int r = PyObject_IsSubclass(subclass, rkey);
         Py_DECREF(rkey);
         if (r < 0) {

@@ -2,6 +2,8 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgsTstate()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_dict.h"          // _PyDict_FromItems()
+#include "pycore_function.h"      // _PyFunction_Vectorcall() definition
+#include "pycore_modsupport.h"    // _Py_VaBuildStack()
 #include "pycore_object.h"        // _PyCFunctionWithKeywords_TrampolineCall()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -106,9 +108,9 @@ PyObject_CallNoArgs(PyObject *func)
 
 
 PyObject *
-_PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
-                             PyObject *const *args, size_t nargsf,
-                             PyObject *kwargs)
+_PyObject_VectorcallDictTstate(PyThreadState *tstate, PyObject *callable,
+                               PyObject *const *args, size_t nargsf,
+                               PyObject *kwargs)
 {
     assert(callable != NULL);
 
@@ -122,7 +124,7 @@ _PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    vectorcallfunc func = _PyVectorcall_Function(callable);
+    vectorcallfunc func = PyVectorcall_Function(callable);
     if (func == NULL) {
         /* Use tp_call instead */
         return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwargs);
@@ -154,7 +156,7 @@ PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
                        size_t nargsf, PyObject *kwargs)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_FastCallDictTstate(tstate, callable, args, nargsf, kwargs);
+    return _PyObject_VectorcallDictTstate(tstate, callable, args, nargsf, kwargs);
 }
 
 static void
@@ -172,7 +174,7 @@ object_is_not_callable(PyThreadState *tstate, PyObject *callable)
             goto basic_type_error;
         }
         PyObject *attr;
-        int res = _PyObject_LookupAttr(callable, name, &attr);
+        int res = PyObject_GetOptionalAttr(callable, name, &attr);
         if (res < 0) {
             _PyErr_Clear(tstate);
         }
@@ -328,14 +330,6 @@ PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
 
 
 PyObject *
-_PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
-{
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _PyObject_FastCallTstate(tstate, func, args, nargs);
-}
-
-
-PyObject *
 _PyObject_Call(PyThreadState *tstate, PyObject *callable,
                PyObject *args, PyObject *kwargs)
 {
@@ -349,7 +343,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
     EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_API, callable);
-    vectorcallfunc vector_func = _PyVectorcall_Function(callable);
+    vectorcallfunc vector_func = PyVectorcall_Function(callable);
     if (vector_func != NULL) {
         return _PyVectorcall_Call(tstate, vector_func, callable, args, kwargs);
     }
@@ -453,7 +447,8 @@ PyEval_CallObjectWithKeywords(PyObject *callable,
     }
 
     if (args == NULL) {
-        return _PyObject_FastCallDictTstate(tstate, callable, NULL, 0, kwargs);
+        return _PyObject_VectorcallDictTstate(tstate, callable,
+                                              NULL, 0, kwargs);
     }
     else {
         return _PyObject_Call(tstate, callable, args, kwargs);
@@ -506,9 +501,9 @@ _PyObject_Call_Prepend(PyThreadState *tstate, PyObject *callable,
            _PyTuple_ITEMS(args),
            argcount * sizeof(PyObject *));
 
-    PyObject *result = _PyObject_FastCallDictTstate(tstate, callable,
-                                                    stack, argcount + 1,
-                                                    kwargs);
+    PyObject *result = _PyObject_VectorcallDictTstate(tstate, callable,
+                                                      stack, argcount + 1,
+                                                      kwargs);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }

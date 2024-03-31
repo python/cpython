@@ -8,6 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+extern void _PyModule_Clear(PyObject *);
+extern void _PyModule_ClearDict(PyObject *);
+extern int _PyModuleSpec_IsInitializing(PyObject *);
+
+extern int _PyModule_IsExtension(PyObject *obj);
+
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
@@ -33,7 +39,7 @@ static inline PyObject* _PyModule_GetDict(PyObject *mod) {
     PyObject *dict = ((PyModuleObject *)mod) -> md_dict;
     // _PyModule_GetDict(mod) must not be used after calling module_clear(mod)
     assert(dict != NULL);
-    return dict;
+    return dict;  // borrowed reference
 }
 
 PyObject* _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress);

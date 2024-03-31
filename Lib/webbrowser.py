@@ -390,15 +390,6 @@ class Konqueror(BaseBrowser):
             return (p.poll() is None)
 
 
-    def open(self, url, new=0, autoraise=True):
-        sys.audit("webbrowser.open", url)
-        if new:
-            ok = self._remote("LOADNEW " + url)
-        else:
-            ok = self._remote("LOAD " + url)
-        return ok
-
-
 class Edge(UnixBrowser):
     "Launcher class for Microsoft Edge browser."
 
@@ -427,12 +418,18 @@ def register_X_browsers():
     if shutil.which("gio"):
         register("gio", None, BackgroundBrowser(["gio", "open", "--", "%s"]))
 
-    # Equivalent of gio open before 2015
-    if "GNOME_DESKTOP_SESSION_ID" in os.environ and shutil.which("gvfs-open"):
+    xdg_desktop = os.getenv("XDG_CURRENT_DESKTOP", "").split(":")
+
+    # The default GNOME3 browser
+    if (("GNOME" in xdg_desktop or
+         "GNOME_DESKTOP_SESSION_ID" in os.environ) and
+            shutil.which("gvfs-open")):
         register("gvfs-open", None, BackgroundBrowser("gvfs-open"))
 
     # The default KDE browser
-    if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
+    if (("KDE" in xdg_desktop or
+         "KDE_FULL_SESSION" in os.environ) and
+            shutil.which("kfmclient")):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
     # Common symbolic link for the default X11 browser
@@ -481,6 +478,9 @@ def register_standard_browsers():
         # OS X can use below Unix support (but we prefer using the OS X
         # specific stuff)
 
+    if sys.platform == "ios":
+        register("iosbrowser", None, IOSBrowser(), preferred=True)
+
     if sys.platform == "serenityos":
         # SerenityOS webbrowser, simply called "Browser".
         register("Browser", None, BackgroundBrowser("Browser"))
@@ -504,7 +504,12 @@ def register_standard_browsers():
             register("microsoft-edge", None, Edge("MicrosoftEdge.exe"))
     else:
         # Prefer X browsers if present
-        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
+        #
+        # NOTE: Do not check for X11 browser on macOS,
+        # XQuartz installation sets a DISPLAY environment variable and will
+        # autostart when someone tries to access the display. Mac users in
+        # general don't need an X11 browser.
+        if sys.platform != "darwin" and (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
             try:
                 cmd = "xdg-settings get default-web-browser".split()
                 raw_result = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
@@ -578,6 +583,7 @@ if sys.platform == 'darwin':
             super().__init__(name)
 
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             if self.name == 'default':
                 script = 'open location "%s"' % url.replace('"', '%22') # opens in default browser
             else:
@@ -595,6 +601,70 @@ if sys.platform == 'darwin':
             osapipe.write(script)
             rc = osapipe.close()
             return not rc
+
+#
+# Platform support for iOS
+#
+if sys.platform == "ios":
+    from _ios_support import objc
+    if objc:
+        # If objc exists, we know ctypes is also importable.
+        from ctypes import c_void_p, c_char_p, c_ulong
+
+    class IOSBrowser(BaseBrowser):
+        def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
+            # If ctypes isn't available, we can't open a browser
+            if objc is None:
+                return False
+
+            # All the messages in this call return object references.
+            objc.objc_msgSend.restype = c_void_p
+
+            # This is the equivalent of:
+            #    NSString url_string =
+            #        [NSString stringWithCString:url.encode("utf-8")
+            #                           encoding:NSUTF8StringEncoding];
+            NSString = objc.objc_getClass(b"NSString")
+            constructor = objc.sel_registerName(b"stringWithCString:encoding:")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_char_p, c_ulong]
+            url_string = objc.objc_msgSend(
+                NSString,
+                constructor,
+                url.encode("utf-8"),
+                4,  # NSUTF8StringEncoding = 4
+            )
+
+            # Create an NSURL object representing the URL
+            # This is the equivalent of:
+            #   NSURL *nsurl = [NSURL URLWithString:url];
+            NSURL = objc.objc_getClass(b"NSURL")
+            urlWithString_ = objc.sel_registerName(b"URLWithString:")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p, c_void_p]
+            ns_url = objc.objc_msgSend(NSURL, urlWithString_, url_string)
+
+            # Get the shared UIApplication instance
+            # This code is the equivalent of:
+            # UIApplication shared_app = [UIApplication sharedApplication]
+            UIApplication = objc.objc_getClass(b"UIApplication")
+            sharedApplication = objc.sel_registerName(b"sharedApplication")
+            objc.objc_msgSend.argtypes = [c_void_p, c_void_p]
+            shared_app = objc.objc_msgSend(UIApplication, sharedApplication)
+
+            # Open the URL on the shared application
+            # This code is the equivalent of:
+            #   [shared_app openURL:ns_url
+            #               options:NIL
+            #     completionHandler:NIL];
+            openURL_ = objc.sel_registerName(b"openURL:options:completionHandler:")
+            objc.objc_msgSend.argtypes = [
+                c_void_p, c_void_p, c_void_p, c_void_p, c_void_p
+            ]
+            # Method returns void
+            objc.objc_msgSend.restype = None
+            objc.objc_msgSend(shared_app, openURL_, ns_url, None, None)
+
+            return True
 
 
 def main():

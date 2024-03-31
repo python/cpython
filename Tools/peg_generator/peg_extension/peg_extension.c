@@ -52,7 +52,7 @@ parse_file(PyObject *self, PyObject *args, PyObject *kwds)
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
     mod_ty res = _PyPegen_run_parser_from_file_pointer(
                         fp, Py_file_input, filename_ob,
-                        NULL, NULL, NULL, &flags, NULL, arena);
+                        NULL, NULL, NULL, &flags, NULL, NULL, arena);
     fclose(fp);
     if (res == NULL) {
         goto error;
