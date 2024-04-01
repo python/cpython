@@ -1,2 +1,0 @@
-Move ``Lib/ctypes/test/`` to ``Lib/test/test_ctypes/``. Patch by Victor
-Stinner.

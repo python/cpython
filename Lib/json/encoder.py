@@ -72,7 +72,7 @@ encode_basestring_ascii = (
     c_encode_basestring_ascii or py_encode_basestring_ascii)
 
 class JSONEncoder(object):
-    """Extensible JSON <http://json.org> encoder for Python data structures.
+    """Extensible JSON <https://json.org> encoder for Python data structures.
 
     Supports the following objects and types by default:
 
@@ -174,7 +174,7 @@ class JSONEncoder(object):
                 else:
                     return list(iterable)
                 # Let the base class default method raise the TypeError
-                return JSONEncoder.default(self, o)
+                return super().default(o)
 
         """
         raise TypeError(f'Object of type {o.__class__.__name__} '

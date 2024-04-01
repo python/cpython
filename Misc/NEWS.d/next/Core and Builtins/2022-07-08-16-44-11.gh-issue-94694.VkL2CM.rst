@@ -1,4 +1,0 @@
-Fix an issue that could cause code with multi-line method lookups to have
-misleading or incorrect column offset information. In some cases (when
-compiling a hand-built AST) this could have resulted in a hard crash of the
-interpreter.

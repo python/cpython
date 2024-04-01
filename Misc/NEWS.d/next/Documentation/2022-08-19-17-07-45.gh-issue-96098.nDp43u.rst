@@ -1,3 +1,0 @@
-Improve discoverability of the higher level concurrent.futures module by
-providing clearer links from the lower level threading and multiprocessing
-modules.

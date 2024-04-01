@@ -1,1 +1,0 @@
-In the Edit menu, move ``Select All`` and add a new separator.

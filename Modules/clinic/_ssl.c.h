@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
 "do_handshake($self, /)\n"
@@ -236,10 +236,6 @@ _ssl__SSLSocket_write(PySSLSocket *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
-        goto exit;
-    }
     return_value = _ssl__SSLSocket_write_impl(self, &b);
 
 exit:
@@ -435,17 +431,17 @@ static PyObject *
 _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = get_state_type(type)->PySSLContext_Type;
     int proto_version;
 
-    if ((type == get_state_type(type)->PySSLContext_Type ||
-         type->tp_init == get_state_type(type)->PySSLContext_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("_SSLContext", kwargs)) {
         goto exit;
     }
     if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
-    proto_version = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    proto_version = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
     if (proto_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -527,10 +523,6 @@ _ssl__SSLContext__set_alpn_protocols(PySSLContext *self, PyObject *arg)
     Py_buffer protos = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &protos, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&protos, 'C')) {
-        _PyArg_BadArgument("_set_alpn_protocols", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl__SSLContext__set_alpn_protocols_impl(self, &protos);
@@ -757,8 +749,8 @@ _ssl__SSLContext__wrap_socket(PySSLContext *self, PyObject *const *args, Py_ssiz
         goto exit;
     }
     sock = args[0];
-    server_side = _PyLong_AsInt(args[1]);
-    if (server_side == -1 && PyErr_Occurred()) {
+    server_side = PyObject_IsTrue(args[1]);
+    if (server_side < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -855,8 +847,8 @@ _ssl__SSLContext__wrap_bio(PySSLContext *self, PyObject *const *args, Py_ssize_t
         goto exit;
     }
     outgoing = (PySSLMemoryBIO *)args[1];
-    server_side = _PyLong_AsInt(args[2]);
-    if (server_side == -1 && PyErr_Occurred()) {
+    server_side = PyObject_IsTrue(args[2]);
+    if (server_side < 0) {
         goto exit;
     }
     if (!noptargs) {
@@ -1021,6 +1013,141 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl__SSLContext_set_psk_client_callback__doc__,
+"set_psk_client_callback($self, /, callback)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_PSK_CLIENT_CALLBACK_METHODDEF    \
+    {"set_psk_client_callback", _PyCFunction_CAST(_ssl__SSLContext_set_psk_client_callback), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_set_psk_client_callback__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_psk_client_callback_impl(PySSLContext *self,
+                                              PyObject *callback);
+
+static PyObject *
+_ssl__SSLContext_set_psk_client_callback(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(callback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"callback", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_psk_client_callback",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *callback;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    callback = args[0];
+    return_value = _ssl__SSLContext_set_psk_client_callback_impl(self, callback);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ssl__SSLContext_set_psk_server_callback__doc__,
+"set_psk_server_callback($self, /, callback, identity_hint=None)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLCONTEXT_SET_PSK_SERVER_CALLBACK_METHODDEF    \
+    {"set_psk_server_callback", _PyCFunction_CAST(_ssl__SSLContext_set_psk_server_callback), METH_FASTCALL|METH_KEYWORDS, _ssl__SSLContext_set_psk_server_callback__doc__},
+
+static PyObject *
+_ssl__SSLContext_set_psk_server_callback_impl(PySSLContext *self,
+                                              PyObject *callback,
+                                              const char *identity_hint);
+
+static PyObject *
+_ssl__SSLContext_set_psk_server_callback(PySSLContext *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(callback), &_Py_ID(identity_hint), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"callback", "identity_hint", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_psk_server_callback",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *callback;
+    const char *identity_hint = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    callback = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1] == Py_None) {
+        identity_hint = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        Py_ssize_t identity_hint_length;
+        identity_hint = PyUnicode_AsUTF8AndSize(args[1], &identity_hint_length);
+        if (identity_hint == NULL) {
+            goto exit;
+        }
+        if (strlen(identity_hint) != (size_t)identity_hint_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("set_psk_server_callback", "argument 'identity_hint'", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _ssl__SSLContext_set_psk_server_callback_impl(self, callback, identity_hint);
+
+exit:
+    return return_value;
+}
+
 static PyObject *
 _ssl_MemoryBIO_impl(PyTypeObject *type);
 
@@ -1028,14 +1155,13 @@ static PyObject *
 _ssl_MemoryBIO(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = get_state_type(type)->PySSLMemoryBIO_Type;
 
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
-         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("MemoryBIO", args)) {
         goto exit;
     }
-    if ((type == get_state_type(type)->PySSLMemoryBIO_Type ||
-         type->tp_init == get_state_type(type)->PySSLMemoryBIO_Type->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("MemoryBIO", kwargs)) {
         goto exit;
     }
@@ -1074,7 +1200,7 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
     if (nargs < 1) {
         goto skip_optional;
     }
-    len = _PyLong_AsInt(args[0]);
+    len = PyLong_AsInt(args[0]);
     if (len == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1106,10 +1232,6 @@ _ssl_MemoryBIO_write(PySSLMemoryBIO *self, PyObject *arg)
     Py_buffer b = {NULL, NULL};
 
     if (PyObject_GetBuffer(arg, &b, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&b, 'C')) {
-        _PyArg_BadArgument("write", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _ssl_MemoryBIO_write_impl(self, &b);
@@ -1174,14 +1296,12 @@ _ssl_RAND_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&view, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&view, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &view, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&view, 'C')) {
-            _PyArg_BadArgument("RAND_add", "argument 1", "contiguous buffer", args[0]);
             goto exit;
         }
     }
@@ -1224,7 +1344,7 @@ _ssl_RAND_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    n = _PyLong_AsInt(arg);
+    n = PyLong_AsInt(arg);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1373,7 +1493,7 @@ _ssl_nid2obj(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int nid;
 
-    nid = _PyLong_AsInt(arg);
+    nid = PyLong_AsInt(arg);
     if (nid == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1543,4 +1663,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=9f477b0c709acb28 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=28a22f2b09d631cb input=a9049054013a1b77]*/

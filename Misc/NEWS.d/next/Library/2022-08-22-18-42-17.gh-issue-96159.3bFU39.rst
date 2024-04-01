@@ -1,1 +1,0 @@
-Fix a performance regression in logging TimedRotatingFileHandler. Only check for special files when the rollover time has passed.

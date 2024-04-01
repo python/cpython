@@ -4,32 +4,12 @@
 Superseded Modules
 ******************
 
-The modules described in this chapter are deprecated and only kept for
+The modules described in this chapter are deprecated or :term:`soft deprecated` and only kept for
 backwards compatibility. They have been superseded by other modules.
 
 
 .. toctree::
+   :maxdepth: 1
 
-   aifc.rst
-   asynchat.rst
-   asyncore.rst
-   audioop.rst
-   cgi.rst
-   cgitb.rst
-   chunk.rst
-   crypt.rst
-   imghdr.rst
-   imp.rst
-   mailcap.rst
-   msilib.rst
-   nis.rst
-   nntplib.rst
+   getopt.rst
    optparse.rst
-   ossaudiodev.rst
-   pipes.rst
-   sndhdr.rst
-   spwd.rst
-   sunau.rst
-   telnetlib.rst
-   uu.rst
-   xdrlib.rst

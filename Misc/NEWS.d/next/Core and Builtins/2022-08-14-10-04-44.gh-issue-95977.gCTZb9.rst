@@ -1,1 +1,0 @@
-Optimized calling :meth:`~object.__get__` with vectorcall. Patch by Kumar Aditya.

@@ -1,1 +1,0 @@
-Fixes the unsuccessful removal of the HTML document directory when uninstalling with Windows msi.

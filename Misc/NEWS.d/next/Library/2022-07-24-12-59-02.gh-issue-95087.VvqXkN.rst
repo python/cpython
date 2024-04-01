@@ -1,1 +1,0 @@
-Fix IndexError in parsing invalid date in the :mod:`email` module.

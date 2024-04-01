@@ -1,4 +1,0 @@
-Fix issue with test_unicode test_raiseMemError. The test case now use
-``test.support.calcobjsize`` to calculate size of PyUnicode structs.
-:func:`sys.getsizeof` may return different size when string has UTF-8
-memory.

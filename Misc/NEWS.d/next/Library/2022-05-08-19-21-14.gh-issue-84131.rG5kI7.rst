@@ -1,3 +1,0 @@
-The :class:`pathlib.Path` deprecated method ``link_to`` has been removed.
-Use 3.10's :meth:`~pathlib.Path.hardlink_to` method instead as its semantics
-are consistent with that of :meth:`~pathlib.Path.symlink_to`.

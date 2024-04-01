@@ -1,1 +1,0 @@
-Fix :class:`asyncio.Runner` to call :func:`asyncio.set_event_loop` only once to avoid calling :meth:`~asyncio.AbstractChildWatcher.attach_loop` multiple times on child watchers. Patch by Kumar Aditya.

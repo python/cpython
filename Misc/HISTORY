@@ -16169,7 +16169,7 @@ Core and Builtins
   codec subsystem, for example UTF-8 is turned into utf-8.
 
 - Issue #4200: Changed the atexit module to store its state in its
-  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpeters.
+  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpreters.
 
 - Issue #4237: io.FileIO() was raising invalid warnings caused by
   insufficient initialization of PyFileIOObject struct members.
@@ -19610,7 +19610,7 @@ durable way.  For example, some people say they're confused by that
 the Open Source Initiative's entry for the Python Software Foundation
 License::
 
-      http://www.opensource.org/licenses/PythonSoftFoundation.php
+      https://opensource.org/licenses/PythonSoftFoundation.php
 
 says "Python 2.1.1" all over it, wondering whether it applies only
 to Python 2.1.1.
