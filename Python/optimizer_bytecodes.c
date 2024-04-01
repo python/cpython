@@ -223,8 +223,10 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
             OUT_OF_SPACE_IF_NULL(res);
-            double f = PyFloat_AS_DOUBLE(temp);
-            REPLACE_OP(this_instr, _POP_TWO_LOAD_FLOAT, 0, double_as_int64_t(f));
+            if (sizeof(double) == sizeof(int64_t)) {
+                double f = PyFloat_AS_DOUBLE(temp);
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_FLOAT, 0, double_as_int64_t(f));
+            }
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
@@ -246,8 +248,10 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
             OUT_OF_SPACE_IF_NULL(res);
-            double f = PyFloat_AS_DOUBLE(temp);
-            REPLACE_OP(this_instr, _POP_TWO_LOAD_FLOAT, 0, double_as_int64_t(f));
+            if (sizeof(double) == sizeof(int64_t)) {
+                double f = PyFloat_AS_DOUBLE(temp);
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_FLOAT, 0, double_as_int64_t(f));
+            }
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));
@@ -269,8 +273,10 @@ dummy_func(void) {
             res = sym_new_const(ctx, temp);
             Py_DECREF(temp);
             OUT_OF_SPACE_IF_NULL(res);
-            double f = PyFloat_AS_DOUBLE(temp);
-            REPLACE_OP(this_instr, _POP_TWO_LOAD_FLOAT, 0, double_as_int64_t(f));
+            if (sizeof(double) == sizeof(int64_t)) {
+                double f = PyFloat_AS_DOUBLE(temp);
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_FLOAT, 0, double_as_int64_t(f));
+            }
         }
         else {
             OUT_OF_SPACE_IF_NULL(res = sym_new_type(ctx, &PyFloat_Type));

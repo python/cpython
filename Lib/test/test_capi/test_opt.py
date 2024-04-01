@@ -845,6 +845,20 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_BINARY_OP_MULTIPLY_FLOAT", uops)
         self.assertIn("_LOAD_FLOAT", uops)
 
+    def test_int_add_constant_propagation_peepholer_advanced(self):
+        def testfunc(n):
+            for _ in range(n):
+                a = 1
+                a = (a + a) + (a + a + (a + a))
+            return a
+
+        res, ex = self._run_with_optimizer(testfunc, 32)
+        self.assertAlmostEqual(res, 6)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_BINARY_OP_ADD_INT", uops)
+        self.assertIn("_LOAD_INT", uops)
+
     def test_add_unicode_propagation(self):
         def testfunc(n):
             a = ""

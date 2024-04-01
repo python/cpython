@@ -540,8 +540,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 break;
             case _POP_TWO_LOAD_FLOAT:
-                if ((sizeof(double) == sizeof(int64_t)) &&
-                    remove_simple_pops(2, &buffer[pc-1], buffer)) {
+                if (remove_simple_pops(2, &buffer[pc-1], buffer)) {
                     buffer[pc].opcode = _LOAD_FLOAT;
                 }
                 break;
