@@ -535,7 +535,9 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
 /* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
  * PyCodeObject *. Retrieve the code object if possible.
  */
-static PyCodeObject *get_co(_PyUOpInstruction *op) {
+static PyCodeObject *
+get_co(_PyUOpInstruction *op)
+{
     assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME);
     PyCodeObject *co = NULL;
     uint64_t operand = op->operand;
@@ -596,7 +598,7 @@ peephole_opt(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer, int buffer_s
                 assert(framesize > 0);
                 curr_space += framesize;
                 if (curr_space < 0 || curr_space > INT32_MAX) {
-                    // overflow or won't fit in operand
+                    // won't fit in signed 32-bit int
                     goto finish;
                 }
                 max_space = curr_space > max_space ? curr_space : max_space;

@@ -958,7 +958,8 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
-get_co_framesize(PyObject *self, PyObject *arg) {
+get_co_framesize(PyObject *self, PyObject *arg)
+{
     if (!PyCode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a code object");
         return NULL;

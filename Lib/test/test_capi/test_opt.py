@@ -4,7 +4,6 @@ import textwrap
 import unittest
 import gc
 import os
-import platform
 
 import _opcode
 import _testinternalcapi
@@ -966,12 +965,11 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d
             return a
 
-
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 832)
         self.assertIsNotNone(ex)
 
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_POP_FRAME"), 2)
@@ -994,12 +992,11 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c
             return a
 
-
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 224)
         self.assertIsNotNone(ex)
 
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_POP_FRAME"), 2)
@@ -1030,12 +1027,11 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d + e
             return a
 
-
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 800)
         self.assertIsNotNone(ex)
 
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
         self.assertEqual(uop_names.count("_POP_FRAME"), 4)
@@ -1067,12 +1063,11 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d + e
             return a
 
-
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 800)
         self.assertIsNotNone(ex)
 
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 4)
         self.assertEqual(uop_names.count("_POP_FRAME"), 4)
@@ -1112,12 +1107,11 @@ class TestUopsOptimization(unittest.TestCase):
                 a += b + c + d
             return a
 
-
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 96)
         self.assertIsNotNone(ex)
 
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 15)
         self.assertEqual(uop_names.count("_POP_FRAME"), 15)
@@ -1173,12 +1167,11 @@ class TestUopsOptimization(unittest.TestCase):
                 b += dummy15(7)
             return b
 
-
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 32 * (repetitions + 9))
         self.assertIsNotNone(ex)
 
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_CHECK_STACK_SPACE_OPERAND"), 1)
@@ -1208,12 +1201,11 @@ class TestUopsOptimization(unittest.TestCase):
                 a += dummy15(n)
             return a
 
-
         res, ex = self._run_with_optimizer(testfunc, 32)
         self.assertEqual(res, 42 * 32)
         self.assertIsNotNone(ex)
 
-        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in list(ex)]
+        uops_and_operands = [(opcode, operand) for opcode, _, _, operand in ex]
         uop_names = [uop[0] for uop in uops_and_operands]
         self.assertEqual(uop_names.count("_PUSH_FRAME"), 2)
         self.assertEqual(uop_names.count("_POP_FRAME"), 0)
