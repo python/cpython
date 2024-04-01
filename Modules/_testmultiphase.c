@@ -952,3 +952,46 @@ PyInit__test_shared_gil_only(void)
 {
     return PyModuleDef_Init(&shared_gil_only_def);
 }
+
+
+#include "datetime.h"
+
+static int
+datetime_capi_exec(PyObject *m)
+{
+    _pydatetimeapi_main = NULL;
+    PyDateTime_IMPORT;
+    if (PyDateTimeAPI == NULL) {
+        return -1;
+    }
+    if (PyDateTimeAPI != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
+        return -1;
+    }
+    if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
+        if (PyDateTimeAPI != _pydatetimeapi_main) {
+            return -1;
+        }
+    }
+    else {
+        if (PyDateTimeAPI == _pydatetimeapi_main) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot datetime_capi_slots[] = {
+    {Py_mod_exec, datetime_capi_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {0, NULL},
+};
+
+static PyModuleDef datetime_capi_def = TEST_MODULE_DEF("_test_datetime_capi",
+                                                        datetime_capi_slots,
+                                                        testexport_methods);
+
+PyMODINIT_FUNC
+PyInit__test_datetime_capi(void)
+{
+    return PyModuleDef_Init(&datetime_capi_def);
+}
