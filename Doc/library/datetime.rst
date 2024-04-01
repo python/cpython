@@ -1094,7 +1094,7 @@ Other constructors, all class methods:
 
          >>> from datetime import datetime
          >>> date_string = "02/29"
-         >>> when = datetime.strptime(f"{date_string};1984", "%m/%d;%Y")
+         >>> when = datetime.strptime(f"{date_string};1984", "%m/%d;%Y")  # Avoids leap year bug.
          >>> when.strftime("%B %d")  # doctest: +SKIP
          'February 29'
 
@@ -2682,7 +2682,7 @@ Notes:
    exception when it encounters leap day because the default year used by the
    parser is not a leap year.  Users run into this bug every four years...
 
-      >>> strptime(f"{month_day};1984", "%m/%d;%Y")  # problem mitigated!
+      >>> strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
 
    .. deprecated-removed:: 3.13 3.15
       :meth:`~.datetime.strptime` calls using a format string containing
