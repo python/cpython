@@ -120,7 +120,8 @@ def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
     return []
 
 _deprecated_function_message = (
-    "{name} is deprecated and will be removed in Python {remove}; use glob.glob instead"
+    "{name} is deprecated and will be removed in Python {remove}. Use "
+    "glob.glob and pass a directory to its root_dir argument instead."
 )
 
 def glob0(dirname, pattern):
