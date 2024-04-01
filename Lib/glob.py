@@ -79,14 +79,21 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         paths = map(os.fsencode, paths)
     return paths
 
-# Following functions are not public but can be used by third-party code.
+_deprecated_function_message = (
+    "{name} is deprecated and will be removed in Python {remove}. Use "
+    "glob.glob and pass a directory to its root_dir argument instead."
+)
 
 def glob0(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
     select = _literal_selector([pattern], False, False)
     paths = _relative_glob(select, dirname, None)
     return list(paths)
 
 def glob1(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
     select = _wildcard_selector([pattern], False, False)
     paths = _relative_glob(select, dirname, None)
     return list(paths)

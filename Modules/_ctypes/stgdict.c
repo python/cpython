@@ -25,6 +25,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
     Py_ssize_t size;
 
+    ctype_clear_stginfo(dst_info);
     PyMem_Free(dst_info->ffi_type_pointer.elements);
     PyMem_Free(dst_info->format);
     dst_info->format = NULL;
@@ -39,6 +40,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     Py_XINCREF(dst_info->converters);
     Py_XINCREF(dst_info->restype);
     Py_XINCREF(dst_info->checker);
+    Py_XINCREF(dst_info->module);
 
     if (src_info->format) {
         dst_info->format = PyMem_Malloc(strlen(src_info->format) + 1);
@@ -488,7 +490,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
             /* construct the field now, as `prop->offset` is `offset` with
                corrected alignment */
-            prop = PyCField_FromDesc(desc, i,
+            prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian);
@@ -542,7 +544,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             size = 0;
             offset = 0;
             align = 0;
-            prop = PyCField_FromDesc(desc, i,
+            prop = PyCField_FromDesc(st, desc, i,
                                    &field_size, bitsize, &bitofs,
                                    &size, &offset, &align,
                                    pack, big_endian);

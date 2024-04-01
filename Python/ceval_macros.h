@@ -392,6 +392,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 #ifdef _Py_JIT
 #define GOTO_TIER_TWO(EXECUTOR)                        \
 do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
     jit_func jitted = (EXECUTOR)->jit_code;            \
     next_instr = jitted(frame, stack_pointer, tstate); \
     Py_DECREF(tstate->previous_executor);              \
@@ -406,6 +407,7 @@ do {                                                   \
 #else
 #define GOTO_TIER_TWO(EXECUTOR) \
 do { \
+    OPT_STAT_INC(traces_executed); \
     next_uop = (EXECUTOR)->trace; \
     assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
     goto enter_tier_two; \
@@ -423,3 +425,9 @@ do { \
 #define CURRENT_OPARG() (next_uop[-1].oparg)
 
 #define CURRENT_OPERAND() (next_uop[-1].operand)
+
+#define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target
+#define JUMP_TO_ERROR() goto jump_to_error_target
+#define GOTO_UNWIND() goto error_tier_two
+#define EXIT_TO_TRACE() goto exit_to_trace
+#define EXIT_TO_TIER1() goto exit_to_tier1
