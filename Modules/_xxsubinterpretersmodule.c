@@ -575,10 +575,11 @@ overriding the initial values.");
 static PyObject *
 interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"config", NULL};
+    static char *kwlist[] = {"config", "reqrefs", NULL};
     PyObject *configobj = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:create", kwlist,
-                                     &configobj)) {
+    int reqrefs = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O$p:create", kwlist,
+                                     &configobj, &reqrefs)) {
         return NULL;
     }
 
@@ -598,16 +599,28 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    if (reqrefs) {
+        // Decref to 0 will destroy the interpreter.
+        _PyInterpreterState_RequireIDRef(interp, 1);
+    }
+
     return idobj;
 }
 
 
 PyDoc_STRVAR(create_doc,
-"create() -> ID\n\
+"create([config], *, reqrefs=False) -> ID\n\
 \n\
 Create a new interpreter and return a unique generated ID.\n\
 \n\
-The caller is responsible for destroying the interpreter before exiting.");
+The caller is responsible for destroying the interpreter before exiting,\n\
+typically by using _interpreters.destroy().  This can be managed \n\
+automatically by passing \"reqrefs=True\" and then using _incref() and\n\
+_decref()` appropriately.\n\
+\n\
+\"config\" must be a valid interpreter config or the name of a\n\
+predefined config (\"isolated\" or \"legacy\").  The default\n\
+is \"isolated\".");
 
 
 static PyObject *
@@ -1168,7 +1181,7 @@ interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "implieslink",  NULL};
     PyObject *id;
-    int implieslink = -1;
+    int implieslink = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "O|$p:_incref", kwlist,
                                      &id, &implieslink))
@@ -1179,9 +1192,6 @@ interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
     PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
-    }
-    if (implieslink < 0) {
-        implieslink = !_Py_IsMainInterpreter(interp);
     }
 
     if (implieslink) {
