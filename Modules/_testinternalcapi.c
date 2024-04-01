@@ -1480,6 +1480,13 @@ normalize_interp_id(PyObject *self, PyObject *idobj)
 }
 
 static PyObject *
+next_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    int64_t interpid = _PyRuntime.interpreters.next_id;
+    return PyLong_FromLongLong(interpid);
+}
+
+static PyObject *
 unused_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t interpid = INT64_MAX;
@@ -1803,6 +1810,7 @@ static PyMethodDef module_functions[] = {
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
     {"normalize_interp_id", normalize_interp_id, METH_O},
+    {"next_interpreter_id", next_interpreter_id, METH_NOARGS},
     {"unused_interpreter_id", unused_interpreter_id, METH_NOARGS},
     {"interpreter_exists", interpreter_exists, METH_O},
     {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
