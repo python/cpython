@@ -423,7 +423,10 @@ symbolic links encountered in the path."""
         pardir = '..'
         getcwd = os.getcwd
 
-    # The stack of unresolved path parts.
+    # The stack of unresolved path parts. When popped, a special value of None
+    # indicates that a symlink target has been resolved, and that the original
+    # symlink path can be retrieved by popping again. The [::-1] slice is a
+    # very fast way of spelling list(reversed(...)).
     rest = filename.split(sep)[::-1]
 
     # The resolved path, which is absolute throughout this function.
