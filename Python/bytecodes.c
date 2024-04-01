@@ -291,7 +291,7 @@ dummy_func(
         }
 
         pure inst(END_SEND, (receiver, value -- value)) {
-            Py_DECREF(receiver);
+            Py_DECREF_TAGGED(receiver_tagged);
         }
 
         tier1 inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
@@ -302,7 +302,7 @@ dummy_func(
                 }
                 PyErr_SetRaisedException(NULL);
             }
-            Py_DECREF(receiver);
+            Py_DECREF_TAGGED(receiver_tagged);
         }
 
         inst(UNARY_NEGATIVE, (value -- res)) {
@@ -393,7 +393,7 @@ dummy_func(
         }
 
         op(_REPLACE_WITH_TRUE, (value -- res)) {
-            Py_DECREF(value);
+            Py_DECREF_TAGGED(value_tagged);
             res = Py_True;
         }
 
@@ -573,6 +573,7 @@ dummy_func(
         macro(BINARY_SUBSCR) = _SPECIALIZE_BINARY_SUBSCR + _BINARY_SUBSCR;
 
         inst(BINARY_SLICE, (container, start, stop -- res)) {
+            // TODO: make this support tagged pointers
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             // Can't use ERROR_IF() here, because we haven't
             // DECREF'ed container yet, and we still own slice.
@@ -583,11 +584,12 @@ dummy_func(
                 res = PyObject_GetItem(container, slice);
                 Py_DECREF(slice);
             }
-            Py_DECREF(container);
+            Py_DECREF_TAGGED(container_tagged);
             ERROR_IF(res == NULL, error);
         }
 
         inst(STORE_SLICE, (v, container, start, stop -- )) {
+            // TODO make this support tageed pointers
             PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
             int err;
             if (slice == NULL) {
@@ -597,8 +599,8 @@ dummy_func(
                 err = PyObject_SetItem(container, slice, v);
                 Py_DECREF(slice);
             }
-            Py_DECREF(v);
-            Py_DECREF(container);
+            Py_DECREF_TAGGED(v_tagged);
+            Py_DECREF_TAGGED(container_tagged);
             ERROR_IF(err, error);
         }
 
@@ -615,7 +617,7 @@ dummy_func(
             assert(res != NULL);
             Py_INCREF(res);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            Py_DECREF(list);
+            Py_DECREF_TAGGED(list_tagged);
         }
 
         inst(BINARY_SUBSCR_STR_INT, (unused/1, str, sub -- res)) {
@@ -630,7 +632,7 @@ dummy_func(
             STAT_INC(BINARY_SUBSCR, hit);
             res = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            Py_DECREF(str);
+            Py_DECREF_TAGGED(str_tagged);
         }
 
         inst(BINARY_SUBSCR_TUPLE_INT, (unused/1, tuple, sub -- res)) {
@@ -646,7 +648,7 @@ dummy_func(
             assert(res != NULL);
             Py_INCREF(res);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            Py_DECREF(tuple);
+            Py_DECREF_TAGGED(tuple_tagged);
         }
 
         inst(BINARY_SUBSCR_DICT, (unused/1, dict, sub -- res)) {
@@ -736,14 +738,14 @@ dummy_func(
             assert(old_value != NULL);
             Py_DECREF(old_value);
             _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
-            Py_DECREF(list);
+            Py_DECREF_TAGGED(list_tagged);
         }
 
         inst(STORE_SUBSCR_DICT, (unused/1, value, dict, sub -- )) {
             DEOPT_IF(!PyDict_CheckExact(dict));
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict, sub, value);
-            Py_DECREF(dict);
+            Py_DECREF_TAGGED(dict_tagged);
             ERROR_IF(err, error);
         }
 
@@ -1031,7 +1033,7 @@ dummy_func(
                     ERROR_NO_POP();
                 }
             }
-            Py_DECREF(v);
+            Py_DECREF_TAGGED(v_tagged);
         }
 
         macro(SEND) = _SPECIALIZE_SEND + _SEND;
@@ -1534,7 +1536,7 @@ dummy_func(
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 ERROR_NO_POP();
             }
-            Py_DECREF(oldobj);
+            Py_DECREF_TAGGED(Py_OBJ_TAG(oldobj));
         }
 
         inst(LOAD_FROM_DICT_OR_DEREF, (class_dict -- value)) {
@@ -1553,7 +1555,7 @@ dummy_func(
                     ERROR_NO_POP();
                 }
             }
-            Py_DECREF(class_dict);
+            Py_DECREF_TAGGED(class_dict_tagged);
         }
 
         inst(LOAD_DEREF, ( -- value)) {
@@ -1629,10 +1631,12 @@ dummy_func(
                 ERROR_NO_POP();
             int err = 0;
             for (int i = 0; i < oparg; i++) {
-                PyObject *item = Py_OBJ_UNTAG(values[i]);
-                if (err == 0)
-                    err = PySet_Add(set, item);
-                Py_DECREF(item);
+                _PyTaggedPtr item = values[i];
+                if (err == 0) {
+                    // TODO steals reference, needs TO_OWNED
+                    err = PySet_Add(set, Py_OBJ_UNTAG(item));
+                }
+                Py_DECREF_TAGGED(item);
             }
             if (err != 0) {
                 Py_DECREF(set);
@@ -1808,16 +1812,16 @@ dummy_func(
             int method_found = 0;
             attr = _PySuper_Lookup(cls, self, name,
                                    Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
-            Py_DECREF(global_super);
-            Py_DECREF(class);
+            Py_DECREF_TAGGED(global_super_tagged);
+            Py_DECREF_TAGGED(class_tagged);
             if (attr == NULL) {
-                Py_DECREF(self);
+                Py_DECREF_TAGGED(self_tagged);
                 ERROR_IF(true, error);
             }
             if (method_found) {
                 self_or_null = self; // transfer ownership
             } else {
-                Py_DECREF(self);
+                Py_DECREF_TAGGED(self_tagged);
                 self_or_null = NULL;
             }
         }
@@ -2091,7 +2095,7 @@ dummy_func(
             else {
                 Py_DECREF(old_value);
             }
-            Py_DECREF(owner);
+            Py_DECREF_TAGGED(owner_tagged);
         }
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
@@ -2138,7 +2142,7 @@ dummy_func(
             }
             /* PEP 509 */
             dict->ma_version_tag = new_version;
-            Py_DECREF(owner);
+            Py_DECREF_TAGGED(owner_tagged);
         }
 
         op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
@@ -2147,7 +2151,7 @@ dummy_func(
             PyObject *old_value = *(PyObject **)addr;
             *(PyObject **)addr = value;
             Py_XDECREF(old_value);
-            Py_DECREF(owner);
+            Py_DECREF_TAGGED(owner_tagged);
         }
 
         macro(STORE_ATTR_SLOT) =
@@ -2180,7 +2184,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
             if (oparg & 16) {
                 int res_bool = PyObject_IsTrue(res);
-                Py_DECREF(res);
+                Py_DECREF_TAGGED(Py_OBJ_TAG(res));
                 ERROR_IF(res_bool < 0, error);
                 res = res_bool ? Py_True : Py_False;
             }
@@ -2565,7 +2569,7 @@ dummy_func(
                 /* iterator ended normally */
                 assert(next_instr[oparg].op.code == END_FOR ||
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-                Py_DECREF(iter);
+                Py_DECREF_TAGGED(iter_tagged);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR and POP_TOP instruction */
                 JUMPBY(oparg + 2);
@@ -2585,7 +2589,7 @@ dummy_func(
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
-                Py_DECREF(iter);
+                Py_DECREF_TAGGED(iter_tagged);
                 STACK_SHRINK(1);
                 /* The translator sets the deopt target just past END_FOR */
                 DEOPT_IF(true);
@@ -2597,7 +2601,8 @@ dummy_func(
 
         inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
             _Py_CODEUNIT *target;
-            PyObject *iter = Py_OBJ_UNTAG(TOP());
+            _PyTaggedPtr iter_tagged = TOP();
+            PyObject *iter = Py_OBJ_UNTAG(iter_tagged);
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
             if (next != NULL) {
                 PUSH(Py_OBJ_TAG(next));
@@ -2615,7 +2620,7 @@ dummy_func(
                 assert(next_instr[oparg].op.code == END_FOR ||
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 STACK_SHRINK(1);
-                Py_DECREF(iter);
+                Py_DECREF_TAGGED(iter_tagged);
                 /* Skip END_FOR and POP_TOP */
                 target = next_instr + oparg + 2;
             }
@@ -2639,7 +2644,7 @@ dummy_func(
                     Py_DECREF(seq);
                 }
                 #endif
-                Py_DECREF(iter);
+                Py_DECREF_TAGGED(iter_tagged);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
                 JUMPBY(oparg + 2);
@@ -2685,7 +2690,7 @@ dummy_func(
                     it->it_seq = NULL;
                     Py_DECREF(seq);
                 }
-                Py_DECREF(iter);
+                Py_DECREF_TAGGED(iter_tagged);
                 STACK_SHRINK(1);
                 /* Jump forward oparg, then skip following END_FOR and POP_TOP instructions */
                 JUMPBY(oparg + 2);
@@ -2728,7 +2733,7 @@ dummy_func(
             STAT_INC(FOR_ITER, hit);
             if (r->len <= 0) {
                 STACK_SHRINK(1);
-                Py_DECREF(r);
+                Py_DECREF_TAGGED(iter_tagged);
                 // Jump over END_FOR and POP_TOP instructions.
                 JUMPBY(oparg + 2);
                 DISPATCH();
@@ -2788,6 +2793,7 @@ dummy_func(
                 }
                 ERROR_NO_POP();
             }
+            _PyTaggedPtr enter_tagged = Py_OBJ_TAG(enter);
             exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
             if (exit == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
@@ -2797,14 +2803,14 @@ dummy_func(
                                   "(missed __aexit__ method)",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                Py_DECREF(enter);
+                Py_DECREF_TAGGED(enter_tagged);
                 ERROR_NO_POP();
             }
             DECREF_INPUTS();
             res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
+            Py_DECREF_TAGGED(enter_tagged);
             if (res == NULL) {
-                Py_DECREF(exit);
+                Py_DECREF_TAGGED(Py_OBJ_TAG(exit));
                 ERROR_IF(true, error);
             }
         }
@@ -2814,6 +2820,7 @@ dummy_func(
              * value returned from calling its __enter__
              */
             PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__enter__));
+            _PyTaggedPtr enter_tagged = Py_OBJ_TAG(enter);
             if (enter == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2832,14 +2839,14 @@ dummy_func(
                                   "(missed __exit__ method)",
                                   Py_TYPE(mgr)->tp_name);
                 }
-                Py_DECREF(enter);
+                Py_DECREF_TAGGED(enter_tagged);
                 ERROR_NO_POP();
             }
             DECREF_INPUTS();
             res = PyObject_CallNoArgs(enter);
-            Py_DECREF(enter);
+            Py_DECREF_TAGGED(enter_tagged);
             if (res == NULL) {
-                Py_DECREF(exit);
+                Py_DECREF_TAGGED(Py_OBJ_TAG(exit));
                 ERROR_IF(true, error);
             }
         }
@@ -3063,7 +3070,7 @@ dummy_func(
                 args[0] = Py_NewRef_Tagged(Py_OBJ_TAG(self));
                 PyObject *method = ((PyMethodObject *)callable)->im_func;
                 args[-1] = Py_NewRef_Tagged(Py_OBJ_TAG(method));
-                Py_DECREF(callable);
+                Py_DECREF_TAGGED(callable_tagged);
                 callable = method;
             }
             // Check if the call can be inlined or not
@@ -3110,7 +3117,7 @@ dummy_func(
                 }
             }
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
@@ -3130,11 +3137,13 @@ dummy_func(
 
         op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, unused, unused[oparg] -- func, self, unused[oparg])) {
             STAT_INC(CALL, hit);
-            self = Py_NewRef(((PyMethodObject *)callable)->im_self);
+            // Ugly tag and untag because the uop header needs to have consistent type with
+            // the rest of the inst. So we can't change it to _PyTaggedPtr.
+            self = Py_OBJ_UNTAG(Py_NewRef_Tagged(Py_OBJ_TAG(((PyMethodObject *)callable)->im_self)));
             stack_pointer[-1 - oparg] = Py_OBJ_TAG(self);  // Patch stack as it is used by _INIT_CALL_PY_EXACT_ARGS
-            func = Py_NewRef(((PyMethodObject *)callable)->im_func);
+            func = Py_OBJ_UNTAG(Py_NewRef_Tagged(Py_OBJ_TAG(((PyMethodObject *)callable)->im_func)));
             stack_pointer[-2 - oparg] = Py_OBJ_TAG(func);  // This is used by CALL, upon deoptimization
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
         }
 
         op(_CHECK_PEP_523, (--)) {
@@ -3245,13 +3254,13 @@ dummy_func(
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res)) {
+        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res: _PyTaggedPtr)) {
             assert(oparg == 1);
             DEOPT_IF(null != NULL);
             DEOPT_IF(callable != (PyObject *)&PyType_Type);
             STAT_INC(CALL, hit);
-            res = Py_NewRef(Py_TYPE(arg));
-            Py_DECREF(arg);
+            res = Py_NewRef_Tagged(Py_OBJ_TAG(Py_TYPE(arg)));
+            Py_DECREF_TAGGED(arg_tagged);
         }
 
         op(_CALL_STR_1, (callable, null, arg -- res)) {
@@ -3260,7 +3269,7 @@ dummy_func(
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
             res = PyObject_Str(arg);
-            Py_DECREF(arg);
+            Py_DECREF_TAGGED(arg_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3276,7 +3285,7 @@ dummy_func(
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
             res = PySequence_Tuple(arg);
-            Py_DECREF(arg);
+            Py_DECREF_TAGGED(arg_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3307,7 +3316,7 @@ dummy_func(
             if (self == NULL) {
                 ERROR_NO_POP();
             }
-            Py_DECREF(tp);
+            Py_DECREF_TAGGED(callable_tagged);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
@@ -3385,14 +3394,14 @@ dummy_func(
             DEOPT_IF(tstate->c_recursion_remaining <= 0);
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
-            PyObject *arg = Py_OBJ_UNTAG(args[0]);
+            _PyTaggedPtr arg = args[0];
             _Py_EnterRecursiveCallTstateUnchecked(tstate);
-            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
+            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), Py_OBJ_UNTAG(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
 
-            Py_DECREF(arg);
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(arg);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3425,7 +3434,7 @@ dummy_func(
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF_TAGGED(args[i]);
             }
-            Py_DECREF(callable);
+            Py_DECREF_TAGGED(callable_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -3479,7 +3488,8 @@ dummy_func(
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.len);
             STAT_INC(CALL, hit);
-            PyObject *arg = Py_OBJ_UNTAG(args[0]);
+            _PyTaggedPtr arg_tagged = args[0];
+            PyObject *arg = Py_OBJ_UNTAG(arg_tagged);
             Py_ssize_t len_i = PyObject_Length(arg);
             if (len_i < 0) {
                 ERROR_NO_POP();
@@ -3489,8 +3499,8 @@ dummy_func(
             if (res == NULL) {
                 GOTO_ERROR(error);
             }
-            Py_DECREF(callable);
-            Py_DECREF(arg);
+            Py_DECREF_TAGGED(callable_tagged);
+            Py_DECREF_TAGGED(arg_tagged);
         }
 
         inst(CALL_ISINSTANCE, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
@@ -3847,7 +3857,7 @@ dummy_func(
             PyFunctionObject *func_obj = (PyFunctionObject *)
                 PyFunction_New(codeobj, GLOBALS());
 
-            Py_DECREF(codeobj);
+            Py_DECREF_TAGGED(codeobj_tagged);
             if (func_obj == NULL) {
                 ERROR_NO_POP();
             }
@@ -3920,7 +3930,7 @@ dummy_func(
             assert(oparg >= FVC_STR && oparg <= FVC_ASCII);
             conv_fn = _PyEval_ConversionFuncs[oparg];
             result = conv_fn(value);
-            Py_DECREF(value);
+            Py_DECREF_TAGGED(value_tagged);
             ERROR_IF(result == NULL, error);
         }
 
@@ -3929,7 +3939,7 @@ dummy_func(
              * of format(value) is value itself. */
             if (!PyUnicode_CheckExact(value)) {
                 res = PyObject_Format(value, NULL);
-                Py_DECREF(value);
+                Py_DECREF_TAGGED(value_tagged);
                 ERROR_IF(res == NULL, error);
             }
             else {
@@ -3939,8 +3949,8 @@ dummy_func(
 
         inst(FORMAT_WITH_SPEC, (value, fmt_spec -- res)) {
             res = PyObject_Format(value, fmt_spec);
-            Py_DECREF(value);
-            Py_DECREF(fmt_spec);
+            Py_DECREF_TAGGED(value_tagged);
+            Py_DECREF_TAGGED(fmt_spec_tagged);
             ERROR_IF(res == NULL, error);
         }
 
@@ -4022,14 +4032,15 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
-            PyObject *value = Py_OBJ_UNTAG(POP());
+            _PyTaggedPtr value_tagged = POP();
+            PyObject *value = Py_OBJ_UNTAG(value_tagged);
             int flag = Py_IsNone(value);
             int offset;
             if (flag) {
                 offset = oparg;
             }
             else {
-                Py_DECREF(value);
+                Py_DECREF_TAGGED(value_tagged);
                 offset = 0;
             }
             #if ENABLE_SPECIALIZATION
@@ -4039,14 +4050,15 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
-            PyObject *value = Py_OBJ_UNTAG(POP());
+            _PyTaggedPtr value_tagged = POP();
+            PyObject *value = Py_OBJ_UNTAG(value_tagged);
             int offset;
             int nflag = Py_IsNone(value);
             if (nflag) {
                 offset = 0;
             }
             else {
-                Py_DECREF(value);
+                Py_DECREF_TAGGED(value_tagged);
                 offset = oparg;
             }
             #if ENABLE_SPECIALIZATION
@@ -4090,7 +4102,7 @@ dummy_func(
         op (_GUARD_IS_NONE_POP, (val -- )) {
             SYNC_SP();
             if (!Py_IsNone(val)) {
-                Py_DECREF(val);
+                Py_DECREF_TAGGED(val_tagged);
                 EXIT_IF(1);
             }
         }
@@ -4098,7 +4110,7 @@ dummy_func(
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
             SYNC_SP();
             EXIT_IF(Py_IsNone(val));
-            Py_DECREF(val);
+            Py_DECREF_TAGGED(val_tagged);
         }
 
         op(_JUMP_TO_TOP, (--)) {
@@ -4138,7 +4150,7 @@ dummy_func(
         }
 
         tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
-            Py_DECREF(pop);
+            Py_DECREF_TAGGED(pop_tagged);
             value = ptr;
         }
 

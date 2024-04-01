@@ -88,7 +88,7 @@ static inline _PyTaggedPtr _Py_NewRef_Tagged(_PyTaggedPtr obj)
     return obj;
 }
 
-#define Py_NewRef_Tagged(op) _Py_NewRef_Tagged(op);
+#define Py_NewRef_Tagged(op) _Py_NewRef_Tagged(op)
 
 #ifdef __cplusplus
 }

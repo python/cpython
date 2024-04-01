@@ -1143,7 +1143,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);
-        frame->localsplus[offset + i] = Py_OBJ_TAG(Py_NewRef(o));
+        frame->localsplus[offset + i] = Py_NewRef_Tagged(Py_OBJ_TAG(o));
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
     frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame));
@@ -1442,7 +1442,7 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
                 }
                 value = Py_NewRef(Py_None);
             }
-            Py_XSETREF_TAGGED(fast[i], Py_OBJ_TAG(Py_NewRef(value)));
+            Py_XSETREF_TAGGED(fast[i], Py_NewRef_Tagged(Py_OBJ_TAG(value)));
         }
         Py_XDECREF(value);
     }

@@ -146,7 +146,7 @@ class Stack:
                         f"{var.name} = {indirect}stack_pointer[{self.top_offset.to_c()}];\n"
                     )
                 else:
-                    if var.type != "_PyTaggedPtr":
+                    if var.type.strip() != "_PyTaggedPtr":
                         return (
                             f"{var.name}_tagged = stack_pointer[{self.top_offset.to_c()}];\n"
                             f"{var.name} = {untag}({var.name}_tagged);\n"
@@ -165,13 +165,13 @@ class Stack:
             return ""
         else:
             self.defined.add(var.name)
-        cast = f"({var.type})" if (not indirect and var.type and var.type != "_PyTaggedPtr") else ""
+        cast = f"({var.type})" if (not indirect and var.type and var.type.strip() != "_PyTaggedPtr") else ""
         if indirect:
             assign = (
                 f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
             )
         else:
-            if var.type != "_PyTaggedPtr":
+            if var.type.strip() != "_PyTaggedPtr":
                 assign = (
                     f"{var.name}_tagged = stack_pointer[{self.base_offset.to_c()}];\n"
                     f"{var.name} = {cast}{untag}({var.name}_tagged);\n"
@@ -204,14 +204,15 @@ class Stack:
         out.start_line()
         for var in self.variables:
             if not var.peek:
-                cast = f"({cast_type})" if (var.type and var.type != "_PyTaggedPtr") else ""
+                type = var.type or ""
+                cast = f"({cast_type})" if (type and type.strip() != "_PyTaggedPtr") else ""
                 if var.name not in UNUSED and not var.is_array():
                     if var.condition:
                         if var.condition == "0":
                             continue
                         elif var.condition != "1":
                             out.emit(f"if ({var.condition}) ")
-                    tag = "Py_OBJ_TAG" if should_tag and var.type != "_PyTaggedPtr" else ""
+                    tag = "Py_OBJ_TAG" if should_tag and type.strip() != "_PyTaggedPtr" else ""
                     out.emit(
                         f"stack_pointer[{self.base_offset.to_c()}] = {tag}({cast}{var.name});\n"
                     )
