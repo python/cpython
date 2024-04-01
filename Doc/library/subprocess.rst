@@ -70,7 +70,8 @@ underlying :class:`Popen` interface can be used directly.
    subprocess's stdin.  If used it must be a byte sequence, or a string if
    *encoding* or *errors* is specified or *text* is true.  When
    used, the internal :class:`Popen` object is automatically created with
-   ``stdin=subprocess.PIPE``, and the *stdin* argument may not be used as well.
+   *stdin* set to :data:`~subprocess.PIPE`,
+   and the *stdin* argument may not be used as well.
 
    If *check* is true, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
