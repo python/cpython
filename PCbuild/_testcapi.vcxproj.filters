@@ -99,6 +99,9 @@
     <ClCompile Include="..\Modules\_testcapi\time.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_testcapi\object.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_testcapi\gc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
