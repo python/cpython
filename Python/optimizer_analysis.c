@@ -286,11 +286,13 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 static int64_t
 double_as_int64_t(double in) {
+    union caster {
+        double from;
+        int64_t to;
+    };
     assert(sizeof(double) == sizeof(int64_t));
-    double temp = in;
-    int64_t result;
-    memcpy(&result, &temp, sizeof(double));
-    return result;
+    union caster temp = {.from = in};
+    return temp.to;
 }
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
