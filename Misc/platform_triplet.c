@@ -12,8 +12,20 @@
 #undef powerpc
 #undef sparc
 #undef unix
+
 #if defined(__ANDROID__)
-    # Android is not a multiarch system.
+#  if defined(__x86_64__)
+PLATFORM_TRIPLET=x86_64-linux-android
+#  elif defined(__i386__)
+PLATFORM_TRIPLET=i686-linux-android
+#  elif defined(__aarch64__)
+PLATFORM_TRIPLET=aarch64-linux-android
+#  elif defined(__arm__)
+PLATFORM_TRIPLET=arm-linux-androideabi
+#  else
+#    error unknown Android platform
+#  endif
+
 #elif defined(__linux__)
 /*
  * BEGIN of Linux block

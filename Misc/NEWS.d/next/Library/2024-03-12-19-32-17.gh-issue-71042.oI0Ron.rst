@@ -1,0 +1,2 @@
+Add :func:`platform.android_ver`, which provides device and OS information
+on Android.

@@ -527,11 +527,11 @@ class TestSpecifics(unittest.TestCase):
         self.assertRaises(TypeError, compile, co1, '<ast>', 'eval')
 
         # raise exception when node type is no start node
-        self.assertRaises(TypeError, compile, _ast.If(), '<ast>', 'exec')
+        self.assertRaises(TypeError, compile, _ast.If(test=_ast.Name(id='x', ctx=_ast.Load())), '<ast>', 'exec')
 
         # raise exception when node has invalid children
         ast = _ast.Module()
-        ast.body = [_ast.BoolOp()]
+        ast.body = [_ast.BoolOp(op=_ast.Or())]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
 
     def test_compile_invalid_typealias(self):
@@ -1958,6 +1958,64 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(
             code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
         )
+
+
+class TestExpectedAttributes(unittest.TestCase):
+
+    def test_basic(self):
+        class C:
+            def f(self):
+                self.a = self.b = 42
+
+        self.assertIsInstance(C.__static_attributes__, tuple)
+        self.assertEqual(sorted(C.__static_attributes__), ['a', 'b'])
+
+    def test_nested_function(self):
+        class C:
+            def f(self):
+                self.x = 1
+                self.y = 2
+                self.x = 3   # check deduplication
+
+            def g(self, obj):
+                self.y = 4
+                self.z = 5
+
+                def h(self, a):
+                    self.u = 6
+                    self.v = 7
+
+                obj.self = 8
+
+        self.assertEqual(sorted(C.__static_attributes__), ['u', 'v', 'x', 'y', 'z'])
+
+    def test_nested_class(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+            class D:
+                def g(self):
+                    self.y = 42
+                    self.z = 42
+
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(C.D.__static_attributes__), ['y', 'z'])
+
+    def test_subclass(self):
+        class C:
+            def f(self):
+                self.x = 42
+                self.y = 42
+
+        class D(C):
+            def g(self):
+                self.y = 42
+                self.z = 42
+
+        self.assertEqual(sorted(C.__static_attributes__), ['x', 'y'])
+        self.assertEqual(sorted(D.__static_attributes__), ['y', 'z'])
 
 
 class TestExpressionStackSize(unittest.TestCase):
