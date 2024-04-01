@@ -204,7 +204,7 @@ def ismount(path):
 
     parent = dirname(abspath(path))
     try:
-        s2 = os.lstat(parent)
+        s2 = os.stat(parent)
     except (OSError, ValueError):
         return False
 
