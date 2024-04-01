@@ -2678,9 +2678,9 @@ Notes:
 (10)
    When parsing a month and day using :meth:`~.datetime.strptime`, always
    include a year in the format.  If the value you need to parse lacks a year,
-   just append an explicit dummy leap year.  Otherwise your code will raise an
-   exception when it encounters leap day as the default year used by the parser
-   is not a leap year.  Users run into this bug every four years...
+   append an explicit dummy leap year.  Otherwise your code will raise an
+   exception when it encounters leap day because the default year used by the
+   parser is not a leap year.  Users run into this bug every four years...
 
       >>> strptime(f"{month_day};1984", "%m/%d;%Y")  # problem mitigated!
 
@@ -2688,7 +2688,7 @@ Notes:
       :meth:`~.datetime.strptime` calls using a format string containing
       a day of month without a year now emit a
       :exc:`DeprecationWarning`. In 3.15 or later we may change this into
-      an error or change the default year to a leapyear. See :gh:`70647`.
+      an error or change the default year to a leap year. See :gh:`70647`.
 
 .. rubric:: Footnotes
 
