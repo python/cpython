@@ -1,0 +1,1 @@
+Improve performance of startswith, endswith, count and find methods for strings and bytes.
