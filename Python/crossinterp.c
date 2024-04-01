@@ -1671,6 +1671,7 @@ PyStatus
 _PyXI_InitTypes(PyInterpreterState *interp)
 {
     if (init_exceptions(interp) < 0) {
+        PyErr_PrintEx(0);
         return _PyStatus_ERR("failed to initialize an exception type");
     }
     return _PyStatus_OK();
