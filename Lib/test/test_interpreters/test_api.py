@@ -1220,17 +1220,17 @@ class LowLevelTests(TestBase):
         legacy = _interpreters.new_config('legacy')
         default = isolated
 
-        with self.subTest('no arg'):
+        with self.subTest('no args'):
             interpid = _interpreters.create()
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, default)
 
-        with self.subTest('arg: None'):
+        with self.subTest('config: None'):
             interpid = _interpreters.create(None)
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, default)
 
-        with self.subTest('arg: \'empty\''):
+        with self.subTest('config: \'empty\''):
             with self.assertRaises(interpreters.InterpreterError):
                 # The "empty" config isn't viable on its own.
                 _interpreters.create('empty')
@@ -1266,6 +1266,17 @@ class LowLevelTests(TestBase):
             with self.assertRaises(ValueError):
                 _interpreters.create(orig)
 
+    def test_destroy(self):
+        interpid = _interpreters.create()
+        before = [id for id, _ in _interpreters.list_all()]
+        _interpreters.destroy(interpid)
+        after = [id for id, _ in _interpreters.list_all()]
+
+        self.assertIn(interpid, before)
+        self.assertNotIn(interpid, after)
+        with self.assertRaises(interpreters.InterpreterNotFoundError):
+            _interpreters.is_running(interpid)
+
     def test_get_config(self):
         with self.subTest('main'):
             expected = _interpreters.new_config('legacy')
@@ -1285,6 +1296,77 @@ class LowLevelTests(TestBase):
             interpid = _interpreters.create('legacy')
             config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
+
+    def test_exec(self):
+        with self.subTest('run script'):
+            interpid = _interpreters.create()
+            script, results = _captured_script('print("it worked!", end="")')
+            with results:
+                exc = _interpreters.exec(interpid, script)
+                out = results.stdout()
+            self.assertIs(exc, None)
+            self.assertEqual(out, 'it worked!')
+
+        with self.subTest('uncaught exception'):
+            interpid = _interpreters.create()
+            script, results = _captured_script("""
+                raise Exception('uh-oh!')
+                print("it worked!", end="")
+                """)
+            with results:
+                exc = _interpreters.exec(interpid, script)
+                out = results.stdout()
+            self.assertEqual(out, '')
+            self.assertEqual(exc, types.SimpleNamespace(
+                type=types.SimpleNamespace(
+                    __name__='Exception',
+                    __qualname__='Exception',
+                    __module__='builtins',
+                ),
+                msg='uh-oh!',
+                # We check these in other tests.
+                formatted=exc.formatted,
+                errdisplay=exc.errdisplay,
+            ))
+
+    def test_call(self):
+        with self.subTest('no args'):
+            interpid = _interpreters.create()
+            exc = _interpreters.call(interpid, call_func_return_shareable)
+            self.assertIs(exc, None)
+
+        with self.subTest('uncaught exception'):
+            interpid = _interpreters.create()
+            exc = _interpreters.call(interpid, call_func_failure)
+            self.assertEqual(exc, types.SimpleNamespace(
+                type=types.SimpleNamespace(
+                    __name__='Exception',
+                    __qualname__='Exception',
+                    __module__='builtins',
+                ),
+                msg='spam!',
+                # We check these in other tests.
+                formatted=exc.formatted,
+                errdisplay=exc.errdisplay,
+            ))
+
+    def test_set___main___attrs(self):
+        interpid = _interpreters.create()
+        before1 = _interpreters.exec(interpid, 'assert spam == \'eggs\'')
+        before2 = _interpreters.exec(interpid, 'assert ham == 42')
+        self.assertEqual(before1.type.__name__, 'NameError')
+        self.assertEqual(before2.type.__name__, 'NameError')
+
+        _interpreters.set___main___attrs(interpid, dict(
+            spam='eggs',
+            ham=42,
+        ))
+        after1 = _interpreters.exec(interpid, 'assert spam == \'eggs\'')
+        after2 = _interpreters.exec(interpid, 'assert ham == 42')
+        after3 = _interpreters.exec(interpid, 'assert spam == 42')
+        self.assertIs(after1, None)
+        self.assertIs(after2, None)
+        self.assertEqual(after3.type.__name__, 'AssertionError')
 
 
 if __name__ == '__main__':
