@@ -49,7 +49,7 @@ and its sub-elements are done on the :class:`Element` level.
 Parsing XML
 ^^^^^^^^^^^
 
-We'll be using the following XML document as the sample data for this section:
+We'll be using the fictive :file:`country_data.xml` XML document as the sample data for this section:
 
 .. code-block:: xml
 
