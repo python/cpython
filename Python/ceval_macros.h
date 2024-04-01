@@ -96,7 +96,6 @@
 /* Do interpreter dispatch accounting for tracing and instrumentation */
 #define DISPATCH() \
     {              \
-        fprintf(stderr, "OP: %s, ARG: %d\n", _PyOpcode_OpName[opcode], oparg);\
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
         DISPATCH_GOTO(); \
@@ -253,7 +252,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
    variable would be pointing to already-freed memory. */
 #define SETLOCAL(i, value)      do { _PyTaggedPtr tmp = GETLOCAL(i); \
                                      GETLOCAL(i) = value; \
-                                     Py_XDECREF(Py_OBJ_UNTAG(tmp)); } while (0)
+                                     Py_XDECREF_TAGGED(tmp); } while (0)
 
 #define GO_TO_INSTRUCTION(op) goto PREDICT_ID(op)
 

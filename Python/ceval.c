@@ -1610,7 +1610,7 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
             for (; i < defcount; i++) {
                 if (Py_OBJ_UNTAG(localsplus[m+i]) == NULL) {
                     PyObject *def = defs[i];
-                    localsplus[m+i] = Py_OBJ_TAG(Py_NewRef(def));
+                    localsplus[m+i] = Py_NewRef_Tagged(Py_OBJ_TAG(def));
                 }
             }
         }
