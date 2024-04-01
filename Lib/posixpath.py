@@ -61,7 +61,7 @@ def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
     sep = _get_sep(s)
-    return s[:1] == sep
+    return s.startswith(sep)
 
 
 # Join pathnames.
@@ -80,9 +80,9 @@ def join(a, *p):
         if not p:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in map(os.fspath, p):
-            if b[:1] == sep:
+            if b.startswith(sep):
                 path = b
-            elif not path or path[-1:] == sep:
+            elif not path or path.endswith(sep):
                 path += b
             else:
                 path += sep + b
@@ -234,7 +234,7 @@ def expanduser(path):
         tilde = b'~'
     else:
         tilde = '~'
-    if path[:1] != tilde:
+    if not path.startswith(tilde):
         return path
     sep = _get_sep(path)
     i = path.find(sep, 1)
@@ -322,7 +322,7 @@ def expandvars(path):
             break
         i, j = m.span(0)
         name = m.group(1)
-        if name[:1] == start and name[-1:] == end:
+        if name.startswith(start) and name.endswith(end):
             name = name[1:-1]
         try:
             if environ is None:
@@ -388,10 +388,10 @@ def abspath(path):
     """Return an absolute path."""
     path = os.fspath(path)
     if isinstance(path, bytes):
-        if path[:1] != b'/':
+        if not path.startswith(b'/'):
             path = join(os.getcwdb(), path)
     else:
-        if path[:1] != '/':
+        if not path.startswith('/'):
             path = join(os.getcwd(), path)
     return normpath(path)
 
@@ -419,7 +419,7 @@ def _joinrealpath(path, rest, strict, seen):
         curdir = '.'
         pardir = '..'
 
-    if rest[:1] == sep:
+    if rest.startswith(sep):
         rest = rest[1:]
         path = sep
 

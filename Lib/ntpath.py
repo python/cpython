@@ -371,7 +371,7 @@ def expanduser(path):
         tilde = b'~'
     else:
         tilde = '~'
-    if path[:1] != tilde:
+    if not path.startswith(tilde):
         return path
     i, n = 1, len(path)
     while i < n and path[i] not in _get_bothseps(path):
@@ -734,7 +734,7 @@ else:
             devnull = 'nul'
             if normcase(path) == devnull:
                 return '\\\\.\\NUL'
-        had_prefix = path[:4] == prefix
+        had_prefix = path.startswith(prefix)
         if not had_prefix and not isabs(path):
             path = join(cwd, path)
         try:
@@ -756,10 +756,10 @@ else:
         # The path returned by _getfinalpathname will always start with \\?\ -
         # strip off that prefix unless it was already provided on the original
         # path.
-        if not had_prefix and path[:4] == prefix:
+        if not had_prefix and path.startswith(prefix):
             # For UNC paths, the prefix will actually be \\?\UNC\
             # Handle that case as well.
-            if path[:8] == unc_prefix:
+            if path.startswith(unc_prefix):
                 spath = new_unc_prefix + path[8:]
             else:
                 spath = path[4:]
@@ -856,6 +856,7 @@ def commonpath(paths):
 
     try:
         drivesplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
+        split_paths = [p.split(sep) for d, r, p in drivesplits]
 
         if len({r for d, r, p in drivesplits}) != 1:
             raise ValueError("Can't mix absolute and relative paths")
@@ -870,10 +871,7 @@ def commonpath(paths):
         common = path.split(sep)
         common = [c for c in common if c and c != curdir]
 
-        split_paths = [
-            [c for c in p.split(sep) if c and c != curdir]
-            for d, r, p in drivesplits
-        ]
+        split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
         s1 = min(split_paths)
         s2 = max(split_paths)
         for i, c in enumerate(s1):
