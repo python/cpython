@@ -551,8 +551,8 @@ def commonpath(paths):
     if not paths:
         raise ValueError('commonpath() arg is an empty iterable')
 
-    _, roots, tails = zip(*map(splitroot, paths))
-    if isinstance(roots[0], bytes):
+    _, roots, paths = zip(*map(splitroot, paths))
+    if isinstance(paths[0], bytes):
         sep = b'/'
         curdir = b'.'
     else:
@@ -561,7 +561,7 @@ def commonpath(paths):
 
     try:
         prefix = min(roots)
-        split_paths = [path.split(sep) for path in tails]
+        split_paths = [path.split(sep) for path in paths]
 
         if not prefix and any(roots):
             raise ValueError("Can't mix absolute and relative paths")
@@ -579,6 +579,6 @@ def commonpath(paths):
     except (TypeError, AttributeError):
         genericpath._check_arg_types('commonpath', *(
             # Can't use paths, can be an iterable
-            root + tail for root, tail in zip(roots, tails)
+            root + tail for root, tail in zip(roots, paths)
         ))
         raise
