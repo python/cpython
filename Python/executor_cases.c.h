@@ -3699,7 +3699,7 @@
         case _LOAD_FLOAT: {
             PyObject *value;
             PyObject *cached = (PyObject *)CURRENT_OPERAND();
-            value = _Py_64_bits_as_double((int64_t)cached);
+            value = _PyFloat_From64Bits((int64_t)cached);
             if (value == NULL) JUMP_TO_ERROR();
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -3715,7 +3715,7 @@
             PyObject *cached = (PyObject *)CURRENT_OPERAND();
             Py_DECREF(pop1);
             Py_DECREF(pop2);
-            value = _Py_64_bits_as_double((int64_t)cached);
+            value = _PyFloat_From64Bits((int64_t)cached);
             if (value == NULL) JUMP_TO_ERROR();
             stack_pointer[-2] = value;
             stack_pointer += -1;
