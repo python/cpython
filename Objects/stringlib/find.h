@@ -91,6 +91,15 @@ STRINGLIB(parse_args_finds)(const char * function_name, PyObject *args,
     Py_ssize_t tmp_start = 0;
     Py_ssize_t tmp_end = PY_SSIZE_T_MAX;
     PyObject *obj_start=Py_None, *obj_end=Py_None;
+
+    if (PyTuple_GET_SIZE(args) == 1) {
+        // fast path
+        *start = tmp_start;
+        *end = tmp_end;
+        *subobj = Py_NewRef(PyTuple_GET_ITEM(args, 0));
+        return 1;
+    }
+
     char format[FORMAT_BUFFER_SIZE] = "O|OO:";
     size_t len = strlen(format);
 
