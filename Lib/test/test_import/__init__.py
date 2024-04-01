@@ -799,7 +799,7 @@ class ImportTests(unittest.TestCase):
                 rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
                 rb"\(consider renaming '.*fractions.py' since it has the "
                 rb"same name as the standard library module named 'fractions' "
-                rb"and takes precedence over it on sys.path\)"
+                rb"and the import system gives it precedence\)"
             )
 
             popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp)
@@ -822,7 +822,7 @@ class ImportTests(unittest.TestCase):
             tmp_child = os.path.join(tmp, "child")
             os.mkdir(tmp_child)
 
-            # test the logic in with different cwd
+            # test the logic with different cwd
             popen = script_helper.spawn_python(os.path.join(tmp, "fractions.py"), cwd=tmp_child)
             stdout, stderr = popen.communicate()
             self.assertRegex(stdout, expected_error)
@@ -851,7 +851,7 @@ fractions.Fraction
                 rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
                 rb"\(consider renaming '.*fractions.__init__.py' since it has the "
                 rb"same name as the standard library module named 'fractions' "
-                rb"and takes precedence over it on sys.path\)"
+                rb"and the import system gives it precedence\)"
             )
 
             popen = script_helper.spawn_python(os.path.join(tmp, "main.py"), cwd=tmp)
@@ -996,7 +996,7 @@ except AttributeError as e:
                 rb"AttributeError: module 'fractions' has no attribute 'Fraction' "
                 rb"\(consider renaming '.*fractions.py' since it has the "
                 rb"same name as the standard library module named 'fractions' "
-                rb"and takes precedence over it on sys.path\)"
+                rb"and the import system gives it precedence\)"
             )
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
