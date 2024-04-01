@@ -96,7 +96,7 @@ STRINGLIB(parse_args_finds)(const char * function_name, PyObject *args,
         // fast path
         *start = tmp_start;
         *end = tmp_end;
-        *subobj = Py_NewRef(PyTuple_GET_ITEM(args, 0));
+        *subobj = PyTuple_GET_ITEM(args, 0);
         return 1;
     }
 
