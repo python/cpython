@@ -115,6 +115,9 @@ PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, PyObject **stack_pointer, _PyExecutorObject **exec_ptr);
 
+PyAPI_FUNC(PyObject *) _Py_64_bits_as_double(int64_t);
+
+
 #ifdef __cplusplus
 }
 #endif

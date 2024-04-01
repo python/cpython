@@ -1615,3 +1615,12 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
         }
     }
 }
+
+PyObject*
+_Py_64_bits_as_double(int64_t val)
+{
+    assert(sizeof(double) == sizeof(int64_t));
+    double dst;
+    memcpy(&dst, &val, sizeof(int64_t));
+    return PyFloat_FromDouble(dst);
+}

@@ -286,6 +286,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 static int64_t
 double_as_int64_t(double in) {
+    assert(sizeof(double) == sizeof(int64_t));
     double temp = in;
     int64_t result;
     memcpy(&result, &temp, sizeof(double));
@@ -538,11 +539,14 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _LOAD_INT;
                 }
                 break;
+// This guarantees that in C99, doubles are 64-bit.
+#ifdef __STDC_IEC_559__
             case _POP_TWO_LOAD_FLOAT:
                 if (remove_simple_pops(2, &buffer[pc-1], buffer)) {
                     buffer[pc].opcode = _LOAD_FLOAT;
                 }
                 break;
+#endif
             case _SET_IP:
                 buffer[pc].opcode = _NOP;
                 last_set_ip = pc;
