@@ -340,8 +340,8 @@ def isreserved(path):
 def _isreservedname(name):
     """Return true if the filename is reserved by the system."""
     # Trailing dots and spaces are reserved.
-    if name[-1:] in ('.', ' ') and name not in ('.', '..'):
-        return True
+    if name[-1:] in ('.', ' '):
+        return name not in ('.', '..')
     # Wildcards, separators, colon, and pipe (*?"<>/\:|) are reserved.
     # ASCII control characters (0-31) are reserved.
     # Colon is reserved for file streams (e.g. "name:stream[:type]").
