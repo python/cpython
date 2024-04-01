@@ -91,10 +91,10 @@ def isabs(s):
         colon_sep = ':\\'
     s = s[:3].replace(altsep, sep)
     # Absolute: UNC, device, and paths with a drive and root.
-    if s[:1] == sep:
-        return s[1:2] == sep
+    if s.startswith(sep):
+        return s.startswith(sep, 1)
     else:
-        return s[1:3] == colon_sep
+        return s.startswith(colon_sep, 1)
 
 # Join two (or more) paths.
 def join(path, *paths):
