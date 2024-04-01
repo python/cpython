@@ -563,7 +563,7 @@ def commonpath(paths):
         prefix = min(roots)
         split_paths = [path.split(sep) for path in tails]
 
-        if not prefix and max(roots):
+        if not prefix and any(roots):
             raise ValueError("Can't mix absolute and relative paths")
 
         split_paths = [[c for c in s if c and c != curdir] for s in split_paths]
