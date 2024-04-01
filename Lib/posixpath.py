@@ -428,7 +428,7 @@ symbolic links encountered in the path."""
 
     # The resolved path, which is absolute throughout this function.
     # Note: getcwd() returns a normalized and symlink-free path.
-    path = sep if filename[:1] == sep else getcwd()
+    path = sep if filename.startswith(sep) else getcwd()
 
     # Mapping from symlink paths to *fully resolved* symlink targets. If a
     # symlink is encountered but not yet resolved, the value is None. This is
@@ -490,13 +490,13 @@ symbolic links encountered in the path."""
                 path = newpath
                 querying = False
                 continue
-        if target[:1] == sep:
+        if target.startswith(sep):
             # Symlink target is absolute; reset resolved path.
             path = sep
         seen[newpath] = None # not resolved symlink
         # Push the symlink path onto the stack, and signal its specialness by
         # also pushing None. When these entries are popped, we'll record the
-        # fully-resolved symlink target in the 'seen' mapping .
+        # fully-resolved symlink target in the 'seen' mapping.
         rest.append(newpath)
         rest.append(None)
         # Push the unresolved symlink target parts onto the stack.
