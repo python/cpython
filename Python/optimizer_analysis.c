@@ -482,14 +482,13 @@ remove_simple_pops(int num_popped, _PyUOpInstruction *curr, _PyUOpInstruction *l
             case _SET_IP:
                 break;
             default:
-                if (op_is_simple_load(opcode)) {
-                    remaining--;
-                }
                 // Hit a non-simple instruction. Just bail early,
                 // so we don't end up with quadratic time.
-                else {
+                if (!op_is_simple_load(opcode)) {
                     return false;
                 }
+                remaining--;
+                break;
         }
         curr--;
     }
@@ -508,7 +507,7 @@ remove_simple_pops(int num_popped, _PyUOpInstruction *curr, _PyUOpInstruction *l
             case _SET_IP:
                 break;
             default:
-                assert (op_is_simple_load(opcode));
+                assert(op_is_simple_load(opcode));
                 curr->opcode = _NOP;
                 remaining--;
                 break;
