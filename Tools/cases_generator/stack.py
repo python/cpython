@@ -159,7 +159,10 @@ class Stack:
                 return ""
             else:
                 self.defined.add(var.name)
-                return f"{var.name} = {popped.name};\n"
+                res = f"{var.name} = {popped.name};\n"
+                if not var.type or var.type.strip() != "_PyTaggedPtr":
+                    res += f"{var.name}_tagged = Py_OBJ_TAG({popped.name});\n"
+                return res
         self.base_offset.pop(var)
         if var.name in UNUSED:
             return ""

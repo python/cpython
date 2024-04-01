@@ -3072,6 +3072,7 @@ dummy_func(
                 args[-1] = Py_NewRef_Tagged(Py_OBJ_TAG(method));
                 Py_DECREF_TAGGED(callable_tagged);
                 callable = method;
+                callable_tagged = Py_OBJ_TAG(method);
             }
             // Check if the call can be inlined or not
             if (Py_TYPE(callable) == &PyFunction_Type &&
@@ -3794,7 +3795,8 @@ dummy_func(
                 if (tuple == NULL) {
                     ERROR_NO_POP();
                 }
-                Py_SETREF(callargs, tuple);
+                Py_SETREF_TAGGED(callargs_tagged, Py_OBJ_TAG(tuple));
+                callargs = tuple;
             }
             assert(PyTuple_CheckExact(callargs));
             EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);

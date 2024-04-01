@@ -917,6 +917,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
                     args[-1] = Py_NewRef_Tagged(Py_OBJ_TAG(method));
                     Py_DECREF_TAGGED(callable_tagged);
                     callable = method;
+                    callable_tagged = Py_OBJ_TAG(method);
                 }
                 // Check if the call can be inlined or not
                 if (Py_TYPE(callable) == &PyFunction_Type &&
@@ -1089,7 +1090,9 @@ callable = Py_OBJ_UNTAG(callable_tagged);
             }
             // _CHECK_FUNCTION_EXACT_ARGS
             self_or_null = self;
+self_or_null_tagged = Py_OBJ_TAG(self);
             callable = func;
+callable_tagged = Py_OBJ_TAG(func);
             {
                 uint32_t func_version = read_u32(&this_instr[2].cache);
                 DEOPT_IF(!PyFunction_Check(callable), CALL);
@@ -1397,7 +1400,8 @@ func = Py_OBJ_UNTAG(func_tagged);
                 if (tuple == NULL) {
                     goto error;
                 }
-                Py_SETREF(callargs, tuple);
+                Py_SETREF_TAGGED(callargs_tagged, Py_OBJ_TAG(tuple));
+                callargs = tuple;
             }
             assert(PyTuple_CheckExact(callargs));
             EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
@@ -5370,6 +5374,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             }
             // _POP_JUMP_IF_TRUE
             cond = b;
+cond_tagged = Py_OBJ_TAG(b);
             {
                 assert(PyBool_Check(cond));
                 int flag = Py_IsTrue(cond);
@@ -5408,6 +5413,7 @@ value = Py_OBJ_UNTAG(value_tagged);
             }
             // _POP_JUMP_IF_FALSE
             cond = b;
+cond_tagged = Py_OBJ_TAG(b);
             {
                 assert(PyBool_Check(cond));
                 int flag = Py_IsFalse(cond);
@@ -6458,6 +6464,7 @@ owner = Py_OBJ_UNTAG(owner_tagged);
             }
             // _REPLACE_WITH_TRUE
             value = owner;
+value_tagged = Py_OBJ_TAG(owner);
             {
                 Py_DECREF_TAGGED(value_tagged);
                 res = Py_True;
