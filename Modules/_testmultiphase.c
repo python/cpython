@@ -959,6 +959,11 @@ PyInit__test_shared_gil_only(void)
 static int
 datetime_capi_exec(PyObject *m)
 {
+    int ismain = PyInterpreterState_Get() == PyInterpreterState_Main();
+    if (ismain) {
+        _pydatetimeapi_main = NULL;
+    }
+
     PyDateTime_IMPORT;
     if (PyDateTimeAPI == NULL) {
         return -1;
@@ -966,7 +971,7 @@ datetime_capi_exec(PyObject *m)
     if (PyDateTimeAPI != PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0)) {
         return -1;
     }
-    if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
+    if (ismain) {
         if (PyDateTimeAPI != _pydatetimeapi_main) {
             return -1;
         }
