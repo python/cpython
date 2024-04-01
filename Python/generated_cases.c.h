@@ -1594,6 +1594,7 @@ callable = Py_OBJ_UNTAG(callable_tagged);
                 args[-1] = Py_NewRef_Tagged(Py_OBJ_TAG(method));
                 Py_DECREF_TAGGED(callable_tagged);
                 callable = method;
+                callable_tagged = Py_OBJ_TAG(method);
             }
             int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames);
             // Check if the call can be inlined or not

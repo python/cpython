@@ -174,7 +174,7 @@ class Stack:
                 f"{var.name} = {indirect}stack_pointer[{self.base_offset.to_c()}];"
             )
         else:
-            if var.type.strip() != "_PyTaggedPtr":
+            if (var.type or "").strip() != "_PyTaggedPtr":
                 assign = (
                     f"{var.name}_tagged = stack_pointer[{self.base_offset.to_c()}];\n"
                     f"{var.name} = {cast}{untag}({var.name}_tagged);\n"
