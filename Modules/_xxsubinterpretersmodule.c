@@ -1198,9 +1198,6 @@ interp_incref(PyObject *self, PyObject *args, PyObject *kwds)
         // Decref to 0 will destroy the interpreter.
         _PyInterpreterState_RequireIDRef(interp, 1);
     }
-    if (_PyInterpreterState_IDInitref(interp) < 0) {
-        return NULL;
-    }
     _PyInterpreterState_IDIncref(interp);
 
     Py_RETURN_NONE;
