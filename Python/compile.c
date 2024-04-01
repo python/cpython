@@ -70,11 +70,11 @@
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && ((C)->u->u_ste->ste_type == ModuleBlock))
 
-typedef _PyCompilerSrcLocation location;
+typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
-    ((const _PyCompilerSrcLocation){(LNO), (END_LNO), (COL), (END_COL)})
+    ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
 /* Return true if loc1 starts after loc2 ends. */
 static inline bool

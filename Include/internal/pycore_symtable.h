@@ -29,9 +29,27 @@ typedef enum _comprehension_type {
     SetComprehension = 3,
     GeneratorExpression = 4 } _Py_comprehension_ty;
 
+/* source location information */
+typedef struct {
+    int lineno;
+    int end_lineno;
+    int col_offset;
+    int end_col_offset;
+} _Py_SourceLocation;
+
+#define SRC_LOCATION_FROM_AST(n) \
+    (_Py_SourceLocation){ \
+               .lineno = (n)->lineno, \
+               .end_lineno = (n)->end_lineno, \
+               .col_offset = (n)->col_offset, \
+               .end_col_offset = (n)->end_col_offset }
+
+static const _Py_SourceLocation NO_LOCATION = {-1, -1, -1, -1};
+
+/* __future__ information */
 typedef struct {
     int ff_features;                    /* flags set by future statements */
-    _PyCompilerSrcLocation ff_location; /* location of last future statement */
+    _Py_SourceLocation ff_location;     /* location of last future statement */
 } _PyFutureFeatures;
 
 struct _symtable_entry;

@@ -32,21 +32,6 @@ typedef struct {
 #define _PyCompilerFlags_INIT \
     (PyCompilerFlags){.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION}
 
-/* source location information */
-typedef struct {
-    int lineno;
-    int end_lineno;
-    int col_offset;
-    int end_col_offset;
-} _PyCompilerSrcLocation;
-
-#define SRC_LOCATION_FROM_AST(n) \
-    (_PyCompilerSrcLocation){ \
-               .lineno = (n)->lineno, \
-               .end_lineno = (n)->end_lineno, \
-               .col_offset = (n)->col_offset, \
-               .end_col_offset = (n)->end_col_offset }
-
 /* Future feature support */
 
 #define FUTURE_NESTED_SCOPES "nested_scopes"

@@ -102,7 +102,7 @@ int
 _PyFuture_FromAST(mod_ty mod, PyObject *filename, _PyFutureFeatures *ff)
 {
     ff->ff_features = 0;
-    ff->ff_location = (_PyCompilerSrcLocation){-1, -1, -1, -1};
+    ff->ff_location = (_Py_SourceLocation){-1, -1, -1, -1};
 
     if (!future_parse(ff, mod, filename)) {
         return 0;
