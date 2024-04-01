@@ -166,7 +166,7 @@ a DeprecationWarning.  Patch by Emanuel Barry.
 .. nonce: aABzcL
 .. section: Core and Builtins
 
-`dict` implementation is changed like PyPy. It is more compact and preserves
+``dict`` implementation is changed like PyPy. It is more compact and preserves
 insertion order. (Concept developed by Raymond Hettinger and patch by Inada
 Naoki.)
 

@@ -1,1 +1,0 @@
-Add :c:func:`PyMapping_GetOptionalItem` function.

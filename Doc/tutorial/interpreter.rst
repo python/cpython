@@ -10,7 +10,7 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python3.13`
+The Python interpreter is usually installed as |usr_local_bin_python_x_dot_y_literal|
 on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command:
 
@@ -24,7 +24,7 @@ Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
 On Windows machines where you have installed Python from the :ref:`Microsoft Store
-<windows-store>`, the :file:`python3.13` command will be available. If you have
+<windows-store>`, the |python_x_dot_y_literal| command will be available. If you have
 the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
 command. See :ref:`setting-envvars` for other ways to launch Python.
 

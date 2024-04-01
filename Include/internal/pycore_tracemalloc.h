@@ -117,14 +117,16 @@ struct _tracemalloc_runtime_state {
     }
 
 
-/* Get the traceback where a memory block was allocated.
-
-   Return a tuple of (filename: str, lineno: int) tuples.
-
-   Return None if the tracemalloc module is disabled or if the memory block
-   is not tracked by tracemalloc.
-
-   Raise an exception and return NULL on error. */
+// Get the traceback where a memory block was allocated.
+//
+// Return a tuple of (filename: str, lineno: int) tuples.
+//
+// Return None if the tracemalloc module is disabled or if the memory block
+// is not tracked by tracemalloc.
+//
+// Raise an exception and return NULL on error.
+//
+// Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
     unsigned int domain,
     uintptr_t ptr);

@@ -1,5 +1,0 @@
-:mod:`logging`: Remove undocumented and untested ``Logger.warn()`` and
-``LoggerAdapter.warn()`` methods and ``logging.warn()`` function. Deprecated
-since Python 3.3, they were aliases to the :meth:`logging.Logger.warning`
-method, :meth:`!logging.LoggerAdapter.warning` method and
-:func:`logging.warning` function. Patch by Victor Stinner.

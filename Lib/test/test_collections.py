@@ -1,5 +1,6 @@
 """Unit tests for collections.py."""
 
+import array
 import collections
 import copy
 import doctest
@@ -488,12 +489,8 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p._replace(x=1), (1, 22))      # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22)) # test _asdict method
 
-        try:
+        with self.assertRaises(TypeError):
             p._replace(x=1, error=2)
-        except ValueError:
-            pass
-        else:
-            self._fail('Did not detect an incorrect fieldname')
 
         # verify that field string can have commas
         Point = namedtuple('Point', 'x, y')
@@ -1976,6 +1973,7 @@ class TestCollectionABCs(ABCTestCase):
         for sample in [list, bytearray, deque]:
             self.assertIsInstance(sample(), MutableSequence)
             self.assertTrue(issubclass(sample, MutableSequence))
+        self.assertTrue(issubclass(array.array, MutableSequence))
         self.assertFalse(issubclass(str, MutableSequence))
         self.validate_abstract_methods(MutableSequence, '__contains__', '__iter__',
             '__len__', '__getitem__', '__setitem__', '__delitem__', 'insert')

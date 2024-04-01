@@ -104,8 +104,8 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
 
 def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
     names = _listdir(dirname, dir_fd, dironly)
-    if include_hidden or not _ishidden(pattern):
-        names = (x for x in names if include_hidden or not _ishidden(x))
+    if not (include_hidden or _ishidden(pattern)):
+        names = (x for x in names if not _ishidden(x))
     return fnmatch.filter(names, pattern)
 
 def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
@@ -132,7 +132,8 @@ def glob1(dirname, pattern):
 
 def _glob2(dirname, pattern, dir_fd, dironly, include_hidden=False):
     assert _isrecursive(pattern)
-    yield pattern[:0]
+    if not dirname or _isdir(dirname, dir_fd):
+        yield pattern[:0]
     yield from _rlistdir(dirname, dir_fd, dironly,
                          include_hidden=include_hidden)
 
@@ -249,3 +250,58 @@ def escape(pathname):
 
 
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+
+
+def translate(pat, *, recursive=False, include_hidden=False, seps=None):
+    """Translate a pathname with shell wildcards to a regular expression.
+
+    If `recursive` is true, the pattern segment '**' will match any number of
+    path segments.
+
+    If `include_hidden` is true, wildcards can match path segments beginning
+    with a dot ('.').
+
+    If a sequence of separator characters is given to `seps`, they will be
+    used to split the pattern into segments and match path separators. If not
+    given, os.path.sep and os.path.altsep (where available) are used.
+    """
+    if not seps:
+        if os.path.altsep:
+            seps = (os.path.sep, os.path.altsep)
+        else:
+            seps = os.path.sep
+    escaped_seps = ''.join(map(re.escape, seps))
+    any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
+    not_sep = f'[^{escaped_seps}]'
+    if include_hidden:
+        one_last_segment = f'{not_sep}+'
+        one_segment = f'{one_last_segment}{any_sep}'
+        any_segments = f'(?:.+{any_sep})?'
+        any_last_segments = '.*'
+    else:
+        one_last_segment = f'[^{escaped_seps}.]{not_sep}*'
+        one_segment = f'{one_last_segment}{any_sep}'
+        any_segments = f'(?:{one_segment})*'
+        any_last_segments = f'{any_segments}(?:{one_last_segment})?'
+
+    results = []
+    parts = re.split(any_sep, pat)
+    last_part_idx = len(parts) - 1
+    for idx, part in enumerate(parts):
+        if part == '*':
+            results.append(one_segment if idx < last_part_idx else one_last_segment)
+        elif recursive and part == '**':
+            if idx < last_part_idx:
+                if parts[idx + 1] != '**':
+                    results.append(any_segments)
+            else:
+                results.append(any_last_segments)
+        else:
+            if part:
+                if not include_hidden and part[0] in '*?':
+                    results.append(r'(?!\.)')
+                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+            if idx < last_part_idx:
+                results.append(any_sep)
+    res = ''.join(results)
+    return fr'(?s:{res})\Z'

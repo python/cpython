@@ -2,11 +2,12 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_bytes_methods.h" // _Py_bytes_startswith()
+#include "pycore_bytesobject.h"   // _PyBytes_Find(), _PyBytes_Repeat()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_format.h"        // F_LJUST
-#include "pycore_global_objects.h"  // _Py_GET_GLOBAL_OBJECT()
+#include "pycore_global_objects.h"// _Py_GET_GLOBAL_OBJECT()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_object.h"        // _PyObject_GC_TRACK
@@ -41,17 +42,12 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
 #define EMPTY (&_Py_SINGLETON(bytes_empty))
 
 
-// Return a borrowed reference to the empty bytes string singleton.
+// Return a reference to the immortal empty bytes string singleton.
 static inline PyObject* bytes_get_empty(void)
 {
-    return &EMPTY->ob_base.ob_base;
-}
-
-
-// Return a strong reference to the empty bytes string singleton.
-static inline PyObject* bytes_new_empty(void)
-{
-    return Py_NewRef(EMPTY);
+    PyObject *empty = &EMPTY->ob_base.ob_base;
+    assert(_Py_IsImmortal(empty));
+    return empty;
 }
 
 
@@ -84,7 +80,7 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
     assert(size >= 0);
 
     if (size == 0) {
-        return bytes_new_empty();
+        return bytes_get_empty();
     }
 
     if ((size_t)size > (size_t)PY_SSIZE_T_MAX - PyBytesObject_SIZE) {
@@ -123,10 +119,11 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
     }
     if (size == 1 && str != NULL) {
         op = CHARACTER(*str & 255);
-        return Py_NewRef(op);
+        assert(_Py_IsImmortal(op));
+        return (PyObject *)op;
     }
     if (size == 0) {
-        return bytes_new_empty();
+        return bytes_get_empty();
     }
 
     op = (PyBytesObject *)_PyBytes_FromSize(size, 0);
@@ -154,11 +151,12 @@ PyBytes_FromString(const char *str)
     }
 
     if (size == 0) {
-        return bytes_new_empty();
+        return bytes_get_empty();
     }
     else if (size == 1) {
         op = CHARACTER(*str & 255);
-        return Py_NewRef(op);
+        assert(_Py_IsImmortal(op));
+        return (PyObject *)op;
     }
 
     /* Inline PyObject_NewVar */
@@ -724,11 +722,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 if (--fmtcnt >= 0)
                     c = *fmt++;
             }
-            else if (c >= 0 && isdigit(c)) {
+            else if (c >= 0 && Py_ISDIGIT(c)) {
                 width = c - '0';
                 while (--fmtcnt >= 0) {
                     c = Py_CHARMASK(*fmt++);
-                    if (!isdigit(c))
+                    if (!Py_ISDIGIT(c))
                         break;
                     if (width > (PY_SSIZE_T_MAX - ((int)c - '0')) / 10) {
                         PyErr_SetString(
@@ -755,7 +753,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                             "* wants int");
                         goto error;
                     }
-                    prec = _PyLong_AsInt(v);
+                    prec = PyLong_AsInt(v);
                     if (prec == -1 && PyErr_Occurred())
                         goto error;
                     if (prec < 0)
@@ -763,11 +761,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     if (--fmtcnt >= 0)
                         c = *fmt++;
                 }
-                else if (c >= 0 && isdigit(c)) {
+                else if (c >= 0 && Py_ISDIGIT(c)) {
                     prec = c - '0';
                     while (--fmtcnt >= 0) {
                         c = Py_CHARMASK(*fmt++);
-                        if (!isdigit(c))
+                        if (!Py_ISDIGIT(c))
                             break;
                         if (prec > (INT_MAX - ((int)c - '0')) / 10) {
                             PyErr_SetString(
@@ -3027,11 +3025,9 @@ PyBytes_ConcatAndDel(PyObject **pv, PyObject *w)
 
 
 /* The following function breaks the notion that bytes are immutable:
-   it changes the size of a bytes object.  We get away with this only if there
-   is only one module referencing the object.  You can also think of it
+   it changes the size of a bytes object.  You can think of it
    as creating a new bytes object and destroying the old one, only
-   more efficiently.  In any case, don't use this if the bytes object may
-   already be known to some other part of the code...
+   more efficiently.
    Note that if there's not enough memory to resize the bytes object, the
    original bytes object at *pv is deallocated, *pv is set to NULL, an "out of
    memory" exception is set, and -1 is returned.  Else (on success) 0 is
@@ -3047,28 +3043,40 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     PyBytesObject *sv;
     v = *pv;
     if (!PyBytes_Check(v) || newsize < 0) {
-        goto error;
+        *pv = 0;
+        Py_DECREF(v);
+        PyErr_BadInternalCall();
+        return -1;
     }
-    if (Py_SIZE(v) == newsize) {
+    Py_ssize_t oldsize = PyBytes_GET_SIZE(v);
+    if (oldsize == newsize) {
         /* return early if newsize equals to v->ob_size */
         return 0;
     }
-    if (Py_SIZE(v) == 0) {
-        if (newsize == 0) {
-            return 0;
-        }
+    if (oldsize == 0) {
         *pv = _PyBytes_FromSize(newsize, 0);
         Py_DECREF(v);
         return (*pv == NULL) ? -1 : 0;
     }
-    if (Py_REFCNT(v) != 1) {
-        goto error;
-    }
     if (newsize == 0) {
-        *pv = bytes_new_empty();
+        *pv = bytes_get_empty();
         Py_DECREF(v);
         return 0;
     }
+    if (Py_REFCNT(v) != 1) {
+        if (oldsize < newsize) {
+            *pv = _PyBytes_FromSize(newsize, 0);
+            if (*pv) {
+                memcpy(PyBytes_AS_STRING(*pv), PyBytes_AS_STRING(v), oldsize);
+            }
+        }
+        else {
+            *pv = PyBytes_FromStringAndSize(PyBytes_AS_STRING(v), newsize);
+        }
+        Py_DECREF(v);
+        return (*pv == NULL) ? -1 : 0;
+    }
+
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
 #endif
@@ -3091,11 +3099,6 @@ _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     sv->ob_shash = -1;          /* invalidate cached hash value */
 _Py_COMP_DIAG_POP
     return 0;
-error:
-    *pv = 0;
-    Py_DECREF(v);
-    PyErr_BadInternalCall();
-    return -1;
 }
 
 

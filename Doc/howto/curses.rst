@@ -527,7 +527,7 @@ If you're in doubt about the detailed behavior of the curses
 functions, consult the manual pages for your curses implementation,
 whether it's ncurses or a proprietary Unix vendor's.  The manual pages
 will document any quirks, and provide complete lists of all the
-functions, attributes, and :const:`ACS_\*` characters available to
+functions, attributes, and :ref:`ACS_\* <curses-acs-codes>` characters available to
 you.
 
 Because the curses API is so large, some functions aren't supported in
