@@ -178,9 +178,10 @@ class GzipFile(_compression.BaseStream):
         and 9 is slowest and produces the most compression. 0 is no compression
         at all. The default is 9.
 
-        The mtime argument is an optional numeric timestamp to be written
-        to the last modification time field in the stream when compressing.
-        If omitted or None, the current time is used.
+        The optional mtime argument is the timestamp requested by gzip. The time
+        is in Unix format, i.e., seconds since 00:00:00 UTC, January 1, 1970.
+        If mtime is omitted or None, the current time is used. Use mtime = 0
+        to generate a compressed stream that does not depend on creation time.
 
         """
 
