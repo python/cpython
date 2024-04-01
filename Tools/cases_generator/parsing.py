@@ -91,6 +91,7 @@ class Expression(Node):
 class CacheEffect(Node):
     name: str
     size: int
+    typ: str
 
 
 @dataclass
@@ -247,7 +248,7 @@ class Parser(PLexer):
 
     @contextual
     def cache_effect(self) -> CacheEffect | None:
-        # IDENTIFIER '/' NUMBER
+        # IDENTIFIER '/' NUMBER [: IDENTIFIER]
         if tkn := self.expect(lx.IDENTIFIER):
             if self.expect(lx.DIVIDE):
                 num = self.require(lx.NUMBER).text
@@ -255,8 +256,14 @@ class Parser(PLexer):
                     size = int(num)
                 except ValueError:
                     raise self.make_syntax_error(f"Expected integer, got {num!r}")
-                else:
-                    return CacheEffect(tkn.text, size)
+                type_text = ""
+                if self.expect(lx.COLON):
+                    type_text = self.require(lx.IDENTIFIER).text.strip()
+                    if self.expect(lx.TIMES):
+                        type_text += " *"
+                    else:
+                        type_text += " "
+                return CacheEffect(tkn.text, size, type_text)
         return None
 
     @contextual
@@ -356,8 +363,14 @@ class Parser(PLexer):
                         raise self.make_syntax_error(
                             f"Expected integer, got {num.text!r}"
                         )
-                    else:
-                        return CacheEffect(tkn.text, size)
+                    type_text = ""
+                    if self.expect(lx.COLON):
+                        type_text = self.require(lx.IDENTIFIER).text.strip()
+                        if self.expect(lx.TIMES):
+                            type_text += " *"
+                        else:
+                            type_text += " "
+                    return CacheEffect(tkn.text, size, type_text)
                 raise self.make_syntax_error("Expected integer")
             else:
                 return OpName(tkn.text)

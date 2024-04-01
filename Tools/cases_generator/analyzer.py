@@ -133,8 +133,11 @@ class StackEffect:
 class CacheEntry:
     name: str
     size: int
+    typ: str
 
     def __str__(self) -> str:
+        if self.typ:
+            return f"{self.name}/{self.size}: {self.typ}"
         return f"{self.name}/{self.size}"
 
 
@@ -321,7 +324,7 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
             raise analysis_error(
                 "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
             )
-    return [CacheEntry(i.name, int(i.size)) for i in caches]
+    return [CacheEntry(i.name, int(i.size), i.typ) for i in caches]
 
 
 def variable_used(node: parser.InstDef, name: str) -> bool:

@@ -164,7 +164,7 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
         for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
-                    type = cast = "PyObject *"
+                    type = cast = cache.typ or "PyObject *"
                 else:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"

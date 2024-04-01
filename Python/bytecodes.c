@@ -4150,12 +4150,12 @@ dummy_func(
             ERROR_IF(value == NULL, error);
         }
 
-        tier2 pure op(_LOAD_FLOAT, (cached/4 -- value)) {
+        tier2 pure op(_LOAD_FLOAT, (cached/4: int64_t -- value)) {
             value = _PyFloat_From64Bits((int64_t)cached);
             ERROR_IF(value == NULL, error);
         }
 
-        tier2 pure op(_POP_TWO_LOAD_FLOAT, (cached/4, pop1, pop2 -- value)) {
+        tier2 pure op(_POP_TWO_LOAD_FLOAT, (cached/4: int64_t, pop1, pop2 -- value)) {
             Py_DECREF(pop1);
             Py_DECREF(pop2);
             value = _PyFloat_From64Bits((int64_t)cached);
