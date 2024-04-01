@@ -119,12 +119,19 @@ def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
             return [basename]
     return []
 
-# Following functions are not public but can be used by third-party code.
+_deprecated_function_message = (
+    "{name} is deprecated and will be removed in Python {remove}. Use "
+    "glob.glob and pass a directory to its root_dir argument instead."
+)
 
 def glob0(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
     return _glob0(dirname, pattern, None, False)
 
 def glob1(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
     return _glob1(dirname, pattern, None, False)
 
 # This helper function recursively yields relative pathnames inside a literal

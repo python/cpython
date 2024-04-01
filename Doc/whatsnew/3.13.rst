@@ -813,6 +813,11 @@ Deprecated
   translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
 
+* :mod:`glob`: The undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
+  functions are deprecated. Use :func:`glob.glob` and pass a directory to its
+  *root_dir* argument instead.
+  (Contributed by Barney Gale in :gh:`117337`.)
+
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
   :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
   HTTP servers have been out of favor for a very long time.  This code was
