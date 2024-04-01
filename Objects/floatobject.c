@@ -2618,11 +2618,8 @@ PyFloat_Unpack8(const char *data, int le)
 PyObject*
 _PyFloat_From64Bits(int64_t val)
 {
-    union caster {
-        int64_t from;
-        double to;
-    };
     assert(sizeof(double) == sizeof(int64_t));
-    union caster temp = {.from = val};
-    return PyFloat_FromDouble(temp.to);
+    double dst;
+    memcpy(&dst, &val, sizeof(int64_t));
+    return PyFloat_FromDouble(dst);
 }
