@@ -866,54 +866,47 @@ class TestNtpath(NtpathTestCase):
         def check(paths, expected):
             tester(('ntpath.commonpath(%r)' % paths).replace('\\\\', '\\'),
                    expected)
-        def check_error(exc, exp, paths):
-            self.assertRaisesRegex(exc, exp, ntpath.commonpath, paths)
-            self.assertRaisesRegex(exc, exp, ntpath.commonpath,
-                              [os.fsencode(p) for p in paths])
+        def check_error(paths, expected):
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath, paths)
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath, paths[::-1])
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath,
+                                   [os.fsencode(p) for p in paths])
+            self.assertRaisesRegex(ValueError, expected, ntpath.commonpath,
+                                   [os.fsencode(p) for p in paths[::-1]])
 
         self.assertRaises(TypeError, ntpath.commonpath, None)
         self.assertRaises(ValueError, ntpath.commonpath, [])
         self.assertRaises(ValueError, ntpath.commonpath, iter([]))
 
-        # gh-117381: Logical error messages, feel free to change drive error
-        # to mix error
-        check_error(ValueError, "Paths don't have the same drive", ['C:\\Program Files', '\\Program Files'])
-        check_error(ValueError, "Paths don't have the same drive", ['C:\\Program Files', 'Program Files'])
-        check_error(ValueError, "Can't mix absolute and relative paths", ['C:\\Program Files', 'C:Program Files'])
-        check_error(ValueError, "Paths don't have the same drive", ['C:\\Program Files', 'D:Program Files'])
-        check_error(ValueError, "Paths don't have the same drive", ['C:Program Files', '\\Program Files'])
-        check_error(ValueError, "Paths don't have the same drive", ['C:Program Files', 'Program Files'])
-        check_error(ValueError, "Can't mix rooted and not-rooted paths", ['\\Program Files', 'Program Files'])
-        check_error(ValueError, "Paths don't have the same drive", ['Program Files', 'C:\\Program Files'])
+        # gh-117381: Logical error messages
+        check_error(['C:\\Foo', 'C:Foo'], "Can't mix absolute and relative paths")
+        check_error(['C:\\Foo', '\\Foo'], "Paths don't have the same drive")
+        check_error(['C:\\Foo', 'Foo'], "Paths don't have the same drive")
+        check_error(['C:Foo', '\\Foo'], "Paths don't have the same drive")
+        check_error(['C:Foo', 'Foo'], "Paths don't have the same drive")
+        check_error(['\\Foo', 'Foo'], "Can't mix rooted and not-rooted paths")
 
-        check(['C:\\Program Files'], 'C:\\Program Files')
-        check(['C:\\Program Files', 'C:\\Program Files'], 'C:\\Program Files')
-        check(['C:\\Program Files\\', 'C:\\Program Files'],
-              'C:\\Program Files')
-        check(['C:\\Program Files\\', 'C:\\Program Files\\'],
-              'C:\\Program Files')
-        check(['C:\\\\Program Files', 'C:\\Program Files\\\\'],
-              'C:\\Program Files')
-        check(['C:\\.\\Program Files', 'C:\\Program Files\\.'],
-              'C:\\Program Files')
-        check(['C:\\', 'C:\\bin'], 'C:\\')
-        check(['C:\\Program Files', 'C:\\bin'], 'C:\\')
-        check(['C:\\Program Files', 'C:\\Program Files\\Bar'],
-              'C:\\Program Files')
-        check(['C:\\Program Files\\Foo', 'C:\\Program Files\\Bar'],
-              'C:\\Program Files')
-        check(['C:\\Program Files', 'C:\\Projects'], 'C:\\')
-        check(['C:\\Program Files\\', 'C:\\Projects'], 'C:\\')
+        check(['C:\\Foo'], 'C:\\Foo')
+        check(['C:\\Foo', 'C:\\Foo'], 'C:\\Foo')
+        check(['C:\\Foo\\', 'C:\\Foo'], 'C:\\Foo')
+        check(['C:\\Foo\\', 'C:\\Foo\\'], 'C:\\Foo')
+        check(['C:\\\\Foo', 'C:\\Foo\\\\'], 'C:\\Foo')
+        check(['C:\\.\\Foo', 'C:\\Foo\\.'], 'C:\\Foo')
+        check(['C:\\', 'C:\\baz'], 'C:\\')
+        check(['C:\\Bar', 'C:\\baz'], 'C:\\')
+        check(['C:\\Foo', 'C:\\Foo\\Baz'], 'C:\\Foo')
+        check(['C:\\Foo\\Bar', 'C:\\Foo\\Baz'], 'C:\\Foo')
+        check(['C:\\Bar', 'C:\\Baz'], 'C:\\')
+        check(['C:\\Bar\\', 'C:\\Baz'], 'C:\\')
 
-        check(['C:\\Program Files\\Foo', 'C:/Program Files/Bar'],
-              'C:\\Program Files')
-        check(['C:\\Program Files\\Foo', 'c:/program files/bar'],
-              'C:\\Program Files')
-        check(['c:/program files/bar', 'C:\\Program Files\\Foo'],
-              'c:\\program files')
+        check(['C:\\Foo\\Bar', 'C:/Foo/Baz'], 'C:\\Foo')
+        check(['C:\\Foo\\Bar', 'c:/foo/baz'], 'C:\\Foo')
+        check(['c:/foo/bar', 'C:\\Foo\\Baz'], 'c:\\foo')
 
-        check_error(ValueError, "Paths don't have the same drive", ['C:\\Program Files', 'D:\\Program Files'])
-        check_error(ValueError, "Paths don't have the same drive", ['C:Program Files', 'D:Program Files'])
+        # gh-117381: Logical error messages
+        check_error(['C:\\Foo', 'D:\\Foo'], "Paths don't have the same drive")
+        check_error(['C:\\Foo', 'D:Foo'], "Paths don't have the same drive")
+        check_error(['C:Foo', 'D:Foo'], "Paths don't have the same drive")
 
         check(['spam'], 'spam')
         check(['spam', 'spam'], 'spam')
@@ -927,20 +920,16 @@ class TestNtpath(NtpathTestCase):
 
         check([''], '')
         check(['', 'spam\\alot'], '')
-        check_error(ValueError, "Can't mix rooted and not-rooted paths", ['', '\\spam\\alot'])
 
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          [b'C:\\Program Files', 'C:\\Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          [b'C:\\Program Files', 'Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          [b'Program Files', 'C:\\Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          ['C:\\Program Files', b'C:\\Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          ['C:\\Program Files', b'Program Files\\Foo'])
-        self.assertRaises(TypeError, ntpath.commonpath,
-                          ['Program Files', b'C:\\Program Files\\Foo'])
+        # gh-117381: Logical error messages
+        check_error(['', '\\spam\\alot'], "Can't mix rooted and not-rooted paths")
+
+        self.assertRaises(TypeError, ntpath.commonpath, [b'C:\\Foo', 'C:\\Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, [b'C:\\Foo', 'Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, [b'Foo', 'C:\\Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, ['C:\\Foo', b'C:\\Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, ['C:\\Foo', b'Foo\\Baz'])
+        self.assertRaises(TypeError, ntpath.commonpath, ['Foo', b'C:\\Foo\\Baz'])
 
     @unittest.skipIf(is_emscripten, "Emscripten cannot fstat unnamed files.")
     def test_sameopenfile(self):
