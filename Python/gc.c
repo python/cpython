@@ -1317,6 +1317,7 @@ gc_collect_young(PyThreadState *tstate,
             survivor_count++;
         }
     }
+    (void)survivor_count;  // Silence compiler warning
     gc_list_merge(&survivors, visited);
     validate_old(gcstate);
     gcstate->young.count = 0;
@@ -1329,12 +1330,14 @@ gc_collect_young(PyThreadState *tstate,
     add_stats(gcstate, 0, stats);
 }
 
+#ifndef NDEBUG
 static inline int
 IS_IN_VISITED(PyGC_Head *gc, int visited_space)
 {
     assert(visited_space == 0 || flip_old_space(visited_space) == 0);
     return gc_old_space(gc) == visited_space;
 }
+#endif
 
 struct container_and_flag {
     PyGC_Head *container;
