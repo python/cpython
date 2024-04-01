@@ -423,15 +423,27 @@ symbolic links encountered in the path."""
         pardir = '..'
         getcwd = os.getcwd
 
-    path = sep if filename[:1] == sep else getcwd()
+    # The stack of unresolved path parts.
     rest = filename.split(sep)[::-1]
+
+    # The resolved path, which is absolute throughout this function.
+    # Note: getcwd() returns a normalized and symlink-free path.
+    path = sep if filename[:1] == sep else getcwd()
+
+    # Mapping from symlink paths to *fully resolved* symlink targets. If a
+    # symlink is encountered but not yet resolved, the value is None. This is
+    # used both to detect symlink loops and to speed up repeated traversals of
+    # the same links.
     seen = {}
+
+    # Whether we're calling lstat() and readlink() to resolve symlinks. If we
+    # encounter an OSError in non-strict mode, this is switched off.
     querying = True
 
     while rest:
         name = rest.pop()
         if name is None:
-            # resolved symlink
+            # resolved symlink target
             seen[rest.pop()] = path
             continue
         if not name or name == curdir:
@@ -474,14 +486,20 @@ symbolic links encountered in the path."""
             if strict:
                 raise
             else:
+                # Return already resolved part + rest of the path unchanged.
                 path = newpath
                 querying = False
                 continue
-        seen[newpath] = None # not resolved symlink
         if target[:1] == sep:
+            # Symlink target is absolute; reset resolved path.
             path = sep
+        seen[newpath] = None # not resolved symlink
+        # Push the symlink path onto the stack, and signal its specialness by
+        # also pushing None. When these entries are popped, we'll record the
+        # fully-resolved symlink target in the 'seen' mapping .
         rest.append(newpath)
         rest.append(None)
+        # Push the unresolved symlink target parts onto the stack.
         rest.extend(target.split(sep)[::-1])
 
     return path
