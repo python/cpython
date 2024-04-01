@@ -973,7 +973,20 @@ datetime_capi_exec(PyObject *m)
     }
     else {
         if (PyDateTimeAPI == _pydatetimeapi_main) {
-            return -1;
+            PyObject *module = PyImport_ImportModule("_datetime");
+            if (module == NULL) {
+                return -1;
+            }
+            PyModuleDef *def = PyModule_GetDef(module);
+            Py_DECREF(module);
+            if (def) {
+                // multi-phase init
+                return -1;
+            }
+            else {
+                // legacy init (shared module)
+                return 0;
+            }
         }
     }
     return 0;
