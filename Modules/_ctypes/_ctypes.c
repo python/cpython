@@ -441,12 +441,27 @@ static PyType_Spec structparam_spec = {
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    ctypes_state *st = GLOBAL_STATE();
+    if (st && st->PyCType_Type) {
+        StgInfo *info;
+        if (PyStgInfo_FromType(st, self, &info) < 0) {
+            PyErr_WriteUnraisable(self);
+        }
+        if (info) {
+            Py_VISIT(info->proto);
+            Py_VISIT(info->argtypes);
+            Py_VISIT(info->converters);
+            Py_VISIT(info->restype);
+            Py_VISIT(info->checker);
+            Py_VISIT(info->module);
+        }
+    }
     Py_VISIT(Py_TYPE(self));
-    return 0;
+    return PyType_Type.tp_traverse(self, visit, arg);
 }
 
-static void
-_ctype_clear_stginfo(StgInfo *info)
+void
+ctype_clear_stginfo(StgInfo *info)
 {
     assert(info);
     Py_CLEAR(info->proto);
@@ -454,6 +469,7 @@ _ctype_clear_stginfo(StgInfo *info)
     Py_CLEAR(info->converters);
     Py_CLEAR(info->restype);
     Py_CLEAR(info->checker);
+    Py_CLEAR(info->module);
 }
 
 static int
@@ -463,13 +479,13 @@ CType_Type_clear(PyObject *self)
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, self, &info) < 0) {
-            return -1;
+            PyErr_WriteUnraisable(self);
         }
         if (info) {
-            _ctype_clear_stginfo(info);
+            ctype_clear_stginfo(info);
         }
     }
-    return 0;
+    return PyType_Type.tp_clear(self);
 }
 
 static void
@@ -489,7 +505,7 @@ CType_Type_dealloc(PyObject *self)
             info->format = NULL;
             PyMem_Free(info->shape);
             info->shape = NULL;
-            _ctype_clear_stginfo(info);
+            ctype_clear_stginfo(info);
         }
     }
 
@@ -522,6 +538,10 @@ CType_Type_sizeof(PyObject *self)
     return PyLong_FromSsize_t(size);
 }
 
+static PyObject *
+CType_Type_repeat(PyObject *self, Py_ssize_t length);
+
+
 static PyMethodDef ctype_methods[] = {
     {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
      METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
@@ -533,6 +553,8 @@ static PyType_Slot ctype_type_slots[] = {
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
     {Py_tp_methods, ctype_methods},
+    // Sequence protocol.
+    {Py_sq_repeat, CType_Type_repeat},
     {0, NULL},
 };
 
@@ -978,7 +1000,7 @@ static PyMethodDef CDataType_methods[] = {
 };
 
 static PyObject *
-CDataType_repeat(PyObject *self, Py_ssize_t length)
+CType_Type_repeat(PyObject *self, Py_ssize_t length)
 {
     if (length < 0)
         return PyErr_Format(PyExc_ValueError,
@@ -986,35 +1008,6 @@ CDataType_repeat(PyObject *self, Py_ssize_t length)
                             length);
     ctypes_state *st = GLOBAL_STATE();
     return PyCArrayType_from_ctype(st, self, length);
-}
-
-static int
-CDataType_clear(PyTypeObject *self)
-{
-    ctypes_state *st = GLOBAL_STATE();
-    StgInfo *info;
-    if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-        return -1;
-    }
-    if (info) {
-        Py_CLEAR(info->proto);
-    }
-    return PyType_Type.tp_clear((PyObject *)self);
-}
-
-static int
-CDataType_traverse(PyTypeObject *self, visitproc visit, void *arg)
-{
-    ctypes_state *st = GLOBAL_STATE();
-    StgInfo *info;
-    if (PyStgInfo_FromType(st, (PyObject *)self, &info) < 0) {
-        return -1;
-    }
-    if (info) {
-        Py_VISIT(info->proto);
-    }
-    Py_VISIT(Py_TYPE(self));
-    return PyType_Type.tp_traverse((PyObject *)self, visit, arg);
 }
 
 static int
@@ -1047,19 +1040,14 @@ UnionType_setattro(PyObject *self, PyObject *key, PyObject *value)
 static PyType_Slot pycstruct_type_slots[] = {
     {Py_tp_setattro, PyCStructType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the CData Objects")},
-    {Py_tp_traverse, CDataType_traverse},
-    {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_init, PyCStructType_init},
-
-    // Sequence protocol.
-    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
 static PyType_Spec pycstruct_type_spec = {
     .name = "_ctypes.PyCStructType",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycstruct_type_slots,
 };
@@ -1067,19 +1055,14 @@ static PyType_Spec pycstruct_type_spec = {
 static PyType_Slot union_type_slots[] = {
     {Py_tp_setattro, UnionType_setattro},
     {Py_tp_doc, PyDoc_STR("metatype for the Union Objects")},
-    {Py_tp_traverse, CDataType_traverse},
-    {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_init, UnionType_init},
-
-    // Sequence protocol.
-    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
 static PyType_Spec union_type_spec = {
     .name = "_ctypes.UnionType",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = union_type_slots,
 };
@@ -1305,19 +1288,14 @@ static PyMethodDef PyCPointerType_methods[] = {
 
 static PyType_Slot pycpointer_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the Pointer Objects")},
-    {Py_tp_traverse, CDataType_traverse},
-    {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, PyCPointerType_methods},
     {Py_tp_init, PyCPointerType_init},
-
-    // Sequence protocol.
-    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
 static PyType_Spec pycpointer_type_spec = {
     .name = "_ctypes.PyCPointerType",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycpointer_type_slots,
 };
@@ -1640,19 +1618,14 @@ error:
 
 static PyType_Slot pycarray_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the Array Objects")},
-    {Py_tp_traverse, CDataType_traverse},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_init, PyCArrayType_init},
-    {Py_tp_clear, CDataType_clear},
-
-    // Sequence protocol.
-    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
 static PyType_Spec pycarray_type_spec = {
     .name = "_ctypes.PyCArrayType",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycarray_type_slots,
 };
@@ -2315,17 +2288,12 @@ static PyType_Slot pycsimple_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for the PyCSimpleType Objects")},
     {Py_tp_methods, PyCSimpleType_methods},
     {Py_tp_init, PyCSimpleType_init},
-    {Py_tp_traverse, CDataType_traverse},
-    {Py_tp_clear, CDataType_clear},
-
-    // Sequence protocol.
-    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
 static PyType_Spec pycsimple_type_spec = {
     .name = "_ctypes.PyCSimpleType",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycsimple_type_slots,
 };
@@ -2570,19 +2538,14 @@ PyCFuncPtrType_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 static PyType_Slot pycfuncptr_type_slots[] = {
     {Py_tp_doc, PyDoc_STR("metatype for C function pointers")},
-    {Py_tp_traverse, CDataType_traverse},
-    {Py_tp_clear, CDataType_clear},
     {Py_tp_methods, CDataType_methods},
     {Py_tp_init, PyCFuncPtrType_init},
-
-    // Sequence protocol.
-    {Py_sq_repeat, CDataType_repeat},
     {0, NULL},
 };
 
 static PyType_Spec pycfuncptr_type_spec = {
     .name = "_ctypes.PyCFuncPtrType",
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC |
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_IMMUTABLETYPE),
     .slots = pycfuncptr_type_slots,
 };
