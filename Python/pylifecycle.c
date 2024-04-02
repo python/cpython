@@ -687,6 +687,10 @@ pycore_init_global_objects(PyInterpreterState *interp)
 
     _PyUnicode_InitState(interp);
 
+    if (_Py_IsMainInterpreter(interp)) {
+        _Py_GetConstant_Init();
+    }
+
     return _PyStatus_OK();
 }
 
@@ -1911,6 +1915,9 @@ Py_FinalizeEx(void)
     int malloc_stats = tstate->interp->config.malloc_stats;
 #endif
 
+    /* Ensure that remaining threads are detached */
+    _PyEval_StopTheWorldAll(runtime);
+
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(tstate->interp, tstate);
@@ -1927,8 +1934,11 @@ Py_FinalizeEx(void)
        will be called in the current Python thread. Since
        _PyRuntimeState_SetFinalizing() has been called, no other Python thread
        can take the GIL at this point: if they try, they will exit
-       immediately. */
-    _PyThreadState_DeleteExcept(tstate);
+       immediately. We start the world once we are the only thread state left,
+       before we call destructors. */
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    _PyEval_StartTheWorldAll(runtime);
+    _PyThreadState_DeleteList(list);
 
     /* At this point no Python code should be running at all.
        The only thread state left should be the main thread of the main
@@ -3135,6 +3145,10 @@ call_ll_exitfuncs(_PyRuntimeState *runtime)
 void _Py_NO_RETURN
 Py_Exit(int sts)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate != NULL && _PyThreadState_IsRunningMain(tstate)) {
+        _PyInterpreterState_SetNotRunningMain(tstate->interp);
+    }
     if (Py_FinalizeEx() < 0) {
         sts = 120;
     }

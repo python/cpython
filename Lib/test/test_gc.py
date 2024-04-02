@@ -823,31 +823,9 @@ class GCTests(unittest.TestCase):
         self.assertTrue(
                 any(l is element for element in gc.get_objects(generation=0))
         )
-        self.assertFalse(
-                any(l is element for element in  gc.get_objects(generation=1))
-        )
-        self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=2))
-        )
-        gc.collect(generation=0)
+        gc.collect()
         self.assertFalse(
                 any(l is element for element in gc.get_objects(generation=0))
-        )
-        self.assertTrue(
-                any(l is element for element in  gc.get_objects(generation=1))
-        )
-        self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=2))
-        )
-        gc.collect(generation=2)
-        self.assertFalse(
-                any(l is element for element in gc.get_objects(generation=0))
-        )
-        self.assertFalse(
-                any(l is element for element in  gc.get_objects(generation=1))
-        )
-        self.assertTrue(
-                any(l is element for element in gc.get_objects(generation=2))
         )
         del l
         gc.collect()
@@ -1058,7 +1036,19 @@ class GCTests(unittest.TestCase):
         callback.assert_not_called()
         gc.enable()
 
+
+class IncrementalGCTests(unittest.TestCase):
+
+    def setUp(self):
+        # Reenable GC as it is disabled module-wide
+        gc.enable()
+
+    def tearDown(self):
+        gc.disable()
+
     @unittest.skipIf(Py_GIL_DISABLED, "Free threading does not support incremental GC")
+    # Use small increments to emulate longer running process in a shorter time
+    @gc_threshold(200, 10)
     def test_incremental_gc_handles_fast_cycle_creation(self):
 
         class LinkedList:
@@ -1080,28 +1070,31 @@ class GCTests(unittest.TestCase):
                 head = LinkedList(head, head.prev)
             return head
 
-        head = make_ll(10000)
-        count = 10000
+        head = make_ll(1000)
+        count = 1000
 
-        # We expect the counts to go negative eventually
-        # as there will some objects we aren't counting,
-        # e.g. the gc stats dicts. The test merely checks
-        # that the counts don't grow.
+        # There will be some objects we aren't counting,
+        # e.g. the gc stats dicts. This test checks
+        # that the counts don't grow, so we try to
+        # correct for the uncounted objects
+        # This is just an estimate.
+        CORRECTION = 20
 
         enabled = gc.isenabled()
         gc.enable()
         olds = []
-        for i in range(1000):
-            newhead = make_ll(200)
-            count += 200
+        for i in range(20_000):
+            newhead = make_ll(20)
+            count += 20
             newhead.surprise = head
             olds.append(newhead)
-            if len(olds) == 50:
+            if len(olds) == 20:
                 stats = gc.get_stats()
                 young = stats[0]
                 incremental = stats[1]
                 old = stats[2]
                 collected = young['collected'] + incremental['collected'] + old['collected']
+                count += CORRECTION
                 live = count - collected
                 self.assertLess(live, 25000)
                 del olds[:]
@@ -1230,6 +1223,7 @@ class GCCallbackTests(unittest.TestCase):
         self.assertEqual(len(gc.garbage), 0)
 
 
+    @requires_subprocess()
     @unittest.skipIf(BUILD_WITH_NDEBUG,
                      'built with -NDEBUG')
     def test_refcount_errors(self):
