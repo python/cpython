@@ -354,6 +354,59 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_find__doc__,
+"find($self, sub, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].");
+
+#define UNICODE_FIND_METHODDEF    \
+    {"find", _PyCFunction_CAST(unicode_find), METH_FASTCALL, unicode_find__doc__},
+
+static Py_ssize_t
+unicode_find_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                  Py_ssize_t end);
+
+static PyObject *
+unicode_find(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("find", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("find", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_find_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_isascii__doc__,
 "isascii($self, /)\n"
 "--\n"
@@ -1662,4 +1715,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6e0b7dda0329e54b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=85f7b2ab50398fb3 input=a9049054013a1b77]*/
