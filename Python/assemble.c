@@ -5,6 +5,7 @@
 #include "pycore_compile.h"
 #include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
+#include "pycore_symtable.h"        // _Py_SourceLocation
 
 
 #define DEFAULT_CODE_SIZE 128
@@ -21,7 +22,7 @@
         return ERROR;       \
     }
 
-typedef _PyCompilerSrcLocation location;
+typedef _Py_SourceLocation location;
 typedef _PyCompile_Instruction instruction;
 typedef _PyCompile_InstructionSequence instr_sequence;
 
