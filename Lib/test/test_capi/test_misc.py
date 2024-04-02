@@ -2533,7 +2533,7 @@ class InterpreterIDTests(unittest.TestCase):
         return (
             _testinternalcapi.get_interpreter_refcount,
             (lambda id: _interpreters.incref(id, implieslink=False)),
-            _interpreter.decref,
+            _interpreters.decref,
         )
 
     def test_linked_lifecycle_does_not_exist(self):
@@ -2583,8 +2583,7 @@ class InterpreterIDTests(unittest.TestCase):
         get_refcount = _testinternalcapi.get_interpreter_refcount
 
         # A new interpreter will start out not linked, with a refcount of 0.
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
         linked = is_linked(interpid)
         refcount = get_refcount(interpid)
 
@@ -2596,8 +2595,7 @@ class InterpreterIDTests(unittest.TestCase):
         is_linked = _testinternalcapi.interpreter_refcount_linked
         get_refcount, incref, decref = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         # Incref will not automatically link it.
         incref(interpid)
@@ -2621,8 +2619,7 @@ class InterpreterIDTests(unittest.TestCase):
         link = _testinternalcapi.link_interpreter_refcount
         unlink = _testinternalcapi.unlink_interpreter_refcount
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         # Linking at refcount 0 does not destroy the interpreter.
         link(interpid)
@@ -2644,8 +2641,7 @@ class InterpreterIDTests(unittest.TestCase):
         link = _testinternalcapi.link_interpreter_refcount
         get_refcount, incref, decref = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         # Linking it will not change the refcount.
         link(interpid)
@@ -2669,8 +2665,7 @@ class InterpreterIDTests(unittest.TestCase):
         link = _testinternalcapi.link_interpreter_refcount
         get_refcount, incref, _ = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         incref(interpid)
         self.assertEqual(
@@ -2690,8 +2685,7 @@ class InterpreterIDTests(unittest.TestCase):
         unlink = _testinternalcapi.unlink_interpreter_refcount
         get_refcount, incref, decref = self.get_refcount_helpers()
 
-        interpid = _testinternalcapi.new_interpreter()
-        self.add_interp_cleanup(interpid)
+        interpid = self.new_interpreter()
 
         link(interpid)
         self.assertTrue(
