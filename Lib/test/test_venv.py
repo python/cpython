@@ -252,7 +252,8 @@ class BasicTest(BaseTest):
             ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), expected.encode(), prefix)
+            self.assertEqual(pathlib.Path(out.strip().decode()),
+                             pathlib.Path(expected), prefix)
 
     @requireVenvCreate
     def test_sysconfig(self):
