@@ -327,11 +327,12 @@ class BaseTest:
             for i in range(len(s)):
                 if s.startswith(p, i):
                     return i
+            if p == '' and s == '':
+                return 0
             return -1
 
-        rr = random.randrange
-        choices = random.choices
-        for _ in range(1000):
+        def check_pattern(rr):
+            choices = random.choices
             p0 = ''.join(choices('abcde', k=rr(10))) * rr(10, 20)
             p = p0[:len(p0) - rr(10)] # pop off some characters
             left = ''.join(choices('abcdef', k=rr(2000)))
@@ -340,6 +341,13 @@ class BaseTest:
             with self.subTest(p=p, text=text):
                 self.checkequal(reference_find(p, text),
                                 text, 'find', p)
+
+        rr = random.randrange
+        for _ in range(1000):
+            check_pattern(rr)
+
+        # Test that empty string always work:
+        check_pattern(lambda *args: 0)
 
     def test_find_many_lengths(self):
         haystack_repeats = [a * 10**e for e in range(6) for a in (1,2,5)]

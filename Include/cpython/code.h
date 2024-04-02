@@ -8,16 +8,21 @@
 extern "C" {
 #endif
 
-
+/* Count of all local monitoring events */
+#define  _PY_MONITORING_LOCAL_EVENTS 10
 /* Count of all "real" monitoring events (not derived from other events) */
-#define _PY_MONITORING_UNGROUPED_EVENTS 14
+#define _PY_MONITORING_UNGROUPED_EVENTS 15
 /* Count of all  monitoring events */
-#define _PY_MONITORING_EVENTS 16
+#define _PY_MONITORING_EVENTS 17
 
-/* Table of which tools are active for each monitored event. */
-typedef struct _Py_Monitors {
+/* Tables of which tools are active for each monitored event. */
+typedef struct _Py_LocalMonitors {
+    uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
+} _Py_LocalMonitors;
+
+typedef struct _Py_GlobalMonitors {
     uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
-} _Py_Monitors;
+} _Py_GlobalMonitors;
 
 /* Each instruction in a code object is a fixed-width value,
  * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
@@ -68,7 +73,7 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-/* Ancilliary data structure used for instrumentation.
+/* Ancillary data structure used for instrumentation.
    Line instrumentation creates an array of
    these. One entry per code unit.*/
 typedef struct {
@@ -88,9 +93,9 @@ typedef struct {
  */
 typedef struct {
     /* Monitoring specific to this code object */
-    _Py_Monitors local_monitors;
+    _Py_LocalMonitors local_monitors;
     /* Monitoring that is active on this code object */
-    _Py_Monitors active_monitors;
+    _Py_LocalMonitors active_monitors;
     /* The tools that are to be notified for events for the matching code unit */
     uint8_t *tools;
     /* Information to support line events */
@@ -162,7 +167,7 @@ typedef struct {
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
-    uint64_t _co_instrumentation_version; /* current instrumentation version */  \
+    uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
@@ -203,6 +208,8 @@ struct PyCodeObject _PyCode_DEF(1);
 #define CO_FUTURE_GENERATOR_STOP  0x800000
 #define CO_FUTURE_ANNOTATIONS    0x1000000
 
+#define CO_NO_MONITORING_EVENTS 0x2000000
+
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
@@ -219,9 +226,13 @@ static inline Py_ssize_t PyCode_GetNumFree(PyCodeObject *op) {
     return op->co_nfreevars;
 }
 
-static inline int PyCode_GetFirstFree(PyCodeObject *op) {
+static inline int PyUnstable_Code_GetFirstFree(PyCodeObject *op) {
     assert(PyCode_Check(op));
     return op->co_nlocalsplus - op->co_nfreevars;
+}
+
+Py_DEPRECATED(3.13) static inline int PyCode_GetFirstFree(PyCodeObject *op) {
+    return PyUnstable_Code_GetFirstFree(op);
 }
 
 #define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)

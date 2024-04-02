@@ -39,15 +39,45 @@ static const char copyright[] =
     " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB ";
 
 #include "Python.h"
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
+#include "pycore_dict.h"             // _PyDict_Next()
+#include "pycore_long.h"             // _PyLong_GetZero()
+#include "pycore_moduleobject.h"     // _PyModule_GetState()
 
-#include "sre.h"
+#include "sre.h"                     // SRE_CODE
+
+#include <ctype.h>                   // tolower(), toupper(), isalnum()
 
 #define SRE_CODE_BITS (8 * sizeof(SRE_CODE))
 
-#include <ctype.h>
+// On macOS, use the wide character ctype API using btowc()
+#if defined(__APPLE__)
+#  define USE_CTYPE_WINT_T
+#endif
+
+static int sre_isalnum(unsigned int ch) {
+#ifdef USE_CTYPE_WINT_T
+    return (unsigned int)iswalnum(btowc((int)ch));
+#else
+    return (unsigned int)isalnum((int)ch);
+#endif
+}
+
+static unsigned int sre_tolower(unsigned int ch) {
+#ifdef USE_CTYPE_WINT_T
+    return (unsigned int)towlower(btowc((int)ch));
+#else
+    return (unsigned int)tolower((int)ch);
+#endif
+}
+
+static unsigned int sre_toupper(unsigned int ch) {
+#ifdef USE_CTYPE_WINT_T
+    return (unsigned int)towupper(btowc((int)ch));
+#else
+    return (unsigned int)toupper((int)ch);
+#endif
+}
 
 /* Defining this one controls tracing:
  * 0 -- disabled
@@ -78,9 +108,11 @@ static const char copyright[] =
 
 #if VERBOSE == 0
 #  define INIT_TRACE(state)
+#  define DO_TRACE 0
 #  define TRACE(v)
 #elif VERBOSE == 1
 #  define INIT_TRACE(state) int _debug = (state)->debug
+#  define DO_TRACE (_debug)
 #  define TRACE(v) do {     \
         if (_debug) { \
             printf v;       \
@@ -88,6 +120,7 @@ static const char copyright[] =
     } while (0)
 #elif VERBOSE == 2
 #  define INIT_TRACE(state)
+#  define DO_TRACE 1
 #  define TRACE(v) printf v
 #else
 #  error VERBOSE must be 0, 1 or 2
@@ -113,17 +146,17 @@ static unsigned int sre_lower_ascii(unsigned int ch)
 /* locale-specific character predicates */
 /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
  * warnings when c's type supports only numbers < N+1 */
-#define SRE_LOC_IS_ALNUM(ch) (!((ch) & ~255) ? isalnum((ch)) : 0)
+#define SRE_LOC_IS_ALNUM(ch) (!((ch) & ~255) ? sre_isalnum((ch)) : 0)
 #define SRE_LOC_IS_WORD(ch) (SRE_LOC_IS_ALNUM((ch)) || (ch) == '_')
 
 static unsigned int sre_lower_locale(unsigned int ch)
 {
-    return ((ch) < 256 ? (unsigned int)tolower((ch)) : ch);
+    return ((ch) < 256 ? (unsigned int)sre_tolower((ch)) : ch);
 }
 
 static unsigned int sre_upper_locale(unsigned int ch)
 {
-    return ((ch) < 256 ? (unsigned int)toupper((ch)) : ch);
+    return ((ch) < 256 ? (unsigned int)sre_toupper((ch)) : ch);
 }
 
 /* unicode-specific character predicates */
@@ -1479,6 +1512,9 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     for (i = 0; i < n; i++) {
         PyObject *o = PyList_GET_ITEM(code, i);
         unsigned long value = PyLong_AsUnsignedLong(o);
+        if (value == (unsigned long)-1 && PyErr_Occurred()) {
+            break;
+        }
         self->code[i] = (SRE_CODE) value;
         if ((unsigned long) self->code[i] != value) {
             PyErr_SetString(PyExc_OverflowError,
@@ -2038,8 +2074,6 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
             GET_SKIP;
             GET_ARG; /* 0 for lookahead, width for lookbehind */
             code--; /* Back up over arg to simplify math below */
-            if (arg & 0x80000000)
-                FAIL; /* Width too large */
             /* Stop 1 before the end; we check the SUCCESS below */
             if (_validate_inner(code+1, code+skip-2, groups))
                 FAIL;
@@ -2316,26 +2350,28 @@ _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
     if (!result || !self->pattern->groupindex)
         return result;
 
+    Py_BEGIN_CRITICAL_SECTION(self->pattern->groupindex);
     while (_PyDict_Next(self->pattern->groupindex, &pos, &key, &value, &hash)) {
         int status;
         Py_INCREF(key);
         value = match_getslice(self, key, default_value);
         if (!value) {
             Py_DECREF(key);
-            goto failed;
+            Py_CLEAR(result);
+            goto exit;
         }
         status = _PyDict_SetItem_KnownHash(result, key, value, hash);
         Py_DECREF(value);
         Py_DECREF(key);
-        if (status < 0)
-            goto failed;
+        if (status < 0) {
+            Py_CLEAR(result);
+            goto exit;
+        }
     }
+exit:
+    Py_END_CRITICAL_SECTION();
 
     return result;
-
-failed:
-    Py_DECREF(result);
-    return NULL;
 }
 
 /*[clinic input]
@@ -2994,13 +3030,13 @@ static PyGetSetDef pattern_getset[] = {
 
 #define PAT_OFF(x) offsetof(PatternObject, x)
 static PyMemberDef pattern_members[] = {
-    {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY,
+    {"pattern",    _Py_T_OBJECT,    PAT_OFF(pattern),       Py_READONLY,
      "The pattern string from which the RE object was compiled."},
-    {"flags",      T_INT,       PAT_OFF(flags),         READONLY,
+    {"flags",      Py_T_INT,       PAT_OFF(flags),         Py_READONLY,
      "The regex matching flags."},
-    {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY,
+    {"groups",     Py_T_PYSSIZET,  PAT_OFF(groups),        Py_READONLY,
      "The number of capturing groups in the pattern."},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(PatternObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PatternObject, weakreflist), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -3053,13 +3089,13 @@ static PyGetSetDef match_getset[] = {
 
 #define MATCH_OFF(x) offsetof(MatchObject, x)
 static PyMemberDef match_members[] = {
-    {"string",  T_OBJECT,   MATCH_OFF(string),  READONLY,
+    {"string",  _Py_T_OBJECT,   MATCH_OFF(string),  Py_READONLY,
      "The string passed to match() or search()."},
-    {"re",      T_OBJECT,   MATCH_OFF(pattern), READONLY,
+    {"re",      _Py_T_OBJECT,   MATCH_OFF(pattern), Py_READONLY,
      "The regular expression object."},
-    {"pos",     T_PYSSIZET, MATCH_OFF(pos),     READONLY,
+    {"pos",     Py_T_PYSSIZET, MATCH_OFF(pos),     Py_READONLY,
      "The index into the string at which the RE engine started looking for a match."},
-    {"endpos",  T_PYSSIZET, MATCH_OFF(endpos),  READONLY,
+    {"endpos",  Py_T_PYSSIZET, MATCH_OFF(endpos),  Py_READONLY,
      "The index into the string beyond which the RE engine will not go."},
     {NULL}
 };
@@ -3103,7 +3139,7 @@ static PyMethodDef scanner_methods[] = {
 
 #define SCAN_OFF(x) offsetof(ScannerObject, x)
 static PyMemberDef scanner_members[] = {
-    {"pattern", T_OBJECT, SCAN_OFF(pattern), READONLY},
+    {"pattern", _Py_T_OBJECT, SCAN_OFF(pattern), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

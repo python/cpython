@@ -16169,7 +16169,7 @@ Core and Builtins
   codec subsystem, for example UTF-8 is turned into utf-8.
 
 - Issue #4200: Changed the atexit module to store its state in its
-  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpeters.
+  PyModuleDef atexitmodule. This fixes a bug with multiple subinterpreters.
 
 - Issue #4237: io.FileIO() was raising invalid warnings caused by
   insufficient initialization of PyFileIOObject struct members.
