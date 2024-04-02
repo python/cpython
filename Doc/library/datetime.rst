@@ -2682,7 +2682,11 @@ Notes:
    exception when it encounters leap day because the default year used by the
    parser is not a leap year.  Users run into this bug every four years...
 
-      >>> strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
+   .. doctest::
+
+      >>> month_day = "02/29"
+      >>> datetime.strptime(f"{month_day};1984", "%m/%d;%Y")  # No leap year bug.
+      datetime.datetime(1984, 2, 29, 0, 0)
 
    .. deprecated-removed:: 3.13 3.15
       :meth:`~.datetime.strptime` calls using a format string containing
