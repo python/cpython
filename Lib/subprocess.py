@@ -839,6 +839,9 @@ class Popen:
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
 
+        if stdout is STDOUT:
+             raise ValueError("STDOUT can only be used for stderr")
+
         if pipesize is None:
             pipesize = -1  # Restore default
         if not isinstance(pipesize, int):
