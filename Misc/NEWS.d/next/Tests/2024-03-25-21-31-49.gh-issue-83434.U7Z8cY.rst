@@ -1,0 +1,3 @@
+Disable JUnit XML output (``--junit-xml=FILE`` command line option) in
+regrtest when hunting for reference leaks (``-R`` option). Patch by Victor
+Stinner.

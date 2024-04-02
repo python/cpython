@@ -79,7 +79,10 @@ typedef struct {
 typedef struct {
     uint16_t counter;
     uint16_t type_version[2];
-    uint16_t keys_version[2];
+    union {
+        uint16_t keys_version[2];
+        uint16_t dict_offset;
+    };
     uint16_t descr[4];
 } _PyLoadMethodCache;
 
@@ -308,6 +311,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
+#define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
 #define OPT_HIST(length, name) \
     do { \
         if (_Py_stats) { \
@@ -334,6 +338,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define OPT_STAT_INC(name) ((void)0)
 #define UOP_STAT_INC(opname, name) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
+#define OPT_ERROR_IN_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS

@@ -209,7 +209,10 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
-HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
+# Older Android versions block UDPLITE with SELinux.
+HAVE_SOCKET_UDPLITE = (
+    hasattr(socket, "IPPROTO_UDPLITE")
+    and not (support.is_android and platform.android_ver().api_level < 29))
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
@@ -1217,8 +1220,8 @@ class GeneralModuleTests(unittest.TestCase):
         else:
             raise OSError
         # Try same call with optional protocol omitted
-        # Issue #26936: Android getservbyname() was broken before API 23.
-        if (not support.is_android) or sys.getandroidapilevel() >= 23:
+        # Issue gh-71123: this fails on Android before API level 23.
+        if not (support.is_android and platform.android_ver().api_level < 23):
             port2 = socket.getservbyname(service)
             eq(port, port2)
         # Try udp, but don't barf if it doesn't exist
@@ -1229,8 +1232,9 @@ class GeneralModuleTests(unittest.TestCase):
         else:
             eq(udpport, port)
         # Now make sure the lookup by port returns the same service name
-        # Issue #26936: Android getservbyport() is broken.
-        if not support.is_android:
+        # Issue #26936: when the protocol is omitted, this fails on Android
+        # before API level 28.
+        if not (support.is_android and platform.android_ver().api_level < 28):
             eq(socket.getservbyport(port2), service)
         eq(socket.getservbyport(port, 'tcp'), service)
         if udpport is not None:
@@ -1575,8 +1579,8 @@ class GeneralModuleTests(unittest.TestCase):
             socket.getaddrinfo('::1', 80)
         # port can be a string service name such as "http", a numeric
         # port number or None
-        # Issue #26936: Android getaddrinfo() was broken before API level 23.
-        if (not support.is_android) or sys.getandroidapilevel() >= 23:
+        # Issue #26936: this fails on Android before API level 23.
+        if not (support.is_android and platform.android_ver().api_level < 23):
             socket.getaddrinfo(HOST, "http")
         socket.getaddrinfo(HOST, 80)
         socket.getaddrinfo(HOST, None)
