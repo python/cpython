@@ -2163,7 +2163,7 @@ class SinglephaseInitTests(unittest.TestCase):
     # subinterpreters
 
     def add_subinterpreter(self):
-        interpid = _interpreters.create('legacy')
+        interpid = _interpreters.create(isolated=False)
         def ensure_destroyed():
             try:
                 _interpreters.destroy(interpid)

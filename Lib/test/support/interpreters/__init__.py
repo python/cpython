@@ -73,7 +73,7 @@ class ExecutionFailed(RuntimeError):
 
 def create():
     """Return a new (idle) Python interpreter."""
-    id = _interpreters.create(reqrefs=True)
+    id = _interpreters.create(isolated=True)
     return Interpreter(id)
 
 
