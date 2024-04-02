@@ -2414,15 +2414,16 @@ class InterpreterConfigTests(unittest.TestCase):
 
     @requires_subinterpreters
     def test_get_config(self):
+        @contextlib.contextmanager
         def new_interp(config):
             interpid = _testinternalcapi.new_interpreter(config)
-            def ensure_destroyed():
+            try:
+                yield interpid
+            finally:
                 try:
                     _interpreters.destroy(interpid)
                 except _interpreters.InterpreterNotFoundError:
                     pass
-            self.addCleanup(ensure_destroyed)
-            return interpid
 
         with self.subTest('main'):
             expected = _testinternalcapi.new_interp_config('legacy')
@@ -2433,14 +2434,14 @@ class InterpreterConfigTests(unittest.TestCase):
 
         with self.subTest('isolated'):
             expected = _testinternalcapi.new_interp_config('isolated')
-            interpid = new_interp('isolated')
-            config = _testinternalcapi.get_interp_config(interpid)
+            with new_interp('isolated') as interpid:
+                config = _testinternalcapi.get_interp_config(interpid)
             self.assert_ns_equal(config, expected)
 
         with self.subTest('legacy'):
             expected = _testinternalcapi.new_interp_config('legacy')
-            interpid = new_interp('legacy')
-            config = _testinternalcapi.get_interp_config(interpid)
+            with new_interp('legacy') as interpid:
+                config = _testinternalcapi.get_interp_config(interpid)
             self.assert_ns_equal(config, expected)
 
         with self.subTest('custom'):
@@ -2449,8 +2450,8 @@ class InterpreterConfigTests(unittest.TestCase):
                 use_main_obmalloc=True,
                 gil='shared',
             )
-            interpid = new_interp(orig)
-            config = _testinternalcapi.get_interp_config(interpid)
+            with new_interp(orig) as interpid:
+                config = _testinternalcapi.get_interp_config(interpid)
             self.assert_ns_equal(config, orig)
 
 
