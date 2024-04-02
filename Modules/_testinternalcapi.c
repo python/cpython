@@ -24,12 +24,10 @@
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
+#include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_typeobject.h"    // _PyType_GetModuleName()
-
-#include "interpreteridobject.h"  // PyInterpreterID_LookUp()
 
 #include "clinic/_testinternalcapi.c.h"
 
@@ -960,13 +958,13 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
-get_counter_optimizer(PyObject *self, PyObject *arg)
+new_counter_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewCounter();
 }
 
 static PyObject *
-get_uop_optimizer(PyObject *self, PyObject *arg)
+new_uop_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewUOpOptimizer();
 }
@@ -977,7 +975,9 @@ set_optimizer(PyObject *self, PyObject *opt)
     if (opt == Py_None) {
         opt = NULL;
     }
-    PyUnstable_SetOptimizer((_PyOptimizerObject*)opt);
+    if (PyUnstable_SetOptimizer((_PyOptimizerObject*)opt) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -989,26 +989,6 @@ get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
         Py_RETURN_NONE;
     }
     return opt;
-}
-
-static PyObject *
-get_executor(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
-{
-
-    if (!_PyArg_CheckPositional("get_executor", nargs, 2, 2)) {
-        return NULL;
-    }
-    PyObject *code = args[0];
-    PyObject *offset = args[1];
-    long ioffset = PyLong_AsLong(offset);
-    if (ioffset == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    if (!PyCode_Check(code)) {
-         PyErr_SetString(PyExc_TypeError, "first argument must be a code object");
-        return NULL;
-    }
-    return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, ioffset);
 }
 
 static PyObject *
@@ -1033,7 +1013,7 @@ static PyObject *
 invalidate_executors(PyObject *self, PyObject *obj)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    _Py_Executors_InvalidateDependency(interp, obj);
+    _Py_Executors_InvalidateDependency(interp, obj, 1);
     Py_RETURN_NONE;
 }
 
@@ -1110,7 +1090,7 @@ pending_identify(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O:pending_identify", &interpid)) {
         return NULL;
     }
-    PyInterpreterState *interp = PyInterpreterID_LookUp(interpid);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(interpid);
     if (interp == NULL) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError, "interpreter not found");
@@ -1285,8 +1265,8 @@ check_pyobject_forbidden_bytes_is_freed(PyObject *self,
 static PyObject *
 check_pyobject_freed_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
-    /* This test would fail if run with the address sanitizer */
-#ifdef _Py_ADDRESS_SANITIZER
+    /* ASan or TSan would report an use-after-free error */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
     Py_RETURN_NONE;
 #else
     PyObject *op = PyObject_CallNoArgs((PyObject *)&PyBaseObject_Type);
@@ -1475,6 +1455,153 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
+static PyObject *
+normalize_interp_id(PyObject *self, PyObject *idobj)
+{
+    int64_t interpid = _PyInterpreterState_ObjectToID(idobj);
+    if (interpid < 0) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(interpid);
+}
+
+static PyObject *
+unused_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    int64_t interpid = INT64_MAX;
+    assert(interpid > _PyRuntime.interpreters.next_id);
+    return PyLong_FromLongLong(interpid);
+}
+
+static PyObject *
+new_interpreter(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Unlike _interpreters.create(), we do not automatically link
+    // the interpreter to its refcount.
+    PyThreadState *save_tstate = PyThreadState_Get();
+    const PyInterpreterConfig config = \
+            (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+    PyThreadState *tstate = NULL;
+    PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+    PyThreadState_Swap(save_tstate);
+    if (PyStatus_Exception(status)) {
+        _PyErr_SetFromPyStatus(status);
+        return NULL;
+    }
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+
+    if (_PyInterpreterState_IDInitref(interp) < 0) {
+        goto error;
+    }
+
+    int64_t interpid = PyInterpreterState_GetID(interp);
+    if (interpid < 0) {
+        goto error;
+    }
+    PyObject *idobj = PyLong_FromLongLong(interpid);
+    if (idobj == NULL) {
+        goto error;
+    }
+
+    PyThreadState_Swap(tstate);
+    PyThreadState_Clear(tstate);
+    PyThreadState_Swap(save_tstate);
+    PyThreadState_Delete(tstate);
+
+    return idobj;
+
+error:
+    save_tstate = PyThreadState_Swap(tstate);
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(save_tstate);
+    return NULL;
+}
+
+static PyObject *
+interpreter_exists(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_InterpreterNotFoundError)) {
+            PyErr_Clear();
+            Py_RETURN_FALSE;
+        }
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+get_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(interp->id_refcount);
+}
+
+static PyObject *
+link_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 1);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+    _PyInterpreterState_RequireIDRef(interp, 0);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+interpreter_refcount_linked(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    if (_PyInterpreterState_RequiresIDRef(interp)) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+interpreter_incref(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    _PyInterpreterState_IDIncref(interp);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+interpreter_decref(PyObject *self, PyObject *idobj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDObject(idobj);
+    if (interp == NULL) {
+        return NULL;
+    }
+    _PyInterpreterState_IDDecref(interp);
+    Py_RETURN_NONE;
+}
+
+
 static void
 _xid_capsule_destructor(PyObject *capsule)
 {
@@ -1618,10 +1745,32 @@ perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
 
 
 static PyObject *
-get_type_module_name(PyObject *self, PyObject *type)
+get_rare_event_counters(PyObject *self, PyObject *type)
 {
-    assert(PyType_Check(type));
-    return _PyType_GetModuleName((PyTypeObject *)type);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    return Py_BuildValue(
+        "{sksksksksk}",
+        "set_class", (unsigned long)interp->rare_events.set_class,
+        "set_bases", (unsigned long)interp->rare_events.set_bases,
+        "set_eval_frame_func", (unsigned long)interp->rare_events.set_eval_frame_func,
+        "builtin_dict", (unsigned long)interp->rare_events.builtin_dict,
+        "func_modification", (unsigned long)interp->rare_events.func_modification
+    );
+}
+
+static PyObject *
+reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    interp->rare_events.set_class = 0;
+    interp->rare_events.set_bases = 0;
+    interp->rare_events.set_eval_frame_func = 0;
+    interp->rare_events.builtin_dict = 0;
+    interp->rare_events.func_modification = 0;
+
+    return Py_None;
 }
 
 
@@ -1634,7 +1783,6 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyLong_FromUnsignedLongLong(tid);
 }
 #endif
-
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -1668,9 +1816,8 @@ static PyMethodDef module_functions[] = {
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
-    {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
-    {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
+    {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},
+    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
@@ -1693,15 +1840,27 @@ static PyMethodDef module_functions[] = {
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
+    {"normalize_interp_id", normalize_interp_id, METH_O},
+    {"unused_interpreter_id", unused_interpreter_id, METH_NOARGS},
+    {"new_interpreter", new_interpreter, METH_NOARGS},
+    {"interpreter_exists", interpreter_exists, METH_O},
+    {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
+    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
+    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
+    {"interpreter_refcount_linked", interpreter_refcount_linked, METH_O},
+    {"interpreter_incref", interpreter_incref, METH_O},
+    {"interpreter_decref", interpreter_decref, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
-    {"get_type_module_name",    get_type_module_name,            METH_O},
+    {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
+    {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
+    {"uop_symbols_test", _Py_uop_symbols_test, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -1724,8 +1883,18 @@ module_exec(PyObject *module)
         return 1;
     }
 
+    Py_ssize_t sizeof_gc_head = 0;
+#ifndef Py_GIL_DISABLED
+    sizeof_gc_head = sizeof(PyGC_Head);
+#endif
+
     if (PyModule_Add(module, "SIZEOF_PYGC_HEAD",
-                        PyLong_FromSsize_t(sizeof(PyGC_Head))) < 0) {
+                        PyLong_FromSsize_t(sizeof_gc_head)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SIZEOF_MANAGED_PRE_HEADER",
+                        PyLong_FromSsize_t(2 * sizeof(PyObject*))) < 0) {
         return 1;
     }
 

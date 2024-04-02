@@ -1,7 +1,7 @@
 import doctest
 import unittest
 from test import support
-from test.support import threading_helper
+from test.support import threading_helper, script_helper
 from itertools import *
 import weakref
 from decimal import Decimal
@@ -187,7 +187,11 @@ class TestBasicOps(unittest.TestCase):
                              [('A', 'B'), ('C', 'D'), ('E', 'F'), ('G',)])
         self.assertEqual(list(batched('ABCDEFG', 1)),
                             [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)])
+        self.assertEqual(list(batched('ABCDEF', 2, strict=True)),
+                             [('A', 'B'), ('C', 'D'), ('E', 'F')])
 
+        with self.assertRaises(ValueError):         # Incomplete batch when strict
+            list(batched('ABCDEFG', 3, strict=True))
         with self.assertRaises(TypeError):          # Too few arguments
             list(batched('ABCDEFG'))
         with self.assertRaises(TypeError):
@@ -1694,6 +1698,14 @@ class TestBasicOps(unittest.TestCase):
             a, b = tee('abc')
             self.pickletest(proto, a, compare=ans)
             self.pickletest(proto, b, compare=ans)
+
+    def test_tee_dealloc_segfault(self):
+        # gh-115874: segfaults when accessing module state in tp_dealloc.
+        script = (
+            "import typing, copyreg, itertools; "
+            "copyreg.buggy_tee = itertools.tee(())"
+        )
+        script_helper.assert_python_ok("-c", script)
 
     # Issue 13454: Crash when deleting backward iterator from tee()
     def test_tee_del_backward(self):

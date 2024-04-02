@@ -157,7 +157,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         return res;
     }
 
-    PyObject *exc;
+    PyObject *exc = NULL;
     if (res == NULL) {
         exc = PyErr_GetRaisedException();
     }
@@ -269,6 +269,13 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             self->fd = -1;
     }
 
+    if (PyBool_Check(nameobj)) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                "bool is used as a file descriptor", 1))
+        {
+            return -1;
+        }
+    }
     fd = PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
@@ -1100,31 +1107,32 @@ static PyObject *
 fileio_repr(fileio *self)
 {
     PyObject *nameobj, *res;
+    const char *type_name = Py_TYPE((PyObject *) self)->tp_name;
 
-    if (self->fd < 0)
-        return PyUnicode_FromFormat("<_io.FileIO [closed]>");
+    if (self->fd < 0) {
+        return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
+    }
 
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {
         return NULL;
     }
     if (nameobj == NULL) {
         res = PyUnicode_FromFormat(
-            "<_io.FileIO fd=%d mode='%s' closefd=%s>",
-            self->fd, mode_string(self), self->closefd ? "True" : "False");
+            "<%.100s fd=%d mode='%s' closefd=%s>",
+            type_name, self->fd, mode_string(self), self->closefd ? "True" : "False");
     }
     else {
         int status = Py_ReprEnter((PyObject *)self);
         res = NULL;
         if (status == 0) {
             res = PyUnicode_FromFormat(
-                "<_io.FileIO name=%R mode='%s' closefd=%s>",
-                nameobj, mode_string(self), self->closefd ? "True" : "False");
+                "<%.100s name=%R mode='%s' closefd=%s>",
+                type_name, nameobj, mode_string(self), self->closefd ? "True" : "False");
             Py_ReprLeave((PyObject *)self);
         }
         else if (status > 0) {
             PyErr_Format(PyExc_RuntimeError,
-                         "reentrant call inside %s.__repr__",
-                         Py_TYPE(self)->tp_name);
+                         "reentrant call inside %.100s.__repr__", type_name);
         }
         Py_DECREF(nameobj);
     }

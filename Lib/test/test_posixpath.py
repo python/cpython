@@ -703,7 +703,9 @@ class PosixPathTest(unittest.TestCase):
             self.assertRaises(exc, posixpath.commonpath,
                               [os.fsencode(p) for p in paths])
 
+        self.assertRaises(TypeError, posixpath.commonpath, None)
         self.assertRaises(ValueError, posixpath.commonpath, [])
+        self.assertRaises(ValueError, posixpath.commonpath, iter([]))
         check_error(ValueError, ['/usr', 'usr'])
         check_error(ValueError, ['usr', '/usr'])
 

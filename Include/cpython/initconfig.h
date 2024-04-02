@@ -181,6 +181,9 @@ typedef struct PyConfig {
     int int_max_str_digits;
 
     int cpu_count;
+#ifdef Py_GIL_DISABLED
+    int enable_gil;
+#endif
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;

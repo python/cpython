@@ -662,6 +662,7 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
     PyObject *key = NULL;
     int has_pairs_hook = (s->object_pairs_hook != Py_None);
     Py_ssize_t next_idx;
+    Py_ssize_t comma_idx;
 
     str = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
@@ -690,11 +691,10 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
-            memokey = PyDict_SetDefault(memo, key, key);
-            if (memokey == NULL) {
+            if (PyDict_SetDefaultRef(memo, key, key, &memokey) < 0) {
                 goto bail;
             }
-            Py_SETREF(key, Py_NewRef(memokey));
+            Py_SETREF(key, memokey);
             idx = next_idx;
 
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
@@ -741,10 +741,16 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
                 raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
+            comma_idx = idx;
             idx++;
 
             /* skip whitespace after , delimiter */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
+
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == '}') {
+                raise_errmsg("Illegal trailing comma before end of object", pystr, comma_idx);
+                goto bail;
+            }
         }
     }
 
@@ -785,6 +791,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
     PyObject *val = NULL;
     PyObject *rval;
     Py_ssize_t next_idx;
+    Py_ssize_t comma_idx;
 
     rval = PyList_New(0);
     if (rval == NULL)
@@ -822,10 +829,16 @@ _parse_array_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssi
                 raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
+            comma_idx = idx;
             idx++;
 
             /* skip whitespace after , */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
+
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == ']') {
+                raise_errmsg("Illegal trailing comma before end of array", pystr, comma_idx);
+                goto bail;
+            }
         }
     }
 

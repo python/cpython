@@ -242,12 +242,13 @@ Miscellaneous options
 
 .. option:: -b
 
-   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
-   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error when the
-   option is given twice (:option:`!-bb`).
+   Issue a warning when converting :class:`bytes` or :class:`bytearray` to
+   :class:`str` without specifying encoding or comparing :class:`!bytes` or
+   :class:`!bytearray` with :class:`!str` or :class:`!bytes` with :class:`int`.
+   Issue an error when the option is given twice (:option:`!-bb`).
 
    .. versionchanged:: 3.5
-      Affects comparisons of :class:`bytes` with :class:`int`.
+      Affects also comparisons of :class:`bytes` with :class:`int`.
 
 .. option:: -B
 
@@ -369,22 +370,24 @@ Miscellaneous options
 
    Hash randomization is intended to provide protection against a
    denial-of-service caused by carefully chosen inputs that exploit the worst
-   case performance of a dict construction, O(n\ :sup:`2`) complexity.  See
+   case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
    http://ocert.org/advisories/ocert-2011-003.html for details.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
 
+   .. versionadded:: 3.2.3
+
    .. versionchanged:: 3.7
       The option is no longer ignored.
-
-   .. versionadded:: 3.2.3
 
 
 .. option:: -s
 
    Don't add the :data:`user site-packages directory <site.USER_SITE>` to
    :data:`sys.path`.
+
+   See also :envvar:`PYTHONNOUSERSITE`.
 
    .. seealso::
 
@@ -517,7 +520,7 @@ Miscellaneous options
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
      additional runtime checks that are too expensive to be enabled by
-     default.
+     default.  See also :envvar:`PYTHONDEVMODE`.
    * ``-X utf8`` enables the :ref:`Python UTF-8 Mode <utf8-mode>`.
      ``-X utf8=0`` explicitly disables :ref:`Python UTF-8 Mode <utf8-mode>`
      (even when it would otherwise activate automatically).
@@ -559,27 +562,29 @@ Miscellaneous options
      :mod:`__main__`. This can be used to execute code early during Python
      initialization. Python needs to be :ref:`built in debug mode <debug-build>`
      for this option to exist.  See also :envvar:`PYTHON_PRESITE`.
+   * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
+     respectively. Only available in builds configured with
+     :option:`--disable-gil`. See also :envvar:`PYTHON_GIL`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
-   .. versionchanged:: 3.2
-      The :option:`-X` option was added.
+   .. versionadded:: 3.2
 
-   .. versionadded:: 3.3
-      The ``-X faulthandler`` option.
+   .. versionchanged:: 3.3
+      Added the ``-X faulthandler`` option.
 
-   .. versionadded:: 3.4
-      The ``-X showrefcount`` and ``-X tracemalloc`` options.
+   .. versionchanged:: 3.4
+      Added the ``-X showrefcount`` and ``-X tracemalloc`` options.
 
-   .. versionadded:: 3.6
-      The ``-X showalloccount`` option.
+   .. versionchanged:: 3.6
+      Added the ``-X showalloccount`` option.
 
-   .. versionadded:: 3.7
-      The ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
+   .. versionchanged:: 3.7
+      Added the ``-X importtime``, ``-X dev`` and ``-X utf8`` options.
 
-   .. versionadded:: 3.8
-      The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
+   .. versionchanged:: 3.8
+      Added the ``-X pycache_prefix`` option. The ``-X dev`` option now logs
       ``close()`` exceptions in :class:`io.IOBase` destructor.
 
    .. versionchanged:: 3.9
@@ -588,31 +593,26 @@ Miscellaneous options
 
       The ``-X showalloccount`` option has been removed.
 
-   .. versionadded:: 3.10
-      The ``-X warn_default_encoding`` option.
+   .. versionchanged:: 3.10
+      Added the ``-X warn_default_encoding`` option.
+      Removed the ``-X oldparser`` option.
 
-   .. deprecated-removed:: 3.9 3.10
-      The ``-X oldparser`` option.
+   .. versionchanged:: 3.11
+      Added the ``-X no_debug_ranges``, ``-X frozen_modules`` and
+      ``-X int_max_str_digits`` options.
 
-   .. versionadded:: 3.11
-      The ``-X no_debug_ranges`` option.
+   .. versionchanged:: 3.12
+      Added the ``-X perf`` option.
 
-   .. versionadded:: 3.11
-      The ``-X frozen_modules`` option.
+   .. versionchanged:: 3.13
+      Added the ``-X cpu_count`` and ``-X presite`` options.
 
-   .. versionadded:: 3.11
-      The ``-X int_max_str_digits`` option.
+   .. versionchanged:: 3.13
+      Added the ``-X gil`` option.
 
-   .. versionadded:: 3.12
-      The ``-X perf`` option.
+.. _using-on-controlling-color:
 
-   .. versionadded:: 3.13
-      The ``-X cpu_count`` option.
-
-   .. versionadded:: 3.13
-      The ``-X presite`` option.
-
-Controlling Color
+Controlling color
 ~~~~~~~~~~~~~~~~~
 
 The Python interpreter is configured by default to use colors to highlight
@@ -623,7 +623,7 @@ Setting the environment variable ``TERM`` to ``dumb`` will disable color.
 
 If the environment variable ``FORCE_COLOR`` is set, then color will be
 enabled regardless of the value of TERM. This is useful on CI systems which
-aren’t terminals but can none-the-less display ANSI escape sequences.
+aren’t terminals but can still display ANSI escape sequences.
 
 If the environment variable ``NO_COLOR`` is set, Python will disable all color
 in the output. This takes precedence over ``FORCE_COLOR``.
@@ -955,10 +955,10 @@ conflict.
    * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
    * ``mimalloc_debug``: same as ``mimalloc`` but also install debug hooks.
 
+   .. versionadded:: 3.6
+
    .. versionchanged:: 3.7
       Added the ``"default"`` allocator.
-
-   .. versionadded:: 3.6
 
 
 .. envvar:: PYTHONMALLOCSTATS
@@ -1135,6 +1135,27 @@ conflict.
 
    If this variable is set to ``1``, the interpreter will colorize various kinds
    of output. Setting it to ``0`` deactivates this behavior.
+   See also :ref:`using-on-controlling-color`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_HISTORY
+
+   This environment variable can be used to set the location of a
+   ``.python_history`` file (by default, it is ``.python_history`` in the
+   user's home directory).
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_GIL
+
+   If this variable is set to ``1``, the global interpreter lock (GIL) will be
+   forced on. Setting it to ``0`` forces the GIL off.
+
+   See also the :option:`-X gil <-X>` command-line option, which takes
+   precedence over this variable.
+
+   Needs Python configured with the :option:`--disable-gil` build option.
 
    .. versionadded:: 3.13
 

@@ -70,7 +70,6 @@ Python/thread_pthread.h
 Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
-Modules/_ssl_data.h
 Modules/_ssl_data_31.h
 Modules/_ssl_data_300.h
 Modules/_ssl_data_111.h
@@ -84,10 +83,11 @@ Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
-Python/abstract_interp_cases.c.h
+Python/optimizer_cases.c.h
 
 # not actually source
 Python/bytecodes.c
+Python/optimizer_bytecodes.c
 
 # mimalloc
 Objects/mimalloc/*.c
@@ -104,6 +104,7 @@ EXCLUDED += clean_lines('''
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
+Modules/expat/internal.h
 Modules/expat/xmlparse.c
 ''')
 
@@ -320,6 +321,7 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (35_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/optimizer.c'): (100_000, 5_000),
     _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
@@ -334,7 +336,7 @@ MAX_SIZES = {
     _abs('Python/stdlib_module_names.h'): (5_000, 500),
 
     # These large files are currently ignored (see above).
-    _abs('Modules/_ssl_data.h'): (80_000, 10_000),
+    _abs('Modules/_ssl_data_31.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_300.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_111.h'): (80_000, 10_000),
     _abs('Modules/cjkcodecs/mappings_*.h'): (160_000, 2_000),

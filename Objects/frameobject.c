@@ -811,7 +811,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
             PyObject *exc = _PyFrame_StackPop(f->f_frame);
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
-            Py_XSETREF(tstate->exc_info->exc_value, exc);
+            Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
             PyObject *v = _PyFrame_StackPop(f->f_frame);
@@ -926,6 +926,7 @@ frame_tp_clear(PyFrameObject *f)
         Py_CLEAR(locals[i]);
     }
     f->f_frame->stacktop = 0;
+    Py_CLEAR(f->f_frame->f_locals);
     return 0;
 }
 
@@ -1139,7 +1140,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
 
     /* Free vars have not been initialized -- Do that */
     PyObject *closure = ((PyFunctionObject *)frame->f_funcobj)->func_closure;
-    int offset = PyCode_GetFirstFree(co);
+    int offset = PyUnstable_Code_GetFirstFree(co);
     for (int i = 0; i < co->co_nfreevars; ++i) {
         PyObject *o = PyTuple_GET_ITEM(closure, i);
         frame->localsplus[offset + i] = Py_NewRef(o);

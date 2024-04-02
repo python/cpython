@@ -605,6 +605,9 @@ Opening network connections
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port*,
       *allow_broadcast*, and *sock* parameters were added.
 
+   .. versionchanged:: 3.8
+      Added support for Windows.
+
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
       :ref:`socket.SO_REUSEADDR <socket-unix-constants>`
@@ -622,11 +625,8 @@ Opening network connections
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
-   .. versionchanged:: 3.8
-      Added support for Windows.
-
    .. versionchanged:: 3.11
-      The *reuse_address* parameter, disabled since Python 3.9.0, 3.8.1,
+      The *reuse_address* parameter, disabled since Python 3.8.1,
       3.7.6 and 3.6.10, has been entirely removed.
 
 .. coroutinemethod:: loop.create_unix_connection(protocol_factory, \
@@ -671,6 +671,7 @@ Creating network servers
                         flags=socket.AI_PASSIVE, \
                         sock=None, backlog=100, ssl=None, \
                         reuse_address=None, reuse_port=None, \
+                        keep_alive=None, \
                         ssl_handshake_timeout=None, \
                         ssl_shutdown_timeout=None, \
                         start_serving=True)
@@ -734,6 +735,13 @@ Creating network servers
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on
      Windows.
+
+   * *keep_alive* set to ``True`` keeps connections active by enabling the
+     periodic transmission of messages.
+
+   .. versionchanged:: 3.13
+
+      Added the *keep_alive* parameter.
 
    * *ssl_handshake_timeout* is (for a TLS server) the time in seconds to wait
      for the TLS handshake to complete before aborting the connection.
@@ -1632,6 +1640,31 @@ Do not instantiate the :class:`Server` class directly.
       The server is closed asynchronously; use the :meth:`wait_closed`
       coroutine to wait until the server is closed (and no more
       connections are active).
+
+   .. method:: close_clients()
+
+      Close all existing incoming client connections.
+
+      Calls :meth:`~asyncio.BaseTransport.close` on all associated
+      transports.
+
+      :meth:`close` should be called before :meth:`close_clients` when
+      closing the server to avoid races with new clients connecting.
+
+      .. versionadded:: 3.13
+
+   .. method:: abort_clients()
+
+      Close all existing incoming client connections immediately,
+      without waiting for pending operations to complete.
+
+      Calls :meth:`~asyncio.WriteTransport.abort` on all associated
+      transports.
+
+      :meth:`close` should be called before :meth:`abort_clients` when
+      closing the server to avoid races with new clients connecting.
+
+      .. versionadded:: 3.13
 
    .. method:: get_loop()
 

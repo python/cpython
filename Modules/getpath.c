@@ -22,7 +22,7 @@
 #endif
 
 /* Reference the precompiled getpath.py */
-#include "../Python/frozen_modules/getpath.h"
+#include "Python/frozen_modules/getpath.h"
 
 #if (!defined(PREFIX) || !defined(EXEC_PREFIX) \
         || !defined(VERSION) || !defined(VPATH) \
@@ -262,6 +262,10 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
+    if (parts == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
     memset(parts, 0, n * sizeof(wchar_t *));
     Py_ssize_t cchFinal = 0;
     Py_ssize_t first = 0;
@@ -502,6 +506,54 @@ done:
     PyMem_Free((void *)path);
     PyMem_Free((void *)narrow);
     return r;
+#elif defined(MS_WINDOWS)
+    HANDLE hFile;
+    wchar_t resolved[MAXPATHLEN+1];
+    int len = 0, err;
+    Py_ssize_t pathlen;
+    PyObject *result;
+
+    wchar_t *path = PyUnicode_AsWideCharString(pathobj, &pathlen);
+    if (!path) {
+        return NULL;
+    }
+    if (wcslen(path) != pathlen) {
+        PyErr_SetString(PyExc_ValueError, "path contains embedded nulls");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    hFile = CreateFileW(path, 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        len = GetFinalPathNameByHandleW(hFile, resolved, MAXPATHLEN, VOLUME_NAME_DOS);
+        err = len ? 0 : GetLastError();
+        CloseHandle(hFile);
+    } else {
+        err = GetLastError();
+    }
+    Py_END_ALLOW_THREADS
+
+    if (err) {
+        PyErr_SetFromWindowsErr(err);
+        result = NULL;
+    } else if (len <= MAXPATHLEN) {
+        const wchar_t *p = resolved;
+        if (0 == wcsncmp(p, L"\\\\?\\", 4)) {
+            if (GetFileAttributesW(&p[4]) != INVALID_FILE_ATTRIBUTES) {
+                p += 4;
+                len -= 4;
+            }
+        }
+        if (CompareStringOrdinal(path, (int)pathlen, p, len, TRUE) == CSTR_EQUAL) {
+            result = Py_NewRef(pathobj);
+        } else {
+            result = PyUnicode_FromWideChar(p, len);
+        }
+    } else {
+        result = Py_NewRef(pathobj);
+    }
+    PyMem_Free(path);
+    return result;
 #endif
 
     return Py_NewRef(pathobj);

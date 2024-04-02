@@ -212,7 +212,10 @@ struct _object {
 struct _PyMutex { uint8_t v; };
 
 struct _object {
-    uintptr_t ob_tid;           // thread id (or zero)
+    // ob_tid stores the thread id (or zero). It is also used by the GC and the
+    // trashcan mechanism as a linked list pointer and by the GC to store the
+    // computed "gc_refs" refcount.
+    uintptr_t ob_tid;
     uint16_t _padding;
     struct _PyMutex ob_mutex;   // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
@@ -239,6 +242,8 @@ PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
 #if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
+
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -279,8 +284,21 @@ _Py_ThreadId(void)
     __asm__ ("" : "=r" (tp));
     tid = tp;
     #endif
+#elif defined(__s390__) && defined(__GNUC__)
+    // Both GCC and Clang have supported __builtin_thread_pointer
+    // for s390 from long time ago.
+    tid = (uintptr_t)__builtin_thread_pointer();
+#elif defined(__riscv)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // tp is Thread Pointer provided by the RISC-V ABI.
+    __asm__ ("mv %0, tp" : "=r" (tid));
+    #endif
 #else
-  # error "define _Py_ThreadId for this platform"
+    // Fallback to a portable implementation if we do not have a faster
+    // platform-specific implementation.
+    tid = _Py_GetThreadLocal_Addr();
 #endif
   return tid;
 }
@@ -325,8 +343,7 @@ PyAPI_DATA(PyTypeObject) PyBool_Type;
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
     assert(ob->ob_type != &PyLong_Type);
     assert(ob->ob_type != &PyBool_Type);
-    PyVarObject *var_ob = _PyVarObject_CAST(ob);
-    return var_ob->ob_size;
+    return  _PyVarObject_CAST(ob)->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
@@ -411,7 +428,11 @@ static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     assert(ob->ob_base.ob_type != &PyLong_Type);
     assert(ob->ob_base.ob_type != &PyBool_Type);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
+#else
     ob->ob_size = size;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
@@ -499,6 +520,10 @@ PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030B0000
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(PyObject *) PyType_GetFullyQualifiedName(PyTypeObject *type);
+PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
@@ -1043,12 +1068,34 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 #endif
 
 
+#define Py_CONSTANT_NONE 0
+#define Py_CONSTANT_FALSE 1
+#define Py_CONSTANT_TRUE 2
+#define Py_CONSTANT_ELLIPSIS 3
+#define Py_CONSTANT_NOT_IMPLEMENTED 4
+#define Py_CONSTANT_ZERO 5
+#define Py_CONSTANT_ONE 6
+#define Py_CONSTANT_EMPTY_STR 7
+#define Py_CONSTANT_EMPTY_BYTES 8
+#define Py_CONSTANT_EMPTY_TUPLE 9
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject*) Py_GetConstant(unsigned int constant_id);
+PyAPI_FUNC(PyObject*) Py_GetConstantBorrowed(unsigned int constant_id);
+#endif
+
+
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
-#define Py_None (&_Py_NoneStruct)
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_None Py_GetConstantBorrowed(Py_CONSTANT_NONE)
+#else
+#  define Py_None (&_Py_NoneStruct)
+#endif
 
 // Test if an object is the None singleton, the same as "x is None" in Python.
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);
@@ -1062,7 +1109,12 @@ Py_NotImplemented is a singleton used to signal that an operation is
 not implemented for a given type combination.
 */
 PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
-#define Py_NotImplemented (&_Py_NotImplementedStruct)
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_NotImplemented Py_GetConstantBorrowed(Py_CONSTANT_NOT_IMPLEMENTED)
+#else
+#  define Py_NotImplemented (&_Py_NotImplementedStruct)
+#endif
 
 /* Macro for returning Py_NotImplemented from a function */
 #define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
@@ -1193,6 +1245,10 @@ static inline int PyType_CheckExact(PyObject *op) {
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define PyType_CheckExact(op) PyType_CheckExact(_PyObject_CAST(op))
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 #endif
 
 #ifdef __cplusplus
