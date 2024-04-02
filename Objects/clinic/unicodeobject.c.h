@@ -140,7 +140,9 @@ PyDoc_STRVAR(unicode_count__doc__,
 "count($self, sub[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return the number of non-overlapping occurrences of substring sub in string S[start:end].");
+"Return the number of non-overlapping occurrences of substring sub in string S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice notation.");
 
 #define UNICODE_COUNT_METHODDEF    \
     {"count", _PyCFunction_CAST(unicode_count), METH_FASTCALL, unicode_count__doc__},
@@ -358,7 +360,10 @@ PyDoc_STRVAR(unicode_find__doc__,
 "find($self, sub, start=None, end=None, /)\n"
 "--\n"
 "\n"
-"Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].");
+"Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice notation.\n"
+"Return -1 on failure.");
 
 #define UNICODE_FIND_METHODDEF    \
     {"find", _PyCFunction_CAST(unicode_find), METH_FASTCALL, unicode_find__doc__},
@@ -1883,4 +1888,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71a97a302f61fedb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c45a7065749e0d27 input=a9049054013a1b77]*/

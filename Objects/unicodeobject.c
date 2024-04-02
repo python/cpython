@@ -11073,12 +11073,14 @@ str.count as unicode_count -> Py_ssize_t
     /
 
 Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
 [clinic start generated code]*/
 
 static Py_ssize_t
 unicode_count_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                    Py_ssize_t end)
-/*[clinic end generated code: output=8fcc3aef0b18edbf input=9e91e81ffff6e356]*/
+/*[clinic end generated code: output=8fcc3aef0b18edbf input=6f168ffd94be8785]*/
 {
     assert(PyUnicode_Check(str));
     assert(PyUnicode_Check(substr));
@@ -11255,12 +11257,15 @@ unicode_expandtabs_impl(PyObject *self, int tabsize)
 str.find as unicode_find = str.count
 
 Return the lowest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Return -1 on failure.
 [clinic start generated code]*/
 
 static Py_ssize_t
 unicode_find_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
                   Py_ssize_t end)
-/*[clinic end generated code: output=51dbe6255712e278 input=37e8a66191930f45]*/
+/*[clinic end generated code: output=51dbe6255712e278 input=4a89d2d68ef57256]*/
 {
     return any_find_slice(str, substr, start, end, 1);
 }
