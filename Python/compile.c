@@ -70,11 +70,11 @@
         ((C)->c_flags.cf_flags & PyCF_ALLOW_TOP_LEVEL_AWAIT) \
         && ((C)->u->u_ste->ste_type == ModuleBlock))
 
-typedef _PyCompilerSrcLocation location;
+typedef _Py_SourceLocation location;
 typedef struct _PyCfgBuilder cfg_builder;
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
-    ((const _PyCompilerSrcLocation){(LNO), (END_LNO), (COL), (END_COL)})
+    ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
 /* Return true if loc1 starts after loc2 ends. */
 static inline bool
@@ -408,7 +408,7 @@ handled by the symbol analysis pass.
 struct compiler {
     PyObject *c_filename;
     struct symtable *c_st;
-    PyFutureFeatures c_future;   /* module's __future__ */
+    _PyFutureFeatures c_future;  /* module's __future__ */
     PyCompilerFlags c_flags;
 
     int c_optimize;              /* optimization level */
@@ -585,7 +585,7 @@ int
 _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
                        int optimize, PyArena *arena)
 {
-    PyFutureFeatures future;
+    _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
         return -1;
     }
