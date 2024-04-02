@@ -126,6 +126,12 @@ bytes(cdata)
 
 #include "pycore_long.h"          // _PyLong_GetZero()
 
+/*[clinic input]
+module _ctypes
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
+#include "clinic/_ctypes.c.h"
+
 
 /****************************************************************/
 
@@ -436,6 +442,11 @@ static PyType_Spec structparam_spec = {
   CType_Type - a base metaclass. Its instances (classes) have a StgInfo.
   */
 
+/*[clinic input]
+class _ctypes.CType_Type "PyObject *" "st->CType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f385b8663b8be200]*/
+
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -512,13 +523,22 @@ CType_Type_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+_ctypes.CType_Type.__sizeof__
+
+    cls: defining_class
+
+Return memory consumption of the type object.
+[clinic start generated code]*/
+
 static PyObject *
-CType_Type_sizeof(PyObject *self)
+_ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=c68c235be84d03f3 input=15b579e4b5aaeea2]*/
 {
     Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
     size += Py_TYPE(self)->tp_itemsize * Py_SIZE(self);
 
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
+    ctypes_state *st = get_module_state_by_class(cls);
     StgInfo *info;
     if (PyStgInfo_FromType(st, self, &info) < 0) {
         return NULL;
@@ -541,8 +561,7 @@ CType_Type_repeat(PyObject *self, Py_ssize_t length);
 
 
 static PyMethodDef ctype_methods[] = {
-    {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
-     METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
+    _CTYPES_CTYPE_TYPE___SIZEOF___METHODDEF
     {0},
 };
 
