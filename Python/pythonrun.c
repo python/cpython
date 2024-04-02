@@ -1274,17 +1274,21 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     // XXX Isn't this dealt with by the move to _PyRuntimeState?
     _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
-    assert(globals);
-
     /* Set globals['__builtins__'] if it doesn't exist */
-    int has_builtins = PyDict_ContainsString(globals, "__builtins__");
-    if (has_builtins < 0) {
+    if (globals == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "globals are NULL");
         return NULL;
     }
-    if (!has_builtins) {
-        if (PyDict_SetItemString(globals, "__builtins__",
-                                    tstate->interp->builtins) < 0) {
+    else {
+        int has_builtins = PyDict_ContainsString(globals, "__builtins__");
+        if (has_builtins < 0) {
             return NULL;
+        }
+        if (!has_builtins) {
+            if (PyDict_SetItemString(globals, "__builtins__",
+                                     tstate->interp->builtins) < 0) {
+                return NULL;
+            }
         }
     }
 
