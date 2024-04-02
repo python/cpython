@@ -113,6 +113,8 @@ extern void _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj);
 
 extern void _PyWeakref_ClearRef(PyWeakReference *self);
 
+PyAPI_FUNC(int) _PyWeakref_IsDead(PyObject *weakref);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1078,3 +1078,9 @@ _PyWeakref_ClearWeakRefsExceptCallbacks(PyObject *obj)
     }
     UNLOCK_WEAKREFS(obj);
 }
+
+int
+_PyWeakref_IsDead(PyObject *weakref)
+{
+    return _PyWeakref_IS_DEAD(weakref);
+}
