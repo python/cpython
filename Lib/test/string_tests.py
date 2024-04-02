@@ -1505,7 +1505,7 @@ class StringLikeTest(BaseTest):
         x = 'x'
         self.assertRaisesRegex(TypeError, r'^find\b', s.find,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rfind\(', s.rfind,
+        self.assertRaisesRegex(TypeError, r'^rfind\b', s.rfind,
                                 x, None, None, None)
         self.assertRaisesRegex(TypeError, r'^index\b', s.index,
                                 x, None, None, None)

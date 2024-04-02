@@ -1054,6 +1054,62 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_rfind__doc__,
+"rfind($self, sub, start=None, end=None, /)\n"
+"--\n"
+"\n"
+"Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].\n"
+"\n"
+"Optional arguments start and end are interpreted as in slice notation.\n"
+"Return -1 on failure.");
+
+#define UNICODE_RFIND_METHODDEF    \
+    {"rfind", _PyCFunction_CAST(unicode_rfind), METH_FASTCALL, unicode_rfind__doc__},
+
+static Py_ssize_t
+unicode_rfind_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                   Py_ssize_t end);
+
+static PyObject *
+unicode_rfind(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("rfind", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("rfind", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_rfind_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_rjust__doc__,
 "rjust($self, width, fillchar=\' \', /)\n"
 "--\n"
@@ -1771,4 +1827,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ee08b0d6a6377d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9f100f72d363e465 input=a9049054013a1b77]*/
