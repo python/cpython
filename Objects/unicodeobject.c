@@ -9194,75 +9194,6 @@ _PyUnicode_InsertThousandsGrouping(
     return count;
 }
 
-static Py_ssize_t
-unicode_count_impl(PyObject *str,
-                   PyObject *substr,
-                   Py_ssize_t start,
-                   Py_ssize_t end)
-{
-    assert(PyUnicode_Check(str));
-    assert(PyUnicode_Check(substr));
-
-    Py_ssize_t result;
-    int kind1, kind2;
-    const void *buf1 = NULL, *buf2 = NULL;
-    Py_ssize_t len1, len2;
-
-    kind1 = PyUnicode_KIND(str);
-    kind2 = PyUnicode_KIND(substr);
-    if (kind1 < kind2)
-        return 0;
-
-    len1 = PyUnicode_GET_LENGTH(str);
-    len2 = PyUnicode_GET_LENGTH(substr);
-    ADJUST_INDICES(start, end, len1);
-    if (end - start < len2)
-        return 0;
-
-    buf1 = PyUnicode_DATA(str);
-    buf2 = PyUnicode_DATA(substr);
-    if (kind2 != kind1) {
-        buf2 = unicode_askind(kind2, buf2, len2, kind1);
-        if (!buf2)
-            goto onError;
-    }
-
-    // We don't reuse `anylib_count` here because of the explicit casts.
-    switch (kind1) {
-    case PyUnicode_1BYTE_KIND:
-        result = ucs1lib_count(
-            ((const Py_UCS1*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    case PyUnicode_2BYTE_KIND:
-        result = ucs2lib_count(
-            ((const Py_UCS2*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    case PyUnicode_4BYTE_KIND:
-        result = ucs4lib_count(
-            ((const Py_UCS4*)buf1) + start, end - start,
-            buf2, len2, PY_SSIZE_T_MAX
-            );
-        break;
-    default:
-        Py_UNREACHABLE();
-    }
-
-    assert((kind2 != kind1) == (buf2 != PyUnicode_DATA(substr)));
-    if (kind2 != kind1)
-        PyMem_Free((void *)buf2);
-
-    return result;
-  onError:
-    assert((kind2 != kind1) == (buf2 != PyUnicode_DATA(substr)));
-    if (kind2 != kind1)
-        PyMem_Free((void *)buf2);
-    return -1;
-}
-
 Py_ssize_t
 PyUnicode_Count(PyObject *str,
                 PyObject *substr,
@@ -11149,29 +11080,85 @@ parse_args_finds_unicode(const char * function_name, PyObject *args,
     return 0;
 }
 
-PyDoc_STRVAR(count__doc__,
-             "S.count(sub[, start[, end]]) -> int\n\
-\n\
-Return the number of non-overlapping occurrences of substring sub in\n\
-string S[start:end].  Optional arguments start and end are\n\
-interpreted as in slice notation.");
+/*[clinic input]
+@text_signature "($self, sub[, start[, end]], /)"
+str.count as unicode_count -> Py_ssize_t
 
-static PyObject *
-unicode_count(PyObject *self, PyObject *args)
+    self as str: self
+    sub as substr: unicode
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+    /
+
+Return the number of non-overlapping occurrences of substring sub in string S[start:end].
+[clinic start generated code]*/
+
+static Py_ssize_t
+unicode_count_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                   Py_ssize_t end)
+/*[clinic end generated code: output=8fcc3aef0b18edbf input=9e91e81ffff6e356]*/
 {
-    PyObject *substring = NULL;   /* initialize to fix a compiler warning */
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
+    assert(PyUnicode_Check(str));
+    assert(PyUnicode_Check(substr));
+
     Py_ssize_t result;
+    int kind1, kind2;
+    const void *buf1 = NULL, *buf2 = NULL;
+    Py_ssize_t len1, len2;
 
-    if (!parse_args_finds_unicode("count", args, &substring, &start, &end))
-        return NULL;
+    kind1 = PyUnicode_KIND(str);
+    kind2 = PyUnicode_KIND(substr);
+    if (kind1 < kind2)
+        return 0;
 
-    result = unicode_count_impl(self, substring, start, end);
-    if (result == -1)
-        return NULL;
+    len1 = PyUnicode_GET_LENGTH(str);
+    len2 = PyUnicode_GET_LENGTH(substr);
+    ADJUST_INDICES(start, end, len1);
+    if (end - start < len2)
+        return 0;
 
-    return PyLong_FromSsize_t(result);
+    buf1 = PyUnicode_DATA(str);
+    buf2 = PyUnicode_DATA(substr);
+    if (kind2 != kind1) {
+        buf2 = unicode_askind(kind2, buf2, len2, kind1);
+        if (!buf2)
+            goto onError;
+    }
+
+    // We don't reuse `anylib_count` here because of the explicit casts.
+    switch (kind1) {
+    case PyUnicode_1BYTE_KIND:
+        result = ucs1lib_count(
+            ((const Py_UCS1*)buf1) + start, end - start,
+            buf2, len2, PY_SSIZE_T_MAX
+            );
+        break;
+    case PyUnicode_2BYTE_KIND:
+        result = ucs2lib_count(
+            ((const Py_UCS2*)buf1) + start, end - start,
+            buf2, len2, PY_SSIZE_T_MAX
+            );
+        break;
+    case PyUnicode_4BYTE_KIND:
+        result = ucs4lib_count(
+            ((const Py_UCS4*)buf1) + start, end - start,
+            buf2, len2, PY_SSIZE_T_MAX
+            );
+        break;
+    default:
+        Py_UNREACHABLE();
+    }
+
+    assert((kind2 != kind1) == (buf2 != PyUnicode_DATA(substr)));
+    if (kind2 != kind1)
+        PyMem_Free((void *)buf2);
+
+    return result;
+  onError:
+    assert((kind2 != kind1) == (buf2 != PyUnicode_DATA(substr)));
+    if (kind2 != kind1)
+        PyMem_Free((void *)buf2);
+    return -1;
 }
 
 /*[clinic input]
@@ -13553,7 +13540,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_CASEFOLD_METHODDEF
     UNICODE_TITLE_METHODDEF
     UNICODE_CENTER_METHODDEF
-    {"count", (PyCFunction) unicode_count, METH_VARARGS, count__doc__},
+    UNICODE_COUNT_METHODDEF
     UNICODE_EXPANDTABS_METHODDEF
     {"find", (PyCFunction) unicode_find, METH_VARARGS, find__doc__},
     UNICODE_PARTITION_METHODDEF

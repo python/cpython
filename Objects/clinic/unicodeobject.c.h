@@ -136,6 +136,59 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_count__doc__,
+"count($self, sub[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return the number of non-overlapping occurrences of substring sub in string S[start:end].");
+
+#define UNICODE_COUNT_METHODDEF    \
+    {"count", _PyCFunction_CAST(unicode_count), METH_FASTCALL, unicode_count__doc__},
+
+static Py_ssize_t
+unicode_count_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                   Py_ssize_t end);
+
+static PyObject *
+unicode_count(PyObject *str, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *substr;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("count", nargs, 1, 3)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("count", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    substr = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    _return_value = unicode_count_impl(str, substr, start, end);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode_encode__doc__,
 "encode($self, /, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
@@ -1609,4 +1662,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c2306767984a3a86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6e0b7dda0329e54b input=a9049054013a1b77]*/
