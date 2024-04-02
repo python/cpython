@@ -17,6 +17,7 @@ import unittest
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
+    from libclinic.converters import int_converter, str_converter
     import clinic
     from clinic import DSLParser
 
@@ -924,7 +925,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(2, len(function.parameters))
         p = function.parameters['path']
         self.assertEqual('path', p.name)
-        self.assertIsInstance(p.converter, clinic.int_converter)
+        self.assertIsInstance(p.converter, int_converter)
 
     def test_param_default(self):
         function = self.parse_function("""
@@ -1023,7 +1024,7 @@ class ClinicParserTest(TestCase):
         """)
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_param_default_parameters_out_of_order(self):
         err = (
@@ -2040,7 +2041,7 @@ class ClinicParserTest(TestCase):
         block = self.parse('module os\nos.access\n   path: "s"')
         module, function = block.signatures
         conv = (function.parameters['path']).converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_legacy_converters_non_string_constant_annotation(self):
         err = "Annotations must be either a name, a function call, or a string"
