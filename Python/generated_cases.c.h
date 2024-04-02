@@ -870,6 +870,7 @@
             DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
             DEOPT_IF(tp->tp_version_tag != read_u32(cache->func_version), CALL);
+            assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable;
             PyFunctionObject *init = (PyFunctionObject *)cls->_spec_cache.init;
             PyCodeObject *code = (PyCodeObject *)init->func_code;
@@ -3680,15 +3681,13 @@
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
             {
                 assert(Py_TYPE(owner)->tp_dictoffset < 0);
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), LOAD_ATTR);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(!_PyObject_InlineValues(owner)->valid, LOAD_ATTR);
             }
             // _LOAD_ATTR_INSTANCE_VALUE
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                attr = _PyDictOrValues_GetValues(dorv)->values[index];
+                attr = _PyObject_InlineValues(owner)->values[index];
                 DEOPT_IF(attr == NULL, LOAD_ATTR);
                 STAT_INC(LOAD_ATTR, hit);
                 Py_INCREF(attr);
@@ -3721,13 +3720,13 @@
             }
             // _CHECK_ATTR_METHOD_LAZY_DICT
             {
-                Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
-                assert(dictoffset > 0);
-                PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+                uint16_t dictoffset = read_u16(&this_instr[4].cache);
+                char *ptr = ((char *)owner) + MANAGED_DICT_OFFSET + dictoffset;
+                PyObject *dict = *(PyObject **)ptr;
                 /* This object has a __dict__, just not yet created */
                 DEOPT_IF(dict != NULL, LOAD_ATTR);
             }
-            /* Skip 2 cache entries */
+            /* Skip 1 cache entry */
             // _LOAD_ATTR_METHOD_LAZY_DICT
             {
                 PyObject *descr = read_obj(&this_instr[6].cache);
@@ -3798,9 +3797,8 @@
             }
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
             {
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), LOAD_ATTR);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(!_PyObject_InlineValues(owner)->valid, LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
             {
@@ -3914,9 +3912,8 @@
             }
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
             {
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv), LOAD_ATTR);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(!_PyObject_InlineValues(owner)->valid, LOAD_ATTR);
             }
             // _GUARD_KEYS_VERSION
             {
@@ -4026,17 +4023,16 @@
             // _CHECK_ATTR_WITH_HINT
             {
                 assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
-                PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+                PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+                PyDictObject *dict = managed_dict->dict;
                 DEOPT_IF(dict == NULL, LOAD_ATTR);
                 assert(PyDict_CheckExact((PyObject *)dict));
             }
             // _LOAD_ATTR_WITH_HINT
             {
                 uint16_t hint = read_u16(&this_instr[4].cache);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+                PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+                PyDictObject *dict = managed_dict->dict;
                 DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, LOAD_ATTR);
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 if (DK_IS_UNICODE(dict->ma_keys)) {
@@ -5315,19 +5311,20 @@
                 assert(type_version != 0);
                 DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             }
-            // _GUARD_DORV_VALUES
+            // _GUARD_DORV_NO_DICT
             {
-                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-                DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
+                assert(Py_TYPE(owner)->tp_dictoffset < 0);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+                DEOPT_IF(_PyObject_ManagedDictPointer(owner)->dict, STORE_ATTR);
+                DEOPT_IF(_PyObject_InlineValues(owner)->valid == 0, STORE_ATTR);
             }
             // _STORE_ATTR_INSTANCE_VALUE
             value = stack_pointer[-2];
             {
                 uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
                 STAT_INC(STORE_ATTR, hit);
-                PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+                assert(_PyObject_ManagedDictPointer(owner)->dict == NULL);
+                PyDictValues *values = _PyObject_InlineValues(owner);
                 PyObject *old_value = values->values[index];
                 values->values[index] = value;
                 if (old_value == NULL) {
@@ -5389,9 +5386,8 @@
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(_PyDictOrValues_IsValues(dorv), STORE_ATTR);
-            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(owner);
+            PyDictObject *dict = managed_dict->dict;
             DEOPT_IF(dict == NULL, STORE_ATTR);
             assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);

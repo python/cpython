@@ -1044,20 +1044,13 @@ class TestInstanceDict(unittest.TestCase):
         c.a = 1
         c.b = 2
         c.__dict__
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
+        self.assertEqual(c.__dict__, {"a":1, "b": 2})
 
     def test_dict_dematerialization(self):
         c = C()
         c.a = 1
         c.b = 2
         c.__dict__
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
         for _ in range(100):
             c.a
         self.assertEqual(
@@ -1072,10 +1065,6 @@ class TestInstanceDict(unittest.TestCase):
         d = c.__dict__
         for _ in range(100):
             c.a
-        self.assertIs(
-            _testinternalcapi.get_object_dict_values(c),
-            None
-        )
         self.assertIs(c.__dict__, d)
 
     def test_dict_dematerialization_copy(self):
