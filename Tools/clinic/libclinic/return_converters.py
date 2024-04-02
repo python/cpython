@@ -33,10 +33,10 @@ def add_c_return_converter(
 
 class CReturnConverterAutoRegister(type):
     def __init__(
-            cls: ReturnConverterType,
-            name: str,
-            bases: tuple[type[object], ...],
-            classdict: dict[str, Any]
+        cls: ReturnConverterType,
+        name: str,
+        bases: tuple[type[object], ...],
+        classdict: dict[str, Any]
     ) -> None:
         add_c_return_converter(cls)
 
@@ -53,10 +53,10 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
     default: object = None
 
     def __init__(
-            self,
-            *,
-            py_default: str | None = None,
-            **kwargs: Any
+        self,
+        *,
+        py_default: str | None = None,
+        **kwargs: Any
     ) -> None:
         self.py_default = py_default
         try:
@@ -78,25 +78,25 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         data.return_value = data.converter_retval
 
     def err_occurred_if(
-            self,
-            expr: str,
-            data: CRenderData
+        self,
+        expr: str,
+        data: CRenderData
     ) -> None:
         line = f'if (({expr}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'
         data.return_conversion.append(line)
 
     def err_occurred_if_null_pointer(
-            self,
-            variable: str,
-            data: CRenderData
+        self,
+        variable: str,
+        data: CRenderData
     ) -> None:
         line = f'if ({variable} == NULL) {{\n    goto exit;\n}}\n'
         data.return_conversion.append(line)
 
     def render(
-            self,
-            function: Function,
-            data: CRenderData
+        self,
+        function: Function,
+        data: CRenderData
     ) -> None: ...
 
 
@@ -107,9 +107,9 @@ class bool_return_converter(CReturnConverter):
     type = 'int'
 
     def render(
-            self,
-            function: Function,
-            data: CRenderData
+        self,
+        function: Function,
+        data: CRenderData
     ) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1", data)
@@ -125,9 +125,9 @@ class long_return_converter(CReturnConverter):
     unsigned_cast = ''
 
     def render(
-            self,
-            function: Function,
-            data: CRenderData
+        self,
+        function: Function,
+        data: CRenderData
     ) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == {self.unsigned_cast}-1", data)
@@ -169,9 +169,9 @@ class double_return_converter(CReturnConverter):
     cast = ''
 
     def render(
-            self,
-            function: Function,
-            data: CRenderData
+        self,
+        function: Function,
+        data: CRenderData
     ) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1.0", data)
