@@ -1752,7 +1752,7 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         uint64_t new_version = _PyDict_NotifyEvent(
                 interp, PyDict_EVENT_MODIFIED, mp, key, value);
         if (_PyDict_HasSplitTable(mp)) {
-            mp->ma_values->values[ix] = value;
+            STORE_SPLIT_VALUE(mp, ix, value);
             if (old_value == NULL) {
                 _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
                 mp->ma_used++;
@@ -2514,7 +2514,7 @@ delitem_common(PyDictObject *mp, Py_hash_t hash, Py_ssize_t ix,
     mp->ma_version_tag = new_version;
     if (_PyDict_HasSplitTable(mp)) {
         assert(old_value == mp->ma_values->values[ix]);
-        mp->ma_values->values[ix] = NULL;
+        STORE_SPLIT_VALUE(mp, ix, NULL);
         assert(ix < SHARED_KEYS_MAX_SIZE);
         /* Update order */
         delete_index_from_values(mp->ma_values, ix);
@@ -4226,7 +4226,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
         assert(_PyDict_HasSplitTable(mp));
         assert(mp->ma_values->values[ix] == NULL);
         MAINTAIN_TRACKING(mp, key, value);
-        mp->ma_values->values[ix] = Py_NewRef(value);
+        STORE_SPLIT_VALUE(mp, ix, Py_NewRef(value));
         _PyDictValues_AddToInsertionOrder(mp->ma_values, ix);
         mp->ma_used++;
         mp->ma_version_tag = new_version;
@@ -6617,27 +6617,54 @@ make_dict_from_instance_attributes(PyInterpreterState *interp,
 }
 
 PyDictObject *
-_PyObject_MakeDictFromInstanceAttributes(PyObject *obj)
+_PyObject_MaterializeManagedDict(PyObject *obj)
 {
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    if (dict != NULL) {
+        return dict;
+    }
+
+    Py_BEGIN_CRITICAL_SECTION(obj);
+
+#ifdef Py_GIL_DISABLED
+    dict = _PyObject_GetManagedDict(obj);
+    if (dict != NULL) {
+        // We raced with another thread creating the dict
+        goto exit;
+    }
+#endif
+
+    OBJECT_STAT_INC(dict_materialized_on_request);
+
     PyDictValues *values = _PyObject_InlineValues(obj);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     OBJECT_STAT_INC(dict_materialized_on_request);
-    return make_dict_from_instance_attributes(interp, keys, values);
+    dict = make_dict_from_instance_attributes(interp, keys, values);
+
+    FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
+                                (PyDictObject *)dict);
+
+#ifdef Py_GIL_DISABLED
+exit:
+#endif
+    Py_END_CRITICAL_SECTION();
+    return dict;
 }
 
 
 
-int
-_PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
+static int
+store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
                               PyObject *name, PyObject *value)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
     assert(values != NULL);
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
     Py_ssize_t ix = DKIX_EMPTY;
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    assert(dict == NULL || ((PyDictObject *)dict)->ma_values == values);
     if (PyUnicode_CheckExact(name)) {
         Py_hash_t hash = unicode_get_hash(name);
         if (hash == -1) {
@@ -6674,25 +6701,21 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         }
 #endif
     }
-    PyDictObject *dict = _PyObject_ManagedDictPointer(obj)->dict;
+
     if (ix == DKIX_EMPTY) {
         if (dict == NULL) {
-            dict = make_dict_from_instance_attributes(
-                    interp, keys, values);
+            dict = _PyObject_MaterializeManagedDict(obj);
             if (dict == NULL) {
                 return -1;
             }
-            _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)dict;
         }
-        if (value == NULL) {
-            return PyDict_DelItem((PyObject *)dict, name);
-        }
-        else {
-            return PyDict_SetItem((PyObject *)dict, name, value);
-        }
+        // Caller needs to insert into materialized dict
+        return 1;
     }
+
     PyObject *old_value = values->values[ix];
-    values->values[ix] = Py_XNewRef(value);
+    FT_ATOMIC_STORE_PTR_RELEASE(values->values[ix], Py_XNewRef(value));
+
     if (old_value == NULL) {
         if (value == NULL) {
             PyErr_Format(PyExc_AttributeError,
@@ -6717,6 +6740,63 @@ _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
         Py_DECREF(old_value);
     }
     return 0;
+}
+
+int
+_PyObject_TryStoreInstanceAttribute(PyObject *obj, PyObject *name, PyObject *value)
+{
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (!FT_ATOMIC_LOAD_UINT8_RELAXED(values->valid)) {
+        return 1;
+    }
+
+#ifdef Py_GIL_DISABLED
+    int res;
+    // We have a valid inline values, at least for now...  There are two potential
+    // races with having the values become invalid.  One is the dictionary
+    // being detached from the object.  The other is if someone is inserting
+    // into the dictionary directly and therefore causing it to resize.
+    //
+    // If we haven't materialized the dictionary yet we lock on the object, which
+    // will also be used to prevent the dictionary from being materialized while
+    // we're doing the insertion.  If we race and the dictionary gets created
+    // then we'll need to release the object lock and lock the dictionary to
+    // prevent resizing.
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+        int retry_with_dict = 0;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        dict = _PyObject_GetManagedDict(obj);
+
+        if (dict == NULL) {
+            res = store_instance_attr_lock_held(obj, values, name, value);
+        }
+        else {
+            // We lost a race with the materialization of the dict, we'll
+            // try the insert with it...
+            retry_with_dict = 1;
+        }
+        Py_END_CRITICAL_SECTION();
+        if (retry_with_dict) {
+            goto with_dict;
+        }
+    }
+    else {
+with_dict:
+        Py_BEGIN_CRITICAL_SECTION(dict);
+        if (dict->ma_values == values) {
+            res = store_instance_attr_lock_held(obj, values, name, value);
+        }
+        else {
+            // Caller needs to insert into dict
+            res = 1;
+        }
+        Py_END_CRITICAL_SECTION();
+    }
+    return res;
+#else
+    return store_instance_attr_lock_held(obj, values, name, value);
+#endif
 }
 
 /* Sanity check for managed dicts */
@@ -6750,19 +6830,80 @@ _PyObject_ManagedDictValidityCheck(PyObject *obj)
 }
 #endif
 
-PyObject *
-_PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
-                              PyObject *name)
+// Attempts to get an instance attribute from the inline values.  Returns 0 if
+// the lookup from the inline values was successful or 1 if the inline values
+// are no longer valid.  No error is set in either case.
+int
+_PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name, PyObject **attr)
 {
     assert(PyUnicode_CheckExact(name));
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (!FT_ATOMIC_LOAD_UINT8_RELAXED(values->valid)) {
+        return 1;
+    }
+
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
     Py_ssize_t ix = _PyDictKeys_StringLookup(keys, name);
     if (ix == DKIX_EMPTY) {
-        return NULL;
+        *attr = NULL;
+        return 0;
     }
+
+#ifdef Py_GIL_DISABLED
+    PyObject *value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+    if (value == NULL || _Py_TryIncrefCompare(&values->values[ix], value)) {
+        *attr = value;
+        return 0;
+    }
+
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
+    if (dict == NULL) {
+        // No dict, lock the object to prevent one from being
+        // materialized...
+        bool success = false;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+
+        dict = _PyObject_GetManagedDict(obj);
+        if (dict == NULL) {
+            // Still no dict, we can read from the values
+            assert(values->valid);
+            value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+            *attr = Py_XNewRef(value);
+            success = true;
+        }
+
+        Py_END_CRITICAL_SECTION();
+
+        if (success) {
+            return 0;
+        }
+    }
+
+    // We have a dictionary, we'll need to lock it to prevent
+    // the values from being resized.
+    assert(dict != NULL);
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(dict);
+
+    if (dict->ma_values == values &&
+        FT_ATOMIC_LOAD_UINT8_RELAXED(values->valid)) {
+        value = _Py_atomic_load_ptr_relaxed(&values->values[ix]);
+        *attr = Py_XNewRef(value);
+        res = 0;
+    } else {
+        // Caller needs to lookup from the dictionary
+        res = 1;
+    }
+
+    Py_END_CRITICAL_SECTION();
+
+    return res;
+#else
     PyObject *value = values->values[ix];
-    return Py_XNewRef(value);
+    *attr = Py_XNewRef(value);
+    return 0;
+#endif
 }
 
 int
@@ -6775,20 +6916,19 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
     PyDictObject *dict;
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictValues *values = _PyObject_InlineValues(obj);
-        if (values->valid) {
+        if (FT_ATOMIC_LOAD_UINT8_RELAXED(values->valid)) {
             PyDictKeysObject *keys = CACHED_KEYS(tp);
             for (Py_ssize_t i = 0; i < keys->dk_nentries; i++) {
-                if (values->values[i] != NULL) {
+                if (FT_ATOMIC_LOAD_PTR_RELAXED(values->values[i]) != NULL) {
                     return 0;
                 }
             }
             return 1;
         }
-        dict = _PyObject_ManagedDictPointer(obj)->dict;
+        dict = _PyObject_GetManagedDict(obj);
     }
     else if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        PyManagedDictPointer* managed_dict = _PyObject_ManagedDictPointer(obj);
-        dict = managed_dict->dict;
+        dict = _PyObject_GetManagedDict(obj);
     }
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
@@ -6820,8 +6960,33 @@ PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
     return 0;
 }
 
+static bool
+set_dict_inline_values(PyObject *obj, PyObject *new_dict)
+{
+    PyDictValues *values = _PyObject_InlineValues(obj);
+
+    if (values->valid) {
+        for (Py_ssize_t i = 0; i < values->capacity; i++) {
+            Py_CLEAR(values->values[i]);
+        }
+        values->valid = 0;
+    }
+
+#ifdef Py_GIL_DISABLED
+    PyDictObject *dict = _PyObject_ManagedDictPointer(obj)->dict;
+    if (dict != NULL) {
+        // We lost a race with materialization of the dict
+        return false;
+    }
+#endif
+
+    Py_XINCREF(new_dict);
+    _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)new_dict;
+    return true;
+}
+
 void
-PyObject_ClearManagedDict(PyObject *obj)
+_PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 {
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
@@ -6829,29 +6994,61 @@ PyObject_ClearManagedDict(PyObject *obj)
     if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
         PyDictObject *dict = _PyObject_ManagedDictPointer(obj)->dict;
         if (dict) {
+#ifdef Py_GIL_DISABLED
+clear_dict:
+#endif
+            Py_BEGIN_CRITICAL_SECTION2(dict, obj);
+
             _PyDict_DetachFromObject(dict, obj);
-            _PyObject_ManagedDictPointer(obj)->dict = NULL;
+
+            Py_XINCREF(new_dict);
+            _PyObject_ManagedDictPointer(obj)->dict = (PyDictObject *)new_dict;
+
+            Py_END_CRITICAL_SECTION2();
+
             Py_DECREF(dict);
         }
         else {
-            PyDictValues *values = _PyObject_InlineValues(obj);
-            if (values->valid) {
-                for (Py_ssize_t i = 0; i < values->capacity; i++) {
-                    Py_CLEAR(values->values[i]);
-                }
-                values->valid = 0;
+            bool success;
+            Py_BEGIN_CRITICAL_SECTION(obj);
+
+            success = set_dict_inline_values(obj, new_dict);
+
+            Py_END_CRITICAL_SECTION();
+
+            (void)success;  // suppress warning when GIL isn't disabled
+
+#ifdef Py_GIL_DISABLED
+            if (!success) {
+                dict = _PyObject_ManagedDictPointer(obj)->dict;
+                assert(dict != NULL);
+                goto clear_dict;
             }
+#endif
         }
     }
     else {
-        Py_CLEAR(_PyObject_ManagedDictPointer(obj)->dict);
+        Py_BEGIN_CRITICAL_SECTION(obj);
+
+        Py_XSETREF(_PyObject_ManagedDictPointer(obj)->dict,
+                   (PyDictObject *)Py_XNewRef(new_dict));
+
+        Py_END_CRITICAL_SECTION();
     }
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
+}
+
+void
+PyObject_ClearManagedDict(PyObject *obj)
+{
+    _PyObject_SetManagedDict(obj, NULL);
 }
 
 int
 _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(mp);
+
     assert(_PyObject_ManagedDictPointer(obj)->dict == mp);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     if (mp->ma_values == NULL || mp->ma_values != _PyObject_InlineValues(obj)) {
@@ -6867,6 +7064,7 @@ _PyDict_DetachFromObject(PyDictObject *mp, PyObject *obj)
     if (mp->ma_values == NULL) {
         return -1;
     }
+
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
     ASSERT_CONSISTENT(mp);
     return 0;
@@ -6877,29 +7075,28 @@ PyObject_GenericGetDict(PyObject *obj, void *context)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyTypeObject *tp = Py_TYPE(obj);
+    PyDictObject *dict;
     if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
-        PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(obj);
-        PyDictObject *dict = managed_dict->dict;
+        dict = _PyObject_GetManagedDict(obj);
         if (dict == NULL &&
             (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
-            _PyObject_InlineValues(obj)->valid
-        ) {
-            PyDictValues *values = _PyObject_InlineValues(obj);
-            OBJECT_STAT_INC(dict_materialized_on_request);
-            dict = make_dict_from_instance_attributes(
-                    interp, CACHED_KEYS(tp), values);
-            if (dict != NULL) {
-                managed_dict->dict = (PyDictObject *)dict;
-            }
+            _PyObject_InlineValues(obj)->valid) {
+            dict = _PyObject_MaterializeManagedDict(obj);
         }
-        else {
-            dict = managed_dict->dict;
+        else if (dict == NULL) {
+            Py_BEGIN_CRITICAL_SECTION(obj);
+
+            // Check again that we're not racing with someone else creating the dict
+            dict = _PyObject_GetManagedDict(obj);
             if (dict == NULL) {
-                dictkeys_incref(CACHED_KEYS(tp));
                 OBJECT_STAT_INC(dict_materialized_on_request);
+                dictkeys_incref(CACHED_KEYS(tp));
                 dict = (PyDictObject *)new_dict_with_shared_keys(interp, CACHED_KEYS(tp));
-                managed_dict->dict = (PyDictObject *)dict;
+                FT_ATOMIC_STORE_PTR_RELEASE(_PyObject_ManagedDictPointer(obj)->dict,
+                                            (PyDictObject *)dict);
             }
+
+            Py_END_CRITICAL_SECTION();
         }
         return Py_XNewRef((PyObject *)dict);
     }
@@ -7109,7 +7306,7 @@ _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
         return 1;
     }
     assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-    PyDictObject *dict = (PyDictObject *)_PyObject_ManagedDictPointer(obj)->dict;
+    PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
         return 1;
     }
