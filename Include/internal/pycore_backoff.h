@@ -35,8 +35,8 @@ typedef struct {
     union {
         uint16_t counter;
         struct {
-            uint16_t value : 12;
             uint16_t backoff : 4;
+            uint16_t value : 12;
         };
     };
 } backoff_counter_t;
