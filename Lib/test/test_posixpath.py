@@ -242,6 +242,7 @@ class PosixPathTest(unittest.TestCase):
     def test_ismount_different_device(self):
         # Simulate the path being on a different device from its parent by
         # mocking out st_dev.
+        save_stat = os.stat
         save_lstat = os.lstat
         def fake_lstat(path):
             st_ino = 0
@@ -251,15 +252,17 @@ class PosixPathTest(unittest.TestCase):
                 st_ino = 1
             return posix.stat_result((0, st_ino, st_dev, 0, 0, 0, 0, 0, 0, 0))
         try:
-            os.lstat = fake_lstat
+            os.stat = os.lstat = fake_lstat
             self.assertIs(posixpath.ismount(ABSTFN), True)
         finally:
+            os.stat = save_stat
             os.lstat = save_lstat
 
     @unittest.skipIf(posix is None, "Test requires posix module")
     def test_ismount_directory_not_readable(self):
         # issue #2466: Simulate ismount run on a directory that is not
         # readable, which used to return False.
+        save_stat = os.stat
         save_lstat = os.lstat
         def fake_lstat(path):
             st_ino = 0
@@ -273,9 +276,10 @@ class PosixPathTest(unittest.TestCase):
                 st_ino = 1
             return posix.stat_result((0, st_ino, st_dev, 0, 0, 0, 0, 0, 0, 0))
         try:
-            os.lstat = fake_lstat
+            os.stat = os.lstat = fake_lstat
             self.assertIs(posixpath.ismount(ABSTFN), True)
         finally:
+            os.stat = save_stat
             os.lstat = save_lstat
 
     def test_isjunction(self):
