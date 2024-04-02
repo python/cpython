@@ -213,10 +213,18 @@ def generate_tier2(
             continue
         out.emit(f"case {uop.name}: {{\n")
         if uop.properties.stub:
-            out.emit(f"stack_pointer = {uop.name}_func(tstate, frame, stack_pointer")
+            out.emit(f"int result = {uop.name}_func(tstate, frame, &stack_pointer")
             if uop.properties.const_oparg < 0:
                 out.emit(", CURRENT_OPARG()")
             out.emit(");\n")
+            out.emit("switch (result) {\n")
+            out.emit("case 0:\n")
+            out.emit("break;\n")
+            out.emit("case 1:\n")
+            out.emit("JUMP_TO_ERROR();\n");
+            out.emit("case 2:\n")
+            out.emit("JUMP_TO_JUMP_TARGET();\n");
+            out.emit("}\n")
             stack = None
         else:
             declare_variables(uop, out)
@@ -239,11 +247,13 @@ def get_stub_signature(name: str, uop: Uop) -> str:
     args = [
         "PyThreadState *tstate",
         "_PyInterpreterFrame *frame",
-        "PyObject **stack_pointer"
+        "PyObject ***_stack_pointer"
     ]
     if uop.properties.const_oparg < 0:
         args.append("int oparg")
-    return f"PyObject ** {name}_func({', '.join(args)})"
+    if not name.startswith("_"):
+        name = "_" + name
+    return f"int {name}_func({', '.join(args)})"
 
 
 def generate_tier2_stubs(
@@ -256,6 +266,12 @@ def generate_tier2_stubs(
     #error "This file is for Tier 2 only"
 #endif
 #define TIER_TWO 2
+
+#undef JUMP_TO_ERROR
+#define JUMP_TO_ERROR() return 1;
+
+#undef JUMP_TO_JUMP_TARGET
+#define JUMP_TO_JUMP_TARGET() return 2;
 """
     )
 
@@ -270,7 +286,7 @@ def generate_tier2_stubs(
 
             if uop.properties.const_oparg >= 0:
                 out.emit("int oparg;\n")
-
+            out.emit("PyObject **stack_pointer = *_stack_pointer;\n")
             declare_variables(uop, out)
             stack = Stack()
             write_uop(uop, out, stack)
@@ -278,9 +294,15 @@ def generate_tier2_stubs(
             if uop.properties.ends_with_eval_breaker:
                 out.emit("CHECK_EVAL_BREAKER();\n")
             out.start_line()
-            out.emit("return stack_pointer;\n")
+            out.emit("*_stack_pointer = stack_pointer;\n")
+            out.emit("return 0;\n")
             out.emit("}\n\n")
 
+    outfile.write("#undef JUMP_TO_ERROR\n")
+    outfile.write("#undef JUMP_TO_JUMP_TARGET\n")
+    # TODO: Handle these macros better
+    outfile.write("#define JUMP_TO_JUMP_TARGET() goto jump_to_jump_target\n")
+    outfile.write("#define JUMP_TO_ERROR() goto jump_to_error_target\n")
     outfile.write("#undef TIER_TWO\n")
 
 
