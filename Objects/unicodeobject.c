@@ -12949,9 +12949,9 @@ str.startswith as unicode_startswith
     prefix as subobj: object
         A string or a tuple of strings to try.
     start: slice_index(accept={int, NoneType}, c_default='0') = None
-        Optional start position. Default 0.
+        Optional start position. Default: start of the string.
     end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
-        Optional stop position. Default PY_SSIZE_T_MAX.
+        Optional stop position. Default: end of the string.
     /
 
 Return True if the string starts with the specified prefix, False otherwise.
@@ -12960,7 +12960,7 @@ Return True if the string starts with the specified prefix, False otherwise.
 static PyObject *
 unicode_startswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
                         Py_ssize_t end)
-/*[clinic end generated code: output=4bd7cfd0803051d4 input=9c6ded2ba2e2f90b]*/
+/*[clinic end generated code: output=4bd7cfd0803051d4 input=5f918b5f5f89d856]*/
 {
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
