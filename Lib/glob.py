@@ -104,8 +104,8 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
 
 def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
     names = _listdir(dirname, dir_fd, dironly)
-    if include_hidden or not _ishidden(pattern):
-        names = (x for x in names if include_hidden or not _ishidden(x))
+    if not (include_hidden or _ishidden(pattern)):
+        names = (x for x in names if not _ishidden(x))
     return fnmatch.filter(names, pattern)
 
 def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
@@ -119,12 +119,19 @@ def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
             return [basename]
     return []
 
-# Following functions are not public but can be used by third-party code.
+_deprecated_function_message = (
+    "{name} is deprecated and will be removed in Python {remove}. Use "
+    "glob.glob and pass a directory to its root_dir argument instead."
+)
 
 def glob0(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
     return _glob0(dirname, pattern, None, False)
 
 def glob1(dirname, pattern):
+    import warnings
+    warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
     return _glob1(dirname, pattern, None, False)
 
 # This helper function recursively yields relative pathnames inside a literal

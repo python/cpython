@@ -35,7 +35,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction"]
+           "commonpath", "isjunction","isdevdrive"]
 
 
 def _get_sep(path):
@@ -185,26 +185,6 @@ def dirname(p):
     if head and head != sep*len(head):
         head = head.rstrip(sep)
     return head
-
-
-# Is a path a junction?
-
-def isjunction(path):
-    """Test whether a path is a junction
-    Junctions are not a part of posix semantics"""
-    os.fspath(path)
-    return False
-
-
-# Being true for dangling symbolic links is also useful.
-
-def lexists(path):
-    """Test whether a path exists.  Returns True for broken symbolic links"""
-    try:
-        os.lstat(path)
-    except (OSError, ValueError):
-        return False
-    return True
 
 
 # Is a path a mount point?

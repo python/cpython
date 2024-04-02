@@ -214,6 +214,12 @@ Other Language Changes
 
   (Contributed by William Woodruff in :gh:`112389`.)
 
+* The :class:`configparser.ConfigParser` now accepts unnamed sections before named
+   ones if configured to do so.
+
+   (Contributed by Pedro Sousa Lacerda in :gh:`66449`)
+
+
 New Modules
 ===========
 
@@ -283,8 +289,15 @@ asyncio
   forcefully close an asyncio server.
   (Contributed by Pierre Ossman in :gh:`113538`.)
 
+* :func:`asyncio.as_completed` now returns an object that is both an
+  :term:`asynchronous iterator` and a plain :term:`iterator` of awaitables.
+  The awaitables yielded by asynchronous iteration include original task or
+  future objects that were passed in, making it easier to associate results
+  with the tasks being completed.
+  (Contributed by Justin Arthur in :gh:`77714`.)
+
 base64
----
+------
 
 * Add :func:`base64.z85encode` and :func:`base64.z85decode` functions which allow encoding
   and decoding z85 data.
@@ -401,6 +414,8 @@ ipaddress
 
 * Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property, which returns the IPv4-mapped IPv6 address.
   (Contributed by Charles Machalow in :gh:`109466`.)
+* Fix ``is_global`` and ``is_private`` behavior in ``IPv4Address``, ``IPv6Address``, ``IPv4Network``
+  and ``IPv6Network``.
 
 itertools
 ---------
@@ -515,6 +530,10 @@ pathlib
 * Add :meth:`pathlib.PurePath.full_match` for matching paths with
   shell-style wildcards, including the recursive wildcard "``**``".
   (Contributed by Barney Gale in :gh:`73435`.)
+
+* Add :attr:`pathlib.PurePath.parser` class attribute that stores the
+  implementation of :mod:`os.path` used for low-level path parsing and
+  joining: either ``posixpath`` or ``ntpath``.
 
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
   :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
@@ -698,6 +717,12 @@ xml.etree.ElementTree
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
 
+zipimport
+---------
+
+* Gains support for ZIP64 format files.  Everybody loves huge code right?
+  (Contributed by Tim Hatch in :gh:`94146`.)
+
 
 Optimizations
 =============
@@ -787,6 +812,11 @@ Deprecated
   :mod:`gettext` functions and methods that consider plural forms even if the
   translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
+* :mod:`glob`: The undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
+  functions are deprecated. Use :func:`glob.glob` and pass a directory to its
+  *root_dir* argument instead.
+  (Contributed by Barney Gale in :gh:`117337`.)
 
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
   :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI
@@ -1527,7 +1557,7 @@ Build Changes
 * The ``errno``, ``fcntl``, ``grp``, ``md5``, ``pwd``, ``resource``,
   ``termios``, ``winsound``,
   ``_ctypes_test``, ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
-  ``_statistics``, ``_testimportmultiple`` and ``_uuid``
+  ``_statistics``, ``_testconsole``, ``_testimportmultiple`` and ``_uuid``
   C extensions are now built with the
   :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
@@ -1700,6 +1730,10 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add :c:func:`PyObject_GenericHash` function that implements the default
+  hashing function of a Python object.
+  (Contributed by Serhiy Storchaka in :gh:`113024`.)
+
 * Add PyTime C API:
 
   * :c:type:`PyTime_t` type.
@@ -1730,6 +1764,14 @@ New Features
   type and of a type: call :c:func:`PyType_GetModuleName`. See :pep:`737` for
   more information.
   (Contributed by Victor Stinner in :gh:`111696`.)
+
+* Add :c:func:`Py_GetConstant` and :c:func:`Py_GetConstantBorrowed` functions
+  to get constants. For example, ``Py_GetConstant(Py_CONSTANT_ZERO)`` returns a
+  :term:`strong reference` to the constant zero.
+  (Contributed by Victor Stinner in :gh:`115754`.)
+
+* Add :c:func:`PyType_GetModuleByDef` to the limited C API
+  (Contributed by Victor Stinner in :gh:`116936`.)
 
 
 Porting to Python 3.13

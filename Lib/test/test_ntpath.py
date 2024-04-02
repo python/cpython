@@ -871,11 +871,14 @@ class TestNtpath(NtpathTestCase):
             self.assertRaises(exc, ntpath.commonpath,
                               [os.fsencode(p) for p in paths])
 
+        self.assertRaises(TypeError, ntpath.commonpath, None)
         self.assertRaises(ValueError, ntpath.commonpath, [])
+        self.assertRaises(ValueError, ntpath.commonpath, iter([]))
         check_error(ValueError, ['C:\\Program Files', 'Program Files'])
         check_error(ValueError, ['C:\\Program Files', 'C:Program Files'])
         check_error(ValueError, ['\\Program Files', 'Program Files'])
         check_error(ValueError, ['Program Files', 'C:\\Program Files'])
+
         check(['C:\\Program Files'], 'C:\\Program Files')
         check(['C:\\Program Files', 'C:\\Program Files'], 'C:\\Program Files')
         check(['C:\\Program Files\\', 'C:\\Program Files'],
