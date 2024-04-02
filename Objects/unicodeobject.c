@@ -11062,24 +11062,6 @@ PyUnicode_AppendAndDel(PyObject **pleft, PyObject *right)
     Py_XDECREF(right);
 }
 
-/*
-Wraps asciilib_parse_args_finds() and additionally ensures that the
-first argument is a unicode object.
-*/
-
-static inline int
-parse_args_finds_unicode(const char * function_name, PyObject *args,
-                         PyObject **substring,
-                         Py_ssize_t *start, Py_ssize_t *end)
-{
-    if (asciilib_parse_args_finds(function_name, args, substring, start, end)) {
-        if (ensure_unicode(*substring) < 0)
-            return 0;
-        return 1;
-    }
-    return 0;
-}
-
 /*[clinic input]
 @text_signature "($self, sub[, start[, end]], /)"
 str.count as unicode_count -> Py_ssize_t
@@ -12438,38 +12420,25 @@ unicode_rfind_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
     return any_find_slice(str, substr, start, end, -1);
 }
 
-PyDoc_STRVAR(rindex__doc__,
-             "S.rindex(sub[, start[, end]]) -> int\n\
-\n\
-Return the highest index in S where substring sub is found,\n\
-such that sub is contained within S[start:end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Raises ValueError when the substring is not found.");
+/*[clinic input]
+str.rindex as unicode_rindex = str.count
 
-static PyObject *
-unicode_rindex(PyObject *self, PyObject *args)
+Return the highest index in S where substring sub is found, such that sub is contained within S[start:end].
+
+Optional arguments start and end are interpreted as in slice notation.
+Raises ValueError when the substring is not found.
+[clinic start generated code]*/
+
+static Py_ssize_t
+unicode_rindex_impl(PyObject *str, PyObject *substr, Py_ssize_t start,
+                    Py_ssize_t end)
+/*[clinic end generated code: output=5f3aef124c867fe1 input=35943dead6c1ea9d]*/
 {
-    /* initialize variables to prevent gcc warning */
-    PyObject *substring = NULL;
-    Py_ssize_t start = 0;
-    Py_ssize_t end = 0;
-    Py_ssize_t result;
-
-    if (!parse_args_finds_unicode("rindex", args, &substring, &start, &end))
-        return NULL;
-
-    result = any_find_slice(self, substring, start, end, -1);
-
-    if (result == -2)
-        return NULL;
-
-    if (result < 0) {
+    Py_ssize_t result = any_find_slice(str, substr, start, end, -1);
+    if (result == -1) {
         PyErr_SetString(PyExc_ValueError, "substring not found");
-        return NULL;
     }
-
-    return PyLong_FromSsize_t(result);
+    return result;
 }
 
 /*[clinic input]
@@ -13509,7 +13478,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_LOWER_METHODDEF
     UNICODE_LSTRIP_METHODDEF
     UNICODE_RFIND_METHODDEF
-    {"rindex", (PyCFunction) unicode_rindex, METH_VARARGS, rindex__doc__},
+    UNICODE_RINDEX_METHODDEF
     UNICODE_RJUST_METHODDEF
     UNICODE_RSTRIP_METHODDEF
     UNICODE_RPARTITION_METHODDEF

@@ -1509,7 +1509,7 @@ class StringLikeTest(BaseTest):
                                 x, None, None, None)
         self.assertRaisesRegex(TypeError, r'^index\b', s.index,
                                 x, None, None, None)
-        self.assertRaisesRegex(TypeError, r'^rindex\(', s.rindex,
+        self.assertRaisesRegex(TypeError, r'^rindex\b', s.rindex,
                                 x, None, None, None)
         self.assertRaisesRegex(TypeError, r'^count\b', s.count,
                                 x, None, None, None)
