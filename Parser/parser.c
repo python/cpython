@@ -17688,7 +17688,7 @@ kwargs_rule(Parser *p)
     return _res;
 }
 
-// starred_expression: invalid_starred_expression | '*' expression
+// starred_expression: invalid_starred_expression | '*' expression | '*'
 static expr_ty
 starred_expression_rule(Parser *p)
 {
@@ -17764,6 +17764,30 @@ starred_expression_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s starred_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' expression"));
+    }
+    { // '*'
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> starred_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*'"));
+        Token * _literal;
+        if (
+            (_literal = _PyPegen_expect_token(p, 16))  // token='*'
+        )
+        {
+            D(fprintf(stderr, "%*c+ starred_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*'"));
+            _res = RAISE_SYNTAX_ERROR ( "Invalid star expression" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s starred_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*'"));
     }
     _res = NULL;
   done:
@@ -24666,7 +24690,7 @@ invalid_kvpair_rule(Parser *p)
     return _res;
 }
 
-// invalid_starred_expression: '*' expression '=' expression | '*' !expression
+// invalid_starred_expression: '*' expression '=' expression
 static void *
 invalid_starred_expression_rule(Parser *p)
 {
@@ -24711,32 +24735,6 @@ invalid_starred_expression_rule(Parser *p)
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_starred_expression[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' expression '=' expression"));
-    }
-    { // '*' !expression
-        if (p->error_indicator) {
-            p->level--;
-            return NULL;
-        }
-        D(fprintf(stderr, "%*c> invalid_starred_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'*' !expression"));
-        Token * _literal;
-        if (
-            (_literal = _PyPegen_expect_token(p, 16))  // token='*'
-            &&
-            _PyPegen_lookahead(0, expression_rule, p)
-        )
-        {
-            D(fprintf(stderr, "%*c+ invalid_starred_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'*' !expression"));
-            _res = RAISE_SYNTAX_ERROR ( "Invalid star expression" );
-            if (_res == NULL && PyErr_Occurred()) {
-                p->error_indicator = 1;
-                p->level--;
-                return NULL;
-            }
-            goto done;
-        }
-        p->mark = _mark;
-        D(fprintf(stderr, "%*c%s invalid_starred_expression[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'*' !expression"));
     }
     _res = NULL;
   done:

@@ -1013,6 +1013,7 @@ kwargs[asdl_seq*]:
 starred_expression[expr_ty]:
     | invalid_starred_expression
     | '*' a=expression { _PyAST_Starred(a, Load, EXTRA) }
+    | '*' { RAISE_SYNTAX_ERROR("Invalid star expression") }
 
 kwarg_or_starred[KeywordOrStarred*]:
     | invalid_kwarg
@@ -1396,7 +1397,7 @@ invalid_kvpair:
     | expression a=':' &('}'|',') {RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "expression expected after dictionary key and ':'") }
 invalid_starred_expression:
     | a='*' expression '=' b=expression { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to iterable argument unpacking") }
-    | '*' !expression { RAISE_SYNTAX_ERROR("Invalid star expression") }
+
 invalid_replacement_field:
     | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '='") }
     | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '!'") }
