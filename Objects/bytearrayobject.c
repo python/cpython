@@ -1190,10 +1190,15 @@ bytearray_contains(PyObject *self, PyObject *arg)
 @text_signature "($self, prefix[, start[, end]], /)"
 bytearray.startswith
 
-    *args: object
+    prefix as subobj: object
+        A byte string or a tuple of byte strings to try.
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the byte string.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the byte string.
     /
 
-Return True if B starts with the specified prefix, False otherwise.
+Return True if the byte string starts with the specified prefix, False otherwise.
 
 With optional start, test B beginning at that position.
 With optional end, stop comparing B at that position.
@@ -1201,17 +1206,19 @@ prefix can also be a tuple of bytes to try.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_startswith_impl(PyByteArrayObject *self, PyObject *args)
-/*[clinic end generated code: output=cfec6eb4d8d465b2 input=53a7036eaff0525e]*/
+bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                          Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=a3d9b6d44d3662a6 input=596f48473d404176]*/
 {
-    return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                                subobj, start, end);
 }
 
 /*[clinic input]
 @text_signature "($self, prefix[, start[, end]], /)"
 bytearray.endswith = bytearray.startswith
 
-Return True if B ends with the specified prefix, False otherwise.
+Return True if the byte string ends with the specified prefix, False otherwise.
 
 With optional start, test B beginning at that position.
 With optional end, stop comparing B at that position.
@@ -1219,10 +1226,12 @@ prefix can also be a tuple of bytes to try.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_endswith_impl(PyByteArrayObject *self, PyObject *args)
-/*[clinic end generated code: output=2d9b7e94ef2b142a input=2a2ba6955504ae08]*/
+bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                        Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=e75ea8c227954caa input=96d3f21baa53c7b2]*/
 {
-    return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                              subobj, start, end);
 }
 
 /*[clinic input]

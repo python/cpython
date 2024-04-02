@@ -141,7 +141,14 @@ PyDoc_STRVAR(bytearray_startswith__doc__,
 "startswith($self, prefix[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return True if B starts with the specified prefix, False otherwise.\n"
+"Return True if the byte string starts with the specified prefix, False otherwise.\n"
+"\n"
+"  prefix\n"
+"    A byte string or a tuple of byte strings to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the byte string.\n"
+"  end\n"
+"    Optional stop position. Default: end of the byte string.\n"
 "\n"
 "With optional start, test B beginning at that position.\n"
 "With optional end, stop comparing B at that position.\n"
@@ -151,28 +158,37 @@ PyDoc_STRVAR(bytearray_startswith__doc__,
     {"startswith", _PyCFunction_CAST(bytearray_startswith), METH_FASTCALL, bytearray_startswith__doc__},
 
 static PyObject *
-bytearray_startswith_impl(PyByteArrayObject *self, PyObject *args);
+bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                          Py_ssize_t start, Py_ssize_t end);
 
 static PyObject *
 bytearray_startswith(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_CheckPositional("startswith", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("startswith", nargs, 1, 3)) {
         goto exit;
     }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
         goto exit;
     }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    if (nargs < 3) {
+        goto skip_optional;
     }
-    return_value = bytearray_startswith_impl(self, __clinic_args);
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytearray_startswith_impl(self, subobj, start, end);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -180,7 +196,14 @@ PyDoc_STRVAR(bytearray_endswith__doc__,
 "endswith($self, prefix[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return True if B ends with the specified prefix, False otherwise.\n"
+"Return True if the byte string ends with the specified prefix, False otherwise.\n"
+"\n"
+"  prefix\n"
+"    A byte string or a tuple of byte strings to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the byte string.\n"
+"  end\n"
+"    Optional stop position. Default: end of the byte string.\n"
 "\n"
 "With optional start, test B beginning at that position.\n"
 "With optional end, stop comparing B at that position.\n"
@@ -190,28 +213,37 @@ PyDoc_STRVAR(bytearray_endswith__doc__,
     {"endswith", _PyCFunction_CAST(bytearray_endswith), METH_FASTCALL, bytearray_endswith__doc__},
 
 static PyObject *
-bytearray_endswith_impl(PyByteArrayObject *self, PyObject *args);
+bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                        Py_ssize_t start, Py_ssize_t end);
 
 static PyObject *
 bytearray_endswith(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
 
-    if (!_PyArg_CheckPositional("endswith", nargs, 0, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("endswith", nargs, 1, 3)) {
         goto exit;
     }
-    __clinic_args = PyTuple_New(nargs - 0);
-    if (!__clinic_args) {
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
         goto exit;
     }
-    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
-        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    if (nargs < 3) {
+        goto skip_optional;
     }
-    return_value = bytearray_endswith_impl(self, __clinic_args);
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytearray_endswith_impl(self, subobj, start, end);
 
 exit:
-    Py_XDECREF(__clinic_args);
     return return_value;
 }
 
@@ -1339,4 +1371,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=0074ca263a60fd85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ef9bb3a7401c0f6 input=a9049054013a1b77]*/

@@ -2289,39 +2289,40 @@ bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
 @text_signature "($self, prefix[, start[, end]], /)"
 bytes.startswith
 
-    *args: object
+    prefix as subobj: object
+        A byte string or a tuple of byte strings to try.
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the byte string.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the byte string.
     /
 
-Return True if B starts with the specified prefix, False otherwise.
-
-With optional start, test B beginning at that position.
-With optional end, stop comparing B at that position.
-prefix can also be a tuple of bytes to try.
+Return True if the byte string starts with the specified prefix, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_startswith_impl(PyBytesObject *self, PyObject *args)
-/*[clinic end generated code: output=172340dafc2f3c97 input=87559404108dcdfc]*/
+bytes_startswith_impl(PyBytesObject *self, PyObject *subobj,
+                      Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=b1e8da1cbd528e8c input=86b5f991fc8ac0dc]*/
 {
-    return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                                subobj, start, end);
 }
 
 /*[clinic input]
 @text_signature "($self, prefix[, start[, end]], /)"
 bytes.endswith = bytes.startswith
 
-Return True if B ends with the specified prefix, False otherwise.
-
-With optional start, test B beginning at that position.
-With optional end, stop comparing B at that position.
-prefix can also be a tuple of bytes to try.
+Return True if the byte string ends with the specified prefix, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_endswith_impl(PyBytesObject *self, PyObject *args)
-/*[clinic end generated code: output=b462e732a996e3eb input=3f7fc635440e2ab5]*/
+bytes_endswith_impl(PyBytesObject *self, PyObject *subobj, Py_ssize_t start,
+                    Py_ssize_t end)
+/*[clinic end generated code: output=038b633111f3629d input=38d3f36990facc7b]*/
 {
-    return _Py_bytes_endswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_endswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                              subobj, start, end);
 }
 
 
