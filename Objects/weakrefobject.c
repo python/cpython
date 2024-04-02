@@ -898,7 +898,8 @@ _PyWeakref_CallableProxyType = {
 PyObject *
 PyWeakref_NewRef(PyObject *ob, PyObject *callback)
 {
-    return (PyObject *)get_or_create_weakref(&_PyWeakref_RefType, ob, callback);
+    return (PyObject *)get_or_create_weakref(&_PyWeakref_RefType, ob,
+                                             callback);
 }
 
 PyObject *
@@ -910,6 +911,7 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
     }
     return (PyObject *)get_or_create_weakref(type, ob, callback);
 }
+
 
 int
 PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
