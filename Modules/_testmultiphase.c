@@ -957,7 +957,7 @@ PyInit__test_shared_gil_only(void)
 #include "datetime.h"
 
 static int
-datetime_capi_exec(PyObject *m)
+datetime_capi_client_exec(PyObject *m)
 {
     int ismain = PyInterpreterState_Get() == PyInterpreterState_Main();
     if (ismain) {
@@ -997,18 +997,17 @@ datetime_capi_exec(PyObject *m)
     return 0;
 }
 
-static PyModuleDef_Slot datetime_capi_slots[] = {
-    {Py_mod_exec, datetime_capi_exec},
+static PyModuleDef_Slot datetime_capi_client_slots[] = {
+    {Py_mod_exec, datetime_capi_client_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 
-static PyModuleDef datetime_capi_def = TEST_MODULE_DEF("_test_datetime_capi",
-                                                        datetime_capi_slots,
-                                                        testexport_methods);
+static PyModuleDef datetime_capi_client_def = TEST_MODULE_DEF(
+    "_testmultiphase_datetime_capi_client", datetime_capi_client_slots, NULL);
 
 PyMODINIT_FUNC
-PyInit__test_datetime_capi(void)
+PyInit__test_datetime_capi_client(void)
 {
-    return PyModuleDef_Init(&datetime_capi_def);
+    return PyModuleDef_Init(&datetime_capi_client_def);
 }
