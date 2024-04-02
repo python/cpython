@@ -13,7 +13,6 @@
 #include "_testcapi/parts.h"
 
 #include "frameobject.h"          // PyFrame_New()
-#include "interpreteridobject.h"  // PyInterpreterID_Type
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
@@ -1447,36 +1446,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
     PyThreadState_Swap(mainstate);
 
     return PyLong_FromLong(r);
-}
-
-static PyObject *
-get_interpreterid_type(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return Py_NewRef(&PyInterpreterID_Type);
-}
-
-static PyObject *
-link_interpreter_refcount(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
-    if (interp == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    _PyInterpreterState_RequireIDRef(interp, 1);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-unlink_interpreter_refcount(PyObject *self, PyObject *idobj)
-{
-    PyInterpreterState *interp = PyInterpreterID_LookUp(idobj);
-    if (interp == NULL) {
-        assert(PyErr_Occurred());
-        return NULL;
-    }
-    _PyInterpreterState_RequireIDRef(interp, 0);
-    Py_RETURN_NONE;
 }
 
 static PyMethodDef ml;
@@ -3323,9 +3292,6 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"get_interpreterid_type",  get_interpreterid_type,          METH_NOARGS},
-    {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},
-    {"unlink_interpreter_refcount", unlink_interpreter_refcount, METH_O},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
@@ -3975,6 +3941,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
     PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
+    PyModule_AddObject(m, "SIZEOF_PID_T", PyLong_FromSsize_t(sizeof(pid_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
@@ -4002,6 +3969,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Abstract(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Bytes(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
@@ -4077,6 +4047,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Object(m) < 0) {
         return NULL;
     }
 
