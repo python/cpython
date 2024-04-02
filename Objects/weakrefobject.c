@@ -95,16 +95,19 @@ clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
     // TODO: Assert locks are held or world is stopped
     if (self->wr_object != Py_None) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
-        if (*list == self)
+        if (*list == self) {
             /* If 'self' is the end of the list (and thus self->wr_next ==
                NULL) then the weakref list itself (and thus the value of *list)
                will end up being set to NULL. */
             FT_ATOMIC_STORE_PTR(*list, self->wr_next);
+        }
         FT_ATOMIC_STORE_PTR(self->wr_object, Py_None);
-        if (self->wr_prev != NULL)
+        if (self->wr_prev != NULL) {
             self->wr_prev->wr_next = self->wr_next;
-        if (self->wr_next != NULL)
+        }
+        if (self->wr_next != NULL) {
             self->wr_next->wr_prev = self->wr_prev;
+        }
         self->wr_prev = NULL;
         self->wr_next = NULL;
     }
