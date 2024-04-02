@@ -1,0 +1,2 @@
+Raise :exc:`FileNotFoundError` when ``getcwd()`` returns '(unreachable)',
+which can happen on Linux >= 2.6.36 with glibc < 2.27.
