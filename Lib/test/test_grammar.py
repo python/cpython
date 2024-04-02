@@ -181,7 +181,9 @@ class TokenTests(unittest.TestCase):
     def test_attrs_on_hexintegers(self):
         good_meth = [m for m in dir(int) if not m.startswith('_')]
         for m in good_meth:
-            self.assertEqual(eval('0x1.' + m), eval('(0x1).' + m))
+            with self.assertWarns(SyntaxWarning):
+                v = eval('0x1.' + m)
+            self.assertEqual(v, eval('(0x1).' + m))
         self.check_syntax_error('0x1.spam', "invalid hexadecimal literal",
                                 lineno=1, offset=4)
         self.check_syntax_error('0x1.foo', "invalid hexadecimal literal",

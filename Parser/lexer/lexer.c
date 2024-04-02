@@ -793,6 +793,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         (c == 'n' && lookahead(tok, "umerator")) ||
                         (c == 'r' && lookahead(tok, "eal")))
                     {
+                        if (_PyTokenizer_parser_warn(tok, PyExc_SyntaxWarning,
+                                                     "invalid float literal"))
+                        {
+                            return 0;
+                        }
                         tok_backup(tok, c);
                         c = '.';
                         goto hexint;
