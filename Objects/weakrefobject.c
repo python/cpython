@@ -1034,14 +1034,14 @@ PyObject_ClearWeakRefs(PyObject *object)
        at the head of the list.
     */
     for (int done = 0; !done;) {
-        PyObject *callback = NULL;
         LOCK_WEAKREFS(object);
         if (*list != NULL && is_basic_ref_or_proxy(*list)) {
+            PyObject *callback;
             clear_weakref_lock_held(*list, &callback);
+            assert(callback == NULL);
         }
         done = (*list == NULL) || !is_basic_ref_or_proxy(*list);
         UNLOCK_WEAKREFS(object);
-        Py_XDECREF(callback);
     }
 
     /* Deal with non-canonical (subtypes or refs with callbacks) references. */
