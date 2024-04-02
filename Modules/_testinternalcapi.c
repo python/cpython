@@ -15,7 +15,7 @@
 #include "pycore_ceval.h"         // _PyEval_AddPendingCall()
 #include "pycore_compile.h"       // _PyCompile_CodeGen()
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
-#include "pycore_dict.h"          // _PyDictOrValues_GetValues()
+#include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // PyGC_Head
@@ -1297,14 +1297,13 @@ static PyObject *
 get_object_dict_values(PyObject *self, PyObject *obj)
 {
     PyTypeObject *type = Py_TYPE(obj);
-    if (!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES)) {
         Py_RETURN_NONE;
     }
-    PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(obj);
-    if (!_PyDictOrValues_IsValues(dorv)) {
+    PyDictValues *values = _PyObject_InlineValues(obj);
+    if (!values->valid) {
         Py_RETURN_NONE;
     }
-    PyDictValues *values = _PyDictOrValues_GetValues(dorv);
     PyDictKeysObject *keys = ((PyHeapTypeObject *)type)->ht_cached_keys;
     assert(keys != NULL);
     int size = (int)keys->dk_nentries;
@@ -1784,6 +1783,16 @@ get_py_thread_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 #endif
 
+static PyObject *
+has_inline_values(PyObject *self, PyObject *obj)
+{
+    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        _PyObject_InlineValues(obj)->valid) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1857,6 +1866,7 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
     {"reset_rare_event_counters", reset_rare_event_counters, METH_NOARGS},
+    {"has_inline_values", has_inline_values, METH_O},
 #ifdef Py_GIL_DISABLED
     {"py_thread_id", get_py_thread_id, METH_NOARGS},
 #endif
