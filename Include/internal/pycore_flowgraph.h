@@ -18,7 +18,7 @@ typedef struct {
 struct _PyCfgBuilder;
 
 int _PyCfgBuilder_UseLabel(struct _PyCfgBuilder *g, _PyCfgJumpTargetLabel lbl);
-int _PyCfgBuilder_Addop(struct _PyCfgBuilder *g, int opcode, int oparg, _PyCompilerSrcLocation loc);
+int _PyCfgBuilder_Addop(struct _PyCfgBuilder *g, int opcode, int oparg, _Py_SourceLocation loc);
 
 struct _PyCfgBuilder* _PyCfgBuilder_New(void);
 void _PyCfgBuilder_Free(struct _PyCfgBuilder *g);
