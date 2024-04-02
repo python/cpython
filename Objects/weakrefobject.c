@@ -698,8 +698,6 @@ static void
 proxy_dealloc(PyWeakReference *self)
 {
     PyObject_GC_UnTrack(self);
-    if (self->wr_callback != NULL)
-        PyObject_GC_UnTrack((PyObject *)self);
     clear_weakref(self);
     PyObject_GC_Del(self);
 }
