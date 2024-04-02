@@ -22,13 +22,13 @@
 
 #define DEFAULT_BLOCK_SIZE 16
 
-typedef _PyCompilerSrcLocation location;
+typedef _Py_SourceLocation location;
 typedef _PyCfgJumpTargetLabel jump_target_label;
 
 typedef struct _PyCfgInstruction {
     int i_opcode;
     int i_oparg;
-    _PyCompilerSrcLocation i_loc;
+    _Py_SourceLocation i_loc;
     struct _PyCfgBasicblock *i_target; /* target block (if jump instruction) */
     struct _PyCfgBasicblock *i_except; /* target block when exception is raised */
 } cfg_instr;
@@ -92,7 +92,7 @@ static const jump_target_label NO_LABEL = {-1};
 #define IS_LABEL(L) (!SAME_LABEL((L), (NO_LABEL)))
 
 #define LOCATION(LNO, END_LNO, COL, END_COL) \
-    ((const _PyCompilerSrcLocation){(LNO), (END_LNO), (COL), (END_COL)})
+    ((const _Py_SourceLocation){(LNO), (END_LNO), (COL), (END_COL)})
 
 static inline int
 is_block_push(cfg_instr *i)

@@ -387,7 +387,7 @@ symtable_new(void)
 }
 
 struct symtable *
-_PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
+_PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_stmt_seq *seq;
@@ -2757,7 +2757,7 @@ _Py_SymtableStringObjectFlags(const char *str, PyObject *filename,
         _PyArena_Free(arena);
         return NULL;
     }
-    PyFutureFeatures future;
+    _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
         _PyArena_Free(arena);
         return NULL;
