@@ -1503,7 +1503,7 @@ class StringLikeTest(BaseTest):
         # issue 11828
         s = 'hello'
         x = 'x'
-        self.assertRaisesRegex(TypeError, r'^find\(', s.find,
+        self.assertRaisesRegex(TypeError, r'^find\b', s.find,
                                 x, None, None, None)
         self.assertRaisesRegex(TypeError, r'^rfind\(', s.rfind,
                                 x, None, None, None)
