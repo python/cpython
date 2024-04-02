@@ -17,6 +17,7 @@ import unittest
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
+    from libclinic.converters import int_converter, str_converter
     import clinic
     from clinic import DSLParser
 
@@ -52,6 +53,20 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     return cm.exception
 
 
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, clinic.converters,
+                        clinic.converters.copy())
+    testcase.addCleanup(restore_dict, clinic.legacy_converters,
+                        clinic.legacy_converters.copy())
+    testcase.addCleanup(restore_dict, clinic.return_converters,
+                        clinic.return_converters.copy())
+
+
 class ClinicWholeFileTest(TestCase):
     maxDiff = None
 
@@ -60,6 +75,7 @@ class ClinicWholeFileTest(TestCase):
                         filename=filename, lineno=lineno)
 
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = _make_clinic(filename="test.c")
 
     def test_eol(self):
@@ -909,7 +925,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(2, len(function.parameters))
         p = function.parameters['path']
         self.assertEqual('path', p.name)
-        self.assertIsInstance(p.converter, clinic.int_converter)
+        self.assertIsInstance(p.converter, int_converter)
 
     def test_param_default(self):
         function = self.parse_function("""
@@ -1008,7 +1024,7 @@ class ClinicParserTest(TestCase):
         """)
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_param_default_parameters_out_of_order(self):
         err = (
@@ -2025,7 +2041,7 @@ class ClinicParserTest(TestCase):
         block = self.parse('module os\nos.access\n   path: "s"')
         module, function = block.signatures
         conv = (function.parameters['path']).converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_legacy_converters_non_string_constant_annotation(self):
         err = "Annotations must be either a name, a function call, or a string"
@@ -2430,6 +2446,9 @@ class ClinicParserTest(TestCase):
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
+
+    def setUp(self):
+        save_restore_converters(self)
 
     def run_clinic(self, *args):
         with (

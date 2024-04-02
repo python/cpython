@@ -210,6 +210,7 @@
     <ClInclude Include="..\Include\internal\pycore_bytesobject.h" />
     <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_capsule.h" />
+    <ClInclude Include="..\Include\internal\pycore_cell.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval_state.h" />
     <ClInclude Include="..\Include\internal\pycore_cfg.h" />
