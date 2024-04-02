@@ -1700,7 +1700,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_endswith__doc__,
-"endswith($self, prefix, start=None, end=None, /)\n"
+"endswith($self, prefix[, start[, end]], /)\n"
 "--\n"
 "\n"
 "Return True if the string ends with the specified prefix, False otherwise.\n"
@@ -1888,4 +1888,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c45a7065749e0d27 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4af05b7e8356a039 input=a9049054013a1b77]*/
