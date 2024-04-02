@@ -1276,7 +1276,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 
     /* Set globals['__builtins__'] if it doesn't exist */
     if (globals == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "globals are NULL");
+        PyErr_SetString(PyExc_RuntimeError, "run_eval_code_obj(): globals = NULL");
         return NULL;
     }
     else {
