@@ -197,50 +197,33 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
 
 static cfg_builder*
 instr_sequence_to_cfg(instr_sequence *seq) {
+    if (_PyInstructionSequence_ApplyLabelMap(seq) < 0) {
+        return NULL;
+    }
     cfg_builder *g = _PyCfgBuilder_New();
     if (g == NULL) {
         return NULL;
     }
-
-    /* There can be more than one label for the same offset. The
-     * offset2lbl maping selects one of them which we use consistently.
-     */
-
-    int *offset2lbl = PyMem_Malloc(seq->s_used * sizeof(int));
-    if (offset2lbl == NULL) {
-        PyErr_NoMemory();
-        goto error;
+    for (int i = 0; i < seq->s_used; i++) {
+        seq->s_instrs[i].i_target = 0;
     }
     for (int i = 0; i < seq->s_used; i++) {
-        offset2lbl[i] = -1;
-    }
-    for (int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
-        int offset = seq->s_labelmap[lbl];
-        if (offset >= 0) {
-            assert(offset < seq->s_used);
-            offset2lbl[offset] = lbl;
+        instruction *instr = &seq->s_instrs[i];
+        if (HAS_TARGET(instr->i_opcode)) {
+            assert(instr->i_oparg >= 0 && instr->i_oparg < seq->s_used);
+            seq->s_instrs[instr->i_oparg].i_target = 1;
         }
     }
-
     for (int i = 0; i < seq->s_used; i++) {
-        int lbl = offset2lbl[i];
-        if (lbl >= 0) {
-            assert (lbl < seq->s_labelmap_size);
-            jump_target_label lbl_ = {lbl};
+        instruction *instr = &seq->s_instrs[i];
+        if (instr->i_target) {
+            jump_target_label lbl_ = {i};
             if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
                 goto error;
             }
         }
-        instruction *instr = &seq->s_instrs[i];
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
-        if (HAS_TARGET(opcode)) {
-            int offset = seq->s_labelmap[oparg];
-            assert(offset >= 0 && offset < seq->s_used);
-            int lbl = offset2lbl[offset];
-            assert(lbl >= 0 && lbl < seq->s_labelmap_size);
-            oparg = lbl;
-        }
         if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
             goto error;
         }
@@ -248,11 +231,9 @@ instr_sequence_to_cfg(instr_sequence *seq) {
     if (_PyCfgBuilder_CheckSize(g) < 0) {
         goto error;
     }
-    PyMem_Free(offset2lbl);
     return g;
 error:
     _PyCfgBuilder_Free(g);
-    PyMem_Free(offset2lbl);
     return NULL;
 }
 

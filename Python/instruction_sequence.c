@@ -73,6 +73,10 @@ _PyInstructionSequence_UseLabel(instr_sequence *seq, int lbl)
 int
 _PyInstructionSequence_ApplyLabelMap(instr_sequence *instrs)
 {
+    if (instrs->s_labelmap == NULL) {
+        /* Already applied - nothing to do */
+        return SUCCESS;
+    }
     /* Replace labels by offsets in the code */
     for (int i=0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];

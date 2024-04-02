@@ -22,7 +22,7 @@ typedef struct {
     _Py_SourceLocation i_loc;
     _PyExceptHandlerInfo i_except_handler_info;
 
-    /* Used by the assembler */
+    /* Temporary fields, used by the assembler and in instr_sequence_to_cfg */
     int i_target;
     int i_offset;
 } _PyInstruction;
