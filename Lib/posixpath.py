@@ -454,7 +454,7 @@ symbolic links encountered in the path."""
             continue
         if name == pardir:
             # parent dir
-            path = path[:path.rfind(sep)] or sep
+            path = path[:path.rindex(sep)] or sep
             continue
         if path == sep:
             newpath = path + name
