@@ -534,12 +534,9 @@ legacy_converters: ConverterDict = {}
 
 
 def add_legacy_c_converter(
-        format_unit: str,
-        **kwargs: Any
+    format_unit: str,
+    **kwargs: Any
 ) -> Callable[[CConverterClassT], CConverterClassT]:
-    """
-    Adds a legacy converter.
-    """
     def closure(f: CConverterClassT) -> CConverterClassT:
         added_f: Callable[..., CConverter]
         if not kwargs:
