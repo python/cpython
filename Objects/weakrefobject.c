@@ -14,7 +14,7 @@
  *
  * In free-threaded builds we need to protect mutable state of:
  *
- * - The weakref (wr_object, wr_hash)
+ * - The weakref (wr_object, hash, wr_callback)
  * - The referenced object (its head-of-list pointer)
  * - The linked list of weakrefs
  *
