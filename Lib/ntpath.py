@@ -102,11 +102,11 @@ def join(path, *paths):
     if isinstance(path, bytes):
         sep = b'\\'
         seps = b'\\/'
-        colon = b':'
+        colon_seps = b':\\/'
     else:
         sep = '\\'
         seps = '\\/'
-        colon = ':'
+        colon_seps = ':\\/'
     try:
         if not paths:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
@@ -135,7 +135,7 @@ def join(path, *paths):
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
         if (result_path and not result_root and
-            result_drive and result_drive[-1:] not in colon + seps):
+            result_drive and result_drive[-1] not in colon_seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
@@ -279,7 +279,7 @@ if hasattr(os.stat_result, 'st_reparse_tag'):
             st = os.lstat(path)
         except (OSError, ValueError, AttributeError):
             return False
-        return bool(st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT)
+        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
 else:
     # Use genericpath.isjunction as imported above
     pass
@@ -340,8 +340,8 @@ def isreserved(path):
 def _isreservedname(name):
     """Return true if the filename is reserved by the system."""
     # Trailing dots and spaces are reserved.
-    if name.endswith(('.', ' ')) and name not in ('.', '..'):
-        return True
+    if name[-1:] in ('.', ' '):
+        return name not in ('.', '..')
     # Wildcards, separators, colon, and pipe (*?"<>/\:|) are reserved.
     # ASCII control characters (0-31) are reserved.
     # Colon is reserved for file streams (e.g. "name:stream[:type]").
@@ -350,9 +350,7 @@ def _isreservedname(name):
     # DOS device names are reserved (e.g. "nul" or "nul .txt"). The rules
     # are complex and vary across Windows versions. On the side of
     # caution, return True for names that may not be reserved.
-    if name.partition('.')[0].rstrip(' ').upper() in _reserved_names:
-        return True
-    return False
+    return name.partition('.')[0].rstrip(' ').upper() in _reserved_names
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -381,13 +379,10 @@ def expanduser(path):
 
     if 'USERPROFILE' in os.environ:
         userhome = os.environ['USERPROFILE']
-    elif not 'HOMEPATH' in os.environ:
+    elif 'HOMEPATH' not in os.environ:
         return path
     else:
-        try:
-            drive = os.environ['HOMEDRIVE']
-        except KeyError:
-            drive = ''
+        drive = os.environ.get('HOMEDRIVE', '')
         userhome = join(drive, os.environ['HOMEPATH'])
 
     if i != 1: #~user
@@ -727,7 +722,8 @@ else:
             new_unc_prefix = b'\\\\'
             cwd = os.getcwdb()
             # bpo-38081: Special case for realpath(b'nul')
-            if normcase(path) == normcase(os.fsencode(devnull)):
+            devnull = b'nul'
+            if normcase(path) == devnull:
                 return b'\\\\.\\NUL'
         else:
             prefix = '\\\\?\\'
@@ -735,7 +731,8 @@ else:
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
             # bpo-38081: Special case for realpath('nul')
-            if normcase(path) == normcase(devnull):
+            devnull = 'nul'
+            if normcase(path) == devnull:
                 return '\\\\.\\NUL'
         had_prefix = path.startswith(prefix)
         if not had_prefix and not isabs(path):
