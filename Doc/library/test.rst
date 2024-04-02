@@ -733,8 +733,8 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_gil_enabled
 
-   Decorator for skipping tests on the free-threaded build. If the :term:`GIL`
-   is disabled, the test is skipped.
+   Decorator for skipping tests on the free-threaded build.  If the
+   :term:`GIL` is disabled, the test is skipped.
 
 
 .. decorator:: requires_IEEE_754
