@@ -1057,7 +1057,7 @@ PyObject_ClearWeakRefs(PyObject *object)
         return;
     }
 
-    int num_items = 0;
+    Py_ssize_t num_items = 0;
     for (int done = 0; !done;) {
         PyObject *callback = NULL;
         LOCK_WEAKREFS(object);
@@ -1078,7 +1078,7 @@ PyObject_ClearWeakRefs(PyObject *object)
         Py_XDECREF(callback);
     }
 
-    for (int i = 0; i < num_items; i += 2) {
+    for (Py_ssize_t i = 0; i < num_items; i += 2) {
         PyObject *callback = PyTuple_GET_ITEM(tuple, i + 1);
         if (callback != NULL) {
             PyObject *weakref = PyTuple_GET_ITEM(tuple, i);
