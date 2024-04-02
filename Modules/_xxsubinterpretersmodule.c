@@ -550,9 +550,8 @@ add_owned(owned_ids *owned, PyInterpreterState *interp)
 }
 
 static void
-drop_owned(owned_ids *owned, PyInterpreterState *interp)
+drop_owned(owned_ids *owned, int64_t interpid)
 {
-    int64_t id = PyInterpreterState_GetID(interp);
 #if sizeof(int64_t) <= sizeof(Py_uhash_t)
     _Py_hashtable_steal(owned_ids, (const void *)id);
 #else
@@ -758,6 +757,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     if (interp == NULL) {
         return NULL;
     }
+    int64_t interpid = PyInterpreterState_GetID(interp);
 
     // Ensure we don't try to destroy the current interpreter.
     PyInterpreterState *current = _get_current_interp();
@@ -778,10 +778,10 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    drop_owned(&_globals.owned, interp);
-
     // Destroy the interpreter.
     _PyXI_EndInterpreter(interp, NULL, NULL);
+
+    drop_owned(&_globals.owned, interpid);
 
     Py_RETURN_NONE;
 }
