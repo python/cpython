@@ -1,2 +1,0 @@
-Added import helper ``isolated_modules`` as ``CleanImport`` does not remove
-modules imported during the context.

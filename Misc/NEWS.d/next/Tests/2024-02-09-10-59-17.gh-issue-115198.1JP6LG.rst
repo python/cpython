@@ -1,1 +1,0 @@
-Fix test_check_metadata_deprecate in distutils tests with a newer Docutils.
