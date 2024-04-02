@@ -660,16 +660,22 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(bytes_le, buffer[:n])
 
                 actual = asnativebytes(v, buffer, n, 4)
+                self.assertEqual(1, v)
                 self.assertIn(actual, expect_2, bytes_be.hex())
                 actual = asnativebytes(v, buffer, n, 5)
                 self.assertIn(actual, expect_2, bytes_be.hex())
-            except AssertionError:
+            except AssertionError as ex:
+                value_hex = ''.join(reversed([
+                    f'{b:02X}{"" if i % 8 else "_"}'
+                    for i, b in enumerate(bytes_le, start=1)
+                ])).strip('_')
                 if support.verbose:
                     print()
-                    print(''.join(f'{b:02X}' for b in bytes_be))
                     print(n, 'bytes')
+                    print('hex =', value_hex)
                     print('int =', v)
-                raise
+                    raise
+                raise AssertionError(f"Value: 0x{value_hex}") from ex
 
     def test_long_fromnativebytes(self):
         import math

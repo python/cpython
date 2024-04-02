@@ -113,21 +113,21 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    retrieved from the resulting value using :c:func:`PyLong_AsVoidPtr`.
 
 
-.. c:function:: PyObject* PyLong_FromNativeBytes(const void* buffer, size_t n_bytes, int endianness)
+.. c:function:: PyObject* PyLong_FromNativeBytes(const void* buffer, size_t n_bytes, int flags)
 
    Create a Python integer from the value contained in the first *n_bytes* of
    *buffer*, interpreted as a two's-complement signed number.
 
    *flags* are as for :c:func:`PyLong_AsNativeBytes`. Passing ``-1`` will select
    the native endian that CPython was compiled with and assume that the
-   most-significant bit is a sign bit. ``Py_ASNATIVEBYTES_REJECT_NEGATIVE`` has
-   no effect. Passing ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` will produce the same
-   result as calling :c:func:`PyLong_FromUnsignedNativeBytes`.
+   most-significant bit is a sign bit. Passing
+   ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` will produce the same result as calling
+   :c:func:`PyLong_FromUnsignedNativeBytes`. Other flags are ignored.
 
    .. versionadded:: 3.13
 
 
-.. c:function:: PyObject* PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n_bytes, int endianness)
+.. c:function:: PyObject* PyLong_FromUnsignedNativeBytes(const void* buffer, size_t n_bytes, int flags)
 
    Create a Python integer from the value contained in the first *n_bytes* of
    *buffer*, interpreted as an unsigned number.
@@ -416,6 +416,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    *flags* is a combination of the flags shown in the table below, or ``-1`` to
    select defaults that behave most like a C cast (currently,
    ``Py_ASNATIVEBYTES_NATIVE_ENDIAN | Py_ASNATIVEBYTES_UNSIGNED_BUFFER``).
+   Note that ``Py_ASNATIVEBYTES_DEFAULTS`` cannot be combined with other flags.
 
    ============================================= ======
    Flag                                          Value
@@ -429,7 +430,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    ============================================= ======
 
    Specifying ``Py_ASNATIVEBYTES_NATIVE_ENDIAN`` will override any other endian
-   flags.
+   flags. Passing ``2`` is reserved.
 
    Specifying ``Py_ASNATIVEBYTES_UNSIGNED_BUFFER`` allows positive input values
    that would set the most-significant bit to be converted. For example,
