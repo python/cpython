@@ -7,7 +7,7 @@ from ._common import (
     Anchor,
 )
 
-from .functional import (
+from ._functional import (
     contents,
     is_resource,
     open_binary,
