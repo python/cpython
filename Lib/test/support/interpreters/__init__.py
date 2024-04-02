@@ -115,7 +115,7 @@ class Interpreter:
                 self._id = id
                 self._ownsref = True
             except BaseException:
-                _interpreters._decref(id)
+                _interpreters.decref(id)
                 raise
             _known[id] = self
         return self
