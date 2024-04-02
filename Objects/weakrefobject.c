@@ -78,7 +78,6 @@ init_weakref(PyWeakReference *self, PyObject *ob, PyObject *callback)
 static void
 clear_weakref_lock_held(PyWeakReference *self, PyObject **callback)
 {
-    // TODO: Assert locks are held or world is stopped
     if (self->wr_object != Py_None) {
         PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
         if (*list == self) {
@@ -1057,8 +1056,8 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
     static_builtin_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
-    // Since this is called at finalization when there's only one thread left
-    // it's safe to do this without locking in free-threaded builds.
+    // This is safe to do without holding the lock in free-threaded builds;
+    // there is only one thread running and no new threads can be created.
     while (*list) {
         _PyWeakref_ClearRef((PyWeakReference *)*list);
     }
