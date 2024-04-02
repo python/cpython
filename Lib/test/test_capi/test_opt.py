@@ -578,6 +578,7 @@ class TestUops(unittest.TestCase):
 @requires_specialization
 @unittest.skipIf(os.getenv("PYTHON_UOPS_OPTIMIZE") == "0", "Needs uop optimizer to run.")
 class TestUopsOptimization(unittest.TestCase):
+
     def _run_with_optimizer(self, testfunc, arg):
         res = None
         opt = _testinternalcapi.new_uop_optimizer()
