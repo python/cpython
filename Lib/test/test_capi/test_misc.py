@@ -2277,11 +2277,11 @@ class InterpreterConfigTests(unittest.TestCase):
             expected = self.supported[expected]
             args = (name,) if name else ()
 
-            config1 = _testinternalcapi.new_interp_config(*args)
+            config1 = _interpreters.new_config(*args)
             self.assert_ns_equal(config1, expected)
             self.assertIsNot(config1, expected)
 
-            config2 = _testinternalcapi.new_interp_config(*args)
+            config2 = _interpreters.new_config(*args)
             self.assert_ns_equal(config2, expected)
             self.assertIsNot(config2, expected)
             self.assertIsNot(config2, config1)
@@ -2298,7 +2298,7 @@ class InterpreterConfigTests(unittest.TestCase):
             with self.subTest(f'noop ({name})'):
                 expected = vanilla
                 overrides = vars(vanilla)
-                config = _testinternalcapi.new_interp_config(name, **overrides)
+                config = _interpreters.new_config(name, **overrides)
                 self.assert_ns_equal(config, expected)
 
             with self.subTest(f'change all ({name})'):
@@ -2308,7 +2308,7 @@ class InterpreterConfigTests(unittest.TestCase):
                         continue
                     overrides['gil'] = gil
                     expected = types.SimpleNamespace(**overrides)
-                    config = _testinternalcapi.new_interp_config(
+                    config = _interpreters.new_config(
                                                             name, **overrides)
                     self.assert_ns_equal(config, expected)
 
@@ -2324,14 +2324,14 @@ class InterpreterConfigTests(unittest.TestCase):
                         expected = types.SimpleNamespace(
                             **dict(vars(vanilla), **overrides),
                         )
-                        config = _testinternalcapi.new_interp_config(
+                        config = _interpreters.new_config(
                                                             name, **overrides)
                         self.assert_ns_equal(config, expected)
 
         with self.subTest('unsupported field'):
             for name in self.supported:
                 with self.assertRaises(ValueError):
-                    _testinternalcapi.new_interp_config(name, spam=True)
+                    _interpreters.new_config(name, spam=True)
 
         # Bad values for bool fields.
         for field, value in vars(self.supported['empty']).items():
@@ -2341,17 +2341,17 @@ class InterpreterConfigTests(unittest.TestCase):
             for value in [1, '', 'spam', 1.0, None, object()]:
                 with self.subTest(f'unsupported value ({field}={value!r})'):
                     with self.assertRaises(TypeError):
-                        _testinternalcapi.new_interp_config(**{field: value})
+                        _interpreters.new_config(**{field: value})
 
         # Bad values for .gil.
         for value in [True, 1, 1.0, None, object()]:
             with self.subTest(f'unsupported value(gil={value!r})'):
                 with self.assertRaises(TypeError):
-                    _testinternalcapi.new_interp_config(gil=value)
+                    _interpreters.new_config(gil=value)
         for value in ['', 'spam']:
             with self.subTest(f'unsupported value (gil={value!r})'):
                 with self.assertRaises(ValueError):
-                    _testinternalcapi.new_interp_config(gil=value)
+                    _interpreters.new_config(gil=value)
 
     @requires_subinterpreters
     def test_interp_init(self):
@@ -2416,7 +2416,7 @@ class InterpreterConfigTests(unittest.TestCase):
     def test_get_config(self):
         @contextlib.contextmanager
         def new_interp(config):
-            interpid = _testinternalcapi.new_interpreter(config)
+            interpid = _interpreters.create(config, reqrefs=False)
             try:
                 yield interpid
             finally:
@@ -2426,32 +2426,32 @@ class InterpreterConfigTests(unittest.TestCase):
                     pass
 
         with self.subTest('main'):
-            expected = _testinternalcapi.new_interp_config('legacy')
+            expected = _interpreters.new_config('legacy')
             expected.gil = 'own'
             interpid = _interpreters.get_main()
-            config = _testinternalcapi.get_interp_config(interpid)
+            config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
         with self.subTest('isolated'):
-            expected = _testinternalcapi.new_interp_config('isolated')
+            expected = _interpreters.new_config('isolated')
             with new_interp('isolated') as interpid:
-                config = _testinternalcapi.get_interp_config(interpid)
+                config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
         with self.subTest('legacy'):
-            expected = _testinternalcapi.new_interp_config('legacy')
+            expected = _interpreters.new_config('legacy')
             with new_interp('legacy') as interpid:
-                config = _testinternalcapi.get_interp_config(interpid)
+                config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, expected)
 
         with self.subTest('custom'):
-            orig = _testinternalcapi.new_interp_config(
+            orig = _interpreters.new_config(
                 'empty',
                 use_main_obmalloc=True,
                 gil='shared',
             )
             with new_interp(orig) as interpid:
-                config = _testinternalcapi.get_interp_config(interpid)
+                config = _interpreters.get_config(interpid)
             self.assert_ns_equal(config, orig)
 
 
@@ -2529,14 +2529,19 @@ class InterpreterIDTests(unittest.TestCase):
         self.assertFalse(
             _testinternalcapi.interpreter_exists(interpid))
 
+    def get_refcount_helpers(self):
+        return (
+            _testinternalcapi.get_interpreter_refcount,
+            (lambda id: _interpreters.incref(id, implieslink=False)),
+            _interpreter.decref,
+        )
+
     def test_linked_lifecycle_does_not_exist(self):
         exists = _testinternalcapi.interpreter_exists
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
         unlink = _testinternalcapi.unlink_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
         with self.subTest('never existed'):
             interpid = _testinternalcapi.unused_interpreter_id()
@@ -2589,9 +2594,7 @@ class InterpreterIDTests(unittest.TestCase):
     def test_linked_lifecycle_never_linked(self):
         exists = _testinternalcapi.interpreter_exists
         is_linked = _testinternalcapi.interpreter_refcount_linked
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
         interpid = _testinternalcapi.new_interpreter()
         self.add_interp_cleanup(interpid)
@@ -2639,9 +2642,7 @@ class InterpreterIDTests(unittest.TestCase):
         exists = _testinternalcapi.interpreter_exists
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
         interpid = _testinternalcapi.new_interpreter()
         self.add_interp_cleanup(interpid)
@@ -2666,8 +2667,7 @@ class InterpreterIDTests(unittest.TestCase):
     def test_linked_lifecycle_incref_link(self):
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
+        get_refcount, incref, _ = self.get_refcount_helpers()
 
         interpid = _testinternalcapi.new_interpreter()
         self.add_interp_cleanup(interpid)
@@ -2688,9 +2688,7 @@ class InterpreterIDTests(unittest.TestCase):
         is_linked = _testinternalcapi.interpreter_refcount_linked
         link = _testinternalcapi.link_interpreter_refcount
         unlink = _testinternalcapi.unlink_interpreter_refcount
-        get_refcount = _testinternalcapi.get_interpreter_refcount
-        incref = _testinternalcapi.interpreter_incref
-        decref = _testinternalcapi.interpreter_decref
+        get_refcount, incref, decref = self.get_refcount_helpers()
 
         interpid = _testinternalcapi.new_interpreter()
         self.add_interp_cleanup(interpid)
