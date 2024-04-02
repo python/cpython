@@ -1103,15 +1103,10 @@ _PyStaticType_ClearWeakRefs(PyInterpreterState *interp, PyTypeObject *type)
 {
     static_builtin_state *state = _PyStaticType_GetState(interp, type);
     PyObject **list = _PyStaticType_GET_WEAKREFS_LISTPTR(state);
-    for (int done = 0; !done;) {
-        PyObject *callback = NULL;
-        LOCK_WEAKREFS(type);
-        if (*list != NULL) {
-            clear_weakref_lock_held((PyWeakReference*)*list, &callback);
-        }
-        done = (*list == NULL);
-        UNLOCK_WEAKREFS(type);
-        Py_XDECREF(callback);
+    // Since this is called at finalization when there's only one thread left
+    // it's safe to do this without locking in free-threaded builds.
+    while (*list) {
+        _PyWeakref_ClearRef((PyWeakReference *)*list);
     }
 }
 
