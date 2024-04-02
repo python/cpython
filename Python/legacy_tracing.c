@@ -586,7 +586,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     // needs to be decref'd outside of the lock
     PyObject *old_traceobj;
     LOCK_SETUP();
-    int tracing_threads = setup_tracing(tstate, func, arg, &old_traceobj);
+    Py_ssize_t tracing_threads = setup_tracing(tstate, func, arg, &old_traceobj);
     UNLOCK_SETUP();
     Py_XDECREF(old_traceobj);
     if (tracing_threads < 0) {

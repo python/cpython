@@ -922,7 +922,7 @@ _Py_atomic_load_uintptr_acquire(const uintptr_t *obj)
 #elif defined(_M_ARM64)
     return (uintptr_t)__ldar64((unsigned __int64 volatile *)obj);
 #else
-#  error "no implementation of _Py_atomic_load_ptr_acquire"
+#  error "no implementation of _Py_atomic_load_uintptr_acquire"
 #endif
 }
 
@@ -947,7 +947,7 @@ _Py_atomic_store_uintptr_release(uintptr_t *obj, uintptr_t value)
     _Py_atomic_ASSERT_ARG_TYPE(unsigned __int64);
     __stlr64((unsigned __int64 volatile *)obj, (unsigned __int64)value);
 #else
-#  error "no implementation of _Py_atomic_store_int_release"
+#  error "no implementation of _Py_atomic_store_uintptr_release"
 #endif
 }
 

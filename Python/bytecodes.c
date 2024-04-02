@@ -2379,6 +2379,14 @@ dummy_func(
         };
 
         tier1 inst(ENTER_EXECUTOR, (--)) {
+            int prevoparg = oparg;
+            CHECK_EVAL_BREAKER();
+            if (this_instr->op.code != ENTER_EXECUTOR ||
+                this_instr->op.arg != prevoparg) {
+                next_instr = this_instr;
+                DISPATCH();
+            }
+
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
@@ -2387,7 +2395,6 @@ dummy_func(
             assert(tstate->previous_executor == NULL);
             tstate->previous_executor = Py_None;
             Py_INCREF(executor);
-            CHECK_EVAL_BREAKER();
             GOTO_TIER_TWO(executor);
         }
 

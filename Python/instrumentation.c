@@ -42,7 +42,7 @@
     assert(!_PyInterpreterState_GET()->stoptheworld.world_stopped); \
     Py_BEGIN_CRITICAL_SECTION(code)
 
-#define UNLOCK_CODE(code)   Py_END_CRITICAL_SECTION()
+#define UNLOCK_CODE()   Py_END_CRITICAL_SECTION()
 
 #else
 
@@ -1374,15 +1374,10 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
     PyInterpreterState *is = _PyInterpreterState_GET();
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     assert(0 <= event_id && event_id < _PY_MONITORING_EVENTS);
-#ifdef Py_GIL_DISABLED
-    PyObject *callback = _Py_atomic_exchange_ptr(
-        &is->monitoring_callables[tool_id][event_id],
+    PyObject *callback = FT_ATOMIC_EXCHANGE_PYOBJECT(is->monitoring_callables[tool_id][event_id],
         Py_XNewRef(obj)
     );
-#else
-    PyObject *callback = is->monitoring_callables[tool_id][event_id];
-    is->monitoring_callables[tool_id][event_id] = Py_XNewRef(obj);
-#endif
+
     return callback;
 }
 
