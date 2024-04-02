@@ -77,12 +77,11 @@ typedef struct _object_stats {
     uint64_t frees;
     uint64_t to_freelist;
     uint64_t from_freelist;
-    uint64_t new_values;
+    uint64_t inline_values;
     uint64_t dict_materialized_on_request;
     uint64_t dict_materialized_new_key;
     uint64_t dict_materialized_too_big;
     uint64_t dict_materialized_str_subclass;
-    uint64_t dict_dematerialized;
     uint64_t type_cache_hits;
     uint64_t type_cache_misses;
     uint64_t type_cache_dunder_hits;
