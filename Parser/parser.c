@@ -19870,17 +19870,17 @@ invalid_arguments_rule(Parser *p)
         D(fprintf(stderr, "%*c> invalid_arguments[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "((','.(starred_expression | (assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) ',' ','.(starred_expression !'=')+"));
         asdl_seq * _gather_152_var;
         void *_tmp_151_var;
-        Token * b;
+        Token * a;
         if (
             (_tmp_151_var = _tmp_151_rule(p))  // (','.(starred_expression | (assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs
             &&
-            (b = _PyPegen_expect_token(p, 12))  // token=','
+            (a = _PyPegen_expect_token(p, 12))  // token=','
             &&
             (_gather_152_var = _gather_152_rule(p))  // ','.(starred_expression !'=')+
         )
         {
             D(fprintf(stderr, "%*c+ invalid_arguments[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "((','.(starred_expression | (assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) ',' ','.(starred_expression !'=')+"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( b , "iterable argument unpacking follows keyword argument unpacking" );
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "iterable argument unpacking follows keyword argument unpacking" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
