@@ -102,11 +102,11 @@ def join(path, *paths):
     if isinstance(path, bytes):
         sep = b'\\'
         seps = b'\\/'
-        colon = b':'
+        colon_seps = b':\\/'
     else:
         sep = '\\'
         seps = '\\/'
-        colon = ':'
+        colon_seps = ':\\/'
     try:
         if not paths:
             path[:0] + sep  #23780: Ensure compatible data type even if p is null.
@@ -135,7 +135,7 @@ def join(path, *paths):
             result_path = result_path + p_path
         ## add separator between UNC and non-absolute path
         if (result_path and not result_root and
-            result_drive and result_drive[-1] not in colon + seps):
+            result_drive and result_drive[-1] not in colon_seps):
             return result_drive + sep + result_path
         return result_drive + result_root + result_path
     except (TypeError, AttributeError, BytesWarning):
