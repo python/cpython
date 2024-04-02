@@ -54,7 +54,6 @@ Objects/genobject.c	-	_PyAsyncGenASend_Type	-
 Objects/genobject.c	-	_PyAsyncGenAThrow_Type	-
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	-
 Objects/genobject.c	-	_PyCoroWrapper_Type	-
-Objects/interpreteridobject.c	-	PyInterpreterID_Type	-
 Objects/iterobject.c	-	PyCallIter_Type	-
 Objects/iterobject.c	-	PySeqIter_Type	-
 Objects/iterobject.c	-	_PyAnextAwaitable_Type	-
@@ -417,14 +416,14 @@ Modules/xxmodule.c	-	ErrorObject	-
 
 ## manually cached PyUnicodeOjbect
 Modules/_ctypes/callproc.c	_ctypes_get_errobj	error_object_name	-
-Modules/_ctypes/_ctypes.c	CreateSwappedType	suffix	-
+Modules/_ctypes/_ctypes.c	CreateSwappedType	swapped_suffix	-
 
 ##-----------------------
 ## other
 
 ## initialized once
 Modules/_ctypes/_ctypes.c	-	_unpickle	-
-Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	cache	-
+Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	array_cache	-
 Modules/_cursesmodule.c	-	ModDict	-
 Modules/_datetimemodule.c	datetime_strptime	module	-
 

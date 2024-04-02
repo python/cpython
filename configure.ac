@@ -362,6 +362,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
@@ -714,16 +715,16 @@ if test "$cross_compiling" = yes; then
 		_host_device=`echo $host | cut -d '-' -f4`
 		_host_device=${_host_device:=os}
 
-		dnl IOS_DEPLOYMENT_TARGET is the minimum supported iOS version
-		IOS_DEPLOYMENT_TARGET=${_host_os:3}
-		IOS_DEPLOYMENT_TARGET=${IOS_DEPLOYMENT_TARGET:=12.0}
+		# IPHONEOS_DEPLOYMENT_TARGET is the minimum supported iOS version
+		IPHONEOS_DEPLOYMENT_TARGET=${_host_os:3}
+		IPHONEOS_DEPLOYMENT_TARGET=${IPHONEOS_DEPLOYMENT_TARGET:=12.0}
 
 		case "$host_cpu" in
 			aarch64)
-				_host_ident=${IOS_DEPLOYMENT_TARGET}-arm64-iphone${_host_device}
+				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-arm64-iphone${_host_device}
 				;;
 			*)
-				_host_ident=${IOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
+				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
 				;;
 		esac
 		;;
@@ -865,6 +866,9 @@ AC_SUBST([EXPORT_MACOSX_DEPLOYMENT_TARGET])
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
 EXPORT_MACOSX_DEPLOYMENT_TARGET='#'
 
+# Record the value of IPHONEOS_DEPLOYMENT_TARGET enforced by the selected host triple.
+AC_SUBST([IPHONEOS_DEPLOYMENT_TARGET])
+
 # checks for alternative programs
 
 # compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
@@ -900,9 +904,8 @@ AS_CASE([$host],
 dnl Add the compiler flag for the iOS minimum supported OS version.
 AS_CASE([$ac_sys_system],
   [iOS], [
-    AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
-    AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IOS_DEPLOYMENT_TARGET}"])
-    AC_SUBST([IOS_DEPLOYMENT_TARGET])
+    AS_VAR_APPEND([CFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
+    AS_VAR_APPEND([LDFLAGS], [" -mios-version-min=${IPHONEOS_DEPLOYMENT_TARGET}"])
   ],
 )
 
@@ -3284,7 +3287,6 @@ if test -z "$SHLIB_SUFFIX"; then
 		esac
 		;;
 	CYGWIN*)   SHLIB_SUFFIX=.dll;;
-	iOS)   SHLIB_SUFFIX=.dylib;;
 	*)	   SHLIB_SUFFIX=.so;;
 	esac
 fi
@@ -4934,13 +4936,21 @@ fi
 if test "$ac_sys_system" = "Linux-android"; then
   # When these functions are used in an unprivileged process, they crash rather
   # than returning an error.
-  privileged_funcs="chroot initgroups setegid seteuid setgid setregid setresgid
-    setresuid setreuid setuid"
+  blocked_funcs="chroot initgroups setegid seteuid setgid sethostname
+    setregid setresgid setresuid setreuid setuid"
 
-  # These functions are unimplemented and always return an error.
-  unimplemented_funcs="sem_open sem_unlink"
+  # These functions are unimplemented and always return an error
+  # (https://android.googlesource.com/platform/system/sepolicy/+/refs/heads/android13-release/public/domain.te#1044)
+  blocked_funcs="$blocked_funcs sem_open sem_unlink"
 
-  for name in $privileged_funcs $unimplemented_funcs; do
+  # Before API level 23, when fchmodat is called with the unimplemented flag
+  # AT_SYMLINK_NOFOLLOW, instead of returning ENOTSUP as it should, it actually
+  # follows the symlink.
+  if test "$ANDROID_API_LEVEL" -lt 23; then
+    blocked_funcs="$blocked_funcs fchmodat"
+  fi
+
+  for name in $blocked_funcs; do
     AS_VAR_PUSHDEF([func_var], [ac_cv_func_$name])
     AS_VAR_SET([func_var], [no])
     AS_VAR_POPDEF([func_var])
@@ -5303,11 +5313,16 @@ then
   ])
 fi
 
-AC_CHECK_FUNCS([clock_nanosleep], [], [
-    AC_CHECK_LIB([rt], [clock_nanosleep], [
-        AC_DEFINE([HAVE_CLOCK_NANOSLEEP], [1])
-    ])
-])
+# On Android before API level 23, clock_nanosleep returns the wrong value when
+# interrupted by a signal (https://issuetracker.google.com/issues/216495770).
+if ! { test "$ac_sys_system" = "Linux-android" &&
+       test "$ANDROID_API_LEVEL" -lt 23; }; then
+  AC_CHECK_FUNCS([clock_nanosleep], [], [
+      AC_CHECK_LIB([rt], [clock_nanosleep], [
+          AC_DEFINE([HAVE_CLOCK_NANOSLEEP], [1])
+      ])
+  ])
+fi
 
 AC_CHECK_FUNCS([nanosleep], [], [
     AC_CHECK_LIB([rt], [nanosleep], [
@@ -6825,8 +6840,7 @@ SRCDIRS="\
   Parser/lexer \
   Programs \
   Python \
-  Python/frozen_modules \
-  Python/deepfreeze"
+  Python/frozen_modules"
 AC_MSG_CHECKING([for build directories])
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
@@ -6927,6 +6941,7 @@ AC_ARG_WITH([ensurepip],
       AS_CASE([$ac_sys_system],
         [Emscripten], [with_ensurepip=no],
         [WASI], [with_ensurepip=no],
+        [iOS], [with_ensurepip=no],
         [with_ensurepip=upgrade]
       )
     ])
@@ -7397,11 +7412,19 @@ AS_CASE([$ac_sys_system],
       [Emscripten/node*], [],
       [WASI/*], [
         dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+        dnl Test modules that must be compiled as shared libraries are not supported
+        dnl (see Modules/Setup.stdlib.in).
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
+          [_testexternalinspection],
+          [_testimportmultiple],
+          [_testmultiphase],
+          [_testsinglephase],
           [fcntl],
           [mmap],
           [termios],
+          [xxlimited],
+          [xxlimited_35],
         )
       ]
     )

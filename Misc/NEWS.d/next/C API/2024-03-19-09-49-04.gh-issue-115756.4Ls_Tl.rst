@@ -1,0 +1,3 @@
+:c:func:`!PyCode_GetFirstFree` is an ustable API now and has been renamed to
+:c:func:`PyUnstable_Code_GetFirstFree`. (Contributed by Bogdan Romanyuk in
+:gh:`115781`)

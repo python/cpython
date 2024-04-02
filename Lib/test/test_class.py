@@ -448,15 +448,15 @@ class ClassTests(unittest.TestCase):
     def testHasAttrString(self):
         import sys
         from test.support import import_helper
-        _testcapi = import_helper.import_module('_testcapi')
+        _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
         class A:
             def __init__(self):
                 self.attr = 1
 
         a = A()
-        self.assertEqual(_testcapi.object_hasattrstring(a, b"attr"), 1)
-        self.assertEqual(_testcapi.object_hasattrstring(a, b"noattr"), 0)
+        self.assertEqual(_testlimitedcapi.object_hasattrstring(a, b"attr"), 1)
+        self.assertEqual(_testlimitedcapi.object_hasattrstring(a, b"noattr"), 0)
         self.assertIsNone(sys.exception())
 
     def testDel(self):
@@ -787,6 +787,7 @@ class ClassTests(unittest.TestCase):
         for i in range(100):
             Type(i)
         self.assertEqual(calls, 100)
+
 
 if __name__ == '__main__':
     unittest.main()

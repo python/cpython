@@ -1,3 +1,9 @@
+// Need limited C API version 3.12 for PyType_FromMetaclass()
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#if !defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API )
+#  define Py_LIMITED_API 0x030c0000
+#endif
+
 #include "parts.h"
 #include <stddef.h>               // max_align_t
 #include <string.h>               // memset
@@ -325,7 +331,8 @@ static PyMethodDef TestMethods[] = {
 };
 
 int
-_PyTestCapi_Init_HeaptypeRelative(PyObject *m) {
+_PyTestLimitedCAPI_Init_HeaptypeRelative(PyObject *m)
+{
     if (PyModule_AddFunctions(m, TestMethods) < 0) {
         return -1;
     }
