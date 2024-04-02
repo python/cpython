@@ -1823,15 +1823,19 @@ class SubinterpImportTests(unittest.TestCase):
             **(self.ISOLATED if isolated else self.NOT_ISOLATED),
             check_multi_interp_extensions=strict,
         )
+        gil = kwargs['gil']
+        kwargs['gil'] = 'default' if gil == 0 else (
+            'shared' if gil == 1 else 'own' if gil == 2 else gil)
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
             import _testinternalcapi, sys
             assert (
                 {name!r} in sys.builtin_module_names or
                 {name!r} not in sys.modules
             ), repr({name!r})
+            config = type(sys.implementation)(**{kwargs})
             ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
-                **{kwargs},
+                config,
             )
             assert ret == 0, ret
             '''))
@@ -1847,12 +1851,16 @@ class SubinterpImportTests(unittest.TestCase):
             **(self.ISOLATED if isolated else self.NOT_ISOLATED),
             check_multi_interp_extensions=True,
         )
+        gil = kwargs['gil']
+        kwargs['gil'] = 'default' if gil == 0 else (
+            'shared' if gil == 1 else 'own' if gil == 2 else gil)
         _, out, err = script_helper.assert_python_ok('-c', textwrap.dedent(f'''
             import _testinternalcapi, sys
             assert {name!r} not in sys.modules, {name!r}
+            config = type(sys.implementation)(**{kwargs})
             ret = _testinternalcapi.run_in_subinterp_with_config(
                 {self.import_script(name, "sys.stdout.fileno()")!r},
-                **{kwargs},
+                config,
             )
             assert ret == 0, ret
             '''))

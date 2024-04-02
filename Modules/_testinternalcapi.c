@@ -23,10 +23,12 @@
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
 #include "pycore_long.h"          // _PyLong_Sign()
+#include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_optimizer.h"     // _Py_UopsSymbol, etc.
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "clinic/_testinternalcapi.c.h"
@@ -1355,83 +1357,153 @@ dict_getitem_knownhash(PyObject *self, PyObject *args)
 }
 
 
+static int
+init_named_interp_config(PyInterpreterConfig *config, const char *name)
+{
+    if (name == NULL) {
+        name = "isolated";
+    }
+
+    if (strcmp(name, "isolated") == 0) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_INIT;
+    }
+    else if (strcmp(name, "legacy") == 0) {
+        *config = (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+    }
+    else if (strcmp(name, "empty") == 0) {
+        *config = (PyInterpreterConfig){0};
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "unsupported config name '%s'", name);
+        return -1;
+    }
+    return 0;
+}
+
+static PyObject *
+new_interp_config(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    const char *name = NULL;
+    if (!PyArg_ParseTuple(args, "|s:new_config", &name)) {
+        return NULL;
+    }
+    PyObject *overrides = kwds;
+
+    if (name == NULL) {
+        name = "isolated";
+    }
+
+    PyInterpreterConfig config;
+    if (init_named_interp_config(&config, name) < 0) {
+        return NULL;
+    }
+
+    if (overrides != NULL && PyDict_GET_SIZE(overrides) > 0) {
+        if (_PyInterpreterConfig_UpdateFromDict(&config, overrides) < 0) {
+            return NULL;
+        }
+    }
+
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+static PyObject *
+get_interp_config(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", NULL};
+    PyObject *idobj = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O:get_config", kwlist, &idobj))
+    {
+        return NULL;
+    }
+
+    PyInterpreterState *interp;
+    if (idobj == NULL) {
+        interp = PyInterpreterState_Get();
+    }
+    else {
+        interp = _PyInterpreterState_LookUpIDObject(idobj);
+        if (interp == NULL) {
+            return NULL;
+        }
+    }
+
+    PyInterpreterConfig config;
+    if (_PyInterpreterConfig_InitFromState(&config, interp) < 0) {
+        return NULL;
+    }
+    PyObject *dict = _PyInterpreterConfig_AsDict(&config);
+    if (dict == NULL) {
+        return NULL;
+    }
+
+    PyObject *configobj = _PyNamespace_New(dict);
+    Py_DECREF(dict);
+    return configobj;
+}
+
+static int
+interp_config_from_object(PyObject *configobj, PyInterpreterConfig *config)
+{
+    if (configobj == NULL || configobj == Py_None) {
+        if (init_named_interp_config(config, NULL) < 0) {
+            return -1;
+        }
+    }
+    else if (PyUnicode_Check(configobj)) {
+        if (init_named_interp_config(config, PyUnicode_AsUTF8(configobj)) < 0) {
+            return -1;
+        }
+    }
+    else {
+        PyObject *dict = PyObject_GetAttrString(configobj, "__dict__");
+        if (dict == NULL) {
+            PyErr_Format(PyExc_TypeError, "bad config %R", configobj);
+            return -1;
+        }
+        int res = _PyInterpreterConfig_InitFromDict(config, dict);
+        Py_DECREF(dict);
+        if (res < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
 /* To run some code in a sub-interpreter. */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     const char *code;
-    int use_main_obmalloc = -1;
-    int allow_fork = -1;
-    int allow_exec = -1;
-    int allow_threads = -1;
-    int allow_daemon_threads = -1;
-    int check_multi_interp_extensions = -1;
-    int gil = -1;
-    int r;
-    PyThreadState *substate, *mainstate;
-    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
-    PyCompilerFlags cflags = {0};
-
-    static char *kwlist[] = {"code",
-                             "use_main_obmalloc",
-                             "allow_fork",
-                             "allow_exec",
-                             "allow_threads",
-                             "allow_daemon_threads",
-                             "check_multi_interp_extensions",
-                             "gil",
-                             NULL};
+    PyObject *configobj;
+    static char *kwlist[] = {"code", "config", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
-                    &code, &use_main_obmalloc,
-                    &allow_fork, &allow_exec,
-                    &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions,
-                    &gil)) {
-        return NULL;
-    }
-    if (use_main_obmalloc < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
-        return NULL;
-    }
-    if (allow_fork < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
-        return NULL;
-    }
-    if (allow_exec < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
-        return NULL;
-    }
-    if (allow_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
-        return NULL;
-    }
-    if (gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing gil");
-        return NULL;
-    }
-    if (allow_daemon_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
-        return NULL;
-    }
-    if (check_multi_interp_extensions < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
+                    "sO:run_in_subinterp_with_config", kwlist,
+                    &code, &configobj))
+    {
         return NULL;
     }
 
-    mainstate = PyThreadState_Get();
+    PyInterpreterConfig config;
+    if (interp_config_from_object(configobj, &config) < 0) {
+        return NULL;
+    }
+
+    PyThreadState *mainstate = PyThreadState_Get();
 
     PyThreadState_Swap(NULL);
 
-    const PyInterpreterConfig config = {
-        .use_main_obmalloc = use_main_obmalloc,
-        .allow_fork = allow_fork,
-        .allow_exec = allow_exec,
-        .allow_threads = allow_threads,
-        .allow_daemon_threads = allow_daemon_threads,
-        .check_multi_interp_extensions = check_multi_interp_extensions,
-        .gil = gil,
-    };
+    PyThreadState *substate;
     PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
     if (PyStatus_Exception(status)) {
         /* Since no new thread state was created, there is no exception to
@@ -1445,7 +1517,9 @@ run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     assert(substate != NULL);
-    r = PyRun_SimpleStringFlags(code, &cflags);
+    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
+    PyCompilerFlags cflags = {0};
+    int r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
     PyThreadState_Swap(mainstate);
@@ -1473,13 +1547,21 @@ unused_interpreter_id(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-new_interpreter(PyObject *self, PyObject *Py_UNUSED(ignored))
+new_interpreter(PyObject *self, PyObject *args)
 {
+    PyObject *configobj = NULL;
+    if (!PyArg_ParseTuple(args, "|O:new_interpreter", &configobj)) {
+        return NULL;
+    }
+
+    PyInterpreterConfig config;
+    if (interp_config_from_object(configobj, &config) < 0) {
+        return NULL;
+    }
+
     // Unlike _interpreters.create(), we do not automatically link
     // the interpreter to its refcount.
     PyThreadState *save_tstate = PyThreadState_Get();
-    const PyInterpreterConfig config = \
-            (PyInterpreterConfig)_PyInterpreterConfig_INIT;
     PyThreadState *tstate = NULL;
     PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
     PyThreadState_Swap(save_tstate);
@@ -1846,12 +1928,16 @@ static PyMethodDef module_functions[] = {
     {"get_object_dict_values", get_object_dict_values, METH_O},
     {"hamt", new_hamt, METH_NOARGS},
     {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
+    {"new_interp_config", _PyCFunction_CAST(new_interp_config),
+     METH_VARARGS | METH_KEYWORDS},
+    {"get_interp_config", _PyCFunction_CAST(get_interp_config),
+     METH_VARARGS | METH_KEYWORDS},
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
     {"normalize_interp_id", normalize_interp_id, METH_O},
     {"unused_interpreter_id", unused_interpreter_id, METH_NOARGS},
-    {"new_interpreter", new_interpreter, METH_NOARGS},
+    {"new_interpreter", new_interpreter, METH_VARARGS},
     {"interpreter_exists", interpreter_exists, METH_O},
     {"get_interpreter_refcount", get_interpreter_refcount, METH_O},
     {"link_interpreter_refcount", link_interpreter_refcount,     METH_O},

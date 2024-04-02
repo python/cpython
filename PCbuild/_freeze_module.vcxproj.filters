@@ -229,6 +229,9 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\interpconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
