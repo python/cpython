@@ -1574,7 +1574,7 @@ new_interpreter(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|O:new_interpreter", &configobj)) {
         return NULL;
     }
-    
+
     PyInterpreterConfig config;
     if (interp_config_from_object(configobj, &config) < 0) {
         return NULL;
