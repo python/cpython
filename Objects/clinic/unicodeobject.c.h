@@ -1378,9 +1378,9 @@ PyDoc_STRVAR(unicode_startswith__doc__,
 "  prefix\n"
 "    A string or a tuple of strings to try.\n"
 "  start\n"
-"    Optional start position. Default 0.\n"
+"    Optional start position. Default: start of the string.\n"
 "  end\n"
-"    Optional stop position. Default PY_SSIZE_T_MAX.");
+"    Optional stop position. Default: end of the string.");
 
 #define UNICODE_STARTSWITH_METHODDEF    \
     {"startswith", _PyCFunction_CAST(unicode_startswith), METH_FASTCALL, unicode_startswith__doc__},
@@ -1429,9 +1429,9 @@ PyDoc_STRVAR(unicode_endswith__doc__,
 "  prefix\n"
 "    A string or a tuple of strings to try.\n"
 "  start\n"
-"    Optional start position. Default 0.\n"
+"    Optional start position. Default: start of the string.\n"
 "  end\n"
-"    Optional stop position. Default PY_SSIZE_T_MAX.");
+"    Optional stop position. Default: end of the string.");
 
 #define UNICODE_ENDSWITH_METHODDEF    \
     {"endswith", _PyCFunction_CAST(unicode_endswith), METH_FASTCALL, unicode_endswith__doc__},
@@ -1609,4 +1609,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=44a894d803f8f81e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e495e878d8283217 input=a9049054013a1b77]*/
