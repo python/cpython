@@ -439,7 +439,7 @@ static PyType_Spec structparam_spec = {
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    ctypes_state *st = GLOBAL_STATE();
+    ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, self, &info) < 0) {
@@ -1007,6 +1007,7 @@ CType_Type_repeat(PyObject *self, Py_ssize_t length)
     ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
     return PyCArrayType_from_ctype(st, self, length);
 }
+
 
 static int
 PyCStructType_setattro(PyObject *self, PyObject *key, PyObject *value)
