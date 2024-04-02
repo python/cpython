@@ -9347,12 +9347,9 @@ tailmatch(PyObject *self,
         PyUnicode_READ(kind_self, data_self, offset + end_sub) ==
         PyUnicode_READ(kind_sub, data_sub, end_sub)) {
         /* If both are of the same kind, memcmp is sufficient */
-        if (kind_self == kind_sub) {
-            return ! memcmp((char *)data_self +
-                                (offset * PyUnicode_KIND(substring)),
-                            data_sub,
-                            PyUnicode_GET_LENGTH(substring) *
-                                PyUnicode_KIND(substring));
+        if (kind_self == kind_sub && end_sub > 1) {
+            return ! memcmp((char *)data_self + (offset * kind_sub),
+                            data_sub, end_sub * kind_sub);
         }
         /* otherwise we have to compare each character by first accessing it */
         else {
