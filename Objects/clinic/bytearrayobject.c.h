@@ -137,6 +137,45 @@ bytearray_copy(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
     return bytearray_copy_impl(self);
 }
 
+PyDoc_STRVAR(bytearray_startswith__doc__,
+"startswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if B starts with the specified prefix, False otherwise.\n"
+"\n"
+"With optional start, test B beginning at that position.\n"
+"With optional end, stop comparing B at that position.\n"
+"prefix can also be a tuple of bytes to try.");
+
+#define BYTEARRAY_STARTSWITH_METHODDEF    \
+    {"startswith", _PyCFunction_CAST(bytearray_startswith), METH_FASTCALL, bytearray_startswith__doc__},
+
+static PyObject *
+bytearray_startswith_impl(PyByteArrayObject *self, PyObject *args);
+
+static PyObject *
+bytearray_startswith(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("startswith", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = bytearray_startswith_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_removeprefix__doc__,
 "removeprefix($self, prefix, /)\n"
 "--\n"
@@ -1261,4 +1300,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=0797a5e03cda2a16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=01c78d65700f652d input=a9049054013a1b77]*/

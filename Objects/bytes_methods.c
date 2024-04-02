@@ -807,14 +807,6 @@ _Py_bytes_tailmatch(const char *str, Py_ssize_t len,
         return PyBool_FromLong(result);
 }
 
-PyDoc_STRVAR_shared(_Py_startswith__doc__,
-"B.startswith(prefix[, start[, end]]) -> bool\n\
-\n\
-Return True if B starts with the specified prefix, False otherwise.\n\
-With optional start, test B beginning at that position.\n\
-With optional end, stop comparing B at that position.\n\
-prefix can also be a tuple of bytes to try.");
-
 PyObject *
 _Py_bytes_startswith(const char *str, Py_ssize_t len, PyObject *args)
 {

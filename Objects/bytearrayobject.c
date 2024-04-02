@@ -1186,8 +1186,23 @@ bytearray_contains(PyObject *self, PyObject *arg)
     return _Py_bytes_contains(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), arg);
 }
 
+/*[clinic input]
+@text_signature "($self, prefix[, start[, end]], /)"
+bytearray.startswith
+
+    *args: object
+    /
+
+Return True if B starts with the specified prefix, False otherwise.
+
+With optional start, test B beginning at that position.
+With optional end, stop comparing B at that position.
+prefix can also be a tuple of bytes to try.
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_startswith(PyByteArrayObject *self, PyObject *args)
+bytearray_startswith_impl(PyByteArrayObject *self, PyObject *args)
+/*[clinic end generated code: output=cfec6eb4d8d465b2 input=53a7036eaff0525e]*/
 {
     return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
 }
@@ -2249,8 +2264,7 @@ bytearray_methods[] = {
     BYTEARRAY_RSTRIP_METHODDEF
     BYTEARRAY_SPLIT_METHODDEF
     BYTEARRAY_SPLITLINES_METHODDEF
-    {"startswith", (PyCFunction)bytearray_startswith, METH_VARARGS ,
-     _Py_startswith__doc__},
+    BYTEARRAY_STARTSWITH_METHODDEF
     BYTEARRAY_STRIP_METHODDEF
     {"swapcase", stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},

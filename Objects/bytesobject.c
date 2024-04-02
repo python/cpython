@@ -2285,8 +2285,23 @@ bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
     return PyBytes_FromStringAndSize(self_start, self_len);
 }
 
+/*[clinic input]
+@text_signature "($self, prefix[, start[, end]], /)"
+bytes.startswith
+
+    *args: object
+    /
+
+Return True if B starts with the specified prefix, False otherwise.
+
+With optional start, test B beginning at that position.
+With optional end, stop comparing B at that position.
+prefix can also be a tuple of bytes to try.
+[clinic start generated code]*/
+
 static PyObject *
-bytes_startswith(PyBytesObject *self, PyObject *args)
+bytes_startswith_impl(PyBytesObject *self, PyObject *args)
+/*[clinic end generated code: output=172340dafc2f3c97 input=87559404108dcdfc]*/
 {
     return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
@@ -2532,8 +2547,7 @@ bytes_methods[] = {
     BYTES_RSTRIP_METHODDEF
     BYTES_SPLIT_METHODDEF
     BYTES_SPLITLINES_METHODDEF
-    {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS,
-     _Py_startswith__doc__},
+    BYTES_STARTSWITH_METHODDEF
     BYTES_STRIP_METHODDEF
     {"swapcase", stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},
