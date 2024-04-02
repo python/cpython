@@ -837,6 +837,10 @@ def check_cflags_pgo():
 
 
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
+
+def requires_gil_enabled(msg="needs the GIL enabled"):
+    return unittest.skipIf(Py_GIL_DISABLED, msg)
+
 if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
