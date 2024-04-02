@@ -213,7 +213,7 @@ def ismount(path):
         parent = realpath(parent)
         try:
             s2 = os.lstat(parent)
-        except (OSError, ValueError):
+        except OSError:
             return False
 
     dev1 = s1.st_dev
