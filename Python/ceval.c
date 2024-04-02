@@ -1078,7 +1078,7 @@ exit_to_tier1:
         printf("DEOPT: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(" -> %s]\n",
-               _PyOpcode_OpName[frame->instr_ptr->op.code]);
+               _PyOpcode_OpName[next_instr->op.code]);
     }
 #endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
