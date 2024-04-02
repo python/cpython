@@ -2204,6 +2204,7 @@ class SubinterpreterTest(unittest.TestCase):
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
 
+@requires_subinterpreters
 class InterpreterConfigTests(unittest.TestCase):
 
     supported = {
@@ -2353,7 +2354,6 @@ class InterpreterConfigTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     _interpreters.new_config(gil=value)
 
-    @requires_subinterpreters
     def test_interp_init(self):
         questionable = [
             # strange
@@ -2412,7 +2412,6 @@ class InterpreterConfigTests(unittest.TestCase):
                 with self.subTest(f'valid: {config}'):
                     check(config)
 
-    @requires_subinterpreters
     def test_get_config(self):
         @contextlib.contextmanager
         def new_interp(config):
