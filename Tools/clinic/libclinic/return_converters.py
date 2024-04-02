@@ -106,11 +106,7 @@ add_c_return_converter(CReturnConverter, 'object')
 class bool_return_converter(CReturnConverter):
     type = 'int'
 
-    def render(
-        self,
-        function: Function,
-        data: CRenderData
-    ) -> None:
+    def render(self, function: Function, data: CRenderData) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1", data)
         data.return_conversion.append(
@@ -124,11 +120,7 @@ class long_return_converter(CReturnConverter):
     cast = ''
     unsigned_cast = ''
 
-    def render(
-        self,
-        function: Function,
-        data: CRenderData
-    ) -> None:
+    def render(self, function: Function, data: CRenderData) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == {self.unsigned_cast}-1", data)
         data.return_conversion.append(
@@ -168,11 +160,7 @@ class double_return_converter(CReturnConverter):
     type = 'double'
     cast = ''
 
-    def render(
-        self,
-        function: Function,
-        data: CRenderData
-    ) -> None:
+    def render(self, function: Function, data: CRenderData) -> None:
         self.declare(data)
         self.err_occurred_if(f"{data.converter_retval} == -1.0", data)
         data.return_conversion.append(
