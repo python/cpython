@@ -76,6 +76,8 @@ pyobject_print_noref_object(PyObject *self, PyObject *args)
 
     if (PyObject_Print(test_string, fp, 0) < 0){
         fclose(fp);
+        Py_SET_REFCNT(test_string, 1);
+        Py_DECREF(test_string);
         return NULL;
     }
 
@@ -105,10 +107,12 @@ pyobject_print_os_error(PyObject *self, PyObject *args)
 
     if (PyObject_Print(test_string, fp, 0) < 0) {
         fclose(fp);
+        Py_DECREF(test_string);
         return NULL;
     }
 
     fclose(fp);
+    Py_DECREF(test_string);
 
     Py_RETURN_NONE;
 }

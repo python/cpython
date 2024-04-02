@@ -3869,7 +3869,9 @@ PyInit__testcapi(void)
         return NULL;
 
     Py_SET_TYPE(&_HashInheritanceTester_Type, &PyType_Type);
-
+    if (PyType_Ready(&_HashInheritanceTester_Type) < 0) {
+        return NULL;
+    }
     if (PyType_Ready(&matmulType) < 0)
         return NULL;
     Py_INCREF(&matmulType);
