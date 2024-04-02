@@ -213,15 +213,8 @@ def ismount(path):
     except (OSError, ValueError):
         return False
 
-    dev1 = s1.st_dev
-    dev2 = s2.st_dev
-    if dev1 != dev2:
-        return True     # path/.. on a different device as path
-    ino1 = s1.st_ino
-    ino2 = s2.st_ino
-    if ino1 == ino2:
-        return True     # path/.. is the same i-node as path
-    return False
+    # path/.. on a different device as path or the same i-node as path
+    return s1.st_dev != s2.st_dev or s1.st_ino == s2.st_ino
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -270,7 +263,7 @@ def expanduser(path):
             return path
         name = path[1:i]
         if isinstance(name, bytes):
-            name = str(name, 'ASCII')
+            name = name.decode('ascii')
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
@@ -359,21 +352,19 @@ except ImportError:
         path = os.fspath(path)
         if isinstance(path, bytes):
             sep = b'/'
-            empty = b''
             dot = b'.'
             dotdot = b'..'
         else:
             sep = '/'
-            empty = ''
             dot = '.'
             dotdot = '..'
-        if path == empty:
+        if not path:
             return dot
         _, initial_slashes, path = splitroot(path)
         comps = path.split(sep)
         new_comps = []
         for comp in comps:
-            if comp in (empty, dot):
+            if not comp or comp == dot:
                 continue
             if (comp != dotdot or (not initial_slashes and not new_comps) or
                  (new_comps and new_comps[-1] == dotdot)):
@@ -396,12 +387,12 @@ else:
 def abspath(path):
     """Return an absolute path."""
     path = os.fspath(path)
-    if not isabs(path):
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
+    if isinstance(path, bytes):
+        if not path.startswith(b'/'):
+            path = join(os.getcwdb(), path)
+    else:
+        if not path.startswith('/'):
+            path = join(os.getcwd(), path)
     return normpath(path)
 
 
@@ -417,6 +408,7 @@ symbolic links encountered in the path."""
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
+# Two leading slashes are replaced by a single slash.
 def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
@@ -427,7 +419,7 @@ def _joinrealpath(path, rest, strict, seen):
         curdir = '.'
         pardir = '..'
 
-    if isabs(rest):
+    if rest.startswith(sep):
         rest = rest[1:]
         path = sep
 
@@ -439,10 +431,15 @@ def _joinrealpath(path, rest, strict, seen):
         if name == pardir:
             # parent dir
             if path:
-                path, name = split(path)
+                parent, name = split(path)
                 if name == pardir:
-                    path = join(path, pardir, pardir)
+                    # ../..
+                    path = join(path, pardir)
+                else:
+                    # foo/bar/.. -> foo
+                    path = parent
             else:
+                # ..
                 path = pardir
             continue
         newpath = join(path, name)
