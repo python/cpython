@@ -660,7 +660,6 @@ class LongTests(unittest.TestCase):
                 self.assertEqual(bytes_le, buffer[:n])
 
                 actual = asnativebytes(v, buffer, n, 4)
-                self.assertEqual(1, v)
                 self.assertIn(actual, expect_2, bytes_be.hex())
                 actual = asnativebytes(v, buffer, n, 5)
                 self.assertIn(actual, expect_2, bytes_be.hex())
