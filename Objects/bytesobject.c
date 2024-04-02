@@ -2306,8 +2306,20 @@ bytes_startswith_impl(PyBytesObject *self, PyObject *args)
     return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
 
+/*[clinic input]
+@text_signature "($self, prefix[, start[, end]], /)"
+bytes.endswith = bytes.startswith
+
+Return True if B ends with the specified prefix, False otherwise.
+
+With optional start, test B beginning at that position.
+With optional end, stop comparing B at that position.
+prefix can also be a tuple of bytes to try.
+[clinic start generated code]*/
+
 static PyObject *
-bytes_endswith(PyBytesObject *self, PyObject *args)
+bytes_endswith_impl(PyBytesObject *self, PyObject *args)
+/*[clinic end generated code: output=b462e732a996e3eb input=3f7fc635440e2ab5]*/
 {
     return _Py_bytes_endswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
@@ -2506,8 +2518,7 @@ bytes_methods[] = {
     {"count", (PyCFunction)bytes_count, METH_VARARGS,
      _Py_count__doc__},
     BYTES_DECODE_METHODDEF
-    {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS,
-     _Py_endswith__doc__},
+    BYTES_ENDSWITH_METHODDEF
     STRINGLIB_EXPANDTABS_METHODDEF
     {"find", (PyCFunction)bytes_find, METH_VARARGS,
      _Py_find__doc__},

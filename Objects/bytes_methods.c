@@ -813,14 +813,6 @@ _Py_bytes_startswith(const char *str, Py_ssize_t len, PyObject *args)
     return _Py_bytes_tailmatch(str, len, "startswith", args, -1);
 }
 
-PyDoc_STRVAR_shared(_Py_endswith__doc__,
-"B.endswith(suffix[, start[, end]]) -> bool\n\
-\n\
-Return True if B ends with the specified suffix, False otherwise.\n\
-With optional start, test B beginning at that position.\n\
-With optional end, stop comparing B at that position.\n\
-suffix can also be a tuple of bytes to try.");
-
 PyObject *
 _Py_bytes_endswith(const char *str, Py_ssize_t len, PyObject *args)
 {

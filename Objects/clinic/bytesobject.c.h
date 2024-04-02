@@ -691,6 +691,45 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(bytes_endswith__doc__,
+"endswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if B ends with the specified prefix, False otherwise.\n"
+"\n"
+"With optional start, test B beginning at that position.\n"
+"With optional end, stop comparing B at that position.\n"
+"prefix can also be a tuple of bytes to try.");
+
+#define BYTES_ENDSWITH_METHODDEF    \
+    {"endswith", _PyCFunction_CAST(bytes_endswith), METH_FASTCALL, bytes_endswith__doc__},
+
+static PyObject *
+bytes_endswith_impl(PyBytesObject *self, PyObject *args);
+
+static PyObject *
+bytes_endswith(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("endswith", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = bytes_endswith_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(bytes_decode__doc__,
 "decode($self, /, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
@@ -1068,4 +1107,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9148bed58e358e53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec9b14dc1196888d input=a9049054013a1b77]*/

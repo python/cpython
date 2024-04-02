@@ -176,6 +176,45 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(bytearray_endswith__doc__,
+"endswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if B ends with the specified prefix, False otherwise.\n"
+"\n"
+"With optional start, test B beginning at that position.\n"
+"With optional end, stop comparing B at that position.\n"
+"prefix can also be a tuple of bytes to try.");
+
+#define BYTEARRAY_ENDSWITH_METHODDEF    \
+    {"endswith", _PyCFunction_CAST(bytearray_endswith), METH_FASTCALL, bytearray_endswith__doc__},
+
+static PyObject *
+bytearray_endswith_impl(PyByteArrayObject *self, PyObject *args);
+
+static PyObject *
+bytearray_endswith(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *__clinic_args = NULL;
+
+    if (!_PyArg_CheckPositional("endswith", nargs, 0, PY_SSIZE_T_MAX)) {
+        goto exit;
+    }
+    __clinic_args = PyTuple_New(nargs - 0);
+    if (!__clinic_args) {
+        goto exit;
+    }
+    for (Py_ssize_t i = 0; i < nargs - 0; ++i) {
+        PyTuple_SET_ITEM(__clinic_args, i, Py_NewRef(args[0 + i]));
+    }
+    return_value = bytearray_endswith_impl(self, __clinic_args);
+
+exit:
+    Py_XDECREF(__clinic_args);
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_removeprefix__doc__,
 "removeprefix($self, prefix, /)\n"
 "--\n"
@@ -1300,4 +1339,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=01c78d65700f652d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0074ca263a60fd85 input=a9049054013a1b77]*/

@@ -1207,8 +1207,20 @@ bytearray_startswith_impl(PyByteArrayObject *self, PyObject *args)
     return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
 }
 
+/*[clinic input]
+@text_signature "($self, prefix[, start[, end]], /)"
+bytearray.endswith = bytearray.startswith
+
+Return True if B ends with the specified prefix, False otherwise.
+
+With optional start, test B beginning at that position.
+With optional end, stop comparing B at that position.
+prefix can also be a tuple of bytes to try.
+[clinic start generated code]*/
+
 static PyObject *
-bytearray_endswith(PyByteArrayObject *self, PyObject *args)
+bytearray_endswith_impl(PyByteArrayObject *self, PyObject *args)
+/*[clinic end generated code: output=2d9b7e94ef2b142a input=2a2ba6955504ae08]*/
 {
     return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
 }
@@ -2218,8 +2230,7 @@ bytearray_methods[] = {
     {"count", (PyCFunction)bytearray_count, METH_VARARGS,
      _Py_count__doc__},
     BYTEARRAY_DECODE_METHODDEF
-    {"endswith", (PyCFunction)bytearray_endswith, METH_VARARGS,
-     _Py_endswith__doc__},
+    BYTEARRAY_ENDSWITH_METHODDEF
     STRINGLIB_EXPANDTABS_METHODDEF
     BYTEARRAY_EXTEND_METHODDEF
     {"find", (PyCFunction)bytearray_find, METH_VARARGS,
