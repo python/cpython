@@ -13066,7 +13066,7 @@ unicode_startswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
     if (!PyUnicode_Check(subobj)) {
         PyErr_Format(PyExc_TypeError,
                      "startswith first arg must be str or "
-                     "a tuple of str, not %N", subobj);
+                     "a tuple of str, not %.100s", Py_TYPE(subobj)->tp_name);
         return NULL;
     }
     int result = tailmatch(self, subobj, start, end, -1);
