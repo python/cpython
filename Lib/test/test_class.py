@@ -863,5 +863,6 @@ class TestInlineValues(unittest.TestCase):
         self.check_100(c)
 
 
+
 if __name__ == '__main__':
     unittest.main()

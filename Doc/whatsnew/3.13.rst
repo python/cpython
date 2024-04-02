@@ -214,6 +214,12 @@ Other Language Changes
 
   (Contributed by William Woodruff in :gh:`112389`.)
 
+* The :class:`configparser.ConfigParser` now accepts unnamed sections before named
+   ones if configured to do so.
+
+   (Contributed by Pedro Sousa Lacerda in :gh:`66449`)
+
+
 New Modules
 ===========
 
@@ -282,6 +288,13 @@ asyncio
   :meth:`asyncio.Server.abort_clients` methods which allow to more
   forcefully close an asyncio server.
   (Contributed by Pierre Ossman in :gh:`113538`.)
+
+* :func:`asyncio.as_completed` now returns an object that is both an
+  :term:`asynchronous iterator` and a plain :term:`iterator` of awaitables.
+  The awaitables yielded by asynchronous iteration include original task or
+  future objects that were passed in, making it easier to associate results
+  with the tasks being completed.
+  (Contributed by Justin Arthur in :gh:`77714`.)
 
 base64
 ------
@@ -518,6 +531,10 @@ pathlib
   shell-style wildcards, including the recursive wildcard "``**``".
   (Contributed by Barney Gale in :gh:`73435`.)
 
+* Add :attr:`pathlib.PurePath.parser` class attribute that stores the
+  implementation of :mod:`os.path` used for low-level path parsing and
+  joining: either ``posixpath`` or ``ntpath``.
+
 * Add *follow_symlinks* keyword-only argument to :meth:`pathlib.Path.glob`,
   :meth:`~pathlib.Path.rglob`, :meth:`~pathlib.Path.is_file`,
   :meth:`~pathlib.Path.is_dir`, :meth:`~pathlib.Path.owner`,
@@ -700,6 +717,12 @@ xml.etree.ElementTree
   :func:`~xml.etree.ElementTree.iterparse` for explicit cleaning up.
   (Contributed by Serhiy Storchaka in :gh:`69893`.)
 
+zipimport
+---------
+
+* Gains support for ZIP64 format files.  Everybody loves huge code right?
+  (Contributed by Tim Hatch in :gh:`94146`.)
+
 
 Optimizations
 =============
@@ -789,6 +812,11 @@ Deprecated
   :mod:`gettext` functions and methods that consider plural forms even if the
   translation was not found.
   (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
+* :mod:`glob`: The undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
+  functions are deprecated. Use :func:`glob.glob` and pass a directory to its
+  *root_dir* argument instead.
+  (Contributed by Barney Gale in :gh:`117337`.)
 
 * :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
   :exc:`DeprecationWarning` as it will be removed in 3.15.  Process-based CGI

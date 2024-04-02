@@ -114,7 +114,7 @@ def load_raw_data(input: Path) -> RawData:
         return data
 
     else:
-        raise ValueError(f"{input:r} is not a file or directory path")
+        raise ValueError(f"{input} is not a file or directory path")
 
 
 def save_raw_data(data: RawData, json_output: TextIO):
