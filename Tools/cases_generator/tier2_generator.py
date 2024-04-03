@@ -268,10 +268,10 @@ def generate_tier2_stubs(
 #define TIER_TWO 2
 
 #undef JUMP_TO_ERROR
-#define JUMP_TO_ERROR() return 1;
+#define JUMP_TO_ERROR() { *_stack_pointer = stack_pointer; return 1; }
 
 #undef JUMP_TO_JUMP_TARGET
-#define JUMP_TO_JUMP_TARGET() return 2;
+#define JUMP_TO_JUMP_TARGET() { *_stack_pointer = stack_pointer; return 2; }
 """
     )
 
