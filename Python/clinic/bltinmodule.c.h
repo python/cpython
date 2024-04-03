@@ -365,14 +365,11 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_dir__doc__,
-"dir([object])\n"
+"dir($module, [object,] /)\n"
 "--\n"
 "\n"
-"dir([object]) -> list of strings.\n"
+"If called without an argument, return the names in the current scope; else, return an alphabetized list of names comprising (some of) the attributes of the given object, and of attributes reachable from it.\n"
 "\n"
-"If called without an argument, return the names in the current scope.\n"
-"Else, return an alphabetized list of names comprising (some of) the attributes\n"
-"of the given object, and of attributes reachable from it.\n"
 "If the object supplies a method named __dir__, it will be used; otherwise\n"
 "the default dir() logic is used and returns:\n"
 "  for a module object: the module\'s attributes.\n"
@@ -568,7 +565,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_getattr__doc__,
-"getattr(object, name[, default])\n"
+"getattr($module, object, name[, default], /)\n"
 "--\n"
 "\n"
 "Get a named attribute from an object; getattr(x, \'y\') is equivalent to x.y.\n"
@@ -1142,13 +1139,10 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_vars__doc__,
-"vars([object])\n"
+"vars($module, [object,] /)\n"
 "--\n"
 "\n"
-"vars([object]) -> dictionary\n"
-"\n"
-"Without arguments, equivalent to locals().\n"
-"With an argument, equivalent to object.__dict__.");
+"Without arguments, equivalent to locals(); with an argument, equivalent to object.__dict__.");
 
 #define BUILTIN_VARS_METHODDEF    \
     {"vars", _PyCFunction_CAST(builtin_vars), METH_FASTCALL, builtin_vars__doc__},
@@ -1311,4 +1305,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e5bbcae56c9a6e5d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb50353181986605 input=a9049054013a1b77]*/

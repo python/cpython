@@ -879,17 +879,14 @@ finally:
 }
 
 /*[clinic input]
-@text_signature ([object])
+@text_signature "($module, [object,] /)"
 dir as builtin_dir
 
     object as arg: object = NULL
     /
 
-dir([object]) -> list of strings.
+If called without an argument, return the names in the current scope; else, return an alphabetized list of names comprising (some of) the attributes of the given object, and of attributes reachable from it.
 
-If called without an argument, return the names in the current scope.
-Else, return an alphabetized list of names comprising (some of) the attributes
-of the given object, and of attributes reachable from it.
 If the object supplies a method named __dir__, it will be used; otherwise
 the default dir() logic is used and returns:
   for a module object: the module's attributes.
@@ -901,7 +898,7 @@ the default dir() logic is used and returns:
 
 static PyObject *
 builtin_dir_impl(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=24f2c7a52c1e3b08 input=bbc029113caeb499]*/
+/*[clinic end generated code: output=24f2c7a52c1e3b08 input=d509c04f8e648d5b]*/
 {
     return PyObject_Dir(arg);
 }
@@ -1176,7 +1173,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 
 
 /*[clinic input]
-@text_signature "(object, name[, default])"
+@text_signature "($module, object, name[, default], /)"
 getattr as builtin_getattr
 
     object as v: object
@@ -1193,7 +1190,7 @@ exist; without it, an exception is raised in that case.
 static PyObject *
 builtin_getattr_impl(PyObject *module, PyObject *v, PyObject *name,
                      PyObject *dflt)
-/*[clinic end generated code: output=dd719f3bee023bc8 input=a2c054ff46ce2ac6]*/
+/*[clinic end generated code: output=dd719f3bee023bc8 input=2a3cf9e1351f5038]*/
 {
     PyObject *result;
 
@@ -2482,21 +2479,18 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 
 
 /*[clinic input]
-@text_signature ([object])
+@text_signature "($module, [object,] /)"
 vars as builtin_vars
 
     object as v: object = NULL
     /
 
-vars([object]) -> dictionary
-
-Without arguments, equivalent to locals().
-With an argument, equivalent to object.__dict__.
+Without arguments, equivalent to locals(); with an argument, equivalent to object.__dict__.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_vars_impl(PyObject *module, PyObject *v)
-/*[clinic end generated code: output=a64017e4a4dc53fc input=55e717045c0167c0]*/
+/*[clinic end generated code: output=a64017e4a4dc53fc input=836def4478e9287b]*/
 {
     if (v == NULL) {
         return _PyEval_GetFrameLocals();
