@@ -41,7 +41,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         p.terminate()
         for fut in futures:
             self.assertRaises(BrokenProcessPool, fut.result)
-            assert isinstance(
+            self.assertIsInstance(
                 fut.exception().__cause__, multiprocessing.context.ProcessError
             )
         # Submitting other jobs fails as well.
