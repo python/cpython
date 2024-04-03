@@ -359,7 +359,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
     @support.requires_specialization
-    @support.requires_test_modules
+    @unittest.skipUnless(support.TEST_MODULES_ENABLED, "requires test modules")
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 

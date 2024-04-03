@@ -1172,12 +1172,6 @@ def requires_limited_api(test):
 TEST_MODULES_ENABLED = sysconfig.get_config_var('TEST_MODULES') == 'yes'
 
 
-def requires_test_modules(test):
-    if TEST_MODULES_ENABLED != 'yes':
-        return unittest.skip('needs test modules')(test)
-    return test
-
-
 def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)

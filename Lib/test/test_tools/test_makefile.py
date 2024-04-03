@@ -35,7 +35,7 @@ class TestMakefile(unittest.TestCase):
                     result.append(line.replace('\\', '').strip())
         return result
 
-    @support.requires_test_modules
+    @unittest.skipUnless(support.TEST_MODULES_ENABLED, "requires test modules")
     def test_makefile_test_folders(self):
         test_dirs = self.list_test_dirs()
         idle_test = 'idlelib/idle_test'
