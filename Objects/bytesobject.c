@@ -2292,9 +2292,9 @@ bytes.startswith
     prefix as subobj: object
         A bytes or a tuple of bytes to try.
     start: slice_index(accept={int, NoneType}, c_default='0') = None
-         Optional start position. Default: start of the bytes.
+        Optional start position. Default: start of the bytes.
     end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
-         Optional stop position. Default: end of the bytes.
+        Optional stop position. Default: end of the bytes.
     /
 
 Return True if the bytes starts with the specified prefix, False otherwise.
@@ -2303,7 +2303,7 @@ Return True if the bytes starts with the specified prefix, False otherwise.
 static PyObject *
 bytes_startswith_impl(PyBytesObject *self, PyObject *subobj,
                       Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=b1e8da1cbd528e8c input=917d9cf26c33b96a]*/
+/*[clinic end generated code: output=b1e8da1cbd528e8c input=8a4165df8adfa6c9]*/
 {
     return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                                 subobj, start, end);
@@ -2321,13 +2321,13 @@ bytes.endswith
          Optional stop position. Default: end of the bytes.
     /
 
-Return True if the byte string ends with the specified suffix, False otherwise.
+Return True if the bytes ends with the specified suffix, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_endswith_impl(PyBytesObject *self, PyObject *subobj, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=038b633111f3629d input=66b64eccac830889]*/
+/*[clinic end generated code: output=038b633111f3629d input=b5c3407a2a5c9aac]*/
 {
     return _Py_bytes_endswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                               subobj, start, end);
