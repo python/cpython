@@ -294,20 +294,20 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     backoff_counter_is_zero(forge_backoff_counter((COUNTER)))
 
 #ifdef Py_GIL_DISABLED
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)                             \
-    do {                                                                \
-        /* gh-115999 tracks progress on addressing this. */             \
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
+        /* gh-115999 tracks progress on addressing this. */ \
         static_assert(0, "The specializing interpreter is not yet thread-safe"); \
     } while (0);
 #else
-#define DECREMENT_ADAPTIVE_COUNTER(COUNTER)           \
-    do {                                              \
+#define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
         (COUNTER) = advance_backoff_counter(forge_backoff_counter((COUNTER))).counter; \
     } while (0);
 #endif
 
-#define PAUSE_ADAPTIVE_COUNTER(COUNTER)              \
-    do {                                             \
+#define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
+    do { \
         (COUNTER) = pause_backoff_counter(forge_backoff_counter((COUNTER))).counter; \
     } while (0);
 

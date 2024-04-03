@@ -121,7 +121,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(BINARY_OP, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
                 assert(NB_ADD <= oparg);
                 assert(oparg <= NB_INPLACE_XOR);
@@ -438,7 +438,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(BINARY_SUBSCR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _BINARY_SUBSCR
@@ -766,7 +766,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(CALL, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 2 cache entries */
@@ -2042,7 +2042,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(COMPARE_OP, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _COMPARE_OP
@@ -2191,7 +2191,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(CONTAINS_OP, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _CONTAINS_OP
@@ -2602,7 +2602,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(FOR_ITER, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _FOR_ITER
@@ -3436,7 +3436,7 @@
                 }
             }
             else {
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
             }
             #endif  /* ENABLE_SPECIALIZATION */
             DISPATCH();
@@ -3537,7 +3537,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_ATTR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 8 cache entries */
@@ -4232,7 +4232,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_GLOBAL, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 1 cache entry */
@@ -4435,7 +4435,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_SUPER_ATTR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _LOAD_SUPER_ATTR
@@ -5076,7 +5076,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(SEND, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _SEND
@@ -5265,7 +5265,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(STORE_ATTR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 3 cache entries */
@@ -5555,7 +5555,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(STORE_SUBSCR, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _STORE_SUBSCR
@@ -5658,7 +5658,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(TO_BOOL, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 2 cache entries */
@@ -5875,7 +5875,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(UNPACK_SEQUENCE, deferred);
-                DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
                 #endif  /* ENABLE_SPECIALIZATION */
                 (void)seq;
                 (void)counter;
