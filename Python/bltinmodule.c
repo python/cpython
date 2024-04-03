@@ -879,7 +879,7 @@ finally:
 }
 
 /*[clinic input]
-@text_signature "([object])"
+@text_signature ([object])
 dir as builtin_dir
 
     object as arg: object = NULL
@@ -901,7 +901,7 @@ the default dir() logic is used and returns:
 
 static PyObject *
 builtin_dir_impl(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=24f2c7a52c1e3b08 input=2977f8ed53832ded]*/
+/*[clinic end generated code: output=24f2c7a52c1e3b08 input=bbc029113caeb499]*/
 {
     return PyObject_Dir(arg);
 }
@@ -2478,32 +2478,34 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_vars(PyObject *self, PyObject *args)
-{
-    PyObject *v = NULL;
-    PyObject *d;
+/*[clinic input]
+@text_signature ([object])
+vars as builtin_vars
 
-    if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
-        return NULL;
+    object as v: object = NULL
+    /
+
+vars([object]) -> dictionary
+
+Without arguments, equivalent to locals().
+With an argument, equivalent to object.__dict__.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_vars_impl(PyObject *module, PyObject *v)
+/*[clinic end generated code: output=a64017e4a4dc53fc input=55e717045c0167c0]*/
+{
     if (v == NULL) {
-        d = _PyEval_GetFrameLocals();
+        return _PyEval_GetFrameLocals();
     }
-    else {
-        if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &d) == 0) {
-            PyErr_SetString(PyExc_TypeError,
+    PyObject *d;
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &d) == 0) {
+        PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
-        }
+        return NULL;
     }
     return d;
 }
-
-PyDoc_STRVAR(vars_doc,
-"vars([object]) -> dictionary\n\
-\n\
-Without arguments, equivalent to locals().\n\
-With an argument, equivalent to object.__dict__.");
 
 
 /*[clinic input]
@@ -3088,7 +3090,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
-    {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
+    BUILTIN_VARS_METHODDEF
     {NULL,              NULL},
 };
 

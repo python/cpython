@@ -1101,6 +1101,41 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_vars__doc__,
+"vars([object])\n"
+"--\n"
+"\n"
+"vars([object]) -> dictionary\n"
+"\n"
+"Without arguments, equivalent to locals().\n"
+"With an argument, equivalent to object.__dict__.");
+
+#define BUILTIN_VARS_METHODDEF    \
+    {"vars", _PyCFunction_CAST(builtin_vars), METH_FASTCALL, builtin_vars__doc__},
+
+static PyObject *
+builtin_vars_impl(PyObject *module, PyObject *v);
+
+static PyObject *
+builtin_vars(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v = NULL;
+
+    if (!_PyArg_CheckPositional("vars", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    v = args[0];
+skip_optional:
+    return_value = builtin_vars_impl(module, v);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_sum__doc__,
 "sum($module, iterable, /, start=0)\n"
 "--\n"
@@ -1236,4 +1271,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=01e55174016903c3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b28d0edbc77cd9f8 input=a9049054013a1b77]*/
