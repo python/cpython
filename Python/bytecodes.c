@@ -1165,7 +1165,7 @@ dummy_func(
             }
         }
 
-        inst(STORE_NAME, (v -- )) {
+        stub inst(STORE_NAME, (v -- )) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             PyObject *ns = LOCALS();
             int err;
@@ -1584,7 +1584,7 @@ dummy_func(
             }
         }
 
-        inst(BUILD_STRING, (pieces[oparg] -- str)) {
+        stub inst(BUILD_STRING, (pieces[oparg] -- str)) {
             str = _PyUnicode_JoinArray(&_Py_STR(empty), pieces, oparg);
             DECREF_INPUTS();
             ERROR_IF(str == NULL, error);
@@ -1641,7 +1641,7 @@ dummy_func(
             }
         }
 
-        inst(BUILD_MAP, (values[oparg*2] -- map)) {
+        stub inst(BUILD_MAP, (values[oparg*2] -- map)) {
             map = _PyDict_FromItems(
                     values, 2,
                     values+1, 2,
@@ -1673,7 +1673,7 @@ dummy_func(
             }
         }
 
-        inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
+        stub inst(BUILD_CONST_KEY_MAP, (values[oparg], keys -- map)) {
             assert(PyTuple_CheckExact(keys));
             assert(PyTuple_GET_SIZE(keys) == (Py_ssize_t)oparg);
             map = _PyDict_FromItems(
@@ -1799,7 +1799,7 @@ dummy_func(
             ERROR_IF(attr == NULL, error);
         }
 
-        inst(LOAD_SUPER_ATTR_METHOD, (unused/1, global_super, class, self -- attr, self_or_null)) {
+        stub inst(LOAD_SUPER_ATTR_METHOD, (unused/1, global_super, class, self -- attr, self_or_null)) {
             assert(oparg & 1);
             DEOPT_IF(global_super != (PyObject *)&PySuper_Type);
             DEOPT_IF(!PyType_Check(class));
@@ -3157,7 +3157,7 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        stub replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        stub pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int has_self = (self_or_null != NULL);
             STAT_INC(CALL, hit);
             PyFunctionObject *func = (PyFunctionObject *)callable;
@@ -3435,7 +3435,7 @@ dummy_func(
             _CALL_BUILTIN_FAST +
             _CHECK_PERIODIC;
 
-        op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
+        stub op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -3538,7 +3538,7 @@ dummy_func(
             DISPATCH();
         }
 
-         op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
+        stub op(_CALL_METHOD_DESCRIPTOR_O, (callable, self_or_null, args[oparg] -- res)) {
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;

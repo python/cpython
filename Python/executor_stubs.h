@@ -3,97 +3,19 @@
 //   Python/bytecodes.c
 // Do not edit!
 
-        int _STORE_SLICE_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _BINARY_SUBSCR_LIST_INT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _BINARY_SUBSCR_STR_INT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _BINARY_SUBSCR_TUPLE_INT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _BINARY_SUBSCR_DICT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _STORE_SUBSCR_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _STORE_SUBSCR_LIST_INT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _GET_AITER_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _GET_ANEXT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _GET_AWAITABLE_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
         int _STORE_NAME_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _LOAD_FROM_DICT_OR_GLOBALS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _LOAD_GLOBAL_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _LOAD_FROM_DICT_OR_DEREF_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 
         int _BUILD_STRING_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 
-        int _LIST_EXTEND_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
         int _BUILD_MAP_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _SETUP_ANNOTATIONS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 
         int _BUILD_CONST_KEY_MAP_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 
-        int _DICT_UPDATE_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _LOAD_SUPER_ATTR_ATTR_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
         int _LOAD_SUPER_ATTR_METHOD_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 
-        int _LOAD_ATTR_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _COMPARE_OP_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _COMPARE_OP_FLOAT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _COMPARE_OP_INT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CONTAINS_OP_SET_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CONTAINS_OP_DICT_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CHECK_EG_MATCH_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _MATCH_CLASS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _FOR_ITER_TIER_TWO_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _WITH_EXCEPT_START_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _INIT_CALL_PY_EXACT_ARGS_0_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer);
-
-        int _INIT_CALL_PY_EXACT_ARGS_1_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer);
-
-        int _INIT_CALL_PY_EXACT_ARGS_2_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer);
-
-        int _INIT_CALL_PY_EXACT_ARGS_3_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer);
-
-        int _INIT_CALL_PY_EXACT_ARGS_4_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer);
-
         int _INIT_CALL_PY_EXACT_ARGS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CALL_BUILTIN_CLASS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CALL_BUILTIN_O_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CALL_BUILTIN_FAST_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 
         int _CALL_BUILTIN_FAST_WITH_KEYWORDS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 
         int _CALL_METHOD_DESCRIPTOR_O_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CALL_METHOD_DESCRIPTOR_NOARGS_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _CALL_METHOD_DESCRIPTOR_FAST_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
-
-        int _BUILD_SLICE_func(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject ***_stack_pointer, int oparg);
 

@@ -192,11 +192,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_PEP_523] = HAS_DEOPT_FLAG,
     [_CHECK_FUNCTION_EXACT_ARGS] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_PASSTHROUGH_FLAG,
     [_CHECK_STACK_SPACE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_PASSTHROUGH_FLAG,
-    [_INIT_CALL_PY_EXACT_ARGS_0] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
-    [_INIT_CALL_PY_EXACT_ARGS_1] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
-    [_INIT_CALL_PY_EXACT_ARGS_2] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
-    [_INIT_CALL_PY_EXACT_ARGS_3] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
-    [_INIT_CALL_PY_EXACT_ARGS_4] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_PUSH_FRAME] = 0,
     [_CALL_TYPE_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
@@ -250,7 +245,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
     [_LOAD_FAST] = 8,
     [_STORE_FAST] = 8,
-    [_INIT_CALL_PY_EXACT_ARGS] = 5,
 };
 
 const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
@@ -356,11 +350,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
     [_INIT_CALL_PY_EXACT_ARGS] = "_INIT_CALL_PY_EXACT_ARGS",
-    [_INIT_CALL_PY_EXACT_ARGS_0] = "_INIT_CALL_PY_EXACT_ARGS_0",
-    [_INIT_CALL_PY_EXACT_ARGS_1] = "_INIT_CALL_PY_EXACT_ARGS_1",
-    [_INIT_CALL_PY_EXACT_ARGS_2] = "_INIT_CALL_PY_EXACT_ARGS_2",
-    [_INIT_CALL_PY_EXACT_ARGS_3] = "_INIT_CALL_PY_EXACT_ARGS_3",
-    [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
     [_INTERNAL_INCREMENT_OPT_COUNTER] = "_INTERNAL_INCREMENT_OPT_COUNTER",
     [_IS_NONE] = "_IS_NONE",
     [_IS_OP] = "_IS_OP",
@@ -829,16 +818,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_FUNCTION_EXACT_ARGS:
             return 2 + oparg;
         case _CHECK_STACK_SPACE:
-            return 2 + oparg;
-        case _INIT_CALL_PY_EXACT_ARGS_0:
-            return 2 + oparg;
-        case _INIT_CALL_PY_EXACT_ARGS_1:
-            return 2 + oparg;
-        case _INIT_CALL_PY_EXACT_ARGS_2:
-            return 2 + oparg;
-        case _INIT_CALL_PY_EXACT_ARGS_3:
-            return 2 + oparg;
-        case _INIT_CALL_PY_EXACT_ARGS_4:
             return 2 + oparg;
         case _INIT_CALL_PY_EXACT_ARGS:
             return 2 + oparg;

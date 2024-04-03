@@ -593,67 +593,117 @@
         }
 
         case _STORE_SLICE: {
-            int result = _STORE_SLICE_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *stop;
+            PyObject *start;
+            PyObject *container;
+            PyObject *v;
+            stop = stack_pointer[-1];
+            start = stack_pointer[-2];
+            container = stack_pointer[-3];
+            v = stack_pointer[-4];
+            PyObject *slice = _PyBuildSlice_ConsumeRefs(start, stop);
+            int err;
+            if (slice == NULL) {
+                err = 1;
             }
+            else {
+                err = PyObject_SetItem(container, slice, v);
+                Py_DECREF(slice);
+            }
+            Py_DECREF(v);
+            Py_DECREF(container);
+            if (err) JUMP_TO_ERROR();
+            stack_pointer += -4;
             break;
         }
 
         case _BINARY_SUBSCR_LIST_INT: {
-            int result = _BINARY_SUBSCR_LIST_INT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *sub;
+            PyObject *list;
+            PyObject *res;
+            sub = stack_pointer[-1];
+            list = stack_pointer[-2];
+            if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
+            if (!PyList_CheckExact(list)) JUMP_TO_JUMP_TARGET();
+            // Deopt unless 0 <= sub < PyList_Size(list)
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) JUMP_TO_JUMP_TARGET();
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            if (index >= PyList_GET_SIZE(list)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(BINARY_SUBSCR, hit);
+            res = PyList_GET_ITEM(list, index);
+            assert(res != NULL);
+            Py_INCREF(res);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(list);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
         case _BINARY_SUBSCR_STR_INT: {
-            int result = _BINARY_SUBSCR_STR_INT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *sub;
+            PyObject *str;
+            PyObject *res;
+            sub = stack_pointer[-1];
+            str = stack_pointer[-2];
+            if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
+            if (!PyUnicode_CheckExact(str)) JUMP_TO_JUMP_TARGET();
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) JUMP_TO_JUMP_TARGET();
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            if (PyUnicode_GET_LENGTH(str) <= index) JUMP_TO_JUMP_TARGET();
+            // Specialize for reading an ASCII character from any string:
+            Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
+            if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) JUMP_TO_JUMP_TARGET();
+            STAT_INC(BINARY_SUBSCR, hit);
+            res = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(str);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
         case _BINARY_SUBSCR_TUPLE_INT: {
-            int result = _BINARY_SUBSCR_TUPLE_INT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *sub;
+            PyObject *tuple;
+            PyObject *res;
+            sub = stack_pointer[-1];
+            tuple = stack_pointer[-2];
+            if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
+            if (!PyTuple_CheckExact(tuple)) JUMP_TO_JUMP_TARGET();
+            // Deopt unless 0 <= sub < PyTuple_Size(list)
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) JUMP_TO_JUMP_TARGET();
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            if (index >= PyTuple_GET_SIZE(tuple)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(BINARY_SUBSCR, hit);
+            res = PyTuple_GET_ITEM(tuple, index);
+            assert(res != NULL);
+            Py_INCREF(res);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(tuple);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
         case _BINARY_SUBSCR_DICT: {
-            int result = _BINARY_SUBSCR_DICT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *sub;
+            PyObject *dict;
+            PyObject *res;
+            sub = stack_pointer[-1];
+            dict = stack_pointer[-2];
+            if (!PyDict_CheckExact(dict)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(BINARY_SUBSCR, hit);
+            int rc = PyDict_GetItemRef(dict, sub, &res);
+            if (rc == 0) {
+                _PyErr_SetKeyError(sub);
             }
+            Py_DECREF(dict);
+            Py_DECREF(sub);
+            if (rc <= 0) JUMP_TO_ERROR();
+            // not found or error
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -684,28 +734,44 @@
         }
 
         case _STORE_SUBSCR: {
-            int result = _STORE_SUBSCR_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *sub;
+            PyObject *container;
+            PyObject *v;
+            sub = stack_pointer[-1];
+            container = stack_pointer[-2];
+            v = stack_pointer[-3];
+            /* container[sub] = v */
+            int err = PyObject_SetItem(container, sub, v);
+            Py_DECREF(v);
+            Py_DECREF(container);
+            Py_DECREF(sub);
+            if (err) JUMP_TO_ERROR();
+            stack_pointer += -3;
             break;
         }
 
         case _STORE_SUBSCR_LIST_INT: {
-            int result = _STORE_SUBSCR_LIST_INT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *sub;
+            PyObject *list;
+            PyObject *value;
+            sub = stack_pointer[-1];
+            list = stack_pointer[-2];
+            value = stack_pointer[-3];
+            if (!PyLong_CheckExact(sub)) JUMP_TO_JUMP_TARGET();
+            if (!PyList_CheckExact(list)) JUMP_TO_JUMP_TARGET();
+            // Ensure nonnegative, zero-or-one-digit ints.
+            if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) JUMP_TO_JUMP_TARGET();
+            Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
+            // Ensure index < len(list)
+            if (index >= PyList_GET_SIZE(list)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(STORE_SUBSCR, hit);
+            PyObject *old_value = PyList_GET_ITEM(list, index);
+            PyList_SET_ITEM(list, index, value);
+            assert(old_value != NULL);
+            Py_DECREF(old_value);
+            _Py_DECREF_SPECIALIZED(sub, (destructor)PyObject_Free);
+            Py_DECREF(list);
+            stack_pointer += -3;
             break;
         }
 
@@ -800,41 +866,110 @@
         /* _INSTRUMENTED_RETURN_CONST is not a viable micro-op for tier 2 because it is instrumented */
 
         case _GET_AITER: {
-            int result = _GET_AITER_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *obj;
+            PyObject *iter;
+            obj = stack_pointer[-1];
+            unaryfunc getter = NULL;
+            PyTypeObject *type = Py_TYPE(obj);
+            if (type->tp_as_async != NULL) {
+                getter = type->tp_as_async->am_aiter;
             }
+            if (getter == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'async for' requires an object with "
+                              "__aiter__ method, got %.100s",
+                              type->tp_name);
+                Py_DECREF(obj);
+                if (true) JUMP_TO_ERROR();
+            }
+            iter = (*getter)(obj);
+            Py_DECREF(obj);
+            if (iter == NULL) JUMP_TO_ERROR();
+            if (Py_TYPE(iter)->tp_as_async == NULL ||
+                Py_TYPE(iter)->tp_as_async->am_anext == NULL) {
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "'async for' received an object from __aiter__ "
+                              "that does not implement __anext__: %.100s",
+                              Py_TYPE(iter)->tp_name);
+                Py_DECREF(iter);
+                if (true) JUMP_TO_ERROR();
+            }
+            stack_pointer[-1] = iter;
             break;
         }
 
         case _GET_ANEXT: {
-            int result = _GET_ANEXT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *aiter;
+            PyObject *awaitable;
+            aiter = stack_pointer[-1];
+            unaryfunc getter = NULL;
+            PyObject *next_iter = NULL;
+            PyTypeObject *type = Py_TYPE(aiter);
+            if (PyAsyncGen_CheckExact(aiter)) {
+                awaitable = type->tp_as_async->am_anext(aiter);
+                if (awaitable == NULL) {
+                    JUMP_TO_ERROR();
+                }
+            } else {
+                if (type->tp_as_async != NULL){
+                    getter = type->tp_as_async->am_anext;
+                }
+                if (getter != NULL) {
+                    next_iter = (*getter)(aiter);
+                    if (next_iter == NULL) {
+                        JUMP_TO_ERROR();
+                    }
+                }
+                else {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'async for' requires an iterator with "
+                                  "__anext__ method, got %.100s",
+                                  type->tp_name);
+                    JUMP_TO_ERROR();
+                }
+                awaitable = _PyCoro_GetAwaitableIter(next_iter);
+                if (awaitable == NULL) {
+                    _PyErr_FormatFromCause(
+                        PyExc_TypeError,
+                        "'async for' received an invalid object "
+                        "from __anext__: %.100s",
+                        Py_TYPE(next_iter)->tp_name);
+                    Py_DECREF(next_iter);
+                    JUMP_TO_ERROR();
+                } else {
+                    Py_DECREF(next_iter);
+                }
             }
+            stack_pointer[0] = awaitable;
+            stack_pointer += 1;
             break;
         }
 
         case _GET_AWAITABLE: {
-            int result = _GET_AWAITABLE_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *iterable;
+            PyObject *iter;
+            oparg = CURRENT_OPARG();
+            iterable = stack_pointer[-1];
+            iter = _PyCoro_GetAwaitableIter(iterable);
+            if (iter == NULL) {
+                _PyEval_FormatAwaitableError(tstate, Py_TYPE(iterable), oparg);
             }
+            Py_DECREF(iterable);
+            if (iter != NULL && PyCoro_CheckExact(iter)) {
+                PyObject *yf = _PyGen_yf((PyGenObject*)iter);
+                if (yf != NULL) {
+                    /* `iter` is a coroutine object that is being
+                       awaited, `yf` is a pointer to the current awaitable
+                       being awaited on. */
+                    Py_DECREF(yf);
+                    Py_CLEAR(iter);
+                    _PyErr_SetString(tstate, PyExc_RuntimeError,
+                                     "coroutine is being awaited already");
+                    /* The code below jumps to `error` if `iter` is NULL. */
+                }
+            }
+            if (iter == NULL) JUMP_TO_ERROR();
+            stack_pointer[-1] = iter;
             break;
         }
 
@@ -1058,30 +1193,78 @@
         }
 
         case _LOAD_FROM_DICT_OR_GLOBALS: {
-            int result = _LOAD_FROM_DICT_OR_GLOBALS_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
+            PyObject *mod_or_class_dict;
+            PyObject *v;
+            oparg = CURRENT_OPARG();
+            mod_or_class_dict = stack_pointer[-1];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
                 JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
             }
+            if (v == NULL) {
+                if (PyDict_GetItemRef(GLOBALS(), name, &v) < 0) {
+                    JUMP_TO_ERROR();
+                }
+                if (v == NULL) {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        JUMP_TO_ERROR();
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                            tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                        JUMP_TO_ERROR();
+                    }
+                }
+            }
+            Py_DECREF(mod_or_class_dict);
+            stack_pointer[-1] = v;
             break;
         }
 
         /* _LOAD_NAME is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _LOAD_GLOBAL: {
-            int result = _LOAD_GLOBAL_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *res;
+            PyObject *null = NULL;
+            oparg = CURRENT_OPARG();
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+            if (PyDict_CheckExact(GLOBALS())
+                && PyDict_CheckExact(BUILTINS()))
+            {
+                res = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                    (PyDictObject *)BUILTINS(),
+                    name);
+                if (res == NULL) {
+                    if (!_PyErr_Occurred(tstate)) {
+                        /* _PyDict_LoadGlobal() returns NULL without raising
+                         * an exception if the key doesn't exist */
+                        _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                    }
+                    if (true) JUMP_TO_ERROR();
+                }
+                Py_INCREF(res);
             }
+            else {
+                /* Slow-path if globals or builtins is not a dict */
+                /* namespace 1: globals */
+                if (PyMapping_GetOptionalItem(GLOBALS(), name, &res) < 0) JUMP_TO_ERROR();
+                if (res == NULL) {
+                    /* namespace 2: builtins */
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &res) < 0) JUMP_TO_ERROR();
+                    if (res == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                            tstate, PyExc_NameError,
+                            NAME_ERROR_MSG, name);
+                        if (true) JUMP_TO_ERROR();
+                    }
+                }
+            }
+            null = NULL;
+            stack_pointer[0] = res;
+            if (oparg & 1) stack_pointer[1] = null;
+            stack_pointer += 1 + (oparg & 1);
             break;
         }
 
@@ -1182,15 +1365,28 @@
         }
 
         case _LOAD_FROM_DICT_OR_DEREF: {
-            int result = _LOAD_FROM_DICT_OR_DEREF_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
+            PyObject *class_dict;
+            PyObject *value;
+            oparg = CURRENT_OPARG();
+            class_dict = stack_pointer[-1];
+            PyObject *name;
+            assert(class_dict);
+            assert(oparg >= 0 && oparg < _PyFrame_GetCode(frame)->co_nlocalsplus);
+            name = PyTuple_GET_ITEM(_PyFrame_GetCode(frame)->co_localsplusnames, oparg);
+            if (PyMapping_GetOptionalItem(class_dict, name, &value) < 0) {
                 JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
             }
+            if (!value) {
+                PyObject *cell = GETLOCAL(oparg);
+                value = PyCell_GET(cell);
+                if (value == NULL) {
+                    _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
+                    JUMP_TO_ERROR();
+                }
+                Py_INCREF(value);
+            }
+            Py_DECREF(class_dict);
+            stack_pointer[-1] = value;
             break;
         }
 
@@ -1274,15 +1470,27 @@
         }
 
         case _LIST_EXTEND: {
-            int result = _LIST_EXTEND_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *iterable;
+            PyObject *list;
+            oparg = CURRENT_OPARG();
+            iterable = stack_pointer[-1];
+            list = stack_pointer[-2 - (oparg-1)];
+            PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
+            if (none_val == NULL) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
+                    (Py_TYPE(iterable)->tp_iter == NULL && !PySequence_Check(iterable)))
+                {
+                    _PyErr_Clear(tstate);
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "Value after * must be an iterable, not %.200s",
+                                  Py_TYPE(iterable)->tp_name);
+                }
+                Py_DECREF(iterable);
+                if (true) JUMP_TO_ERROR();
             }
+            assert(Py_IsNone(none_val));
+            Py_DECREF(iterable);
+            stack_pointer += -1;
             break;
         }
 
@@ -1315,14 +1523,25 @@
         }
 
         case _SETUP_ANNOTATIONS: {
-            int result = _SETUP_ANNOTATIONS_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            int err;
+            PyObject *ann_dict;
+            if (LOCALS() == NULL) {
+                _PyErr_Format(tstate, PyExc_SystemError,
+                              "no locals found when setting up annotations");
+                if (true) JUMP_TO_ERROR();
+            }
+            /* check if __annotations__ in locals()... */
+            if (PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict) < 0) JUMP_TO_ERROR();
+            if (ann_dict == NULL) {
+                ann_dict = PyDict_New();
+                if (ann_dict == NULL) JUMP_TO_ERROR();
+                err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
+                                       ann_dict);
+                Py_DECREF(ann_dict);
+                if (err) JUMP_TO_ERROR();
+            }
+            else {
+                Py_DECREF(ann_dict);
             }
             break;
         }
@@ -1341,15 +1560,22 @@
         }
 
         case _DICT_UPDATE: {
-            int result = _DICT_UPDATE_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *update;
+            PyObject *dict;
+            oparg = CURRENT_OPARG();
+            update = stack_pointer[-1];
+            dict = stack_pointer[-2 - (oparg - 1)];
+            if (PyDict_Update(dict, update) < 0) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object is not a mapping",
+                                  Py_TYPE(update)->tp_name);
+                }
+                Py_DECREF(update);
+                if (true) JUMP_TO_ERROR();
             }
+            Py_DECREF(update);
+            stack_pointer += -1;
             break;
         }
 
@@ -1390,15 +1616,26 @@
         /* _INSTRUMENTED_LOAD_SUPER_ATTR is not a viable micro-op for tier 2 because it is instrumented */
 
         case _LOAD_SUPER_ATTR_ATTR: {
-            int result = _LOAD_SUPER_ATTR_ATTR_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *self;
+            PyObject *class;
+            PyObject *global_super;
+            PyObject *attr;
+            oparg = CURRENT_OPARG();
+            self = stack_pointer[-1];
+            class = stack_pointer[-2];
+            global_super = stack_pointer[-3];
+            assert(!(oparg & 1));
+            if (global_super != (PyObject *)&PySuper_Type) JUMP_TO_JUMP_TARGET();
+            if (!PyType_Check(class)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(LOAD_SUPER_ATTR, hit);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
+            attr = _PySuper_Lookup((PyTypeObject *)class, self, name, NULL);
+            Py_DECREF(global_super);
+            Py_DECREF(class);
+            Py_DECREF(self);
+            if (attr == NULL) JUMP_TO_ERROR();
+            stack_pointer[-3] = attr;
+            stack_pointer += -2;
             break;
         }
 
@@ -1416,15 +1653,44 @@
         }
 
         case _LOAD_ATTR: {
-            int result = _LOAD_ATTR_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self_or_null = NULL;
+            oparg = CURRENT_OPARG();
+            owner = stack_pointer[-1];
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
+            if (oparg & 1) {
+                /* Designed to work in tandem with CALL, pushes two values. */
+                attr = NULL;
+                if (_PyObject_GetMethod(owner, name, &attr)) {
+                    /* We can bypass temporary bound method object.
+                       meth is unbound method and obj is self.
+                       meth | self | arg1 | ... | argN
+                     */
+                    assert(attr != NULL);  // No errors on this branch
+                    self_or_null = owner;  // Transfer ownership
+                }
+                else {
+                    /* meth is not an unbound method (but a regular attr, or
+                       something was returned by a descriptor protocol).  Set
+                       the second element of the stack to NULL, to signal
+                       CALL that it's not a method call.
+                       meth | NULL | arg1 | ... | argN
+                     */
+                    Py_DECREF(owner);
+                    if (attr == NULL) JUMP_TO_ERROR();
+                    self_or_null = NULL;
+                }
             }
+            else {
+                /* Classic, pushes one value. */
+                attr = PyObject_GetAttr(owner, name);
+                Py_DECREF(owner);
+                if (attr == NULL) JUMP_TO_ERROR();
+            }
+            stack_pointer[-1] = attr;
+            if (oparg & 1) stack_pointer[0] = self_or_null;
+            stack_pointer += (oparg & 1);
             break;
         }
 
@@ -1706,41 +1972,71 @@
         }
 
         case _COMPARE_OP: {
-            int result = _COMPARE_OP_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            assert((oparg >> 5) <= Py_GE);
+            res = PyObject_RichCompare(left, right, oparg >> 5);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res == NULL) JUMP_TO_ERROR();
+            if (oparg & 16) {
+                int res_bool = PyObject_IsTrue(res);
+                Py_DECREF(res);
+                if (res_bool < 0) JUMP_TO_ERROR();
+                res = res_bool ? Py_True : Py_False;
             }
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
         case _COMPARE_OP_FLOAT: {
-            int result = _COMPARE_OP_FLOAT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            STAT_INC(COMPARE_OP, hit);
+            double dleft = PyFloat_AS_DOUBLE(left);
+            double dright = PyFloat_AS_DOUBLE(right);
+            // 1 if NaN, 2 if <, 4 if >, 8 if ==; this matches low four bits of the oparg
+            int sign_ish = COMPARISON_BIT(dleft, dright);
+            _Py_DECREF_SPECIALIZED(left, _PyFloat_ExactDealloc);
+            _Py_DECREF_SPECIALIZED(right, _PyFloat_ExactDealloc);
+            res = (sign_ish & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
         case _COMPARE_OP_INT: {
-            int result = _COMPARE_OP_INT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *right;
+            PyObject *left;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!_PyLong_IsCompact((PyLongObject *)left)) JUMP_TO_JUMP_TARGET();
+            if (!_PyLong_IsCompact((PyLongObject *)right)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(COMPARE_OP, hit);
+            assert(_PyLong_DigitCount((PyLongObject *)left) <= 1 &&
+                   _PyLong_DigitCount((PyLongObject *)right) <= 1);
+            Py_ssize_t ileft = _PyLong_CompactValue((PyLongObject *)left);
+            Py_ssize_t iright = _PyLong_CompactValue((PyLongObject *)right);
+            // 2 if <, 4 if >, 8 if ==; this matches the low 4 bits of the oparg
+            int sign_ish = COMPARISON_BIT(ileft, iright);
+            _Py_DECREF_SPECIALIZED(left, (destructor)PyObject_Free);
+            _Py_DECREF_SPECIALIZED(right, (destructor)PyObject_Free);
+            res = (sign_ish & oparg) ? Py_True : Py_False;
+            // It's always a bool, so we don't care about oparg & 16.
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
             break;
         }
 
@@ -1800,41 +2096,70 @@
         }
 
         case _CONTAINS_OP_SET: {
-            int result = _CONTAINS_OP_SET_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!(PySet_CheckExact(right) || PyFrozenSet_CheckExact(right))) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CONTAINS_OP, hit);
+            // Note: both set and frozenset use the same seq_contains method!
+            int res = _PySet_Contains((PySetObject *)right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) JUMP_TO_ERROR();
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
             break;
         }
 
         case _CONTAINS_OP_DICT: {
-            int result = _CONTAINS_OP_DICT_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *right;
+            PyObject *left;
+            PyObject *b;
+            oparg = CURRENT_OPARG();
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (!PyDict_CheckExact(right)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CONTAINS_OP, hit);
+            int res = PyDict_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) JUMP_TO_ERROR();
+            b = (res ^ oparg) ? Py_True : Py_False;
+            stack_pointer[-2] = b;
+            stack_pointer += -1;
             break;
         }
 
         case _CHECK_EG_MATCH: {
-            int result = _CHECK_EG_MATCH_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *match_type;
+            PyObject *exc_value;
+            PyObject *rest;
+            PyObject *match;
+            match_type = stack_pointer[-1];
+            exc_value = stack_pointer[-2];
+            if (_PyEval_CheckExceptStarTypeValid(tstate, match_type) < 0) {
+                Py_DECREF(exc_value);
+                Py_DECREF(match_type);
+                if (true) JUMP_TO_ERROR();
             }
+            match = NULL;
+            rest = NULL;
+            int res = _PyEval_ExceptionGroupMatch(exc_value, match_type,
+                &match, &rest);
+            Py_DECREF(exc_value);
+            Py_DECREF(match_type);
+            if (res < 0) JUMP_TO_ERROR();
+            assert((match == NULL) == (rest == NULL));
+            if (match == NULL) JUMP_TO_ERROR();
+            if (!Py_IsNone(match)) {
+                PyErr_SetHandledException(match);
+            }
+            stack_pointer[-2] = rest;
+            stack_pointer[-1] = match;
             break;
         }
 
@@ -1890,15 +2215,31 @@
         }
 
         case _MATCH_CLASS: {
-            int result = _MATCH_CLASS_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *names;
+            PyObject *type;
+            PyObject *subject;
+            PyObject *attrs;
+            oparg = CURRENT_OPARG();
+            names = stack_pointer[-1];
+            type = stack_pointer[-2];
+            subject = stack_pointer[-3];
+            // Pop TOS and TOS1. Set TOS to a tuple of attributes on success, or
+            // None on failure.
+            assert(PyTuple_CheckExact(names));
+            attrs = _PyEval_MatchClass(tstate, subject, type, oparg, names);
+            Py_DECREF(subject);
+            Py_DECREF(type);
+            Py_DECREF(names);
+            if (attrs) {
+                assert(PyTuple_CheckExact(attrs));  // Success!
             }
+            else {
+                if (_PyErr_Occurred(tstate)) JUMP_TO_ERROR();
+                // Error!
+                attrs = Py_None;  // Failure!
+            }
+            stack_pointer[-3] = attrs;
+            stack_pointer += -2;
             break;
         }
 
@@ -1985,15 +2326,27 @@
         /* _FOR_ITER is not a viable micro-op for tier 2 because it is replaced */
 
         case _FOR_ITER_TIER_TWO: {
-            int result = _FOR_ITER_TIER_TWO_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *iter;
+            PyObject *next;
+            iter = stack_pointer[-1];
+            /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
+            next = (*Py_TYPE(iter)->tp_iternext)(iter);
+            if (next == NULL) {
+                if (_PyErr_Occurred(tstate)) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
+                        JUMP_TO_ERROR();
+                    }
+                    _PyErr_Clear(tstate);
+                }
+                /* iterator ended normally */
+                Py_DECREF(iter);
+                STACK_SHRINK(1);
+                /* The translator sets the deopt target just past END_FOR */
+                if (true) JUMP_TO_JUMP_TARGET();
             }
+            // Common case: no jump, leave it to the code generator
+            stack_pointer[0] = next;
+            stack_pointer += 1;
             break;
         }
 
@@ -2112,15 +2465,39 @@
         /* _BEFORE_WITH is not a viable micro-op for tier 2 because it has both popping and not-popping errors */
 
         case _WITH_EXCEPT_START: {
-            int result = _WITH_EXCEPT_START_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject *val;
+            PyObject *lasti;
+            PyObject *exit_func;
+            PyObject *res;
+            val = stack_pointer[-1];
+            lasti = stack_pointer[-3];
+            exit_func = stack_pointer[-4];
+            /* At the top of the stack are 4 values:
+               - val: TOP = exc_info()
+               - unused: SECOND = previous exception
+               - lasti: THIRD = lasti of exception in exc_info()
+               - exit_func: FOURTH = the context.__exit__ bound method
+               We call FOURTH(type(TOP), TOP, GetTraceback(TOP)).
+               Then we push the __exit__ return value.
+             */
+            PyObject *exc, *tb;
+            assert(val && PyExceptionInstance_Check(val));
+            exc = PyExceptionInstance_Class(val);
+            tb = PyException_GetTraceback(val);
+            if (tb == NULL) {
+                tb = Py_None;
             }
+            else {
+                Py_DECREF(tb);
+            }
+            assert(PyLong_Check(lasti));
+            (void)lasti; // Shut up compiler warning if asserts are off
+            PyObject *stack[4] = {NULL, exc, val, tb};
+            res = PyObject_Vectorcall(exit_func, stack + 1,
+                                      3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            if (res == NULL) JUMP_TO_ERROR();
+            stack_pointer[0] = res;
+            stack_pointer += 1;
             break;
         }
 
@@ -2331,71 +2708,6 @@
             break;
         }
 
-        case _INIT_CALL_PY_EXACT_ARGS_0: {
-            int result = _INIT_CALL_PY_EXACT_ARGS_0_func(tstate, frame, &stack_pointer);
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
-
-        case _INIT_CALL_PY_EXACT_ARGS_1: {
-            int result = _INIT_CALL_PY_EXACT_ARGS_1_func(tstate, frame, &stack_pointer);
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
-
-        case _INIT_CALL_PY_EXACT_ARGS_2: {
-            int result = _INIT_CALL_PY_EXACT_ARGS_2_func(tstate, frame, &stack_pointer);
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
-
-        case _INIT_CALL_PY_EXACT_ARGS_3: {
-            int result = _INIT_CALL_PY_EXACT_ARGS_3_func(tstate, frame, &stack_pointer);
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
-
-        case _INIT_CALL_PY_EXACT_ARGS_4: {
-            int result = _INIT_CALL_PY_EXACT_ARGS_4_func(tstate, frame, &stack_pointer);
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
-
         case _INIT_CALL_PY_EXACT_ARGS: {
             int result = _INIT_CALL_PY_EXACT_ARGS_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
             switch (result) {
@@ -2513,41 +2825,103 @@
         }
 
         case _CALL_BUILTIN_CLASS: {
-            int result = _CALL_BUILTIN_CLASS_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
             }
+            if (!PyType_Check(callable)) JUMP_TO_JUMP_TARGET();
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            if (tp->tp_vectorcall == NULL) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CALL, hit);
+            res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(tp);
+            if (res == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
         case _CALL_BUILTIN_O: {
-            int result = _CALL_BUILTIN_O_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* Builtin METH_O functions */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
             }
+            if (total_args != 1) JUMP_TO_JUMP_TARGET();
+            if (!PyCFunction_CheckExact(callable)) JUMP_TO_JUMP_TARGET();
+            if (PyCFunction_GET_FLAGS(callable) != METH_O) JUMP_TO_JUMP_TARGET();
+            // CPython promises to check all non-vectorcall function calls.
+            if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            PyObject *arg = args[0];
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            res = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable), arg);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(arg);
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
         case _CALL_BUILTIN_FAST: {
-            int result = _CALL_BUILTIN_FAST_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            /* Builtin METH_FASTCALL functions, without keywords */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
             }
+            if (!PyCFunction_CheckExact(callable)) JUMP_TO_JUMP_TARGET();
+            if (PyCFunction_GET_FLAGS(callable) != METH_FASTCALL) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable);
+            /* res = func(self, args, nargs) */
+            res = ((PyCFunctionFast)(void(*)(void))cfunc)(
+                PyCFunction_GET_SELF(callable),
+                args,
+                total_args);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -2652,41 +3026,116 @@
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
-            int result = _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
             }
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET();
+            PyMethodDef *meth = method->d_method;
+            if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) JUMP_TO_JUMP_TARGET();
+            PyTypeObject *d_type = method->d_common.d_type;
+            PyObject *self = args[0];
+            if (!Py_IS_TYPE(self, d_type)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CALL, hit);
+            int nargs = total_args - 1;
+            PyCFunctionFastWithKeywords cfunc =
+            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            res = cfunc(self, args + 1, nargs, NULL);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_NOARGS: {
-            int result = _CALL_METHOD_DESCRIPTOR_NOARGS_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            assert(oparg == 0 || oparg == 1);
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
             }
+            if (total_args != 1) JUMP_TO_JUMP_TARGET();
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET();
+            PyMethodDef *meth = method->d_method;
+            PyObject *self = args[0];
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET();
+            if (meth->ml_flags != METH_NOARGS) JUMP_TO_JUMP_TARGET();
+            // CPython promises to check all non-vectorcall function calls.
+            if (tstate->c_recursion_remaining <= 0) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = meth->ml_meth;
+            _Py_EnterRecursiveCallTstateUnchecked(tstate);
+            res = _PyCFunction_TrampolineCall(cfunc, self, NULL);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            Py_DECREF(self);
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
         case _CALL_METHOD_DESCRIPTOR_FAST: {
-            int result = _CALL_METHOD_DESCRIPTOR_FAST_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
             }
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            /* Builtin METH_FASTCALL methods, without keywords */
+            if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) JUMP_TO_JUMP_TARGET();
+            PyMethodDef *meth = method->d_method;
+            if (meth->ml_flags != METH_FASTCALL) JUMP_TO_JUMP_TARGET();
+            PyObject *self = args[0];
+            if (!Py_IS_TYPE(self, method->d_common.d_type)) JUMP_TO_JUMP_TARGET();
+            STAT_INC(CALL, hit);
+            PyCFunctionFast cfunc =
+            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            int nargs = total_args - 1;
+            res = cfunc(self, args + 1, nargs);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            /* Clear the stack of the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer += -1 - oparg;
             break;
         }
 
@@ -2751,15 +3200,21 @@
         }
 
         case _BUILD_SLICE: {
-            int result = _BUILD_SLICE_func(tstate, frame, &stack_pointer, CURRENT_OPARG());
-            switch (result) {
-                case 0:
-                break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
-            }
+            PyObject *step = NULL;
+            PyObject *stop;
+            PyObject *start;
+            PyObject *slice;
+            oparg = CURRENT_OPARG();
+            if (oparg == 3) { step = stack_pointer[-((oparg == 3) ? 1 : 0)]; }
+            stop = stack_pointer[-1 - ((oparg == 3) ? 1 : 0)];
+            start = stack_pointer[-2 - ((oparg == 3) ? 1 : 0)];
+            slice = PySlice_New(start, stop, step);
+            Py_DECREF(start);
+            Py_DECREF(stop);
+            Py_XDECREF(step);
+            if (slice == NULL) JUMP_TO_ERROR();
+            stack_pointer[-2 - ((oparg == 3) ? 1 : 0)] = slice;
+            stack_pointer += -1 - ((oparg == 3) ? 1 : 0);
             break;
         }
 
