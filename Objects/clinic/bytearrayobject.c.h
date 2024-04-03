@@ -378,12 +378,12 @@ exit:
 }
 
 PyDoc_STRVAR(bytearray_endswith__doc__,
-"endswith($self, prefix[, start[, end]], /)\n"
+"endswith($self, suffix[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return True if the byte string ends with the specified prefix, False otherwise.\n"
+"Return True if the byte string ends with the specified suffix, False otherwise.\n"
 "\n"
-"  prefix\n"
+"  suffix\n"
 "    A bytes or a tuple of bytes to try.\n"
 "  start\n"
 "    Optional start position. Default: start of the bytearray.\n"
@@ -1552,4 +1552,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=e30a6e2fcaba605c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9b74241c4448dcb input=a9049054013a1b77]*/

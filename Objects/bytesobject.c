@@ -2365,16 +2365,24 @@ bytes_startswith_impl(PyBytesObject *self, PyObject *subobj,
 }
 
 /*[clinic input]
-@text_signature "($self, prefix[, start[, end]], /)"
-bytes.endswith = bytes.startswith
+@text_signature "($self, suffix[, start[, end]], /)"
+bytes.endswith
 
-Return True if the byte string ends with the specified prefix, False otherwise.
+    suffix as subobj: object
+        A bytes or a tuple of bytes to try.
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the bytes.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the bytes.
+    /
+
+Return True if the byte string ends with the specified suffix, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_endswith_impl(PyBytesObject *self, PyObject *subobj, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=038b633111f3629d input=38d3f36990facc7b]*/
+/*[clinic end generated code: output=038b633111f3629d input=66b64eccac830889]*/
 {
     return _Py_bytes_endswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                               subobj, start, end);

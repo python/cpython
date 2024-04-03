@@ -1268,16 +1268,24 @@ bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
 }
 
 /*[clinic input]
-@text_signature "($self, prefix[, start[, end]], /)"
-bytearray.endswith = bytearray.startswith
+@text_signature "($self, suffix[, start[, end]], /)"
+bytearray.endswith
 
-Return True if the byte string ends with the specified prefix, False otherwise.
+    suffix as subobj: object
+        A bytes or a tuple of bytes to try.
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the bytearray.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the bytearray.
+    /
+
+Return True if the byte string ends with the specified suffix, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
                         Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=e75ea8c227954caa input=6b8a65e1d0071201]*/
+/*[clinic end generated code: output=e75ea8c227954caa input=3b63c2dc878407c2]*/
 {
     return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                               subobj, start, end);
