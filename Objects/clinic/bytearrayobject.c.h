@@ -137,6 +137,108 @@ bytearray_copy(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
     return bytearray_copy_impl(self);
 }
 
+PyDoc_STRVAR(bytearray_startswith__doc__,
+"startswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the bytearray starts with the specified prefix, False otherwise.\n"
+"\n"
+"  prefix\n"
+"    A bytes or a tuple of bytes to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the bytearray.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytearray.");
+
+#define BYTEARRAY_STARTSWITH_METHODDEF    \
+    {"startswith", _PyCFunction_CAST(bytearray_startswith), METH_FASTCALL, bytearray_startswith__doc__},
+
+static PyObject *
+bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                          Py_ssize_t start, Py_ssize_t end);
+
+static PyObject *
+bytearray_startswith(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("startswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytearray_startswith_impl(self, subobj, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(bytearray_endswith__doc__,
+"endswith($self, suffix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the bytearray ends with the specified suffix, False otherwise.\n"
+"\n"
+"  suffix\n"
+"    A bytes or a tuple of bytes to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the bytearray.\n"
+"  end\n"
+"    Optional stop position. Default: end of the bytearray.");
+
+#define BYTEARRAY_ENDSWITH_METHODDEF    \
+    {"endswith", _PyCFunction_CAST(bytearray_endswith), METH_FASTCALL, bytearray_endswith__doc__},
+
+static PyObject *
+bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                        Py_ssize_t start, Py_ssize_t end);
+
+static PyObject *
+bytearray_endswith(PyByteArrayObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("endswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = bytearray_endswith_impl(self, subobj, start, end);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_removeprefix__doc__,
 "removeprefix($self, prefix, /)\n"
 "--\n"
@@ -1261,4 +1363,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=0797a5e03cda2a16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0147908e97ebe882 input=a9049054013a1b77]*/

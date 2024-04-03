@@ -771,66 +771,47 @@ notfound:
 
 static PyObject *
 _Py_bytes_tailmatch(const char *str, Py_ssize_t len,
-                    const char *function_name, PyObject *args,
+                    const char *function_name, PyObject *subobj,
+                    Py_ssize_t start, Py_ssize_t end,
                     int direction)
 {
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *subobj = NULL;
-    int result;
-
-    if (!stringlib_parse_args_finds(function_name, args, &subobj, &start, &end))
-        return NULL;
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
         for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            result = tailmatch(str, len, PyTuple_GET_ITEM(subobj, i),
-                               start, end, direction);
-            if (result == -1)
+            PyObject *item = PyTuple_GET_ITEM(subobj, i);
+            int result = tailmatch(str, len, item, start, end, direction);
+            if (result < 0) {
                 return NULL;
+            }
             else if (result) {
                 Py_RETURN_TRUE;
             }
         }
         Py_RETURN_FALSE;
     }
-    result = tailmatch(str, len, subobj, start, end, direction);
+    int result = tailmatch(str, len, subobj, start, end, direction);
     if (result == -1) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
                          "%s first arg must be bytes or a tuple of bytes, "
                          "not %s",
                          function_name, Py_TYPE(subobj)->tp_name);
+        }
         return NULL;
     }
-    else
-        return PyBool_FromLong(result);
+    return PyBool_FromLong(result);
 }
 
-PyDoc_STRVAR_shared(_Py_startswith__doc__,
-"B.startswith(prefix[, start[, end]]) -> bool\n\
-\n\
-Return True if B starts with the specified prefix, False otherwise.\n\
-With optional start, test B beginning at that position.\n\
-With optional end, stop comparing B at that position.\n\
-prefix can also be a tuple of bytes to try.");
-
 PyObject *
-_Py_bytes_startswith(const char *str, Py_ssize_t len, PyObject *args)
+_Py_bytes_startswith(const char *str, Py_ssize_t len, PyObject *subobj,
+                     Py_ssize_t start, Py_ssize_t end)
 {
-    return _Py_bytes_tailmatch(str, len, "startswith", args, -1);
+    return _Py_bytes_tailmatch(str, len, "startswith", subobj, start, end, -1);
 }
 
-PyDoc_STRVAR_shared(_Py_endswith__doc__,
-"B.endswith(suffix[, start[, end]]) -> bool\n\
-\n\
-Return True if B ends with the specified suffix, False otherwise.\n\
-With optional start, test B beginning at that position.\n\
-With optional end, stop comparing B at that position.\n\
-suffix can also be a tuple of bytes to try.");
-
 PyObject *
-_Py_bytes_endswith(const char *str, Py_ssize_t len, PyObject *args)
+_Py_bytes_endswith(const char *str, Py_ssize_t len, PyObject *subobj,
+                   Py_ssize_t start, Py_ssize_t end)
 {
-    return _Py_bytes_tailmatch(str, len, "endswith", args, +1);
+    return _Py_bytes_tailmatch(str, len, "endswith", subobj, start, end, +1);
 }
