@@ -523,12 +523,11 @@ def relpath(path, start=None):
 def commonpath(paths):
     """Given an iterable of path names, returns the longest common sub-path."""
 
-    paths = tuple(paths)
+    try:
+        _, roots, paths = zip(*map(splitroot, paths))
+    except ValueError:
+        raise ValueError('commonpath() arg is an empty iterable') from None
 
-    if not paths:
-        raise ValueError('commonpath() arg is an empty iterable')
-
-    _, roots, paths = zip(*map(splitroot, paths))
     if isinstance(paths[0], bytes):
         sep = b'/'
         curdir = b'.'
