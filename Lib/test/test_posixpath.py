@@ -718,11 +718,13 @@ class PosixPathTest(unittest.TestCase):
         check(['/usr/local'], '/usr/local')
         check(['//usr/local'], '//usr/local')
         check(['///usr/local'], '/usr/local')
-        check(['/usr/local', '//usr/local'], '/usr/local')
-        check(['//usr/local', '//usr/local'], '//usr/local')
-        check(['///usr/local', '//usr/local'], '/usr/local')
-
         check(['/usr/local', '/usr/local'], '/usr/local')
+        check(['/usr/local', '//usr/local'], '/usr/local')
+        check(['/usr/local', '///usr/local'], '/usr/local')
+        check(['//usr/local', '//usr/local'], '//usr/local')
+        check(['//usr/local', '///usr/local'], '/usr/local')
+        check(['///usr/local', '///usr/local'], '/usr/local')
+
         check(['/usr/local/', '/usr/local'], '/usr/local')
         check(['/usr/local/', '/usr/local/'], '/usr/local')
         check(['/usr//local', '/usr/local'], '/usr/local')
@@ -748,9 +750,18 @@ class PosixPathTest(unittest.TestCase):
         check(['', 'spam/alot'], '')
         check_error(ValueError, ['', '/spam/alot'])
 
-        check_error(TypeError, [b'/usr/lib/', '/usr/lib/python3'])
-        check_error(TypeError, [b'/usr/lib/', 'usr/lib/python3'])
-        check_error(TypeError, [b'usr/lib/', '/usr/lib/python3'])
+        self.assertRaises(TypeError, posixpath.commonpath,
+                          [b'/usr/lib/', '/usr/lib/python3'])
+        self.assertRaises(TypeError, posixpath.commonpath,
+                          [b'/usr/lib/', 'usr/lib/python3'])
+        self.assertRaises(TypeError, posixpath.commonpath,
+                          [b'usr/lib/', '/usr/lib/python3'])
+        self.assertRaises(TypeError, posixpath.commonpath,
+                          ['/usr/lib/', b'/usr/lib/python3'])
+        self.assertRaises(TypeError, posixpath.commonpath,
+                          ['/usr/lib/', b'usr/lib/python3'])
+        self.assertRaises(TypeError, posixpath.commonpath,
+                          ['usr/lib/', b'/usr/lib/python3'])
 
 
 class PosixCommonTest(test_genericpath.CommonTest, unittest.TestCase):
