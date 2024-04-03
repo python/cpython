@@ -818,10 +818,10 @@ static int devpoll_flush(devpollObject *self)
         ** clear what to do if a partial write occurred. For now, raise
         ** an exception and see if we actually found this problem in
         ** the wild.
-        ** See http://bugs.python.org/issue6397.
+        ** See https://github.com/python/cpython/issues/50646.
         */
         PyErr_Format(PyExc_OSError, "failed to write all pollfds. "
-                "Please, report at http://bugs.python.org/. "
+                "Please, report at https://github.com/python/cpython/issues/. "
                 "Data to report: Size tried: %d, actual size written: %d.",
                 size, n);
         return -1;
