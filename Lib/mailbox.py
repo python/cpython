@@ -755,7 +755,7 @@ class _singlefileMailbox(Mailbox):
         os.chmod(new_file.name, info.st_mode)
         try:
             os.chown(new_file.name, info.st_uid, info.st_gid)
-        except:
+        except (AttributeError, OSError):
             pass
         try:
             os.rename(new_file.name, self._path)
