@@ -18,6 +18,9 @@ test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
     from libclinic.converters import int_converter, str_converter
+    from libclinic.function import (
+        permute_optional_groups, permute_right_option_groups,
+        permute_left_option_groups)
     import clinic
     from clinic import DSLParser
 
@@ -679,7 +682,7 @@ class ParseFileUnitTest(TestCase):
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
-        computed = clinic.permute_optional_groups(l, m, r)
+        computed = permute_optional_groups(l, m, r)
         self.assertEqual(output, computed)
 
     def test_range(self):
@@ -721,7 +724,7 @@ class ClinicGroupPermuterTest(TestCase):
 
     def test_have_left_options_but_required_is_empty(self):
         def fn():
-            clinic.permute_optional_groups(['a'], [], [])
+            permute_optional_groups(['a'], [], [])
         self.assertRaises(ValueError, fn)
 
 
@@ -3764,7 +3767,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_left_option_groups(data))
+        actual = tuple(permute_left_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_right_option_groups(self):
@@ -3775,7 +3778,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_right_option_groups(data))
+        actual = tuple(permute_right_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_optional_groups(self):
@@ -3854,7 +3857,7 @@ class PermutationTests(unittest.TestCase):
         for params in dataset:
             with self.subTest(**params):
                 left, required, right, expected = params.values()
-                permutations = clinic.permute_optional_groups(left, required, right)
+                permutations = permute_optional_groups(left, required, right)
                 actual = tuple(permutations)
                 self.assertEqual(actual, expected)
 
