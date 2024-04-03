@@ -87,6 +87,10 @@ Interpreter improvements:
   Performance improvements are modest -- we expect to be improving this
   over the next few releases.
 
+New typing features:
+
+* :pep:`742`: :data:`typing.TypeIs` was added, providing more intuitive
+  type narrowing behavior.
 
 New Features
 ============
