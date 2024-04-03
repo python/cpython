@@ -1343,6 +1343,9 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\interpconfig.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
