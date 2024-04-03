@@ -629,13 +629,18 @@ given type object has a specified feature.
 /* Track types initialized using _PyStaticType_InitBuiltin(). */
 #define _Py_TPFLAGS_STATIC_BUILTIN (1 << 1)
 
+/* The values array is placed inline directly after the rest of
+ * the object. Implies Py_TPFLAGS_HAVE_GC.
+ */
+#define Py_TPFLAGS_INLINE_VALUES (1 << 2)
+
 /* Placement of weakref pointers are managed by the VM, not by the type.
  * The VM will automatically set tp_weaklistoffset.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
 /* Placement of dict (and values) pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_dictoffset.
+ * The VM will automatically set tp_dictoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
@@ -1245,6 +1250,10 @@ static inline int PyType_CheckExact(PyObject *op) {
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define PyType_CheckExact(op) PyType_CheckExact(_PyObject_CAST(op))
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
 #endif
 
 #ifdef __cplusplus
