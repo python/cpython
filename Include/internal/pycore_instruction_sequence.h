@@ -33,9 +33,12 @@ typedef struct {
     int s_allocated;
     int s_used;
 
+    int s_next_free_label; /* next free label id */
+    /* Map of a label id to instruction offset (index into s_instrs).
+     * If s_labelmap is NULL, then each label id is the offset itself.
+     */
     int *s_labelmap;       /* label id --> instr offset */
     int s_labelmap_size;
-    int s_next_free_label; /* next free label id */
 } _PyInstructionSequence;
 
 typedef struct {
