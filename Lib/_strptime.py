@@ -10,6 +10,7 @@ FUNCTIONS:
     strptime -- Calculates the time struct represented by the passed-in string
 
 """
+import os
 import time
 import locale
 import calendar
@@ -273,7 +274,7 @@ to either always raise an exception or to use a different default year (TBD).
 To avoid trouble, add a specific year to the input & format.
 See https://github.com/python/cpython/issues/70647.""",
                           DeprecationWarning,
-                          stacklevel=5)
+                          skip_file_prefixes=(os.path.dirname(__file__),))
         return "%s%s" % (processed_format, format)
 
     def compile(self, format):
