@@ -78,7 +78,8 @@ extern struct PyModuleDef _ctypesmodule;
 
 
 static inline ctypes_state *
-get_module_state(PyObject *module) {
+get_module_state(PyObject *module)
+{
     void *state = _PyModule_GetState(module);
     assert(state != NULL);
     return (ctypes_state *)state;

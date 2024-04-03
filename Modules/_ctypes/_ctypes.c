@@ -490,7 +490,6 @@ static void
 CType_Type_dealloc(PyObject *self)
 {
     ctypes_state *st = get_module_state_by_def_final(Py_TYPE(self));
-
     if (st && st->PyCType_Type) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, self, &info) < 0) {
@@ -506,7 +505,6 @@ CType_Type_dealloc(PyObject *self)
             ctype_clear_stginfo(info);
         }
     }
-
     PyTypeObject *tp = Py_TYPE(self);
     PyType_Type.tp_dealloc(self);
     Py_DECREF(tp);
