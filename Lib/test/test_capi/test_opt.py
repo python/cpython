@@ -10,6 +10,7 @@ import _testinternalcapi
 
 from test.support import script_helper, requires_specialization
 
+from _testinternalcapi import TIER2_THRESHOLD
 
 @contextlib.contextmanager
 def temporary_optimizer(opt):
@@ -69,8 +70,8 @@ class TestOptimizerAPI(unittest.TestCase):
                 self.assertEqual(opt.get_count(), 0)
                 with clear_executors(loop):
                     loop()
-                # Subtract 16 because optimizer doesn't kick in until 16
-                self.assertEqual(opt.get_count(), 1000 - 16)
+                # Subtract because optimizer doesn't kick in sooner
+                self.assertEqual(opt.get_count(), 1000 - TIER2_THRESHOLD)
 
     def test_long_loop(self):
         "Check that we aren't confused by EXTENDED_ARG"
@@ -97,7 +98,7 @@ class TestOptimizerAPI(unittest.TestCase):
         with temporary_optimizer(opt):
             self.assertEqual(opt.get_count(), 0)
             long_loop()
-            self.assertEqual(opt.get_count(), 20 - 16)  # Need 16 iterations to warm up
+            self.assertEqual(opt.get_count(), 20 - TIER2_THRESHOLD)  # Need iterations to warm up
 
     def test_code_restore_for_ENTER_EXECUTOR(self):
         def testfunc(x):
@@ -933,10 +934,10 @@ class TestUopsOptimization(unittest.TestCase):
         exec(src, ns, ns)
         testfunc = ns['testfunc']
         ns['_test_global'] = 0
-        _, ex = self._run_with_optimizer(testfunc, 16)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNone(ex)
         ns['_test_global'] = 1
-        _, ex = self._run_with_optimizer(testfunc, 16)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_GUARD_BOTH_INT", uops)
@@ -947,10 +948,10 @@ class TestUopsOptimization(unittest.TestCase):
         exec(src, ns, ns)
         testfunc = ns['testfunc']
         ns['_test_global'] = 0
-        _, ex = self._run_with_optimizer(testfunc, 16)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNone(ex)
         ns['_test_global'] = 3.14
-        _, ex = self._run_with_optimizer(testfunc, 16)
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertIsNone(ex)
 
     def test_many_nested(self):
