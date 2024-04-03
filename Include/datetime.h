@@ -196,14 +196,16 @@ typedef struct {
 /* Define global variable for the C API and a macro for setting it. */
 static PyDateTime_CAPI *_pydatetimeapi_main = NULL;
 
-static inline void _import_pydatetime(void) {
+static inline void
+_import_pydatetime(void) {
     if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
         _pydatetimeapi_main = PyCapsule_Import(PyDateTime_CAPSULE_NAME, 0);
     }
 }
 #define PyDateTime_IMPORT _import_pydatetime()
 
-static inline PyDateTime_CAPI *_get_pydatetime_api(void) {
+static inline PyDateTime_CAPI *
+_get_pydatetime_api(void) {
     if (PyInterpreterState_Get() == PyInterpreterState_Main()) {
         return _pydatetimeapi_main;
     }
