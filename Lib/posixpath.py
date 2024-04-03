@@ -454,6 +454,17 @@ symbolic links encountered in the path."""
         if not querying:
             path = newpath
             continue
+        try:
+            st = os.lstat(newpath)
+        except OSError:
+            if strict:
+                raise
+            is_link = False
+        else:
+            is_link = stat.S_ISLNK(st.st_mode)
+        if not is_link:
+            path = newpath
+            continue
         # Resolve the symbolic link
         if newpath in seen:
             # Already seen this path
@@ -470,24 +481,11 @@ symbolic links encountered in the path."""
                 path = newpath
                 querying = False
                 continue
-        try:
-            st = os.lstat(newpath)
-            if not stat.S_ISLNK(st.st_mode):
-                path = newpath
-                continue
-            target = os.readlink(newpath)
-        except OSError:
-            if strict:
-                raise
-            else:
-                # Return already resolved part + rest of the path unchanged.
-                path = newpath
-                querying = False
-                continue
+        seen[newpath] = None # not resolved symlink
+        target = os.readlink(newpath)
         if target.startswith(sep):
             # Symlink target is absolute; reset resolved path.
             path = sep
-        seen[newpath] = None # not resolved symlink
         # Push the symlink path onto the stack, and signal its specialness by
         # also pushing None. When these entries are popped, we'll record the
         # fully-resolved symlink target in the 'seen' mapping.
