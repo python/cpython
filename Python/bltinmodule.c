@@ -1175,20 +1175,30 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 }
 
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+/*[clinic input]
+@text_signature "(object, name[, default])"
+getattr as builtin_getattr
+
+    object as v: object
+    name: object
+    default as dflt: object = NULL
+    /
+
+Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.
+
+When a default argument is given, it is returned when the attribute doesn't
+exist; without it, an exception is raised in that case.
+[clinic start generated code]*/
+
 static PyObject *
-builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+builtin_getattr_impl(PyObject *module, PyObject *v, PyObject *name,
+                     PyObject *dflt)
+/*[clinic end generated code: output=dd719f3bee023bc8 input=a2c054ff46ce2ac6]*/
 {
-    PyObject *v, *name, *result;
+    PyObject *result;
 
-    if (!_PyArg_CheckPositional("getattr", nargs, 2, 3))
-        return NULL;
-
-    v = args[0];
-    name = args[1];
-    if (nargs > 2) {
+    if (dflt != NULL) {
         if (PyObject_GetOptionalAttr(v, name, &result) == 0) {
-            PyObject *dflt = args[2];
             return Py_NewRef(dflt);
         }
     }
@@ -1197,13 +1207,6 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     return result;
 }
-
-PyDoc_STRVAR(getattr_doc,
-"getattr(object, name[, default]) -> value\n\
-\n\
-Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.\n\
-When a default argument is given, it is returned when the attribute doesn't\n\
-exist; without it, an exception is raised in that case.");
 
 
 /*[clinic input]
@@ -3064,7 +3067,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
     BUILTIN_FORMAT_METHODDEF
-    {"getattr", _PyCFunction_CAST(builtin_getattr), METH_FASTCALL, getattr_doc},
+    BUILTIN_GETATTR_METHODDEF
     BUILTIN_GLOBALS_METHODDEF
     BUILTIN_HASATTR_METHODDEF
     BUILTIN_HASH_METHODDEF

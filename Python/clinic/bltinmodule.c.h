@@ -567,6 +567,46 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_getattr__doc__,
+"getattr(object, name[, default])\n"
+"--\n"
+"\n"
+"Get a named attribute from an object; getattr(x, \'y\') is equivalent to x.y.\n"
+"\n"
+"When a default argument is given, it is returned when the attribute doesn\'t\n"
+"exist; without it, an exception is raised in that case.");
+
+#define BUILTIN_GETATTR_METHODDEF    \
+    {"getattr", _PyCFunction_CAST(builtin_getattr), METH_FASTCALL, builtin_getattr__doc__},
+
+static PyObject *
+builtin_getattr_impl(PyObject *module, PyObject *v, PyObject *name,
+                     PyObject *dflt);
+
+static PyObject *
+builtin_getattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v;
+    PyObject *name;
+    PyObject *dflt = NULL;
+
+    if (!_PyArg_CheckPositional("getattr", nargs, 2, 3)) {
+        goto exit;
+    }
+    v = args[0];
+    name = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    dflt = args[2];
+skip_optional:
+    return_value = builtin_getattr_impl(module, v, name, dflt);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_globals__doc__,
 "globals($module, /)\n"
 "--\n"
@@ -1271,4 +1311,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b28d0edbc77cd9f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5bbcae56c9a6e5d input=a9049054013a1b77]*/
