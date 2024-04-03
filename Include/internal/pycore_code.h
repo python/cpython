@@ -495,7 +495,7 @@ adaptive_counter_cooldown(void) {
 
 static inline uint16_t
 adaptive_counter_backoff(uint16_t counter) {
-    return reset_backoff_counter(forge_backoff_counter(counter)).counter;
+    return restart_backoff_counter(forge_backoff_counter(counter)).counter;
 }
 
 

@@ -4154,7 +4154,7 @@ dummy_func(
             else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    exit->temperature = reset_backoff_counter(temperature).counter;
+                    exit->temperature = restart_backoff_counter(temperature).counter;
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;

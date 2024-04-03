@@ -67,7 +67,7 @@ forge_backoff_counter(uint16_t counter)
 }
 
 static inline backoff_counter_t
-reset_backoff_counter(backoff_counter_t counter)
+restart_backoff_counter(backoff_counter_t counter)
 {
     assert(!is_unreachable_backoff_counter(counter));
     if (counter.backoff < 12) {
