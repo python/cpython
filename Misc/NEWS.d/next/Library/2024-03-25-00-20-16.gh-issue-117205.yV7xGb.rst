@@ -1,0 +1,1 @@
+Speed up :func:`compileall.compile_dir` by 20% when using multiprocessing by increasing ``chunksize``.
