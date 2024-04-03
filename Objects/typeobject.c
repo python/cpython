@@ -7963,6 +7963,7 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
     res = type_ready(self, !ismain);
     END_TYPE_LOCK()
     if (res < 0) {
+        _PyStaticType_ClearWeakRefs(interp, self);
         static_builtin_state_clear(interp, self);
     }
     return res;

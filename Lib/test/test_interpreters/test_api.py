@@ -364,11 +364,11 @@ class TestInterpreterClose(TestBase):
 
     def test_main(self):
         main, = interpreters.list_all()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(interpreters.InterpreterError):
             main.close()
 
         def f():
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(interpreters.InterpreterError):
                 main.close()
 
         t = threading.Thread(target=f)
@@ -389,7 +389,7 @@ class TestInterpreterClose(TestBase):
             interp = interpreters.Interpreter({interp.id})
             try:
                 interp.close()
-            except RuntimeError:
+            except interpreters.InterpreterError:
                 print('failed')
             """))
         self.assertEqual(out.strip(), 'failed')
@@ -424,7 +424,7 @@ class TestInterpreterClose(TestBase):
         main, = interpreters.list_all()
         interp = interpreters.create()
         with _running(interp):
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(interpreters.InterpreterError):
                 interp.close()
             self.assertTrue(interp.is_running())
 
@@ -1103,7 +1103,7 @@ class LowLevelTests(TestBase):
             self.assert_ns_equal(config, default)
 
         with self.subTest('arg: \'empty\''):
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(interpreters.InterpreterError):
                 # The "empty" config isn't viable on its own.
                 _interpreters.create('empty')
 

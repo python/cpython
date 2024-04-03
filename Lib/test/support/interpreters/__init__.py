@@ -43,7 +43,7 @@ Uncaught in the interpreter:
 {formatted}
 """.strip()
 
-class ExecutionFailed(RuntimeError):
+class ExecutionFailed(InterpreterError):
     """An unhandled exception happened during execution.
 
     This is raised from Interpreter.exec() and Interpreter.call().
@@ -158,7 +158,7 @@ class Interpreter:
         """Finalize and destroy the interpreter.
 
         Attempting to destroy the current interpreter results
-        in a RuntimeError.
+        in an InterpreterError.
         """
         return _interpreters.destroy(self._id)
 

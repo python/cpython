@@ -1073,7 +1073,7 @@ int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {
     if (interp->threads.main != NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "interpreter already running");
         return -1;
     }
