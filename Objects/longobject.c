@@ -3645,6 +3645,40 @@ x_sub(PyLongObject *a, PyLongObject *b)
 }
 
 PyObject *
+_PyLong_Add_1X(PyLongObject *a, PyLongObject *b)
+{
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits x = medium_value(a) + medium_value(b);
+        if (is_medium_int(x)) {
+            digit abs_x = x < 0 ? -x : x;
+            _PyLong_SetSignAndDigitCount(a, x<0?-1:1, 1);
+            a->long_value.ob_digit[0] = abs_x;
+            return (PyObject *)a;
+        }
+    }
+    PyObject *res = _PyLong_Add(a, b);
+    Py_DECREF(a);
+    return res;
+}
+
+PyObject *
+_PyLong_Add_X1(PyLongObject *a, PyLongObject *b)
+{
+    if (_PyLong_BothAreCompact(a, b)) {
+        stwodigits x = medium_value(a) + medium_value(b);
+        if (is_medium_int(x)) {
+            digit abs_x = x < 0 ? -x : x;
+            _PyLong_SetSignAndDigitCount(b, x<0?-1:1, 1);
+            b->long_value.ob_digit[0] = abs_x;
+            return (PyObject *)b;
+        }
+    }
+    PyObject *res = _PyLong_Add(a, b);
+    Py_DECREF(b);
+    return res;
+}
+
+PyObject *
 _PyLong_Add(PyLongObject *a, PyLongObject *b)
 {
     if (_PyLong_BothAreCompact(a, b)) {

@@ -410,11 +410,12 @@ dummy_func(
             BINARY_OP_11,
             BINARY_OP_1X,
             BINARY_OP_1I,
+            BINARY_OP_I1,
+            BINARY_OP_II,
+            BINARY_OP_IX,
             BINARY_OP_X1,
             BINARY_OP_XI,
-            BINARY_OP_I1,
-            BINARY_OP_IX,
-            BINARY_OP_II,
+            BINARY_OP_XX,
             // BINARY_OP_INPLACE_ADD_UNICODE,  // See comments at that opcode.
         };
 
@@ -434,49 +435,98 @@ dummy_func(
             EXIT_IF(!_Py_IsImmortal(value1));
         }
 
+        op(_BINARY_OP_TABLE_NN, (type_version/1, left, right -- res)) {
+            PyTypeObject *lt = Py_TYPE(left);
+            PyTypeObject *rt = Py_TYPE(right);
+            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
+            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+        }
+
+        op(_BINARY_OP_TABLE_NF, (type_version/1, left, right -- res)) {
+            PyTypeObject *lt = Py_TYPE(left);
+            PyTypeObject *rt = Py_TYPE(right);
+            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
+            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+            _Py_Dealloc(right);
+        }
+
+        op(_BINARY_OP_TABLE_ND, (type_version/1, left, right -- res)) {
+            PyTypeObject *lt = Py_TYPE(left);
+            PyTypeObject *rt = Py_TYPE(right);
+            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
+            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+            Py_DECREF(right);
+        }
+
+        op(_BINARY_OP_TABLE_DN, (type_version/1, left, right -- res)) {
+            PyTypeObject *lt = Py_TYPE(left);
+            PyTypeObject *rt = Py_TYPE(right);
+            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
+            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+            Py_DECREF(left);
+        }
+
+        op(_BINARY_OP_TABLE_DD, (type_version/1, left, right -- res)) {
+            PyTypeObject *lt = Py_TYPE(left);
+            PyTypeObject *rt = Py_TYPE(right);
+            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
+            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+            Py_DECREF(left);
+            Py_DECREF(right);
+        }
+
         macro(BINARY_OP_11) =
             unused/1 +
             _GUARD_NOS_REFCNT1 +
             _GUARD_TOS_REFCNT1 +
-            _BINARY_OP;
-
-        macro(BINARY_OP_1X) =
-            unused/1 +
-            _GUARD_NOS_REFCNT1 +
-            _BINARY_OP;
+            _BINARY_OP_TABLE_NF;
 
         macro(BINARY_OP_1I) =
             unused/1 +
             _GUARD_NOS_REFCNT1 +
             _GUARD_TOS_IMMORTAL +
-            _BINARY_OP;
+            _BINARY_OP_TABLE_NN;
 
-        macro(BINARY_OP_X1) =
+        macro(BINARY_OP_1X) =
             unused/1 +
-            _GUARD_TOS_REFCNT1 +
-            _BINARY_OP;
-
-        macro(BINARY_OP_XI) =
-            unused/1 +
-            _GUARD_TOS_IMMORTAL +
-            _BINARY_OP;
+            _GUARD_NOS_REFCNT1 +
+            _BINARY_OP_TABLE_ND;
 
         macro(BINARY_OP_I1) =
             unused/1 +
             _GUARD_NOS_IMMORTAL +
             _GUARD_TOS_REFCNT1 +
-            _BINARY_OP;
-
-        macro(BINARY_OP_IX) =
-            unused/1 +
-            _GUARD_NOS_IMMORTAL +
-            _BINARY_OP;
+            _BINARY_OP_TABLE_NN;
 
         macro(BINARY_OP_II) =
             unused/1 +
             _GUARD_NOS_IMMORTAL +
             _GUARD_TOS_IMMORTAL +
-            _BINARY_OP;
+            _BINARY_OP_TABLE_NN;
+
+        macro(BINARY_OP_IX) =
+            unused/1 +
+            _GUARD_NOS_IMMORTAL +
+            _BINARY_OP_TABLE_ND;
+
+        macro(BINARY_OP_X1) =
+            unused/1 +
+            _GUARD_TOS_REFCNT1 +
+            _BINARY_OP_TABLE_DN;
+
+        macro(BINARY_OP_XI) =
+            unused/1 +
+            _GUARD_TOS_IMMORTAL +
+            _BINARY_OP_TABLE_DN;
+
+        macro(BINARY_OP_XX) =
+            unused/1 +
+            _BINARY_OP_TABLE_DD;
 
         op(_GUARD_BOTH_INT, (left, right -- left, right)) {
             EXIT_IF(!PyLong_CheckExact(left));
@@ -3913,7 +3963,7 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + _BINARY_OP;
+        macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/1 + _BINARY_OP;
 
         pure inst(SWAP, (bottom, unused[oparg-2], top --
                     top, unused[oparg-2], bottom)) {

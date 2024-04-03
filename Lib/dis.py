@@ -744,8 +744,10 @@ def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=N
 
         if caches:
             cache_info = []
+            data_offset = offset + 2
             for name, size in _cache_format[opname[deop]].items():
-                data = code[offset + 2: offset + 2 + 2 * size]
+                data = code[data_offset: data_offset + 2 * size]
+                data_offset += 2 * size
                 cache_info.append((name, size, data))
         else:
             cache_info = None

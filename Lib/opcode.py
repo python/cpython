@@ -49,6 +49,7 @@ _cache_format = {
     },
     "BINARY_OP": {
         "counter": 1,
+        "type_versions": 1,
     },
     "UNPACK_SEQUENCE": {
         "counter": 1,

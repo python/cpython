@@ -62,6 +62,11 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_REFCNT1] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG | HAS_PASSTHROUGH_FLAG,
     [_GUARD_NOS_IMMORTAL] = HAS_EXIT_FLAG | HAS_PASSTHROUGH_FLAG,
     [_GUARD_TOS_IMMORTAL] = HAS_EXIT_FLAG | HAS_PASSTHROUGH_FLAG,
+    [_BINARY_OP_TABLE_NN] = HAS_EXIT_FLAG,
+    [_BINARY_OP_TABLE_NF] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_OP_TABLE_ND] = HAS_EXIT_FLAG,
+    [_BINARY_OP_TABLE_DN] = HAS_EXIT_FLAG,
+    [_BINARY_OP_TABLE_DD] = HAS_EXIT_FLAG,
     [_GUARD_BOTH_INT] = HAS_EXIT_FLAG | HAS_PASSTHROUGH_FLAG,
     [_GUARD_BOTH_FLOAT] = HAS_EXIT_FLAG | HAS_PASSTHROUGH_FLAG,
     [_GUARD_BOTH_UNICODE] = HAS_EXIT_FLAG | HAS_PASSTHROUGH_FLAG,
@@ -252,6 +257,11 @@ const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
 
 const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_OP] = "_BINARY_OP",
+    [_BINARY_OP_TABLE_DD] = "_BINARY_OP_TABLE_DD",
+    [_BINARY_OP_TABLE_DN] = "_BINARY_OP_TABLE_DN",
+    [_BINARY_OP_TABLE_ND] = "_BINARY_OP_TABLE_ND",
+    [_BINARY_OP_TABLE_NF] = "_BINARY_OP_TABLE_NF",
+    [_BINARY_OP_TABLE_NN] = "_BINARY_OP_TABLE_NN",
     [_BINARY_SLICE] = "_BINARY_SLICE",
     [_BINARY_SUBSCR] = "_BINARY_SUBSCR",
     [_BINARY_SUBSCR_DICT] = "_BINARY_SUBSCR_DICT",
@@ -564,6 +574,16 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _GUARD_TOS_IMMORTAL:
             return 1;
+        case _BINARY_OP_TABLE_NN:
+            return 2;
+        case _BINARY_OP_TABLE_NF:
+            return 2;
+        case _BINARY_OP_TABLE_ND:
+            return 2;
+        case _BINARY_OP_TABLE_DN:
+            return 2;
+        case _BINARY_OP_TABLE_DD:
+            return 2;
         case _GUARD_BOTH_INT:
             return 2;
         case _GUARD_BOTH_FLOAT:

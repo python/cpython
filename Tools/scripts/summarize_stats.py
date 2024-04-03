@@ -557,6 +557,24 @@ class Stats:
             if key.startswith(prefix)
         ]
 
+    def get_binary_specialization_failure_stats(self) -> list[tuple[str, int]]:
+        stats = {}
+        prefix = "Binary specialization failure"
+        for key, value in self._data.items():
+            if not key.startswith(prefix):
+                continue
+            bits, _, rest = key[len(prefix) + 1 :].partition("]")
+            bits = int(bits)
+            rtype = bits & 15
+            ltype = (bits >> 4) & 15
+            kind = (bits >> 8) & 3
+            oparg = bits >> 10
+            name = f"{oparg} {kind} {ltype} {rtype}"
+            stats[name] = value
+        return [ (key, value) for
+                 (value, key) in
+                 sorted([(value, key) for (key, value) in stats.items()], reverse=True)
+                ]
 
 class JoinMode(enum.Enum):
     # Join using the first column as a key
@@ -771,6 +789,37 @@ def pair_count_section() -> Section:
         doc="""
         Pairs of specialized operations that deoptimize and are then followed by
         the corresponding unspecialized instruction are not counted as pairs.
+        """,
+    )
+
+def binary_failure_section() -> Section:
+    def calc_binary_failure_table(stats: Stats) -> Rows:
+        stats = stats.get_binary_specialization_failure_stats()
+        rows: Rows = []
+        for (i, item) in enumerate(stats):
+            if i == 100:
+                break;
+            name, count = item
+            rows.append(
+                (
+                    name,
+                    Count(count),
+                )
+            )
+        return rows
+
+    return Section(
+        "Binary op specialization failures",
+        "Binary op specialization failures",
+        [
+            Table(
+                ("Kind", "Count:"),
+                calc_binary_failure_table,
+            )
+        ],
+        comparative=False,
+        doc="""
+        Failure counts for binary specialization.
         """,
     )
 
@@ -1302,6 +1351,7 @@ LAYOUT = [
     gc_stats_section(),
     optimization_section(),
     rare_event_section(),
+    binary_failure_section(),
     meta_stats_section(),
 ]
 

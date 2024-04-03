@@ -154,8 +154,8 @@ typedef struct _stats {
     OptimizationStats optimization_stats;
     RareEventStats rare_event_stats;
     GCStats *gc_stats;
+    uint64_t binary_specialization_failure[1<<15];
 } PyStats;
-
 
 // Export for shared extensions like 'math'
 PyAPI_DATA(PyStats*) _Py_stats;

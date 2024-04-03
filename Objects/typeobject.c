@@ -7938,8 +7938,10 @@ _PyStaticType_InitBuiltin(PyInterpreterState *interp, PyTypeObject *self)
         self->tp_flags |= Py_TPFLAGS_IMMUTABLETYPE;
 
         assert(NEXT_GLOBAL_VERSION_TAG <= _Py_MAX_GLOBAL_TYPE_VERSION_TAG);
-        self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
-        self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+        if ((self->tp_flags & Py_TPFLAGS_VALID_VERSION_TAG) == 0) {
+            self->tp_version_tag = NEXT_GLOBAL_VERSION_TAG++;
+            self->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
+        }
     }
     else {
         assert(!ismain);

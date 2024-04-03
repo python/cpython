@@ -26,7 +26,7 @@ extern const char *_PyUOpName(int index);
 #ifdef Py_STATS
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
-PyStats *_Py_stats = NULL;
+PyStats *_Py_stats = &_Py_stats_struct; // NULL;
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -303,6 +303,11 @@ print_stats(FILE *out, PyStats *stats)
     print_gc_stats(out, stats->gc_stats);
     print_optimization_stats(out, &stats->optimization_stats);
     print_rare_event_stats(out, &stats->rare_event_stats);
+    for (int i = 0; i < (1<<13); i++) {
+        if (stats->binary_specialization_failure[i]) {
+            fprintf(out, "Binary specialization failure[%d]: %" PRIu64 "\n", i, stats->binary_specialization_failure[i]);
+        }
+    }
 }
 
 void
@@ -400,11 +405,20 @@ do { \
     } \
 } while (0)
 
+
+#define BINARY_SPECIALIZATION_FAIL(lv, rv, kind, oparg) \
+do { \
+    if (_Py_stats) { \
+        binary_specialization_fail(lv, rv, kind, oparg); \
+    } \
+} while (0)
+
 #endif  // Py_STATS
 
 
 #ifndef SPECIALIZATION_FAIL
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
+#  define BINARY_SPECIALIZATION_FAIL(lhs, rhs, kind, oparg) ((void)0)
 #endif
 
 // Initialize warmup counters and insert superinstructions. This cannot fail.
@@ -2065,74 +2079,107 @@ _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 }
 
 #ifdef Py_STATS
-static int
-binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
+static void
+binary_specialization_fail(int lv, int rv, int kind, int oparg)
 {
-    switch (oparg) {
-        case NB_ADD:
-        case NB_INPLACE_ADD:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                return SPEC_FAIL_BINARY_OP_ADD_DIFFERENT_TYPES;
-            }
-            return SPEC_FAIL_BINARY_OP_ADD_OTHER;
-        case NB_AND:
-        case NB_INPLACE_AND:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                return SPEC_FAIL_BINARY_OP_AND_DIFFERENT_TYPES;
-            }
-            if (PyLong_CheckExact(lhs)) {
-                return SPEC_FAIL_BINARY_OP_AND_INT;
-            }
-            return SPEC_FAIL_BINARY_OP_AND_OTHER;
-        case NB_FLOOR_DIVIDE:
-        case NB_INPLACE_FLOOR_DIVIDE:
-            return SPEC_FAIL_BINARY_OP_FLOOR_DIVIDE;
-        case NB_LSHIFT:
-        case NB_INPLACE_LSHIFT:
-            return SPEC_FAIL_BINARY_OP_LSHIFT;
-        case NB_MATRIX_MULTIPLY:
-        case NB_INPLACE_MATRIX_MULTIPLY:
-            return SPEC_FAIL_BINARY_OP_MATRIX_MULTIPLY;
-        case NB_MULTIPLY:
-        case NB_INPLACE_MULTIPLY:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                return SPEC_FAIL_BINARY_OP_MULTIPLY_DIFFERENT_TYPES;
-            }
-            return SPEC_FAIL_BINARY_OP_MULTIPLY_OTHER;
-        case NB_OR:
-        case NB_INPLACE_OR:
-            return SPEC_FAIL_BINARY_OP_OR;
-        case NB_POWER:
-        case NB_INPLACE_POWER:
-            return SPEC_FAIL_BINARY_OP_POWER;
-        case NB_REMAINDER:
-        case NB_INPLACE_REMAINDER:
-            return SPEC_FAIL_BINARY_OP_REMAINDER;
-        case NB_RSHIFT:
-        case NB_INPLACE_RSHIFT:
-            return SPEC_FAIL_BINARY_OP_RSHIFT;
-        case NB_SUBTRACT:
-        case NB_INPLACE_SUBTRACT:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                return SPEC_FAIL_BINARY_OP_SUBTRACT_DIFFERENT_TYPES;
-            }
-            return SPEC_FAIL_BINARY_OP_SUBTRACT_OTHER;
-        case NB_TRUE_DIVIDE:
-        case NB_INPLACE_TRUE_DIVIDE:
-            if (!Py_IS_TYPE(lhs, Py_TYPE(rhs))) {
-                return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_DIFFERENT_TYPES;
-            }
-            if (PyFloat_CheckExact(lhs)) {
-                return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_FLOAT;
-            }
-            return SPEC_FAIL_BINARY_OP_TRUE_DIVIDE_OTHER;
-        case NB_XOR:
-        case NB_INPLACE_XOR:
-            return SPEC_FAIL_BINARY_OP_XOR;
+    /* Gather stats per op, not family */
+    if (lv >= 8) {
+        lv = 0;
     }
-    Py_UNREACHABLE();
+    if (rv >= 8) {
+        rv = 0;
+    }
+    assert(kind < 4);
+    assert(oparg < 32);
+    _Py_stats->binary_specialization_failure[(oparg << 10) | (kind << 8) | (lv << 4) | rv]++;
 }
 #endif   // Py_STATS
+
+
+enum Kinds {
+    KIND_1X = 1,
+    KIND_X1 = 2,
+    KIND_XX = 3,
+};
+
+typedef struct {
+    uint16_t hash;
+    uint8_t index;
+} binary_function_entry;
+
+#define FUNC_HASH(LV, RV, KIND, OPARG) (((OPARG) << 11) | ((KIND) << 8) | ((LV) << 4) | (RV))
+
+static uint16_t hash(int lv, int rv, int kind, int oparg)
+{
+    assert(lv >= 0 && lv < 16);
+    assert(rv >= 0 && rv < 16);
+    assert(kind >= 0 && kind < 4);
+    assert(oparg >= 0 && oparg < 64);
+    return FUNC_HASH(lv, rv, kind, oparg);
+}
+
+static inline double
+float_add(PyObject *left, PyObject *right)
+{
+    return PyFloat_AS_DOUBLE(left) + PyFloat_AS_DOUBLE(right);
+}
+
+static PyObject *
+binary_add_float_float_xx(PyObject *left, PyObject *right)
+{
+    return PyFloat_FromDouble(float_add(left, right));
+}
+
+static PyObject *
+binary_add_float_float_1x(PyObject *left, PyObject *right)
+{
+    ((PyFloatObject *)left)->ob_fval = float_add(left, right);
+    return left;
+}
+
+static PyObject *
+binary_add_float_float_x1(PyObject *left, PyObject *right)
+{
+    ((PyFloatObject *)right)->ob_fval = float_add(left, right);
+    return right;
+}
+
+static binary_function_entry binary_function_entry_table[] = {
+    { FUNC_HASH(_Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, KIND_1X, NB_ADD), 1},
+    { FUNC_HASH(_Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, KIND_X1, NB_ADD), 2},
+    { FUNC_HASH(_Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, KIND_XX, NB_ADD), 3},
+    { FUNC_HASH(_Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, KIND_1X, NB_ADD), 4},
+    { FUNC_HASH(_Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, KIND_X1, NB_ADD), 5},
+    { FUNC_HASH(_Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, KIND_XX, NB_ADD), 6},
+};
+
+const binaryfunc _Py_BinaryFunctionTable[] = {
+    [0] = NULL,
+    [1] = (binaryfunc)_PyLong_Add_1X,
+    [2] = (binaryfunc)_PyLong_Add_X1,
+    [3] = (binaryfunc)_PyLong_Add,
+    [4] = binary_add_float_float_1x,
+    [5] = binary_add_float_float_x1,
+    [6] = binary_add_float_float_xx,
+};
+
+static int
+lookup_binary_function(int left_version, int right_version, int kind, int oparg) {
+    assert(oparg < 256);
+    if (left_version >= _Py_TYPE_VERSIONS_PREALLOCATED) {
+        return 0;
+    }
+    if (right_version >= _Py_TYPE_VERSIONS_PREALLOCATED) {
+        return 0;
+    }
+    int key = hash(left_version, right_version, kind, oparg);
+    for (int i = 0; i < (int)Py_ARRAY_LENGTH(binary_function_entry_table); i++) {
+        if (binary_function_entry_table[i].hash == key) {
+            return binary_function_entry_table[i].index;
+        }
+    }
+    return 0;
+}
 
 void
 _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
@@ -2142,8 +2189,9 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
-    int func_index = 0;
+    int kind = KIND_XX;
     if (Py_REFCNT(lhs) == 1) {
+        kind = KIND_1X;
         if (Py_REFCNT(rhs) == 1) {
             instr->op.code = BINARY_OP_11;
         }
@@ -2157,6 +2205,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     else if (_Py_IsImmortal(lhs)) {
         if (Py_REFCNT(rhs) == 1) {
             instr->op.code = BINARY_OP_I1;
+            kind = KIND_X1;
         }
         else if (_Py_IsImmortal(rhs)) {
             instr->op.code = BINARY_OP_II;
@@ -2168,44 +2217,30 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     else {
         if (Py_REFCNT(rhs) == 1) {
             instr->op.code = BINARY_OP_X1;
+            kind = KIND_X1;
         }
         else if (_Py_IsImmortal(rhs)) {
             instr->op.code = BINARY_OP_XI;
         }
+        else {
+            instr->op.code = BINARY_OP_XX;
+        }
     }
-    if (instr->op.code == BINARY_OP) {
-        SPECIALIZATION_FAIL(BINARY_OP, binary_op_fail_kind(oparg, lhs, rhs));
+    int left_version =  Py_TYPE(lhs)->tp_version_tag;
+    int right_version = Py_TYPE(lhs)->tp_version_tag;
+    int func_index = lookup_binary_function(left_version, right_version, kind, oparg);
+    assert(func_index >= 0 && func_index < 256);
+    if (func_index == 0) {
+        instr->op.code = BINARY_OP;
+        BINARY_SPECIALIZATION_FAIL(left_version, left_version, kind, oparg);
+        SPECIALIZATION_FAIL(BINARY_OP, oparg);
         STAT_INC(BINARY_OP, failure);
         cache->counter = adaptive_counter_backoff(cache->counter);
     }
     else {
-#ifdef Py_STATS
-        /* Gather stats per op, not family */
-        int lv = Py_TYPE(lhs)->tp_version_tag;
-        if (lv >= 6) {
-            lv = 0;
-        }
-        int rv = Py_TYPE(lhs)->tp_version_tag;
-        if (rv >= 6) {
-            rv = 0;
-        }
-        int kind;
-        if (lv <= _Py_TYPE_VERSION_FLOAT && rv <= _Py_TYPE_VERSION_FLOAT) {
-            kind = (lv << 2) | rv;
-        }
-        else if (lv == rv) {
-            kind = lv + 8;
-        }
-        else if (lv > rv) {
-            kind = lv + 16;
-        }
-        else {
-            kind = rv + 24;
-        }
-        SPECIALIZATION_FAIL(instr->op.code, kind);
         STAT_INC(BINARY_OP, success);
-#endif
         cache->counter = adaptive_counter_cooldown();
+        cache->type_versions = (func_index << 8) | (left_version << 4) | right_version;
     }
 }
 

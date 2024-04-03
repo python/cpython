@@ -59,6 +59,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 2;
         case BINARY_OP_XI:
             return 2;
+        case BINARY_OP_XX:
+            return 2;
         case BINARY_SLICE:
             return 3;
         case BINARY_SUBSCR:
@@ -488,6 +490,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case BINARY_OP_XI:
             return 1;
+        case BINARY_OP_XX:
+            return 1;
         case BINARY_SLICE:
             return 1;
         case BINARY_SUBSCR:
@@ -894,13 +898,15 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
 enum InstructionFormat {
     INSTR_FMT_IB = 1,
     INSTR_FMT_IBC = 2,
-    INSTR_FMT_IBC00 = 3,
-    INSTR_FMT_IBC000 = 4,
-    INSTR_FMT_IBC00000000 = 5,
-    INSTR_FMT_IX = 6,
-    INSTR_FMT_IXC = 7,
-    INSTR_FMT_IXC00 = 8,
-    INSTR_FMT_IXC000 = 9,
+    INSTR_FMT_IBC0 = 3,
+    INSTR_FMT_IBC00 = 4,
+    INSTR_FMT_IBC000 = 5,
+    INSTR_FMT_IBC00000000 = 6,
+    INSTR_FMT_IX = 7,
+    INSTR_FMT_IXC = 8,
+    INSTR_FMT_IXC0 = 9,
+    INSTR_FMT_IXC00 = 10,
+    INSTR_FMT_IXC000 = 11,
 };
 
 #define IS_VALID_OPCODE(OP) \
@@ -958,15 +964,16 @@ extern const struct opcode_metadata _PyOpcode_opcode_metadata[268];
 const struct opcode_metadata _PyOpcode_opcode_metadata[268] = {
     [BEFORE_ASYNC_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BEFORE_WITH] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_11] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_1I] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_1X] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_I1] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_II] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_IX] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_X1] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BINARY_OP_XI] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP] = { true, INSTR_FMT_IBC0, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_11] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_1I] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_1X] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_I1] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_II] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG },
+    [BINARY_OP_IX] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG },
+    [BINARY_OP_X1] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
+    [BINARY_OP_XI] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG },
+    [BINARY_OP_XX] = { true, INSTR_FMT_IXC0, HAS_EXIT_FLAG },
     [BINARY_SLICE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_SUBSCR] = { true, INSTR_FMT_IXC, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_SUBSCR_DICT] = { true, INSTR_FMT_IXC, HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
@@ -1191,14 +1198,15 @@ extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[256];
 const struct opcode_macro_expansion
 _PyOpcode_macro_expansion[256] = {
     [BINARY_OP] = { .nuops = 1, .uops = { { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_11] = { .nuops = 3, .uops = { { _GUARD_NOS_REFCNT1, 0, 0 }, { _GUARD_TOS_REFCNT1, 0, 0 }, { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_1I] = { .nuops = 3, .uops = { { _GUARD_NOS_REFCNT1, 0, 0 }, { _GUARD_TOS_IMMORTAL, 0, 0 }, { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_1X] = { .nuops = 2, .uops = { { _GUARD_NOS_REFCNT1, 0, 0 }, { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_I1] = { .nuops = 3, .uops = { { _GUARD_NOS_IMMORTAL, 0, 0 }, { _GUARD_TOS_REFCNT1, 0, 0 }, { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_II] = { .nuops = 3, .uops = { { _GUARD_NOS_IMMORTAL, 0, 0 }, { _GUARD_TOS_IMMORTAL, 0, 0 }, { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_IX] = { .nuops = 2, .uops = { { _GUARD_NOS_IMMORTAL, 0, 0 }, { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_X1] = { .nuops = 2, .uops = { { _GUARD_TOS_REFCNT1, 0, 0 }, { _BINARY_OP, 0, 0 } } },
-    [BINARY_OP_XI] = { .nuops = 2, .uops = { { _GUARD_TOS_IMMORTAL, 0, 0 }, { _BINARY_OP, 0, 0 } } },
+    [BINARY_OP_11] = { .nuops = 3, .uops = { { _GUARD_NOS_REFCNT1, 0, 0 }, { _GUARD_TOS_REFCNT1, 0, 0 }, { _BINARY_OP_TABLE_NF, 1, 1 } } },
+    [BINARY_OP_1I] = { .nuops = 3, .uops = { { _GUARD_NOS_REFCNT1, 0, 0 }, { _GUARD_TOS_IMMORTAL, 0, 0 }, { _BINARY_OP_TABLE_NN, 1, 1 } } },
+    [BINARY_OP_1X] = { .nuops = 2, .uops = { { _GUARD_NOS_REFCNT1, 0, 0 }, { _BINARY_OP_TABLE_ND, 1, 1 } } },
+    [BINARY_OP_I1] = { .nuops = 3, .uops = { { _GUARD_NOS_IMMORTAL, 0, 0 }, { _GUARD_TOS_REFCNT1, 0, 0 }, { _BINARY_OP_TABLE_NN, 1, 1 } } },
+    [BINARY_OP_II] = { .nuops = 3, .uops = { { _GUARD_NOS_IMMORTAL, 0, 0 }, { _GUARD_TOS_IMMORTAL, 0, 0 }, { _BINARY_OP_TABLE_NN, 1, 1 } } },
+    [BINARY_OP_IX] = { .nuops = 2, .uops = { { _GUARD_NOS_IMMORTAL, 0, 0 }, { _BINARY_OP_TABLE_ND, 1, 1 } } },
+    [BINARY_OP_X1] = { .nuops = 2, .uops = { { _GUARD_TOS_REFCNT1, 0, 0 }, { _BINARY_OP_TABLE_DN, 1, 1 } } },
+    [BINARY_OP_XI] = { .nuops = 2, .uops = { { _GUARD_TOS_IMMORTAL, 0, 0 }, { _BINARY_OP_TABLE_DN, 1, 1 } } },
+    [BINARY_OP_XX] = { .nuops = 1, .uops = { { _BINARY_OP_TABLE_DD, 1, 1 } } },
     [BINARY_SLICE] = { .nuops = 1, .uops = { { _BINARY_SLICE, 0, 0 } } },
     [BINARY_SUBSCR] = { .nuops = 1, .uops = { { _BINARY_SUBSCR, 0, 0 } } },
     [BINARY_SUBSCR_DICT] = { .nuops = 1, .uops = { { _BINARY_SUBSCR_DICT, 0, 0 } } },
@@ -1363,6 +1371,7 @@ const char *_PyOpcode_OpName[268] = {
     [BINARY_OP_IX] = "BINARY_OP_IX",
     [BINARY_OP_X1] = "BINARY_OP_X1",
     [BINARY_OP_XI] = "BINARY_OP_XI",
+    [BINARY_OP_XX] = "BINARY_OP_XX",
     [BINARY_SLICE] = "BINARY_SLICE",
     [BINARY_SUBSCR] = "BINARY_SUBSCR",
     [BINARY_SUBSCR_DICT] = "BINARY_SUBSCR_DICT",
@@ -1598,7 +1607,7 @@ const uint8_t _PyOpcode_Caches[256] = {
     [POP_JUMP_IF_NOT_NONE] = 1,
     [FOR_ITER] = 1,
     [CALL] = 3,
-    [BINARY_OP] = 1,
+    [BINARY_OP] = 2,
 };
 #endif
 
@@ -1616,6 +1625,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [BINARY_OP_IX] = BINARY_OP,
     [BINARY_OP_X1] = BINARY_OP,
     [BINARY_OP_XI] = BINARY_OP,
+    [BINARY_OP_XX] = BINARY_OP,
     [BINARY_SLICE] = BINARY_SLICE,
     [BINARY_SUBSCR] = BINARY_SUBSCR,
     [BINARY_SUBSCR_DICT] = BINARY_SUBSCR,
@@ -1851,7 +1861,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 146: \
     case 147: \
     case 148: \
-    case 222: \
     case 223: \
     case 224: \
     case 225: \
