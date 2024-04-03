@@ -210,6 +210,8 @@ interp_config_from_dict(PyObject *origdict, PyInterpreterConfig *config,
                      "config dict has %d extra items (%R)", unused, dict);
         goto error;
     }
+
+    Py_DECREF(dict);
     return 0;
 
 error:
