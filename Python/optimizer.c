@@ -1088,7 +1088,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     assert(exit_count < COLD_EXIT_COUNT);
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = initial_backoff_counter();
+        executor->exits[i].temperature = initial_temperature_backoff_counter();
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -1525,7 +1525,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_DECREF(executor->exits[i].executor);
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = forge_backoff_counter(UNREACHABLE_BACKOFF);
+        executor->exits[i].temperature = initial_unreachable_backoff_counter();
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);
