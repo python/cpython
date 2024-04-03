@@ -4106,6 +4106,20 @@ posix_getcwd(int use_bytes)
     else {
         obj = PyUnicode_DecodeFSDefault(buf);
     }
+#ifdef __linux__
+    if (buf[0] != '/') {
+        /*
+         * On Linux >= 2.6.36 with glibc < 2.27, getcwd() can return a
+         * relative pathname starting with '(unreachable)'. We detect this
+         * and fail with ENOENT, matching newer glibc behaviour.
+         */
+        errno = ENOENT;
+        path_object_error(obj);
+        PyMem_RawFree(buf);
+        return NULL;
+    }
+#endif
+    assert(buf[0] == '/');
     PyMem_RawFree(buf);
 
     return obj;

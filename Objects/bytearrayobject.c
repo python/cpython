@@ -1186,16 +1186,52 @@ bytearray_contains(PyObject *self, PyObject *arg)
     return _Py_bytes_contains(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), arg);
 }
 
-static PyObject *
-bytearray_startswith(PyByteArrayObject *self, PyObject *args)
-{
-    return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
-}
+/*[clinic input]
+@text_signature "($self, prefix[, start[, end]], /)"
+bytearray.startswith
+
+    prefix as subobj: object
+        A bytes or a tuple of bytes to try.
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+        Optional start position. Default: start of the bytearray.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+        Optional stop position. Default: end of the bytearray.
+    /
+
+Return True if the bytearray starts with the specified prefix, False otherwise.
+[clinic start generated code]*/
 
 static PyObject *
-bytearray_endswith(PyByteArrayObject *self, PyObject *args)
+bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                          Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=a3d9b6d44d3662a6 input=76385e0b376b45c1]*/
 {
-    return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                                subobj, start, end);
+}
+
+/*[clinic input]
+@text_signature "($self, suffix[, start[, end]], /)"
+bytearray.endswith
+
+    suffix as subobj: object
+        A bytes or a tuple of bytes to try.
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the bytearray.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the bytearray.
+    /
+
+Return True if the bytearray ends with the specified suffix, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
+                        Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=e75ea8c227954caa input=9b8baa879aa3d74b]*/
+{
+    return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                              subobj, start, end);
 }
 
 /*[clinic input]
@@ -2203,8 +2239,7 @@ bytearray_methods[] = {
     {"count", (PyCFunction)bytearray_count, METH_VARARGS,
      _Py_count__doc__},
     BYTEARRAY_DECODE_METHODDEF
-    {"endswith", (PyCFunction)bytearray_endswith, METH_VARARGS,
-     _Py_endswith__doc__},
+    BYTEARRAY_ENDSWITH_METHODDEF
     STRINGLIB_EXPANDTABS_METHODDEF
     BYTEARRAY_EXTEND_METHODDEF
     {"find", (PyCFunction)bytearray_find, METH_VARARGS,
@@ -2249,8 +2284,7 @@ bytearray_methods[] = {
     BYTEARRAY_RSTRIP_METHODDEF
     BYTEARRAY_SPLIT_METHODDEF
     BYTEARRAY_SPLITLINES_METHODDEF
-    {"startswith", (PyCFunction)bytearray_startswith, METH_VARARGS ,
-     _Py_startswith__doc__},
+    BYTEARRAY_STARTSWITH_METHODDEF
     BYTEARRAY_STRIP_METHODDEF
     {"swapcase", stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},

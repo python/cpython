@@ -273,7 +273,8 @@ class BasicTest(BaseTest):
             ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), expected.encode(), prefix)
+            self.assertEqual(pathlib.Path(out.strip().decode()),
+                             pathlib.Path(expected), prefix)
 
     @requireVenvCreate
     def test_sysconfig(self):
@@ -531,7 +532,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
-        subprocess.check_call([self.envpy(real_env_dir=True), script])
+        subprocess.check_call([self.envpy(real_env_dir=True), "-I", script])
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):

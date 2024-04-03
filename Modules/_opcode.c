@@ -347,6 +347,28 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
     return list;
 }
 
+/*[clinic input]
+
+_opcode.get_executor
+
+  code: object
+  offset: int
+
+Return the executor object at offset in code if exists, None otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
+/*[clinic end generated code: output=c035c7a47b16648f input=85eff93ea7aac282]*/
+{
+    if (!PyCode_Check(code)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a code object, not '%.100s'",
+                     Py_TYPE(code)->tp_name);
+        return NULL;
+    }
+    return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, offset);
+}
 
 static PyMethodDef
 opcode_functions[] =  {
@@ -363,6 +385,7 @@ opcode_functions[] =  {
     _OPCODE_GET_NB_OPS_METHODDEF
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
+    _OPCODE_GET_EXECUTOR_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 

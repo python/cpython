@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
@@ -235,14 +236,12 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
 static PyObject *
 get_once_registry(PyInterpreterState *interp)
 {
-    PyObject *registry;
-
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
+    PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -265,14 +264,12 @@ get_once_registry(PyInterpreterState *interp)
 static PyObject *
 get_default_action(PyInterpreterState *interp)
 {
-    PyObject *default_action;
-
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
+    PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -299,15 +296,12 @@ get_filter(PyInterpreterState *interp, PyObject *category,
            PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
 {
-    PyObject *action;
-    Py_ssize_t i;
-    PyObject *warnings_filters;
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -324,7 +318,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     }
 
     /* WarningsState.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
@@ -384,7 +378,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         Py_DECREF(tmp_item);
     }
 
-    action = get_default_action(interp);
+    PyObject *action = get_default_action(interp);
     if (action != NULL) {
         *item = Py_NewRef(Py_None);
         return action;
@@ -404,9 +398,9 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         return -1;
 
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return -1;
-    }
+    assert(st != NULL);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
         return -1;
@@ -1000,8 +994,15 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(tstate->interp);
+    assert(st != NULL);
+#endif
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
+    Py_END_CRITICAL_SECTION();
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1149,8 +1150,16 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
             return NULL;
         }
     }
+
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(tstate->interp);
+    assert(st != NULL);
+#endif
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
+    Py_END_CRITICAL_SECTION();
     Py_XDECREF(source_line);
     return returned;
 }
@@ -1168,11 +1177,14 @@ warnings_filters_mutated_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
+
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     st->filters_version++;
+    Py_END_CRITICAL_SECTION();
+
     Py_RETURN_NONE;
 }
 
@@ -1290,8 +1302,16 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     if (tstate == NULL) {
         return -1;
     }
+
+#ifdef Py_GIL_DISABLED
+    WarningsState *st = warnings_get_state(tstate->interp);
+    assert(st != NULL);
+#endif
+
+    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
+    Py_END_CRITICAL_SECTION();
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1356,8 +1376,15 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
+#ifdef Py_GIL_DISABLED
+            WarningsState *st = warnings_get_state(tstate->interp);
+            assert(st != NULL);
+#endif
+
+            Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
+            Py_END_CRITICAL_SECTION();
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);

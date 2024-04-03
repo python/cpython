@@ -13,6 +13,7 @@ import itertools
 import locale
 import os
 import pickle
+import platform
 import select
 import selectors
 import shutil
@@ -56,8 +57,10 @@ try:
 except (ImportError, AttributeError):
     all_users = []
 try:
+    import _testcapi
     from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 except ImportError:
+    _testcapi = None
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 try:
@@ -4085,9 +4088,15 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # Tolerate a difference of 1 ms
-    CLOCK_RES_NS = 1_000_000
-    CLOCK_RES = CLOCK_RES_NS * 1e-9
+    # 1 ms accuracy is reliably achievable on every platform except Android
+    # emulators, where we allow 10 ms (gh-108277).
+    if sys.platform == "android" and platform.android_ver().is_emulator:
+        CLOCK_RES_PLACES = 2
+    else:
+        CLOCK_RES_PLACES = 3
+
+    CLOCK_RES = 10 ** -CLOCK_RES_PLACES
+    CLOCK_RES_NS = 10 ** (9 - CLOCK_RES_PLACES)
 
     def timerfd_create(self, *args, **kwargs):
         fd = os.timerfd_create(*args, **kwargs)
@@ -4109,18 +4118,18 @@ class TimerfdTests(unittest.TestCase):
 
         # 1st call
         next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
-        self.assertAlmostEqual(interval2, 0.0, places=3)
-        self.assertAlmostEqual(next_expiration, 0.0, places=3)
+        self.assertAlmostEqual(interval2, 0.0, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, 0.0, places=self.CLOCK_RES_PLACES)
 
         # 2nd call
         next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=self.CLOCK_RES_PLACES)
 
         # timerfd_gettime
         next_expiration, interval2 = os.timerfd_gettime(fd)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=self.CLOCK_RES_PLACES)
 
     def test_timerfd_non_blocking(self):
         fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
@@ -4174,8 +4183,8 @@ class TimerfdTests(unittest.TestCase):
 
         # timerfd_gettime
         next_expiration, interval2 = os.timerfd_gettime(fd)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=self.CLOCK_RES_PLACES)
 
         count = 3
         t = time.perf_counter()
@@ -4206,8 +4215,8 @@ class TimerfdTests(unittest.TestCase):
         # timerfd_gettime
         # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
         next_expiration, interval2 = os.timerfd_gettime(fd)
-        self.assertAlmostEqual(interval2, interval, places=3)
-        self.assertAlmostEqual(next_expiration, offset, places=3)
+        self.assertAlmostEqual(interval2, interval, places=self.CLOCK_RES_PLACES)
+        self.assertAlmostEqual(next_expiration, offset, places=self.CLOCK_RES_PLACES)
 
         t = time.perf_counter()
         count_signaled = self.read_count_signaled(fd)
@@ -5331,6 +5340,7 @@ class ForkTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform in ("linux", "android", "darwin"),
                          "Only Linux and macOS detect this today.")
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_fork_warns_when_non_python_thread_exists(self):
         code = """if 1:
             import os, threading, warnings
