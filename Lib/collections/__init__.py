@@ -1039,7 +1039,7 @@ class ChainMap(_collections_abc.MutableMapping):
 
     @classmethod
     def fromkeys(cls, iterable, value=None, /):
-        'Create a new ChainMap with keys from thhe iterable and values set to value.'
+        'Create a new ChainMap with keys from iterable and values set to value.'
         return cls(dict.fromkeys(iterable, value))
 
     def copy(self):
