@@ -1204,7 +1204,7 @@ Return True if the bytearray starts with the specified prefix, False otherwise.
 static PyObject *
 bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
                           Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=a3d9b6d44d3662a6 input=1bb77e6e964116b5]*/
+/*[clinic end generated code: output=a3d9b6d44d3662a6 input=5815c1138cf1ba28]*/
 {
     return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                                 subobj, start, end);

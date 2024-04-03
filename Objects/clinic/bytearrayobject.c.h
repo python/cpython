@@ -148,11 +148,7 @@ PyDoc_STRVAR(bytearray_startswith__doc__,
 "  start\n"
 "    Optional start position. Default: start of the bytearray.\n"
 "  end\n"
-"    Optional stop position. Default: end of the bytearray.\n"
-"\n"
-"With optional start, test B beginning at that position.\n"
-"With optional end, stop comparing B at that position.\n"
-"prefix can also be a tuple of bytes to try.");
+"    Optional stop position. Default: end of the bytearray.");
 
 #define BYTEARRAY_STARTSWITH_METHODDEF    \
     {"startswith", _PyCFunction_CAST(bytearray_startswith), METH_FASTCALL, bytearray_startswith__doc__},
@@ -1367,4 +1363,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=d1ec3d7be5d1093c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=353628ec8834ad01 input=a9049054013a1b77]*/
