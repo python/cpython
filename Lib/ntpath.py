@@ -857,9 +857,6 @@ def commonpath(paths):
         drivesplits = [splitroot(p.replace(altsep, sep).lower()) for p in paths]
         split_paths = [p.split(sep) for d, r, p in drivesplits]
 
-        if len({r for d, r, p in drivesplits}) != 1:
-            raise ValueError("Can't mix absolute and relative paths")
-
         # Check that all drive letters or UNC paths match. The check is made only
         # now otherwise type errors for mixing strings and bytes would not be
         # caught.
@@ -867,6 +864,12 @@ def commonpath(paths):
             raise ValueError("Paths don't have the same drive")
 
         drive, root, path = splitroot(paths[0].replace(altsep, sep))
+        if len({r for d, r, p in drivesplits}) != 1:
+            if drive:
+                raise ValueError("Can't mix absolute and relative paths")
+            else:
+                raise ValueError("Can't mix rooted and not-rooted paths")
+
         common = path.split(sep)
         common = [c for c in common if c and c != curdir]
 
