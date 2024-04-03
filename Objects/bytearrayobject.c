@@ -1191,14 +1191,14 @@ bytearray_contains(PyObject *self, PyObject *arg)
 bytearray.startswith
 
     prefix as subobj: object
-        A byte string or a tuple of byte strings to try.
+        A bytes or a tuple of bytes to try.
     start: slice_index(accept={int, NoneType}, c_default='0') = None
-         Optional start position. Default: start of the byte string.
+         Optional start position. Default: start of the bytearray.
     end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
-         Optional stop position. Default: end of the byte string.
+         Optional stop position. Default: end of the bytearray.
     /
 
-Return True if the byte string starts with the specified prefix, False otherwise.
+Return True if the bytearray starts with the specified prefix, False otherwise.
 
 With optional start, test B beginning at that position.
 With optional end, stop comparing B at that position.
@@ -1208,7 +1208,7 @@ prefix can also be a tuple of bytes to try.
 static PyObject *
 bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
                           Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=a3d9b6d44d3662a6 input=596f48473d404176]*/
+/*[clinic end generated code: output=a3d9b6d44d3662a6 input=1bb77e6e964116b5]*/
 {
     return _Py_bytes_startswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                                 subobj, start, end);

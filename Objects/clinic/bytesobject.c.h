@@ -656,14 +656,14 @@ PyDoc_STRVAR(bytes_startswith__doc__,
 "startswith($self, prefix[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return True if the byte string starts with the specified prefix, False otherwise.\n"
+"Return True if the bytes starts with the specified prefix, False otherwise.\n"
 "\n"
 "  prefix\n"
-"    A byte string or a tuple of byte strings to try.\n"
+"    A bytes or a tuple of bytes to try.\n"
 "  start\n"
-"    Optional start position. Default: start of the byte string.\n"
+"    Optional start position. Default: start of the bytes.\n"
 "  end\n"
-"    Optional stop position. Default: end of the byte string.");
+"    Optional stop position. Default: end of the bytes.");
 
 #define BYTES_STARTSWITH_METHODDEF    \
     {"startswith", _PyCFunction_CAST(bytes_startswith), METH_FASTCALL, bytes_startswith__doc__},
@@ -710,11 +710,11 @@ PyDoc_STRVAR(bytes_endswith__doc__,
 "Return True if the byte string ends with the specified prefix, False otherwise.\n"
 "\n"
 "  prefix\n"
-"    A byte string or a tuple of byte strings to try.\n"
+"    A bytes or a tuple of bytes to try.\n"
 "  start\n"
-"    Optional start position. Default: start of the byte string.\n"
+"    Optional start position. Default: start of the bytes.\n"
 "  end\n"
-"    Optional stop position. Default: end of the byte string.");
+"    Optional stop position. Default: end of the bytes.");
 
 #define BYTES_ENDSWITH_METHODDEF    \
     {"endswith", _PyCFunction_CAST(bytes_endswith), METH_FASTCALL, bytes_endswith__doc__},
@@ -1131,4 +1131,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4c2cdae78ce05ce5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d319f11a99fbc02 input=a9049054013a1b77]*/

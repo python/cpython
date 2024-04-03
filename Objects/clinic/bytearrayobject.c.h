@@ -141,14 +141,14 @@ PyDoc_STRVAR(bytearray_startswith__doc__,
 "startswith($self, prefix[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return True if the byte string starts with the specified prefix, False otherwise.\n"
+"Return True if the bytearray starts with the specified prefix, False otherwise.\n"
 "\n"
 "  prefix\n"
-"    A byte string or a tuple of byte strings to try.\n"
+"    A bytes or a tuple of bytes to try.\n"
 "  start\n"
-"    Optional start position. Default: start of the byte string.\n"
+"    Optional start position. Default: start of the bytearray.\n"
 "  end\n"
-"    Optional stop position. Default: end of the byte string.\n"
+"    Optional stop position. Default: end of the bytearray.\n"
 "\n"
 "With optional start, test B beginning at that position.\n"
 "With optional end, stop comparing B at that position.\n"
@@ -199,11 +199,11 @@ PyDoc_STRVAR(bytearray_endswith__doc__,
 "Return True if the byte string ends with the specified prefix, False otherwise.\n"
 "\n"
 "  prefix\n"
-"    A byte string or a tuple of byte strings to try.\n"
+"    A bytes or a tuple of bytes to try.\n"
 "  start\n"
-"    Optional start position. Default: start of the byte string.\n"
+"    Optional start position. Default: start of the bytearray.\n"
 "  end\n"
-"    Optional stop position. Default: end of the byte string.");
+"    Optional stop position. Default: end of the bytearray.");
 
 #define BYTEARRAY_ENDSWITH_METHODDEF    \
     {"endswith", _PyCFunction_CAST(bytearray_endswith), METH_FASTCALL, bytearray_endswith__doc__},
@@ -1367,4 +1367,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=11cc701b1df6250e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1ec3d7be5d1093c input=a9049054013a1b77]*/

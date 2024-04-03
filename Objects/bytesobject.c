@@ -2290,20 +2290,20 @@ bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
 bytes.startswith
 
     prefix as subobj: object
-        A byte string or a tuple of byte strings to try.
+        A bytes or a tuple of bytes to try.
     start: slice_index(accept={int, NoneType}, c_default='0') = None
-         Optional start position. Default: start of the byte string.
+         Optional start position. Default: start of the bytes.
     end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
-         Optional stop position. Default: end of the byte string.
+         Optional stop position. Default: end of the bytes.
     /
 
-Return True if the byte string starts with the specified prefix, False otherwise.
+Return True if the bytes starts with the specified prefix, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 bytes_startswith_impl(PyBytesObject *self, PyObject *subobj,
                       Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=b1e8da1cbd528e8c input=86b5f991fc8ac0dc]*/
+/*[clinic end generated code: output=b1e8da1cbd528e8c input=917d9cf26c33b96a]*/
 {
     return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                                 subobj, start, end);
