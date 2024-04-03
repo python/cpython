@@ -566,15 +566,6 @@ find_internal(const char *str, Py_ssize_t len,
     return res;
 }
 
-PyDoc_STRVAR_shared(_Py_find__doc__,
-"B.find(sub[, start[, end]]) -> int\n\
-\n\
-Return the lowest index in B where subsection sub is found,\n\
-such that sub is contained within B[start,end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.");
-
 PyObject *
 _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *args)
 {
@@ -583,15 +574,6 @@ _Py_bytes_find(const char *str, Py_ssize_t len, PyObject *args)
         return NULL;
     return PyLong_FromSsize_t(result);
 }
-
-PyDoc_STRVAR_shared(_Py_index__doc__,
-"B.index(sub[, start[, end]]) -> int\n\
-\n\
-Return the lowest index in B where subsection sub is found,\n\
-such that sub is contained within B[start,end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Raises ValueError when the subsection is not found.");
 
 PyObject *
 _Py_bytes_index(const char *str, Py_ssize_t len, PyObject *args)
@@ -607,15 +589,6 @@ _Py_bytes_index(const char *str, Py_ssize_t len, PyObject *args)
     return PyLong_FromSsize_t(result);
 }
 
-PyDoc_STRVAR_shared(_Py_rfind__doc__,
-"B.rfind(sub[, start[, end]]) -> int\n\
-\n\
-Return the highest index in B where subsection sub is found,\n\
-such that sub is contained within B[start,end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.");
-
 PyObject *
 _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *args)
 {
@@ -624,15 +597,6 @@ _Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *args)
         return NULL;
     return PyLong_FromSsize_t(result);
 }
-
-PyDoc_STRVAR_shared(_Py_rindex__doc__,
-"B.rindex(sub[, start[, end]]) -> int\n\
-\n\
-Return the highest index in B where subsection sub is found,\n\
-such that sub is contained within B[start,end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Raise ValueError when the subsection is not found.");
 
 PyObject *
 _Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *args)
@@ -647,13 +611,6 @@ _Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *args)
     }
     return PyLong_FromSsize_t(result);
 }
-
-PyDoc_STRVAR_shared(_Py_count__doc__,
-"B.count(sub[, start[, end]]) -> int\n\
-\n\
-Return the number of non-overlapping occurrences of subsection sub in\n\
-bytes B[start:end].  Optional arguments start and end are interpreted\n\
-as in slice notation.");
 
 PyObject *
 _Py_bytes_count(const char *str, Py_ssize_t len, PyObject *args)
