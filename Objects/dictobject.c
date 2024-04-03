@@ -162,6 +162,16 @@ ASSERT_DICT_LOCKED(PyObject *op)
     assert(_Py_IsOwnedByCurrentThread((PyObject *)mp) || IS_DICT_SHARED(mp));
 #define LOAD_KEYS_NENTRIES(d)
 
+#define LOCK_KEYS_IF_SPLIT(keys, kind) \
+        if (kind == DICT_KEYS_SPLIT) { \
+            LOCK_KEYS(dk);             \
+        }
+
+#define UNLOCK_KEYS_IF_SPLIT(keys, kind) \
+        if (kind == DICT_KEYS_SPLIT) {   \
+            UNLOCK_KEYS(dk);             \
+        }
+
 static inline Py_ssize_t
 load_keys_nentries(PyDictObject *mp)
 {
@@ -195,6 +205,9 @@ set_values(PyDictObject *mp, PyDictValues *values)
 #define DECREF_KEYS(dk)  _Py_atomic_add_ssize(&dk->dk_refcnt, -1)
 #define LOAD_KEYS_NENTIRES(keys) _Py_atomic_load_ssize_relaxed(&keys->dk_nentries)
 
+#define INCREF_KEYS_FT(dk) dictkeys_incref(dk)
+#define DECREF_KEYS_FT(dk, shared) dictkeys_decref(_PyInterpreterState_GET(), dk, shared)
+
 static inline void split_keys_entry_added(PyDictKeysObject *keys)
 {
     ASSERT_KEYS_LOCKED(keys);
@@ -216,6 +229,10 @@ static inline void split_keys_entry_added(PyDictKeysObject *keys)
 #define INCREF_KEYS(dk)  dk->dk_refcnt++
 #define DECREF_KEYS(dk)  dk->dk_refcnt--
 #define LOAD_KEYS_NENTIRES(keys) keys->dk_nentries
+#define INCREF_KEYS_FT(dk)
+#define DECREF_KEYS_FT(dk, shared)
+#define LOCK_KEYS_IF_SPLIT(keys, kind)
+#define UNLOCK_KEYS_IF_SPLIT(keys, kind)
 #define IS_DICT_SHARED(mp) (false)
 #define SET_DICT_SHARED(mp)
 #define LOAD_INDEX(keys, size, idx) ((const int##size##_t*)(keys->dk_indices))[idx]
@@ -1200,10 +1217,18 @@ start:
 
     if (kind != DICT_KEYS_GENERAL) {
         if (PyUnicode_CheckExact(key)) {
+            LOCK_KEYS_IF_SPLIT(dk, kind);
             ix = unicodekeys_lookup_unicode(dk, key, hash);
+            UNLOCK_KEYS_IF_SPLIT(dk, kind);
         }
         else {
+            INCREF_KEYS_FT(dk);
+            LOCK_KEYS_IF_SPLIT(dk, kind);
+
             ix = unicodekeys_lookup_generic(mp, dk, key, hash);
+
+            UNLOCK_KEYS_IF_SPLIT(dk, kind);
+            DECREF_KEYS_FT(dk, IS_DICT_SHARED(mp));
             if (ix == DKIX_KEY_CHANGED) {
                 goto start;
             }
@@ -1444,6 +1469,7 @@ _Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyOb
                     Py_DECREF(value);
                     goto read_failed;
                 }
+
             }
         }
         else {
@@ -1720,7 +1746,38 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         assert(mp->ma_keys->dk_kind == DICT_KEYS_GENERAL);
     }
 
-    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, &old_value);
+    Py_ssize_t ix;
+#ifdef Py_GIL_DISABLED
+    PyDictKeysObject *dk = mp->ma_keys;
+    DictKeysKind kind = dk->dk_kind;
+
+    if (kind == DICT_KEYS_SPLIT) {
+        // Split keys can be mutated by other dictionaries, so we need
+        // to do a threadsafe lookup here.  This is basically the split-key
+        // half of _Py_dict_lookup_threadsafe and avoids locking the
+        // shared keys if we can
+        if (PyUnicode_CheckExact(key)) {
+            ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
+        }
+        else {
+            ix = unicodekeys_lookup_generic_threadsafe(mp, dk, key, hash);
+        }
+
+        if (ix >= 0) {
+            old_value = mp->ma_values->values[ix];
+        }
+        else if (ix == DKIX_KEY_CHANGED) {
+            ix = _Py_dict_lookup(mp, key, hash, &old_value);
+        }
+        else {
+            old_value = NULL;
+        }
+    } else {
+        ix = _Py_dict_lookup(mp, key, hash, &old_value);
+    }
+#else
+    ix = _Py_dict_lookup(mp, key, hash, &old_value);
+#endif
     if (ix == DKIX_ERROR)
         goto Fail;
 
