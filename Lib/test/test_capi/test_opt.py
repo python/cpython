@@ -1155,8 +1155,8 @@ class TestUopsOptimization(unittest.TestCase):
         #     a1 = a0 + 1
         #     a2 = a1 + 1
         #     ....
-        #     a99999 = a99998 + 1
-        #     return a99999
+        #     a9999 = a9998 + 1
+        #     return a9999
 
         def dummy15(z):
             y = dummy_large(z)
