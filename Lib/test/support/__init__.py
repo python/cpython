@@ -1734,8 +1734,19 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
         raise unittest.SkipTest("requires _testinternalcapi")
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
-        config['gil'] = 2 if own_gil else 1
-    return _testinternalcapi.run_in_subinterp_with_config(code, **config)
+        config['gil'] = 'own' if own_gil else 'shared'
+    else:
+        gil = config['gil']
+        if gil == 0:
+            config['gil'] = 'default'
+        elif gil == 1:
+            config['gil'] = 'shared'
+        elif gil == 2:
+            config['gil'] = 'own'
+        else:
+            raise NotImplementedError(gil)
+    config = types.SimpleNamespace(**config)
+    return _testinternalcapi.run_in_subinterp_with_config(code, config)
 
 
 def _check_tracemalloc():
