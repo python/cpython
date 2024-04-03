@@ -4094,6 +4094,12 @@ dummy_func(
             frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
         }
 
+        tier2 op(_CHECK_STACK_SPACE_OPERAND, (framesize/2 --)) {
+            assert(framesize <= INT_MAX);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, framesize));
+            DEOPT_IF(tstate->py_recursion_remaining <= 1);
+        }
+
         op(_SAVE_RETURN_OFFSET, (--)) {
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - this_instr);

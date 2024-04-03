@@ -960,6 +960,17 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+get_co_framesize(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)arg;
+    return PyLong_FromLong(code->co_framesize);
+}
+
+static PyObject *
 new_counter_optimizer(PyObject *self, PyObject *arg)
 {
     return PyUnstable_Optimizer_NewCounter();
@@ -1715,6 +1726,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
     {"set_optimizer", set_optimizer,  METH_O, NULL},
     {"new_counter_optimizer", new_counter_optimizer, METH_NOARGS, NULL},

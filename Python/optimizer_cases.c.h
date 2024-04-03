@@ -1906,6 +1906,10 @@
             break;
         }
 
+        case _CHECK_STACK_SPACE_OPERAND: {
+            break;
+        }
+
         case _SAVE_RETURN_OFFSET: {
             break;
         }
