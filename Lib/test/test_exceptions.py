@@ -19,10 +19,11 @@ from test.support.warnings_helper import check_warnings
 from test import support
 
 try:
+    import _testcapi
     from _testcapi import INT_MAX
 except ImportError:
+    _testcapi = None
     INT_MAX = 2**31 - 1
-
 
 
 class NaiveException(Exception):
@@ -345,8 +346,8 @@ class ExceptionTests(unittest.TestCase):
         class InvalidException:
             pass
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi1():
-            import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 1)
             except TypeError as err:
@@ -356,8 +357,8 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("Expected exception")
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi2():
-            import _testcapi
             try:
                 _testcapi.raise_exception(BadException, 0)
             except RuntimeError as err:
@@ -370,8 +371,8 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("Expected exception")
 
+        @unittest.skipIf(_testcapi is None, "requires _testcapi")
         def test_capi3():
-            import _testcapi
             self.assertRaises(SystemError, _testcapi.raise_exception,
                               InvalidException, 1)
 
@@ -1381,6 +1382,7 @@ class ExceptionTests(unittest.TestCase):
 
     @cpython_only
     def test_recursion_normalizing_exception(self):
+        import_module("_testinternalcapi")
         # Issue #22898.
         # Test that a RecursionError is raised when tstate->recursion_depth is
         # equal to recursion_limit in PyErr_NormalizeException() and check
@@ -1435,6 +1437,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_recursion_normalizing_infinite_exception(self):
         # Issue #30697. Test that a RecursionError is raised when
         # maximum recursion depth has been exceeded when creating
@@ -1503,6 +1506,7 @@ class ExceptionTests(unittest.TestCase):
     # Python built with Py_TRACE_REFS fail with a fatal error in
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1525,6 +1529,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertIn(b'MemoryError', err)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_MemoryError(self):
         # PyErr_NoMemory always raises the same exception instance.
         # Check that the traceback is not doubled.
@@ -1544,8 +1549,8 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(tb1, tb2)
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_exception_with_doc(self):
-        import _testcapi
         doc2 = "This is a test docstring."
         doc4 = "This is another test docstring."
 
@@ -1584,6 +1589,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(error5.__doc__, "")
 
     @cpython_only
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_cleanup(self):
         # Issue #5437: preallocated MemoryError instances should not keep
         # traceback objects alive.
@@ -1674,6 +1680,7 @@ class ExceptionTests(unittest.TestCase):
     # Python built with Py_TRACE_REFS fail with a fatal error in
     # _PyRefchain_Trace() on memory allocation error.
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1792,6 +1799,7 @@ class ExceptionTests(unittest.TestCase):
 
             gc_collect()
 
+    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def test_memory_error_in_subinterp(self):
         # gh-109894: subinterpreters shouldn't count on last resort memory error
         # when MemoryError is raised through PyErr_NoMemory() call,
