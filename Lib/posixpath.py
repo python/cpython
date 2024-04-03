@@ -554,8 +554,5 @@ def commonpath(paths):
 
         return prefix + sep.join(common)
     except (TypeError, AttributeError):
-        genericpath._check_arg_types('commonpath', *(
-            # Can't use paths, can be an iterable
-            root + tail for root, tail in zip(roots, paths)
-        ))
+        genericpath._check_arg_types('commonpath', *paths)
         raise
