@@ -382,13 +382,6 @@ Modules/_ctypes/ctypes.h	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/ctypes.h	-	basespec_string	-
 Modules/_ctypes/stgdict.c	-	PyCStgDict_Type	-
 Modules/_cursesmodule.c	-	PyCursesWindow_Type	-
-Modules/_datetimemodule.c	-	PyDateTime_DateTimeType	-
-Modules/_datetimemodule.c	-	PyDateTime_DateType	-
-Modules/_datetimemodule.c	-	PyDateTime_DeltaType	-
-Modules/_datetimemodule.c	-	PyDateTime_IsoCalendarDateType	-
-Modules/_datetimemodule.c	-	PyDateTime_TZInfoType	-
-Modules/_datetimemodule.c	-	PyDateTime_TimeType	-
-Modules/_datetimemodule.c	-	PyDateTime_TimeZoneType	-
 Modules/xxmodule.c	-	Null_Type	-
 Modules/xxmodule.c	-	Str_Type	-
 Modules/xxmodule.c	-	Xxo_Type	-
@@ -425,13 +418,11 @@ Modules/_ctypes/_ctypes.c	CreateSwappedType	swapped_suffix	-
 Modules/_ctypes/_ctypes.c	-	_unpickle	-
 Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	array_cache	-
 Modules/_cursesmodule.c	-	ModDict	-
-Modules/_datetimemodule.c	datetime_strptime	module	-
 
 ## state
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/_ctypes.c	-	global_state	-
 Modules/_ctypes/ctypes.h	-	global_state	-
-Modules/_datetimemodule.c	-	_datetime_global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
