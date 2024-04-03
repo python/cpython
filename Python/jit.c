@@ -416,7 +416,13 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         patches[HoleValue_DATA] = (uint64_t)data;
         patches[HoleValue_EXECUTOR] = (uint64_t)executor;
         patches[HoleValue_OPARG] = instruction->oparg;
+    #if SIZEOF_VOID_P == 8
         patches[HoleValue_OPERAND] = instruction->operand;
+    #else
+        assert(SIZEOF_VOID_P == 4);
+        patches[HoleValue_OPERAND_HI] = instruction->operand >> 32;
+        patches[HoleValue_OPERAND_LO] = instruction->operand & UINT32_MAX;
+    #endif
         switch (instruction->format) {
             case UOP_FORMAT_TARGET:
                 patches[HoleValue_TARGET] = instruction->target;
