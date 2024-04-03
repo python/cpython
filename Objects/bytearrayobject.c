@@ -1219,16 +1219,12 @@ bytearray_startswith_impl(PyByteArrayObject *self, PyObject *subobj,
 bytearray.endswith = bytearray.startswith
 
 Return True if the byte string ends with the specified prefix, False otherwise.
-
-With optional start, test B beginning at that position.
-With optional end, stop comparing B at that position.
-prefix can also be a tuple of bytes to try.
 [clinic start generated code]*/
 
 static PyObject *
 bytearray_endswith_impl(PyByteArrayObject *self, PyObject *subobj,
                         Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=e75ea8c227954caa input=96d3f21baa53c7b2]*/
+/*[clinic end generated code: output=e75ea8c227954caa input=6b8a65e1d0071201]*/
 {
     return _Py_bytes_endswith(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
                               subobj, start, end);
