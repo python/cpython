@@ -164,7 +164,7 @@ test_from_spec_invalid_metatype_inheritance(PyObject *self, PyObject *Py_UNUSED(
                     "TypeError args are not a one-tuple");
             goto finally;
         }
-        message = Py_NewRef(PyTuple_GET_ITEM(args, 0));
+        message = PyTuple_GetItemRef(args, 0);
         meta_error_string = PyUnicode_FromString("metaclass conflict:");
         if (meta_error_string == NULL) {
             goto finally;
@@ -1028,7 +1028,7 @@ HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
     }
 
     for (Py_ssize_t i = 0; i < size; i++) {
-        data[i] = Py_NewRef(PyTuple_GET_ITEM(args, i));
+        data[i] = PyTuple_GetItemRef(args, i);
     }
 
     result = self;

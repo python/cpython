@@ -1064,7 +1064,7 @@ merge_consts_recursive(PyObject *const_cache, PyObject *o)
             }
             PyObject *u;
             if (PyTuple_CheckExact(k)) {
-                u = Py_NewRef(PyTuple_GET_ITEM(k, 1));
+                u = PyTuple_GetItemRef(k, 1);
                 Py_DECREF(k);
             }
             else {

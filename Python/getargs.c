@@ -1625,7 +1625,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
         if (!skip) {
             PyObject *current_arg;
             if (i < nargs) {
-                current_arg = Py_NewRef(PyTuple_GET_ITEM(args, i));
+                current_arg = PyTuple_GetItemRef(args, i);
             }
             else if (nkwargs && i >= pos) {
                 if (PyDict_GetItemStringRef(kwargs, kwlist[i], &current_arg) < 0) {

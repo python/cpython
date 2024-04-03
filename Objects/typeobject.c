@@ -6453,8 +6453,8 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
             Py_DECREF(newargs);
             return -1;
         }
-        *args = Py_NewRef(PyTuple_GET_ITEM(newargs, 0));
-        *kwargs = Py_NewRef(PyTuple_GET_ITEM(newargs, 1));
+        *args = PyTuple_GetItemRef(newargs, 0);
+        *kwargs = PyTuple_GetItemRef(newargs, 1);
         Py_DECREF(newargs);
 
         /* XXX We should perhaps allow None to be passed here. */

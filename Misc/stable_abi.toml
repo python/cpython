@@ -2506,3 +2506,5 @@
     added = '3.13'
 [function.PyType_GetModuleByDef]
     added = '3.13'
+[function.PyTuple_GetItemRef]
+    added = '3.13'

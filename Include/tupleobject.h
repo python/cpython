@@ -30,6 +30,9 @@ PyAPI_DATA(PyTypeObject) PyTupleIter_Type;
 PyAPI_FUNC(PyObject *) PyTuple_New(Py_ssize_t size);
 PyAPI_FUNC(Py_ssize_t) PyTuple_Size(PyObject *);
 PyAPI_FUNC(PyObject *) PyTuple_GetItem(PyObject *, Py_ssize_t);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject *) PyTuple_GetItemRef(PyObject *, Py_ssize_t);
+#endif
 PyAPI_FUNC(int) PyTuple_SetItem(PyObject *, Py_ssize_t, PyObject *);
 PyAPI_FUNC(PyObject *) PyTuple_GetSlice(PyObject *, Py_ssize_t, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyTuple_Pack(Py_ssize_t, ...);

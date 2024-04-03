@@ -213,7 +213,7 @@ divide_nearest(PyObject *m, PyObject *n)
     temp = _PyLong_DivmodNear(m, n);
     if (temp == NULL)
         return NULL;
-    result = Py_NewRef(PyTuple_GET_ITEM(temp, 0));
+    result = PyTuple_GetItemRef(temp, 0);
     Py_DECREF(temp);
 
     return result;
@@ -1978,7 +1978,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
         goto BadDivmod;
     }
 
-    num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));        /* leftover seconds */
+    num = PyTuple_GetItemRef(tuple, 0);         /* leftover seconds */
     Py_DECREF(tuple);
 
     tuple = checked_divmod(num, st->seconds_per_day);
@@ -1996,7 +1996,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
         goto BadDivmod;
     }
 
-    num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));           /* leftover days */
+    num = PyTuple_GetItemRef(tuple, 0);         /* leftover days */
     d = PyLong_AsInt(num);
     if (d == -1 && PyErr_Occurred()) {
         goto Done;

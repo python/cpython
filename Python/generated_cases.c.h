@@ -2787,7 +2787,7 @@
                 PyTupleObject *seq = it->it_seq;
                 assert(seq);
                 assert(it->it_index < PyTuple_GET_SIZE(seq));
-                next = Py_NewRef(PyTuple_GET_ITEM(seq, it->it_index++));
+                next = PyTuple_GetItemRef((PyObject*)seq, it->it_index++);
             }
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -5962,8 +5962,8 @@
             DEOPT_IF(!PyTuple_CheckExact(seq), UNPACK_SEQUENCE);
             DEOPT_IF(PyTuple_GET_SIZE(seq) != 2, UNPACK_SEQUENCE);
             STAT_INC(UNPACK_SEQUENCE, hit);
-            val0 = Py_NewRef(PyTuple_GET_ITEM(seq, 0));
-            val1 = Py_NewRef(PyTuple_GET_ITEM(seq, 1));
+            val0 = PyTuple_GetItemRef(seq, 0);
+            val1 = PyTuple_GetItemRef(seq, 1);
             Py_DECREF(seq);
             stack_pointer[-1] = val1;
             stack_pointer[0] = val0;

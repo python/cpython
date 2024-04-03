@@ -2121,7 +2121,7 @@ struct_unpack_single(const char *ptr, struct unpacker *x)
         return NULL;
 
     if (PyTuple_GET_SIZE(v) == 1) {
-        PyObject *res = Py_NewRef(PyTuple_GET_ITEM(v, 0));
+        PyObject *res = PyTuple_GetItemRef(v, 0);
         Py_DECREF(v);
         return res;
     }

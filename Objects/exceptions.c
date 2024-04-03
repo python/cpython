@@ -641,7 +641,7 @@ SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
     if (size == 0)
         return 0;
     if (size == 1) {
-        Py_XSETREF(self->code, Py_NewRef(PyTuple_GET_ITEM(args, 0)));
+        Py_XSETREF(self->code, PyTuple_GetItemRef(args, 0));
     }
     else { /* size > 1 */
         Py_XSETREF(self->code, Py_NewRef(args));
@@ -1546,7 +1546,7 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     Py_XSETREF(self->name_from, Py_XNewRef(name_from));
 
     if (PyTuple_GET_SIZE(args) == 1) {
-        msg = Py_NewRef(PyTuple_GET_ITEM(args, 0));
+        msg = PyTuple_GetItemRef(args, 0);
     }
     Py_XSETREF(self->msg, msg);
 
@@ -2034,8 +2034,8 @@ OSError_reduce(PyOSErrorObject *self, PyObject *Py_UNUSED(ignored))
         if (!args)
             return NULL;
 
-        PyTuple_SET_ITEM(args, 0, Py_NewRef(PyTuple_GET_ITEM(self->args, 0)));
-        PyTuple_SET_ITEM(args, 1, Py_NewRef(PyTuple_GET_ITEM(self->args, 1)));
+        PyTuple_SET_ITEM(args, 0, PyTuple_GetItemRef(self->args, 0));
+        PyTuple_SET_ITEM(args, 1, PyTuple_GetItemRef(self->args, 1));
         PyTuple_SET_ITEM(args, 2, Py_NewRef(self->filename));
 
         if (self->filename2) {
@@ -2389,7 +2389,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (lenargs >= 1) {
-        Py_XSETREF(self->msg, Py_NewRef(PyTuple_GET_ITEM(args, 0)));
+        Py_XSETREF(self->msg, PyTuple_GetItemRef(args, 0));
     }
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);

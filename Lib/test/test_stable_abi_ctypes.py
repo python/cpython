@@ -695,6 +695,7 @@ SYMBOL_NAMES = (
     "PyTraceBack_Type",
     "PyTupleIter_Type",
     "PyTuple_GetItem",
+    "PyTuple_GetItemRef",
     "PyTuple_GetSlice",
     "PyTuple_New",
     "PyTuple_Pack",

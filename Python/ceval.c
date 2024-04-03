@@ -2031,8 +2031,8 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
         }
         assert(PyTuple_CheckExact(pair));
         assert(PyTuple_GET_SIZE(pair) == 2);
-        *match = Py_NewRef(PyTuple_GET_ITEM(pair, 0));
-        *rest = Py_NewRef(PyTuple_GET_ITEM(pair, 1));
+        *match = PyTuple_GetItemRef(pair, 0);
+        *rest = PyTuple_GetItemRef(pair, 1);
         Py_DECREF(pair);
         return 0;
     }
