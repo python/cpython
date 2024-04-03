@@ -1369,6 +1369,108 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_startswith__doc__,
+"startswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the string starts with the specified prefix, False otherwise.\n"
+"\n"
+"  prefix\n"
+"    A string or a tuple of strings to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the string.\n"
+"  end\n"
+"    Optional stop position. Default: end of the string.");
+
+#define UNICODE_STARTSWITH_METHODDEF    \
+    {"startswith", _PyCFunction_CAST(unicode_startswith), METH_FASTCALL, unicode_startswith__doc__},
+
+static PyObject *
+unicode_startswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
+                        Py_ssize_t end);
+
+static PyObject *
+unicode_startswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("startswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = unicode_startswith_impl(self, subobj, start, end);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(unicode_endswith__doc__,
+"endswith($self, prefix[, start[, end]], /)\n"
+"--\n"
+"\n"
+"Return True if the string ends with the specified prefix, False otherwise.\n"
+"\n"
+"  prefix\n"
+"    A string or a tuple of strings to try.\n"
+"  start\n"
+"    Optional start position. Default: start of the string.\n"
+"  end\n"
+"    Optional stop position. Default: end of the string.");
+
+#define UNICODE_ENDSWITH_METHODDEF    \
+    {"endswith", _PyCFunction_CAST(unicode_endswith), METH_FASTCALL, unicode_endswith__doc__},
+
+static PyObject *
+unicode_endswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
+                      Py_ssize_t end);
+
+static PyObject *
+unicode_endswith(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *subobj;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+
+    if (!_PyArg_CheckPositional("endswith", nargs, 1, 3)) {
+        goto exit;
+    }
+    subobj = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[1], &start)) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    if (!_PyEval_SliceIndex(args[2], &end)) {
+        goto exit;
+    }
+skip_optional:
+    return_value = unicode_endswith_impl(self, subobj, start, end);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(unicode___format____doc__,
 "__format__($self, format_spec, /)\n"
 "--\n"
@@ -1507,4 +1609,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1aab29bab5201c78 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e495e878d8283217 input=a9049054013a1b77]*/
