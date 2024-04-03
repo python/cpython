@@ -13078,16 +13078,24 @@ unicode_startswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
 
 
 /*[clinic input]
-@text_signature "($self, prefix[, start[, end]], /)"
-str.endswith as unicode_endswith = str.startswith
+@text_signature "($self, suffix[, start[, end]], /)"
+str.endswith as unicode_endswith
 
-Return True if the string ends with the specified prefix, False otherwise.
+    suffix as subobj: object
+        A string or a tuple of strings to try.
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+        Optional start position. Default: start of the string.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+        Optional stop position. Default: end of the string.
+    /
+
+Return True if the string ends with the specified suffix, False otherwise.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_endswith_impl(PyObject *self, PyObject *subobj, Py_ssize_t start,
                       Py_ssize_t end)
-/*[clinic end generated code: output=cce6f8ceb0102ca9 input=82cd5ce9e7623646]*/
+/*[clinic end generated code: output=cce6f8ceb0102ca9 input=00fbdc774a7d4d71]*/
 {
     if (PyTuple_Check(subobj)) {
         Py_ssize_t i;
