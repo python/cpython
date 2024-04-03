@@ -4119,6 +4119,7 @@ posix_getcwd(int use_bytes)
         return NULL;
     }
 #endif
+    assert(buf[0] == '/');
     PyMem_RawFree(buf);
 
     return obj;
