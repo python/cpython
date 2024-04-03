@@ -58,14 +58,14 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         pathname = os.fsdecode(pathname)
         if root_dir is not None:
             root_dir = os.fsdecode(root_dir)
-    pathname, parts = _split_pathname(pathname)
+    anchor, parts = _split_pathname(pathname)
 
     select = _selector(parts, recursive, include_hidden)
-    if pathname:
+    if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
-        exists = not os.path.splitdrive(pathname)[0]
-        paths = select(pathname, pathname, dir_fd, exists)
+        exists = not os.path.splitdrive(anchor)[0]
+        paths = select(anchor, anchor, dir_fd, exists)
     else:
         # Relative pattern.
         if root_dir is None:
