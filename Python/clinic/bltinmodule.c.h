@@ -364,6 +364,49 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(builtin_dir__doc__,
+"dir([object])\n"
+"--\n"
+"\n"
+"dir([object]) -> list of strings.\n"
+"\n"
+"If called without an argument, return the names in the current scope.\n"
+"Else, return an alphabetized list of names comprising (some of) the attributes\n"
+"of the given object, and of attributes reachable from it.\n"
+"If the object supplies a method named __dir__, it will be used; otherwise\n"
+"the default dir() logic is used and returns:\n"
+"  for a module object: the module\'s attributes.\n"
+"  for a class object:  its attributes, and recursively the attributes\n"
+"    of its bases.\n"
+"  for any other object: its attributes, its class\'s attributes, and\n"
+"    recursively the attributes of its class\'s base classes.");
+
+#define BUILTIN_DIR_METHODDEF    \
+    {"dir", _PyCFunction_CAST(builtin_dir), METH_FASTCALL, builtin_dir__doc__},
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *arg);
+
+static PyObject *
+builtin_dir(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *arg = NULL;
+
+    if (!_PyArg_CheckPositional("dir", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    arg = args[0];
+skip_optional:
+    return_value = builtin_dir_impl(module, arg);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_divmod__doc__,
 "divmod($module, x, y, /)\n"
 "--\n"
@@ -1193,4 +1236,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=643a8d5f900e0c36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=01e55174016903c3 input=a9049054013a1b77]*/
