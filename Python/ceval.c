@@ -1100,7 +1100,7 @@ exit_to_trace:
         printf("SIDE EXIT: [UOp ");
         _PyUOpPrint(&next_uop[-1]);
         printf(", exit %u, temp %d, target %d -> %s]\n",
-               exit_index, exit->temperature, exit->target,
+               exit_index, exit->temperature.as_counter, exit->target,
                _PyOpcode_OpName[_PyCode_CODE(_PyFrame_GetCode(frame))[exit->target].op.code]);
     }
 #endif

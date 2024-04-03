@@ -31,43 +31,30 @@ extern "C" {
    There is an exceptional value which must not be updated, 0xFFFF.
 */
 
-typedef struct {
-    union {
-        uint16_t counter;
-        struct {
-            uint16_t backoff : 4;
-            uint16_t value : 12;
-        };
-    };
-} backoff_counter_t;
-
-static_assert(sizeof(backoff_counter_t) == sizeof(_Py_CODEUNIT),
-    "backoff counter size should be the same size as a code unit");
-
 #define UNREACHABLE_BACKOFF 0xFFFF
 
 static inline bool
-is_unreachable_backoff_counter(backoff_counter_t counter)
+is_unreachable_backoff_counter(_Py_BackoffCounter counter)
 {
-    return counter.counter == UNREACHABLE_BACKOFF;
+    return counter.as_counter == UNREACHABLE_BACKOFF;
 }
 
-static inline backoff_counter_t
+static inline _Py_BackoffCounter
 make_backoff_counter(uint16_t value, uint16_t backoff)
 {
     assert(backoff <= 15);
     assert(value <= 0xFFF);
-    return (backoff_counter_t){.value = value, .backoff = backoff};
+    return (_Py_BackoffCounter){.value = value, .backoff = backoff};
 }
 
-static inline backoff_counter_t
+static inline _Py_BackoffCounter
 forge_backoff_counter(uint16_t counter)
 {
-    return (backoff_counter_t){.counter = counter};
+    return (_Py_BackoffCounter){.as_counter = counter};
 }
 
-static inline backoff_counter_t
-restart_backoff_counter(backoff_counter_t counter)
+static inline _Py_BackoffCounter
+restart_backoff_counter(_Py_BackoffCounter counter)
 {
     assert(!is_unreachable_backoff_counter(counter));
     if (counter.backoff < 12) {
@@ -78,14 +65,14 @@ restart_backoff_counter(backoff_counter_t counter)
     }
 }
 
-static inline backoff_counter_t
-pause_backoff_counter(backoff_counter_t counter)
+static inline _Py_BackoffCounter
+pause_backoff_counter(_Py_BackoffCounter counter)
 {
     return make_backoff_counter(counter.value | 1, counter.backoff);
 }
 
-static inline backoff_counter_t
-advance_backoff_counter(backoff_counter_t counter)
+static inline _Py_BackoffCounter
+advance_backoff_counter(_Py_BackoffCounter counter)
 {
     if (!is_unreachable_backoff_counter(counter)) {
         return make_backoff_counter((counter.value - 1) & 0xFFF, counter.backoff);
@@ -96,16 +83,16 @@ advance_backoff_counter(backoff_counter_t counter)
 }
 
 static inline bool
-backoff_counter_triggers(backoff_counter_t counter)
+backoff_counter_triggers(_Py_BackoffCounter counter)
 {
     return counter.value == 0;
 }
 
-static inline uint16_t
+static inline _Py_BackoffCounter
 initial_backoff_counter(void)
 {
     // Backoff sequence 16, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096
-    return make_backoff_counter(16, 3).counter;
+    return make_backoff_counter(16, 3);
 }
 
 #ifdef __cplusplus

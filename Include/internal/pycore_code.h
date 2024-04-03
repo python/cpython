@@ -31,7 +31,7 @@ extern "C" {
 #define CACHE_ENTRIES(cache) (sizeof(cache)/sizeof(_Py_CODEUNIT))
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t module_keys_version;
     uint16_t builtin_keys_version;
     uint16_t index;
@@ -40,44 +40,44 @@ typedef struct {
 #define INLINE_CACHE_ENTRIES_LOAD_GLOBAL CACHE_ENTRIES(_PyLoadGlobalCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyBinaryOpCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_OP CACHE_ENTRIES(_PyBinaryOpCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyUnpackSequenceCache;
 
 #define INLINE_CACHE_ENTRIES_UNPACK_SEQUENCE \
     CACHE_ENTRIES(_PyUnpackSequenceCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyBinarySubscrCache;
 
 #define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PySuperAttrCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t version[2];
     uint16_t index;
 } _PyAttrCache;
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t type_version[2];
     union {
         uint16_t keys_version[2];
@@ -93,39 +93,39 @@ typedef struct {
 #define INLINE_CACHE_ENTRIES_STORE_ATTR CACHE_ENTRIES(_PyAttrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t func_version[2];
 } _PyCallCache;
 
 #define INLINE_CACHE_ENTRIES_CALL CACHE_ENTRIES(_PyCallCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyStoreSubscrCache;
 
 #define INLINE_CACHE_ENTRIES_STORE_SUBSCR CACHE_ENTRIES(_PyStoreSubscrCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PySendCache;
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
     uint16_t version[2];
 } _PyToBoolCache;
 
 #define INLINE_CACHE_ENTRIES_TO_BOOL CACHE_ENTRIES(_PyToBoolCache)
 
 typedef struct {
-    uint16_t counter;
+    _Py_BackoffCounter counter;
 } _PyContainsOpCache;
 
 #define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
@@ -476,26 +476,26 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
 #define ADAPTIVE_COOLDOWN_VALUE 52
 #define ADAPTIVE_COOLDOWN_BACKOFF 0
 
-static inline uint16_t
+static inline _Py_BackoffCounter
 adaptive_counter_bits(uint16_t value, uint16_t backoff) {
-    return make_backoff_counter(value, backoff).counter;
+    return make_backoff_counter(value, backoff);
 }
 
-static inline uint16_t
+static inline _Py_BackoffCounter
 adaptive_counter_warmup(void) {
     return adaptive_counter_bits(ADAPTIVE_WARMUP_VALUE,
                                  ADAPTIVE_WARMUP_BACKOFF);
 }
 
-static inline uint16_t
+static inline _Py_BackoffCounter
 adaptive_counter_cooldown(void) {
     return adaptive_counter_bits(ADAPTIVE_COOLDOWN_VALUE,
                                  ADAPTIVE_COOLDOWN_BACKOFF);
 }
 
-static inline uint16_t
-adaptive_counter_backoff(uint16_t counter) {
-    return restart_backoff_counter(forge_backoff_counter(counter)).counter;
+static inline _Py_BackoffCounter
+adaptive_counter_backoff(_Py_BackoffCounter counter) {
+    return restart_backoff_counter(counter);
 }
 
 

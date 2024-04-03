@@ -302,13 +302,13 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #else
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
-        (COUNTER) = advance_backoff_counter(forge_backoff_counter((COUNTER))).counter; \
+        (COUNTER) = advance_backoff_counter((COUNTER)); \
     } while (0);
 #endif
 
 #define PAUSE_ADAPTIVE_COUNTER(COUNTER) \
     do { \
-        (COUNTER) = pause_backoff_counter(forge_backoff_counter((COUNTER))).counter; \
+        (COUNTER) = pause_backoff_counter((COUNTER)); \
     } while (0);
 
 #define UNBOUNDLOCAL_ERROR_MSG \

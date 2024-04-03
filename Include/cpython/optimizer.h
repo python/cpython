@@ -89,7 +89,7 @@ static inline uint16_t uop_get_error_target(const _PyUOpInstruction *inst)
 
 typedef struct _exit_data {
     uint32_t target;
-    uint16_t temperature;
+    _Py_BackoffCounter temperature;
     const struct _PyExecutorObject *executor;
 } _PyExitData;
 

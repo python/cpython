@@ -422,7 +422,7 @@ _PyCode_Quicken(PyCodeObject *code)
             int initial_value;
             switch (opcode) {
                 case JUMP_BACKWARD:
-                    initial_value = initial_backoff_counter();
+                    initial_value = initial_backoff_counter().as_counter;
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
@@ -431,7 +431,7 @@ _PyCode_Quicken(PyCodeObject *code)
                     initial_value = 0x5555;  // Alternating 0, 1 bits
                     break;
                 default:
-                    initial_value = adaptive_counter_warmup();
+                    initial_value = adaptive_counter_warmup().as_counter;
                     break;
             }
             instructions[i + 1].cache = initial_value;

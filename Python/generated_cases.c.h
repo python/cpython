@@ -121,7 +121,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(BINARY_OP, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
                 assert(NB_ADD <= oparg);
                 assert(oparg <= NB_INPLACE_XOR);
@@ -438,7 +438,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(BINARY_SUBSCR, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _BINARY_SUBSCR
@@ -766,7 +766,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(CALL, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 2 cache entries */
@@ -2042,7 +2042,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(COMPARE_OP, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _COMPARE_OP
@@ -2191,7 +2191,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(CONTAINS_OP, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _CONTAINS_OP
@@ -2602,7 +2602,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(FOR_ITER, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _FOR_ITER
@@ -3026,7 +3026,7 @@
                 tstate, PY_MONITORING_EVENT_CALL,
                 frame, this_instr, function, arg);
             if (err) goto error;
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(CALL);
         }
 
@@ -3142,7 +3142,7 @@
             if (next_opcode < 0) goto error;
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
-                PAUSE_ADAPTIVE_COUNTER(next_instr[1].cache);
+                PAUSE_ADAPTIVE_COUNTER(next_instr[1].counter);
             }
             assert(next_opcode > 0 && next_opcode < 256);
             opcode = next_opcode;
@@ -3177,7 +3177,7 @@
             /* Skip 1 cache entry */
             // cancel out the decrement that will happen in LOAD_SUPER_ATTR; we
             // don't want to specialize instrumented instructions
-            PAUSE_ADAPTIVE_COUNTER(this_instr[1].cache);
+            PAUSE_ADAPTIVE_COUNTER(this_instr[1].counter);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
         }
 
@@ -3415,8 +3415,8 @@
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
-            uint16_t counter = this_instr[1].cache;
-            if (ADAPTIVE_COUNTER_TRIGGERS(counter) && this_instr->op.code == JUMP_BACKWARD) {
+            _Py_BackoffCounter counter = this_instr[1].counter;
+            if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD) {
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                 while (oparg > 255) {
@@ -3432,11 +3432,11 @@
                     GOTO_TIER_TWO(executor);
                 }
                 else {
-                    this_instr[1].cache = adaptive_counter_backoff(counter);
+                    this_instr[1].counter = restart_backoff_counter(counter);
                 }
             }
             else {
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
             }
             #endif  /* ENABLE_SPECIALIZATION */
             DISPATCH();
@@ -3537,7 +3537,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_ATTR, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 8 cache entries */
@@ -4232,7 +4232,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_GLOBAL, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 1 cache entry */
@@ -4435,7 +4435,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(LOAD_SUPER_ATTR, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _LOAD_SUPER_ATTR
@@ -5076,7 +5076,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(SEND, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _SEND
@@ -5265,7 +5265,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(STORE_ATTR, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 3 cache entries */
@@ -5555,7 +5555,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(STORE_SUBSCR, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             // _STORE_SUBSCR
@@ -5658,7 +5658,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(TO_BOOL, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
             }
             /* Skip 2 cache entries */
@@ -5875,7 +5875,7 @@
                     DISPATCH_SAME_OPARG();
                 }
                 STAT_INC(UNPACK_SEQUENCE, deferred);
-                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].cache);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
                 #endif  /* ENABLE_SPECIALIZATION */
                 (void)seq;
                 (void)counter;

@@ -1525,7 +1525,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_DECREF(executor->exits[i].executor);
         executor->exits[i].executor = &COLD_EXITS[i];
-        executor->exits[i].temperature = UNREACHABLE_BACKOFF;
+        executor->exits[i].temperature = forge_backoff_counter(UNREACHABLE_BACKOFF);
     }
     _Py_CODEUNIT *instruction = &_PyCode_CODE(code)[executor->vm_data.index];
     assert(instruction->op.code == ENTER_EXECUTOR);

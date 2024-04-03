@@ -3688,9 +3688,9 @@
             _PyExitData *exit = &previous->exits[oparg];
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            backoff_counter_t temperature = forge_backoff_counter(exit->temperature);
+            _Py_BackoffCounter temperature = exit->temperature;
             if (!backoff_counter_triggers(temperature)) {
-                exit->temperature = advance_backoff_counter(temperature).counter;
+                exit->temperature = advance_backoff_counter(temperature);
                 GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
@@ -3701,7 +3701,7 @@
             else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    exit->temperature = restart_backoff_counter(temperature).counter;
+                    exit->temperature = restart_backoff_counter(temperature);
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
