@@ -748,9 +748,9 @@ class PosixPathTest(unittest.TestCase):
         check(['', 'spam/alot'], '')
         check_error(ValueError, ['', '/spam/alot'])
 
-        check_error(TypeError, posixpath.commonpath, [b'/usr/lib/', '/usr/lib64'])
-        check_error(TypeError, posixpath.commonpath, [b'/usr/lib/', 'usr/lib64'])
-        check_error(TypeError, posixpath.commonpath, [b'usr/lib/', '/usr/lib64'])
+        check_error(TypeError, [b'/usr/lib/', '/usr/lib/python3'])
+        check_error(TypeError, [b'/usr/lib/', 'usr/lib/python3'])
+        check_error(TypeError, [b'usr/lib/', '/usr/lib/python3'])
 
 
 class PosixCommonTest(test_genericpath.CommonTest, unittest.TestCase):
