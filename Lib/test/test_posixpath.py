@@ -700,22 +700,32 @@ class PosixPathTest(unittest.TestCase):
                              os.fsencode(expected))
         def check_error(exc, paths):
             self.assertRaises(exc, posixpath.commonpath, paths)
+            self.assertRaises(exc, posixpath.commonpath, paths[::-1])
             self.assertRaises(exc, posixpath.commonpath,
                               [os.fsencode(p) for p in paths])
+            self.assertRaises(exc, posixpath.commonpath,
+                              [os.fsencode(p) for p in paths[::-1]])
 
         self.assertRaises(TypeError, posixpath.commonpath, None)
         self.assertRaises(ValueError, posixpath.commonpath, [])
         self.assertRaises(ValueError, posixpath.commonpath, iter([]))
         check_error(ValueError, ['/usr', 'usr'])
-        check_error(ValueError, ['usr', '/usr'])
         check_error(ValueError, ['//usr', 'usr'])
+        check_error(ValueError, ['///usr', 'usr'])
         check_error(ValueError, ['//usr', '/usr', 'usr'])
 
+        # gh-117201: Handle leading slashes
         check(['/usr/local'], '/usr/local')
+        check(['//usr/local'], '//usr/local')
+        check(['///usr/local'], '/usr/local')
+        check(['/usr/local', '//usr/local'], '/usr/local')
+        check(['//usr/local', '//usr/local'], '//usr/local')
+        check(['///usr/local', '//usr/local'], '/usr/local')
+
         check(['/usr/local', '/usr/local'], '/usr/local')
         check(['/usr/local/', '/usr/local'], '/usr/local')
         check(['/usr/local/', '/usr/local/'], '/usr/local')
-        check(['/usr//local', '//usr/local'], '/usr/local')
+        check(['/usr//local', '/usr/local'], '/usr/local')
         check(['/usr/./local', '/./usr/local'], '/usr/local')
         check(['/', '/dev'], '/')
         check(['/usr', '/dev'], '/')
@@ -738,21 +748,9 @@ class PosixPathTest(unittest.TestCase):
         check(['', 'spam/alot'], '')
         check_error(ValueError, ['', '/spam/alot'])
 
-        self.assertRaises(TypeError, posixpath.commonpath,
-                          [b'/usr/lib/', '/usr/lib/python3'])
-        self.assertRaises(TypeError, posixpath.commonpath,
-                          [b'/usr/lib/', 'usr/lib/python3'])
-        self.assertRaises(TypeError, posixpath.commonpath,
-                          [b'usr/lib/', '/usr/lib/python3'])
-        self.assertRaises(TypeError, posixpath.commonpath,
-                          ['/usr/lib/', b'/usr/lib/python3'])
-        self.assertRaises(TypeError, posixpath.commonpath,
-                          ['/usr/lib/', b'usr/lib/python3'])
-        self.assertRaises(TypeError, posixpath.commonpath,
-                          ['usr/lib/', b'/usr/lib/python3'])
-
-        # gh-117201: Handle leading `//` for `posixpath.commonpath`
-        check(['//foo/bar', '//foo/baz'], '//foo')
+        check_error(TypeError, posixpath.commonpath, [b'/usr/lib/', '/usr/lib64'])
+        check_error(TypeError, posixpath.commonpath, [b'/usr/lib/', 'usr/lib64'])
+        check_error(TypeError, posixpath.commonpath, [b'usr/lib/', '/usr/lib64'])
 
 
 class PosixCommonTest(test_genericpath.CommonTest, unittest.TestCase):
