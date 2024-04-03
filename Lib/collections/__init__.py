@@ -1038,9 +1038,9 @@ class ChainMap(_collections_abc.MutableMapping):
         return f'{self.__class__.__name__}({", ".join(map(repr, self.maps))})'
 
     @classmethod
-    def fromkeys(cls, iterable, *args):
-        'Create a ChainMap with a single dict created from the iterable.'
-        return cls(dict.fromkeys(iterable, *args))
+    def fromkeys(cls, iterable, value=None, /):
+        'Create a new ChainMap with keys from iterable and values set to value.'
+        return cls(dict.fromkeys(iterable, value))
 
     def copy(self):
         'New ChainMap or subclass with a new copy of maps[0] and refs to maps[1:]'
