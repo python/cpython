@@ -291,7 +291,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     }
 
 #define ADAPTIVE_COUNTER_TRIGGERS(COUNTER) \
-    backoff_counter_is_zero(forge_backoff_counter((COUNTER)))
+    backoff_counter_triggers(forge_backoff_counter((COUNTER)))
 
 #ifdef Py_GIL_DISABLED
 #define ADVANCE_ADAPTIVE_COUNTER(COUNTER) \

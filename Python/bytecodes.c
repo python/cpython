@@ -4142,7 +4142,7 @@ dummy_func(
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
             backoff_counter_t temperature = forge_backoff_counter(exit->temperature);
-            if (!backoff_counter_is_zero(temperature)) {
+            if (!backoff_counter_triggers(temperature)) {
                 exit->temperature = advance_backoff_counter(temperature).counter;
                 GOTO_TIER_ONE(target);
             }

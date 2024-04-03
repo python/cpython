@@ -96,7 +96,7 @@ advance_backoff_counter(backoff_counter_t counter)
 }
 
 static inline bool
-backoff_counter_is_zero(backoff_counter_t counter)
+backoff_counter_triggers(backoff_counter_t counter)
 {
     return counter.value == 0;
 }
