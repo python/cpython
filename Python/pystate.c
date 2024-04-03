@@ -261,6 +261,12 @@ bind_tstate(PyThreadState *tstate)
     tstate->native_thread_id = PyThread_get_thread_native_id();
 #endif
 
+#ifdef Py_GIL_DISABLED
+    // Initialize biased reference counting inter-thread queue. Note that this
+    // needs to be initialized from the active thread.
+    _Py_brc_init_thread(tstate);
+#endif
+
     // mimalloc state needs to be initialized from the active thread.
     tstate_mimalloc_bind(tstate);
 
@@ -1067,7 +1073,7 @@ int
 _PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
 {
     if (interp->threads.main != NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "interpreter already running");
         return -1;
     }
@@ -1412,10 +1418,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->what_event = -1;
     tstate->previous_executor = NULL;
 
-#ifdef Py_GIL_DISABLED
-    // Initialize biased reference counting inter-thread queue
-    _Py_brc_init_thread(tstate);
-#endif
     llist_init(&_tstate->mem_free_queue);
 
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
@@ -1658,7 +1660,6 @@ static void
 tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
-    assert(tstate->state != _Py_THREAD_ATTACHED);
     tstate_verify_not_active(tstate);
     assert(!_PyThreadState_IsRunningMain(tstate));
 
@@ -1738,7 +1739,6 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #ifdef Py_GIL_DISABLED
     _Py_qsbr_detach(((_PyThreadStateImpl *)tstate)->qsbr);
 #endif
-    tstate_set_detached(tstate, _Py_THREAD_DETACHED);
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate);
     _PyEval_ReleaseLock(tstate->interp, NULL);
@@ -2406,6 +2406,7 @@ _PyThread_CurrentFrames(void)
      * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
+    _PyEval_StopTheWorldAll(runtime);
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
@@ -2439,6 +2440,7 @@ fail:
 
 done:
     HEAD_UNLOCK(runtime);
+    _PyEval_StartTheWorldAll(runtime);
     return result;
 }
 
@@ -2470,6 +2472,7 @@ _PyThread_CurrentExceptions(void)
      * Because these lists can mutate even when the GIL is held, we
      * need to grab head_mutex for the duration.
      */
+    _PyEval_StopTheWorldAll(runtime);
     HEAD_LOCK(runtime);
     PyInterpreterState *i;
     for (i = runtime->interpreters.head; i != NULL; i = i->next) {
@@ -2502,6 +2505,7 @@ fail:
 
 done:
     HEAD_UNLOCK(runtime);
+    _PyEval_StartTheWorldAll(runtime);
     return result;
 }
 

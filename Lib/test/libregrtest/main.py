@@ -349,9 +349,7 @@ class Regrtest:
             namespace = dict(locals())
             tracer.runctx(cmd, globals=globals(), locals=namespace)
             result = namespace['result']
-            # Mypy doesn't know about this attribute yet,
-            # but it will do soon: https://github.com/python/typeshed/pull/11091
-            result.covered_lines = list(tracer.counts)  # type: ignore[attr-defined]
+            result.covered_lines = list(tracer.counts)
         else:
             result = run_single_test(test_name, runtests)
 

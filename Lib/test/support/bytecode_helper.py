@@ -3,7 +3,10 @@
 import unittest
 import dis
 import io
-from _testinternalcapi import compiler_codegen, optimize_cfg, assemble_code_object
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 _UNSPECIFIED = object()
 
@@ -133,23 +136,26 @@ class CompilationStepTestCase(unittest.TestCase):
         return res
 
 
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class CodegenTestCase(CompilationStepTestCase):
 
     def generate_code(self, ast):
-        insts, _ = compiler_codegen(ast, "my_file.py", 0)
+        insts, _ = _testinternalcapi.compiler_codegen(ast, "my_file.py", 0)
         return insts
 
 
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class CfgOptimizationTestCase(CompilationStepTestCase):
 
     def get_optimized(self, insts, consts, nlocals=0):
         insts = self.normalize_insts(insts)
         insts = self.complete_insts_info(insts)
-        insts = optimize_cfg(insts, consts, nlocals)
+        insts = _testinternalcapi.optimize_cfg(insts, consts, nlocals)
         return insts, consts
 
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class AssemblerTestCase(CompilationStepTestCase):
 
     def get_code_object(self, filename, insts, metadata):
-        co = assemble_code_object(filename, insts, metadata)
+        co = _testinternalcapi.assemble_code_object(filename, insts, metadata)
         return co
