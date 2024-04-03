@@ -1,5 +1,0 @@
-The ``structmember.h`` header is deprecated. Its non-deprecated contents are
-now available just by including ``Python.h``, with a ``Py_`` prefix added if
-it was missing. (Deprecated contents are :c:macro:`T_OBJECT`,
-:c:macro:`T_NONE`, and no-op flags.) Patch by Petr Viktorin, based on
-earlier work by Alexander Belopolsky and Matthias Braun.

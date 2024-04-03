@@ -339,7 +339,7 @@ instantiate the class in those tests.
     >>> mock.old_method()
     Traceback (most recent call last):
        ...
-    AttributeError: object has no attribute 'old_method'
+    AttributeError: Mock object has no attribute 'old_method'. Did you mean: 'class_method'?
 
 Using a specification also enables a smarter matching of calls made to the
 mock, regardless of whether some parameters were passed as positional or
@@ -359,6 +359,30 @@ If you want a stronger form of specification that prevents the setting
 of arbitrary attributes as well as the getting of them then you can use
 *spec_set* instead of *spec*.
 
+
+Using side_effect to return per file content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`mock_open` is used to patch :func:`open` method. :attr:`~Mock.side_effect`
+can be used to return a new Mock object per call. This can be used to return different
+contents per file stored in a dictionary::
+
+   DEFAULT = "default"
+   data_dict = {"file1": "data1",
+                "file2": "data2"}
+
+   def open_side_effect(name):
+       return mock_open(read_data=data_dict.get(name, DEFAULT))()
+
+   with patch("builtins.open", side_effect=open_side_effect):
+       with open("file1") as file1:
+           assert file1.read() == "data1"
+
+       with open("file2") as file2:
+           assert file2.read() == "data2"
+
+       with open("file3") as file2:
+           assert file2.read() == "default"
 
 
 Patch Decorators
@@ -579,14 +603,14 @@ Partial mocking
 In some tests I wanted to mock out a call to :meth:`datetime.date.today`
 to return a known date, but I didn't want to prevent the code under test from
 creating new date objects. Unfortunately :class:`datetime.date` is written in C, and
-so I couldn't just monkey-patch out the static :meth:`date.today` method.
+so I couldn't just monkey-patch out the static :meth:`datetime.date.today` method.
 
 I found a simple way of doing this that involved effectively wrapping the date
 class with a mock, but passing through calls to the constructor to the real
 class (and returning real instances).
 
 The :func:`patch decorator <patch>` is used here to
-mock out the ``date`` class in the module under test. The :attr:`side_effect`
+mock out the ``date`` class in the module under test. The :attr:`~Mock.side_effect`
 attribute on the mock date class is then set to a lambda function that returns
 a real date. When the mock date class is called a real date will be
 constructed and returned by ``side_effect``. ::
@@ -766,15 +790,16 @@ mock has a nice API for making assertions about how your mock objects are used.
     >>> mock.foo_bar.assert_called_with('baz', spam='eggs')
 
 If your mock is only being called once you can use the
-:meth:`assert_called_once_with` method that also asserts that the
-:attr:`call_count` is one.
+:meth:`~Mock.assert_called_once_with` method that also asserts that the
+:attr:`~Mock.call_count` is one.
 
     >>> mock.foo_bar.assert_called_once_with('baz', spam='eggs')
     >>> mock.foo_bar()
     >>> mock.foo_bar.assert_called_once_with('baz', spam='eggs')
     Traceback (most recent call last):
         ...
-    AssertionError: Expected to be called once. Called 2 times.
+    AssertionError: Expected 'foo_bar' to be called once. Called 2 times.
+    Calls: [call('baz', spam='eggs'), call()].
 
 Both ``assert_called_with`` and ``assert_called_once_with`` make assertions about
 the *most recent* call. If your mock is going to be called several times, and
@@ -835,7 +860,7 @@ One possibility would be for mock to copy the arguments you pass in. This
 could then cause problems if you do assertions that rely on object identity
 for equality.
 
-Here's one solution that uses the :attr:`side_effect`
+Here's one solution that uses the :attr:`~Mock.side_effect`
 functionality. If you provide a ``side_effect`` function for a mock then
 ``side_effect`` will be called with the same args as the mock. This gives us an
 opportunity to copy the arguments and store them for later assertions. In this
@@ -903,8 +928,9 @@ Here's an example implementation:
     >>> c.assert_called_with(arg)
     Traceback (most recent call last):
         ...
-    AssertionError: Expected call: mock({1})
-    Actual call: mock(set())
+    AssertionError: expected call not found.
+    Expected: mock({1})
+    Actual: mock(set())
     >>> c.foo
     <CopyingMock name='mock.foo' id='...'>
 
@@ -971,7 +997,8 @@ We can do this with :class:`MagicMock`, which will behave like a dictionary,
 and using :data:`~Mock.side_effect` to delegate dictionary access to a real
 underlying dictionary that is under our control.
 
-When the :meth:`__getitem__` and :meth:`__setitem__` methods of our ``MagicMock`` are called
+When the :meth:`~object.__getitem__` and :meth:`~object.__setitem__` methods
+of our ``MagicMock`` are called
 (normal dictionary access) then ``side_effect`` is called with the key (and in
 the case of ``__setitem__`` the value too). We can also control what is returned.
 
@@ -1074,7 +1101,7 @@ subclass.
 Sometimes this is inconvenient. For example, `one user
 <https://code.google.com/archive/p/mock/issues/105>`_ is subclassing mock to
 created a `Twisted adaptor
-<https://twistedmatrix.com/documents/11.0.0/api/twisted.python.components.html>`_.
+<https://twisted.org/documents/11.0.0/api/twisted.python.components.html>`_.
 Having this applied to attributes too actually causes errors.
 
 ``Mock`` (in all its flavours) uses a method called ``_get_child_mock`` to create
@@ -1267,8 +1294,9 @@ sufficient:
     >>> mock.assert_called_with(Foo(1, 2))
     Traceback (most recent call last):
         ...
-    AssertionError: Expected: call(<__main__.Foo object at 0x...>)
-    Actual call: call(<__main__.Foo object at 0x...>)
+    AssertionError: expected call not found.
+    Expected: mock(<__main__.Foo object at 0x...>)
+    Actual: mock(<__main__.Foo object at 0x...>)
 
 A comparison function for our ``Foo`` class might look something like this:
 

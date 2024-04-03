@@ -1,1 +1,0 @@
-Improved the description of what a resource is in importlib.resources docs.

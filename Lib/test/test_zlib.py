@@ -3,11 +3,10 @@ from test import support
 from test.support import import_helper
 import binascii
 import copy
-import os
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G
+from test.support import bigmemtest, _1G, _4G, skip_on_s390x
 
 
 zlib = import_helper.import_module('zlib')
@@ -18,6 +17,21 @@ requires_Compress_copy = unittest.skipUnless(
 requires_Decompress_copy = unittest.skipUnless(
         hasattr(zlib.decompressobj(), "copy"),
         'requires Decompress.copy()')
+
+
+def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
+    # Register "1.2.3" as "1.2.3.0"
+    # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
+    v = zlib_version.split('-', 1)[0].split('.')
+    if len(v) < 4:
+        v.append('0')
+    elif not v[-1].isnumeric():
+        v[-1] = '0'
+    return tuple(map(int, v))
+
+
+ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
+
 
 # bpo-46623: On s390x, when a hardware accelerator is used, using different
 # ways to compress data with zlib can produce different compressed data.
@@ -44,10 +58,7 @@ requires_Decompress_copy = unittest.skipUnless(
 #   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
 #
 # Make the assumption that s390x always has an accelerator to simplify the skip
-# condition. Windows doesn't have os.uname() but it doesn't support s390x.
-skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
-                                'skipped on s390x')
-
+# condition.
 
 class VersionTestCase(unittest.TestCase):
 
@@ -477,9 +488,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
                     'Z_PARTIAL_FLUSH']
 
-        ver = tuple(int(v) for v in zlib.ZLIB_RUNTIME_VERSION.split('.'))
         # Z_BLOCK has a known failure prior to 1.2.5.3
-        if ver >= (1, 2, 5, 3):
+        if ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 5, 3):
             sync_opt.append('Z_BLOCK')
 
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
@@ -516,18 +526,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
         # Try 17K of data
         # generate random data stream
-        try:
-            # In 2.3 and later, WichmannHill is the RNG of the bug report
-            gen = random.WichmannHill()
-        except AttributeError:
-            try:
-                # 2.2 called it Random
-                gen = random.Random()
-            except AttributeError:
-                # others might simply have a single RNG
-                gen = random
-        gen.seed(1)
-        data = gen.randbytes(17 * 1024)
+        data = random.randbytes(17 * 1024)
 
         # compress, sync-flush, and decompress
         first = co.compress(data)
@@ -808,16 +807,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
-        # Register "1.2.3" as "1.2.3.0"
-        # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
-        v = zlib.ZLIB_RUNTIME_VERSION.split('-', 1)[0].split('.')
-        if len(v) < 4:
-            v.append('0')
-        elif not v[-1].isnumeric():
-            v[-1] = '0'
-
-        v = tuple(map(int, v))
-        supports_wbits_0 = v >= (1, 2, 3, 5)
+        supports_wbits_0 = ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
@@ -944,13 +934,18 @@ LAERTES
 """
 
 
-class ZlibDecompressorTest():
+class ZlibDecompressorTest(unittest.TestCase):
     # Test adopted from test_bz2.py
     TEXT = HAMLET_SCENE
     DATA = zlib.compress(HAMLET_SCENE)
     BAD_DATA = b"Not a valid deflate block"
+    BIG_TEXT = DATA * ((128 * 1024 // len(DATA)) + 1)
+    BIG_DATA = zlib.compress(BIG_TEXT)
+
     def test_Constructor(self):
-        self.assertRaises(TypeError, zlib._ZlibDecompressor, 42)
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, "ASDA")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, "notbytes")
+        self.assertRaises(TypeError, zlib._ZlibDecompressor, -15, b"bytes", 5)
 
     def testDecompress(self):
         zlibd = zlib._ZlibDecompressor()
@@ -987,10 +982,10 @@ class ZlibDecompressorTest():
     @bigmemtest(size=_4G + 100, memuse=3.3)
     def testDecompress4G(self, size):
         # "Test zlib._ZlibDecompressor.decompress() with >4GiB input"
-        blocksize = 10 * 1024 * 1024
+        blocksize = min(10 * 1024 * 1024, size)
         block = random.randbytes(blocksize)
         try:
-            data = block * (size // blocksize + 1)
+            data = block * ((size-1) // blocksize + 1)
             compressed = zlib.compress(data)
             zlibd = zlib._ZlibDecompressor()
             decompressed = zlibd.decompress(compressed)

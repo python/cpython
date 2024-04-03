@@ -1,10 +1,16 @@
 # Windows specific tests
 
-from ctypes import *
-import unittest, sys
-from test import support
-
 import _ctypes_test
+import ctypes
+import errno
+import sys
+import unittest
+from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
+                    _pointer_type_cache,
+                    c_void_p, c_char, c_int, c_long)
+from test import support
+from ._support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
+
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class FunctionCallTestCase(unittest.TestCase):
@@ -14,15 +20,17 @@ class FunctionCallTestCase(unittest.TestCase):
     def test_SEH(self):
         # Disable faulthandler to prevent logging the warning:
         # "Windows fatal exception: access violation"
+        kernel32 = ctypes.windll.kernel32
         with support.disable_faulthandler():
             # Call functions with invalid arguments, and make sure
             # that access violations are trapped and raise an
             # exception.
-            self.assertRaises(OSError, windll.kernel32.GetModuleHandleA, 32)
+            self.assertRaises(OSError, kernel32.GetModuleHandleA, 32)
 
     def test_noargs(self):
         # This is a special case on win32 x64
-        windll.user32.GetDesktopWindow()
+        user32 = ctypes.windll.user32
+        user32.GetDesktopWindow()
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
@@ -40,7 +48,6 @@ class ReturnStructSizesTestCase(unittest.TestCase):
                 value = getattr(res, f[0])
                 expected = bytes([ord('a') + i])
                 self.assertEqual(value, expected)
-
 
 
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
@@ -67,28 +74,35 @@ class TestWintypes(unittest.TestCase):
         self.assertEqual(ex.text, "text")
         self.assertEqual(ex.details, ("details",))
 
+        self.assertEqual(COMError.mro(),
+                         [COMError, Exception, BaseException, object])
+        self.assertFalse(COMError.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+        self.assertTrue(COMError.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
+
+
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class TestWinError(unittest.TestCase):
     def test_winerror(self):
         # see Issue 16169
-        import errno
         ERROR_INVALID_PARAMETER = 87
-        msg = FormatError(ERROR_INVALID_PARAMETER).strip()
+        msg = ctypes.FormatError(ERROR_INVALID_PARAMETER).strip()
         args = (errno.EINVAL, msg, None, ERROR_INVALID_PARAMETER)
 
-        e = WinError(ERROR_INVALID_PARAMETER)
+        e = ctypes.WinError(ERROR_INVALID_PARAMETER)
         self.assertEqual(e.args, args)
         self.assertEqual(e.errno, errno.EINVAL)
         self.assertEqual(e.winerror, ERROR_INVALID_PARAMETER)
 
-        windll.kernel32.SetLastError(ERROR_INVALID_PARAMETER)
+        kernel32 = ctypes.windll.kernel32
+        kernel32.SetLastError(ERROR_INVALID_PARAMETER)
         try:
-            raise WinError()
+            raise ctypes.WinError()
         except OSError as exc:
             e = exc
         self.assertEqual(e.args, args)
         self.assertEqual(e.errno, errno.EINVAL)
         self.assertEqual(e.winerror, ERROR_INVALID_PARAMETER)
+
 
 class Structures(unittest.TestCase):
     def test_struct_by_value(self):
@@ -129,8 +143,8 @@ class Structures(unittest.TestCase):
             self.assertEqual(ret.bottom, bottom.value)
 
         # to not leak references, we must clean _pointer_type_cache
-        from ctypes import _pointer_type_cache
         del _pointer_type_cache[RECT]
+
 
 if __name__ == '__main__':
     unittest.main()
