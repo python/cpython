@@ -865,6 +865,7 @@ PyTypeObject PyTuple_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE | Py_TPFLAGS_TUPLE_SUBCLASS |
+        Py_TPFLAGS_VALID_VERSION_TAG |
         _Py_TPFLAGS_MATCH_SELF | Py_TPFLAGS_SEQUENCE,  /* tp_flags */
     tuple_new__doc__,                           /* tp_doc */
     (traverseproc)tupletraverse,                /* tp_traverse */
@@ -886,6 +887,7 @@ PyTypeObject PyTuple_Type = {
     tuple_new,                                  /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
     .tp_vectorcall = tuple_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_TUPLE,
 };
 
 /* The following function breaks the notion that tuples are immutable:

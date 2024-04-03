@@ -1898,6 +1898,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+        Py_TPFLAGS_VALID_VERSION_TAG |
         _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
     float_new__doc__,                           /* tp_doc */
     0,                                          /* tp_traverse */
@@ -1918,6 +1919,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
     .tp_vectorcall = (vectorcallfunc)float_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FLOAT,
 };
 
 static void

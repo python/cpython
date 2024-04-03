@@ -3178,6 +3178,8 @@ array_modexec(PyObject *m)
     ADD_INTERNED(state, iter);
 
     CREATE_TYPE(m, state->ArrayType, &array_spec);
+    state->ArrayType->tp_version_tag = _Py_TYPE_VERSION_ARRAY;
+    state->ArrayType->tp_flags |= Py_TPFLAGS_VALID_VERSION_TAG;
     CREATE_TYPE(m, state->ArrayIterType, &arrayiter_spec);
     Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 

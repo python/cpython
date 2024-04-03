@@ -2460,7 +2460,7 @@ PyTypeObject PySet_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE |
+        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_VALID_VERSION_TAG |
         _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
     set_doc,                            /* tp_doc */
     (traverseproc)set_traverse,         /* tp_traverse */
@@ -2482,6 +2482,7 @@ PyTypeObject PySet_Type = {
     set_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = set_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_SET,
 };
 
 /* frozenset object ********************************************************/
@@ -2550,7 +2551,7 @@ PyTypeObject PyFrozenSet_Type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE |
+        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_VALID_VERSION_TAG |
         _Py_TPFLAGS_MATCH_SELF,       /* tp_flags */
     frozenset_doc,                      /* tp_doc */
     (traverseproc)set_traverse,         /* tp_traverse */
@@ -2572,6 +2573,7 @@ PyTypeObject PyFrozenSet_Type = {
     frozenset_new,                      /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
     .tp_vectorcall = frozenset_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_FROZEN_SET,
 };
 
 

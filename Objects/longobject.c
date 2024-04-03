@@ -6499,7 +6499,7 @@ PyTypeObject PyLong_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_LONG_SUBCLASS |
+        Py_TPFLAGS_LONG_SUBCLASS | Py_TPFLAGS_VALID_VERSION_TAG |
         _Py_TPFLAGS_MATCH_SELF,               /* tp_flags */
     long_doc,                                   /* tp_doc */
     0,                                          /* tp_traverse */
@@ -6521,6 +6521,7 @@ PyTypeObject PyLong_Type = {
     long_new,                                   /* tp_new */
     PyObject_Free,                              /* tp_free */
     .tp_vectorcall = long_vectorcall,
+    .tp_version_tag = _Py_TYPE_VERSION_INT,
 };
 
 static PyTypeObject Int_InfoType;

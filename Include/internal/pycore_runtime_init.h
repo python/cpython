@@ -132,7 +132,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .double_format = _py_float_format_unknown, \
         }, \
         .types = { \
-            .next_version_tag = 1, \
+            .next_version_tag = _Py_TYPE_VERSIONS_PREALLOCATED, \
         }, \
         .static_objects = { \
             .singletons = { \

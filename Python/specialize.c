@@ -2142,6 +2142,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
+    int func_index = 0;
     if (Py_REFCNT(lhs) == 1) {
         if (Py_REFCNT(rhs) == 1) {
             instr->op.code = BINARY_OP_11;
@@ -2178,7 +2179,32 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         cache->counter = adaptive_counter_backoff(cache->counter);
     }
     else {
+#ifdef Py_STATS
+        /* Gather stats per op, not family */
+        int lv = Py_TYPE(lhs)->tp_version_tag;
+        if (lv >= 6) {
+            lv = 0;
+        }
+        int rv = Py_TYPE(lhs)->tp_version_tag;
+        if (rv >= 6) {
+            rv = 0;
+        }
+        int kind;
+        if (lv <= _Py_TYPE_VERSION_FLOAT && rv <= _Py_TYPE_VERSION_FLOAT) {
+            kind = (lv << 2) | rv;
+        }
+        else if (lv == rv) {
+            kind = lv + 8;
+        }
+        else if (lv > rv) {
+            kind = lv + 16;
+        }
+        else {
+            kind = rv + 24;
+        }
+        SPECIALIZATION_FAIL(instr->op.code, kind);
         STAT_INC(BINARY_OP, success);
+#endif
         cache->counter = adaptive_counter_cooldown();
     }
 }
