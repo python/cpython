@@ -437,6 +437,7 @@ Modules/_tkinter.c	-	trbInCmd	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
+Include/datetime.h	-	_pydatetimeapi_main	-
 Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
 Modules/_cursesmodule.c	-	initialised	-
