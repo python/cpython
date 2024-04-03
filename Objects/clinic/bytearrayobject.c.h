@@ -445,7 +445,7 @@ PyDoc_STRVAR(bytearray_endswith__doc__,
 "endswith($self, suffix[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return True if the byte string ends with the specified suffix, False otherwise.\n"
+"Return True if the bytearray ends with the specified suffix, False otherwise.\n"
 "\n"
 "  suffix\n"
 "    A bytes or a tuple of bytes to try.\n"
@@ -1616,4 +1616,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=c38e639d46457765 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a5c9cdc24858a0a input=a9049054013a1b77]*/

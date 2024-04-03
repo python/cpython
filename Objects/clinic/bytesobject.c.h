@@ -960,7 +960,7 @@ PyDoc_STRVAR(bytes_endswith__doc__,
 "endswith($self, suffix[, start[, end]], /)\n"
 "--\n"
 "\n"
-"Return True if the byte string ends with the specified suffix, False otherwise.\n"
+"Return True if the bytes ends with the specified suffix, False otherwise.\n"
 "\n"
 "  suffix\n"
 "    A bytes or a tuple of bytes to try.\n"
@@ -1384,4 +1384,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=35e40c2444afd1ee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6801c6001e57f91 input=a9049054013a1b77]*/
