@@ -1,9 +1,10 @@
-import _ctypes_test
 import ctypes
 import gc
 import sys
 import unittest
 from test import support
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 MyCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int)

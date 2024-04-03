@@ -117,7 +117,9 @@ class TestFcntl(unittest.TestCase):
 
     @cpython_only
     def test_fcntl_bad_file_overflow(self):
-        from _testcapi import INT_MAX, INT_MIN
+        _testcapi = import_module("_testcapi")
+        INT_MAX = _testcapi.INT_MAX
+        INT_MIN = _testcapi.INT_MIN
         # Issue 15989
         with self.assertRaises(OverflowError):
             fcntl.fcntl(INT_MAX + 1, fcntl.F_SETFL, os.O_NONBLOCK)
@@ -189,7 +191,7 @@ class TestFcntl(unittest.TestCase):
 
     @cpython_only
     def test_flock_overflow(self):
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         self.assertRaises(OverflowError, fcntl.flock, _testcapi.INT_MAX+1,
                           fcntl.LOCK_SH)
 

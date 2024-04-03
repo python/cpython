@@ -14,7 +14,7 @@ try:
     from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
     from _testexternalinspection import get_stack_trace
 except ImportError:
-    unittest.skip("Test only runs when _testexternalinspection is available")
+    raise unittest.SkipTest("Test only runs when _testexternalinspection is available")
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)

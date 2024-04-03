@@ -14,6 +14,7 @@ import random
 from test import support
 from test.support import script_helper, ALWAYS_EQ
 from test.support import gc_collect
+from test.support import import_helper
 from test.support import threading_helper
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
@@ -161,7 +162,7 @@ class ReferencesTestCase(TestBase):
 
     @support.cpython_only
     def test_cfunction(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         create_cfunction = _testcapi.create_cfunction
         f = create_cfunction()
         wr = weakref.ref(f)

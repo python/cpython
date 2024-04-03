@@ -1,4 +1,3 @@
-import _ctypes_test
 from platform import architecture as _architecture
 import struct
 import sys
@@ -12,6 +11,8 @@ from ctypes.util import find_library
 from struct import calcsize
 from collections import namedtuple
 from test import support
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 

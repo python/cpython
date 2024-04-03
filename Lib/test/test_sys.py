@@ -1390,7 +1390,7 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.P = struct.calcsize('P')
         self.longdigit = sys.int_info.sizeof_digit
-        import _testinternalcapi
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
         self.gc_headsize = _testinternalcapi.SIZEOF_PYGC_HEAD
         self.managed_pre_header_size = _testinternalcapi.SIZEOF_MANAGED_PRE_HEADER
 

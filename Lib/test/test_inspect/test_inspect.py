@@ -32,7 +32,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only
+from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
@@ -668,7 +668,10 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     @cpython_only
     def test_c_cleandoc(self):
-        import _testinternalcapi
+        try:
+            import _testinternalcapi
+        except ImportError:
+            return unittest.skip("requires _testinternalcapi")
         func = _testinternalcapi.compiler_cleandoc
         for i, (input, expected) in enumerate(self.cleandoc_testdata):
             with self.subTest(i=i):
@@ -1220,7 +1223,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_func(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         builtin = _testcapi.docstring_with_signature_with_defaults
         spec = inspect.getfullargspec(builtin)
         self.assertEqual(spec.defaults[0], 'avocado')
@@ -1229,7 +1232,7 @@ class TestClassesAndFunctions(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_getfullargspec_builtin_func_no_signature(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
             inspect.getfullargspec(builtin)
@@ -2890,7 +2893,7 @@ class TestSignatureObject(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_builtins(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
 
         def test_unbound_method(o):
             """Use this to test unbound methods (things that should have a self)"""
@@ -2971,7 +2974,7 @@ class TestSignatureObject(unittest.TestCase):
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
     def test_signature_on_decorated_builtins(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         func = _testcapi.docstring_with_signature_with_defaults
 
         def decorator(func):
@@ -2992,7 +2995,7 @@ class TestSignatureObject(unittest.TestCase):
 
     @cpython_only
     def test_signature_on_builtins_no_signature(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         with self.assertRaisesRegex(ValueError,
                                     'no signature found for builtin'):
             inspect.signature(_testcapi.docstring_no_signature)

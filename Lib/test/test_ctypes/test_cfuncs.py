@@ -1,4 +1,3 @@
-import _ctypes_test
 import ctypes
 import unittest
 from ctypes import (CDLL,
@@ -6,6 +5,8 @@ from ctypes import (CDLL,
                     c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double, c_longdouble)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 class CFunctions(unittest.TestCase):
