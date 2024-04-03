@@ -1867,20 +1867,25 @@ _PyBytes_Join(PyObject *sep, PyObject *x)
 @text_signature "($self, sub[, start[, end]], /)"
 bytes.find
 
-    *args: object
+    sub: object
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the bytes.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the bytes.
     /
 
 Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments 'start' and 'end' are interpreted as in slice notation.
 Return -1 on failure.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_find_impl(PyBytesObject *self, PyObject *args)
-/*[clinic end generated code: output=62e7a26240c8a4a2 input=f0bde0cb478d2b8c]*/
+bytes_find_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                Py_ssize_t end)
+/*[clinic end generated code: output=d5961a1c77b472a1 input=3171e62a8ae7f240]*/
 {
-    return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                          sub, start, end);
 }
 
 /*[clinic input]
@@ -1889,15 +1894,16 @@ bytes.index = bytes.find
 
 Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments start and end are interpreted as in slice notation.
 Raise ValueError if the subsection is not found.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_index_impl(PyBytesObject *self, PyObject *args)
-/*[clinic end generated code: output=866d781b6589b72f input=ffba1569b1c9af9b]*/
+bytes_index_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end)
+/*[clinic end generated code: output=0da25cc74683ba42 input=712ec82ceee77c06]*/
 {
-    return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                           sub, start, end);
 }
 
 /*[clinic input]
@@ -1906,15 +1912,16 @@ bytes.rfind = bytes.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments 'start' and 'end' are interpreted as in slice notation.
 Return -1 on failure.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_rfind_impl(PyBytesObject *self, PyObject *args)
-/*[clinic end generated code: output=ae774c87c9c7a5af input=e42f537ca09ece2b]*/
+bytes_rfind_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end)
+/*[clinic end generated code: output=51b60fa4ad011c09 input=19e2e378ffb1cad1]*/
 {
-    return _Py_bytes_rfind(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_rfind(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                           sub, start, end);
 }
 
 /*[clinic input]
@@ -1923,15 +1930,16 @@ bytes.rindex = bytes.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments start and end are interpreted as in slice notation.
 Raise ValueError if the subsection is not found.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_rindex_impl(PyBytesObject *self, PyObject *args)
-/*[clinic end generated code: output=6758f68eb1883d20 input=b7b56bf94364b8da]*/
+bytes_rindex_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                  Py_ssize_t end)
+/*[clinic end generated code: output=42bf674e0a0aabf6 input=3a398f4797c1ab93]*/
 {
-    return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                            sub, start, end);
 }
 
 
@@ -2073,15 +2081,15 @@ bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes)
 bytes.count = bytes.find
 
 Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[start:end].
-
-Optional arguments start and end are interpreted as in slice notation.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_count_impl(PyBytesObject *self, PyObject *args)
-/*[clinic end generated code: output=5d8c9f60259d3064 input=2a32925161376240]*/
+bytes_count_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
+                 Py_ssize_t end)
+/*[clinic end generated code: output=9848140b9be17d0f input=e620ca81fb49f0de]*/
 {
-    return _Py_bytes_count(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
+    return _Py_bytes_count(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                           sub, start, end);
 }
 
 

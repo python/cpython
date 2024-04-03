@@ -453,31 +453,21 @@ stringlib_parse_args_finds().
 */
 
 Py_LOCAL_INLINE(int)
-parse_args_finds_byte(const char *function_name, PyObject *args,
-                      PyObject **subobj, char *byte,
-                      Py_ssize_t *start, Py_ssize_t *end)
+parse_args_finds_byte(const char *function_name, PyObject **subobj, char *byte)
 {
-    PyObject *tmp_subobj;
-    Py_ssize_t ival;
-
-    if(!stringlib_parse_args_finds(function_name, args, &tmp_subobj,
-                                   start, end))
-        return 0;
-
-    if (PyObject_CheckBuffer(tmp_subobj)) {
-        *subobj = tmp_subobj;
+    if (PyObject_CheckBuffer(*subobj)) {
         return 1;
     }
 
-    if (!_PyIndex_Check(tmp_subobj)) {
+    if (!_PyIndex_Check(*subobj)) {
         PyErr_Format(PyExc_TypeError,
                      "argument should be integer or bytes-like object, "
                      "not '%.200s'",
-                     Py_TYPE(tmp_subobj)->tp_name);
+                     Py_TYPE(*subobj)->tp_name);
         return 0;
     }
 
-    ival = PyNumber_AsSsize_t(tmp_subobj, NULL);
+    Py_ssize_t ival = PyNumber_AsSsize_t(*subobj, NULL);
     if (ival == -1 && PyErr_Occurred()) {
         return 0;
     }
@@ -508,19 +498,19 @@ parse_args_finds_byte(const char *function_name, PyObject *args,
 
 Py_LOCAL_INLINE(Py_ssize_t)
 find_internal(const char *str, Py_ssize_t len,
-              const char *function_name, PyObject *args, int dir)
+              const char *function_name, PyObject *subobj,
+              Py_ssize_t start, Py_ssize_t end,
+              int dir)
 {
-    PyObject *subobj;
     char byte;
     Py_buffer subbuf;
     const char *sub;
     Py_ssize_t sub_len;
-    Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
     Py_ssize_t res;
 
-    if (!parse_args_finds_byte(function_name, args,
-                               &subobj, &byte, &start, &end))
+    if (!parse_args_finds_byte(function_name, &subobj, &byte)) {
         return -2;
+    }
 
     if (subobj) {
         if (PyObject_GetBuffer(subobj, &subbuf, PyBUF_SIMPLE) != 0)
@@ -567,41 +557,20 @@ find_internal(const char *str, Py_ssize_t len,
 }
 
 PyObject *
-_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *args)
+_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *sub,
+               Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_internal(str, len, "find", args, +1);
+    Py_ssize_t result = find_internal(str, len, "find", sub, start, end, +1);
     if (result == -2)
         return NULL;
     return PyLong_FromSsize_t(result);
 }
 
 PyObject *
-_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *args)
+_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *sub,
+                Py_ssize_t start, Py_ssize_t end)
 {
-    Py_ssize_t result = find_internal(str, len, "index", args, +1);
-    if (result == -2)
-        return NULL;
-    if (result == -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "subsection not found");
-        return NULL;
-    }
-    return PyLong_FromSsize_t(result);
-}
-
-PyObject *
-_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *args)
-{
-    Py_ssize_t result = find_internal(str, len, "rfind", args, -1);
-    if (result == -2)
-        return NULL;
-    return PyLong_FromSsize_t(result);
-}
-
-PyObject *
-_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *args)
-{
-    Py_ssize_t result = find_internal(str, len, "rindex", args, -1);
+    Py_ssize_t result = find_internal(str, len, "index", sub, start, end, +1);
     if (result == -2)
         return NULL;
     if (result == -1) {
@@ -613,20 +582,44 @@ _Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *args)
 }
 
 PyObject *
-_Py_bytes_count(const char *str, Py_ssize_t len, PyObject *args)
+_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *sub,
+                Py_ssize_t start, Py_ssize_t end)
 {
-    PyObject *sub_obj;
+    Py_ssize_t result = find_internal(str, len, "rfind", sub, start, end, -1);
+    if (result == -2)
+        return NULL;
+    return PyLong_FromSsize_t(result);
+}
+
+PyObject *
+_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *sub,
+                 Py_ssize_t start, Py_ssize_t end)
+{
+    Py_ssize_t result = find_internal(str, len, "rindex", sub, start, end, -1);
+    if (result == -2)
+        return NULL;
+    if (result == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "subsection not found");
+        return NULL;
+    }
+    return PyLong_FromSsize_t(result);
+}
+
+PyObject *
+_Py_bytes_count(const char *str, Py_ssize_t len, PyObject *sub_obj,
+                Py_ssize_t start, Py_ssize_t end)
+{
     const char *sub;
     Py_ssize_t sub_len;
     char byte;
-    Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
 
     Py_buffer vsub;
     PyObject *count_obj;
 
-    if (!parse_args_finds_byte("count", args,
-                               &sub_obj, &byte, &start, &end))
+    if (!parse_args_finds_byte("count", &sub_obj, &byte)) {
         return NULL;
+    }
 
     if (sub_obj) {
         if (PyObject_GetBuffer(sub_obj, &vsub, PyBUF_SIMPLE) != 0)

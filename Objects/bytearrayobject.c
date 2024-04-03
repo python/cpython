@@ -1125,20 +1125,25 @@ bytearray_dealloc(PyByteArrayObject *self)
 @text_signature "($self, sub[, start[, end]], /)"
 bytearray.find
 
-    *args: object
+    sub: object
+    start: slice_index(accept={int, NoneType}, c_default='0') = None
+         Optional start position. Default: start of the bytes.
+    end: slice_index(accept={int, NoneType}, c_default='PY_SSIZE_T_MAX') = None
+         Optional stop position. Default: end of the bytes.
     /
 
 Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments 'start' and 'end' are interpreted as in slice notation.
 Return -1 on failure.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_find_impl(PyByteArrayObject *self, PyObject *args)
-/*[clinic end generated code: output=a77f2d2cf96f4301 input=0515d0b1cdb6bf57]*/
+bytearray_find_impl(PyByteArrayObject *self, PyObject *sub, Py_ssize_t start,
+                    Py_ssize_t end)
+/*[clinic end generated code: output=413e1cab2ae87da0 input=27dce3d6f4f24c31]*/
 {
-    return _Py_bytes_find(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_find(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                          sub, start, end);
 }
 
 /*[clinic input]
@@ -1146,15 +1151,15 @@ bytearray_find_impl(PyByteArrayObject *self, PyObject *args)
 bytearray.count = bytearray.find
 
 Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[start:end].
-
-Optional arguments start and end are interpreted as in slice notation.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_count_impl(PyByteArrayObject *self, PyObject *args)
-/*[clinic end generated code: output=ef57bde4b8b86a0f input=a6f76f638a7a450c]*/
+bytearray_count_impl(PyByteArrayObject *self, PyObject *sub,
+                     Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=a21ee2692e4f1233 input=f4582e0f6bc42fd7]*/
 {
-    return _Py_bytes_count(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_count(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                           sub, start, end);
 }
 
 /*[clinic input]
@@ -1192,15 +1197,16 @@ bytearray.index = bytearray.find
 
 Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments start and end are interpreted as in slice notation.
 Raise ValueError if the subsection is not found.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_index_impl(PyByteArrayObject *self, PyObject *args)
-/*[clinic end generated code: output=b712bd29955506e6 input=34f93d0642e75797]*/
+bytearray_index_impl(PyByteArrayObject *self, PyObject *sub,
+                     Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=067a1e78efc672a7 input=5dab02095748cc92]*/
 {
-    return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_index(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                           sub, start, end);
 }
 
 /*[clinic input]
@@ -1209,15 +1215,16 @@ bytearray.rfind = bytearray.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments 'start' and 'end' are interpreted as in slice notation.
 Return -1 on failure.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_rfind_impl(PyByteArrayObject *self, PyObject *args)
-/*[clinic end generated code: output=c3ae3b3474c46566 input=a40d7bfe9d71c21c]*/
+bytearray_rfind_impl(PyByteArrayObject *self, PyObject *sub,
+                     Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=51bf886f932b283c input=0c059ef74263f94b]*/
 {
-    return _Py_bytes_rfind(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_rfind(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                           sub, start, end);
 }
 
 /*[clinic input]
@@ -1226,15 +1233,16 @@ bytearray.rindex = bytearray.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
 
-Optional arguments start and end are interpreted as in slice notation.
 Raise ValueError if the subsection is not found.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_rindex_impl(PyByteArrayObject *self, PyObject *args)
-/*[clinic end generated code: output=7801cbd97f9ca19e input=78f9e77317d145fb]*/
+bytearray_rindex_impl(PyByteArrayObject *self, PyObject *sub,
+                      Py_ssize_t start, Py_ssize_t end)
+/*[clinic end generated code: output=38e1cf66bafb08b9 input=b1e0254a85220795]*/
 {
-    return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self), args);
+    return _Py_bytes_rindex(PyByteArray_AS_STRING(self), PyByteArray_GET_SIZE(self),
+                            sub, start, end);
 }
 
 static int
