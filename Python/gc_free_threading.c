@@ -374,24 +374,27 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    // Untrack tuples and dicts as necessary in this pass.
-    if (PyTuple_CheckExact(op)) {
-        _PyTuple_MaybeUntrack(op);
-        if (!_PyObject_GC_IS_TRACKED(op)) {
-            gc_restore_refs(op);
-            return true;
-        }
-    }
-    else if (PyDict_CheckExact(op)) {
-        _PyDict_MaybeUntrack(op);
-        if (!_PyObject_GC_IS_TRACKED(op)) {
-            gc_restore_refs(op);
-            return true;
-        }
-    }
-
     Py_ssize_t refcount = Py_REFCNT(op);
     _PyObject_ASSERT(op, refcount >= 0);
+
+    if (refcount > 0) {
+        // Untrack tuples and dicts as necessary in this pass, but not objects
+        // with zero refcount, which we will want to collect.
+        if (PyTuple_CheckExact(op)) {
+            _PyTuple_MaybeUntrack(op);
+            if (!_PyObject_GC_IS_TRACKED(op)) {
+                gc_restore_refs(op);
+                return true;
+            }
+        }
+        else if (PyDict_CheckExact(op)) {
+            _PyDict_MaybeUntrack(op);
+            if (!_PyObject_GC_IS_TRACKED(op)) {
+                gc_restore_refs(op);
+                return true;
+            }
+        }
+    }
 
     // We repurpose ob_tid to compute "gc_refs", the number of external
     // references to the object (i.e., from outside the GC heaps). This means
@@ -1636,7 +1639,11 @@ PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp), presize);
+    size_t size = _PyObject_SIZE(tp);
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
+        size += _PyInlineValuesSize(tp);
+    }
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
