@@ -1199,10 +1199,6 @@ bytearray.startswith
     /
 
 Return True if the bytearray starts with the specified prefix, False otherwise.
-
-With optional start, test B beginning at that position.
-With optional end, stop comparing B at that position.
-prefix can also be a tuple of bytes to try.
 [clinic start generated code]*/
 
 static PyObject *
