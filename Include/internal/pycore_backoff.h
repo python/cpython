@@ -41,7 +41,8 @@ typedef struct {
     };
 } backoff_counter_t;
 
-static_assert(sizeof(backoff_counter_t) == 2, "backoff counter size should be 2 bytes");
+static_assert(sizeof(backoff_counter_t) == sizeof(_Py_CODEUNIT),
+    "backoff counter size should be the same size as a code unit");
 
 #define UNREACHABLE_BACKOFF 0xFFFF
 

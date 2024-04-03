@@ -455,7 +455,7 @@ write_location_entry_start(uint8_t *ptr, int code, int length)
  * When counting executions until the next specialization attempt,
  * exponential backoff is used to reduce the number of specialization failures.
  * See pycore_backoff.h for more details.
- * On a specialization failure, the backoff counter is reset.
+ * On a specialization failure, the backoff counter is restarted.
  */
 
 #include "pycore_backoff.h"
