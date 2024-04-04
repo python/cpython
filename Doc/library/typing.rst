@@ -1903,7 +1903,7 @@ without the dedicated syntax, as documented below.
       be pickled.
 
    .. seealso::
-      * :ref:`typing:paramspec` -- typing specification for `ParamSpec`
+      * :ref:`typing:paramspec` -- typing specification for ``ParamSpec``
       * :data:`Concatenate`
       * :ref:`annotating-callables`
 
