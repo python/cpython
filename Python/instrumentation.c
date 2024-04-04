@@ -1374,9 +1374,8 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
     PyInterpreterState *is = _PyInterpreterState_GET();
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     assert(0 <= event_id && event_id < _PY_MONITORING_EVENTS);
-    PyObject *callback = FT_ATOMIC_EXCHANGE_PYOBJECT(is->monitoring_callables[tool_id][event_id],
-        Py_XNewRef(obj)
-    );
+    PyObject *callback = _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id],
+                                                 Py_XNewRef(obj));
 
     return callback;
 }

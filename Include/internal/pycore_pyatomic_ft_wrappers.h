@@ -40,8 +40,6 @@ extern "C" {
     _Py_atomic_store_ssize_relaxed(&value, new_value)
 #define FT_ATOMIC_STORE_UINT8_RELAXED(value, new_value) \
     _Py_atomic_store_uint8_relaxed(&value, new_value)
-#define FT_ATOMIC_EXCHANGE_PYOBJECT(value, new_value)   \
-    _Py_atomic_exchange_ptr(&value, new_value)
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
@@ -55,16 +53,6 @@ extern "C" {
 #define FT_ATOMIC_STORE_UINTPTR_RELEASE(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_SSIZE_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_STORE_UINT8_RELAXED(value, new_value) value = new_value
-#define FT_ATOMIC_EXCHANGE_PYOBJECT(value, new_value)   \
-    _atomic_exchange_pyobject_withgil(&value, new_value)
-
-static inline PyObject *
-_atomic_exchange_pyobject_withgil(PyObject **src, PyObject *new_value)
-{
-    PyObject *res = *src;
-    *src = new_value;
-    return res;
-}
 
 #endif
 
