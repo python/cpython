@@ -2226,12 +2226,12 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
         }
     }
     int left_version =  Py_TYPE(lhs)->tp_version_tag;
-    int right_version = Py_TYPE(lhs)->tp_version_tag;
+    int right_version = Py_TYPE(rhs)->tp_version_tag;
     int func_index = lookup_binary_function(left_version, right_version, kind, oparg);
     assert(func_index >= 0 && func_index < 256);
     if (func_index == 0) {
         instr->op.code = BINARY_OP;
-        BINARY_SPECIALIZATION_FAIL(left_version, left_version, kind, oparg);
+        BINARY_SPECIALIZATION_FAIL(left_version, right_version, kind, oparg);
         SPECIALIZATION_FAIL(BINARY_OP, oparg);
         STAT_INC(BINARY_OP, failure);
         cache->counter = adaptive_counter_backoff(cache->counter);

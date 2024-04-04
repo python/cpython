@@ -441,6 +441,7 @@ dummy_func(
             PyTypeObject *rt = Py_TYPE(right);
             EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
             EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
         }
 
@@ -449,7 +450,9 @@ dummy_func(
             PyTypeObject *rt = Py_TYPE(right);
             EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
             EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+            assert(Py_REFCNT(right) == 1);
             _Py_Dealloc(right);
         }
 
@@ -458,6 +461,7 @@ dummy_func(
             PyTypeObject *rt = Py_TYPE(right);
             EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
             EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(right);
         }
@@ -467,6 +471,7 @@ dummy_func(
             PyTypeObject *rt = Py_TYPE(right);
             EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
             EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
         }
@@ -476,6 +481,7 @@ dummy_func(
             PyTypeObject *rt = Py_TYPE(right);
             EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
             EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
+            STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
             Py_DECREF(right);
