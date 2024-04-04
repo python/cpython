@@ -60,7 +60,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
             root_dir = os.fsdecode(root_dir)
     anchor, parts = _split_pathname(pathname)
 
-    select = _selector(parts, recursive, include_hidden)
+    select = _selector(parts, include_hidden, recursive)
     if anchor:
         # Non-relative pattern. The anchor is guaranteed to exist unless it
         # has a Windows drive component.
@@ -87,15 +87,15 @@ _deprecated_function_message = (
 def glob0(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    select = _literal_selector([pattern], False, False)
-    paths = _relative_glob(select, dirname, None)
+    select = _literal_selector([pattern], recursive=False, include_hidden=False)
+    paths = _relative_glob(select, dirname, dir_fd=None)
     return list(paths)
 
 def glob1(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    select = _wildcard_selector([pattern], False, False)
-    paths = _relative_glob(select, dirname, None)
+    select = _wildcard_selector([pattern], recursive=False, include_hidden=False)
+    paths = _relative_glob(select, dirname, dir_fd=None)
     return list(paths)
 
 magic_check = re.compile('([*?[])')
@@ -175,7 +175,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 
 
 @functools.lru_cache(maxsize=32768)
-def _compile_pattern(pattern, recursive, include_hidden):
+def _compile_pattern(pattern, include_hidden, recursive):
     """Compile an re.Pattern object for the given glob-style pattern.
     """
     if include_hidden:
@@ -186,8 +186,8 @@ def _compile_pattern(pattern, recursive, include_hidden):
         else:
             if pattern == '*':
                 return None
-    regex = translate(pattern, recursive=recursive,
-                      include_hidden=include_hidden, seps=os.path.sep)
+    regex = translate(pattern, include_hidden=include_hidden,
+                      recursive=recursive, seps=os.path.sep)
     return re.compile(regex, flags=_pattern_flags).match
 
 
@@ -236,12 +236,12 @@ def _relative_glob(select, dirname, dir_fd):
     """
     dirname = _add_trailing_slash(dirname)
     slicer = operator.itemgetter(slice(len(dirname), None))
-    paths = select(dirname, dirname, dir_fd, False)
+    paths = select(dirname, dirname, dir_fd, exists=False)
     paths = map(slicer, paths)
     return paths
 
 
-def _selector(parts, recursive, include_hidden):
+def _selector(parts, include_hidden, recursive):
     """Returns a function that selects from a given path, walking and
     filtering according to the glob-style pattern parts in *parts*.
     """
@@ -253,10 +253,10 @@ def _selector(parts, recursive, include_hidden):
         selector = _wildcard_selector
     else:
         selector = _literal_selector
-    return selector(parts, recursive, include_hidden)
+    return selector(parts, include_hidden, recursive)
 
 
-def _literal_selector(parts, recursive, include_hidden):
+def _literal_selector(parts, include_hidden, recursive):
     """Returns a function that selects a literal descendant of a given path.
     """
     part = parts.pop()
@@ -273,7 +273,7 @@ def _literal_selector(parts, recursive, include_hidden):
         is_special = is_special and next_part in _special_parts
         part += os.path.sep + next_part
 
-    select_next = _selector(parts, recursive, include_hidden)
+    select_next = _selector(parts, include_hidden, recursive)
 
     def select_literal(path, rel_path, dir_fd, exists):
         path = _add_trailing_slash(path) + part
@@ -282,11 +282,11 @@ def _literal_selector(parts, recursive, include_hidden):
     return select_literal
 
 
-def _wildcard_selector(parts, recursive, include_hidden):
+def _wildcard_selector(parts, include_hidden, recursive):
     """Returns a function that selects direct children of a given path,
     filtering by pattern.
     """
-    match = _compile_pattern(parts.pop(), False, include_hidden)
+    match = _compile_pattern(parts.pop(), include_hidden, recursive=False)
 
     if not parts:
         # Optimization: use os.listdir() rather than os.scandir(), because we
@@ -307,7 +307,7 @@ def _wildcard_selector(parts, recursive, include_hidden):
                     os.close(fd)
         return select_last_wildcard
 
-    select_next = _selector(parts, recursive, include_hidden)
+    select_next = _selector(parts, include_hidden, recursive)
 
     def select_wildcard(path, rel_path, dir_fd, exists):
         close_fd = False
@@ -327,7 +327,7 @@ def _wildcard_selector(parts, recursive, include_hidden):
                             if fd is not None:
                                 entry_path = prefix + entry_path
                             yield from select_next(
-                                entry_path, entry.name, fd, True)
+                                entry_path, entry.name, fd, exists=True)
                     except OSError:
                         pass
         except OSError:
@@ -338,7 +338,7 @@ def _wildcard_selector(parts, recursive, include_hidden):
     return select_wildcard
 
 
-def _recursive_selector(parts, recursive, include_hidden):
+def _recursive_selector(parts, include_hidden, recursive):
     """Returns a function that selects a given path and all its children,
     recursively, filtering by pattern.
     """
@@ -356,9 +356,9 @@ def _recursive_selector(parts, recursive, include_hidden):
     while parts and parts[-1] not in _special_parts:
         part += os.path.sep + parts.pop()
 
-    match = _compile_pattern(part, True, include_hidden)
+    match = _compile_pattern(part, include_hidden, recursive)
     dir_only = bool(parts)
-    select_next = _selector(parts, recursive, include_hidden)
+    select_next = _selector(parts, include_hidden, recursive)
 
     def select_recursive(path, rel_path, dir_fd, exists):
         path = _add_trailing_slash(path)
@@ -393,7 +393,7 @@ def _recursive_selector(parts, recursive, include_hidden):
                     if match is None or match(entry_path, match_pos):
                         if dir_only:
                             yield from select_next(
-                                entry_path, entry.name, fd, True)
+                                entry_path, entry.name, fd, exists=True)
                         else:
                             # Optimization: directly yield the path if this is
                             # last pattern part.
