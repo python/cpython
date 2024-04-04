@@ -77,7 +77,9 @@ reftotal_add(PyThreadState *tstate, Py_ssize_t n)
 {
 #ifdef Py_GIL_DISABLED
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
-    tstate_impl->reftotal += n;
+    // relaxed store to avoid data race with read in get_reftotal()
+    Py_ssize_t reftotal = tstate_impl->reftotal + n;
+    _Py_atomic_store_ssize_relaxed(&tstate_impl->reftotal, reftotal);
 #else
     REFTOTAL(tstate->interp) += n;
 #endif
@@ -114,7 +116,8 @@ get_reftotal(PyInterpreterState *interp)
 #ifdef Py_GIL_DISABLED
     for (PyThreadState *p = interp->threads.head; p != NULL; p = p->next) {
         /* This may race with other threads modifications to their reftotal */
-        total += ((_PyThreadStateImpl *)p)->reftotal;
+        _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
+        total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
     }
 #endif
     return total;
