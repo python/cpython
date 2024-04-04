@@ -267,6 +267,7 @@ class Queue(mixins._LoopBoundMixin):
                     self._unfinished_tasks -= 1
             if self._unfinished_tasks == 0:
                 self._finished.set()
+        # All getters need to re-check queue-empty to raise ShutDown
         while self._getters:
             getter = self._getters.popleft()
             if not getter.done():
