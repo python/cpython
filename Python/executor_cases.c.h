@@ -3592,6 +3592,14 @@
             break;
         }
 
+        case _CHECK_STACK_SPACE_OPERAND: {
+            uint32_t framesize = (uint32_t)CURRENT_OPERAND();
+            assert(framesize <= INT_MAX);
+            if (!_PyThreadState_HasStackSpace(tstate, framesize)) JUMP_TO_JUMP_TARGET();
+            if (tstate->py_recursion_remaining <= 1) JUMP_TO_JUMP_TARGET();
+            break;
+        }
+
         case _SAVE_RETURN_OFFSET: {
             oparg = CURRENT_OPARG();
             #if TIER_ONE
@@ -3686,21 +3694,22 @@
             oparg = CURRENT_OPARG();
             _PyExecutorObject *previous = (_PyExecutorObject *)tstate->previous_executor;
             _PyExitData *exit = &previous->exits[oparg];
-            exit->temperature++;
             PyCodeObject *code = _PyFrame_GetCode(frame);
             _Py_CODEUNIT *target = _PyCode_CODE(code) + exit->target;
-            if (exit->temperature < (int32_t)tstate->interp->optimizer_side_threshold) {
+            _Py_BackoffCounter temperature = exit->temperature;
+            if (!backoff_counter_triggers(temperature)) {
+                exit->temperature = advance_backoff_counter(temperature);
                 GOTO_TIER_ONE(target);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
                 executor = code->co_executors->executors[target->op.arg];
                 Py_INCREF(executor);
-            } else {
+            }
+            else {
                 int optimized = _PyOptimizer_Optimize(frame, target, stack_pointer, &executor);
                 if (optimized <= 0) {
-                    int32_t new_temp = -1 * tstate->interp->optimizer_side_threshold;
-                    exit->temperature = (new_temp < INT16_MIN) ? INT16_MIN : new_temp;
+                    exit->temperature = restart_backoff_counter(temperature);
                     if (optimized < 0) {
                         Py_DECREF(previous);
                         tstate->previous_executor = Py_None;
