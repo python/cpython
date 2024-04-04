@@ -833,6 +833,18 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(run_coro_after_tg_closes())
 
+    async def test_cancelling_level_preserved(self):
+        async def raise_after(t, e):
+            await asyncio.sleep(t)
+            raise e()
+
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(raise_after(0.0, RuntimeError))
+        except* RuntimeError:
+            pass
+        self.assertEqual(asyncio.current_task().cancelling(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
