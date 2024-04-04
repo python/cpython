@@ -560,6 +560,7 @@ class Stats:
     def get_binary_specialization_failure_stats(self) -> list[tuple[str, int]]:
         stats = {}
         prefix = "Binary specialization failure"
+        total = 0
         for key, value in self._data.items():
             if not key.startswith(prefix):
                 continue
@@ -571,6 +572,7 @@ class Stats:
             oparg = bits >> 10
             name = f"{oparg} {kind} {ltype} {rtype}"
             stats[name] = value
+            total += int(value)
         return [ (key, value) for
                  (value, key) in
                  sorted([(value, key) for (key, value) in stats.items()], reverse=True)
@@ -795,6 +797,9 @@ def pair_count_section() -> Section:
 def binary_failure_section() -> Section:
     def calc_binary_failure_table(stats: Stats) -> Rows:
         stats = stats.get_binary_specialization_failure_stats()
+        total = 0
+        for (name, count) in stats:
+            total += int(count)
         rows: Rows = []
         for (i, item) in enumerate(stats):
             if i == 100:
@@ -804,6 +809,7 @@ def binary_failure_section() -> Section:
                 (
                     name,
                     Count(count),
+                    Ratio(count, total),
                 )
             )
         return rows
@@ -813,7 +819,7 @@ def binary_failure_section() -> Section:
         "Binary op specialization failures",
         [
             Table(
-                ("Kind", "Count:"),
+                ("Kind", "Count:", ""),
                 calc_binary_failure_table,
             )
         ],
