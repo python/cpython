@@ -731,6 +731,12 @@ The :mod:`test.support` module defines the following functions:
    macOS version is less than the minimum, the test is skipped.
 
 
+.. decorator:: requires_gil_enabled
+
+   Decorator for skipping tests on the free-threaded build.  If the
+   :term:`GIL` is disabled, the test is skipped.
+
+
 .. decorator:: requires_IEEE_754
 
    Decorator for skipping tests on non-IEEE 754 platforms.
