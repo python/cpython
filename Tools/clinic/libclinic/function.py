@@ -7,10 +7,10 @@ import inspect
 from collections.abc import Iterable, Iterator, Sequence
 from typing import Final, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from clinic import Clinic
     from libclinic.converter import CConverter
     from libclinic.converters import self_converter
     from libclinic.return_converters import CReturnConverter
+    from libclinic.app import Clinic
 
 from libclinic import VersionTuple, unspecified
 

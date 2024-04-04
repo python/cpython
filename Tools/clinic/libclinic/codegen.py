@@ -3,14 +3,14 @@ import dataclasses as dc
 import io
 import os
 from typing import Final, TYPE_CHECKING
-if TYPE_CHECKING:
-    from clinic import Clinic
 
 import libclinic
 from libclinic import fail
 from libclinic.crenderdata import Include
 from libclinic.language import Language
 from libclinic.block_parser import Block
+if TYPE_CHECKING:
+    from libclinic.app import Clinic
 
 
 @dc.dataclass(slots=True)
@@ -185,3 +185,6 @@ class Destination:
 
     def dump(self) -> str:
         return self.buffers.dump()
+
+
+DestinationDict = dict[str, Destination]
