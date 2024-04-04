@@ -251,8 +251,7 @@ class Queue(mixins._LoopBoundMixin):
             await self._finished.wait()
 
     def shutdown(self, immediate=False):
-        """Shut-down the queue, making queue gets and puts raise
-        QueueShutDown.
+        """Shut-down the queue, making queue gets and puts raise QueueShutDown.
 
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
