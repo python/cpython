@@ -451,6 +451,11 @@ static PyType_Spec structparam_spec = {
   CType_Type - a base metaclass. Its instances (classes) have a StgInfo.
   */
 
+/*[clinic input]
+class _ctypes.CType_Type "PyObject *" "st->CType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f385b8663b8be200]*/
+
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
 {
