@@ -4,13 +4,13 @@ import sys
 from types import NoneType
 from typing import Any
 
-from libclinic import fail, Null, unspecified, unknown
-from libclinic.function import (
+from . import fail, Null, unspecified, unknown
+from .function import (
     Function, Parameter,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
     GETTER, SETTER)
-from libclinic.crenderdata import CRenderData, TemplateDict
-from libclinic.converter import (
+from .crenderdata import CRenderData, TemplateDict
+from .converter import (
     CConverter, legacy_converters, add_legacy_c_converter)
 
 

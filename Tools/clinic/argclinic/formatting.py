@@ -4,7 +4,7 @@ import functools
 import textwrap
 from typing import Final
 
-from libclinic import ClinicError
+from . import ClinicError
 
 
 SIG_END_MARKER: Final = "--"

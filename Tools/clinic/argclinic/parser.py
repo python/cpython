@@ -5,13 +5,13 @@ import io
 from types import NoneType
 from typing import Any, Protocol, TYPE_CHECKING
 
-from libclinic import unspecified
-from libclinic.block_parser import Block
-from libclinic.converter import CConverter, converters
-from libclinic.converters import buffer, robuffer, rwbuffer
-from libclinic.return_converters import CReturnConverter, return_converters
+from . import unspecified
+from .block_parser import Block
+from .converter import CConverter, converters
+from .converters import buffer, robuffer, rwbuffer
+from .return_converters import CReturnConverter, return_converters
 if TYPE_CHECKING:
-    from libclinic.app import Clinic
+    from .app import Clinic
 
 
 class Parser(Protocol):

@@ -1,8 +1,9 @@
 import sys
 from collections.abc import Callable
-from libclinic.crenderdata import CRenderData
-from libclinic.function import Function
 from typing import Any
+
+from .crenderdata import CRenderData
+from .function import Function
 
 
 ReturnConverterType = Callable[..., "CReturnConverter"]

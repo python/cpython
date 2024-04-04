@@ -846,14 +846,16 @@ coverage-report: regen-token regen-frozen
 	@ # build lcov report
 	$(MAKE) coverage-lcov
 
+ARGCLINIC=PYTHONPATH="$(srcdir)/Tools/clinic" $(PYTHON_FOR_REGEN) -m argclinic
+
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
+	$(ARGCLINIC) --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
 
 .PHONY: clinic-tests
 clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $(srcdir)/Lib/test/clinic.test.c
+	$(ARGCLINIC) -f $(srcdir)/Lib/test/clinic.test.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
@@ -881,7 +883,7 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 # blake2s is auto-generated from blake2b
 $(srcdir)/Modules/_blake2/blake2s_impl.c: $(srcdir)/Modules/_blake2/blake2b_impl.c $(srcdir)/Modules/_blake2/blake2b2s.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Modules/_blake2/blake2b2s.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $@
+	$(ARGCLINIC) -f $@
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)

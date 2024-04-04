@@ -4,13 +4,12 @@ import io
 import os
 from typing import Final, TYPE_CHECKING
 
-import libclinic
-from libclinic import fail
-from libclinic.crenderdata import Include
-from libclinic.language import Language
-from libclinic.block_parser import Block
+from . import fail, compute_checksum
+from .crenderdata import Include
+from .language import Language
+from .block_parser import Block
 if TYPE_CHECKING:
-    from libclinic.app import Clinic
+    from .app import Clinic
 
 
 @dc.dataclass(slots=True)
@@ -90,8 +89,8 @@ class BlockPrinter:
             write(output)
 
         arguments = "output={output} input={input}".format(
-            output=libclinic.compute_checksum(output, 16),
-            input=libclinic.compute_checksum(input, 16)
+            output=compute_checksum(output, 16),
+            input=compute_checksum(input, 16)
         )
         write(self.language.checksum_line.format(dsl_name=dsl_name, arguments=arguments))
         write("\n")

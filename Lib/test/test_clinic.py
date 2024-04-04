@@ -16,21 +16,25 @@ import unittest
 
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
-    import libclinic
-    from libclinic import ClinicError, unspecified, NULL, fail
-    from libclinic.converters import int_converter, str_converter, self_converter
-    from libclinic.function import (
+    from argclinic import ClinicError, unspecified, NULL, fail
+    from argclinic.cpp import Monitor
+    from argclinic.formatting import (
+        linear_format, normalize_snippet, docstring_for_c_string,
+        format_escape, indent_all_lines, suffix_all_lines,
+    )
+    from argclinic.converters import int_converter, str_converter, self_converter
+    from argclinic.function import (
         Module, Class, Function, FunctionKind, Parameter,
         permute_optional_groups, permute_right_option_groups,
         permute_left_option_groups)
-    import clinic
-    from libclinic.clanguage import CLanguage
-    from libclinic.converter import converters, legacy_converters
-    from libclinic.return_converters import return_converters, int_return_converter
-    from libclinic.block_parser import Block, BlockParser
-    from libclinic.codegen import BlockPrinter, Destination
-    from libclinic.dsl_parser import DSLParser
-    from libclinic.cli import parse_file, Clinic
+    import argclinic
+    from argclinic.clanguage import CLanguage
+    from argclinic.converter import converters, legacy_converters
+    from argclinic.return_converters import return_converters, int_return_converter
+    from argclinic.block_parser import Block, BlockParser
+    from argclinic.codegen import BlockPrinter, Destination
+    from argclinic.dsl_parser import DSLParser
+    from argclinic.cli import parse_file, Clinic, main
 
 
 def _make_clinic(*, filename='clinic_tests', limited_capi=False):
@@ -738,7 +742,7 @@ class ClinicGroupPermuterTest(TestCase):
 
 class ClinicLinearFormatTest(TestCase):
     def _test(self, input, output, **kwargs):
-        computed = libclinic.linear_format(input, **kwargs)
+        computed = linear_format(input, **kwargs)
         self.assertEqual(output, computed)
 
     def test_empty_strings(self):
@@ -791,14 +795,14 @@ class ClinicLinearFormatTest(TestCase):
     def test_text_before_block_marker(self):
         regex = re.escape("found before '{marker}'")
         with self.assertRaisesRegex(ClinicError, regex):
-            libclinic.linear_format("no text before marker for you! {marker}",
-                                    marker="not allowed!")
+            linear_format("no text before marker for you! {marker}",
+                          marker="not allowed!")
 
     def test_text_after_block_marker(self):
         regex = re.escape("found after '{marker}'")
         with self.assertRaisesRegex(ClinicError, regex):
-            libclinic.linear_format("{marker} no text after marker for you!",
-                                    marker="not allowed!")
+            linear_format("{marker} no text after marker for you!",
+                          marker="not allowed!")
 
 
 class InertParser:
@@ -2467,7 +2471,7 @@ class ClinicExternalTest(TestCase):
             support.captured_stderr() as err,
             self.assertRaises(SystemExit) as cm
         ):
-            clinic.main(args)
+            main(args)
         return out.getvalue(), err.getvalue(), cm.exception.code
 
     def expect_success(self, *args):
@@ -3888,7 +3892,7 @@ class FormatHelperTests(unittest.TestCase):
         )
         for lines, expected in dataset:
             with self.subTest(lines=lines, expected=expected):
-                out = libclinic.normalize_snippet(lines)
+                out = normalize_snippet(lines)
                 self.assertEqual(out, expected)
 
     def test_normalize_snippet(self):
@@ -3917,7 +3921,7 @@ class FormatHelperTests(unittest.TestCase):
         expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
         for indent, expected in expected_outputs.items():
             with self.subTest(indent=indent):
-                actual = libclinic.normalize_snippet(snippet, indent=indent)
+                actual = normalize_snippet(snippet, indent=indent)
                 self.assertEqual(actual, expected)
 
     def test_escaped_docstring(self):
@@ -3932,18 +3936,18 @@ class FormatHelperTests(unittest.TestCase):
         )
         for line, expected in dataset:
             with self.subTest(line=line, expected=expected):
-                out = libclinic.docstring_for_c_string(line)
+                out = docstring_for_c_string(line)
                 self.assertEqual(out, expected)
 
     def test_format_escape(self):
         line = "{}, {a}"
         expected = "{{}}, {{a}}"
-        out = libclinic.format_escape(line)
+        out = format_escape(line)
         self.assertEqual(out, expected)
 
     def test_indent_all_lines(self):
         # Blank lines are expected to be unchanged.
-        self.assertEqual(libclinic.indent_all_lines("", prefix="bar"), "")
+        self.assertEqual(indent_all_lines("", prefix="bar"), "")
 
         lines = (
             "one\n"
@@ -3953,7 +3957,7 @@ class FormatHelperTests(unittest.TestCase):
             "barone\n"
             "bartwo"
         )
-        out = libclinic.indent_all_lines(lines, prefix="bar")
+        out = indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -3969,12 +3973,12 @@ class FormatHelperTests(unittest.TestCase):
             "bartwo\n"
             ""
         )
-        out = libclinic.indent_all_lines(lines, prefix="bar")
+        out = indent_all_lines(lines, prefix="bar")
         self.assertEqual(out, expected)
 
     def test_suffix_all_lines(self):
         # Blank lines are expected to be unchanged.
-        self.assertEqual(libclinic.suffix_all_lines("", suffix="foo"), "")
+        self.assertEqual(suffix_all_lines("", suffix="foo"), "")
 
         lines = (
             "one\n"
@@ -3984,7 +3988,7 @@ class FormatHelperTests(unittest.TestCase):
             "onefoo\n"
             "twofoo"
         )
-        out = libclinic.suffix_all_lines(lines, suffix="foo")
+        out = suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
         # If last line is empty, expect it to be unchanged.
@@ -4000,7 +4004,7 @@ class FormatHelperTests(unittest.TestCase):
             "twofoo\n"
             ""
         )
-        out = libclinic.suffix_all_lines(lines, suffix="foo")
+        out = suffix_all_lines(lines, suffix="foo")
         self.assertEqual(out, expected)
 
 
@@ -4078,7 +4082,7 @@ class ClinicReprTests(unittest.TestCase):
         self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
 
     def test_Monitor_repr(self):
-        monitor = libclinic.cpp.Monitor("test.c")
+        monitor = Monitor("test.c")
         self.assertRegex(repr(monitor), r"<clinic.Monitor \d+ line=0 condition=''>")
 
         monitor.line_number = 42

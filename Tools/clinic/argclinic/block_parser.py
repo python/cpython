@@ -5,10 +5,9 @@ import re
 import shlex
 from typing import Any
 
-import libclinic
-from libclinic import fail, ClinicError
-from libclinic.language import Language
-from libclinic.function import (
+from . import fail, ClinicError, create_regex, compute_checksum
+from .language import Language
+from .function import (
     Module, Class, Function)
 
 
@@ -110,9 +109,8 @@ class BlockParser:
         self.language = language
         before, _, after = language.start_line.partition('{dsl_name}')
         assert _ == '{dsl_name}'
-        self.find_start_re = libclinic.create_regex(before, after,
-                                                    whole_line=False)
-        self.start_re = libclinic.create_regex(before, after)
+        self.find_start_re = create_regex(before, after, whole_line=False)
+        self.start_re = create_regex(before, after)
         self.verify = verify
         self.last_checksum_re: re.Pattern[str] | None = None
         self.last_dsl_name: str | None = None
@@ -206,7 +204,7 @@ class BlockParser:
         else:
             before, _, after = self.language.checksum_line.format(dsl_name=dsl_name, arguments='{arguments}').partition('{arguments}')
             assert _ == '{arguments}'
-            checksum_re = libclinic.create_regex(before, after, word=False)
+            checksum_re = create_regex(before, after, word=False)
             self.last_dsl_name = dsl_name
             self.last_checksum_re = checksum_re
         assert checksum_re is not None
@@ -240,7 +238,7 @@ class BlockParser:
                 else:
                     checksum = d['checksum']
 
-                computed = libclinic.compute_checksum(output, len(checksum))
+                computed = compute_checksum(output, len(checksum))
                 if checksum != computed:
                     fail("Checksum mismatch! "
                          f"Expected {checksum!r}, computed {computed!r}. "

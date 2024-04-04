@@ -5,19 +5,18 @@ from collections.abc import Callable, Sequence
 from typing import Any, TYPE_CHECKING
 
 
-import libclinic
-from libclinic import fail, warn
-from libclinic.function import Class
-from libclinic.block_parser import Block, BlockParser
-from libclinic.crenderdata import Include
-from libclinic.codegen import BlockPrinter, Destination
-from libclinic.parser import Parser, PythonParser
-from libclinic.dsl_parser import DSLParser
+from . import fail, warn, write_file
+from .function import Class
+from .block_parser import Block, BlockParser
+from .crenderdata import Include
+from .codegen import BlockPrinter, Destination
+from .parser import Parser, PythonParser
+from .dsl_parser import DSLParser
 if TYPE_CHECKING:
-    from libclinic.clanguage import CLanguage
-    from libclinic.function import (
+    from .clanguage import CLanguage
+    from .function import (
         Module, Function, ClassDict, ModuleDict)
-    from libclinic.codegen import DestinationDict
+    from .codegen import DestinationDict
 
 
 # maps strings to callables.
@@ -260,8 +259,8 @@ impl_definition block
                                           core_includes=True,
                                           limited_capi=self.limited_capi,
                                           header_includes=self.includes)
-                    libclinic.write_file(destination.filename,
-                                         printer_2.f.getvalue())
+                    write_file(destination.filename,
+                               printer_2.f.getvalue())
                     continue
 
         return printer.f.getvalue()

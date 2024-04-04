@@ -10,17 +10,13 @@ from typing import NoReturn
 
 
 # Local imports.
-import libclinic
-import libclinic.cpp
-from libclinic import ClinicError
-from libclinic.language import Language, PythonLanguage
-from libclinic.block_parser import BlockParser
-from libclinic.converter import (
-    ConverterType, converters, legacy_converters)
-from libclinic.return_converters import (
-    return_converters, ReturnConverterType)
-from libclinic.clanguage import CLanguage
-from libclinic.app import Clinic
+from . import ClinicError, write_file
+from .language import Language, PythonLanguage
+from .block_parser import BlockParser
+from .converter import ConverterType, converters, legacy_converters
+from .return_converters import return_converters, ReturnConverterType
+from .clanguage import CLanguage
+from .app import Clinic
 
 
 # TODO:
@@ -83,7 +79,7 @@ def parse_file(
                     limited_capi=limited_capi)
     cooked = clinic.parse(raw)
 
-    libclinic.write_file(output, cooked)
+    write_file(output, cooked)
 
 
 def create_cli() -> argparse.ArgumentParser:

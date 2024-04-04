@@ -5,13 +5,12 @@ from collections.abc import (
     Iterable,
 )
 
-import libclinic
-from libclinic import fail
-from libclinic.function import (
+from . import fail, FormatCounterFormatter
+from .function import (
     Module, Class, Function)
 
 if typing.TYPE_CHECKING:
-    from libclinic.app import Clinic
+    from .app import Clinic
 
 
 class Language(metaclass=abc.ABCMeta):
@@ -67,7 +66,7 @@ class Language(metaclass=abc.ABCMeta):
             fields = ['dsl_name']
             fields.extend(additional_fields)
             line: str = getattr(self, attr)
-            fcf = libclinic.FormatCounterFormatter()
+            fcf = FormatCounterFormatter()
             fcf.format(line)
             def local_fail(should_be_there_but_isnt: bool) -> None:
                 if should_be_there_but_isnt:

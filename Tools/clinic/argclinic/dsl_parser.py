@@ -10,27 +10,28 @@ from collections.abc import Callable
 from types import FunctionType, NoneType
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-import libclinic
-from libclinic import (
+from . import (
     ClinicError, VersionTuple,
-    fail, warn, unspecified, unknown, NULL)
-from libclinic.function import (
+    fail, warn, unspecified, unknown, NULL,
+    is_legal_py_identifier, is_legal_c_identifier, c_repr, SIG_END_MARKER)
+from .formatting import linear_format
+from .function import (
     Module, Class, Function, Parameter,
     FunctionKind,
     CALLABLE, STATIC_METHOD, CLASS_METHOD, METHOD_INIT, METHOD_NEW,
     GETTER, SETTER)
-from libclinic.converter import (
+from .converter import (
     converters, legacy_converters)
-from libclinic.converters import (
+from .converters import (
     self_converter, defining_class_converter,
     correct_name_for_self)
-from libclinic.return_converters import (
+from .return_converters import (
     CReturnConverter, return_converters,
     int_return_converter)
-from libclinic.parser import create_parser_namespace
+from .parser import create_parser_namespace
 if TYPE_CHECKING:
-    from libclinic.block_parser import Block
-    from libclinic.app import Clinic
+    from .block_parser import Block
+    from .app import Clinic
 
 
 unsupported_special_methods: set[str] = set("""
@@ -539,9 +540,9 @@ class DSLParser:
             if fields[-1] == '__new__':
                 fields.pop()
             c_basename = "_".join(fields)
-        if not libclinic.is_legal_py_identifier(full_name):
+        if not is_legal_py_identifier(full_name):
             fail(f"Illegal function name: {full_name!r}")
-        if not libclinic.is_legal_c_identifier(c_basename):
+        if not is_legal_c_identifier(c_basename):
             fail(f"Illegal C basename: {c_basename!r}")
         names = FunctionNames(full_name=full_name, c_basename=c_basename)
         self.normalize_function_kind(names.full_name)
@@ -665,7 +666,7 @@ class DSLParser:
         before, equals, existing = line.rpartition('=')
         if equals:
             existing = existing.strip()
-            if libclinic.is_legal_py_identifier(existing):
+            if is_legal_py_identifier(existing):
                 # we're cloning!
                 names = self.parse_function_names(before)
                 return self.parse_cloned_function(names, existing)
@@ -1041,7 +1042,7 @@ class DSLParser:
                     if isinstance(value, (bool, NoneType)):
                         c_default = "Py_" + py_default
                     elif isinstance(value, str):
-                        c_default = libclinic.c_repr(value)
+                        c_default = c_repr(value)
                     else:
                         c_default = py_default
 
@@ -1485,7 +1486,7 @@ class DSLParser:
         #     lines.append(f.return_converter.py_default)
 
         if not f.docstring_only:
-            lines.append("\n" + libclinic.SIG_END_MARKER + "\n")
+            lines.append("\n" + SIG_END_MARKER + "\n")
 
         signature_line = "".join(lines)
 
@@ -1542,9 +1543,9 @@ class DSLParser:
         parameters = self.format_docstring_parameters(params)
         signature = self.format_docstring_signature(f, params)
         docstring = "\n".join(lines)
-        return libclinic.linear_format(docstring,
-                                       signature=signature,
-                                       parameters=parameters).rstrip()
+        return linear_format(docstring,
+                             signature=signature,
+                             parameters=parameters).rstrip()
 
     def check_remaining_star(self, lineno: int | None = None) -> None:
         assert isinstance(self.function, Function)

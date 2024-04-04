@@ -4,11 +4,11 @@ import functools
 from typing import Any, TypeVar, Literal, TYPE_CHECKING, cast
 from collections.abc import Callable
 
-import libclinic
-from libclinic import fail
-from libclinic import Sentinels, unspecified, unknown
-from libclinic.crenderdata import CRenderData, Include, TemplateDict
-from libclinic.function import Function, Parameter
+from . import (
+    fail, Sentinels, unspecified, unknown,
+    c_repr, ensure_legal_c_identifier, CLINIC_PREFIXED_ARGS, CLINIC_PREFIX)
+from .crenderdata import CRenderData, Include, TemplateDict
+from .function import Function, Parameter
 
 
 CConverterClassT = TypeVar("CConverterClassT", bound=type["CConverter"])
@@ -177,7 +177,7 @@ class CConverter(metaclass=CConverterAutoRegister):
              unused: bool = False,
              **kwargs: Any
     ) -> None:
-        self.name = libclinic.ensure_legal_c_identifier(name)
+        self.name = ensure_legal_c_identifier(name)
         self.py_name = py_name
         self.unused = unused
         self.includes: list[Include] = []
@@ -324,7 +324,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             args.append(self.converter)
 
         if self.encoding:
-            args.append(libclinic.c_repr(self.encoding))
+            args.append(c_repr(self.encoding))
         elif self.subclass_of:
             args.append(self.subclass_of)
 
@@ -505,8 +505,8 @@ class CConverter(metaclass=CConverterAutoRegister):
 
     @property
     def parser_name(self) -> str:
-        if self.name in libclinic.CLINIC_PREFIXED_ARGS: # bpo-39741
-            return libclinic.CLINIC_PREFIX + self.name
+        if self.name in CLINIC_PREFIXED_ARGS: # bpo-39741
+            return CLINIC_PREFIX + self.name
         else:
             return self.name
 
