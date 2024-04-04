@@ -611,17 +611,17 @@ class _QueueShutdownTestMixin:
         with self.assertRaisesShutdown():
             q.get_nowait()
 
-        # Ensure there is 1 unfinished task
+        # Ensure there is 1 unfinished task, and join() task succeeds
         q.task_done()
+
+        await asyncio.sleep(0)
+        self.assertTrue(join_task.done())
+        await join_task
+
         with self.assertRaises(
             ValueError, msg="Didn't appear to mark all tasks done"
         ):
             q.task_done()
-
-        # Ensure join() task has successfully finished
-        await asyncio.sleep(0)
-        self.assertTrue(join_task.done())
-        await join_task
 
     async def test_shutdown_immediate(self):
         # Test immediately shutting down a queue
