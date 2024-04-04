@@ -130,7 +130,6 @@ bytes(cdata)
 module _ctypes
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
-
 #include "clinic/_ctypes.c.h"
 
 /****************************************************************/
@@ -741,7 +740,7 @@ _ctypes.CDataType.from_address as CDataType_from_address
 
 C.from_address(integer) -> C instance
 
-Access a C instance at the specified address
+Access a C instance at the specified address.
 [clinic start generated code]*/
 
 static PyObject *
@@ -929,7 +928,7 @@ _ctypes.CDataType.in_dll as CDataType_in_dll
 
 C.in_dll(dll, name) -> C instance
 
-Access a C instance in a dll
+Access a C instance in a dll.
 [clinic start generated code]*/
 
 static PyObject *
