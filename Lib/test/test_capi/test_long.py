@@ -604,7 +604,7 @@ class LongTests(unittest.TestCase):
                     f"PyLong_AsNativeBytes(v, buffer, {n}, <little|unsigned>)")
 
         # Ensure Py_ASNATIVEBYTES_REJECT_NEGATIVE raises on negative value
-        with self.assertRaises(OverflowError):
+        with self.assertRaises(ValueError):
             asnativebytes(-1, buffer, 0, 8)
 
         # Check a few error conditions. These are validated in code, but are
