@@ -4,6 +4,7 @@ import sys
 import unittest
 from test import support
 from test.support import import_helper
+from test.support import script_helper
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
