@@ -302,7 +302,7 @@ print_stats(FILE *out, PyStats *stats)
     print_gc_stats(out, stats->gc_stats);
     print_optimization_stats(out, &stats->optimization_stats);
     print_rare_event_stats(out, &stats->rare_event_stats);
-    for (int i = 0; i < (1<<13); i++) {
+    for (int i = 0; i < (1<<15); i++) {
         if (stats->binary_specialization_failure[i]) {
             fprintf(out, "Binary specialization failure[%d]: %" PRIu64 "\n", i, stats->binary_specialization_failure[i]);
         }
@@ -417,7 +417,7 @@ do { \
 
 #ifndef SPECIALIZATION_FAIL
 #  define SPECIALIZATION_FAIL(opcode, kind) ((void)0)
-#  define BINARY_SPECIALIZATION_FAIL(lhs, rhs, kind, oparg) ((void)0)
+#  define BINARY_SPECIALIZATION_FAIL(lv, rv, kind, oparg) ((void)0)
 #endif
 
 // Initialize warmup counters and insert superinstructions. This cannot fail.
@@ -2090,7 +2090,9 @@ binary_specialization_fail(int lv, int rv, int kind, int oparg)
     }
     assert(kind < 4);
     assert(oparg < 32);
-    _Py_stats->binary_specialization_failure[(oparg << 10) | (kind << 8) | (lv << 4) | rv]++;
+    int hash = (oparg << 10) | (kind << 8) | (lv << 4) | rv;
+    assert(hash < (1 << 15));
+    _Py_stats->binary_specialization_failure[hash]++;
 }
 #endif   // Py_STATS
 
