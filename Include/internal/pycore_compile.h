@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_symtable.h"  // _Py_SourceLocation
+
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
 
@@ -27,7 +29,7 @@ extern int _PyCompile_AstOptimize(
     int optimize,
     struct _arena *arena);
 
-static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
+struct _Py_SourceLocation;
 
 extern int _PyAST_Optimize(
     struct _mod *,
@@ -44,7 +46,7 @@ typedef struct {
 typedef struct {
     int i_opcode;
     int i_oparg;
-    _PyCompilerSrcLocation i_loc;
+    _Py_SourceLocation i_loc;
     _PyCompile_ExceptHandlerInfo i_except_handler_info;
 
     /* Used by the assembler */
@@ -65,7 +67,8 @@ typedef struct {
 int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq, int lbl);
 int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
                                          int opcode, int oparg,
-                                         _PyCompilerSrcLocation loc);
+                                         _Py_SourceLocation loc);
+int _PyCompile_InstructionSequence_ApplyLabelMap(_PyCompile_InstructionSequence *seq);
 
 typedef struct {
     PyObject *u_name;
@@ -103,7 +106,7 @@ int _PyCompile_EnsureArrayLargeEnough(
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 
-// Export for '_opcode' extention module
+// Export for '_opcode' extension module
 PyAPI_FUNC(int) _PyCompile_OpcodeIsValid(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasArg(int opcode);
 PyAPI_FUNC(int) _PyCompile_OpcodeHasConst(int opcode);

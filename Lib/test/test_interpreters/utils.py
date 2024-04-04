@@ -4,8 +4,9 @@ import os.path
 import subprocess
 import sys
 import tempfile
-import threading
 from textwrap import dedent
+import threading
+import types
 import unittest
 
 from test import support
@@ -41,7 +42,7 @@ def _run_output(interp, request, init=None):
     with rpipe:
         if init:
             interp.prepare_main(init)
-        interp.exec_sync(script)
+        interp.exec(script)
         return rpipe.read()
 
 
@@ -49,7 +50,7 @@ def _run_output(interp, request, init=None):
 def _running(interp):
     r, w = os.pipe()
     def run():
-        interp.exec_sync(dedent(f"""
+        interp.exec(dedent(f"""
             # wait for "signal"
             with open({r}) as rpipe:
                 rpipe.read()
@@ -67,6 +68,9 @@ def _running(interp):
 
 class TestBase(unittest.TestCase):
 
+    def tearDown(self):
+        clean_up_interpreters()
+
     def pipe(self):
         def ensure_closed(fd):
             try:
@@ -83,6 +87,18 @@ class TestBase(unittest.TestCase):
         tempdir = os.path.realpath(tempdir)
         self.addCleanup(lambda: os_helper.rmtree(tempdir))
         return tempdir
+
+    @contextlib.contextmanager
+    def captured_thread_exception(self):
+        ctx = types.SimpleNamespace(caught=None)
+        def excepthook(args):
+            ctx.caught = args
+        orig_excepthook = threading.excepthook
+        threading.excepthook = excepthook
+        try:
+            yield ctx
+        finally:
+            threading.excepthook = orig_excepthook
 
     def make_script(self, filename, dirname=None, text=None):
         if text:
@@ -143,5 +159,19 @@ class TestBase(unittest.TestCase):
         self.assertNotEqual(exitcode, 0)
         return stdout, stderr
 
-    def tearDown(self):
-        clean_up_interpreters()
+    def assert_ns_equal(self, ns1, ns2, msg=None):
+        # This is mostly copied from TestCase.assertDictEqual.
+        self.assertEqual(type(ns1), type(ns2))
+        if ns1 == ns2:
+            return
+
+        import difflib
+        import pprint
+        from unittest.util import _common_shorten_repr
+        standardMsg = '%s != %s' % _common_shorten_repr(ns1, ns2)
+        diff = ('\n' + '\n'.join(difflib.ndiff(
+                       pprint.pformat(vars(ns1)).splitlines(),
+                       pprint.pformat(vars(ns2)).splitlines())))
+        diff = f'namespace({diff})'
+        standardMsg = self._truncateMessage(standardMsg, diff)
+        self.fail(self._formatMessage(msg, standardMsg))

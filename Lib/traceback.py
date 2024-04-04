@@ -1051,7 +1051,11 @@ class TracebackException:
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
         self._str = _safe_string(exc_value, 'exception')
-        self.__notes__ = getattr(exc_value, '__notes__', None)
+        try:
+            self.__notes__ = getattr(exc_value, '__notes__', None)
+        except Exception as e:
+            self.__notes__ = [
+                f'Ignored error getting __notes__: {_safe_string(e, '__notes__', repr)}']
 
         self._is_syntax_error = False
         self._have_exc_type = exc_type is not None
@@ -1496,6 +1500,13 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             self = frame.f_locals['self']
             if hasattr(self, wrong_name):
                 return f"self.{wrong_name}"
+
+    try:
+        import _suggestions
+    except ImportError:
+        pass
+    else:
+        return _suggestions._generate_suggestions(d, wrong_name)
 
     # Compute closest match
 

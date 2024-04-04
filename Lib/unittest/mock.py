@@ -573,7 +573,7 @@ class NonCallableMock(Base):
         if self._mock_delegate is not None:
             ret = self._mock_delegate.return_value
 
-        if ret is DEFAULT:
+        if ret is DEFAULT and self._mock_wraps is None:
             ret = self._get_child_mock(
                 _new_parent=self, _new_name='()'
             )
@@ -1010,8 +1010,8 @@ class NonCallableMock(Base):
                                     for e in expected])
                 raise AssertionError(
                     f'{problem}\n'
-                    f'Expected: {_CallList(calls)}'
-                    f'{self._calls_repr(prefix="  Actual").rstrip(".")}'
+                    f'Expected: {_CallList(calls)}\n'
+                    f'  Actual: {safe_repr(self.mock_calls)}'
                 ) from cause
             return
 
@@ -1085,7 +1085,7 @@ class NonCallableMock(Base):
         return klass(**kw)
 
 
-    def _calls_repr(self, prefix="Calls"):
+    def _calls_repr(self):
         """Renders self.mock_calls as a string.
 
         Example: "\nCalls: [call(1), call(2)]."
@@ -1095,7 +1095,7 @@ class NonCallableMock(Base):
         """
         if not self.mock_calls:
             return ""
-        return f"\n{prefix}: {safe_repr(self.mock_calls)}."
+        return f"\nCalls: {safe_repr(self.mock_calls)}."
 
 
 # Denylist for forbidden attribute names in safe mode
@@ -1232,6 +1232,9 @@ class CallableMixin(Base):
                 return result
 
         if self._mock_return_value is not DEFAULT:
+            return self.return_value
+
+        if self._mock_delegate and self._mock_delegate.return_value is not DEFAULT:
             return self.return_value
 
         if self._mock_wraps is not None:
@@ -2229,8 +2232,11 @@ class MagicProxy(Base):
         return self.create_mock()
 
 
-_CODE_ATTRS = dir(CodeType)
-_CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+try:
+    _CODE_SIG = inspect.signature(partial(CodeType.__init__, None))
+    _CODE_ATTRS = dir(CodeType)
+except ValueError:
+    _CODE_SIG = None
 
 
 class AsyncMockMixin(Base):
@@ -2250,9 +2256,12 @@ class AsyncMockMixin(Base):
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
-        code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
-        code_mock.__dict__["_spec_class"] = CodeType
-        code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        if _CODE_SIG:
+            code_mock = NonCallableMock(spec_set=_CODE_ATTRS)
+            code_mock.__dict__["_spec_class"] = CodeType
+            code_mock.__dict__["_spec_signature"] = _CODE_SIG
+        else:
+            code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = (
             inspect.CO_COROUTINE
             + inspect.CO_VARARGS
@@ -2779,9 +2788,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     if _parent is not None and not instance:
         _parent._mock_children[_name] = mock
 
+    wrapped = kwargs.get('wraps')
+
     if is_type and not instance and 'return_value' not in kwargs:
         mock.return_value = create_autospec(spec, spec_set, instance=True,
-                                            _name='()', _parent=mock)
+                                            _name='()', _parent=mock,
+                                            wraps=wrapped)
 
     for entry in dir(spec):
         if _is_magic(entry):
@@ -2803,6 +2815,9 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
             continue
 
         kwargs = {'spec': original}
+        # Wrap child attributes also.
+        if wrapped and hasattr(wrapped, entry):
+            kwargs.update(wraps=original)
         if spec_set:
             kwargs = {'spec_set': original}
 

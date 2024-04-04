@@ -43,11 +43,13 @@ import sys
 import tempfile
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
 from test.support import asyncore
+from test.support import smtpd
 from test.support.logging_helper import TestHandler
 import textwrap
 import threading
@@ -61,9 +63,6 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
-
-with warnings.catch_warnings():
-    from . import smtpd
 
 try:
     import win32evtlog, win32evtlogutil, pywintypes
@@ -81,6 +80,9 @@ except ImportError:
 skip_if_asan_fork = unittest.skipIf(
     support.HAVE_ASAN_FORK_BUG,
     "libasan has a pthread_create() dead lock related to thread+fork")
+skip_if_tsan_fork = unittest.skipIf(
+    support.check_sanitizer(thread=True),
+    "TSAN doesn't support threads after fork")
 
 
 class BaseTest(unittest.TestCase):
@@ -604,7 +606,7 @@ class HandlerTest(BaseTest):
     def test_builtin_handlers(self):
         # We can't actually *use* too many handlers in the tests,
         # but we can try instantiating them with various options
-        if sys.platform in ('linux', 'darwin'):
+        if sys.platform in ('linux', 'android', 'darwin'):
             for existing in (True, False):
                 fn = make_temp_file()
                 if not existing:
@@ -668,7 +670,7 @@ class HandlerTest(BaseTest):
                     (logging.handlers.RotatingFileHandler, (pfn, 'a')),
                     (logging.handlers.TimedRotatingFileHandler, (pfn, 'h')),
                 )
-        if sys.platform in ('linux', 'darwin'):
+        if sys.platform in ('linux', 'android', 'darwin'):
             cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
         for cls, args in cases:
             h = cls(*args, encoding="utf-8")
@@ -732,6 +734,7 @@ class HandlerTest(BaseTest):
     @support.requires_fork()
     @threading_helper.requires_working_threading()
     @skip_if_asan_fork
+    @skip_if_tsan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -3922,6 +3925,26 @@ class ConfigDictTest(BaseTest):
         # Logger should be enabled, since explicitly mentioned
         self.assertFalse(logger.disabled)
 
+    def test_111615(self):
+        # See gh-111615
+        import_helper.import_module('_multiprocessing')  # see gh-113692
+        mp = import_helper.import_module('multiprocessing')
+
+        config = {
+            'version': 1,
+            'handlers': {
+                'sink': {
+                    'class': 'logging.handlers.QueueHandler',
+                    'queue': mp.get_context('spawn').Queue(),
+                },
+            },
+            'root': {
+                'handlers': ['sink'],
+                'level': 'DEBUG',
+            },
+        }
+        logging.config.dictConfig(config)
+
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
         logged = []
@@ -4070,6 +4093,7 @@ class QueueHandlerTest(BaseTest):
             self.que_logger.critical(self.next_message())
         finally:
             listener.stop()
+            listener.stop()  # gh-114706 - ensure no crash if called again
         self.assertTrue(handler.matches(levelno=logging.WARNING, message='1'))
         self.assertTrue(handler.matches(levelno=logging.ERROR, message='2'))
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='3'))
@@ -5458,6 +5482,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertEqual(record.levelno, logging.CRITICAL)
         self.assertEqual(record.msg, msg)
         self.assertEqual(record.args, (self.recording,))
+        self.assertEqual(record.funcName, 'test_critical')
 
     def test_is_enabled_for(self):
         old_disable = self.adapter.logger.manager.disable
@@ -5476,15 +5501,9 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertFalse(self.adapter.hasHandlers())
 
     def test_nested(self):
-        class Adapter(logging.LoggerAdapter):
-            prefix = 'Adapter'
-
-            def process(self, msg, kwargs):
-                return f"{self.prefix} {msg}", kwargs
-
         msg = 'Adapters can be nested, yo.'
-        adapter = Adapter(logger=self.logger, extra=None)
-        adapter_adapter = Adapter(logger=adapter, extra=None)
+        adapter = PrefixAdapter(logger=self.logger, extra=None)
+        adapter_adapter = PrefixAdapter(logger=adapter, extra=None)
         adapter_adapter.prefix = 'AdapterAdapter'
         self.assertEqual(repr(adapter), repr(adapter_adapter))
         adapter_adapter.log(logging.CRITICAL, msg, self.recording)
@@ -5493,6 +5512,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertEqual(record.levelno, logging.CRITICAL)
         self.assertEqual(record.msg, f"Adapter AdapterAdapter {msg}")
         self.assertEqual(record.args, (self.recording,))
+        self.assertEqual(record.funcName, 'test_nested')
         orig_manager = adapter_adapter.manager
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
@@ -5507,6 +5527,61 @@ class LoggerAdapterTest(unittest.TestCase):
         self.assertIs(adapter_adapter.manager, orig_manager)
         self.assertIs(adapter.manager, orig_manager)
         self.assertIs(self.logger.manager, orig_manager)
+
+    def test_styled_adapter(self):
+        # Test an example from the Cookbook.
+        records = self.recording.records
+        adapter = StyleAdapter(self.logger)
+        adapter.warning('Hello, {}!', 'world')
+        self.assertEqual(str(records[-1].msg), 'Hello, world!')
+        self.assertEqual(records[-1].funcName, 'test_styled_adapter')
+        adapter.log(logging.WARNING, 'Goodbye {}.', 'world')
+        self.assertEqual(str(records[-1].msg), 'Goodbye world.')
+        self.assertEqual(records[-1].funcName, 'test_styled_adapter')
+
+    def test_nested_styled_adapter(self):
+        records = self.recording.records
+        adapter = PrefixAdapter(self.logger)
+        adapter.prefix = '{}'
+        adapter2 = StyleAdapter(adapter)
+        adapter2.warning('Hello, {}!', 'world')
+        self.assertEqual(str(records[-1].msg), '{} Hello, world!')
+        self.assertEqual(records[-1].funcName, 'test_nested_styled_adapter')
+        adapter2.log(logging.WARNING, 'Goodbye {}.', 'world')
+        self.assertEqual(str(records[-1].msg), '{} Goodbye world.')
+        self.assertEqual(records[-1].funcName, 'test_nested_styled_adapter')
+
+    def test_find_caller_with_stacklevel(self):
+        the_level = 1
+        trigger = self.adapter.warning
+
+        def innermost():
+            trigger('test', stacklevel=the_level)
+
+        def inner():
+            innermost()
+
+        def outer():
+            inner()
+
+        records = self.recording.records
+        outer()
+        self.assertEqual(records[-1].funcName, 'innermost')
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'inner')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'outer')
+        self.assertGreater(records[-1].lineno, lineno)
+        lineno = records[-1].lineno
+        the_level += 1
+        outer()
+        self.assertEqual(records[-1].funcName, 'test_find_caller_with_stacklevel')
+        self.assertGreater(records[-1].lineno, lineno)
 
     def test_extra_in_records(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
@@ -5547,6 +5622,30 @@ class LoggerAdapterTest(unittest.TestCase):
         record = self.recording.records[0]
         self.assertTrue(hasattr(record, 'foo'))
         self.assertEqual(record.foo, '2')
+
+
+class PrefixAdapter(logging.LoggerAdapter):
+    prefix = 'Adapter'
+
+    def process(self, msg, kwargs):
+        return f"{self.prefix} {msg}", kwargs
+
+
+class Message:
+    def __init__(self, fmt, args):
+        self.fmt = fmt
+        self.args = args
+
+    def __str__(self):
+        return self.fmt.format(*self.args)
+
+
+class StyleAdapter(logging.LoggerAdapter):
+    def log(self, level, msg, /, *args, stacklevel=1, **kwargs):
+        if self.isEnabledFor(level):
+            msg, kwargs = self.process(msg, kwargs)
+            self.logger.log(level, Message(msg, args), **kwargs,
+                            stacklevel=stacklevel+1)
 
 
 class LoggerTest(BaseTest, AssertErrorMessage):
@@ -5985,6 +6084,52 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                     print(tf.read())
         self.assertTrue(found, msg=msg)
 
+    def test_rollover_at_midnight(self, weekly=False):
+        os_helper.unlink(self.fn)
+        now = datetime.datetime.now()
+        atTime = now.time()
+        if not 0.1 < atTime.microsecond/1e6 < 0.9:
+            # The test requires all records to be emitted within
+            # the range of the same whole second.
+            time.sleep((0.1 - atTime.microsecond/1e6) % 1.0)
+            now = datetime.datetime.now()
+            atTime = now.time()
+        atTime = atTime.replace(microsecond=0)
+        fmt = logging.Formatter('%(asctime)s %(message)s')
+        when = f'W{now.weekday()}' if weekly else 'MIDNIGHT'
+        for i in range(3):
+            fh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, encoding="utf-8", when=when, atTime=atTime)
+            fh.setFormatter(fmt)
+            r2 = logging.makeLogRecord({'msg': f'testing1 {i}'})
+            fh.emit(r2)
+            fh.close()
+        self.assertLogFile(self.fn)
+        with open(self.fn, encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                self.assertIn(f'testing1 {i}', line)
+
+        os.utime(self.fn, (now.timestamp() - 1,)*2)
+        for i in range(2):
+            fh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, encoding="utf-8", when=when, atTime=atTime)
+            fh.setFormatter(fmt)
+            r2 = logging.makeLogRecord({'msg': f'testing2 {i}'})
+            fh.emit(r2)
+            fh.close()
+        rolloverDate = now - datetime.timedelta(days=7 if weekly else 1)
+        otherfn = f'{self.fn}.{rolloverDate:%Y-%m-%d}'
+        self.assertLogFile(otherfn)
+        with open(self.fn, encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                self.assertIn(f'testing2 {i}', line)
+        with open(otherfn, encoding="utf-8") as f:
+            for i, line in enumerate(f):
+                self.assertIn(f'testing1 {i}', line)
+
+    def test_rollover_at_weekday(self):
+        self.test_rollover_at_midnight(weekly=True)
+
     def test_invalid(self):
         assertRaises = self.assertRaises
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
@@ -5994,22 +6139,47 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
                      self.fn, 'W7', encoding="utf-8", delay=True)
 
+    # TODO: Test for utc=False.
     def test_compute_rollover_daily_attime(self):
         currentTime = 0
+        rh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT',
+            utc=True, atTime=None)
+        try:
+            actual = rh.computeRollover(currentTime)
+            self.assertEqual(actual, currentTime + 24 * 60 * 60)
+
+            actual = rh.computeRollover(currentTime + 24 * 60 * 60 - 1)
+            self.assertEqual(actual, currentTime + 24 * 60 * 60)
+
+            actual = rh.computeRollover(currentTime + 24 * 60 * 60)
+            self.assertEqual(actual, currentTime + 48 * 60 * 60)
+
+            actual = rh.computeRollover(currentTime + 25 * 60 * 60)
+            self.assertEqual(actual, currentTime + 48 * 60 * 60)
+        finally:
+            rh.close()
+
         atTime = datetime.time(12, 0, 0)
         rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, encoding="utf-8", when='MIDNIGHT', interval=1, backupCount=0,
+            self.fn, encoding="utf-8", when='MIDNIGHT',
             utc=True, atTime=atTime)
         try:
             actual = rh.computeRollover(currentTime)
             self.assertEqual(actual, currentTime + 12 * 60 * 60)
+
+            actual = rh.computeRollover(currentTime + 12 * 60 * 60 - 1)
+            self.assertEqual(actual, currentTime + 12 * 60 * 60)
+
+            actual = rh.computeRollover(currentTime + 12 * 60 * 60)
+            self.assertEqual(actual, currentTime + 36 * 60 * 60)
 
             actual = rh.computeRollover(currentTime + 13 * 60 * 60)
             self.assertEqual(actual, currentTime + 36 * 60 * 60)
         finally:
             rh.close()
 
-    #@unittest.skipIf(True, 'Temporarily skipped while failures investigated.')
+    # TODO: Test for utc=False.
     def test_compute_rollover_weekly_attime(self):
         currentTime = int(time.time())
         today = currentTime - currentTime % 86400
@@ -6034,14 +6204,28 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 expected += 12 * 60 * 60
                 # Add in adjustment for today
                 expected += today
+
                 actual = rh.computeRollover(today)
                 if actual != expected:
                     print('failed in timezone: %d' % time.timezone)
                     print('local vars: %s' % locals())
                 self.assertEqual(actual, expected)
+
+                actual = rh.computeRollover(today + 12 * 60 * 60 - 1)
+                if actual != expected:
+                    print('failed in timezone: %d' % time.timezone)
+                    print('local vars: %s' % locals())
+                self.assertEqual(actual, expected)
+
                 if day == wday:
                     # goes into following week
                     expected += 7 * 24 * 60 * 60
+                actual = rh.computeRollover(today + 12 * 60 * 60)
+                if actual != expected:
+                    print('failed in timezone: %d' % time.timezone)
+                    print('local vars: %s' % locals())
+                self.assertEqual(actual, expected)
+
                 actual = rh.computeRollover(today + 13 * 60 * 60)
                 if actual != expected:
                     print('failed in timezone: %d' % time.timezone)
@@ -6059,7 +6243,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         for i in range(10):
             times.append(dt.strftime('%Y-%m-%d_%H-%M-%S'))
             dt += datetime.timedelta(seconds=5)
-        prefixes = ('a.b', 'a.b.c', 'd.e', 'd.e.f')
+        prefixes = ('a.b', 'a.b.c', 'd.e', 'd.e.f', 'g')
         files = []
         rotators = []
         for prefix in prefixes:
@@ -6072,10 +6256,22 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             if prefix.startswith('a.b'):
                 for t in times:
                     files.append('%s.log.%s' % (prefix, t))
-            else:
-                rotator.namer = lambda name: name.replace('.log', '') + '.log'
+            elif prefix.startswith('d.e'):
+                def namer(filename):
+                    dirname, basename = os.path.split(filename)
+                    basename = basename.replace('.log', '') + '.log'
+                    return os.path.join(dirname, basename)
+                rotator.namer = namer
                 for t in times:
                     files.append('%s.%s.log' % (prefix, t))
+            elif prefix == 'g':
+                def namer(filename):
+                    dirname, basename = os.path.split(filename)
+                    basename = 'g' + basename[6:] + '.oldlog'
+                    return os.path.join(dirname, basename)
+                rotator.namer = namer
+                for t in times:
+                    files.append('g%s.oldlog' % t)
         # Create empty files
         for fn in files:
             p = os.path.join(wd, fn)
@@ -6085,18 +6281,423 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         for i, prefix in enumerate(prefixes):
             rotator = rotators[i]
             candidates = rotator.getFilesToDelete()
-            self.assertEqual(len(candidates), 3)
+            self.assertEqual(len(candidates), 3, candidates)
             if prefix.startswith('a.b'):
                 p = '%s.log.' % prefix
                 for c in candidates:
                     d, fn = os.path.split(c)
                     self.assertTrue(fn.startswith(p))
-            else:
+            elif prefix.startswith('d.e'):
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.endswith('.log'))
+                    self.assertTrue(fn.endswith('.log'), fn)
                     self.assertTrue(fn.startswith(prefix + '.') and
                                     fn[len(prefix) + 2].isdigit())
+            elif prefix == 'g':
+                for c in candidates:
+                    d, fn = os.path.split(c)
+                    self.assertTrue(fn.endswith('.oldlog'))
+                    self.assertTrue(fn.startswith('g') and fn[1].isdigit())
+
+    def test_compute_files_to_delete_same_filename_different_extensions(self):
+        # See GH-93205 for background
+        wd = pathlib.Path(tempfile.mkdtemp(prefix='test_logging_'))
+        self.addCleanup(shutil.rmtree, wd)
+        times = []
+        dt = datetime.datetime.now()
+        n_files = 10
+        for _ in range(n_files):
+            times.append(dt.strftime('%Y-%m-%d_%H-%M-%S'))
+            dt += datetime.timedelta(seconds=5)
+        prefixes = ('a.log', 'a.log.b')
+        files = []
+        rotators = []
+        for i, prefix in enumerate(prefixes):
+            backupCount = i+1
+            rotator = logging.handlers.TimedRotatingFileHandler(wd / prefix, when='s',
+                                                                interval=5,
+                                                                backupCount=backupCount,
+                                                                delay=True)
+            rotators.append(rotator)
+            for t in times:
+                files.append('%s.%s' % (prefix, t))
+        for t in times:
+            files.append('a.log.%s.c' % t)
+        # Create empty files
+        for f in files:
+            (wd / f).touch()
+        # Now the checks that only the correct files are offered up for deletion
+        for i, prefix in enumerate(prefixes):
+            backupCount = i+1
+            rotator = rotators[i]
+            candidates = rotator.getFilesToDelete()
+            self.assertEqual(len(candidates), n_files - backupCount, candidates)
+            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\Z")
+            for c in candidates:
+                d, fn = os.path.split(c)
+                self.assertTrue(fn.startswith(prefix+'.'))
+                suffix = fn[(len(prefix)+1):]
+                self.assertRegex(suffix, matcher)
+
+    # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
+    # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_compute_rollover_MIDNIGHT_local(self):
+        # DST begins at 2012-3-11T02:00:00 and ends at 2012-11-4T02:00:00.
+        DT = datetime.datetime
+        def test(current, expected):
+            actual = fh.computeRollover(current.timestamp())
+            diff = actual - expected.timestamp()
+            if diff:
+                self.assertEqual(diff, 0, datetime.timedelta(seconds=diff))
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False)
+
+        test(DT(2012, 3, 10, 23, 59, 59), DT(2012, 3, 11, 0, 0))
+        test(DT(2012, 3, 11, 0, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 11, 1, 0), DT(2012, 3, 12, 0, 0))
+
+        test(DT(2012, 11, 3, 23, 59, 59), DT(2012, 11, 4, 0, 0))
+        test(DT(2012, 11, 4, 0, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 5, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False,
+            atTime=datetime.time(12, 0, 0))
+
+        test(DT(2012, 3, 10, 11, 59, 59), DT(2012, 3, 10, 12, 0))
+        test(DT(2012, 3, 10, 12, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 10, 13, 0), DT(2012, 3, 11, 12, 0))
+
+        test(DT(2012, 11, 3, 11, 59, 59), DT(2012, 11, 3, 12, 0))
+        test(DT(2012, 11, 3, 12, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 11, 3, 13, 0), DT(2012, 11, 4, 12, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False,
+            atTime=datetime.time(2, 0, 0))
+
+        test(DT(2012, 3, 10, 1, 59, 59), DT(2012, 3, 10, 2, 0))
+        # 2:00:00 is the same as 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 10, 2, 0), DT(2012, 3, 11, 3, 0))
+        test(DT(2012, 3, 10, 3, 0), DT(2012, 3, 11, 3, 0))
+
+        test(DT(2012, 3, 11, 1, 59, 59), DT(2012, 3, 11, 3, 0))
+        # No time between 2:00:00 and 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 11, 3, 0), DT(2012, 3, 12, 2, 0))
+        test(DT(2012, 3, 11, 4, 0), DT(2012, 3, 12, 2, 0))
+
+        test(DT(2012, 11, 3, 1, 59, 59), DT(2012, 11, 3, 2, 0))
+        test(DT(2012, 11, 3, 2, 0), DT(2012, 11, 4, 2, 0))
+        test(DT(2012, 11, 3, 3, 0), DT(2012, 11, 4, 2, 0))
+
+        # 1:00:00-2:00:00 is repeated twice at 2012-11-4.
+        test(DT(2012, 11, 4, 1, 59, 59), DT(2012, 11, 4, 2, 0))
+        test(DT(2012, 11, 4, 1, 59, 59, fold=1), DT(2012, 11, 4, 2, 0))
+        test(DT(2012, 11, 4, 2, 0), DT(2012, 11, 5, 2, 0))
+        test(DT(2012, 11, 4, 3, 0), DT(2012, 11, 5, 2, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False,
+            atTime=datetime.time(2, 30, 0))
+
+        test(DT(2012, 3, 10, 2, 29, 59), DT(2012, 3, 10, 2, 30))
+        # No time 2:30:00 at 2012-3-11.
+        test(DT(2012, 3, 10, 2, 30), DT(2012, 3, 11, 3, 30))
+        test(DT(2012, 3, 10, 3, 0), DT(2012, 3, 11, 3, 30))
+
+        test(DT(2012, 3, 11, 1, 59, 59), DT(2012, 3, 11, 3, 30))
+        # No time between 2:00:00 and 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 11, 3, 0), DT(2012, 3, 12, 2, 30))
+        test(DT(2012, 3, 11, 3, 30), DT(2012, 3, 12, 2, 30))
+
+        test(DT(2012, 11, 3, 2, 29, 59), DT(2012, 11, 3, 2, 30))
+        test(DT(2012, 11, 3, 2, 30), DT(2012, 11, 4, 2, 30))
+        test(DT(2012, 11, 3, 3, 0), DT(2012, 11, 4, 2, 30))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False,
+            atTime=datetime.time(1, 30, 0))
+
+        test(DT(2012, 3, 11, 1, 29, 59), DT(2012, 3, 11, 1, 30))
+        test(DT(2012, 3, 11, 1, 30), DT(2012, 3, 12, 1, 30))
+        test(DT(2012, 3, 11, 1, 59, 59), DT(2012, 3, 12, 1, 30))
+        # No time between 2:00:00 and 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 11, 3, 0), DT(2012, 3, 12, 1, 30))
+        test(DT(2012, 3, 11, 3, 30), DT(2012, 3, 12, 1, 30))
+
+        # 1:00:00-2:00:00 is repeated twice at 2012-11-4.
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 4, 1, 30))
+        test(DT(2012, 11, 4, 1, 29, 59), DT(2012, 11, 4, 1, 30))
+        test(DT(2012, 11, 4, 1, 30), DT(2012, 11, 5, 1, 30))
+        test(DT(2012, 11, 4, 1, 59, 59), DT(2012, 11, 5, 1, 30))
+        # It is weird, but the rollover date jumps back from 2012-11-5
+        # to 2012-11-4.
+        test(DT(2012, 11, 4, 1, 0, fold=1), DT(2012, 11, 4, 1, 30, fold=1))
+        test(DT(2012, 11, 4, 1, 29, 59, fold=1), DT(2012, 11, 4, 1, 30, fold=1))
+        test(DT(2012, 11, 4, 1, 30, fold=1), DT(2012, 11, 5, 1, 30))
+        test(DT(2012, 11, 4, 1, 59, 59, fold=1), DT(2012, 11, 5, 1, 30))
+        test(DT(2012, 11, 4, 2, 0), DT(2012, 11, 5, 1, 30))
+        test(DT(2012, 11, 4, 2, 30), DT(2012, 11, 5, 1, 30))
+
+        fh.close()
+
+    # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
+    # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_compute_rollover_W6_local(self):
+        # DST begins at 2012-3-11T02:00:00 and ends at 2012-11-4T02:00:00.
+        DT = datetime.datetime
+        def test(current, expected):
+            actual = fh.computeRollover(current.timestamp())
+            diff = actual - expected.timestamp()
+            if diff:
+                self.assertEqual(diff, 0, datetime.timedelta(seconds=diff))
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False)
+
+        test(DT(2012, 3, 4, 23, 59, 59), DT(2012, 3, 5, 0, 0))
+        test(DT(2012, 3, 5, 0, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 5, 1, 0), DT(2012, 3, 12, 0, 0))
+
+        test(DT(2012, 10, 28, 23, 59, 59), DT(2012, 10, 29, 0, 0))
+        test(DT(2012, 10, 29, 0, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 10, 29, 1, 0), DT(2012, 11, 5, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False,
+            atTime=datetime.time(0, 0, 0))
+
+        test(DT(2012, 3, 10, 23, 59, 59), DT(2012, 3, 11, 0, 0))
+        test(DT(2012, 3, 11, 0, 0), DT(2012, 3, 18, 0, 0))
+        test(DT(2012, 3, 11, 1, 0), DT(2012, 3, 18, 0, 0))
+
+        test(DT(2012, 11, 3, 23, 59, 59), DT(2012, 11, 4, 0, 0))
+        test(DT(2012, 11, 4, 0, 0), DT(2012, 11, 11, 0, 0))
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 11, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False,
+            atTime=datetime.time(12, 0, 0))
+
+        test(DT(2012, 3, 4, 11, 59, 59), DT(2012, 3, 4, 12, 0))
+        test(DT(2012, 3, 4, 12, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 4, 13, 0), DT(2012, 3, 11, 12, 0))
+
+        test(DT(2012, 10, 28, 11, 59, 59), DT(2012, 10, 28, 12, 0))
+        test(DT(2012, 10, 28, 12, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 10, 28, 13, 0), DT(2012, 11, 4, 12, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False,
+            atTime=datetime.time(2, 0, 0))
+
+        test(DT(2012, 3, 4, 1, 59, 59), DT(2012, 3, 4, 2, 0))
+        # 2:00:00 is the same as 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 4, 2, 0), DT(2012, 3, 11, 3, 0))
+        test(DT(2012, 3, 4, 3, 0), DT(2012, 3, 11, 3, 0))
+
+        test(DT(2012, 3, 11, 1, 59, 59), DT(2012, 3, 11, 3, 0))
+        # No time between 2:00:00 and 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 11, 3, 0), DT(2012, 3, 18, 2, 0))
+        test(DT(2012, 3, 11, 4, 0), DT(2012, 3, 18, 2, 0))
+
+        test(DT(2012, 10, 28, 1, 59, 59), DT(2012, 10, 28, 2, 0))
+        test(DT(2012, 10, 28, 2, 0), DT(2012, 11, 4, 2, 0))
+        test(DT(2012, 10, 28, 3, 0), DT(2012, 11, 4, 2, 0))
+
+        # 1:00:00-2:00:00 is repeated twice at 2012-11-4.
+        test(DT(2012, 11, 4, 1, 59, 59), DT(2012, 11, 4, 2, 0))
+        test(DT(2012, 11, 4, 1, 59, 59, fold=1), DT(2012, 11, 4, 2, 0))
+        test(DT(2012, 11, 4, 2, 0), DT(2012, 11, 11, 2, 0))
+        test(DT(2012, 11, 4, 3, 0), DT(2012, 11, 11, 2, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False,
+            atTime=datetime.time(2, 30, 0))
+
+        test(DT(2012, 3, 4, 2, 29, 59), DT(2012, 3, 4, 2, 30))
+        # No time 2:30:00 at 2012-3-11.
+        test(DT(2012, 3, 4, 2, 30), DT(2012, 3, 11, 3, 30))
+        test(DT(2012, 3, 4, 3, 0), DT(2012, 3, 11, 3, 30))
+
+        test(DT(2012, 3, 11, 1, 59, 59), DT(2012, 3, 11, 3, 30))
+        # No time between 2:00:00 and 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 11, 3, 0), DT(2012, 3, 18, 2, 30))
+        test(DT(2012, 3, 11, 3, 30), DT(2012, 3, 18, 2, 30))
+
+        test(DT(2012, 10, 28, 2, 29, 59), DT(2012, 10, 28, 2, 30))
+        test(DT(2012, 10, 28, 2, 30), DT(2012, 11, 4, 2, 30))
+        test(DT(2012, 10, 28, 3, 0), DT(2012, 11, 4, 2, 30))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False,
+            atTime=datetime.time(1, 30, 0))
+
+        test(DT(2012, 3, 11, 1, 29, 59), DT(2012, 3, 11, 1, 30))
+        test(DT(2012, 3, 11, 1, 30), DT(2012, 3, 18, 1, 30))
+        test(DT(2012, 3, 11, 1, 59, 59), DT(2012, 3, 18, 1, 30))
+        # No time between 2:00:00 and 3:00:00 at 2012-3-11.
+        test(DT(2012, 3, 11, 3, 0), DT(2012, 3, 18, 1, 30))
+        test(DT(2012, 3, 11, 3, 30), DT(2012, 3, 18, 1, 30))
+
+        # 1:00:00-2:00:00 is repeated twice at 2012-11-4.
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 4, 1, 30))
+        test(DT(2012, 11, 4, 1, 29, 59), DT(2012, 11, 4, 1, 30))
+        test(DT(2012, 11, 4, 1, 30), DT(2012, 11, 11, 1, 30))
+        test(DT(2012, 11, 4, 1, 59, 59), DT(2012, 11, 11, 1, 30))
+        # It is weird, but the rollover date jumps back from 2012-11-11
+        # to 2012-11-4.
+        test(DT(2012, 11, 4, 1, 0, fold=1), DT(2012, 11, 4, 1, 30, fold=1))
+        test(DT(2012, 11, 4, 1, 29, 59, fold=1), DT(2012, 11, 4, 1, 30, fold=1))
+        test(DT(2012, 11, 4, 1, 30, fold=1), DT(2012, 11, 11, 1, 30))
+        test(DT(2012, 11, 4, 1, 59, 59, fold=1), DT(2012, 11, 11, 1, 30))
+        test(DT(2012, 11, 4, 2, 0), DT(2012, 11, 11, 1, 30))
+        test(DT(2012, 11, 4, 2, 30), DT(2012, 11, 11, 1, 30))
+
+        fh.close()
+
+    # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
+    # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_compute_rollover_MIDNIGHT_local_interval(self):
+        # DST begins at 2012-3-11T02:00:00 and ends at 2012-11-4T02:00:00.
+        DT = datetime.datetime
+        def test(current, expected):
+            actual = fh.computeRollover(current.timestamp())
+            diff = actual - expected.timestamp()
+            if diff:
+                self.assertEqual(diff, 0, datetime.timedelta(seconds=diff))
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False, interval=3)
+
+        test(DT(2012, 3, 8, 23, 59, 59), DT(2012, 3, 11, 0, 0))
+        test(DT(2012, 3, 9, 0, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 9, 1, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 10, 23, 59, 59), DT(2012, 3, 13, 0, 0))
+        test(DT(2012, 3, 11, 0, 0), DT(2012, 3, 14, 0, 0))
+        test(DT(2012, 3, 11, 1, 0), DT(2012, 3, 14, 0, 0))
+
+        test(DT(2012, 11, 1, 23, 59, 59), DT(2012, 11, 4, 0, 0))
+        test(DT(2012, 11, 2, 0, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 11, 2, 1, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 11, 3, 23, 59, 59), DT(2012, 11, 6, 0, 0))
+        test(DT(2012, 11, 4, 0, 0), DT(2012, 11, 7, 0, 0))
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 7, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='MIDNIGHT', utc=False, interval=3,
+            atTime=datetime.time(12, 0, 0))
+
+        test(DT(2012, 3, 8, 11, 59, 59), DT(2012, 3, 10, 12, 0))
+        test(DT(2012, 3, 8, 12, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 8, 13, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 10, 11, 59, 59), DT(2012, 3, 12, 12, 0))
+        test(DT(2012, 3, 10, 12, 0), DT(2012, 3, 13, 12, 0))
+        test(DT(2012, 3, 10, 13, 0), DT(2012, 3, 13, 12, 0))
+
+        test(DT(2012, 11, 1, 11, 59, 59), DT(2012, 11, 3, 12, 0))
+        test(DT(2012, 11, 1, 12, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 11, 1, 13, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 11, 3, 11, 59, 59), DT(2012, 11, 5, 12, 0))
+        test(DT(2012, 11, 3, 12, 0), DT(2012, 11, 6, 12, 0))
+        test(DT(2012, 11, 3, 13, 0), DT(2012, 11, 6, 12, 0))
+
+        fh.close()
+
+    # Run with US-style DST rules: DST begins 2 a.m. on second Sunday in
+    # March (M3.2.0) and ends 2 a.m. on first Sunday in November (M11.1.0).
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_compute_rollover_W6_local_interval(self):
+        # DST begins at 2012-3-11T02:00:00 and ends at 2012-11-4T02:00:00.
+        DT = datetime.datetime
+        def test(current, expected):
+            actual = fh.computeRollover(current.timestamp())
+            diff = actual - expected.timestamp()
+            if diff:
+                self.assertEqual(diff, 0, datetime.timedelta(seconds=diff))
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False, interval=3)
+
+        test(DT(2012, 2, 19, 23, 59, 59), DT(2012, 3, 5, 0, 0))
+        test(DT(2012, 2, 20, 0, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 2, 20, 1, 0), DT(2012, 3, 12, 0, 0))
+        test(DT(2012, 3, 4, 23, 59, 59), DT(2012, 3, 19, 0, 0))
+        test(DT(2012, 3, 5, 0, 0), DT(2012, 3, 26, 0, 0))
+        test(DT(2012, 3, 5, 1, 0), DT(2012, 3, 26, 0, 0))
+
+        test(DT(2012, 10, 14, 23, 59, 59), DT(2012, 10, 29, 0, 0))
+        test(DT(2012, 10, 15, 0, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 10, 15, 1, 0), DT(2012, 11, 5, 0, 0))
+        test(DT(2012, 10, 28, 23, 59, 59), DT(2012, 11, 12, 0, 0))
+        test(DT(2012, 10, 29, 0, 0), DT(2012, 11, 19, 0, 0))
+        test(DT(2012, 10, 29, 1, 0), DT(2012, 11, 19, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False, interval=3,
+            atTime=datetime.time(0, 0, 0))
+
+        test(DT(2012, 2, 25, 23, 59, 59), DT(2012, 3, 11, 0, 0))
+        test(DT(2012, 2, 26, 0, 0), DT(2012, 3, 18, 0, 0))
+        test(DT(2012, 2, 26, 1, 0), DT(2012, 3, 18, 0, 0))
+        test(DT(2012, 3, 10, 23, 59, 59), DT(2012, 3, 25, 0, 0))
+        test(DT(2012, 3, 11, 0, 0), DT(2012, 4, 1, 0, 0))
+        test(DT(2012, 3, 11, 1, 0), DT(2012, 4, 1, 0, 0))
+
+        test(DT(2012, 10, 20, 23, 59, 59), DT(2012, 11, 4, 0, 0))
+        test(DT(2012, 10, 21, 0, 0), DT(2012, 11, 11, 0, 0))
+        test(DT(2012, 10, 21, 1, 0), DT(2012, 11, 11, 0, 0))
+        test(DT(2012, 11, 3, 23, 59, 59), DT(2012, 11, 18, 0, 0))
+        test(DT(2012, 11, 4, 0, 0), DT(2012, 11, 25, 0, 0))
+        test(DT(2012, 11, 4, 1, 0), DT(2012, 11, 25, 0, 0))
+
+        fh.close()
+
+        fh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, encoding="utf-8", when='W6', utc=False, interval=3,
+            atTime=datetime.time(12, 0, 0))
+
+        test(DT(2012, 2, 18, 11, 59, 59), DT(2012, 3, 4, 12, 0))
+        test(DT(2012, 2, 19, 12, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 2, 19, 13, 0), DT(2012, 3, 11, 12, 0))
+        test(DT(2012, 3, 4, 11, 59, 59), DT(2012, 3, 18, 12, 0))
+        test(DT(2012, 3, 4, 12, 0), DT(2012, 3, 25, 12, 0))
+        test(DT(2012, 3, 4, 13, 0), DT(2012, 3, 25, 12, 0))
+
+        test(DT(2012, 10, 14, 11, 59, 59), DT(2012, 10, 28, 12, 0))
+        test(DT(2012, 10, 14, 12, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 10, 14, 13, 0), DT(2012, 11, 4, 12, 0))
+        test(DT(2012, 10, 28, 11, 59, 59), DT(2012, 11, 11, 12, 0))
+        test(DT(2012, 10, 28, 12, 0), DT(2012, 11, 18, 12, 0))
+        test(DT(2012, 10, 28, 13, 0), DT(2012, 11, 18, 12, 0))
+
+        fh.close()
 
 
 def secs(**kw):
@@ -6110,40 +6711,49 @@ for when, exp in (('S', 1),
                   # current time (epoch start) is a Thursday, W0 means Monday
                   ('W0', secs(days=4, hours=24)),
                  ):
-    def test_compute_rollover(self, when=when, exp=exp):
-        rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, encoding="utf-8", when=when, interval=1, backupCount=0, utc=True)
-        currentTime = 0.0
-        actual = rh.computeRollover(currentTime)
-        if exp != actual:
-            # Failures occur on some systems for MIDNIGHT and W0.
-            # Print detailed calculation for MIDNIGHT so we can try to see
-            # what's going on
-            if when == 'MIDNIGHT':
-                try:
-                    if rh.utc:
-                        t = time.gmtime(currentTime)
-                    else:
-                        t = time.localtime(currentTime)
-                    currentHour = t[3]
-                    currentMinute = t[4]
-                    currentSecond = t[5]
-                    # r is the number of seconds left between now and midnight
-                    r = logging.handlers._MIDNIGHT - ((currentHour * 60 +
-                                                       currentMinute) * 60 +
-                            currentSecond)
-                    result = currentTime + r
-                    print('t: %s (%s)' % (t, rh.utc), file=sys.stderr)
-                    print('currentHour: %s' % currentHour, file=sys.stderr)
-                    print('currentMinute: %s' % currentMinute, file=sys.stderr)
-                    print('currentSecond: %s' % currentSecond, file=sys.stderr)
-                    print('r: %s' % r, file=sys.stderr)
-                    print('result: %s' % result, file=sys.stderr)
-                except Exception as e:
-                    print('exception in diagnostic code: %s' % e, file=sys.stderr)
-        self.assertEqual(exp, actual)
-        rh.close()
-    setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
+    for interval in 1, 3:
+        def test_compute_rollover(self, when=when, interval=interval, exp=exp):
+            rh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, encoding="utf-8", when=when, interval=interval, backupCount=0, utc=True)
+            currentTime = 0.0
+            actual = rh.computeRollover(currentTime)
+            if when.startswith('W'):
+                exp += secs(days=7*(interval-1))
+            else:
+                exp *= interval
+            if exp != actual:
+                # Failures occur on some systems for MIDNIGHT and W0.
+                # Print detailed calculation for MIDNIGHT so we can try to see
+                # what's going on
+                if when == 'MIDNIGHT':
+                    try:
+                        if rh.utc:
+                            t = time.gmtime(currentTime)
+                        else:
+                            t = time.localtime(currentTime)
+                        currentHour = t[3]
+                        currentMinute = t[4]
+                        currentSecond = t[5]
+                        # r is the number of seconds left between now and midnight
+                        r = logging.handlers._MIDNIGHT - ((currentHour * 60 +
+                                                        currentMinute) * 60 +
+                                currentSecond)
+                        result = currentTime + r
+                        print('t: %s (%s)' % (t, rh.utc), file=sys.stderr)
+                        print('currentHour: %s' % currentHour, file=sys.stderr)
+                        print('currentMinute: %s' % currentMinute, file=sys.stderr)
+                        print('currentSecond: %s' % currentSecond, file=sys.stderr)
+                        print('r: %s' % r, file=sys.stderr)
+                        print('result: %s' % result, file=sys.stderr)
+                    except Exception as e:
+                        print('exception in diagnostic code: %s' % e, file=sys.stderr)
+            self.assertEqual(exp, actual)
+            rh.close()
+        name = "test_compute_rollover_%s" % when
+        if interval > 1:
+            name += "_interval"
+        test_compute_rollover.__name__ = name
+        setattr(TimedRotatingFileHandlerTest, name, test_compute_rollover)
 
 
 @unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')

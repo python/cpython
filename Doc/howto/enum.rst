@@ -497,12 +497,29 @@ the :meth:`~Enum.__repr__` omits the inherited class' name.  For example::
     >>> Creature.DOG
     <Creature.DOG: size='medium', legs=4>
 
-Use the :func:`!dataclass` argument ``repr=False``
+Use the :func:`~dataclasses.dataclass` argument ``repr=False``
 to use the standard :func:`repr`.
 
 .. versionchanged:: 3.12
    Only the dataclass fields are shown in the value area, not the dataclass'
    name.
+
+.. note::
+
+   Adding :func:`~dataclasses.dataclass` decorator to :class:`Enum`
+   and its subclasses is not supported. It will not raise any errors,
+   but it will produce very strange results at runtime, such as members
+   being equal to each other::
+
+      >>> @dataclass               # don't do this: it does not make any sense
+      ... class Color(Enum):
+      ...    RED = 1
+      ...    BLUE = 2
+      ...
+      >>> Color.RED is Color.BLUE
+      False
+      >>> Color.RED == Color.BLUE  # problem is here: they should not be equal
+      True
 
 
 Pickling

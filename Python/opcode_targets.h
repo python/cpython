@@ -182,6 +182,8 @@ static void *opcode_targets[256] = {
     &&TARGET_COMPARE_OP_FLOAT,
     &&TARGET_COMPARE_OP_INT,
     &&TARGET_COMPARE_OP_STR,
+    &&TARGET_CONTAINS_OP_DICT,
+    &&TARGET_CONTAINS_OP_SET,
     &&TARGET_FOR_ITER_GEN,
     &&TARGET_FOR_ITER_LIST,
     &&TARGET_FOR_ITER_RANGE,
@@ -233,8 +235,6 @@ static void *opcode_targets[256] = {
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
-    &&_unknown_opcode,
-    &&_unknown_opcode,
     &&TARGET_INSTRUMENTED_RESUME,
     &&TARGET_INSTRUMENTED_END_FOR,
     &&TARGET_INSTRUMENTED_END_SEND,
@@ -254,4 +254,5 @@ static void *opcode_targets[256] = {
     &&TARGET_INSTRUMENTED_POP_JUMP_IF_NONE,
     &&TARGET_INSTRUMENTED_POP_JUMP_IF_NOT_NONE,
     &&TARGET_INSTRUMENTED_LINE,
-    &&_unknown_opcode};
+    &&_unknown_opcode,
+};

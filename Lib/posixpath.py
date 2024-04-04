@@ -35,7 +35,7 @@ __all__ = ["normcase","isabs","join","splitdrive","splitroot","split","splitext"
            "samefile","sameopenfile","samestat",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
            "devnull","realpath","supports_unicode_filenames","relpath",
-           "commonpath", "isjunction"]
+           "commonpath", "isjunction","isdevdrive"]
 
 
 def _get_sep(path):
@@ -187,26 +187,6 @@ def dirname(p):
     return head
 
 
-# Is a path a junction?
-
-def isjunction(path):
-    """Test whether a path is a junction
-    Junctions are not a part of posix semantics"""
-    os.fspath(path)
-    return False
-
-
-# Being true for dangling symbolic links is also useful.
-
-def lexists(path):
-    """Test whether a path exists.  Returns True for broken symbolic links"""
-    try:
-        os.lstat(path)
-    except (OSError, ValueError):
-        return False
-    return True
-
-
 # Is a path a mount point?
 # (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
 
@@ -233,15 +213,8 @@ def ismount(path):
     except (OSError, ValueError):
         return False
 
-    dev1 = s1.st_dev
-    dev2 = s2.st_dev
-    if dev1 != dev2:
-        return True     # path/.. on a different device as path
-    ino1 = s1.st_ino
-    ino2 = s2.st_ino
-    if ino1 == ino2:
-        return True     # path/.. is the same i-node as path
-    return False
+    # path/.. on a different device as path or the same i-node as path
+    return s1.st_dev != s2.st_dev or s1.st_ino == s2.st_ino
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -290,7 +263,7 @@ def expanduser(path):
             return path
         name = path[1:i]
         if isinstance(name, bytes):
-            name = str(name, 'ASCII')
+            name = name.decode('ascii')
         try:
             pwent = pwd.getpwnam(name)
         except KeyError:
@@ -379,21 +352,19 @@ except ImportError:
         path = os.fspath(path)
         if isinstance(path, bytes):
             sep = b'/'
-            empty = b''
             dot = b'.'
             dotdot = b'..'
         else:
             sep = '/'
-            empty = ''
             dot = '.'
             dotdot = '..'
-        if path == empty:
+        if not path:
             return dot
         _, initial_slashes, path = splitroot(path)
         comps = path.split(sep)
         new_comps = []
         for comp in comps:
-            if comp in (empty, dot):
+            if not comp or comp == dot:
                 continue
             if (comp != dotdot or (not initial_slashes and not new_comps) or
                  (new_comps and new_comps[-1] == dotdot)):
@@ -416,12 +387,12 @@ else:
 def abspath(path):
     """Return an absolute path."""
     path = os.fspath(path)
-    if not isabs(path):
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
+    if isinstance(path, bytes):
+        if not path.startswith(b'/'):
+            path = join(os.getcwdb(), path)
+    else:
+        if not path.startswith('/'):
+            path = join(os.getcwd(), path)
     return normpath(path)
 
 
@@ -437,6 +408,7 @@ symbolic links encountered in the path."""
 
 # Join two paths, normalizing and eliminating any symbolic links
 # encountered in the second path.
+# Two leading slashes are replaced by a single slash.
 def _joinrealpath(path, rest, strict, seen):
     if isinstance(path, bytes):
         sep = b'/'
@@ -447,7 +419,7 @@ def _joinrealpath(path, rest, strict, seen):
         curdir = '.'
         pardir = '..'
 
-    if isabs(rest):
+    if rest.startswith(sep):
         rest = rest[1:]
         path = sep
 
@@ -459,10 +431,15 @@ def _joinrealpath(path, rest, strict, seen):
         if name == pardir:
             # parent dir
             if path:
-                path, name = split(path)
+                parent, name = split(path)
                 if name == pardir:
-                    path = join(path, pardir, pardir)
+                    # ../..
+                    path = join(path, pardir)
+                else:
+                    # foo/bar/.. -> foo
+                    path = parent
             else:
+                # ..
                 path = pardir
             continue
         newpath = join(path, name)
@@ -546,10 +523,11 @@ def relpath(path, start=None):
 def commonpath(paths):
     """Given a sequence of path names, returns the longest common sub-path."""
 
+    paths = tuple(map(os.fspath, paths))
+
     if not paths:
         raise ValueError('commonpath() arg is an empty sequence')
 
-    paths = tuple(map(os.fspath, paths))
     if isinstance(paths[0], bytes):
         sep = b'/'
         curdir = b'.'
