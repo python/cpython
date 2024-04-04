@@ -126,6 +126,20 @@ bytes(cdata)
 
 #include "pycore_long.h"          // _PyLong_GetZero()
 
+/*[clinic input]
+module _ctypes
+class _ctypes.CDataType      "PyObject *" ""
+class _ctypes.PyCPointerType "PyObject *" "PyCPointerType_Type"
+class _ctypes.PyCSimpleType  "PyObject *" "PyCSimpleType_Type"
+class _ctypes.PyCData        "PyObject *" "PyCData_Type"
+class _ctypes.Simple         "PyObject *" "Simple_Type"
+class _ctypes.c_char_p       "PyObject *" ""
+class _ctypes.c_wchar_p      "PyObject *" ""
+class _ctypes.c_void_p       "PyObject *" ""
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=93e86f795c9444ba]*/
+
+#include "clinic/_ctypes.c.h"
 
 /****************************************************************/
 
@@ -1640,15 +1654,25 @@ _type_ attribute.
 
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
 
+/*[clinic input]
+_ctypes.c_wchar_p.from_param as c_wchar_p_from_param
+
+    type: self
+    cls: defining_class
+    value: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-c_wchar_p_from_param(PyObject *type, PyObject *value)
+c_wchar_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
+/*[clinic end generated code: output=e453949a2f725a4c input=d322c7237a319607]*/
 {
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
         Py_RETURN_NONE;
     }
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+    ctypes_state *st = get_module_state_by_class(cls->tp_base);
     if (PyUnicode_Check(value)) {
         PyCArgObject *parg;
         struct fielddesc *fd = _ctypes_get_fielddesc("Z");
@@ -1704,7 +1728,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
-        value = c_wchar_p_from_param(type, as_parameter);
+        value = c_wchar_p_from_param_impl(type, cls, as_parameter);
         Py_DECREF(as_parameter);
         return value;
     }
@@ -1714,15 +1738,25 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
     return NULL;
 }
 
+/*[clinic input]
+_ctypes.c_char_p.from_param as c_char_p_from_param
+
+    type: self
+    cls: defining_class
+    value: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-c_char_p_from_param(PyObject *type, PyObject *value)
+c_char_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
+/*[clinic end generated code: output=219652ab7c174aa1 input=6cf0d1b6bb4ede11]*/
 {
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
         Py_RETURN_NONE;
     }
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+    ctypes_state *st = get_module_state_by_class(cls->tp_base);
     if (PyBytes_Check(value)) {
         PyCArgObject *parg;
         struct fielddesc *fd = _ctypes_get_fielddesc("z");
@@ -1778,7 +1812,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
-        value = c_char_p_from_param(type, as_parameter);
+        value = c_char_p_from_param_impl(type, cls, as_parameter);
         Py_DECREF(as_parameter);
         return value;
     }
@@ -1788,8 +1822,18 @@ c_char_p_from_param(PyObject *type, PyObject *value)
     return NULL;
 }
 
+/*[clinic input]
+_ctypes.c_void_p.from_param as c_void_p_from_param
+
+    type: self
+    cls: defining_class
+    value: object
+    /
+[clinic start generated code]*/
+
 static PyObject *
-c_void_p_from_param(PyObject *type, PyObject *value)
+c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
+/*[clinic end generated code: output=984d0075b6038cc7 input=0e8b343fc19c77d4]*/
 {
     PyObject *as_parameter;
     int res;
@@ -1798,7 +1842,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
     if (value == Py_None) {
         Py_RETURN_NONE;
     }
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+    ctypes_state *st = get_module_state_by_class(cls->tp_base);
 
     /* Should probably allow buffer interface as well */
 /* int, long */
@@ -1920,7 +1964,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
-        value = c_void_p_from_param(type, as_parameter);
+        value = c_void_p_from_param_impl(type, cls, as_parameter);
         Py_DECREF(as_parameter);
         return value;
     }
@@ -1930,9 +1974,9 @@ c_void_p_from_param(PyObject *type, PyObject *value)
     return NULL;
 }
 
-static PyMethodDef c_void_p_method = { "from_param", c_void_p_from_param, METH_O };
-static PyMethodDef c_char_p_method = { "from_param", c_char_p_from_param, METH_O };
-static PyMethodDef c_wchar_p_method = { "from_param", c_wchar_p_from_param, METH_O };
+static PyMethodDef c_void_p_methods[] = {C_VOID_P_FROM_PARAM_METHODDEF {0}};
+static PyMethodDef c_char_p_methods[] = {C_CHAR_P_FROM_PARAM_METHODDEF {0}};
+static PyMethodDef c_wchar_p_methods[] = {C_WCHAR_P_FROM_PARAM_METHODDEF {0}};
 
 static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
                                    PyObject *args, PyObject *kwds,
@@ -2117,15 +2161,15 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (((PyTypeObject *)self)->tp_base == st->Simple_Type) {
         switch (*proto_str) {
         case 'z': /* c_char_p */
-            ml = &c_char_p_method;
+            ml = c_char_p_methods;
             stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 'Z': /* c_wchar_p */
-            ml = &c_wchar_p_method;
+            ml = c_wchar_p_methods;
             stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 'P': /* c_void_p */
-            ml = &c_void_p_method;
+            ml = c_void_p_methods;
             stginfo->flags |= TYPEFLAG_ISPOINTER;
             break;
         case 's':
