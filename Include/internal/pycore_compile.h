@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_symtable.h"  // _Py_SourceLocation
+#include "pycore_instruction_sequence.h"
 
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
@@ -37,38 +38,6 @@ extern int _PyAST_Optimize(
     int optimize,
     int ff_features);
 
-typedef struct {
-    int h_label;
-    int h_startdepth;
-    int h_preserve_lasti;
-} _PyCompile_ExceptHandlerInfo;
-
-typedef struct {
-    int i_opcode;
-    int i_oparg;
-    _Py_SourceLocation i_loc;
-    _PyCompile_ExceptHandlerInfo i_except_handler_info;
-
-    /* Used by the assembler */
-    int i_target;
-    int i_offset;
-} _PyCompile_Instruction;
-
-typedef struct {
-    _PyCompile_Instruction *s_instrs;
-    int s_allocated;
-    int s_used;
-
-    int *s_labelmap;       /* label id --> instr offset */
-    int s_labelmap_size;
-    int s_next_free_label; /* next free label id */
-} _PyCompile_InstructionSequence;
-
-int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq, int lbl);
-int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
-                                         int opcode, int oparg,
-                                         _Py_SourceLocation loc);
-int _PyCompile_InstructionSequence_ApplyLabelMap(_PyCompile_InstructionSequence *seq);
 
 typedef struct {
     PyObject *u_name;
