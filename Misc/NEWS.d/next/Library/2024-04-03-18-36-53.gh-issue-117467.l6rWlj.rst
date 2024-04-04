@@ -1,0 +1,2 @@
+Preserve mailbox ownership when rewriting in :func:`mailbox.mbox.flush`.
+Patch by Tony Mountifield.
