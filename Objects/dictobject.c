@@ -1756,12 +1756,8 @@ insertdict(PyInterpreterState *interp, PyDictObject *mp,
         // to do a threadsafe lookup here.  This is basically the split-key
         // half of _Py_dict_lookup_threadsafe and avoids locking the
         // shared keys if we can
-        if (PyUnicode_CheckExact(key)) {
-            ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
-        }
-        else {
-            ix = unicodekeys_lookup_generic_threadsafe(mp, dk, key, hash);
-        }
+        assert(PyUnicode_CheckExact(key));
+        ix = unicodekeys_lookup_unicode_threadsafe(dk, key, hash);
 
         if (ix >= 0) {
             old_value = mp->ma_values->values[ix];
