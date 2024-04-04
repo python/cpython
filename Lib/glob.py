@@ -360,15 +360,13 @@ def _recursive_selector(parts, include_hidden, recursive):
     dir_only = bool(parts)
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_recursive(path, rel_path, dir_fd, exists):
-        path = _add_trailing_slash(path)
-        rel_path = _add_trailing_slash(rel_path)
-        match_pos = len(path)
-        if match is None or match(path, match_pos):
-            yield from select_next(path, rel_path, dir_fd, exists)
-        yield from select_recursive_step(path, rel_path, dir_fd, match_pos)
-
-    def select_recursive_step(path, rel_path, dir_fd, match_pos):
+    def select_recursive(path, rel_path, dir_fd, exists, match_pos=None):
+        if match_pos is None:
+            path = _add_trailing_slash(path)
+            rel_path = _add_trailing_slash(rel_path)
+            match_pos = len(path)
+            if match is None or match(path, match_pos):
+                yield from select_next(path, rel_path, dir_fd, exists)
         close_fd = False
         try:
             arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
@@ -399,8 +397,8 @@ def _recursive_selector(parts, include_hidden, recursive):
                             # last pattern part.
                             yield entry_path
                     if is_dir:
-                        yield from select_recursive_step(
-                            entry_path, entry.name, fd, match_pos)
+                        yield from select_recursive(
+                            entry_path, entry.name, fd, exists, match_pos)
         except OSError:
             pass
         finally:
