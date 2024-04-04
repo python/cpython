@@ -24,6 +24,7 @@ extensions = [
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
 ]
 
 # Skip if downstream redistributors haven't installed them
@@ -54,6 +55,12 @@ del warnings
 '''
 
 manpages_url = 'https://manpages.debian.org/{path}'
+
+# Intersphinx configuration
+intersphinx_mapping = {
+    'typing': ('https://typing.readthedocs.io/en/latest/', None),
+}
+intersphinx_disabled_reftypes = []
 
 # General substitutions.
 project = 'Python'
