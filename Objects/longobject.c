@@ -1088,10 +1088,7 @@ _resolve_endianness(int *endianness)
     } else {
         *endianness &= 1;
     }
-    if (*endianness != 0 && *endianness != 1) {
-        PyErr_SetString(PyExc_SystemError, "invalid 'endianness' value");
-        return -1;
-    }
+    assert(*endianness == 0 || *endianness == 1);
     return 0;
 }
 
@@ -1129,7 +1126,7 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
 
     if ((flags != -1 && (flags & Py_ASNATIVEBYTES_REJECT_NEGATIVE))
         && _PyLong_IsNegative(v)) {
-        PyErr_SetString(PyExc_OverflowError, "Cannot convert negative int");
+        PyErr_SetString(PyExc_ValueError, "Cannot convert negative int");
         if (do_decref) {
             Py_DECREF(v);
         }
@@ -1222,16 +1219,20 @@ PyLong_AsNativeBytes(PyObject* vv, void* buffer, Py_ssize_t n, int flags)
         /* Calculates the number of bits required for the *absolute* value
          * of v. This does not take sign into account, only magnitude. */
         size_t nb = _PyLong_NumBits((PyObject *)v);
-        /* Normally this would be((nb - 1) / 8) + 1 to avoid rounding up
-         * multiples of 8 to the next byte, but we add an implied bit for
-         * the sign and it cancels out. */
-        res = (Py_ssize_t)(nb / 8) + 1;
+        if (nb == (size_t)-1) {
+            res = -1;
+        } else {
+            /* Normally this would be((nb - 1) / 8) + 1 to avoid rounding up
+             * multiples of 8 to the next byte, but we add an implied bit for
+             * the sign and it cancels out. */
+            res = (Py_ssize_t)(nb / 8) + 1;
+        }
 
         /* Two edge cases exist that are best handled after extracting the
          * bits. These may result in us reporting overflow when the value
          * actually fits.
          */
-        if (n > 0 && res == n + 1 && nb == n * 8) {
+        if (n > 0 && res == n + 1 && nb % 8 == 0) {
             if (_PyLong_IsNegative(v)) {
                 /* Values of 0x80...00 from negative values that use every
                  * available bit in the buffer do not require an additional
