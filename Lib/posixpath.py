@@ -463,6 +463,7 @@ symbolic links encountered in the path."""
             if strict:
                 raise
             path = newpath
+            querying = False
             continue
         # Resolve the symbolic link
         if newpath in seen:
