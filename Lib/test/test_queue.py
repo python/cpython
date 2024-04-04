@@ -647,7 +647,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
         results = []
         get_thread = threading.Thread(target=get)
         get_thread.start()
-        q.shutdown()
+        q.shutdown(immediate=False)
         get_thread.join(timeout=10.0)
         self.assertFalse(get_thread.is_alive())
         self.assertEqual(len(results), 1)
