@@ -530,7 +530,7 @@ class _QueueShutdownTestMixin:
 
     async def test_format(self):
         q = self.q_class()
-        q._is_shutdown = True
+        q.shutdown()
         self.assertEqual(q._format(), 'maxsize=0 shutdown')
 
     async def test_shutdown_empty(self):
