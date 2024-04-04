@@ -443,6 +443,7 @@ dummy_func(
             EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+            ERROR_IF(res == NULL, error);
         }
 
         op(_BINARY_OP_TABLE_NF, (type_version/1, left, right -- res)) {
@@ -454,6 +455,7 @@ dummy_func(
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             assert(Py_REFCNT(right) == 1);
             _Py_Dealloc(right);
+            ERROR_IF(res == NULL, error);
         }
 
         op(_BINARY_OP_TABLE_ND, (type_version/1, left, right -- res)) {
@@ -464,6 +466,7 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(right);
+            ERROR_IF(res == NULL, error);
         }
 
         op(_BINARY_OP_TABLE_DN, (type_version/1, left, right -- res)) {
@@ -474,6 +477,7 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
+            ERROR_IF(res == NULL, error);
         }
 
         op(_BINARY_OP_TABLE_DD, (type_version/1, left, right -- res)) {
@@ -485,6 +489,7 @@ dummy_func(
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
             Py_DECREF(right);
+            ERROR_IF(res == NULL, error);
         }
 
         macro(BINARY_OP_11) =

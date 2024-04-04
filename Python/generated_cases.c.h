@@ -174,6 +174,7 @@
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 assert(Py_REFCNT(right) == 1);
                 _Py_Dealloc(right);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -212,6 +213,7 @@
                 DEOPT_IF(rt->tp_version_tag != (type_version & 0xf), BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -245,6 +247,7 @@
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(right);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -283,6 +286,7 @@
                 DEOPT_IF(rt->tp_version_tag != (type_version & 0xf), BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -321,6 +325,7 @@
                 DEOPT_IF(rt->tp_version_tag != (type_version & 0xf), BINARY_OP);
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -354,6 +359,7 @@
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(right);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -387,6 +393,7 @@
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(left);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -420,6 +427,7 @@
                 STAT_INC(BINARY_OP, hit);
                 res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
                 Py_DECREF(left);
+                if (res == NULL) goto pop_2_error;
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -446,6 +454,7 @@
             res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
             Py_DECREF(left);
             Py_DECREF(right);
+            if (res == NULL) goto pop_2_error;
             stack_pointer[-2] = res;
             stack_pointer += -1;
             DISPATCH();
