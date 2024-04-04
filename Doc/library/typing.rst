@@ -1465,7 +1465,7 @@ These can be used as types in annotations. They all support subscription using
    of ``TypeB``, and if it returns ``False``, it is not an instance of ``TypeB``.
 
    ``TypeIs`` also works with type variables.  For more information, see
-   PEP 742 (Narrowing types with ``TypeIs``).
+   :pep:`742` (Narrowing types with ``TypeIs``).
 
    .. versionadded:: 3.13
 
