@@ -16,7 +16,6 @@ typedef struct {
 } _PyExceptHandlerInfo;
 
 typedef struct {
-    PyObject_HEAD
     int i_opcode;
     int i_oparg;
     _Py_SourceLocation i_loc;
@@ -28,7 +27,6 @@ typedef struct {
 } _PyInstruction;
 
 typedef struct {
-    PyObject_HEAD
     _PyInstruction *s_instrs;
     int s_allocated;
     int s_used;
