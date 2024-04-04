@@ -2395,7 +2395,6 @@ _asyncio_Task_uncancel_impl(TaskObj *self)
         self->task_num_cancels_requested -= 1;
         if (self->task_num_cancels_requested == 0) {
             self->task_must_cancel = 0;
-            Py_CLEAR(self->task_cancel_msg);
         }
     }
     return PyLong_FromLong(self->task_num_cancels_requested);
