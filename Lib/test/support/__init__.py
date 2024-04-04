@@ -1168,6 +1168,10 @@ def requires_limited_api(test):
         return unittest.skip('needs _testcapi and _testlimitedcapi modules')(test)
     return test
 
+
+TEST_MODULES_ENABLED = sysconfig.get_config_var('TEST_MODULES') == 'yes'
+
+
 def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
@@ -1734,8 +1738,19 @@ def run_in_subinterp_with_config(code, *, own_gil=None, **config):
         raise unittest.SkipTest("requires _testinternalcapi")
     if own_gil is not None:
         assert 'gil' not in config, (own_gil, config)
-        config['gil'] = 2 if own_gil else 1
-    return _testinternalcapi.run_in_subinterp_with_config(code, **config)
+        config['gil'] = 'own' if own_gil else 'shared'
+    else:
+        gil = config['gil']
+        if gil == 0:
+            config['gil'] = 'default'
+        elif gil == 1:
+            config['gil'] = 'shared'
+        elif gil == 2:
+            config['gil'] = 'own'
+        else:
+            raise NotImplementedError(gil)
+    config = types.SimpleNamespace(**config)
+    return _testinternalcapi.run_in_subinterp_with_config(code, config)
 
 
 def _check_tracemalloc():
