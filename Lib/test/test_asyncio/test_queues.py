@@ -525,21 +525,6 @@ class PriorityQueueJoinTests(_QueueJoinTestMixin, unittest.IsolatedAsyncioTestCa
 class _QueueShutdownTestMixin:
     q_class = None
 
-    @staticmethod
-    async def _ensure_started(task):
-        # Explicitly start (if not already) task
-
-        async def swallow(x):
-            try:
-                return await x
-            except Exception:
-                pass
-
-        try:
-            await asyncio.wait_for(asyncio.shield(swallow(task)), 0.01)
-        except TimeoutError:
-            pass
-
     def assertRaisesShutdown(self, msg="Didn't appear to shut-down queue"):
         return self.assertRaises(asyncio.QueueShutDown, msg=msg)
 
@@ -556,7 +541,7 @@ class _QueueShutdownTestMixin:
         loop = asyncio.get_running_loop()
         join_task = loop.create_task(q.join())
         get_task = loop.create_task(q.get())
-        await self._ensure_started(get_task)  # want pending before shutdown
+        await asyncio.sleep(0)  # want get task pending before shutdown
 
         # Perform shut-down
         q.shutdown(immediate=False)  # unfinished tasks: 0 -> 0
@@ -569,6 +554,7 @@ class _QueueShutdownTestMixin:
         await join_task
 
         # Ensure get() task is finished, and raised ShutDown
+        await asyncio.sleep(0)
         self.assertTrue(get_task.done())
         with self.assertRaisesShutdown():
             await get_task
@@ -596,7 +582,7 @@ class _QueueShutdownTestMixin:
         put_task = loop.create_task(q.put("data2"))
 
         # Ensure put() task is not finished
-        await self._ensure_started(put_task)
+        await asyncio.sleep(0)
         self.assertFalse(put_task.done())
 
         # Perform shut-down
@@ -605,7 +591,7 @@ class _QueueShutdownTestMixin:
         self.assertEqual(q.qsize(), 1)
 
         # Ensure put() task is finished, and raised ShutDown
-        await self._ensure_started(put_task)
+        await asyncio.sleep(0)
         self.assertTrue(put_task.done())
         with self.assertRaisesShutdown():
             await put_task
@@ -614,7 +600,7 @@ class _QueueShutdownTestMixin:
         self.assertEqual(await q.get(), "data")
 
         # Ensure join() task is not finished
-        await self._ensure_started(join_task)
+        await asyncio.sleep(0)
         self.assertFalse(join_task.done())
 
         # Ensure put() and get() raise ShutDown
@@ -636,7 +622,7 @@ class _QueueShutdownTestMixin:
             q.task_done()
 
         # Ensure join() task has successfully finished
-        await self._ensure_started(join_task)
+        await asyncio.sleep(0)
         self.assertTrue(join_task.done())
         await join_task
 
@@ -655,7 +641,7 @@ class _QueueShutdownTestMixin:
         self.assertEqual(q.qsize(), 0)
 
         # Ensure join() task has successfully finished
-        await self._ensure_started(join_task)
+        await asyncio.sleep(0)
         self.assertTrue(join_task.done())
         await join_task
 
@@ -693,7 +679,7 @@ class _QueueShutdownTestMixin:
         self.assertEqual(q.qsize(), 0)
 
         # Ensure join() task is not finished
-        await self._ensure_started(join_task)
+        await asyncio.sleep(0)
         self.assertFalse(join_task.done())
 
         # Ensure put() and get() raise ShutDown
@@ -715,7 +701,7 @@ class _QueueShutdownTestMixin:
             q.task_done()
 
         # Ensure join() task has successfully finished
-        await self._ensure_started(join_task)
+        await asyncio.sleep(0)
         self.assertTrue(join_task.done())
         await join_task
 
