@@ -1699,9 +1699,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
         if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
             res = _PyObject_TryStoreInstanceAttribute(obj, name, value);
-            if (res <= 0) {
-                goto error_check;
-            }
+            goto error_check;
         }
 
         if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
