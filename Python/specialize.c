@@ -419,22 +419,20 @@ _PyCode_Quicken(PyCodeObject *code)
         int caches = _PyOpcode_Caches[opcode];
         if (caches) {
             // The initial value depends on the opcode
-            int initial_value;
             switch (opcode) {
                 case JUMP_BACKWARD:
-                    initial_value = 0;
+                    instructions[i + 1].counter = initial_jump_backoff_counter();
                     break;
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
                 case POP_JUMP_IF_NONE:
                 case POP_JUMP_IF_NOT_NONE:
-                    initial_value = 0x5555;  // Alternating 0, 1 bits
+                    instructions[i + 1].cache = 0x5555;  // Alternating 0, 1 bits
                     break;
                 default:
-                    initial_value = adaptive_counter_warmup();
+                    instructions[i + 1].counter = adaptive_counter_warmup();
                     break;
             }
-            instructions[i + 1].cache = initial_value;
             i += caches;
         }
     }

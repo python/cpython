@@ -10,6 +10,7 @@
 #undef NDEBUG
 
 #include "Python.h"
+#include "pycore_backoff.h"       // JUMP_BACKWARD_INITIAL_VALUE
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_ceval.h"         // _PyEval_AddPendingCall()
@@ -1816,6 +1817,11 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "SIZEOF_TIME_T",
                         PyLong_FromSsize_t(sizeof(time_t))) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "TIER2_THRESHOLD",
+                        PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE)) < 0) {
         return 1;
     }
 
