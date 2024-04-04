@@ -1816,22 +1816,22 @@ A[*(1:2)]
     >>> A[*(1:2)]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
     >>> A[*(1:2)] = 1
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
     >>> del A[*(1:2)]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
 
 A[*:] and A[:*]
 
     >>> A[*:]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
     >>> A[:*]
     Traceback (most recent call last):
         ...
@@ -1842,7 +1842,7 @@ A[*]
     >>> A[*]
     Traceback (most recent call last):
         ...
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
 
 A[**]
 
@@ -1986,11 +1986,23 @@ Invalid expressions in type scopes:
 
     >>> f(**x, *)
     Traceback (most recent call last):
-    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+    SyntaxError: Invalid star expression
 
     >>> f(x, *:)
     Traceback (most recent call last):
-    SyntaxError: invalid syntax
+    SyntaxError: Invalid star expression
+
+    >>> f(x, *)
+    Traceback (most recent call last):
+    SyntaxError: Invalid star expression
+
+    >>> f(x = 5, *)
+    Traceback (most recent call last):
+    SyntaxError: Invalid star expression
+
+    >>> f(x = 5, *:)
+    Traceback (most recent call last):
+    SyntaxError: Invalid star expression
 """
 
 import re
