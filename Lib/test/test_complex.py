@@ -598,7 +598,7 @@ class ComplexTest(unittest.TestCase):
         for num in nums:
             self.assertAlmostEqual((num.real**2 + num.imag**2)  ** 0.5, abs(num))
 
-        self.assertRaises(OverflowError, abs, complex(*[DBL_MAX]*2))
+        self.assertRaises(OverflowError, abs, complex(DBL_MAX, DBL_MAX))
 
     def test_repr_str(self):
         def test(v, expected, test_fn=self.assertEqual):
