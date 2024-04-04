@@ -845,6 +845,28 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             pass
         self.assertEqual(asyncio.current_task().cancelling(), 0)
 
+    async def test_nested_groups_both_cancelled(self):
+        async def raise_after(t, e):
+            await asyncio.sleep(t)
+            raise e()
+
+        try:
+            async with asyncio.TaskGroup() as outer_tg:
+                try:
+                    async with asyncio.TaskGroup() as inner_tg:
+                        inner_tg.create_task(raise_after(0, RuntimeError))
+                        outer_tg.create_task(raise_after(0, ValueError))
+                except* RuntimeError:
+                    pass
+                else:
+                    self.fail("RuntimeError not raised")
+            self.assertEqual(asyncio.current_task().cancelling(), 1)
+        except* ValueError:
+            pass
+        else:
+            self.fail("ValueError not raised")
+        self.assertEqual(asyncio.current_task().cancelling(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
