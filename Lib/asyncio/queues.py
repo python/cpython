@@ -265,7 +265,7 @@ class Queue(mixins._LoopBoundMixin):
                 self._get()
                 if self._unfinished_tasks > 0:
                     self._unfinished_tasks -= 1
-            if self._unfinished_tasks <= 0:
+            if self._unfinished_tasks == 0:
                 self._finished.set()
         while self._getters:
             getter = self._getters.popleft()
