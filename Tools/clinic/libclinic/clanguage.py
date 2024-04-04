@@ -19,7 +19,7 @@ from libclinic.function import (
 from libclinic.converters import (
     defining_class_converter, object_converter, self_converter)
 if TYPE_CHECKING:
-    from clinic import Clinic
+    from libclinic.app import Clinic
 
 
 def declare_parser(
