@@ -867,6 +867,38 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
             self.fail("ValueError not raised")
         self.assertEqual(asyncio.current_task().cancelling(), 0)
 
+    async def test_error_and_cancel(self):
+        event = asyncio.Event()
+
+        async def raise_error():
+            event.set()
+            await asyncio.sleep(0)
+            raise RuntimeError()
+
+        async def inner():
+            try:
+                async with taskgroups.TaskGroup() as tg:
+                    tg.create_task(raise_error())
+                    await asyncio.sleep(1)
+                    self.fail("Sleep in group should have been cancelled")
+            except* RuntimeError:
+                self.assertEqual(asyncio.current_task().cancelling(), 1)
+            self.assertEqual(asyncio.current_task().cancelling(), 1)
+            await asyncio.sleep(1)
+            self.fail("Sleep after group should have been cancelled")
+
+        async def outer():
+            t = asyncio.create_task(inner())
+            await event.wait()
+            self.assertEqual(t.cancelling(), 0)
+            t.cancel()
+            self.assertEqual(t.cancelling(), 1)
+            with self.assertRaises(asyncio.CancelledError):
+                await t
+            self.assertTrue(t.cancelled())
+
+        await outer()
+
 
 if __name__ == "__main__":
     unittest.main()
