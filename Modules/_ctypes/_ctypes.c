@@ -746,7 +746,7 @@ Access a C instance at the specified address.
 static PyObject *
 CDataType_from_address_impl(PyObject *type, PyTypeObject *cls,
                             PyObject *value)
-/*[clinic end generated code: output=5be4a7c0d9aa6c74 input=104ed288a3ecab50]*/
+/*[clinic end generated code: output=5be4a7c0d9aa6c74 input=827a22cefe380c01]*/
 {
     void *buf;
     if (!PyLong_Check(value)) {
@@ -934,7 +934,7 @@ Access a C instance in a dll.
 static PyObject *
 CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
                       const char *name)
-/*[clinic end generated code: output=d0e5c43b66bfa21f input=7fe5dc35a9b64423]*/
+/*[clinic end generated code: output=d0e5c43b66bfa21f input=f85bf281477042b4]*/
 {
     PyObject *obj;
     void *handle;

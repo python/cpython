@@ -33,7 +33,7 @@ PyDoc_STRVAR(CDataType_from_address__doc__,
 "\n"
 "C.from_address(integer) -> C instance\n"
 "\n"
-"Access a C instance at the specified address");
+"Access a C instance at the specified address.");
 
 #define CDATATYPE_FROM_ADDRESS_METHODDEF    \
     {"from_address", _PyCFunction_CAST(CDataType_from_address), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, CDataType_from_address__doc__},
@@ -212,7 +212,7 @@ PyDoc_STRVAR(CDataType_in_dll__doc__,
 "\n"
 "C.in_dll(dll, name) -> C instance\n"
 "\n"
-"Access a C instance in a dll");
+"Access a C instance in a dll.");
 
 #define CDATATYPE_IN_DLL_METHODDEF    \
     {"in_dll", _PyCFunction_CAST(CDataType_in_dll), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, CDataType_in_dll__doc__},
@@ -607,4 +607,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=d9632f894878669a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9c6539a3559e6088 input=a9049054013a1b77]*/
