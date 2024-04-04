@@ -245,9 +245,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
         if (_PyLong_IsPositive((const PyLongObject *)stop)) {
             return Py_NewRef(stop);
         }
-        else {
-            return zero;
-        }
+        return zero;
     }
 
     /* fast path when all arguments fit into a long integer */
