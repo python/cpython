@@ -2227,7 +2227,7 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     }
     int left_version =  Py_TYPE(lhs)->tp_version_tag;
     int right_version = Py_TYPE(rhs)->tp_version_tag;
-    int func_index = lookup_binary_function(left_version, right_version, kind, oparg);
+    int func_index = 0; // lookup_binary_function(left_version, right_version, kind, oparg);
     assert(func_index >= 0 && func_index < 256);
     if (func_index == 0) {
         instr->op.code = BINARY_OP;
