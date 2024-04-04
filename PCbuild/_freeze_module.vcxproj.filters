@@ -229,6 +229,9 @@
     <ClCompile Include="..\Python\initconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\interpconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -239,9 +242,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\lock.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\interpreteridobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\PC\invalid_parameter_handler.c">

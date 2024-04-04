@@ -31,6 +31,7 @@
 int _PyTestCapi_Init_Vectorcall(PyObject *module);
 int _PyTestCapi_Init_Heaptype(PyObject *module);
 int _PyTestCapi_Init_Abstract(PyObject *module);
+int _PyTestCapi_Init_Bytes(PyObject *module);
 int _PyTestCapi_Init_Unicode(PyObject *module);
 int _PyTestCapi_Init_GetArgs(PyObject *module);
 int _PyTestCapi_Init_DateTime(PyObject *module);
@@ -56,5 +57,6 @@ int _PyTestCapi_Init_Immortal(PyObject *module);
 int _PyTestCapi_Init_GC(PyObject *module);
 int _PyTestCapi_Init_Hash(PyObject *module);
 int _PyTestCapi_Init_Time(PyObject *module);
+int _PyTestCapi_Init_Object(PyObject *module);
 
 #endif // Py_TESTCAPI_PARTS_H

@@ -1,4 +1,3 @@
-import _ctypes_test
 from platform import architecture as _architecture
 import struct
 import sys
@@ -12,6 +11,8 @@ from ctypes.util import find_library
 from struct import calcsize
 from collections import namedtuple
 from test import support
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 
@@ -84,6 +85,23 @@ class StructureTestCase(unittest.TestCase):
             with self.subTest(cls=cls):
                 self.assertTrue(Structure.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
                 self.assertFalse(Structure.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
+
+    def test_metaclass_details(self):
+        # Abstract classes (whose metaclass __init__ was not called) can't be
+        # instantiated directly
+        NewStructure = PyCStructType.__new__(PyCStructType, 'NewStructure',
+                                             (Structure,), {})
+        for cls in Structure, NewStructure:
+            with self.subTest(cls=cls):
+                with self.assertRaisesRegex(TypeError, "abstract class"):
+                    obj = cls()
+
+        # Cannot call the metaclass __init__ more than once
+        class T(Structure):
+            _fields_ = [("x", c_char),
+                        ("y", c_char)]
+        with self.assertRaisesRegex(SystemError, "already initialized"):
+            PyCStructType.__init__(T, 'ptr', (), {})
 
     def test_simple_structs(self):
         for code, tp in self.formats.items():
@@ -507,8 +525,8 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_a(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
-        # _fields_ assignment, and PyCStgDict_clone()
+        # PyCStructUnionType_update_stginfo() for each
+        # _fields_ assignment, and PyCStgInfo_clone()
         # for the Mid and Vector class definitions.
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -523,7 +541,7 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_b(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
+        # PyCStructUnionType_update_stginfo() for each
         # _fields_ assignment.
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -538,7 +556,7 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_c(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
+        # PyCStructUnionType_update_stginfo() for each
         # _fields_ assignment.
         class Base(Structure):
             _fields_ = [('y', c_double)]

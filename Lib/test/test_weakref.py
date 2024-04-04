@@ -14,6 +14,7 @@ import random
 from test import support
 from test.support import script_helper, ALWAYS_EQ
 from test.support import gc_collect
+from test.support import import_helper
 from test.support import threading_helper
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
@@ -116,6 +117,33 @@ class ReferencesTestCase(TestBase):
         del o
         repr(wr)
 
+    @support.cpython_only
+    def test_ref_repr(self):
+        obj = C()
+        ref = weakref.ref(obj)
+        self.assertRegex(repr(ref),
+                         rf"<weakref at 0x[0-9a-fA-F]+; "
+                         rf"to '{C.__module__}.{C.__qualname__}' "
+                         rf"at 0x[0-9a-fA-F]+>")
+
+        obj = None
+        gc_collect()
+        self.assertRegex(repr(ref),
+                         rf'<weakref at 0x[0-9a-fA-F]+; dead>')
+
+        # test type with __name__
+        class WithName:
+            @property
+            def __name__(self):
+                return "custom_name"
+
+        obj2 = WithName()
+        ref2 = weakref.ref(obj2)
+        self.assertRegex(repr(ref2),
+                         rf"<weakref at 0x[0-9a-fA-F]+; "
+                         rf"to '{WithName.__module__}.{WithName.__qualname__}' "
+                         rf"at 0x[0-9a-fA-F]+ \(custom_name\)>")
+
     def test_repr_failure_gh99184(self):
         class MyConfig(dict):
             def __getattr__(self, x):
@@ -134,7 +162,7 @@ class ReferencesTestCase(TestBase):
 
     @support.cpython_only
     def test_cfunction(self):
-        import _testcapi
+        _testcapi = import_helper.import_module("_testcapi")
         create_cfunction = _testcapi.create_cfunction
         f = create_cfunction()
         wr = weakref.ref(f)
@@ -194,6 +222,20 @@ class ReferencesTestCase(TestBase):
         gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, bool, ref3)
         self.assertEqual(self.cbcalled, 2)
+
+    @support.cpython_only
+    def test_proxy_repr(self):
+        obj = C()
+        ref = weakref.proxy(obj, self.callback)
+        self.assertRegex(repr(ref),
+                         rf"<weakproxy at 0x[0-9a-fA-F]+; "
+                         rf"to '{C.__module__}.{C.__qualname__}' "
+                         rf"at 0x[0-9a-fA-F]+>")
+
+        obj = None
+        gc_collect()
+        self.assertRegex(repr(ref),
+                         rf'<weakproxy at 0x[0-9a-fA-F]+; dead>')
 
     def check_basic_ref(self, factory):
         o = factory()
