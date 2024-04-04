@@ -130,9 +130,9 @@ class Queue(mixins._LoopBoundMixin):
 
         Raises QueueShutDown if the queue has been shut down.
         """
-        if self._is_shutdown:
-            raise QueueShutDown
         while self.full():
+            if self._is_shutdown:
+                raise QueueShutDown
             putter = self._get_loop().create_future()
             self._putters.append(putter)
             try:
@@ -151,8 +151,6 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._putters)
                 raise
-            if self._is_shutdown:
-                raise QueueShutDown
         return self.put_nowait(item)
 
     def put_nowait(self, item):
@@ -179,9 +177,9 @@ class Queue(mixins._LoopBoundMixin):
         Raises QueueShutDown if the queue has been shut down and is empty, or
         if the queue has been shut down immediately.
         """
-        if self._is_shutdown and self.empty():
-            raise QueueShutDown
         while self.empty():
+            if self._is_shutdown and self.empty():
+                raise QueueShutDown
             getter = self._get_loop().create_future()
             self._getters.append(getter)
             try:
@@ -200,8 +198,6 @@ class Queue(mixins._LoopBoundMixin):
                     # the call.  Wake up the next in line.
                     self._wakeup_next(self._getters)
                 raise
-            if self._is_shutdown and self.empty():
-                raise QueueShutDown
         return self.get_nowait()
 
     def get_nowait(self):
