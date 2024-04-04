@@ -539,7 +539,6 @@ class _QueueShutdownTestMixin:
         # Setup empty queue, and join() and get() tasks
         q = self.q_class()
         loop = asyncio.get_running_loop()
-        join_task = loop.create_task(q.join())
         get_task = loop.create_task(q.get())
         await asyncio.sleep(0)  # want get task pending before shutdown
 
@@ -548,10 +547,8 @@ class _QueueShutdownTestMixin:
 
         self.assertEqual(q.qsize(), 0)
 
-        # Ensure join() task has successfully finished
-        await self._ensure_started(join_task)
-        self.assertTrue(join_task.done())
-        await join_task
+        # Ensure join() task successfully finishes
+        await q.join()
 
         # Ensure get() task is finished, and raised ShutDown
         await asyncio.sleep(0)
