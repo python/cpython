@@ -1915,7 +1915,7 @@ In a similar way to the above section, we can implement a listener and handler
 using `pynng <https://pypi.org/project/pynng/>`_, which is a Python binding to
 `NNG <https://nng.nanomsg.org/>`_, billed as a spiritual successor to ZeroMQ.
 The following snippets illustrate -- you can test them in an environment which has
-``pynng`` installed. Juat for variety, we present the listener first.
+``pynng`` installed. Just for variety, we present the listener first.
 
 
 Subclass ``QueueListener``
@@ -1923,6 +1923,7 @@ Subclass ``QueueListener``
 
 .. code-block:: python
 
+    # listener.py
     import json
     import logging
     import logging.handlers
@@ -1955,7 +1956,7 @@ Subclass ``QueueListener``
                     break
                 except pynng.Timeout:
                     pass
-                except pynng.Closed:  # sometimes hit when you hit Ctrl-C
+                except pynng.Closed:  # sometimes happens when you hit Ctrl-C
                     break
             if data is None:
                 return None
@@ -1988,6 +1989,7 @@ Subclass ``QueueHandler``
 
 .. code-block:: python
 
+    # sender.py
     import json
     import logging
     import logging.handlers
@@ -2015,9 +2017,10 @@ Subclass ``QueueHandler``
 
     logging.getLogger('pynng').propagate = False
     handler = NNGSocketHandler(DEFAULT_ADDR)
+    # Make sure the process ID is in the output
     logging.basicConfig(level=logging.DEBUG,
                         handlers=[logging.StreamHandler(), handler],
-                        format='%(levelname)-8s %(name)10s %(message)s')
+                        format='%(levelname)-8s %(name)10s %(process)6s %(message)s')
     levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
               logging.CRITICAL)
     logger_names = ('myapp', 'myapp.lib1', 'myapp.lib2')
@@ -2031,7 +2034,64 @@ Subclass ``QueueHandler``
         delay = random.random() * 2 + 0.5
         time.sleep(delay)
 
-You can run the above two snippets in separate command shells.
+You can run the above two snippets in separate command shells. If we run the
+listener in one shell and run the sender in two separate shells, we should see
+something like the following. In the first sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    CRITICAL myapp.lib2    613 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    (and so on)
+
+In the second sender shell:
+
+.. code-block:: console
+
+    $ python sender.py
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+In the listener shell:
+
+.. code-block:: console
+
+    $ python listener.py
+    Press Ctrl-C to stop.
+    DEBUG         myapp    613 Message no.     1
+    WARNING  myapp.lib2    613 Message no.     2
+    INFO     myapp.lib2    657 Message no.     1
+    CRITICAL myapp.lib2    613 Message no.     3
+    CRITICAL myapp.lib2    657 Message no.     2
+    CRITICAL      myapp    657 Message no.     3
+    WARNING  myapp.lib2    613 Message no.     4
+    CRITICAL myapp.lib1    613 Message no.     5
+    CRITICAL myapp.lib1    657 Message no.     4
+    INFO     myapp.lib1    657 Message no.     5
+    DEBUG         myapp    613 Message no.     6
+    WARNING  myapp.lib2    657 Message no.     6
+    CRITICAL      myapp    657 Message no.     7
+    CRITICAL myapp.lib1    613 Message no.     7
+    INFO     myapp.lib1    613 Message no.     8
+    DEBUG    myapp.lib1    657 Message no.     8
+    (and so on)
+
+As you can see, the logging from the two sender processes is interleaved in the
+listener's output.
 
 
 An example dictionary-based configuration
