@@ -5,6 +5,28 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_ctypes_CType_Type___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Return memory consumption of the type object.");
+
+#define _CTYPES_CTYPE_TYPE___SIZEOF___METHODDEF    \
+    {"__sizeof__", _PyCFunction_CAST(_ctypes_CType_Type___sizeof__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _ctypes_CType_Type___sizeof____doc__},
+
+static PyObject *
+_ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls);
+
+static PyObject *
+_ctypes_CType_Type___sizeof__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "__sizeof__() takes no arguments");
+        return NULL;
+    }
+    return _ctypes_CType_Type___sizeof___impl(self, cls);
+}
+
 PyDoc_STRVAR(CDataType_from_address__doc__,
 "from_address($self, value, /)\n"
 "--\n"
@@ -585,4 +607,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=1bfb1ed8f85e1906 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d9632f894878669a input=a9049054013a1b77]*/

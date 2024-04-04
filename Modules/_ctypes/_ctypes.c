@@ -128,16 +128,17 @@ bytes(cdata)
 
 /*[clinic input]
 module _ctypes
+class _ctypes.CType_Type     "PyObject *" "st->CType_Type"
 class _ctypes.CDataType      "PyObject *" ""
-class _ctypes.PyCPointerType "PyObject *" "PyCPointerType_Type"
-class _ctypes.PyCSimpleType  "PyObject *" "PyCSimpleType_Type"
-class _ctypes.PyCData        "PyObject *" "PyCData_Type"
-class _ctypes.Simple         "PyObject *" "Simple_Type"
+class _ctypes.PyCPointerType "PyObject *" "st->PyCPointerType_Type"
+class _ctypes.PyCSimpleType  "PyObject *" "st->PyCSimpleType_Type"
+class _ctypes.PyCData        "PyObject *" "st->PyCData_Type"
+class _ctypes.Simple         "PyObject *" "st->Simple_Type"
 class _ctypes.c_char_p       "PyObject *" ""
 class _ctypes.c_wchar_p      "PyObject *" ""
 class _ctypes.c_void_p       "PyObject *" ""
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=93e86f795c9444ba]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=76aba021756e47b7]*/
 
 #include "clinic/_ctypes.c.h"
 
@@ -524,13 +525,22 @@ CType_Type_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+_ctypes.CType_Type.__sizeof__
+
+    cls: defining_class
+    /
+Return memory consumption of the type object.
+[clinic start generated code]*/
+
 static PyObject *
-CType_Type_sizeof(PyObject *self)
+_ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=c68c235be84d03f3 input=d064433b6110d1ce]*/
 {
     Py_ssize_t size = Py_TYPE(self)->tp_basicsize;
     size += Py_TYPE(self)->tp_itemsize * Py_SIZE(self);
 
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
+    ctypes_state *st = get_module_state_by_class(cls);
     StgInfo *info;
     if (PyStgInfo_FromType(st, self, &info) < 0) {
         return NULL;
@@ -553,8 +563,7 @@ CType_Type_repeat(PyObject *self, Py_ssize_t length);
 
 
 static PyMethodDef ctype_methods[] = {
-    {"__sizeof__", _PyCFunction_CAST(CType_Type_sizeof),
-     METH_NOARGS, PyDoc_STR("Return memory consumption of the type object.")},
+    _CTYPES_CTYPE_TYPE___SIZEOF___METHODDEF
     {0},
 };
 
