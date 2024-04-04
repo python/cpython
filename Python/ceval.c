@@ -1083,7 +1083,6 @@ exit_to_tier1:
     }
 #endif
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    UOP_STAT_INC(uopcode, miss);
     Py_DECREF(current_executor);
     tstate->previous_executor = NULL;
     DISPATCH();
@@ -1091,7 +1090,6 @@ exit_to_tier1:
 exit_to_trace:
     assert(next_uop[-1].format == UOP_FORMAT_EXIT);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    UOP_STAT_INC(uopcode, miss);
     uint32_t exit_index = next_uop[-1].exit_index;
     assert(exit_index < current_executor->exit_count);
     _PyExitData *exit = &current_executor->exits[exit_index];
