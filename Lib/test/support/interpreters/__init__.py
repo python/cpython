@@ -43,7 +43,7 @@ Uncaught in the interpreter:
 {formatted}
 """.strip()
 
-class ExecutionFailed(RuntimeError):
+class ExecutionFailed(InterpreterError):
     """An unhandled exception happened during execution.
 
     This is raised from Interpreter.exec() and Interpreter.call().
@@ -73,7 +73,7 @@ class ExecutionFailed(RuntimeError):
 
 def create():
     """Return a new (idle) Python interpreter."""
-    id = _interpreters.create(isolated=True)
+    id = _interpreters.create(reqrefs=True)
     return Interpreter(id)
 
 
@@ -109,13 +109,13 @@ class Interpreter:
             assert hasattr(self, '_ownsref')
         except KeyError:
             # This may raise InterpreterNotFoundError:
-            _interpreters._incref(id)
+            _interpreters.incref(id)
             try:
                 self = super().__new__(cls)
                 self._id = id
                 self._ownsref = True
             except BaseException:
-                _interpreters._deccref(id)
+                _interpreters.decref(id)
                 raise
             _known[id] = self
         return self
@@ -142,7 +142,7 @@ class Interpreter:
             return
         self._ownsref = False
         try:
-            _interpreters._decref(self.id)
+            _interpreters.decref(self.id)
         except InterpreterNotFoundError:
             pass
 
@@ -158,7 +158,7 @@ class Interpreter:
         """Finalize and destroy the interpreter.
 
         Attempting to destroy the current interpreter results
-        in a RuntimeError.
+        in an InterpreterError.
         """
         return _interpreters.destroy(self._id)
 
