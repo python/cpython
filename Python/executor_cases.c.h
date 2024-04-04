@@ -1254,7 +1254,6 @@
                     }
                     if (true) JUMP_TO_ERROR();
                 }
-                Py_INCREF(res);
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
