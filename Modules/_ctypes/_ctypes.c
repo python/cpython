@@ -128,17 +128,8 @@ bytes(cdata)
 
 /*[clinic input]
 module _ctypes
-class _ctypes.CType_Type     "PyObject *" "st->CType_Type"
-class _ctypes.CDataType      "PyObject *" ""
-class _ctypes.PyCPointerType "PyObject *" "st->PyCPointerType_Type"
-class _ctypes.PyCSimpleType  "PyObject *" "st->PyCSimpleType_Type"
-class _ctypes.PyCData        "PyObject *" "st->PyCData_Type"
-class _ctypes.Simple         "PyObject *" "st->Simple_Type"
-class _ctypes.c_char_p       "PyObject *" ""
-class _ctypes.c_wchar_p      "PyObject *" ""
-class _ctypes.c_void_p       "PyObject *" ""
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=76aba021756e47b7]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
 
 #include "clinic/_ctypes.c.h"
 
@@ -735,6 +726,12 @@ UnionType_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+class _ctypes.CDataType "PyObject *" ""
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=50e231c00c3d5b3b]*/
+
+
+/*[clinic input]
 _ctypes.CDataType.from_address as CDataType_from_address
 
     type: self
@@ -1150,6 +1147,12 @@ size property/method, and the sequence protocol.
 
 */
 
+/*[clinic input]
+class _ctypes.PyCPointerType "PyObject *" "st->PyCPointerType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f55cffad4be4031c]*/
+
+
 static int
 PyCPointerType_SetProto(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
 {
@@ -1266,7 +1269,6 @@ static PyObject *
 PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
                              PyObject *type)
 /*[clinic end generated code: output=51459d8f429a70ac input=67e1e8df921f123e]*/
-
 {
     PyObject *attrdict = PyType_GetDict(self);
     if (!attrdict) {
@@ -1731,6 +1733,26 @@ PyCSimpleType_init ensures that the new Simple_Type subclass created has a valid
 _type_ attribute.
 
 */
+
+/*[clinic input]
+class _ctypes.PyCSimpleType "PyObject *" "st->PyCSimpleType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d4e70c88c2b66eb4]*/
+
+/*[clinic input]
+class _ctypes.c_wchar_p "PyObject *" ""
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9d20886e76c8d270]*/
+
+/*[clinic input]
+class _ctypes.c_char_p "PyObject *" ""
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d001f38521ae2e8a]*/
+
+/*[clinic input]
+class _ctypes.c_void_p "PyObject *" ""
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2627dadc498784b7]*/
 
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
 
@@ -2794,6 +2816,13 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
 /*
   PyCData_Type
  */
+
+/*[clinic input]
+class _ctypes.PyCData "PyObject *" "st->PyCData_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=253e5d9a1cbbe944]*/
+
+
 static int
 PyCData_traverse(CDataObject *self, visitproc visit, void *arg)
 {
@@ -4958,6 +4987,12 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
 /*
   Simple_Type
 */
+
+/*[clinic input]
+class _ctypes.Simple "PyObject *" "st->Simple_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=29f54d201863e234]*/
+
 
 static int
 Simple_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored))
