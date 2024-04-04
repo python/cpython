@@ -1387,9 +1387,9 @@ These can be used as types in annotations. They all support subscription using
 
 .. data:: TypeGuard
 
-   Special typing construct for marking user-defined type guard functions.
+   Special typing construct for marking user-defined type predicate functions.
 
-   Type guard functions are user-defined functions that return whether their
+   Type predicate functions are user-defined functions that return whether their
    argument is an instance of a particular type.
    ``TypeGuard`` works similarly to :data:`TypeIs`, but has subtly different
    effects on type checking behavior.
@@ -1436,10 +1436,10 @@ These can be used as types in annotations. They all support subscription using
 
 .. data:: TypeIs
 
-   Special typing construct for marking user-defined type narrowing functions.
+   Special typing construct for marking user-defined type predicate functions.
 
    ``TypeIs`` can be used to annotate the return type of a user-defined
-   type guard function.  ``TypeIs`` only accepts a single type argument.
+   type predicate function.  ``TypeIs`` only accepts a single type argument.
    At runtime, functions marked this way should return a boolean and take at
    least one positional argument.
 
@@ -1447,10 +1447,10 @@ These can be used as types in annotations. They all support subscription using
    type checkers to determine a more precise type of an expression within a
    program's code flow.  Usually type narrowing is done by analyzing
    conditional code flow and applying the narrowing to a block of code.  The
-   conditional expression here is sometimes referred to as a "type guard"::
+   conditional expression here is sometimes referred to as a "type predicate"::
 
       def is_str(val: str | float):
-          # "isinstance" type guard
+          # "isinstance" type predicate
           if isinstance(val, str):
               # Type of ``val`` is narrowed to ``str``
               ...
@@ -1459,7 +1459,7 @@ These can be used as types in annotations. They all support subscription using
               ...
 
    Sometimes it would be convenient to use a user-defined boolean function
-   as a type guard.  Such a function should use ``TypeIs[...]`` or
+   as a type predicate.  Such a function should use ``TypeIs[...]`` or
    :data:`TypeGuard` as its return type to alert static type checkers to
    this intention.  ``TypeIs`` usually has more intuitive behavior than
    ``TypeGuard``, but it cannot be used when the input and output types

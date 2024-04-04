@@ -819,20 +819,20 @@ def Concatenate(self, parameters):
 
 @_SpecialForm
 def TypeGuard(self, parameters):
-    """Special typing construct for marking user-defined type guard functions.
+    """Special typing construct for marking user-defined type predicate functions.
 
     ``TypeGuard`` can be used to annotate the return type of a user-defined
-    type guard function.  ``TypeGuard`` only accepts a single type argument.
+    type predicate function.  ``TypeGuard`` only accepts a single type argument.
     At runtime, functions marked this way should return a boolean.
 
     ``TypeGuard`` aims to benefit *type narrowing* -- a technique used by static
     type checkers to determine a more precise type of an expression within a
     program's code flow.  Usually type narrowing is done by analyzing
     conditional code flow and applying the narrowing to a block of code.  The
-    conditional expression here is sometimes referred to as a "type guard".
+    conditional expression here is sometimes referred to as a "type predicate".
 
     Sometimes it would be convenient to use a user-defined boolean function
-    as a type guard.  Such a function should use ``TypeGuard[...]`` or
+    as a type predicate.  Such a function should use ``TypeGuard[...]`` or
     ``TypeIs[...]`` as its return type to alert static type checkers to
     this intention. ``TypeGuard`` should be used over ``TypeIs`` when narrowing
     from an incompatible type (e.g., ``list[object]`` to ``list[int]``) or when
@@ -864,7 +864,7 @@ def TypeGuard(self, parameters):
     type-unsafe results.  The main reason is to allow for things like
     narrowing ``list[object]`` to ``list[str]`` even though the latter is not
     a subtype of the former, since ``list`` is invariant.  The responsibility of
-    writing type-safe type guards is left to the user.
+    writing type-safe type predicates is left to the user.
 
     ``TypeGuard`` also works with type variables.  For more information, see
     PEP 647 (User-Defined Type Guards).
@@ -875,10 +875,10 @@ def TypeGuard(self, parameters):
 
 @_SpecialForm
 def TypeIs(self, parameters):
-    """Special typing construct for marking user-defined type narrowing functions.
+    """Special typing construct for marking user-defined type predicate functions.
 
     ``TypeIs`` can be used to annotate the return type of a user-defined
-    type guard function.  ``TypeIs`` only accepts a single type argument.
+    type predicate function.  ``TypeIs`` only accepts a single type argument.
     At runtime, functions marked this way should return a boolean and accept
     at least one argument.
 
@@ -886,14 +886,14 @@ def TypeIs(self, parameters):
     type checkers to determine a more precise type of an expression within a
     program's code flow.  Usually type narrowing is done by analyzing
     conditional code flow and applying the narrowing to a block of code.  The
-    conditional expression here is sometimes referred to as a "type guard".
+    conditional expression here is sometimes referred to as a "type predicate".
 
     Sometimes it would be convenient to use a user-defined boolean function
-    as a type guard.  Such a function should use ``TypeIs[...]`` or
+    as a type predicate.  Such a function should use ``TypeIs[...]`` or
     ``TypeGuard[...]`` as its return type to alert static type checkers to
     this intention.  ``TypeIs`` usually has more intuitive behavior than
     ``TypeGuard``, but it cannot be used when the input and output types
-    are incompatible (e.g., ``list[object]`` to ``list[int]``) and when the
+    are incompatible (e.g., ``list[object]`` to ``list[int]``) or when the
     function does not return ``True`` for all instances of the narrowed type.
 
     Using  ``-> TypeIs`` tells the static type checker that for a given
