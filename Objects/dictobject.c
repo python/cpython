@@ -1488,6 +1488,16 @@ read_failed:
     return ix;
 }
 
+#else   // Py_GIL_DISABLED
+
+Py_ssize_t
+_Py_dict_lookup_threadsafe(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject **value_addr)
+{
+    Py_ssize_t ix = _Py_dict_lookup(mp, key, hash, value_addr);
+    Py_XNewRef(*value_addr);
+    return ix;
+}
+
 #endif
 
 int
@@ -2359,7 +2369,6 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
             return NULL;
     }
 
-#ifdef Py_GIL_DISABLED
     /* namespace 1: globals */
     ix = _Py_dict_lookup_threadsafe(globals, key, hash, &value);
     if (ix == DKIX_ERROR)
@@ -2371,19 +2380,6 @@ _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
     ix = _Py_dict_lookup_threadsafe(builtins, key, hash, &value);
     assert(ix >= 0 || value == NULL);
     return value;
-#else
-    /* namespace 1: globals */
-    ix = _Py_dict_lookup(globals, key, hash, &value);
-    if (ix == DKIX_ERROR)
-        return NULL;
-    if (ix != DKIX_EMPTY && value != NULL)
-        return Py_NewRef(value);
-
-    /* namespace 2: builtins */
-    ix = _Py_dict_lookup(builtins, key, hash, &value);
-    assert(ix >= 0 || value == NULL);
-    return Py_XNewRef(value);
-#endif
 }
 
 /* Consumes references to key and value */
@@ -3229,11 +3225,7 @@ dict_subscript(PyObject *self, PyObject *key)
         if (hash == -1)
             return NULL;
     }
-#ifdef Py_GIL_DISABLED
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
-#else
-    ix = _Py_dict_lookup(mp, key, hash, &value);
-#endif
     if (ix == DKIX_ERROR)
         return NULL;
     if (ix == DKIX_EMPTY || value == NULL) {
@@ -3253,11 +3245,7 @@ dict_subscript(PyObject *self, PyObject *key)
         _PyErr_SetKeyError(key);
         return NULL;
     }
-#ifdef Py_GIL_DISABLED
     return value;
-#else
-    return Py_NewRef(value);
-#endif
 }
 
 static int
@@ -4124,24 +4112,13 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
         if (hash == -1)
             return NULL;
     }
-#ifdef Py_GIL_DISABLED
     ix = _Py_dict_lookup_threadsafe(self, key, hash, &val);
-#else
-    ix = _Py_dict_lookup(self, key, hash, &val);
-#endif
     if (ix == DKIX_ERROR)
         return NULL;
-#ifdef Py_GIL_DISABLED
     if (ix == DKIX_EMPTY || val == NULL) {
         val = Py_NewRef(default_value);
     }
     return val;
-#else
-    if (ix == DKIX_EMPTY || val == NULL) {
-        val = default_value;
-    }
-    return Py_NewRef(val);
-#endif
 }
 
 static int
