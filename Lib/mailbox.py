@@ -698,9 +698,13 @@ class _singlefileMailbox(Mailbox):
         _sync_close(new_file)
         # self._file is about to get replaced, so no need to sync.
         self._file.close()
-        # Make sure the new file's mode is the same as the old file's
-        mode = os.stat(self._path).st_mode
-        os.chmod(new_file.name, mode)
+        # Make sure the new file's mode and owner are the same as the old file's
+        info = os.stat(self._path)
+        os.chmod(new_file.name, info.st_mode)
+        try:
+            os.chown(new_file.name, info.st_uid, info.st_gid)
+        except (AttributeError, OSError):
+            pass
         try:
             os.rename(new_file.name, self._path)
         except FileExistsError:
