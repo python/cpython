@@ -220,10 +220,12 @@ def generate_tier2(
             out.emit("switch (result) {\n")
             out.emit("case 0:\n")
             out.emit("break;\n")
-            out.emit("case 1:\n")
-            out.emit("JUMP_TO_ERROR();\n");
-            out.emit("case 2:\n")
-            out.emit("JUMP_TO_JUMP_TARGET();\n");
+            if uop.properties.errors_if:
+                out.emit("case 1:\n")
+                out.emit("JUMP_TO_ERROR();\n");
+            if uop.properties.deopts:
+                out.emit("case 2:\n")
+                out.emit("JUMP_TO_JUMP_TARGET();\n");
             out.emit("}\n")
             stack = None
         else:

@@ -29,6 +29,7 @@ class Properties:
     oparg_and_1: bool = False
     const_oparg: int = -1
     stub: bool = False
+    errors_if: bool = False
 
     def dump(self, indent: str) -> None:
         print(indent, end="")
@@ -540,6 +541,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF")
+    errors_if = variable_used(op, "ERROR_IF")
     if deopts_if and exits_if:
         tkn = op.tokens[0]
         raise lexer.make_syntax_error(
@@ -575,6 +577,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         passthrough=passthrough,
         tier=tier_variable(op),
         stub="stub" in op.annotations,
+        errors_if=errors_if
     )
 
 

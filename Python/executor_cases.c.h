@@ -1016,8 +1016,6 @@
                 break;
                 case 1:
                 JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
@@ -1439,8 +1437,6 @@
                 break;
                 case 1:
                 JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
@@ -1516,8 +1512,6 @@
                 break;
                 case 1:
                 JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
@@ -1553,8 +1547,6 @@
                 break;
                 case 1:
                 JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
@@ -2713,10 +2705,6 @@
             switch (result) {
                 case 0:
                 break;
-                case 1:
-                JUMP_TO_ERROR();
-                case 2:
-                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
