@@ -26,23 +26,12 @@ _PyMonitoring_FirePyYieldEvent(PyMonitoringState *state, PyObject *codelike, int
                                PyObject *retval);
 
 PyAPI_FUNC(int)
-_PyMonitoring_FirePyCallEvent(PyMonitoringState *state, PyObject *codelike, int offset,
-                              PyObject* callable, PyObject *arg0);
-
-PyAPI_FUNC(int)
 _PyMonitoring_FireCallEvent(PyMonitoringState *state, PyObject *codelike, int offset,
                             PyObject* callable, PyObject *arg0);
 
 PyAPI_FUNC(int)
 _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int offset,
                             int lineno);
-
-PyAPI_FUNC(int)
-_PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, int offset);
-
-PyAPI_FUNC(int)
-_PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int offset,
-                            PyObject *target_offset);
 
 PyAPI_FUNC(int)
 _PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int offset,

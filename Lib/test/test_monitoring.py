@@ -1918,7 +1918,6 @@ class TestCApiEventGeneration(MonitoringTestBase, unittest.TestCase):
             ( 1, E.PY_YIELD, capi.fire_event_py_yield, 10),
             ( 1, E.PY_RETURN, capi.fire_event_py_return, 20),
             ( 2, E.CALL, capi.fire_event_call, callable, 40),
-            (10, E.INSTRUCTION, capi.fire_event_instruction),
             ( 1, E.JUMP, capi.fire_event_jump, 60),
             ( 1, E.BRANCH, capi.fire_event_branch, 70),
             ( 1, E.PY_THROW, capi.fire_event_py_throw, ValueError(1)),

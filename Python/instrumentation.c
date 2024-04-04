@@ -2432,16 +2432,6 @@ _PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int of
 }
 
 int
-_PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, int offset)
-{
-    assert(state->active);
-    PyObject *args[3] = { NULL, NULL, NULL };
-    int res= capi_call_instrumentation(state, codelike, offset, args, 2,
-                                       PY_MONITORING_EVENT_INSTRUCTION);
-    return res;
-}
-
-int
 _PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int offset,
                             PyObject *target_offset)
 {

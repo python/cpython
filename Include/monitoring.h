@@ -79,14 +79,6 @@ PyMonitoring_FireLineEvent(PyMonitoringState *state, PyObject *codelike, int off
 }
 
 static inline int
-PyMonitoring_FireInstructionEvent(PyMonitoringState *state, PyObject *codelike, int offset)
-{
-    _PYMONITORING_IF_ACTIVE(
-        state,
-        _PyMonitoring_FireInstructionEvent(state, codelike, offset));
-}
-
-static inline int
 PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int offset,
                            PyObject *target_offset)
 {
