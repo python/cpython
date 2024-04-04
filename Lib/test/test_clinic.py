@@ -17,6 +17,10 @@ import unittest
 test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import libclinic
+    from libclinic.converters import int_converter, str_converter
+    from libclinic.function import (
+        permute_optional_groups, permute_right_option_groups,
+        permute_left_option_groups)
     import clinic
     from clinic import DSLParser
 
@@ -52,6 +56,20 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
     return cm.exception
 
 
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, clinic.converters,
+                        clinic.converters.copy())
+    testcase.addCleanup(restore_dict, clinic.legacy_converters,
+                        clinic.legacy_converters.copy())
+    testcase.addCleanup(restore_dict, clinic.return_converters,
+                        clinic.return_converters.copy())
+
+
 class ClinicWholeFileTest(TestCase):
     maxDiff = None
 
@@ -60,6 +78,7 @@ class ClinicWholeFileTest(TestCase):
                         filename=filename, lineno=lineno)
 
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = _make_clinic(filename="test.c")
 
     def test_eol(self):
@@ -663,7 +682,7 @@ class ParseFileUnitTest(TestCase):
 
 class ClinicGroupPermuterTest(TestCase):
     def _test(self, l, m, r, output):
-        computed = clinic.permute_optional_groups(l, m, r)
+        computed = permute_optional_groups(l, m, r)
         self.assertEqual(output, computed)
 
     def test_range(self):
@@ -705,7 +724,7 @@ class ClinicGroupPermuterTest(TestCase):
 
     def test_have_left_options_but_required_is_empty(self):
         def fn():
-            clinic.permute_optional_groups(['a'], [], [])
+            permute_optional_groups(['a'], [], [])
         self.assertRaises(ValueError, fn)
 
 
@@ -909,7 +928,7 @@ class ClinicParserTest(TestCase):
         self.assertEqual(2, len(function.parameters))
         p = function.parameters['path']
         self.assertEqual('path', p.name)
-        self.assertIsInstance(p.converter, clinic.int_converter)
+        self.assertIsInstance(p.converter, int_converter)
 
     def test_param_default(self):
         function = self.parse_function("""
@@ -1008,7 +1027,7 @@ class ClinicParserTest(TestCase):
         """)
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_param_default_parameters_out_of_order(self):
         err = (
@@ -2025,7 +2044,7 @@ class ClinicParserTest(TestCase):
         block = self.parse('module os\nos.access\n   path: "s"')
         module, function = block.signatures
         conv = (function.parameters['path']).converter
-        self.assertIsInstance(conv, clinic.str_converter)
+        self.assertIsInstance(conv, str_converter)
 
     def test_legacy_converters_non_string_constant_annotation(self):
         err = "Annotations must be either a name, a function call, or a string"
@@ -2431,6 +2450,9 @@ class ClinicParserTest(TestCase):
 class ClinicExternalTest(TestCase):
     maxDiff = None
 
+    def setUp(self):
+        save_restore_converters(self)
+
     def run_clinic(self, *args):
         with (
             support.captured_stdout() as out,
@@ -2657,6 +2679,7 @@ class ClinicExternalTest(TestCase):
                 float()
                 int()
                 long()
+                object()
                 Py_ssize_t()
                 size_t()
                 unsigned_int()
@@ -3744,7 +3767,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_left_option_groups(data))
+        actual = tuple(permute_left_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_right_option_groups(self):
@@ -3755,7 +3778,7 @@ class PermutationTests(unittest.TestCase):
             (1, 2, 3),
         )
         data = list(zip([1, 2, 3]))  # Generate a list of 1-tuples.
-        actual = tuple(clinic.permute_right_option_groups(data))
+        actual = tuple(permute_right_option_groups(data))
         self.assertEqual(actual, expected)
 
     def test_permute_optional_groups(self):
@@ -3834,7 +3857,7 @@ class PermutationTests(unittest.TestCase):
         for params in dataset:
             with self.subTest(**params):
                 left, required, right, expected = params.values()
-                permutations = clinic.permute_optional_groups(left, required, right)
+                permutations = permute_optional_groups(left, required, right)
                 actual = tuple(permutations)
                 self.assertEqual(actual, expected)
 

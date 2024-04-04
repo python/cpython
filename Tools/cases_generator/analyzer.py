@@ -359,11 +359,10 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
 
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
-    "_PyDictOrValues_IsValues",
-    "_PyObject_DictOrValuesPointer",
-    "_PyDictOrValues_GetValues",
+    "_PyManagedDictPointer_IsValues",
+    "_PyObject_ManagedDictPointer",
+    "_PyObject_InlineValues",
     "_PyDictValues_AddToInsertionOrder",
-    "_PyObject_MakeInstanceAttributesFromDict",
     "Py_DECREF",
     "_Py_DECREF_SPECIALIZED",
     "DECREF_INPUTS_AND_REUSE_FLOAT",
@@ -520,8 +519,9 @@ def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
         variable_used(op, "PyCell_New")
-        or variable_used(op, "PyCell_GET")
-        or variable_used(op, "PyCell_SET")
+        or variable_used(op, "PyCell_GetRef")
+        or variable_used(op, "PyCell_SetTakeRef")
+        or variable_used(op, "PyCell_SwapTakeRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF")

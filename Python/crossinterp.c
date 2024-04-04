@@ -845,7 +845,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         return 0;
     case _PyXI_ERR_OTHER:
         // XXX msg?
-        PyErr_SetNone(PyExc_RuntimeError);
+        PyErr_SetNone(PyExc_InterpreterError);
         break;
     case _PyXI_ERR_NO_MEMORY:
         PyErr_NoMemory();
@@ -856,11 +856,11 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         _PyInterpreterState_FailIfRunningMain(interp);
         break;
     case _PyXI_ERR_MAIN_NS_FAILURE:
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "failed to get __main__ namespace");
         break;
     case _PyXI_ERR_APPLY_NS_FAILURE:
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_InterpreterError,
                         "failed to apply namespace to __main__");
         break;
     case _PyXI_ERR_NOT_SHAREABLE:
@@ -935,7 +935,7 @@ _PyXI_ApplyError(_PyXI_error *error)
         if (error->uncaught.type.name != NULL || error->uncaught.msg != NULL) {
             // __context__ will be set to a proxy of the propagated exception.
             PyObject *exc = PyErr_GetRaisedException();
-            _PyXI_excinfo_Apply(&error->uncaught, PyExc_RuntimeError);
+            _PyXI_excinfo_Apply(&error->uncaught, PyExc_InterpreterError);
             PyObject *exc2 = PyErr_GetRaisedException();
             PyException_SetContext(exc, exc2);
             PyErr_SetRaisedException(exc);
@@ -1671,6 +1671,7 @@ PyStatus
 _PyXI_InitTypes(PyInterpreterState *interp)
 {
     if (init_exceptions(interp) < 0) {
+        PyErr_PrintEx(0);
         return _PyStatus_ERR("failed to initialize an exception type");
     }
     return _PyStatus_OK();
