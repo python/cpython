@@ -456,13 +456,12 @@ symbolic links encountered in the path."""
             continue
         try:
             st = os.lstat(newpath)
+            if not stat.S_ISLNK(st.st_mode):
+                path = newpath
+                continue
         except OSError:
             if strict:
                 raise
-            is_link = False
-        else:
-            is_link = stat.S_ISLNK(st.st_mode)
-        if not is_link:
             path = newpath
             continue
         # Resolve the symbolic link
