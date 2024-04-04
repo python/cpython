@@ -416,6 +416,9 @@ iso_week1_monday(int year)
 static int
 iso_to_ymd(const int iso_year, const int iso_week, const int iso_day,
            int *year, int *month, int *day) {
+    if (iso_year <= 0) {
+        return -2;
+    }
     if (iso_week <= 0 || iso_week >= 53) {
         int out_of_range = 1;
         if (iso_week == 53) {
