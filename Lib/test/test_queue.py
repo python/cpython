@@ -636,7 +636,7 @@ class BaseQueueTestMixin(BlockingTestMixin):
 
         self.assertEqual(results, [True]*len(thrds))
 
-    def test_shutdown_get_simple(self):
+    def test_shutdown_pending_get(self):
         def get():
             try:
                 results.append(q.get())
