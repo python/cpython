@@ -106,7 +106,7 @@ typedef struct {
 #if defined(NID_sha512_224)
 # define Py_hash_sha512_224 "sha512_224"
 #endif
-#if defined(NID_sha512_512)
+#if defined(NID_sha512_256)
 # define Py_hash_sha512_256 "sha512_256"
 #endif
 #if defined(NID_sha3_224)
