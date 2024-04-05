@@ -201,13 +201,18 @@ def _split_pathname(pathname):
     return dirname, parts
 
 
-def _add_trailing_slash(pathname):
-    """Returns the given path with a trailing slash added, where possible.
-    """
-    tail = os.path.splitdrive(pathname)[1]
-    if not tail or tail[-1] in _path_seps:
-        return pathname
-    return pathname + os.path.sep
+# Returns the given path with a trailing slash added, where possible.
+if os.name == 'nt':
+    def _add_trailing_slash(pathname):
+        tail = os.path.splitroot(pathname)[2]
+        if not tail or tail[-1] in '\\/':
+            return pathname
+        return f'{pathname}\\'
+else:
+    def _add_trailing_slash(pathname):
+        if not pathname or pathname[-1] == '/':
+            return pathname
+        return f'{pathname}/'
 
 
 def _open_dir(path, rel_path=None, dir_fd=None):
