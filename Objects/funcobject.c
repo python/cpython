@@ -626,7 +626,17 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 static PyObject *
 func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
-    return Py_NewRef(op->func_name);
+    /* Null pointer judgement. */
+    if (op != nullptr)
+    {
+        return Py_NewRef(op->func_name);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_InterpreterError,
+                        "got a null pointer in function 'func_get_qualname'");
+        return nullptr;
+    }
 }
 
 static int
@@ -646,7 +656,17 @@ func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 static PyObject *
 func_get_qualname(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
-    return Py_NewRef(op->func_qualname);
+    /* Null pointer judgement. */
+    if (op != nullptr)
+    {
+        return Py_NewRef(op->func_qualname);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_InterpreterError,
+                        "got a null pointer in function 'func_get_qualname'");
+        return nullptr;
+    }
 }
 
 static int
