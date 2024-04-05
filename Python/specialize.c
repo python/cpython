@@ -6,6 +6,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
+#include "pycore_list.h"          // _PyList_Concat
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
@@ -2082,10 +2083,10 @@ static void
 binary_specialization_fail(int lv, int rv, int kind, int oparg)
 {
     /* Gather stats per op, not family */
-    if (lv >= 8) {
+    if (lv >= 16) {
         lv = 0;
     }
-    if (rv >= 8) {
+    if (rv >= 16) {
         rv = 0;
     }
     assert(kind < 4);
@@ -2098,31 +2099,38 @@ binary_specialization_fail(int lv, int rv, int kind, int oparg)
 
 
 enum Kinds {
-    KIND_1X = 1,
-    KIND_X1 = 2,
-    KIND_XX = 3,
+    REFCOUNTS_11 = 0,
+    REFCOUNTS_1X = 1,
+    REFCOUNTS_X1 = 2,
+    REFCOUNTS_XX = 3,
 };
 
 typedef struct {
-    uint16_t hash;
-    uint8_t index;
+    uint8_t oparg;
+    uint8_t left;
+    uint8_t right;
+    uint8_t index_1x;
+    uint8_t index_x1;
+    uint8_t index_xx;
 } binary_function_entry;
 
-#define FUNC_HASH(LV, RV, KIND, OPARG) (((OPARG) << 11) | ((KIND) << 8) | ((LV) << 4) | (RV))
-
-static uint16_t hash(int lv, int rv, int kind, int oparg)
-{
-    assert(lv >= 0 && lv < 16);
-    assert(rv >= 0 && rv < 16);
-    assert(kind >= 0 && kind < 4);
-    assert(oparg >= 0 && oparg < 64);
-    return FUNC_HASH(lv, rv, kind, oparg);
-}
 
 static inline double
 float_add(PyObject *left, PyObject *right)
 {
     return PyFloat_AS_DOUBLE(left) + PyFloat_AS_DOUBLE(right);
+}
+
+static inline double
+float_sub(PyObject *left, PyObject *right)
+{
+    return PyFloat_AS_DOUBLE(left) - PyFloat_AS_DOUBLE(right);
+}
+
+static inline double
+float_mult(PyObject *left, PyObject *right)
+{
+    return PyFloat_AS_DOUBLE(left) * PyFloat_AS_DOUBLE(right);
 }
 
 static PyObject *
@@ -2145,13 +2153,64 @@ binary_add_float_float_x1(PyObject *left, PyObject *right)
     return right;
 }
 
+static PyObject *
+binary_mult_float_float_xx(PyObject *left, PyObject *right)
+{
+    return PyFloat_FromDouble(float_mult(left, right));
+}
+
+static PyObject *
+binary_mult_float_float_1x(PyObject *left, PyObject *right)
+{
+    ((PyFloatObject *)left)->ob_fval = float_mult(left, right);
+    return left;
+}
+
+static PyObject *
+binary_mult_float_float_x1(PyObject *left, PyObject *right)
+{
+    ((PyFloatObject *)right)->ob_fval = float_mult(left, right);
+    return right;
+}
+
+static PyObject *
+binary_sub_float_float_xx(PyObject *left, PyObject *right)
+{
+    return PyFloat_FromDouble(float_sub(left, right));
+}
+
+static PyObject *
+binary_sub_float_float_1x(PyObject *left, PyObject *right)
+{
+    ((PyFloatObject *)left)->ob_fval = float_sub(left, right);
+    return left;
+}
+
+static PyObject *
+binary_sub_float_float_x1(PyObject *left, PyObject *right)
+{
+    ((PyFloatObject *)right)->ob_fval = float_sub(left, right);
+    return right;
+}
+
 static binary_function_entry binary_function_entry_table[] = {
-    { FUNC_HASH(_Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, KIND_1X, NB_ADD), 1},
-    { FUNC_HASH(_Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, KIND_X1, NB_ADD), 2},
-    { FUNC_HASH(_Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, KIND_XX, NB_ADD), 3},
-    { FUNC_HASH(_Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, KIND_1X, NB_ADD), 4},
-    { FUNC_HASH(_Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, KIND_X1, NB_ADD), 5},
-    { FUNC_HASH(_Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, KIND_XX, NB_ADD), 6},
+    { NB_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 1, 2, 3},
+    { NB_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 4, 5, 6},
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 1, 2, 3},
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 4, 5, 6},
+    { NB_AND, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 7},
+    { NB_SUBTRACT, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 8},
+    { NB_MULTIPLY, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 9},
+    { NB_MULTIPLY, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 10, 11, 12},
+    { NB_INPLACE_MULTIPLY, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 9},
+    { NB_INPLACE_MULTIPLY, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 10, 11, 12},
+    { NB_SUBTRACT, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 13, 14, 15},
+    { NB_INPLACE_SUBTRACT, _Py_TYPE_VERSION_FLOAT, _Py_TYPE_VERSION_FLOAT, 13, 14, 15},
+    { NB_ADD, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 16},
+    { NB_INPLACE_ADD, _Py_TYPE_VERSION_STR, _Py_TYPE_VERSION_STR, 0, 0, 16},
+    { NB_ADD, _Py_TYPE_VERSION_LIST, _Py_TYPE_VERSION_LIST, 0, 0, 17},
+    { NB_FLOOR_DIVIDE, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 18},
+    { NB_INPLACE_FLOOR_DIVIDE, _Py_TYPE_VERSION_INT, _Py_TYPE_VERSION_INT, 0, 0, 18},
 };
 
 const binaryfunc _Py_BinaryFunctionTable[] = {
@@ -2162,10 +2221,22 @@ const binaryfunc _Py_BinaryFunctionTable[] = {
     [4] = binary_add_float_float_1x,
     [5] = binary_add_float_float_x1,
     [6] = binary_add_float_float_xx,
+    [7] = (binaryfunc)_PyLong_And,
+    [8] = (binaryfunc)_PyLong_Subtract,
+    [9] = (binaryfunc)_PyLong_Multiply,
+    [10] = (binaryfunc)binary_mult_float_float_1x,
+    [11] = (binaryfunc)binary_mult_float_float_x1,
+    [12] = (binaryfunc)binary_mult_float_float_xx,
+    [13] = (binaryfunc)binary_sub_float_float_1x,
+    [14] = (binaryfunc)binary_sub_float_float_x1,
+    [15] = (binaryfunc)binary_sub_float_float_xx,
+    [16] = PyUnicode_Concat,
+    [17] = (binaryfunc)_PyList_Concat,
+    [18] = (binaryfunc)_PyLong_FloorDiv,
 };
 
 static int
-lookup_binary_function(int left_version, int right_version, int kind, int oparg) {
+lookup_binary_function(int left_version, int right_version, int *refcounts, int oparg) {
     assert(oparg < 256);
     if (left_version >= _Py_TYPE_VERSIONS_PREALLOCATED) {
         return 0;
@@ -2173,10 +2244,33 @@ lookup_binary_function(int left_version, int right_version, int kind, int oparg)
     if (right_version >= _Py_TYPE_VERSIONS_PREALLOCATED) {
         return 0;
     }
-    int key = hash(left_version, right_version, kind, oparg);
     for (int i = 0; i < (int)Py_ARRAY_LENGTH(binary_function_entry_table); i++) {
-        if (binary_function_entry_table[i].hash == key) {
-            return binary_function_entry_table[i].index;
+        binary_function_entry *entry = &binary_function_entry_table[i];
+        if (entry->oparg == oparg && entry->left == left_version && entry->right == right_version) {
+            switch (*refcounts) {
+                case REFCOUNTS_11:
+                    if (entry->index_1x != 0) {
+                        *refcounts = REFCOUNTS_1X;
+                        return entry->index_1x;
+                    }
+                    if (entry->index_x1 != 0) {
+                        *refcounts = REFCOUNTS_X1;
+                        return entry->index_x1;
+                    }
+                    break;
+                case REFCOUNTS_X1:
+                    if (entry->index_x1 != 0) {
+                        return entry->index_x1;
+                    }
+                    break;
+                case REFCOUNTS_1X:
+                    if (entry->index_1x != 0) {
+                        return entry->index_1x;
+                    }
+                    break;
+            }
+            *refcounts = REFCOUNTS_XX;
+            return entry->index_xx;
         }
     }
     return 0;
@@ -2190,55 +2284,76 @@ _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
     assert(ENABLE_SPECIALIZATION);
     assert(_PyOpcode_Caches[BINARY_OP] == INLINE_CACHE_ENTRIES_BINARY_OP);
     _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(instr + 1);
-    int kind = KIND_XX;
+    int refcounts;
     if (Py_REFCNT(lhs) == 1) {
-        kind = KIND_1X;
         if (Py_REFCNT(rhs) == 1) {
-            instr->op.code = BINARY_OP_11;
-        }
-        else if (_Py_IsImmortal(rhs)) {
-            instr->op.code = BINARY_OP_1I;
+            refcounts = REFCOUNTS_11;
         }
         else {
-            instr->op.code = BINARY_OP_1X;
-        }
-    }
-    else if (_Py_IsImmortal(lhs)) {
-        if (Py_REFCNT(rhs) == 1) {
-            instr->op.code = BINARY_OP_I1;
-            kind = KIND_X1;
-        }
-        else if (_Py_IsImmortal(rhs)) {
-            instr->op.code = BINARY_OP_II;
-        }
-        else {
-            instr->op.code = BINARY_OP_IX;
+            refcounts = REFCOUNTS_1X;
         }
     }
     else {
         if (Py_REFCNT(rhs) == 1) {
-            instr->op.code = BINARY_OP_X1;
-            kind = KIND_X1;
-        }
-        else if (_Py_IsImmortal(rhs)) {
-            instr->op.code = BINARY_OP_XI;
+            refcounts = REFCOUNTS_X1;
         }
         else {
-            instr->op.code = BINARY_OP_XX;
+            refcounts = REFCOUNTS_XX;
         }
     }
     int left_version =  Py_TYPE(lhs)->tp_version_tag;
     int right_version = Py_TYPE(rhs)->tp_version_tag;
-    int func_index = 0; // lookup_binary_function(left_version, right_version, kind, oparg);
+#ifdef Py_STATS
+    int original_refcounts = refcounts;
+#endif
+    int func_index = lookup_binary_function(left_version, right_version, &refcounts, oparg);
     assert(func_index >= 0 && func_index < 256);
     if (func_index == 0) {
-        instr->op.code = BINARY_OP;
-        BINARY_SPECIALIZATION_FAIL(left_version, right_version, kind, oparg);
+        BINARY_SPECIALIZATION_FAIL(left_version, right_version, original_refcounts, oparg);
         SPECIALIZATION_FAIL(BINARY_OP, oparg);
         STAT_INC(BINARY_OP, failure);
         cache->counter = adaptive_counter_backoff(cache->counter);
     }
     else {
+        switch (refcounts) {
+            case REFCOUNTS_11:
+                Py_UNREACHABLE();
+                break;
+            case REFCOUNTS_1X:
+                if (_Py_IsImmortal(rhs)) {
+                    instr->op.code = BINARY_OP_1I;
+                }
+                else {
+                    instr->op.code = BINARY_OP_1X;
+                }
+                break;
+            case REFCOUNTS_X1:
+                if (_Py_IsImmortal(lhs)) {
+                    instr->op.code = BINARY_OP_I1;
+                }
+                else {
+                    instr->op.code = BINARY_OP_X1;
+                }
+                break;
+            case REFCOUNTS_XX:
+                if (_Py_IsImmortal(lhs)) {
+                    if (_Py_IsImmortal(rhs)) {
+                        instr->op.code = BINARY_OP_II;
+                    }
+                    else {
+                        instr->op.code = BINARY_OP_IX;
+                    }
+                }
+                else {
+                    if (_Py_IsImmortal(rhs)) {
+                        instr->op.code = BINARY_OP_XI;
+                    }
+                    else {
+                        instr->op.code = BINARY_OP_XX;
+                    }
+                }
+                break;
+        }
         STAT_INC(BINARY_OP, success);
         cache->counter = adaptive_counter_cooldown();
         cache->type_versions = (func_index << 8) | (left_version << 4) | right_version;

@@ -244,15 +244,6 @@
             break;
         }
 
-        case _BINARY_OP_TABLE_NF: {
-            _Py_UopsSymbol *res;
-            res = sym_new_not_null(ctx);
-            if (res == NULL) goto out_of_space;
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
         case _BINARY_OP_TABLE_ND: {
             _Py_UopsSymbol *res;
             res = sym_new_not_null(ctx);

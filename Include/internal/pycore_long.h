@@ -126,6 +126,8 @@ PyAPI_FUNC(PyObject*) _PyLong_Add_X1(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(PyObject*) _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
+PyObject* _PyLong_And(PyLongObject *left, PyLongObject *right);
+PyObject* _PyLong_FloorDiv(PyLongObject *left, PyLongObject *right);
 
 // Export for 'binascii' shared extension.
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];

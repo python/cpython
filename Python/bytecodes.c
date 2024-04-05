@@ -408,7 +408,6 @@ dummy_func(
         }
 
         family(BINARY_OP, INLINE_CACHE_ENTRIES_BINARY_OP) = {
-            BINARY_OP_11,
             BINARY_OP_1X,
             BINARY_OP_1I,
             BINARY_OP_I1,
@@ -446,18 +445,6 @@ dummy_func(
             ERROR_IF(res == NULL, error);
         }
 
-        op(_BINARY_OP_TABLE_NF, (type_version/1, left, right -- res)) {
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            EXIT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4));
-            EXIT_IF(rt->tp_version_tag != (type_version & 0xf));
-            STAT_INC(BINARY_OP, hit);
-            res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
-            assert(Py_REFCNT(right) == 1);
-            _Py_Dealloc(right);
-            ERROR_IF(res == NULL, error);
-        }
-
         op(_BINARY_OP_TABLE_ND, (type_version/1, left, right -- res)) {
             PyTypeObject *lt = Py_TYPE(left);
             PyTypeObject *rt = Py_TYPE(right);
@@ -491,12 +478,6 @@ dummy_func(
             Py_DECREF(right);
             ERROR_IF(res == NULL, error);
         }
-
-        macro(BINARY_OP_11) =
-            unused/1 +
-            _GUARD_NOS_REFCNT1 +
-            _GUARD_TOS_REFCNT1 +
-            _BINARY_OP_TABLE_NF;
 
         macro(BINARY_OP_1I) =
             unused/1 +

@@ -4405,20 +4405,24 @@ l_mod(PyLongObject *v, PyLongObject *w, PyLongObject **pmod)
     return 0;
 }
 
+PyObject *
+_PyLong_FloorDiv(PyLongObject *a, PyLongObject *b)
+{
+    PyLongObject *div;
+    if (_PyLong_DigitCount(a) == 1 && _PyLong_DigitCount(b) == 1) {
+        return fast_floor_div(a, b);
+    }
+    if (l_divmod(a, b, &div, NULL) < 0) {
+        div = NULL;
+    }
+    return (PyObject *)div;
+}
+
 static PyObject *
 long_div(PyObject *a, PyObject *b)
 {
-    PyLongObject *div;
-
     CHECK_BINOP(a, b);
-
-    if (_PyLong_DigitCount((PyLongObject*)a) == 1 && _PyLong_DigitCount((PyLongObject*)b) == 1) {
-        return fast_floor_div((PyLongObject*)a, (PyLongObject*)b);
-    }
-
-    if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, NULL) < 0)
-        div = NULL;
-    return (PyObject *)div;
+    return _PyLong_FloorDiv((PyLongObject *)a, (PyLongObject *)b);
 }
 
 /* PyLong/PyLong -> float, with correctly rounded result. */
@@ -5509,16 +5513,22 @@ long_bitwise(PyLongObject *a,
     return (PyObject *)maybe_small_long(long_normalize(z));
 }
 
+PyObject *
+_PyLong_And(PyLongObject *x, PyLongObject *y)
+{
+    if (_PyLong_IsCompact(x) && _PyLong_IsCompact(y)) {
+        return _PyLong_FromSTwoDigits(medium_value(x) & medium_value(y));
+    }
+    return long_bitwise(x, '&', y);
+}
+
 static PyObject *
 long_and(PyObject *a, PyObject *b)
 {
     CHECK_BINOP(a, b);
     PyLongObject *x = (PyLongObject*)a;
     PyLongObject *y = (PyLongObject*)b;
-    if (_PyLong_IsCompact(x) && _PyLong_IsCompact(y)) {
-        return _PyLong_FromSTwoDigits(medium_value(x) & medium_value(y));
-    }
-    return long_bitwise(x, '&', y);
+    return _PyLong_And(x, y);
 }
 
 static PyObject *

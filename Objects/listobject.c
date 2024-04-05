@@ -745,6 +745,16 @@ list_concat_lock_held(PyListObject *a, PyListObject *b)
     return (PyObject *)np;
 }
 
+PyObject *
+_PyList_Concat(PyListObject *a, PyListObject *b)
+{
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION2(a, b);
+    ret = list_concat_lock_held(a, b);
+    Py_END_CRITICAL_SECTION2();
+    return ret;
+}
+
 static PyObject *
 list_concat(PyObject *aa, PyObject *bb)
 {
@@ -756,11 +766,7 @@ list_concat(PyObject *aa, PyObject *bb)
     }
     PyListObject *a = (PyListObject *)aa;
     PyListObject *b = (PyListObject *)bb;
-    PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION2(a, b);
-    ret = list_concat_lock_held(a, b);
-    Py_END_CRITICAL_SECTION2();
-    return ret;
+    return _PyList_Concat(a, b);
 }
 
 static PyObject *

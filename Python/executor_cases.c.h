@@ -457,27 +457,6 @@
             break;
         }
 
-        case _BINARY_OP_TABLE_NF: {
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            uint16_t type_version = (uint16_t)CURRENT_OPERAND();
-            PyTypeObject *lt = Py_TYPE(left);
-            PyTypeObject *rt = Py_TYPE(right);
-            if (lt->tp_version_tag != ((type_version & 0xf0) >> 4)) JUMP_TO_JUMP_TARGET();
-            if (rt->tp_version_tag != (type_version & 0xf)) JUMP_TO_JUMP_TARGET();
-            STAT_INC(BINARY_OP, hit);
-            res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
-            assert(Py_REFCNT(right) == 1);
-            _Py_Dealloc(right);
-            if (res == NULL) JUMP_TO_ERROR();
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            break;
-        }
-
         case _BINARY_OP_TABLE_ND: {
             PyObject *right;
             PyObject *left;

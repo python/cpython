@@ -140,47 +140,6 @@
             DISPATCH();
         }
 
-        TARGET(BINARY_OP_11) {
-            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
-            next_instr += 3;
-            INSTRUCTION_STATS(BINARY_OP_11);
-            static_assert(INLINE_CACHE_ENTRIES_BINARY_OP == 2, "incorrect cache size");
-            PyObject *value2;
-            PyObject *value1;
-            PyObject *right;
-            PyObject *left;
-            PyObject *res;
-            /* Skip 1 cache entry */
-            // _GUARD_NOS_REFCNT1
-            value2 = stack_pointer[-2];
-            {
-                DEOPT_IF(Py_REFCNT(value2) != 1, BINARY_OP);
-            }
-            // _GUARD_TOS_REFCNT1
-            value1 = stack_pointer[-1];
-            {
-                DEOPT_IF(Py_REFCNT(value1) != 1, BINARY_OP);
-            }
-            // _BINARY_OP_TABLE_NF
-            right = value1;
-            left = value2;
-            {
-                uint16_t type_version = read_u16(&this_instr[2].cache);
-                PyTypeObject *lt = Py_TYPE(left);
-                PyTypeObject *rt = Py_TYPE(right);
-                DEOPT_IF(lt->tp_version_tag != ((type_version & 0xf0) >> 4), BINARY_OP);
-                DEOPT_IF(rt->tp_version_tag != (type_version & 0xf), BINARY_OP);
-                STAT_INC(BINARY_OP, hit);
-                res = _Py_BinaryFunctionTable[type_version >> 8](left, right);
-                assert(Py_REFCNT(right) == 1);
-                _Py_Dealloc(right);
-                if (res == NULL) goto pop_2_error;
-            }
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            DISPATCH();
-        }
-
         TARGET(BINARY_OP_1I) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 3;
