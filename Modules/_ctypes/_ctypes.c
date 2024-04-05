@@ -132,6 +132,9 @@ module _ctypes
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
 #include "clinic/_ctypes.c.h"
 
+#define clinic_state() (get_module_state_by_class(cls))
+#define clinic_state_sub() (get_module_state_by_class(cls->base))
+
 /****************************************************************/
 
 typedef struct {
@@ -442,9 +445,9 @@ static PyType_Spec structparam_spec = {
   */
 
 /*[clinic input]
-class _ctypes.CType_Type "PyObject *" "st->CType_Type"
+class _ctypes.CType_Type "PyObject *" "clinic_state()->CType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f385b8663b8be200]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8389fc5b74a84f2a]*/
 
 static int
 CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
@@ -725,9 +728,9 @@ UnionType_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
-class _ctypes.CDataType "PyObject *" "st->CType_Type"
+class _ctypes.CDataType "PyObject *" "clinic_state()->CType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a5629668227ced6c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=466a505a93d73156]*/
 
 
 /*[clinic input]
@@ -1147,9 +1150,9 @@ size property/method, and the sequence protocol.
 */
 
 /*[clinic input]
-class _ctypes.PyCPointerType "PyObject *" "st->PyCPointerType_Type"
+class _ctypes.PyCPointerType "PyObject *" "clinic_state()->PyCPointerType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f55cffad4be4031c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c45e96c1f7645ab7]*/
 
 
 static int
@@ -1734,24 +1737,24 @@ _type_ attribute.
 */
 
 /*[clinic input]
-class _ctypes.PyCSimpleType "PyObject *" "st->PyCSimpleType_Type"
+class _ctypes.PyCSimpleType "PyObject *" "clinic_state()->PyCSimpleType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d4e70c88c2b66eb4]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d5a45772668e7f49]*/
 
 /*[clinic input]
-class _ctypes.c_wchar_p "PyObject *" "st->PyCSimpleType_Type"
+class _ctypes.c_wchar_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad67842bc81b56a6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=468de7283d622d47]*/
 
 /*[clinic input]
-class _ctypes.c_char_p "PyObject *" "st->PyCSimpleType_Type"
+class _ctypes.c_char_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9a97029952caab32]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e750865616e7dcea]*/
 
 /*[clinic input]
-class _ctypes.c_void_p "PyObject *" "st->PyCSimpleType_Type"
+class _ctypes.c_void_p "PyObject *" "clinic_state_sub()->PyCSimpleType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fd4534ee51ddf049]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=dd4d9646c56f43a9]*/
 
 static const char SIMPLE_TYPE_CHARS[] = "cbBhHiIlLdfuzZqQPXOv?g";
 
@@ -2817,9 +2820,9 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
  */
 
 /*[clinic input]
-class _ctypes.PyCData "PyObject *" "st->PyCData_Type"
+class _ctypes.PyCData "PyObject *" "clinic_state()->PyCData_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=253e5d9a1cbbe944]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ac13df38dee3c22c]*/
 
 
 static int
@@ -4988,9 +4991,9 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
 */
 
 /*[clinic input]
-class _ctypes.Simple "PyObject *" "st->Simple_Type"
+class _ctypes.Simple "PyObject *" "clinic_state()->Simple_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=29f54d201863e234]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=016c476c7aa8b8a8]*/
 
 
 static int
