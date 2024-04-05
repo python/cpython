@@ -247,7 +247,7 @@ def get_external_signature(name: str, uop: Uop) -> str:
         args.append("int oparg")
     if not name.startswith("_"):
         name = "_" + name
-    return f"PyObject ** _Py{name}_func({', '.join(args)})"
+    return f"PyAPI_FUNC(PyObject **) _Py{name}_func({', '.join(args)})"
 
 
 def generate_tier2_externals(
