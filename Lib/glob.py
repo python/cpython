@@ -360,50 +360,54 @@ def _recursive_selector(parts, include_hidden, recursive):
     dir_only = bool(parts)
     select_next = _selector(parts, include_hidden, recursive)
 
-    def select_recursive(path, rel_path, dir_fd, exists, match_pos=None):
-        if match_pos is None:
-            path = _add_trailing_slash(path)
-            rel_path = _add_trailing_slash(rel_path)
-            match_pos = len(path)
-            if match is None or match(path, match_pos):
-                yield from select_next(path, rel_path, dir_fd, exists)
-        close_fd = False
-        try:
-            arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
-            if fd is not None:
-                prefix = _add_trailing_slash(path)
-            # Ensure we don't exhaust file descriptors when globbing deep
-            # trees by closing the directory *before* yielding anything.
-            with os.scandir(arg) as scandir_it:
-                entries = list(scandir_it)
-            for entry in entries:
-                is_dir = False
-                try:
-                    if entry.is_dir():
-                        is_dir = True
-                except OSError:
-                    pass
+    def select_recursive(path, rel_path, dir_fd, exists):
+        path = _add_trailing_slash(path)
+        rel_path = _add_trailing_slash(rel_path)
+        match_pos = len(path)
+        if match is None or match(path, match_pos):
+            yield from select_next(path, rel_path, dir_fd, exists)
+        stack = [(path, rel_path, dir_fd)]
+        while stack:
+            try:
+                yield from select_recursive_step(stack, match_pos)
+            except OSError:
+                pass
 
-                if is_dir or not dir_only:
-                    entry_path = entry.path
-                    if fd is not None:
-                        entry_path = prefix + entry_path
-                    if match is None or match(entry_path, match_pos):
-                        if dir_only:
-                            yield from select_next(
-                                entry_path, entry.name, fd, exists=True)
-                        else:
-                            # Optimization: directly yield the path if this is
-                            # last pattern part.
-                            yield entry_path
-                    if is_dir:
-                        yield from select_recursive(
-                            entry_path, entry.name, fd, exists, match_pos)
-        except OSError:
-            pass
-        finally:
+    def select_recursive_step(stack, match_pos):
+        path, rel_path, dir_fd = stack.pop()
+        if path is None:
+            os.close(dir_fd)
+            return
+        arg, fd, close_fd = _open_dir(path, rel_path, dir_fd)
+        if fd is not None:
+            prefix = _add_trailing_slash(path)
             if close_fd:
-                os.close(fd)
+                stack.append((None, None, fd))
+        with os.scandir(arg) as scandir_it:
+            entries = list(scandir_it)
+        for entry in entries:
+            is_dir = False
+            try:
+                if entry.is_dir():
+                    is_dir = True
+            except OSError:
+                pass
+
+            if is_dir or not dir_only:
+                entry_path = entry.path
+                if fd is not None:
+                    entry_path = prefix + entry_path
+                if match is None or match(entry_path, match_pos):
+                    if dir_only:
+                        yield from select_next(
+                            entry_path, entry.name, fd, exists=True)
+                    else:
+                        # Optimization: directly yield the path if this is
+                        # last pattern part.
+                        yield entry_path
+                if is_dir:
+                    stack.append((entry_path, entry.name, fd))
+
     return select_recursive
 
 
