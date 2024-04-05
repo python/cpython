@@ -579,7 +579,7 @@ converterr(const char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
         PyOS_snprintf(msgbuf, bufsize,
                       "%.100s", expected);
     }
-    else if (arg == NULL} {
+    else if (arg == NULL) {
         PyOS_snprintf(msgbuf, bufsize, "must be %.100s", expected);
     }
     else {
