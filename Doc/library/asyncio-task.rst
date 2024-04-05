@@ -411,7 +411,7 @@ The :exc:`asyncio.CancelledError` will be raised at the next
 Task groups now preserve the cancellation count
 (as reported by :meth:`asyncio.Task.cancelling`).
 
-.. versionchaged:: 3.13
+.. versionchanged:: 3.13
 
    Improved handling of simultaneous inside and outside cancellation.
 
