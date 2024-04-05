@@ -130,10 +130,12 @@ bytes(cdata)
 module _ctypes
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
-#include "clinic/_ctypes.c.h"
 
 #define clinic_state() (get_module_state_by_class(cls))
 #define clinic_state_sub() (get_module_state_by_class(cls->tp_base))
+#include "clinic/_ctypes.c.h"
+#undef clinic_state
+#undef clinic_state_sub
 
 /****************************************************************/
 
